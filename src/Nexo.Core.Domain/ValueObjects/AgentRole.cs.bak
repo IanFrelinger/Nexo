@@ -1,0 +1,27 @@
+using System;
+using System.Collections.Generic;
+namespace Nexo.Core.Domain.ValueObjects
+{
+    public sealed record AgentRole : IComparable<AgentRole>
+    {
+        private static readonly HashSet<string> StandardRoles = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Manager", "Architect", "Developer", "Tester", "DevOps", "Designer", "Analyst"
+        };
+        public string Value { get; }
+        public AgentRole(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Agent role cannot be empty", nameof(value));
+            Value = value.Trim();
+        }
+        public bool IsStandardRole => StandardRoles.Contains(Value);
+        public static AgentRole Manager => new("Manager");
+        public static AgentRole Architect => new("Architect");
+        public static AgentRole Developer => new("Developer");
+        public static AgentRole Tester => new("Tester");
+        public static implicit operator string(AgentRole role) => role.Value;
+        public override string ToString() => Value;
+        public int CompareTo(AgentRole? other) => string.Compare(Value, other?.Value, StringComparison.Ordinal);
+    }
+}

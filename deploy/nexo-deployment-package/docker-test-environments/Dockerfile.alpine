@@ -1,0 +1,29 @@
+# Alpine Linux Test Environment for Nexo Framework
+FROM alpine:3.18
+
+# Install .NET 8.0 dependencies
+RUN apk add --no-cache \
+    wget \
+    curl \
+    git \
+    bash \
+    && rm -rf /var/cache/apk/*
+
+# Install .NET 8.0 SDK
+RUN wget -O dotnet.tar.gz https://download.microsoft.com/download/8/8/5/885e5c96-47ba-4e49-aa97-9c2f46c6c069/dotnet-sdk-8.0.100-linux-musl-x64.tar.gz \
+    && mkdir -p /usr/share/dotnet \
+    && tar -C /usr/share/dotnet -xzf dotnet.tar.gz \
+    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
+    && rm dotnet.tar.gz
+
+# Set working directory
+WORKDIR /test
+
+# Copy test scripts and framework
+COPY . .
+
+# Make test script executable
+RUN chmod +x test-deployment.sh
+
+# Default command
+CMD ["./test-deployment.sh"] 

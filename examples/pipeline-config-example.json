@@ -1,0 +1,249 @@
+{
+  "name": "Sample Pipeline Configuration",
+  "version": "1.0.0",
+  "description": "A sample pipeline configuration demonstrating various features",
+  "author": "Nexo Framework",
+  "tags": ["sample", "example", "demo"],
+  "execution": {
+    "maxParallelExecutions": 4,
+    "commandTimeoutMs": 30000,
+    "behaviorTimeoutMs": 60000,
+    "aggregatorTimeoutMs": 120000,
+    "maxRetries": 3,
+    "retryDelayMs": 1000,
+    "enableDetailedLogging": true,
+    "enablePerformanceMonitoring": true,
+    "enableExecutionHistory": true,
+    "maxExecutionHistoryEntries": 100,
+    "enableParallelExecution": true,
+    "enableDependencyResolution": true,
+    "enableResourceManagement": true,
+    "maxMemoryUsageBytes": 1073741824,
+    "maxCpuUsagePercentage": 90.0
+  },
+  "commands": [
+    {
+      "id": "init-project",
+      "name": "Initialize Project",
+      "description": "Initialize a new project with the specified template",
+      "category": "Project",
+      "priority": "High",
+      "parameters": {
+        "template": "webapi",
+        "projectName": "MyProject",
+        "solutionName": "MySolution"
+      },
+      "dependencies": [],
+      "canExecuteInParallel": false,
+      "timeoutMs": 60000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 2000,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 10000
+      },
+      "validation": ["project-name-required", "template-exists"]
+    },
+    {
+      "id": "add-container",
+      "name": "Add Container Support",
+      "description": "Add Docker containerization to the project",
+      "category": "Container",
+      "priority": "Normal",
+      "parameters": {
+        "runtime": "docker",
+        "platform": "linux/amd64"
+      },
+      "dependencies": ["init-project"],
+      "canExecuteInParallel": true,
+      "timeoutMs": 45000,
+      "validation": ["project-exists"]
+    },
+    {
+      "id": "add-tests",
+      "name": "Add Test Project",
+      "description": "Add unit test project to the solution",
+      "category": "Testing",
+      "priority": "Normal",
+      "parameters": {
+        "testFramework": "xunit",
+        "testProjectName": "MyProject.Tests"
+      },
+      "dependencies": ["init-project"],
+      "canExecuteInParallel": true,
+      "timeoutMs": 30000,
+      "validation": ["solution-exists"]
+    },
+    {
+      "id": "analyze-code",
+      "name": "Analyze Code",
+      "description": "Perform static code analysis",
+      "category": "Analysis",
+      "priority": "Normal",
+      "parameters": {
+        "path": "./src",
+        "output": "console",
+        "severity": "warning"
+      },
+      "dependencies": ["init-project"],
+      "canExecuteInParallel": true,
+      "timeoutMs": 120000,
+      "validation": ["source-path-exists"]
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "project-setup",
+      "name": "Project Setup",
+      "description": "Complete project setup workflow",
+      "executionStrategy": "Sequential",
+      "commands": ["init-project", "add-container", "add-tests"],
+      "dependencies": [],
+      "conditions": ["project-not-exists"]
+    },
+    {
+      "id": "quality-check",
+      "name": "Quality Check",
+      "description": "Perform code quality checks",
+      "executionStrategy": "Parallel",
+      "commands": ["analyze-code"],
+      "dependencies": ["project-setup"],
+      "conditions": ["code-changed"]
+    }
+  ],
+  "aggregators": [
+    {
+      "id": "full-pipeline",
+      "name": "Full Pipeline",
+      "description": "Complete project creation and quality check pipeline",
+      "executionStrategy": "Sequential",
+      "behaviors": ["project-setup", "quality-check"],
+      "dependencies": [],
+      "resourceRequirements": {
+        "minMemoryBytes": 536870912,
+        "maxMemoryBytes": 2147483648,
+        "minCpuCores": 2,
+        "maxCpuCores": 8,
+        "requiredDiskSpaceBytes": 1073741824
+      }
+    }
+  ],
+  "variables": {
+    "projectName": "MyProject",
+    "solutionName": "MySolution",
+    "containerRuntime": "docker",
+    "testFramework": "xunit",
+    "codeAnalysisSeverity": "warning"
+  },
+  "environments": {
+    "development": {
+      "variables": {
+        "enableDebug": true,
+        "logLevel": "Debug",
+        "enableHotReload": true
+      },
+      "execution": {
+        "maxParallelExecutions": 2,
+        "enableDetailedLogging": true,
+        "enablePerformanceMonitoring": false
+      },
+      "commandOverrides": {
+        "analyze-code": {
+          "parameters": {
+            "severity": "info"
+          }
+        }
+      }
+    },
+    "production": {
+      "variables": {
+        "enableDebug": false,
+        "logLevel": "Information",
+        "enableHotReload": false
+      },
+      "execution": {
+        "maxParallelExecutions": 8,
+        "enableDetailedLogging": false,
+        "enablePerformanceMonitoring": true
+      },
+      "commandOverrides": {
+        "analyze-code": {
+          "parameters": {
+            "severity": "error"
+          }
+        }
+      }
+    }
+  },
+  "validation": {
+    "rules": [
+      {
+        "name": "project-name-required",
+        "description": "Project name must be specified",
+        "type": "required-field",
+        "parameters": {
+          "field": "projectName",
+          "message": "Project name is required"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "template-exists",
+        "description": "Template must exist",
+        "type": "template-validation",
+        "parameters": {
+          "templateField": "template",
+          "message": "Template does not exist"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "project-exists",
+        "description": "Project must exist before adding container support",
+        "type": "file-exists",
+        "parameters": {
+          "path": "./src",
+          "message": "Project source directory does not exist"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "solution-exists",
+        "description": "Solution file must exist before adding tests",
+        "type": "file-exists",
+        "parameters": {
+          "path": "*.sln",
+          "message": "Solution file does not exist"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "source-path-exists",
+        "description": "Source path must exist for code analysis",
+        "type": "directory-exists",
+        "parameters": {
+          "path": "./src",
+          "message": "Source directory does not exist"
+        },
+        "severity": "Error"
+      }
+    ],
+    "failOnError": true,
+    "timeoutMs": 30000
+  },
+  "documentation": {
+    "summary": "A comprehensive pipeline configuration for creating and managing .NET projects",
+    "details": "This pipeline configuration demonstrates various features including project initialization, containerization, testing, and code analysis. It supports multiple environments and includes comprehensive validation rules.",
+    "examples": [
+      "nexo pipeline create webapi --projectName MyApi --solutionName MySolution",
+      "nexo pipeline validate --config pipeline-config.json",
+      "nexo pipeline execute --config pipeline-config.json --env development"
+    ],
+    "tags": ["webapi", "aspnet", "container", "testing", "analysis"],
+    "links": [
+      "https://docs.microsoft.com/en-us/aspnet/core/web-api/",
+      "https://docs.microsoft.com/en-us/dotnet/core/testing/",
+      "https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/"
+    ]
+  }
+} 

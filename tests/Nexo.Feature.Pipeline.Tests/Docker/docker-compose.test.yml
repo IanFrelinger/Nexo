@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # .NET 8.0 Container for .NET-specific tests
+  dotnet-tests:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: nexo-dotnet-tests
+    volumes:
+      - ../..:/workspace
+      - dotnet-cache:/root/.nuget
+    working_dir: /workspace
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+    command: >
+      bash -c "
+        echo 'Running .NET 8.0 tests...' &&
+        dotnet restore tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj &&
+        dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj 
+          --filter 'RuntimeFactAttribute&SupportedRuntimes=DotNet' 
+          --logger 'console;verbosity=detailed' 
+          --results-directory /workspace/test-results/dotnet
+      "
+    networks:
+      - nexo-test-network
+
+  # .NET Core 3.1 Container for CoreCLR tests
+  coreclr-tests:
+    image: mcr.microsoft.com/dotnet/sdk:3.1
+    container_name: nexo-coreclr-tests
+    volumes:
+      - ../..:/workspace
+      - dotnet-cache:/root/.nuget
+    working_dir: /workspace
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+    command: >
+      bash -c "
+        echo 'Running .NET Core 3.1 (CoreCLR) tests...' &&
+        dotnet restore tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj &&
+        dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj 
+          --filter 'RuntimeFactAttribute&SupportedRuntimes=CoreCLR' 
+          --logger 'console;verbosity=detailed' 
+          --results-directory /workspace/test-results/coreclr
+      "
+    networks:
+      - nexo-test-network
+
+  # Mono Container for Mono-specific tests
+  mono-tests:
+    image: mono:latest
+    container_name: nexo-mono-tests
+    volumes:
+      - ../..:/workspace
+    working_dir: /workspace
+    environment:
+      - MONO_TELEMETRY_OPTOUT=1
+    command: >
+      bash -c "
+        echo 'Installing .NET SDK for Mono tests...' &&
+        apt-get update && apt-get install -y wget &&
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg &&
+        mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/ &&
+        wget -q https://packages.microsoft.com/config/debian/11/prod.list &&
+        mv prod.list /etc/apt/sources.list.d/microsoft-prod.list &&
+        chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg &&
+        chown root:root /etc/apt/sources.list.d/microsoft-prod.list &&
+        apt-get update && apt-get install -y dotnet-sdk-6.0 &&
+        echo 'Running Mono tests...' &&
+        dotnet restore tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj &&
+        dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj 
+          --filter 'RuntimeFactAttribute&SupportedRuntimes=Mono' 
+          --logger 'console;verbosity=detailed' 
+          --results-directory /workspace/test-results/mono
+      "
+    networks:
+      - nexo-test-network
+
+  # Unity Container for Unity-specific tests
+  unity-tests:
+    image: unityci/editor:2022.3.0f1-linux-il2cpp-1.1.1
+    container_name: nexo-unity-tests
+    volumes:
+      - ../..:/workspace
+      - unity-cache:/root/.cache/unity3d
+    working_dir: /workspace
+    environment:
+      - UNITY_LICENSE=1
+      - UNITY_EMAIL=${UNITY_EMAIL:-}
+      - UNITY_PASSWORD=${UNITY_PASSWORD:-}
+    command: >
+      bash -c "
+        echo 'Setting up Unity test environment...' &&
+        mkdir -p /workspace/test-results/unity &&
+        echo 'Running Unity tests...' &&
+        dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj 
+          --filter 'RuntimeFactAttribute&SupportedRuntimes=Unity' 
+          --logger 'console;verbosity=detailed' 
+          --results-directory /workspace/test-results/unity
+      "
+    networks:
+      - nexo-test-network
+
+  # Cross-platform test runner
+  test-runner:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: nexo-test-runner
+    volumes:
+      - ../..:/workspace
+      - dotnet-cache:/root/.nuget
+    working_dir: /workspace
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+    command: >
+      bash -c "
+        echo 'Waiting for all test containers to complete...' &&
+        sleep 30 &&
+        echo 'Running cross-runtime tests...' &&
+        dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj 
+          --filter 'CrossRuntimePipelineTests' 
+          --logger 'console;verbosity=detailed' 
+          --results-directory /workspace/test-results/cross-runtime &&
+        echo 'Generating test report...' &&
+        dotnet tool install --global dotnet-reportgenerator-globaltool &&
+        reportgenerator -reports:/workspace/test-results/**/coverage.info -targetdir:/workspace/test-results/report -reporttypes:Html
+      "
+    depends_on:
+      - dotnet-tests
+      - coreclr-tests
+      - mono-tests
+      - unity-tests
+    networks:
+      - nexo-test-network
+
+volumes:
+  dotnet-cache:
+  unity-cache:
+
+networks:
+  nexo-test-network:
+    driver: bridge 

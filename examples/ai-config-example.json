@@ -1,0 +1,97 @@
+{
+  "mode": "Development",
+  "models": {
+    "defaultProvider": "OpenAI",
+    "selectionStrategy": "Priority",
+    "fallbackChain": ["OpenAI", "AzureOpenAI"],
+    "enableCaching": true,
+    "cacheTimeoutSeconds": 1800,
+    "providers": {
+      "OpenAI": {
+        "type": "OpenAI",
+        "endpoint": "https://api.openai.com/v1",
+        "apiKey": "",
+        "defaultModel": "gpt-3.5-turbo",
+        "models": ["gpt-3.5-turbo", "gpt-4"],
+        "timeoutMs": 30000,
+        "maxRetries": 3,
+        "retryDelayMs": 1000,
+        "priority": 1,
+        "enabled": true
+      },
+      "AzureOpenAI": {
+        "type": "AzureOpenAI",
+        "endpoint": "https://your-resource.openai.azure.com/",
+        "apiKey": "",
+        "defaultModel": "gpt-4",
+        "models": ["gpt-4", "gpt-35-turbo"],
+        "timeoutMs": 60000,
+        "maxRetries": 5,
+        "retryDelayMs": 2000,
+        "priority": 2,
+        "enabled": false
+      },
+      "LocalOllama": {
+        "type": "Ollama",
+        "endpoint": "http://localhost:11434",
+        "apiKey": "",
+        "defaultModel": "llama2",
+        "models": ["llama2", "codellama"],
+        "timeoutMs": 180000,
+        "maxRetries": 5,
+        "retryDelayMs": 2000,
+        "priority": 3,
+        "enabled": false
+      }
+    }
+  },
+  "resources": {
+    "maxMemoryBytes": 1073741824,
+    "maxCpuCores": 4,
+    "maxGpuMemoryBytes": 0,
+    "maxConcurrentOperations": 2,
+    "allocationStrategy": "Balanced",
+    "enableDynamicScaling": false,
+    "monitoringIntervalSeconds": 60
+  },
+  "performance": {
+    "mode": "Fast",
+    "batchSize": 1,
+    "maxResponseTimeMs": 15000,
+    "enableParallelProcessing": false,
+    "parallelProcessingLimit": 4,
+    "enableResponseStreaming": true,
+    "streamingChunkSize": 512
+  },
+  "caching": {
+    "enableResponseCaching": true,
+    "cacheDurationSeconds": 1800,
+    "maxCacheSizeBytes": 52428800,
+    "evictionPolicy": "Lru",
+    "enableSemanticCaching": false,
+    "semanticSimilarityThreshold": 0.8,
+    "enableCacheWarming": false
+  },
+  "fallback": {
+    "enableBasicAnalysisFallback": true,
+    "enableLocalModelFallback": false,
+    "fallbackTimeoutMs": 5000,
+    "maxFallbackAttempts": 2,
+    "fallbackDelayMs": 500,
+    "fallbackErrorMessage": "AI analysis unavailable, using basic analysis"
+  },
+  "monitoring": {
+    "enableOperationMonitoring": true,
+    "enablePerformanceMonitoring": true,
+    "enableErrorMonitoring": true,
+    "monitoringIntervalSeconds": 60,
+    "maxHistoryEntries": 100,
+    "enableAlerting": false,
+    "alertThresholds": {
+      "errorRateThreshold": 10.0,
+      "responseTimeThresholdMs": 15000,
+      "memoryUsageThreshold": 70.0,
+      "cpuUsageThreshold": 80.0
+    }
+  }
+} 

@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  dotnet:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    entrypoint: ["dotnet"]
+
+  mono:
+    image: mono:latest
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    entrypoint: ["mono"] 

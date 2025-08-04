@@ -1,0 +1,223 @@
+version: '3.8'
+
+services:
+  # .NET 8.0 Runtime Testing
+  test-dotnet8-linux:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: nexo-test-dotnet8-linux
+    volumes:
+      - .:/workspace
+      - /workspace/bin
+      - /workspace/obj
+    working_dir: /workspace
+    command: >
+      sh -c "
+        echo 'Testing .NET 8.0 on Linux...' &&
+        dotnet --version &&
+        dotnet restore &&
+        dotnet build --configuration Release &&
+        dotnet test tests/Nexo.Core.Domain.Tests/Nexo.Core.Domain.Tests.csproj --configuration Release --verbosity normal &&
+        dotnet test tests/Nexo.Shared.Tests/Nexo.Shared.Tests.csproj --configuration Release --verbosity normal &&
+        dotnet test tests/Nexo.Core.Application.Tests/Nexo.Core.Application.Tests.csproj --configuration Release --verbosity normal &&
+        dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj --configuration Release --verbosity normal &&
+        echo '.NET 8.0 Linux tests completed'
+      "
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_NOLOGO=1
+
+  test-dotnet8-windows:
+    image: mcr.microsoft.com/dotnet/sdk:8.0-windowsservercore-ltsc2019
+    container_name: nexo-test-dotnet8-windows
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: >
+      powershell -Command "
+        Write-Host 'Testing .NET 8.0 on Windows...' -ForegroundColor Green;
+        dotnet --version;
+        dotnet restore;
+        dotnet build --configuration Release;
+        dotnet test tests/Nexo.Core.Domain.Tests/Nexo.Core.Domain.Tests.csproj --configuration Release --verbosity normal;
+        dotnet test tests/Nexo.Shared.Tests/Nexo.Shared.Tests.csproj --configuration Release --verbosity normal;
+        dotnet test tests/Nexo.Core.Application.Tests/Nexo.Core.Application.Tests.csproj --configuration Release --verbosity normal;
+        dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj --configuration Release --verbosity normal;
+        Write-Host '.NET 8.0 Windows tests completed' -ForegroundColor Green
+      "
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_NOLOGO=1
+
+  # .NET 7.0 Runtime Testing (for broader compatibility)
+  test-dotnet7-linux:
+    image: mcr.microsoft.com/dotnet/sdk:7.0
+    container_name: nexo-test-dotnet7-linux
+    volumes:
+      - .:/workspace
+      - /workspace/bin
+      - /workspace/obj
+    working_dir: /workspace
+    command: >
+      sh -c "
+        echo 'Testing .NET 7.0 on Linux...' &&
+        dotnet --version &&
+        dotnet restore &&
+        dotnet build --configuration Release &&
+        dotnet test tests/Nexo.Core.Domain.Tests/Nexo.Core.Domain.Tests.csproj --configuration Release --verbosity normal &&
+        dotnet test tests/Nexo.Shared.Tests/Nexo.Shared.Tests.csproj --configuration Release --verbosity normal &&
+        echo '.NET 7.0 Linux tests completed'
+      "
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_NOLOGO=1
+
+  # .NET 6.0 Runtime Testing (LTS version)
+  test-dotnet6-linux:
+    image: mcr.microsoft.com/dotnet/sdk:6.0
+    container_name: nexo-test-dotnet6-linux
+    volumes:
+      - .:/workspace
+      - /workspace/bin
+      - /workspace/obj
+    working_dir: /workspace
+    command: >
+      sh -c "
+        echo 'Testing .NET 6.0 on Linux...' &&
+        dotnet --version &&
+        dotnet restore &&
+        dotnet build --configuration Release &&
+        dotnet test tests/Nexo.Core.Domain.Tests/Nexo.Core.Domain.Tests.csproj --configuration Release --verbosity normal &&
+        dotnet test tests/Nexo.Shared.Tests/Nexo.Shared.Tests.csproj --configuration Release --verbosity normal &&
+        echo '.NET 6.0 Linux tests completed'
+      "
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_NOLOGO=1
+
+  # .NET Framework 4.8 Testing (Windows only)
+  test-dotnet48-windows:
+    image: mcr.microsoft.com/dotnet/framework/sdk:4.8-windowsservercore-ltsc2019
+    container_name: nexo-test-dotnet48-windows
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: >
+      powershell -Command "
+        Write-Host 'Testing .NET Framework 4.8 on Windows...' -ForegroundColor Green;
+        dotnet --version;
+        dotnet restore;
+        dotnet build --configuration Release;
+        dotnet test tests/Nexo.Core.Domain.Tests/Nexo.Core.Domain.Tests.csproj --configuration Release --verbosity normal;
+        dotnet test tests/Nexo.Shared.Tests/Nexo.Shared.Tests.csproj --configuration Release --verbosity normal;
+        Write-Host '.NET Framework 4.8 Windows tests completed' -ForegroundColor Green
+      "
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_NOLOGO=1
+
+  # Unity Engine Testing Environment
+  test-unity-linux:
+    build:
+      context: .
+      dockerfile: Dockerfile.unity-test
+    container_name: nexo-test-unity-linux
+    volumes:
+      - .:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    working_dir: /workspace
+    environment:
+      - DISPLAY=:99
+      - UNITY_LICENSE=1
+    command: ["/usr/local/bin/run-unity-tests.sh"]
+
+  # Mono Runtime Testing (for Unity compatibility)
+  test-mono-linux:
+    image: mono:latest
+    container_name: nexo-test-mono-linux
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: >
+      sh -c "
+        echo 'Testing Mono runtime compatibility...' &&
+        mono --version &&
+        # Build and test with Mono
+        msbuild /p:Configuration=Release /p:TargetFramework=netstandard2.0 src/Nexo.Core.Domain/Nexo.Core.Domain.csproj &&
+        msbuild /p:Configuration=Release /p:TargetFramework=netstandard2.0 src/Nexo.Shared/Nexo.Shared.csproj &&
+        echo 'Mono runtime tests completed'
+      "
+
+  # Cross-platform compatibility testing
+  test-cross-platform:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: nexo-test-cross-platform
+    volumes:
+      - .:/workspace
+      - /workspace/bin
+      - /workspace/obj
+    working_dir: /workspace
+    command: >
+      sh -c "
+        echo 'Testing cross-platform compatibility...' &&
+        # Test all target frameworks
+        dotnet build --configuration Release --framework net8.0 &&
+        dotnet build --configuration Release --framework netstandard2.0 &&
+        # Test platform-specific builds
+        dotnet publish --configuration Release --framework net8.0 --runtime linux-x64 --self-contained false &&
+        dotnet publish --configuration Release --framework net8.0 --runtime win-x64 --self-contained false &&
+        dotnet publish --configuration Release --framework net8.0 --runtime osx-x64 --self-contained false &&
+        echo 'Cross-platform compatibility tests completed'
+      "
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_NOLOGO=1
+
+  # Performance testing environment
+  test-performance:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: nexo-test-performance
+    volumes:
+      - .:/workspace
+      - /workspace/bin
+      - /workspace/obj
+    working_dir: /workspace
+    command: >
+      sh -c "
+        echo 'Running performance tests...' &&
+        dotnet restore &&
+        dotnet build --configuration Release &&
+        # Run tests with performance profiling
+        dotnet test tests/Nexo.Core.Domain.Tests/Nexo.Core.Domain.Tests.csproj --configuration Release --collect:'XPlat Code Coverage' --results-directory ./TestResults &&
+        dotnet test tests/Nexo.Shared.Tests/Nexo.Shared.Tests.csproj --configuration Release --collect:'XPlat Code Coverage' --results-directory ./TestResults &&
+        echo 'Performance tests completed'
+      "
+    environment:
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+      - DOTNET_NOLOGO=1
+
+  # Test results aggregator
+  test-results:
+    image: alpine:latest
+    container_name: nexo-test-results
+    volumes:
+      - ./test-results:/results
+    working_dir: /results
+    command: >
+      sh -c "
+        echo 'Aggregating test results...' &&
+        echo 'Test Results Summary:' > summary.txt &&
+        echo '====================' >> summary.txt &&
+        echo '$(date)' >> summary.txt &&
+        echo 'All test environments completed.' >> summary.txt &&
+        cat summary.txt
+      "
+    depends_on:
+      - test-dotnet8-linux
+      - test-dotnet7-linux
+      - test-dotnet6-linux
+      - test-cross-platform
+      - test-performance
+
+networks:
+  default:
+    name: nexo-test-network 

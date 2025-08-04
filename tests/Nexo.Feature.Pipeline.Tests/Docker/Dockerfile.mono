@@ -1,0 +1,59 @@
+FROM mono:latest
+
+# Set environment variables
+ENV MONO_TELEMETRY_OPTOUT=1
+ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+# Install additional tools and .NET SDK
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install .NET SDK for Mono compatibility
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.asc.gpg \
+    && mv microsoft.asc.gpg /etc/apt/trusted.gpg.d/ \
+    && wget -q https://packages.microsoft.com/config/debian/11/prod.list \
+    && mv prod.list /etc/apt/sources.list.d/microsoft-prod.list \
+    && chown root:root /etc/apt/trusted.gpg.d/microsoft.asc.gpg \
+    && chown root:root /etc/apt/sources.list.d/microsoft-prod.list \
+    && apt-get update \
+    && apt-get install -y dotnet-sdk-6.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install global tools
+RUN dotnet tool install --global dotnet-reportgenerator-globaltool
+RUN dotnet tool install --global dotnet-coverage
+
+# Create test results directory
+RUN mkdir -p /workspace/test-results/mono
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy test project files
+COPY tests/Nexo.Feature.Pipeline.Tests/ ./tests/Nexo.Feature.Pipeline.Tests/
+COPY src/ ./src/
+COPY global.json ./
+
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+echo "Running Mono tests..."\n\
+echo "Mono version: $(mono --version | head -1)"\n\
+echo ".NET version: $(dotnet --version)"\n\
+\n\
+dotnet restore tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj\n\
+dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj \\\n\
+  --filter "RuntimeFactAttribute&SupportedRuntimes=Mono" \\\n\
+  --logger "console;verbosity=detailed" \\\n\
+  --results-directory /workspace/test-results/mono \\\n\
+  --collect:"XPlat Code Coverage" \\\n\
+  --settings /workspace/tests/Nexo.Feature.Pipeline.Tests/Docker/coverlet.runsettings\n\
+\n\
+echo "Tests completed for Mono"\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"] 

@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = Nexo.Feature.Plugin
+build_property.ProjectDir = /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Plugin/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-07-27T00:27:25.201079Z",
+  "format": "json",
+  "includeHistory": false,
+  "summary": {
+    "totalTests": 100,
+    "passed": 95,
+    "failed": 3,
+    "skipped": 2
+  }
+}

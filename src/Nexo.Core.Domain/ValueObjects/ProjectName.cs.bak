@@ -1,0 +1,32 @@
+using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+namespace Nexo.Core.Domain.ValueObjects
+{
+    public sealed partial record ProjectName : IComparable<ProjectName>
+    {
+        private const int MinLength = 1;
+        private const int MaxLength = 100;
+        private static readonly Regex ValidNamePattern = GenerateValidNameRegex();
+        public string Value { get; }
+        public ProjectName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Project name cannot be empty", nameof(value));
+            if (value.Length < MinLength || value.Length > MaxLength)
+                throw new ArgumentException($"Project name must be between {MinLength} and {MaxLength} characters", nameof(value));
+            if (!ValidNamePattern.IsMatch(value))
+                throw new ArgumentException("Project name must start with a letter and contain only letters, numbers, hyphens, and underscores", nameof(value));
+            Value = value;
+        }
+        [GeneratedRegex(@"^[a-zA-Z][a-zA-Z0-9\-_]*$", RegexOptions.Compiled)]
+        private static partial Regex GenerateValidNameRegex();
+        public static implicit operator string(ProjectName name) => name.Value;
+        public override string ToString() => Value;
+        public int CompareTo(ProjectName? other) => string.Compare(Value, other?.Value, StringComparison.Ordinal);
+        public static bool IsValid(string value) =>
+            !string.IsNullOrWhiteSpace(value) &&
+            value.Length is >= MinLength and <= MaxLength &&
+            ValidNamePattern.IsMatch(value);
+    }
+}

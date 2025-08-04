@@ -1,0 +1,30 @@
+using System;
+using System.Collections.Generic;
+namespace Nexo.Core.Domain.ValueObjects
+{
+    public sealed record ProjectId : IComparable<ProjectId>
+    {
+        public Guid Value { get; }
+        public ProjectId(Guid value)
+        {
+            if (value == Guid.Empty)
+                throw new ArgumentException("Project ID cannot be empty", nameof(value));
+            Value = value;
+        }
+        public static ProjectId New() => new(Guid.NewGuid());
+        public static ProjectId Parse(string value) => new(Guid.Parse(value));
+        public static bool TryParse(string value, out ProjectId? projectId)
+        {
+            projectId = null;
+            if (Guid.TryParse(value, out var guid) && guid != Guid.Empty)
+            {
+                projectId = new ProjectId(guid);
+                return true;
+            }
+            return false;
+        }
+        public static implicit operator Guid(ProjectId id) => id.Value;
+        public override string ToString() => Value.ToString();
+        public int CompareTo(ProjectId? other) => other is null ? 1 : Value.CompareTo(other.Value);
+    }
+}

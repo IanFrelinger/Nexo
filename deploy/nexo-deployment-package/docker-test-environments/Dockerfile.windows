@@ -1,0 +1,20 @@
+# Windows Test Environment for Nexo Framework
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Install Chocolatey
+RUN powershell -Command \
+    Set-ExecutionPolicy Bypass -Scope Process -Force; \
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Install .NET 8.0 SDK
+RUN choco install dotnet-8.0-sdk -y
+
+# Set working directory
+WORKDIR C:\\test
+
+# Copy test scripts and framework
+COPY . .
+
+# Default command
+CMD ["cmd", "/c", "test-deployment.bat"] 

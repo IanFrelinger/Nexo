@@ -1,0 +1,108 @@
+name: Multi-Platform Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and test Ubuntu
+      run: |
+        cd deploy/nexo-deployment-package/docker-test-environments
+        docker build -f Dockerfile.ubuntu -t nexo-test-ubuntu .
+        docker run --rm nexo-test-ubuntu > ../test-results/ubuntu-github.log 2>&1
+        
+    - name: Upload Ubuntu test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: ubuntu-test-results
+        path: deploy/nexo-deployment-package/test-results/ubuntu-github.log
+
+  test-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and test macOS
+      run: |
+        cd deploy/nexo-deployment-package/docker-test-environments
+        docker build -f Dockerfile.macos -t nexo-test-macos .
+        docker run --rm nexo-test-macos > ../test-results/macos-github.log 2>&1
+        
+    - name: Upload macOS test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-test-results
+        path: deploy/nexo-deployment-package/test-results/macos-github.log
+
+  test-alpine:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and test Alpine
+      run: |
+        cd deploy/nexo-deployment-package/docker-test-environments
+        docker build -f Dockerfile.alpine -t nexo-test-alpine .
+        docker run --rm nexo-test-alpine > ../test-results/alpine-github.log 2>&1
+        
+    - name: Upload Alpine test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: alpine-test-results
+        path: deploy/nexo-deployment-package/test-results/alpine-github.log
+
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: [test-ubuntu, test-macos, test-alpine]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all test results
+      uses: actions/download-artifact@v4
+      with:
+        path: test-results
+    
+    - name: Generate test summary
+      run: |
+        echo "# Multi-Platform Test Summary" > test-summary.md
+        echo "" >> test-summary.md
+        echo "## Test Results" >> test-summary.md
+        
+        for log in test-results/*-github.log; do
+          platform=$(basename $log | sed 's/-github.log//')
+          if grep -q "Deployment Status: ✅ SUCCESS" "$log"; then
+            echo "- **$platform**: ✅ PASSED" >> test-summary.md
+          else
+            echo "- **$platform**: ❌ FAILED" >> test-summary.md
+          fi
+        done
+        
+        echo "" >> test-summary.md
+        echo "## Detailed Logs" >> test-summary.md
+        for log in test-results/*-github.log; do
+          platform=$(basename $log | sed 's/-github.log//')
+          echo "- [$platform](./test-results/$log)" >> test-summary.md
+        done
+    
+    - name: Upload test summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-summary
+        path: test-summary.md 

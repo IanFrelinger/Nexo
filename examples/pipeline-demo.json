@@ -1,0 +1,377 @@
+{
+  "name": "Project Initialization Pipeline",
+  "version": "1.0.0",
+  "description": "A comprehensive pipeline for initializing new projects with AI-enhanced features",
+  "author": "Nexo Team",
+  "tags": ["project", "initialization", "ai", "scaffolding"],
+  "execution": {
+    "maxParallelExecutions": 4,
+    "commandTimeoutMs": 30000,
+    "behaviorTimeoutMs": 60000,
+    "aggregatorTimeoutMs": 120000,
+    "maxRetries": 3,
+    "retryDelayMs": 1000,
+    "enableDetailedLogging": true,
+    "enablePerformanceMonitoring": true,
+    "enableExecutionHistory": true,
+    "maxExecutionHistoryEntries": 100,
+    "enableParallelExecution": true,
+    "enableDependencyResolution": true,
+    "enableResourceManagement": true,
+    "maxMemoryUsageBytes": 1073741824,
+    "maxCpuUsagePercentage": 80.0
+  },
+  "commands": [
+    {
+      "id": "validate-project-requirements",
+      "name": "Validate Project Requirements",
+      "description": "Validates that all project requirements are met",
+      "category": "validation",
+      "priority": "critical",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}"
+      },
+      "dependencies": [],
+      "canExecuteInParallel": false,
+      "timeoutMs": 10000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 500,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 2000
+      },
+      "validation": {
+        "requiredParameters": ["projectName", "projectType", "targetPath"],
+        "parameterValidation": {
+          "projectName": {
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "projectType": {
+            "allowedValues": ["webapi", "console", "library", "microservice", "blazor"]
+          }
+        }
+      }
+    },
+    {
+      "id": "analyze-project-context",
+      "name": "Analyze Project Context",
+      "description": "Analyzes the project context and requirements using AI",
+      "category": "analysis",
+      "priority": "high",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "requirements": "${requirements}",
+        "constraints": "${constraints}"
+      },
+      "dependencies": ["validate-project-requirements"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 30000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 1000,
+        "backoffMultiplier": 2.0,
+        "maxDelayMs": 5000
+      }
+    },
+    {
+      "id": "generate-project-structure",
+      "name": "Generate Project Structure",
+      "description": "Generates the basic project directory structure",
+      "category": "project",
+      "priority": "normal",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}",
+        "structure": "${analyzedStructure}"
+      },
+      "dependencies": ["analyze-project-context"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 15000,
+      "retry": {
+        "maxRetries": 1,
+        "delayMs": 500,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 1000
+      }
+    },
+    {
+      "id": "generate-source-files",
+      "name": "Generate Source Files",
+      "description": "Generates the main source code files for the project",
+      "category": "project",
+      "priority": "normal",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}",
+        "templates": "${generatedTemplates}"
+      },
+      "dependencies": ["generate-project-structure"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 20000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 1000,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 3000
+      }
+    },
+    {
+      "id": "generate-configuration-files",
+      "name": "Generate Configuration Files",
+      "description": "Generates configuration files for the project",
+      "category": "configuration",
+      "priority": "normal",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}",
+        "configTemplates": "${configTemplates}"
+      },
+      "dependencies": ["generate-project-structure"],
+      "canExecuteInParallel": true,
+      "timeoutMs": 10000,
+      "retry": {
+        "maxRetries": 1,
+        "delayMs": 500,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 1000
+      }
+    },
+    {
+      "id": "generate-documentation",
+      "name": "Generate Documentation",
+      "description": "Generates project documentation",
+      "category": "documentation",
+      "priority": "low",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}",
+        "docTemplates": "${docTemplates}"
+      },
+      "dependencies": ["generate-source-files"],
+      "canExecuteInParallel": true,
+      "timeoutMs": 15000,
+      "retry": {
+        "maxRetries": 1,
+        "delayMs": 500,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 1000
+      }
+    },
+    {
+      "id": "setup-development-environment",
+      "name": "Setup Development Environment",
+      "description": "Sets up the development environment and tools",
+      "category": "environment",
+      "priority": "normal",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}",
+        "tools": "${requiredTools}"
+      },
+      "dependencies": ["generate-configuration-files"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 25000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 2000,
+        "backoffMultiplier": 2.0,
+        "maxDelayMs": 8000
+      }
+    },
+    {
+      "id": "run-initial-tests",
+      "name": "Run Initial Tests",
+      "description": "Runs initial tests to verify the project setup",
+      "category": "testing",
+      "priority": "normal",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}",
+        "testFramework": "${testFramework}"
+      },
+      "dependencies": ["generate-source-files", "setup-development-environment"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 30000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 1000,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 4000
+      }
+    },
+    {
+      "id": "finalize-project",
+      "name": "Finalize Project",
+      "description": "Finalizes the project setup and provides summary",
+      "category": "project",
+      "priority": "low",
+      "parameters": {
+        "projectName": "${projectName}",
+        "projectType": "${projectType}",
+        "targetPath": "${targetPath}",
+        "summary": "${projectSummary}"
+      },
+      "dependencies": ["run-initial-tests", "generate-documentation"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 5000,
+      "retry": {
+        "maxRetries": 0,
+        "delayMs": 0,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 0
+      }
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "ai-enhanced-analysis",
+      "name": "AI-Enhanced Analysis",
+      "description": "Uses AI to enhance project analysis and recommendations",
+      "executionStrategy": "sequential",
+      "commands": ["analyze-project-context"],
+      "dependencies": [],
+      "conditions": {
+        "aiEnabled": true,
+        "hasRequirements": true
+      }
+    },
+    {
+      "id": "parallel-file-generation",
+      "name": "Parallel File Generation",
+      "description": "Generates multiple file types in parallel for efficiency",
+      "executionStrategy": "parallel",
+      "commands": ["generate-configuration-files", "generate-documentation"],
+      "dependencies": ["generate-project-structure"],
+      "conditions": {
+        "enableParallelExecution": true
+      }
+    }
+  ],
+  "aggregators": [
+    {
+      "id": "project-initialization",
+      "name": "Project Initialization",
+      "description": "Main aggregator for project initialization pipeline",
+      "executionStrategy": "dependencyOrdered",
+      "behaviors": ["ai-enhanced-analysis", "parallel-file-generation"],
+      "dependencies": [],
+      "resourceRequirements": {
+        "minMemoryBytes": 268435456,
+        "maxMemoryBytes": 1073741824,
+        "minCpuCores": 2,
+        "maxCpuCores": 8,
+        "requiredDiskSpaceBytes": 536870912
+      }
+    }
+  ],
+  "variables": {
+    "projectName": "",
+    "projectType": "webapi",
+    "targetPath": "",
+    "requirements": "",
+    "constraints": "",
+    "aiEnabled": true,
+    "enableParallelExecution": true,
+    "testFramework": "xunit",
+    "defaultTemplate": "modern"
+  },
+  "environments": {
+    "development": {
+      "variables": {
+        "enableDetailedLogging": true,
+        "enablePerformanceMonitoring": true,
+        "maxParallelExecutions": 2
+      },
+      "execution": {
+        "commandTimeoutMs": 60000,
+        "behaviorTimeoutMs": 120000,
+        "maxRetries": 5
+      }
+    },
+    "production": {
+      "variables": {
+        "enableDetailedLogging": false,
+        "enablePerformanceMonitoring": true,
+        "maxParallelExecutions": 8
+      },
+      "execution": {
+        "commandTimeoutMs": 15000,
+        "behaviorTimeoutMs": 30000,
+        "maxRetries": 2
+      }
+    }
+  },
+  "validation": {
+    "rules": [
+      {
+        "name": "Project Name Validation",
+        "description": "Ensures project name follows naming conventions",
+        "type": "regex",
+        "parameters": {
+          "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$",
+          "field": "projectName"
+        },
+        "severity": "error"
+      },
+      {
+        "name": "Path Validation",
+        "description": "Ensures target path is valid and accessible",
+        "type": "path",
+        "parameters": {
+          "field": "targetPath",
+          "mustExist": false,
+          "mustBeWritable": true
+        },
+        "severity": "error"
+      }
+    ],
+    "failOnError": true,
+    "timeoutMs": 10000
+  },
+  "documentation": {
+    "summary": "A comprehensive pipeline for initializing new projects with AI-enhanced features and modern development practices.",
+    "details": "This pipeline provides a complete project initialization workflow that includes validation, AI-enhanced analysis, project structure generation, source file creation, configuration setup, documentation generation, environment setup, testing, and finalization.",
+    "examples": [
+      {
+        "name": "Web API Project",
+        "description": "Initialize a new ASP.NET Core Web API project",
+        "parameters": {
+          "projectName": "MyWebApi",
+          "projectType": "webapi",
+          "targetPath": "./projects/MyWebApi"
+        }
+      },
+      {
+        "name": "Console Application",
+        "description": "Initialize a new .NET Console application",
+        "parameters": {
+          "projectName": "MyConsoleApp",
+          "projectType": "console",
+          "targetPath": "./projects/MyConsoleApp"
+        }
+      }
+    ],
+    "tags": ["project", "initialization", "ai", "scaffolding", "development"],
+    "links": [
+      {
+        "name": "Pipeline Architecture Documentation",
+        "url": "https://docs.nexo.dev/pipeline-architecture"
+      },
+      {
+        "name": "AI Integration Guide",
+        "url": "https://docs.nexo.dev/ai-integration"
+      }
+    ]
+  }
+} 

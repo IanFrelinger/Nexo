@@ -1,0 +1,70 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ce26a334-aeee-435f-9a08-3d7b27ccad4a" name="@Mac 2025-07-24 16:58:25" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-07-24T16:58:25.1226580-04:00" queuing="2025-07-24T16:58:25.1226580-04:00" start="2025-07-24T16:58:24.6852220-04:00" finish="2025-07-24T16:58:25.1260150-04:00" />
+  <TestSettings name="default" id="214b9120-4191-4746-a24b-a1ad8ceb5e7c">
+    <Deployment runDeploymentRoot="_Mac_2025-07-24_16_58_25" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="8ec2fa1c-46bb-4d6d-8558-13d0a95e2287" testId="543e966d-ee20-a901-7a24-fcb1d029a757" testName="Nexo.Feature.AI.Tests.AIPipelineTests.AI_ModelConfiguration_WorksCorrectly" computerName="Mac" duration="00:00:00.0004004" startTime="2025-07-24T16:58:25.0712930-04:00" endTime="2025-07-24T16:58:25.0712930-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8ec2fa1c-46bb-4d6d-8558-13d0a95e2287" />
+    <UnitTestResult executionId="753ad3d2-1b8d-4a6e-889b-c190707b6e79" testId="b7005d08-fcbb-8274-664b-19daba7fc7a8" testName="Nexo.Feature.AI.Tests.AIPipelineTests.AI_Enums_WorkCorrectly" computerName="Mac" duration="00:00:00.0002818" startTime="2025-07-24T16:58:25.0713610-04:00" endTime="2025-07-24T16:58:25.0713610-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="753ad3d2-1b8d-4a6e-889b-c190707b6e79" />
+    <UnitTestResult executionId="71f90435-cd19-42d5-aced-bec8cda9a13a" testId="23b229ed-2c03-21b5-1366-af81cad743bd" testName="Nexo.Feature.AI.Tests.AIPipelineTests.AI_Configuration_WorksCorrectly" computerName="Mac" duration="00:00:00.0058937" startTime="2025-07-24T16:58:25.0696620-04:00" endTime="2025-07-24T16:58:25.0696720-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="71f90435-cd19-42d5-aced-bec8cda9a13a" />
+    <UnitTestResult executionId="c367025a-dc63-4f27-93f1-f094caa6e8ab" testId="420930d1-4bbb-f763-946a-73b7bce4660b" testName="Nexo.Feature.AI.Tests.AIPipelineTests.AIMode_EnumValues_AreDefined" computerName="Mac" duration="00:00:00.0000677" startTime="2025-07-24T16:58:25.0713400-04:00" endTime="2025-07-24T16:58:25.0713400-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c367025a-dc63-4f27-93f1-f094caa6e8ab" />
+    <UnitTestResult executionId="a62e3689-86df-4aa7-9cca-96bdb52cb3e8" testId="cb0d1d3e-27b1-ba32-865b-c6f603462e00" testName="Nexo.Feature.AI.Tests.AIPipelineTests.CacheEvictionPolicy_EnumValues_AreDefined" computerName="Mac" duration="00:00:00.0000699" startTime="2025-07-24T16:58:25.0713170-04:00" endTime="2025-07-24T16:58:25.0713170-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a62e3689-86df-4aa7-9cca-96bdb52cb3e8" />
+    <UnitTestResult executionId="c0a58420-e628-462e-b2a0-f1883719863a" testId="e0130ea5-e754-3f5d-7346-6b7bb0dae4ef" testName="Nexo.Feature.AI.Tests.AIPipelineTests.AI_CachingConfiguration_WorksCorrectly" computerName="Mac" duration="00:00:00.0007012" startTime="2025-07-24T16:58:25.0713820-04:00" endTime="2025-07-24T16:58:25.0713820-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c0a58420-e628-462e-b2a0-f1883719863a" />
+    <UnitTestResult executionId="b4493f1d-531b-4096-bbd7-85c9bcfa7fed" testId="d7bf2b4a-f113-2e75-ce3d-b4791f34dea0" testName="Nexo.Feature.AI.Tests.AIPipelineTests.ModelType_EnumValues_AreDefined" computerName="Mac" duration="00:00:00.0002626" startTime="2025-07-24T16:58:25.0711460-04:00" endTime="2025-07-24T16:58:25.0711460-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b4493f1d-531b-4096-bbd7-85c9bcfa7fed" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Nexo.Feature.AI.Tests.AIPipelineTests.AI_CachingConfiguration_WorksCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.feature.ai.tests/bin/debug/net8.0/nexo.feature.ai.tests.dll" id="e0130ea5-e754-3f5d-7346-6b7bb0dae4ef">
+      <Execution id="c0a58420-e628-462e-b2a0-f1883719863a" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.AI.Tests/bin/Debug/net8.0/Nexo.Feature.AI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Feature.AI.Tests.AIPipelineTests" name="AI_CachingConfiguration_WorksCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Feature.AI.Tests.AIPipelineTests.ModelType_EnumValues_AreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.feature.ai.tests/bin/debug/net8.0/nexo.feature.ai.tests.dll" id="d7bf2b4a-f113-2e75-ce3d-b4791f34dea0">
+      <Execution id="b4493f1d-531b-4096-bbd7-85c9bcfa7fed" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.AI.Tests/bin/Debug/net8.0/Nexo.Feature.AI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Feature.AI.Tests.AIPipelineTests" name="ModelType_EnumValues_AreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Feature.AI.Tests.AIPipelineTests.AIMode_EnumValues_AreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.feature.ai.tests/bin/debug/net8.0/nexo.feature.ai.tests.dll" id="420930d1-4bbb-f763-946a-73b7bce4660b">
+      <Execution id="c367025a-dc63-4f27-93f1-f094caa6e8ab" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.AI.Tests/bin/Debug/net8.0/Nexo.Feature.AI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Feature.AI.Tests.AIPipelineTests" name="AIMode_EnumValues_AreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Feature.AI.Tests.AIPipelineTests.AI_ModelConfiguration_WorksCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.feature.ai.tests/bin/debug/net8.0/nexo.feature.ai.tests.dll" id="543e966d-ee20-a901-7a24-fcb1d029a757">
+      <Execution id="8ec2fa1c-46bb-4d6d-8558-13d0a95e2287" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.AI.Tests/bin/Debug/net8.0/Nexo.Feature.AI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Feature.AI.Tests.AIPipelineTests" name="AI_ModelConfiguration_WorksCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Feature.AI.Tests.AIPipelineTests.AI_Enums_WorkCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.feature.ai.tests/bin/debug/net8.0/nexo.feature.ai.tests.dll" id="b7005d08-fcbb-8274-664b-19daba7fc7a8">
+      <Execution id="753ad3d2-1b8d-4a6e-889b-c190707b6e79" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.AI.Tests/bin/Debug/net8.0/Nexo.Feature.AI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Feature.AI.Tests.AIPipelineTests" name="AI_Enums_WorkCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Feature.AI.Tests.AIPipelineTests.AI_Configuration_WorksCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.feature.ai.tests/bin/debug/net8.0/nexo.feature.ai.tests.dll" id="23b229ed-2c03-21b5-1366-af81cad743bd">
+      <Execution id="71f90435-cd19-42d5-aced-bec8cda9a13a" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.AI.Tests/bin/Debug/net8.0/Nexo.Feature.AI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Feature.AI.Tests.AIPipelineTests" name="AI_Configuration_WorksCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Feature.AI.Tests.AIPipelineTests.CacheEvictionPolicy_EnumValues_AreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.feature.ai.tests/bin/debug/net8.0/nexo.feature.ai.tests.dll" id="cb0d1d3e-27b1-ba32-865b-c6f603462e00">
+      <Execution id="a62e3689-86df-4aa7-9cca-96bdb52cb3e8" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.AI.Tests/bin/Debug/net8.0/Nexo.Feature.AI.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Feature.AI.Tests.AIPipelineTests" name="CacheEvictionPolicy_EnumValues_AreDefined" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="543e966d-ee20-a901-7a24-fcb1d029a757" executionId="8ec2fa1c-46bb-4d6d-8558-13d0a95e2287" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b7005d08-fcbb-8274-664b-19daba7fc7a8" executionId="753ad3d2-1b8d-4a6e-889b-c190707b6e79" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="23b229ed-2c03-21b5-1366-af81cad743bd" executionId="71f90435-cd19-42d5-aced-bec8cda9a13a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="420930d1-4bbb-f763-946a-73b7bce4660b" executionId="c367025a-dc63-4f27-93f1-f094caa6e8ab" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cb0d1d3e-27b1-ba32-865b-c6f603462e00" executionId="a62e3689-86df-4aa7-9cca-96bdb52cb3e8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e0130ea5-e754-3f5d-7346-6b7bb0dae4ef" executionId="c0a58420-e628-462e-b2a0-f1883719863a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d7bf2b4a-f113-2e75-ce3d-b4791f34dea0" executionId="b4493f1d-531b-4096-bbd7-85c9bcfa7fed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="7" executed="7" passed="7" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.6+bf9b858c26 (64-bit .NET 8.0.7)
+[xUnit.net 00:00:00.04]   Discovering: Nexo.Feature.AI.Tests
+[xUnit.net 00:00:00.05]   Discovered:  Nexo.Feature.AI.Tests
+[xUnit.net 00:00:00.05]   Starting:    Nexo.Feature.AI.Tests
+[xUnit.net 00:00:00.09]   Finished:    Nexo.Feature.AI.Tests
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

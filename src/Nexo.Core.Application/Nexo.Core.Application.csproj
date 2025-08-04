@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net48;netstandard2.0</TargetFrameworks>
+        <LangVersion>8.0</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
+        <ProjectReference Include="..\Nexo.Feature.Pipeline\Nexo.Feature.Pipeline.csproj" />
+        <ProjectReference Include="..\Nexo.Shared\Nexo.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Updated to stable version - was 10.0.0-preview.6.25358.103 -->
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+        <PackageReference Include="System.Text.Json" Version="9.0.7" />
+    </ItemGroup>
+
+</Project>

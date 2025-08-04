@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = Nexo.Feature.Logging
+build_property.ProjectDir = /workspace/src/Nexo.Feature.Logging/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

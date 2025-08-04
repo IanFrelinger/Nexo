@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net48;netstandard2.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Nexo.Shared\Nexo.Shared.csproj" />
+      <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+      <ProjectReference Include="..\Nexo.Feature.AI\Nexo.Feature.AI.csproj" />
+      <ProjectReference Include="..\Nexo.Feature.Pipeline\Nexo.Feature.Pipeline.csproj" />
+      <ProjectReference Include="..\Nexo.Feature.Logging\Nexo.Feature.Logging.csproj" />
+      <ProjectReference Include="..\Nexo.Feature.Validation\Nexo.Feature.Validation.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="backup/**/*.cs" />
+      <Compile Remove="backup_old/**/*.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Reactive" Version="6.0.1" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
+      <PackageReference Include="System.Text.Json" Version="9.0.7" />
+      <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+      <PackageReference Include="StackExchange.Redis" Version="2.7.17" />
+      <Reference Include="System.Net.Http" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,57 @@
+FROM unityci/editor:2022.3.0f1-linux-il2cpp-1.1.1
+
+# Set environment variables
+ENV UNITY_LICENSE=1
+ENV UNITY_EMAIL=${UNITY_EMAIL}
+ENV UNITY_PASSWORD=${UNITY_PASSWORD}
+
+# Install additional tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    dotnet-sdk-8.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install global tools
+RUN dotnet tool install --global dotnet-reportgenerator-globaltool
+RUN dotnet tool install --global dotnet-coverage
+
+# Create test results directory
+RUN mkdir -p /workspace/test-results/unity
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy test project files
+COPY tests/Nexo.Feature.Pipeline.Tests/ ./tests/Nexo.Feature.Pipeline.Tests/
+COPY src/ ./src/
+COPY global.json ./
+
+# Create Unity test project structure
+RUN mkdir -p /workspace/unity-test-project/Assets/Scripts
+RUN mkdir -p /workspace/unity-test-project/Assets/Tests
+
+# Create Unity test runner script
+RUN echo '#!/bin/bash\n\
+echo "Setting up Unity test environment..."\n\
+\n\
+# Activate Unity license if credentials provided\n\
+if [ ! -z "$UNITY_EMAIL" ] && [ ! -z "$UNITY_PASSWORD" ]; then\n\
+    echo "Activating Unity license..."\n\
+    unity-editor -batchmode -quit -username "$UNITY_EMAIL" -password "$UNITY_PASSWORD" -logFile /workspace/unity-activation.log\n\
+fi\n\
+\n\
+echo "Running Unity tests..."\n\
+dotnet restore tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj\n\
+dotnet test tests/Nexo.Feature.Pipeline.Tests/Nexo.Feature.Pipeline.Tests.csproj \\\n\
+  --filter "RuntimeFactAttribute&SupportedRuntimes=Unity" \\\n\
+  --logger "console;verbosity=detailed" \\\n\
+  --results-directory /workspace/test-results/unity \\\n\
+  --collect:"XPlat Code Coverage" \\\n\
+  --settings /workspace/tests/Nexo.Feature.Pipeline.Tests/Docker/coverlet.runsettings\n\
+\n\
+echo "Tests completed for Unity"\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"] 

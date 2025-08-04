@@ -1,0 +1,34 @@
+# macOS-like Test Environment for Nexo Framework
+# Note: Docker on macOS uses Linux containers, so we simulate macOS environment
+FROM ubuntu:22.04
+
+# Install .NET 8.0 and macOS-like tools
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    git \
+    zsh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install .NET 8.0 SDK
+RUN wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get install -y dotnet-sdk-8.0
+
+# Set up macOS-like environment
+ENV SHELL=/bin/zsh
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+
+# Set working directory
+WORKDIR /test
+
+# Copy test scripts and framework
+COPY . .
+
+# Make test script executable
+RUN chmod +x test-deployment.sh
+
+# Default command
+CMD ["./test-deployment.sh"] 

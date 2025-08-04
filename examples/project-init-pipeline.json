@@ -1,0 +1,422 @@
+{
+  "name": "AI-Enhanced Project Initialization",
+  "version": "1.0.0",
+  "description": "Pipeline for AI-enhanced project initialization with intelligent template selection and customization",
+  "author": "Nexo Framework",
+  "tags": ["project", "initialization", "ai", "template"],
+  "execution": {
+    "maxParallelExecutions": 2,
+    "commandTimeoutMs": 60000,
+    "behaviorTimeoutMs": 120000,
+    "aggregatorTimeoutMs": 300000,
+    "maxRetries": 2,
+    "retryDelayMs": 2000,
+    "enableDetailedLogging": true,
+    "enablePerformanceMonitoring": true,
+    "enableExecutionHistory": true,
+    "maxExecutionHistoryEntries": 50,
+    "enableParallelExecution": false,
+    "enableDependencyResolution": true,
+    "enableResourceManagement": true,
+    "maxMemoryUsageBytes": 1073741824,
+    "maxCpuUsagePercentage": 80.0
+  },
+  "commands": [
+    {
+      "id": "validate-project-requirements",
+      "name": "Validate Project Requirements",
+      "description": "Validate project name, type, and path requirements",
+      "category": "Validation",
+      "priority": "Critical",
+      "parameters": {
+        "projectName": "",
+        "projectType": "",
+        "projectPath": ""
+      },
+      "dependencies": [],
+      "canExecuteInParallel": false,
+      "timeoutMs": 10000,
+      "retry": {
+        "maxRetries": 1,
+        "delayMs": 1000,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 1000
+      },
+      "validation": ["project-name-required", "project-type-valid", "path-available"]
+    },
+    {
+      "id": "ai-analyze-requirements",
+      "name": "AI Requirements Analysis",
+      "description": "Use AI to analyze project requirements and suggest optimal configuration",
+      "category": "AI",
+      "priority": "High",
+      "parameters": {
+        "projectName": "",
+        "projectType": "",
+        "requirements": ""
+      },
+      "dependencies": ["validate-project-requirements"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 30000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 2000,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 8000
+      },
+      "validation": ["ai-service-available"]
+    },
+    {
+      "id": "select-optimal-template",
+      "name": "Select Optimal Template",
+      "description": "AI-powered template selection based on requirements analysis",
+      "category": "Template",
+      "priority": "High",
+      "parameters": {
+        "projectType": "",
+        "aiRecommendations": "",
+        "customTemplate": ""
+      },
+      "dependencies": ["ai-analyze-requirements"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 15000,
+      "retry": {
+        "maxRetries": 1,
+        "delayMs": 1000,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 1000
+      },
+      "validation": ["template-exists"]
+    },
+    {
+      "id": "create-project-structure",
+      "name": "Create Project Structure",
+      "description": "Create the basic project directory structure",
+      "category": "FileSystem",
+      "priority": "Normal",
+      "parameters": {
+        "projectPath": "",
+        "projectName": "",
+        "structure": ""
+      },
+      "dependencies": ["select-optimal-template"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 20000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 1000,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 5000
+      },
+      "validation": ["path-writable"]
+    },
+    {
+      "id": "generate-project-files",
+      "name": "Generate Project Files",
+      "description": "Generate project files using the selected template",
+      "category": "Template",
+      "priority": "Normal",
+      "parameters": {
+        "template": "",
+        "projectPath": "",
+        "projectName": "",
+        "customizations": ""
+      },
+      "dependencies": ["create-project-structure"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 45000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 2000,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 10000
+      },
+      "validation": ["template-valid", "files-generated"]
+    },
+    {
+      "id": "ai-customize-project",
+      "name": "AI Project Customization",
+      "description": "Use AI to customize project files based on requirements",
+      "category": "AI",
+      "priority": "Normal",
+      "parameters": {
+        "projectPath": "",
+        "customizations": "",
+        "aiRecommendations": ""
+      },
+      "dependencies": ["generate-project-files"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 60000,
+      "retry": {
+        "maxRetries": 2,
+        "delayMs": 3000,
+        "backoffMultiplier": 1.5,
+        "maxDelayMs": 12000
+      },
+      "validation": ["ai-service-available"]
+    },
+    {
+      "id": "validate-generated-project",
+      "name": "Validate Generated Project",
+      "description": "Validate the generated project structure and files",
+      "category": "Validation",
+      "priority": "Normal",
+      "parameters": {
+        "projectPath": "",
+        "projectType": "",
+        "validationRules": ""
+      },
+      "dependencies": ["ai-customize-project"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 20000,
+      "retry": {
+        "maxRetries": 1,
+        "delayMs": 1000,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 1000
+      },
+      "validation": ["project-structure-valid"]
+    },
+    {
+      "id": "generate-documentation",
+      "name": "Generate Project Documentation",
+      "description": "Generate README and documentation for the project",
+      "category": "Documentation",
+      "priority": "Low",
+      "parameters": {
+        "projectPath": "",
+        "projectName": "",
+        "projectType": "",
+        "aiRecommendations": ""
+      },
+      "dependencies": ["validate-generated-project"],
+      "canExecuteInParallel": false,
+      "timeoutMs": 30000,
+      "retry": {
+        "maxRetries": 1,
+        "delayMs": 1000,
+        "backoffMultiplier": 1.0,
+        "maxDelayMs": 1000
+      },
+      "validation": ["documentation-generated"]
+    }
+  ],
+  "behaviors": [
+    {
+      "id": "ai-project-analysis",
+      "name": "AI Project Analysis",
+      "description": "AI-powered analysis of project requirements and template selection",
+      "executionStrategy": "Sequential",
+      "commands": ["validate-project-requirements", "ai-analyze-requirements", "select-optimal-template"],
+      "dependencies": [],
+      "conditions": ["ai-enabled"]
+    },
+    {
+      "id": "project-generation",
+      "name": "Project Generation",
+      "description": "Generate the project structure and files",
+      "executionStrategy": "Sequential",
+      "commands": ["create-project-structure", "generate-project-files"],
+      "dependencies": ["ai-project-analysis"],
+      "conditions": ["template-selected"]
+    },
+    {
+      "id": "ai-customization",
+      "name": "AI Customization",
+      "description": "AI-powered project customization and optimization",
+      "executionStrategy": "Sequential",
+      "commands": ["ai-customize-project"],
+      "dependencies": ["project-generation"],
+      "conditions": ["ai-enabled"]
+    },
+    {
+      "id": "project-validation",
+      "name": "Project Validation",
+      "description": "Validate the generated project",
+      "executionStrategy": "Sequential",
+      "commands": ["validate-generated-project", "generate-documentation"],
+      "dependencies": ["ai-customization"],
+      "conditions": ["project-generated"]
+    }
+  ],
+  "aggregators": [
+    {
+      "id": "ai-enhanced-init",
+      "name": "AI-Enhanced Project Initialization",
+      "description": "Complete AI-enhanced project initialization pipeline",
+      "executionStrategy": "Sequential",
+      "behaviors": ["ai-project-analysis", "project-generation", "ai-customization", "project-validation"],
+      "dependencies": [],
+      "resourceRequirements": {
+        "minMemoryBytes": 536870912,
+        "maxMemoryBytes": 2147483648,
+        "minCpuCores": 2,
+        "maxCpuCores": 4,
+        "requiredDiskSpaceBytes": 536870912
+      }
+    }
+  ],
+  "variables": {
+    "defaultProjectType": "webapi",
+    "defaultTemplate": "webapi",
+    "aiModel": "gpt-4",
+    "enableAICustomization": true,
+    "generateDocumentation": true,
+    "validationStrictness": "normal"
+  },
+  "environments": {
+    "development": {
+      "variables": {
+        "enableDebug": true,
+        "logLevel": "Debug",
+        "aiModel": "gpt-4",
+        "enableAICustomization": true
+      },
+      "execution": {
+        "maxParallelExecutions": 1,
+        "enableDetailedLogging": true,
+        "enablePerformanceMonitoring": true
+      }
+    },
+    "production": {
+      "variables": {
+        "enableDebug": false,
+        "logLevel": "Information",
+        "aiModel": "gpt-4",
+        "enableAICustomization": true
+      },
+      "execution": {
+        "maxParallelExecutions": 2,
+        "enableDetailedLogging": false,
+        "enablePerformanceMonitoring": true
+      }
+    }
+  },
+  "validation": {
+    "rules": [
+      {
+        "name": "project-name-required",
+        "description": "Project name must be specified and valid",
+        "type": "required-field",
+        "parameters": {
+          "field": "projectName",
+          "message": "Project name is required and must be a valid identifier"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "project-type-valid",
+        "description": "Project type must be supported",
+        "type": "enum-validation",
+        "parameters": {
+          "field": "projectType",
+          "validValues": ["webapi", "console", "library", "microservice", "blazor", "mvc"],
+          "message": "Project type must be one of: webapi, console, library, microservice, blazor, mvc"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "path-available",
+        "description": "Project path must be available for creation",
+        "type": "path-validation",
+        "parameters": {
+          "path": "projectPath",
+          "shouldExist": false,
+          "shouldBeWritable": true,
+          "message": "Project path must be available and writable"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "ai-service-available",
+        "description": "AI service must be available for AI-enhanced features",
+        "type": "service-validation",
+        "parameters": {
+          "service": "ai",
+          "message": "AI service is not available"
+        },
+        "severity": "Warning"
+      },
+      {
+        "name": "template-exists",
+        "description": "Selected template must exist",
+        "type": "template-validation",
+        "parameters": {
+          "templateField": "template",
+          "message": "Selected template does not exist"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "path-writable",
+        "description": "Project path must be writable",
+        "type": "permission-validation",
+        "parameters": {
+          "path": "projectPath",
+          "permission": "write",
+          "message": "Project path is not writable"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "template-valid",
+        "description": "Template must be valid and complete",
+        "type": "template-validation",
+        "parameters": {
+          "template": "template",
+          "message": "Template is invalid or incomplete"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "files-generated",
+        "description": "Project files must be generated successfully",
+        "type": "file-validation",
+        "parameters": {
+          "path": "projectPath",
+          "requiredFiles": ["*.csproj", "*.sln"],
+          "message": "Required project files were not generated"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "project-structure-valid",
+        "description": "Generated project structure must be valid",
+        "type": "structure-validation",
+        "parameters": {
+          "path": "projectPath",
+          "message": "Generated project structure is invalid"
+        },
+        "severity": "Error"
+      },
+      {
+        "name": "documentation-generated",
+        "description": "Project documentation must be generated",
+        "type": "file-validation",
+        "parameters": {
+          "path": "projectPath",
+          "requiredFiles": ["README.md"],
+          "message": "Project documentation was not generated"
+        },
+        "severity": "Warning"
+      }
+    ],
+    "failOnError": true,
+    "timeoutMs": 30000
+  },
+  "documentation": {
+    "summary": "AI-enhanced project initialization pipeline with intelligent template selection and customization",
+    "details": "This pipeline provides comprehensive AI-enhanced project initialization capabilities. It analyzes project requirements using AI, selects optimal templates, generates project structure, and customizes the project based on AI recommendations.",
+    "examples": [
+      "nexo project init MyApi --type webapi --ai",
+      "nexo project init MyService --type microservice --template custom --ai",
+      "nexo pipeline execute --config project-init-pipeline.json --variables projectName=MyApp,projectType=blazor"
+    ],
+    "tags": ["project", "initialization", "ai", "template", "customization"],
+    "links": [
+      "https://docs.microsoft.com/en-us/dotnet/core/tools/",
+      "https://docs.microsoft.com/en-us/aspnet/core/",
+      "https://docs.microsoft.com/en-us/dotnet/architecture/"
+    ]
+  }
+} 

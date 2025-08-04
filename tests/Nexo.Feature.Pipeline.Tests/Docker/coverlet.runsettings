@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Format>opencover</Format>
+          <Format>json</Format>
+          <Exclude>[*]*.Program</Exclude>
+          <Exclude>[*]*.Startup</Exclude>
+          <Exclude>[*]*.Migrations.*</Exclude>
+          <Exclude>[*]*.Tests.*</Exclude>
+          <Exclude>[*]*.Test.*</Exclude>
+          <Exclude>[*]*.Mock.*</Exclude>
+          <Exclude>[*]*.Fake.*</Exclude>
+          <Exclude>[*]*.Stub.*</Exclude>
+          <Exclude>[*]*.Runtime.*</Exclude>
+          <Exclude>[*]*.Docker.*</Exclude>
+          <Include>[Nexo.Feature.Pipeline]*</Include>
+          <Include>[Nexo.Core.*]*</Include>
+          <Include>[Nexo.Shared]*</Include>
+          <SingleHit>false</SingleHit>
+          <UseSourceLink>true</UseSourceLink>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+  <RunConfiguration>
+    <ResultsDirectory>$(MSBuildThisFileDirectory)test-results</ResultsDirectory>
+    <CollectSourceInformation>false</CollectSourceInformation>
+  </RunConfiguration>
+</RunSettings> 

@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = Nexo.Shared
+build_property.ProjectDir = /workspace/src/Nexo.Shared/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 

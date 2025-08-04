@@ -1,0 +1,20 @@
+using System;
+using System.Collections.Generic;
+namespace Nexo.Core.Domain.ValueObjects
+{
+    public sealed record AgentName : IComparable<AgentName>
+    {
+        public string Value { get; }
+        public AgentName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Agent name cannot be empty", nameof(value));
+            if (value.Length > 100)
+                throw new ArgumentException("Agent name cannot exceed 100 characters", nameof(value));
+            Value = value.Trim();
+        }
+        public static implicit operator string(AgentName name) => name.Value;
+        public override string ToString() => Value;
+        public int CompareTo(AgentName? other) => string.Compare(Value, other?.Value, StringComparison.Ordinal);
+    }
+}

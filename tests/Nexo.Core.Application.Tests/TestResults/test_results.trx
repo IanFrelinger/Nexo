@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="340693f2-8d55-4de7-9b47-6e28b5df7640" name="@Mac 2025-07-24 16:58:25" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-07-24T16:58:25.0593190-04:00" queuing="2025-07-24T16:58:25.0593190-04:00" start="2025-07-24T16:58:24.6330520-04:00" finish="2025-07-24T16:58:25.0732350-04:00" />
+  <TestSettings name="default" id="370d5bc0-6215-4ac2-bf13-3efce16899ba">
+    <Deployment runDeploymentRoot="_Mac_2025-07-24_16_58_25" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="7ee95ed7-97f2-4d37-8a2d-a045b8c19931" testId="d70668ae-3f1c-4a5f-3b3d-52243c7232ce" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.Enums_Values_AreDefined" computerName="Mac" duration="00:00:00.0003948" startTime="2025-07-24T16:58:25.0417940-04:00" endTime="2025-07-24T16:58:25.0417940-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7ee95ed7-97f2-4d37-8a2d-a045b8c19931" />
+    <UnitTestResult executionId="e857ae4e-a46e-4a51-ad10-ae9059d01570" testId="9364e5f0-0b61-7b6d-e410-4478dc4d3d73" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.CacheItemPriority_Enum_ValuesAreDefined" computerName="Mac" duration="00:00:00.0082265" startTime="2025-07-24T16:58:25.0241460-04:00" endTime="2025-07-24T16:58:25.0241930-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e857ae4e-a46e-4a51-ad10-ae9059d01570" />
+    <UnitTestResult executionId="62153fdd-a420-475f-a720-c690dc1f759f" testId="15bd2f59-8588-b260-446f-966fc885bbe8" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceAlertSeverity_Enum_ValuesAreDefined" computerName="Mac" duration="00:00:00.0002400" startTime="2025-07-24T16:58:25.0418950-04:00" endTime="2025-07-24T16:58:25.0418960-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="62153fdd-a420-475f-a720-c690dc1f759f" />
+    <UnitTestResult executionId="591ab41c-39b8-4d09-a6eb-5e8fd17a28aa" testId="5ced6112-ddea-a847-f5c4-b79085458543" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceHealth_Enum_ValuesAreDefined" computerName="Mac" duration="00:00:00.0002668" startTime="2025-07-24T16:58:25.0418720-04:00" endTime="2025-07-24T16:58:25.0418720-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="591ab41c-39b8-4d09-a6eb-5e8fd17a28aa" />
+    <UnitTestResult executionId="c7b78890-0e27-433b-8baa-c15eb509cf0d" testId="a497bc69-53c5-0222-512c-4c981629bb12" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelValidationResult_Properties_WorkCorrectly" computerName="Mac" duration="00:00:00.0006338" startTime="2025-07-24T16:58:25.0267670-04:00" endTime="2025-07-24T16:58:25.0267670-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c7b78890-0e27-433b-8baa-c15eb509cf0d" />
+    <UnitTestResult executionId="d0f16b61-86e9-4eb5-8f67-47ef8752a494" testId="fa7389c9-b89d-2a0a-0a73-11af04f11505" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelResponse_Properties_WorkCorrectly" computerName="Mac" duration="00:00:00.0006502" startTime="2025-07-24T16:58:25.0283820-04:00" endTime="2025-07-24T16:58:25.0283820-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d0f16b61-86e9-4eb5-8f67-47ef8752a494" />
+    <UnitTestResult executionId="6683deb8-dd09-4287-87fa-284933162546" testId="82d58ced-aaba-0aec-0f0a-55dab742be72" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourcePriority_Enum_ValuesAreDefined" computerName="Mac" duration="00:00:00.0003222" startTime="2025-07-24T16:58:25.0268150-04:00" endTime="2025-07-24T16:58:25.0268150-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6683deb8-dd09-4287-87fa-284933162546" />
+    <UnitTestResult executionId="89099f34-6aba-4c5e-8a03-4c899ef54b9c" testId="e3a5d028-5d64-791f-84a4-304cb33eed72" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelHealthStatus_Properties_WorkCorrectly" computerName="Mac" duration="00:00:00.0006166" startTime="2025-07-24T16:58:25.0275000-04:00" endTime="2025-07-24T16:58:25.0275000-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="89099f34-6aba-4c5e-8a03-4c899ef54b9c" />
+    <UnitTestResult executionId="2f0d1460-c092-40f4-a692-2cd92788db33" testId="368942e1-8ec5-e6ca-823a-bcdb8b78225a" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.InterfaceImplementations_AreAccessible" computerName="Mac" duration="00:00:00.0002355" startTime="2025-07-24T16:58:25.0277150-04:00" endTime="2025-07-24T16:58:25.0277150-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2f0d1460-c092-40f4-a692-2cd92788db33" />
+    <UnitTestResult executionId="76320747-e0a1-4762-826b-7723deedec69" testId="752a5b24-5632-71a4-8bb6-d8c1314babde" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceAlertType_Enum_ValuesAreDefined" computerName="Mac" duration="00:00:00.0003003" startTime="2025-07-24T16:58:25.0266130-04:00" endTime="2025-07-24T16:58:25.0266130-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="76320747-e0a1-4762-826b-7723deedec69" />
+    <UnitTestResult executionId="847ad55d-8649-4d79-94fc-0f4a24b21da7" testId="a4365eb4-cdde-9f24-6394-76371f689354" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceType_Enum_ValuesAreDefined" computerName="Mac" duration="00:00:00.0004896" startTime="2025-07-24T16:58:25.0268360-04:00" endTime="2025-07-24T16:58:25.0268360-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="847ad55d-8649-4d79-94fc-0f4a24b21da7" />
+    <UnitTestResult executionId="9840afe5-cd05-4713-a2b6-19665f62923a" testId="8b10a845-d140-50fa-3816-f734d21d0cd7" testName="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelOptimizationResult_Properties_WorkCorrectly" computerName="Mac" duration="00:00:00.0011654" startTime="2025-07-24T16:58:25.0267900-04:00" endTime="2025-07-24T16:58:25.0267900-04:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9840afe5-cd05-4713-a2b6-19665f62923a" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceAlertType_Enum_ValuesAreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="752a5b24-5632-71a4-8bb6-d8c1314babde">
+      <Execution id="76320747-e0a1-4762-826b-7723deedec69" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ResourceAlertType_Enum_ValuesAreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceHealth_Enum_ValuesAreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="5ced6112-ddea-a847-f5c4-b79085458543">
+      <Execution id="591ab41c-39b8-4d09-a6eb-5e8fd17a28aa" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ResourceHealth_Enum_ValuesAreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourcePriority_Enum_ValuesAreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="82d58ced-aaba-0aec-0f0a-55dab742be72">
+      <Execution id="6683deb8-dd09-4287-87fa-284933162546" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ResourcePriority_Enum_ValuesAreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelResponse_Properties_WorkCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="fa7389c9-b89d-2a0a-0a73-11af04f11505">
+      <Execution id="d0f16b61-86e9-4eb5-8f67-47ef8752a494" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ModelResponse_Properties_WorkCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelValidationResult_Properties_WorkCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="a497bc69-53c5-0222-512c-4c981629bb12">
+      <Execution id="c7b78890-0e27-433b-8baa-c15eb509cf0d" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ModelValidationResult_Properties_WorkCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceAlertSeverity_Enum_ValuesAreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="15bd2f59-8588-b260-446f-966fc885bbe8">
+      <Execution id="62153fdd-a420-475f-a720-c690dc1f759f" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ResourceAlertSeverity_Enum_ValuesAreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.InterfaceImplementations_AreAccessible" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="368942e1-8ec5-e6ca-823a-bcdb8b78225a">
+      <Execution id="2f0d1460-c092-40f4-a692-2cd92788db33" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="InterfaceImplementations_AreAccessible" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ResourceType_Enum_ValuesAreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="a4365eb4-cdde-9f24-6394-76371f689354">
+      <Execution id="847ad55d-8649-4d79-94fc-0f4a24b21da7" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ResourceType_Enum_ValuesAreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelOptimizationResult_Properties_WorkCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="8b10a845-d140-50fa-3816-f734d21d0cd7">
+      <Execution id="9840afe5-cd05-4713-a2b6-19665f62923a" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ModelOptimizationResult_Properties_WorkCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.CacheItemPriority_Enum_ValuesAreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="9364e5f0-0b61-7b6d-e410-4478dc4d3d73">
+      <Execution id="e857ae4e-a46e-4a51-ad10-ae9059d01570" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="CacheItemPriority_Enum_ValuesAreDefined" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.ModelHealthStatus_Properties_WorkCorrectly" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="e3a5d028-5d64-791f-84a4-304cb33eed72">
+      <Execution id="89099f34-6aba-4c5e-8a03-4c899ef54b9c" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="ModelHealthStatus_Properties_WorkCorrectly" />
+    </UnitTest>
+    <UnitTest name="Nexo.Core.Application.Tests.CoreApplicationPipelineTests.Enums_Values_AreDefined" storage="/users/ianfrelinger/riderprojects/nexo/tests/nexo.core.application.tests/bin/debug/net8.0/nexo.core.application.tests.dll" id="d70668ae-3f1c-4a5f-3b3d-52243c7232ce">
+      <Execution id="7ee95ed7-97f2-4d37-8a2d-a045b8c19931" />
+      <TestMethod codeBase="/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="Nexo.Core.Application.Tests.CoreApplicationPipelineTests" name="Enums_Values_AreDefined" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="d70668ae-3f1c-4a5f-3b3d-52243c7232ce" executionId="7ee95ed7-97f2-4d37-8a2d-a045b8c19931" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9364e5f0-0b61-7b6d-e410-4478dc4d3d73" executionId="e857ae4e-a46e-4a51-ad10-ae9059d01570" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15bd2f59-8588-b260-446f-966fc885bbe8" executionId="62153fdd-a420-475f-a720-c690dc1f759f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5ced6112-ddea-a847-f5c4-b79085458543" executionId="591ab41c-39b8-4d09-a6eb-5e8fd17a28aa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a497bc69-53c5-0222-512c-4c981629bb12" executionId="c7b78890-0e27-433b-8baa-c15eb509cf0d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="fa7389c9-b89d-2a0a-0a73-11af04f11505" executionId="d0f16b61-86e9-4eb5-8f67-47ef8752a494" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="82d58ced-aaba-0aec-0f0a-55dab742be72" executionId="6683deb8-dd09-4287-87fa-284933162546" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e3a5d028-5d64-791f-84a4-304cb33eed72" executionId="89099f34-6aba-4c5e-8a03-4c899ef54b9c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="368942e1-8ec5-e6ca-823a-bcdb8b78225a" executionId="2f0d1460-c092-40f4-a692-2cd92788db33" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="752a5b24-5632-71a4-8bb6-d8c1314babde" executionId="76320747-e0a1-4762-826b-7723deedec69" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a4365eb4-cdde-9f24-6394-76371f689354" executionId="847ad55d-8649-4d79-94fc-0f4a24b21da7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8b10a845-d140-50fa-3816-f734d21d0cd7" executionId="9840afe5-cd05-4713-a2b6-19665f62923a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="12" executed="12" passed="12" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.6+bf9b858c26 (64-bit .NET 8.0.7)
+[xUnit.net 00:00:00.04]   Discovering: Nexo.Core.Application.Tests
+[xUnit.net 00:00:00.06]   Discovered:  Nexo.Core.Application.Tests
+[xUnit.net 00:00:00.06]   Starting:    Nexo.Core.Application.Tests
+[xUnit.net 00:00:00.11]   Finished:    Nexo.Core.Application.Tests
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

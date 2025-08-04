@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  nexo-cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nexo-framework
+    environment:
+      - NEXO_LOG_LEVEL=Information
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      # Mount source code for development
+      - ./:/workspace
+      # Mount configuration
+      - ./config:/app/config
+    working_dir: /workspace
+    command: ["--help"]
+    
+  # Optional: Redis for caching (if needed)
+  redis:
+    image: redis:7-alpine
+    container_name: nexo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # Optional: Ollama for local AI models
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nexo-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  ollama_data: 

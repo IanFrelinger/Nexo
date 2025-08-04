@@ -1,0 +1,34 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+namespace Nexo.Core.Domain.ValueObjects
+{
+    public sealed record ProjectPath : IComparable<ProjectPath>
+    {
+        public string Value { get; }
+        public ProjectPath(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Project path cannot be empty", nameof(value));
+            try
+            {
+                Value = Path.GetFullPath(value);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Invalid project path: {ex.Message}", nameof(value), ex);
+            }
+        }
+        public static implicit operator string(ProjectPath path) => path.Value;
+        public override string ToString() => Value;
+        public int CompareTo(ProjectPath? other) => string.Compare(Value, other?.Value, StringComparison.Ordinal);
+        public ProjectPath Combine(params string[] paths)
+        {
+            var combined = paths.Aggregate(Value, Path.Combine);
+            return new ProjectPath(combined);
+        }
+        public string? GetDirectoryName() => Path.GetDirectoryName(Value);
+        public string GetFileName() => Path.GetFileName(Value);
+    }
+}

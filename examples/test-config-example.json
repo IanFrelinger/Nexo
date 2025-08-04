@@ -1,0 +1,54 @@
+{
+  "name": "Cross-Platform Test Configuration",
+  "version": "1.0.0",
+  "description": "Configuration for running tests across multiple .NET runtimes and Unity environments",
+  "environments": {
+    "dotnet8-linux": {
+      "enabled": true,
+      "description": ".NET 8.0 on Linux",
+      "docker_service": "test-dotnet8-linux",
+      "timeout_minutes": 10,
+      "parallel": false
+    },
+    "unity-linux": {
+      "enabled": true,
+      "description": "Unity compatibility on Linux",
+      "docker_service": "test-unity-linux",
+      "timeout_minutes": 15,
+      "parallel": false
+    },
+    "performance": {
+      "enabled": true,
+      "description": "Performance testing with coverage",
+      "docker_service": "test-performance",
+      "timeout_minutes": 20,
+      "parallel": false
+    },
+    "cross-platform": {
+      "enabled": true,
+      "description": "Cross-platform build testing",
+      "docker_service": "test-cross-platform",
+      "timeout_minutes": 25,
+      "parallel": false
+    }
+  },
+  "execution": {
+    "parallel_environments": false,
+    "stop_on_failure": false,
+    "retry_failed": true,
+    "max_retries": 2,
+    "coverage_enabled": true,
+    "coverage_threshold": 80.0
+  },
+  "reporting": {
+    "output_format": "html",
+    "output_directory": "./test-reports",
+    "include_history": true,
+    "generate_summary": true
+  },
+  "docker": {
+    "compose_file": "docker-compose.test-environments.yml",
+    "cleanup_after": true,
+    "remove_orphans": true
+  }
+} 

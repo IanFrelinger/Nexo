@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Ubuntu Test Environment
+  test-ubuntu:
+    build:
+      context: ..
+      dockerfile: docker-test-environments/Dockerfile.ubuntu
+    container_name: nexo-test-ubuntu
+    environment:
+      - NEXO_LOG_LEVEL=Information
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      - ../test-results:/test/results
+    command: ["./test-deployment.sh"]
+    
+  # Windows Test Environment (requires Windows containers)
+  test-windows:
+    build:
+      context: ..
+      dockerfile: docker-test-environments/Dockerfile.windows
+    container_name: nexo-test-windows
+    environment:
+      - NEXO_LOG_LEVEL=Information
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      - ../test-results:/test/results
+    command: ["cmd", "/c", "test-deployment.bat"]
+    
+  # macOS-like Test Environment
+  test-macos:
+    build:
+      context: ..
+      dockerfile: docker-test-environments/Dockerfile.macos
+    container_name: nexo-test-macos
+    environment:
+      - NEXO_LOG_LEVEL=Information
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - SHELL=/bin/zsh
+    volumes:
+      - ../test-results:/test/results
+    command: ["./test-deployment.sh"]
+    
+  # Alpine Linux Test Environment (minimal)
+  test-alpine:
+    build:
+      context: ..
+      dockerfile: docker-test-environments/Dockerfile.alpine
+    container_name: nexo-test-alpine
+    environment:
+      - NEXO_LOG_LEVEL=Information
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      - ../test-results:/test/results
+    command: ["./test-deployment.sh"]
+
+volumes:
+  test-results: 

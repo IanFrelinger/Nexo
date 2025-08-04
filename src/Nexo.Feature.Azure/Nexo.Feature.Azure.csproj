@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.20.0" />
+    <PackageReference Include="Azure.Storage.Common" Version="12.20.0" />
+    <PackageReference Include="Azure.ResourceManager.Storage" Version="1.2.0" />
+    <PackageReference Include="Azure.ResourceManager.ContainerService" Version="1.2.0" />
+    <PackageReference Include="Azure.ResourceManager.AppService" Version="1.2.0" />
+    <PackageReference Include="Azure.ResourceManager.Resources" Version="1.11.0" />
+    <PackageReference Include="Azure.Identity" Version="1.11.0" />
+    <PackageReference Include="Azure.Core" Version="1.46.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Nexo.Core.Application/Nexo.Core.Application.csproj" />
+    <ProjectReference Include="../Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="../Nexo.Shared/Nexo.Shared.csproj" />
+  </ItemGroup>
+
+</Project> 
