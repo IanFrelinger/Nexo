@@ -17,7 +17,7 @@ namespace Nexo.Infrastructure.Tests.Services.AI
         public async Task Registers_And_Lists_Providers()
         {
             var orchestrator = new ModelOrchestrator(NullLogger<ModelOrchestrator>.Instance);
-            var openAiProvider = new OpenAIModelProvider(new HttpClient(), NullLogger<OpenAIModelProvider>.Instance, "test-key");
+            var openAiProvider = new OpenAiModelProvider(new HttpClient(), NullLogger<OpenAiModelProvider>.Instance, "test-key");
             var ollamaProvider = new OllamaModelProvider(new HttpClient(), NullLogger<OllamaModelProvider>.Instance);
             orchestrator.RegisterProvider(openAiProvider);
             orchestrator.RegisterProvider(ollamaProvider);
@@ -30,7 +30,7 @@ namespace Nexo.Infrastructure.Tests.Services.AI
         public async Task Discovers_Models_From_All_Providers()
         {
             var orchestrator = new ModelOrchestrator(NullLogger<ModelOrchestrator>.Instance);
-            var openAiProvider = new OpenAIModelProvider(new HttpClient(), NullLogger<OpenAIModelProvider>.Instance, "test-key");
+            var openAiProvider = new OpenAiModelProvider(new HttpClient(), NullLogger<OpenAiModelProvider>.Instance, "test-key");
             orchestrator.RegisterProvider(openAiProvider);
             var models = await orchestrator.GetAllAvailableModelsAsync();
             Assert.NotNull(models);
@@ -40,7 +40,7 @@ namespace Nexo.Infrastructure.Tests.Services.AI
         public async Task Loads_Model_From_Preferred_Provider_Or_Fallback()
         {
             var orchestrator = new ModelOrchestrator(NullLogger<ModelOrchestrator>.Instance);
-            var openAiProvider = new OpenAIModelProvider(new HttpClient(), NullLogger<OpenAIModelProvider>.Instance, "test-key");
+            var openAiProvider = new OpenAiModelProvider(new HttpClient(), NullLogger<OpenAiModelProvider>.Instance, "test-key");
             var ollamaProvider = new OllamaModelProvider(new HttpClient(), NullLogger<OllamaModelProvider>.Instance);
             orchestrator.RegisterProvider(openAiProvider);
             orchestrator.RegisterProvider(ollamaProvider);
@@ -54,7 +54,7 @@ namespace Nexo.Infrastructure.Tests.Services.AI
         public async Task Health_Checks_And_Fallback_Work()
         {
             var orchestrator = new ModelOrchestrator(NullLogger<ModelOrchestrator>.Instance);
-            var openAiProvider = new OpenAIModelProvider(new HttpClient(), NullLogger<OpenAIModelProvider>.Instance, "test-key");
+            var openAiProvider = new OpenAiModelProvider(new HttpClient(), NullLogger<OpenAiModelProvider>.Instance, "test-key");
             orchestrator.RegisterProvider(openAiProvider);
             var healthStatuses = await orchestrator.GetAllProviderHealthStatusAsync();
             Assert.NotNull(healthStatuses);

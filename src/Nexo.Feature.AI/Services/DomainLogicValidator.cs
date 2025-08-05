@@ -677,8 +677,7 @@ namespace Nexo.Feature.AI.Services
         /// </summary>
         public async Task<DomainLogicOptimizationResult> OptimizeBasedOnValidationAsync(
             DomainLogicResult domainLogic,
-            DomainLogicValidationResult validationResult,
-            CancellationToken cancellationToken = default)
+            DomainLogicValidationResult validationResult)
         {
             if (domainLogic == null)
                 throw new ArgumentNullException(nameof(domainLogic));

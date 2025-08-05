@@ -289,8 +289,7 @@ namespace Nexo.Feature.AI.Services
         /// </summary>
         public async Task<PrioritizationResult> PrioritizeRequirementsAsync(
             List<FeatureRequirement> requirements,
-            ProcessingContext context,
-            CancellationToken cancellationToken = default)
+            ProcessingContext context)
         {
             if (requirements == null)
                 throw new ArgumentNullException(nameof(requirements));
@@ -369,8 +368,7 @@ namespace Nexo.Feature.AI.Services
         /// Analyzes requirements for completeness, clarity, and consistency.
         /// </summary>
         public async Task<RequirementsAnalysisResult> AnalyzeRequirementsAsync(
-            List<FeatureRequirement> requirements,
-            CancellationToken cancellationToken = default)
+            List<FeatureRequirement> requirements)
         {
             if (requirements == null)
                 throw new ArgumentNullException(nameof(requirements));

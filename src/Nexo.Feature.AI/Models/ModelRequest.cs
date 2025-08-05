@@ -8,6 +8,14 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ModelRequest
     {
+        public ModelRequest(double topP, double frequencyPenalty, double presencePenalty, bool stream)
+        {
+            TopP = topP;
+            FrequencyPenalty = frequencyPenalty;
+            PresencePenalty = presencePenalty;
+            Stream = stream;
+        }
+
         /// <summary>
         /// Gets or sets the input prompt or content.
         /// </summary>
@@ -36,36 +44,30 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the top-p value for nucleus sampling.
         /// </summary>
         [JsonPropertyName("topP")]
-        public double TopP { get; set; } = 1.0;
+        public double TopP { get; set; }
 
         /// <summary>
         /// Gets or sets the frequency penalty.
         /// </summary>
         [JsonPropertyName("frequencyPenalty")]
-        public double FrequencyPenalty { get; set; } = 0.0;
+        public double FrequencyPenalty { get; set; }
 
         /// <summary>
         /// Gets or sets the presence penalty.
         /// </summary>
         [JsonPropertyName("presencePenalty")]
-        public double PresencePenalty { get; set; } = 0.0;
+        public double PresencePenalty { get; set; }
 
         /// <summary>
         /// Gets or sets whether to stream the response.
         /// </summary>
         [JsonPropertyName("stream")]
-        public bool Stream { get; set; } = false;
-
-        /// <summary>
-        /// Gets or sets the stop sequences.
-        /// </summary>
-        [JsonPropertyName("stopSequences")]
-        public List<string> StopSequences { get; set; } = new List<string>();
+        public bool Stream { get; set; }
 
         /// <summary>
         /// Gets or sets the metadata for the request.
         /// </summary>
         [JsonPropertyName("metadata")]
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 } 

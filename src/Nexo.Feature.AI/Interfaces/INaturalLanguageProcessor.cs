@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nexo.Feature.AI.Models;
@@ -97,11 +96,6 @@ namespace Nexo.Feature.AI.Interfaces
         public IEnumerable<string> UserRoles { get; set; } = new List<string>();
 
         /// <summary>
-        /// Integration points and dependencies.
-        /// </summary>
-        public IEnumerable<string> IntegrationPoints { get; set; } = new List<string>();
-
-        /// <summary>
         /// Quality attributes and non-functional requirements.
         /// </summary>
         public QualityAttributes QualityAttributes { get; set; } = new QualityAttributes();
@@ -168,16 +162,6 @@ namespace Nexo.Feature.AI.Interfaces
         /// Technical complexity weights.
         /// </summary>
         public Dictionary<string, double> TechnicalComplexityWeights { get; set; } = new Dictionary<string, double>();
-
-        /// <summary>
-        /// Resource constraints and availability.
-        /// </summary>
-        public ResourceConstraints ResourceConstraints { get; set; } = new ResourceConstraints();
-
-        /// <summary>
-        /// Timeline constraints and deadlines.
-        /// </summary>
-        public TimelineConstraints TimelineConstraints { get; set; } = new TimelineConstraints();
     }
 
     /// <summary>
@@ -204,53 +188,6 @@ namespace Nexo.Feature.AI.Interfaces
         /// Usability requirements.
         /// </summary>
         public string Usability { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Maintainability requirements.
-        /// </summary>
-        public string Maintainability { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Resource constraints for prioritization.
-    /// </summary>
-    public class ResourceConstraints
-    {
-        /// <summary>
-        /// Available development team size.
-        /// </summary>
-        public int TeamSize { get; set; }
-
-        /// <summary>
-        /// Available budget.
-        /// </summary>
-        public decimal Budget { get; set; }
-
-        /// <summary>
-        /// Available infrastructure resources.
-        /// </summary>
-        public string Infrastructure { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Timeline constraints for prioritization.
-    /// </summary>
-    public class TimelineConstraints
-    {
-        /// <summary>
-        /// Project deadline.
-        /// </summary>
-        public DateTime Deadline { get; set; }
-
-        /// <summary>
-        /// Sprint duration in days.
-        /// </summary>
-        public int SprintDuration { get; set; } = 14;
-
-        /// <summary>
-        /// Number of available sprints.
-        /// </summary>
-        public int AvailableSprints { get; set; }
     }
 
     /// <summary>
@@ -261,42 +198,7 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Extract user stories and acceptance criteria.
         /// </summary>
-        UserStories,
-
-        /// <summary>
-        /// Extract business rules and logic.
-        /// </summary>
-        BusinessRules,
-
-        /// <summary>
-        /// Extract technical requirements.
-        /// </summary>
-        TechnicalRequirements,
-
-        /// <summary>
-        /// Extract integration points.
-        /// </summary>
-        IntegrationPoints,
-
-        /// <summary>
-        /// Extract data models and entities.
-        /// </summary>
-        DataModels,
-
-        /// <summary>
-        /// Extract workflow and process flows.
-        /// </summary>
-        Workflows,
-
-        /// <summary>
-        /// Extract security requirements.
-        /// </summary>
-        SecurityRequirements,
-
-        /// <summary>
-        /// Extract performance requirements.
-        /// </summary>
-        PerformanceRequirements
+        UserStories
     }
 
     /// <summary>
@@ -310,38 +212,8 @@ namespace Nexo.Feature.AI.Interfaces
         PlainText,
 
         /// <summary>
-        /// Markdown formatted text.
-        /// </summary>
-        Markdown,
-
-        /// <summary>
-        /// Product manager specification format.
-        /// </summary>
-        ProductSpecification,
-
-        /// <summary>
-        /// User story format.
-        /// </summary>
-        UserStory,
-
-        /// <summary>
-        /// Business requirement document format.
-        /// </summary>
-        BusinessRequirementDocument,
-
-        /// <summary>
-        /// Technical specification format.
-        /// </summary>
-        TechnicalSpecification,
-
-        /// <summary>
         /// Email or communication format.
         /// </summary>
-        Email,
-
-        /// <summary>
-        /// Meeting notes format.
-        /// </summary>
-        MeetingNotes
+        Email
     }
 }

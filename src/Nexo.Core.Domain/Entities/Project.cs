@@ -74,16 +74,22 @@ public sealed class Project
     /// </summary>
     public Project(ProjectName name, ProjectPath path, ContainerRuntime runtime)
     {
-        if (name == null) throw new ArgumentNullException(nameof(name));
-        if (path == null) throw new ArgumentNullException(nameof(path));
-        if (runtime == null) throw new ArgumentNullException(nameof(runtime));
+            ArgumentNullException.ThrowIfNull(name);
+            if (path != null)
+            {
+                ArgumentNullException.ThrowIfNull(runtime);
 
-        Id = ProjectId.New();
-        Name = name;
-        Path = path;
-        Runtime = runtime;
-        Status = ProjectStatus.NotInitialized;
-        CreatedAt = DateTimeOffset.UtcNow;
+                Id = ProjectId.New();
+                Name = name;
+                Path = path;
+                Runtime = runtime;
+                Status = ProjectStatus.NotInitialized;
+                CreatedAt = DateTimeOffset.UtcNow;
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(path));
+            }
     }
 
     /// <summary>
@@ -94,13 +100,13 @@ public sealed class Project
     /// <exception cref="InvalidOperationException">Thrown when the agent already exists in the project.</exception>
     public void AddAgent(Agent agent)
     {
-        if (agent == null) throw new ArgumentNullException(nameof(agent));
+            ArgumentNullException.ThrowIfNull(agent);
 
-        if (_agents.Any(a => a.Id == agent.Id))
-            throw new InvalidOperationException($"Agent with ID '{agent.Id}' already exists in the project.");
+            if (_agents.Any(a => a.Id == agent.Id))
+                throw new InvalidOperationException($"Agent with ID '{agent.Id}' already exists in the project.");
 
-        _agents.Add(agent);
-        UpdateModifiedTime();
+            _agents.Add(agent);
+            UpdateModifiedTime();
     }
 
     /// <summary>

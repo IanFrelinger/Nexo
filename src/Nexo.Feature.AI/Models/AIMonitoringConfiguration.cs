@@ -1,13 +1,23 @@
 using System.Text.Json.Serialization;
-using System.Collections.Generic;
 
 namespace Nexo.Feature.AI.Models
 {
     /// <summary>
     /// Configuration for AI monitoring and observability settings.
     /// </summary>
-    public class AIMonitoringConfiguration
+    public class AiMonitoringConfiguration
     {
+        public AiMonitoringConfiguration(bool enableCostTracking, int healthCheckIntervalSeconds, bool enableTelemetry, string telemetryEndpoint, bool enableDistributedTracing, double tracingSamplingRate, bool enableCustomMetrics)
+        {
+            EnableCostTracking = enableCostTracking;
+            HealthCheckIntervalSeconds = healthCheckIntervalSeconds;
+            EnableTelemetry = enableTelemetry;
+            TelemetryEndpoint = telemetryEndpoint;
+            EnableDistributedTracing = enableDistributedTracing;
+            TracingSamplingRate = tracingSamplingRate;
+            EnableCustomMetrics = enableCustomMetrics;
+        }
+
         /// <summary>
         /// Whether to enable AI monitoring.
         /// </summary>
@@ -24,7 +34,7 @@ namespace Nexo.Feature.AI.Models
         /// Whether to enable request/response logging.
         /// </summary>
         [JsonPropertyName("enableRequestResponseLogging")]
-        public bool EnableRequestResponseLogging { get; set; } = false;
+        public bool EnableRequestResponseLogging { get; set; }
         
         /// <summary>
         /// Whether to enable performance metrics collection.
@@ -48,7 +58,7 @@ namespace Nexo.Feature.AI.Models
         /// Whether to enable cost tracking.
         /// </summary>
         [JsonPropertyName("enableCostTracking")]
-        public bool EnableCostTracking { get; set; } = true;
+        public bool EnableCostTracking { get; set; }
         
         /// <summary>
         /// Whether to enable health checks.
@@ -60,48 +70,42 @@ namespace Nexo.Feature.AI.Models
         /// The health check interval in seconds.
         /// </summary>
         [JsonPropertyName("healthCheckIntervalSeconds")]
-        public int HealthCheckIntervalSeconds { get; set; } = 300; // 5 minutes
+        public int HealthCheckIntervalSeconds { get; set; } // 5 minutes
         
         /// <summary>
         /// The alert thresholds for monitoring.
         /// </summary>
         [JsonPropertyName("alertThresholds")]
-        public AIAlertThresholds AlertThresholds { get; set; } = new AIAlertThresholds();
+        public AiAlertThresholds AlertThresholds { get; set; } = new();
         
         /// <summary>
         /// Whether to enable telemetry collection.
         /// </summary>
         [JsonPropertyName("enableTelemetry")]
-        public bool EnableTelemetry { get; set; } = true;
+        public bool EnableTelemetry { get; set; }
         
         /// <summary>
         /// The telemetry endpoint URL.
         /// </summary>
         [JsonPropertyName("telemetryEndpoint")]
-        public string TelemetryEndpoint { get; set; } = "";
+        public string TelemetryEndpoint { get; set; }
         
         /// <summary>
         /// Whether to enable distributed tracing.
         /// </summary>
         [JsonPropertyName("enableDistributedTracing")]
-        public bool EnableDistributedTracing { get; set; } = true;
+        public bool EnableDistributedTracing { get; set; }
         
         /// <summary>
         /// The sampling rate for distributed tracing (0.0 to 1.0).
         /// </summary>
         [JsonPropertyName("tracingSamplingRate")]
-        public double TracingSamplingRate { get; set; } = 0.1;
+        public double TracingSamplingRate { get; set; }
         
         /// <summary>
         /// Whether to enable custom metrics.
         /// </summary>
         [JsonPropertyName("enableCustomMetrics")]
-        public bool EnableCustomMetrics { get; set; } = true;
-        
-        /// <summary>
-        /// Custom monitoring settings.
-        /// </summary>
-        [JsonPropertyName("customSettings")]
-        public Dictionary<string, object> CustomSettings { get; set; } = new Dictionary<string, object>();
+        public bool EnableCustomMetrics { get; set; }
     }
 } 

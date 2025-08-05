@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Text.Json;
-using System.Text;
 
 namespace Nexo.Infrastructure.Services.AI
 {
@@ -43,14 +41,14 @@ public class ModelOrchestrator : IModelOrchestrator
 
     public void RegisterProvider(IModelProvider provider)
     {
-        if (provider == null)
+        if (provider != null)
+            lock (_lock)
+            {
+                _providers[provider.ProviderId] = provider;
+                _logger.LogInformation("Registered model provider: {ProviderId}", provider.ProviderId);
+            }
+        else
             throw new ArgumentNullException(nameof(provider));
-
-        lock (_lock)
-        {
-            _providers[provider.ProviderId] = provider;
-            _logger.LogInformation("Registered model provider: {ProviderId}", provider.ProviderId);
-        }
     }
 
     public void UnregisterProvider(string providerId)
@@ -74,10 +72,7 @@ public class ModelOrchestrator : IModelOrchestrator
 
         lock (_lock)
         {
-            IModelProvider provider;
-            if (_providers.TryGetValue(providerId, out provider))
-                return provider;
-            return null;
+            return _providers.GetValueOrDefault(providerId);
         }
     }
 
@@ -154,17 +149,17 @@ public class ModelOrchestrator : IModelOrchestrator
 
 
 
-    public async Task<IEnumerable<IModelProvider>> GetProvidersAsync(CancellationToken cancellationToken = default(CancellationToken))
+    public Task<IEnumerable<IModelProvider>> GetProvidersAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
-        return Providers;
+        return Task.FromResult(Providers);
     }
 
-    public async Task<IModelProvider> SelectModelAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
+    public Task<IModelProvider> SelectModelAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
         _logger.LogInformation("Selecting model for request");
         
         // Simple implementation: return the first available provider
-        return Providers.FirstOrDefault();
+        return Task.FromResult(Providers.FirstOrDefault());
     }
 
     public async Task<IEnumerable<ModelHealthStatus>> GetHealthStatusAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -196,22 +191,22 @@ public class ModelOrchestrator : IModelOrchestrator
         return healthStatuses;
     }
 
-    public async Task<ModelOptimizationResult> OptimizeAsync(CancellationToken cancellationToken = default(CancellationToken))
+    public Task<ModelOptimizationResult> OptimizeAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
         _logger.LogInformation("Optimizing model orchestration");
         
-        var result = new Nexo.Feature.AI.Models.ModelOptimizationResult
+        var result = new ModelOptimizationResult
         {
             Success = true,
             ErrorMessage = "",
-            PerformanceAnalysis = new List<Nexo.Feature.AI.Models.PerformancePattern>(),
-            Bottlenecks = new List<string>(),
-            Recommendations = new List<Nexo.Feature.AI.Models.OptimizationRecommendation>(),
+            PerformanceAnalysis = [],
+            Bottlenecks = [],
+            Recommendations = [],
             AnalysisTimestamp = DateTime.UtcNow,
             Metadata = new Dictionary<string, object>()
         };
 
-        return result;
+        return Task.FromResult(result);
     }
 
     public async Task RegisterProviderAsync(IModelProvider provider, CancellationToken cancellationToken = default(CancellationToken))
@@ -233,24 +228,22 @@ public class ModelOrchestrator : IModelOrchestrator
         // Simple implementation: return the first available provider of the requested type
         var availableModels = await GetAvailableModelsAsync(modelType, cancellationToken);
         var firstModel = availableModels.FirstOrDefault();
-        
-        if (firstModel != null)
+
+        if (firstModel == null) return null;
+        // Find the provider for this model
+        foreach (var provider in Providers)
         {
-            // Find the provider for this model
-            foreach (var provider in Providers)
+            try
             {
-                try
+                var models = await provider.GetAvailableModelsAsync(cancellationToken);
+                if (models.Any(m => m.Id == firstModel.Id))
                 {
-                    var models = await provider.GetAvailableModelsAsync(cancellationToken);
-                    if (models.Any(m => m.Id == firstModel.Id))
-                    {
-                        return provider;
-                    }
+                    return provider;
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogDebug(ex, "Error checking models for provider {ProviderId}", provider.ProviderId);
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Error checking models for provider {ProviderId}", provider.ProviderId);
             }
         }
 
@@ -337,11 +330,9 @@ public class ModelOrchestrator : IModelOrchestrator
 
         // Check if any provider is available
         var healthyProviders = await GetHealthyProvidersAsync();
-        if (!healthyProviders.Any())
-        {
-            result.IsValid = false;
-            result.Errors.Add("No healthy model providers available");
-        }
+        if (healthyProviders.Any()) return result;
+        result.IsValid = false;
+        result.Errors.Add("No healthy model providers available");
 
         return result;
     }
@@ -374,13 +365,13 @@ public class ModelOrchestrator : IModelOrchestrator
     {
         _logger.LogInformation("Optimizing model: {ModelName}", modelName);
 
-        var result = new Nexo.Feature.AI.Models.ModelOptimizationResult
+        var result = new ModelOptimizationResult
         {
             Success = true,
             ErrorMessage = "",
-            PerformanceAnalysis = new List<Nexo.Feature.AI.Models.PerformancePattern>(),
-            Bottlenecks = new List<string>(),
-            Recommendations = new List<Nexo.Feature.AI.Models.OptimizationRecommendation>(),
+            PerformanceAnalysis = [],
+            Bottlenecks = [],
+            Recommendations = [],
             AnalysisTimestamp = DateTime.UtcNow,
             Metadata = new Dictionary<string, object>
             {
@@ -450,10 +441,7 @@ public class ModelOrchestrator : IModelOrchestrator
     {
         lock (_lock)
         {
-            IModel model;
-            if (_loadedModels.TryGetValue(modelName, out model))
-                return model;
-            return null;
+            return _loadedModels.GetValueOrDefault(modelName);
         }
     }
 
@@ -465,9 +453,4 @@ public class ModelOrchestrator : IModelOrchestrator
         }
     }
 }
-
-/// <summary>
-/// Model optimization result.
-/// </summary>
-
 }

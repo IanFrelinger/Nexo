@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "Qwh6frTtZRk=",
+  "dgSpecHash": "+QrIJL5hUPU=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/Nexo.Infrastructure.csproj",
   "expectedPackageFiles": [
+    "/Users/ianfrelinger/.nuget/packages/jetbrains.annotations/2025.2.0/jetbrains.annotations.2025.2.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.bcl.asyncinterfaces/9.0.7/microsoft.bcl.asyncinterfaces.9.0.7.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.analyzers/3.3.4/microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.common/4.8.0/microsoft.codeanalysis.common.4.8.0.nupkg.sha512",

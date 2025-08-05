@@ -11,19 +11,11 @@ namespace Nexo.Feature.AI.Interfaces
     public interface IAdvancedModelOrchestrator
     {
         /// <summary>
-        /// Executes a request with intelligent model selection and fallback strategies.
+        /// Executes a multimodel workflow with coordination between different models.
         /// </summary>
-        /// <param name="request">The advanced model request.</param>
+        /// <param name="workflow">The multimodel workflow definition.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Advanced model response with detailed metrics.</returns>
-        Task<AdvancedModelResponse> ExecuteAdvancedAsync(AdvancedModelRequest request, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Executes a multi-model workflow with coordination between different models.
-        /// </summary>
-        /// <param name="workflow">The multi-model workflow definition.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Multi-model workflow response with step results.</returns>
+        /// <returns>Multimodel workflow response with step results.</returns>
         Task<MultiModelResponse> ExecuteMultiModelWorkflowAsync(MultiModelWorkflow workflow, CancellationToken cancellationToken = default);
 
         /// <summary>

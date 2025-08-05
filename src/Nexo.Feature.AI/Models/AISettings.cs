@@ -1,11 +1,9 @@
-using System;
-
 namespace Nexo.Feature.AI.Models
 {
     /// <summary>
     /// Configuration settings for AI provider and model preferences.
     /// </summary>
-    public class AISettings
+    public class AiSettings
     {
         /// <summary>
         /// Gets or sets the preferred AI provider ID (e.g., "openai", "ollama", "azure-openai").

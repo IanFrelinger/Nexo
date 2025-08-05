@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Nexo.Feature.AI.Enums;
 
@@ -8,8 +6,18 @@ namespace Nexo.Feature.AI.Models
     /// <summary>
     /// Configuration for AI resource allocation and management.
     /// </summary>
-    public class AIResourceConfiguration
+    public class AiResourceConfiguration
     {
+        public AiResourceConfiguration(long maxNetworkBandwidthBytesPerSecond, long maxDiskUsageBytes, ResourceAllocationStrategy allocationStrategy, bool enableAutoScaling, double minResourceAllocationPercentage, double maxResourceAllocationPercentage)
+        {
+            MaxNetworkBandwidthBytesPerSecond = maxNetworkBandwidthBytesPerSecond;
+            MaxDiskUsageBytes = maxDiskUsageBytes;
+            AllocationStrategy = allocationStrategy;
+            EnableAutoScaling = enableAutoScaling;
+            MinResourceAllocationPercentage = minResourceAllocationPercentage;
+            MaxResourceAllocationPercentage = maxResourceAllocationPercentage;
+        }
+
         /// <summary>
         /// The maximum number of concurrent AI requests.
         /// </summary>
@@ -44,19 +52,19 @@ namespace Nexo.Feature.AI.Models
         /// The maximum network bandwidth in bytes per second.
         /// </summary>
         [JsonPropertyName("maxNetworkBandwidthBytesPerSecond")]
-        public long MaxNetworkBandwidthBytesPerSecond { get; set; } = 10L * 1024L * 1024L; // 10MB/s
+        public long MaxNetworkBandwidthBytesPerSecond { get; set; } // 10MB/s
         
         /// <summary>
         /// The maximum disk usage in bytes.
         /// </summary>
         [JsonPropertyName("maxDiskUsageBytes")]
-        public long MaxDiskUsageBytes { get; set; } = 10L * 1024L * 1024L * 1024L; // 10GB
+        public long MaxDiskUsageBytes { get; set; } // 10GB
         
         /// <summary>
         /// The resource allocation strategy.
         /// </summary>
         [JsonPropertyName("allocationStrategy")]
-        public ResourceAllocationStrategy AllocationStrategy { get; set; } = ResourceAllocationStrategy.Balanced;
+        public ResourceAllocationStrategy AllocationStrategy { get; set; }
         
         /// <summary>
         /// Whether to enable resource monitoring.
@@ -74,24 +82,18 @@ namespace Nexo.Feature.AI.Models
         /// Whether to enable automatic resource scaling.
         /// </summary>
         [JsonPropertyName("enableAutoScaling")]
-        public bool EnableAutoScaling { get; set; } = false;
+        public bool EnableAutoScaling { get; set; }
         
         /// <summary>
         /// The minimum resource allocation percentage.
         /// </summary>
         [JsonPropertyName("minResourceAllocationPercentage")]
-        public double MinResourceAllocationPercentage { get; set; } = 10.0;
+        public double MinResourceAllocationPercentage { get; set; }
         
         /// <summary>
         /// The maximum resource allocation percentage.
         /// </summary>
         [JsonPropertyName("maxResourceAllocationPercentage")]
-        public double MaxResourceAllocationPercentage { get; set; } = 100.0;
-        
-        /// <summary>
-        /// Custom resource limits.
-        /// </summary>
-        [JsonPropertyName("customResourceLimits")]
-        public Dictionary<string, object> CustomResourceLimits { get; set; } = new Dictionary<string, object>();
+        public double MaxResourceAllocationPercentage { get; set; }
     }
 } 

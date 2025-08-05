@@ -26,7 +26,7 @@ namespace Nexo.Feature.AI.Tests.Services
         {
             _logger = Mock.Of<ILogger<ApplicationLogicStandardizer>>();
             _mockModelOrchestrator = new Mock<IModelOrchestrator>();
-            _standardizer = new ApplicationLogicStandardizer(_mockModelOrchestrator.Object, _logger);
+            _standardizer = new ApplicationLogicStandardizer(_logger);
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace Nexo.Feature.AI.Tests.Services
             var options = new SecurityPatternOptions();
 
             // Act
-            var result = await _standardizer.ApplySecurityPatternsAsync(applicationLogic, options);
+            var result = await _standardizer.ApplySecurityPatternsAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -98,7 +98,7 @@ namespace Nexo.Feature.AI.Tests.Services
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() =>
-                _standardizer.ApplySecurityPatternsAsync(applicationLogic, options));
+                _standardizer.ApplySecurityPatternsAsync(options));
         }
 
         [Fact]
@@ -109,7 +109,7 @@ namespace Nexo.Feature.AI.Tests.Services
             var options = new PerformanceOptimizationOptions();
 
             // Act
-            var result = await _standardizer.OptimizeForPerformanceAsync(applicationLogic, options);
+            var result = await _standardizer.OptimizeForPerformanceAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -127,7 +127,7 @@ namespace Nexo.Feature.AI.Tests.Services
             var options = new StateManagementOptions();
 
             // Act
-            var result = await _standardizer.GenerateStateManagementAsync(applicationLogic, options);
+            var result = await _standardizer.GenerateStateManagementAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -145,7 +145,7 @@ namespace Nexo.Feature.AI.Tests.Services
             var options = new ApiContractOptions();
 
             // Act
-            var result = await _standardizer.GenerateApiContractsAsync(applicationLogic, options);
+            var result = await _standardizer.GenerateApiContractsAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -163,7 +163,7 @@ namespace Nexo.Feature.AI.Tests.Services
             var options = new DataFlowOptimizationOptions();
 
             // Act
-            var result = await _standardizer.OptimizeDataFlowAsync(applicationLogic, options);
+            var result = await _standardizer.OptimizeDataFlowAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -338,7 +338,7 @@ namespace Nexo.Feature.AI.Tests.Services
             };
 
             // Act
-            var result = await _standardizer.ApplySecurityPatternsAsync(applicationLogic, options);
+            var result = await _standardizer.ApplySecurityPatternsAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -356,7 +356,7 @@ namespace Nexo.Feature.AI.Tests.Services
             };
 
             // Act
-            var result = await _standardizer.ApplySecurityPatternsAsync(applicationLogic, options);
+            var result = await _standardizer.ApplySecurityPatternsAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -374,7 +374,7 @@ namespace Nexo.Feature.AI.Tests.Services
             };
 
             // Act
-            var result = await _standardizer.OptimizeForPerformanceAsync(applicationLogic, options);
+            var result = await _standardizer.OptimizeForPerformanceAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -392,7 +392,7 @@ namespace Nexo.Feature.AI.Tests.Services
             };
 
             // Act
-            var result = await _standardizer.GenerateStateManagementAsync(applicationLogic, options);
+            var result = await _standardizer.GenerateStateManagementAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -406,11 +406,11 @@ namespace Nexo.Feature.AI.Tests.Services
             var applicationLogic = CreateValidStandardizedApplicationLogic();
             var options = new ApiContractOptions
             {
-                EnableREST = true
+                EnableRest = true
             };
 
             // Act
-            var result = await _standardizer.GenerateApiContractsAsync(applicationLogic, options);
+            var result = await _standardizer.GenerateApiContractsAsync(options);
 
             // Assert
             Assert.True(result.IsSuccess);
@@ -557,7 +557,7 @@ namespace Nexo.Feature.AI.Tests.Services
                     {
                         Name = "JWT Authentication",
                         Description = "JWT authentication",
-                        Type = SecurityPatternType.JWT,
+                        Type = SecurityPatternType.Jwt,
                         Implementation = "JWT Service",
                         GeneratedCode = "public interface IJwtService { }"
                     }
@@ -580,7 +580,7 @@ namespace Nexo.Feature.AI.Tests.Services
                         Name = "User API",
                         Description = "User API contract",
                         Endpoint = "/api/user",
-                        Method = Nexo.Feature.AI.Models.HttpMethod.GET,
+                        Method = Nexo.Feature.AI.Models.HttpMethod.Get,
                         GeneratedCode = "public class UserController { }"
                     }
                 },

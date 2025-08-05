@@ -16,18 +16,18 @@ namespace Nexo.Core.Domain.Entities
         /// <summary>
         /// Stores the collection of tasks planned within the sprint.
         /// </summary>
-        private readonly List<SprintTask> _tasks = new List<SprintTask>();
+        private readonly List<SprintTask> _tasks = [];
 
         /// <summary>
         /// Represents the list of criteria that define when tasks or the sprint itself are considered complete.
         /// This ensures a shared understanding of the quality standards and expectations for the sprint.
         /// </summary>
-        private readonly List<string> _definitionOfDone = new List<string>();
+        private readonly List<string> _definitionOfDone = [];
 
         /// <summary>
         /// Holds key-value pairs representing metrics associated with the sprint.
         /// </summary>
-        private readonly Dictionary<string, object> _metrics = new Dictionary<string, object>();
+        private readonly Dictionary<string, object> _metrics = new();
 
         /// <summary>
         /// Gets the unique identifier of the sprint instance.
@@ -155,8 +155,7 @@ namespace Nexo.Core.Domain.Entities
         /// <exception cref="InvalidOperationException">Thrown when the sprint is not in the planning phase or the task already exists in the sprint.</exception>
         public void AddTask(SprintTask task)
         {
-            if (task == null)
-                throw new ArgumentNullException(nameof(task));
+            ArgumentNullException.ThrowIfNull(task);
 
             if (Status != SprintStatus.Planning)
                 throw new InvalidOperationException("Cannot add tasks after planning phase.");
@@ -256,8 +255,7 @@ namespace Nexo.Core.Domain.Entities
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key cannot be null, empty, or whitespace", nameof(key));
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             _metrics[key] = value;
         }
@@ -342,12 +340,10 @@ namespace Nexo.Core.Domain.Entities
             };
             sprint._tasks.AddRange(tasks);
             sprint._definitionOfDone.AddRange(definitionOfDone);
-            if (metrics != null)
+            if (metrics == null) return sprint;
+            foreach (var kv in metrics)
             {
-                foreach (var kv in metrics)
-                {
-                    sprint._metrics[kv.Key] = kv.Value;
-                }
+                sprint._metrics[kv.Key] = kv.Value;
             }
             return sprint;
         }

@@ -8,6 +8,15 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ModelCapabilities
     {
+        public ModelCapabilities(bool supportsTextGeneration, bool supportsCodeGeneration, bool supportsCodeAnalysis, bool supportsImageGeneration, bool supportsImageAnalysis)
+        {
+            SupportsTextGeneration = supportsTextGeneration;
+            SupportsCodeGeneration = supportsCodeGeneration;
+            SupportsCodeAnalysis = supportsCodeAnalysis;
+            SupportsImageGeneration = supportsImageGeneration;
+            SupportsImageAnalysis = supportsImageAnalysis;
+        }
+
         /// <summary>
         /// Gets or sets whether the model supports text generation.
         /// </summary>
@@ -72,12 +81,6 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the supported languages.
         /// </summary>
         [JsonPropertyName("supportedLanguages")]
-        public List<string> SupportedLanguages { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Gets or sets the supported programming languages.
-        /// </summary>
-        [JsonPropertyName("supportedProgrammingLanguages")]
-        public List<string> SupportedProgrammingLanguages { get; set; } = new List<string>();
+        public List<string> SupportedLanguages { get; set; } = [];
     }
 } 

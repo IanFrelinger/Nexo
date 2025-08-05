@@ -34,14 +34,6 @@ namespace Nexo.Feature.AI.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Optimizes processing based on collected metrics.
-        /// </summary>
-        /// <param name="metrics">The processing metrics to analyze.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Processing optimization recommendations.</returns>
-        Task<ProcessingOptimization> OptimizeProcessingAsync(IEnumerable<ProcessingMetrics> metrics, CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Gets performance metrics for processing operations.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -118,8 +110,7 @@ namespace Nexo.Feature.AI.Interfaces
     {
         Low,
         Normal,
-        High,
-        Critical
+        High
     }
 
     /// <summary>
@@ -247,7 +238,6 @@ namespace Nexo.Feature.AI.Interfaces
     public enum TrendDirection
     {
         Improving,
-        Degrading,
-        Stable
+        Degrading
     }
 } 

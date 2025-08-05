@@ -1,26 +1,14 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
-using System.Reflection;
+using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
-using System.Reactive.Subjects;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Nexo.Shared.Enums;
-using Nexo.Shared.Interfaces;
-using Nexo.Shared.Models;
 using Nexo.Core.Application.Interfaces;
-using System.IO;
 
-namespace Nexo.Infrastructure.Adapters
+namespace Nexo.Infrastructure.Adapters.Configuration
 {
 
 /// <summary>
@@ -99,32 +87,38 @@ public sealed class JsonConfigurationProvider : IConfigurationProvider
         string configPath,
         ILogger<JsonConfigurationProvider> logger)
     {
-        if (fileSystem == null)
+        if (fileSystem != null)
+        {
+            if (string.IsNullOrWhiteSpace(configPath))
+            {
+                throw new ArgumentException("Config path cannot be null or empty", nameof(configPath));
+            }
+
+            if (logger != null)
+            {
+                _fileSystem = fileSystem;
+                _configPath = configPath;
+                _logger = logger;
+                _jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    Converters =
+                    {
+                        new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+                    }
+                };
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
+        }
+        else
         {
             throw new ArgumentNullException(nameof(fileSystem));
         }
-        if (string.IsNullOrWhiteSpace(configPath))
-        {
-            throw new ArgumentException("Config path cannot be null or empty", nameof(configPath));
-        }
-        if (logger == null)
-        {
-            throw new ArgumentNullException(nameof(logger));
-        }
-        
-        _fileSystem = fileSystem;
-        _configPath = configPath;
-        _logger = logger;
-        _jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            Converters = 
-            { 
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) 
-            }
-        };
     }
 
     /// <summary>
@@ -188,30 +182,32 @@ public sealed class JsonConfigurationProvider : IConfigurationProvider
         CancellationToken cancellationToken = default) 
         where T : class
     {
-        if (configuration == null)
+        if (configuration != null)
+        {
+            await _cacheLock.WaitAsync(cancellationToken);
+            try
+            {
+                // Ensure the configuration directory exists
+                await _fileSystem.CreateDirectoryAsync(_configPath, cancellationToken);
+
+                var filePath = GetConfigurationFilePath<T>();
+                var json = JsonSerializer.Serialize(configuration, _jsonOptions);
+
+                await _fileSystem.WriteTextAsync(filePath, json, cancellationToken);
+
+                // Update cache
+                _cache[typeof(T)] = configuration;
+
+                _logger.LogDebug("Saved configuration for {Type} to {FilePath}", typeof(T).Name, filePath);
+            }
+            finally
+            {
+                _cacheLock.Release();
+            }
+        }
+        else
         {
             throw new ArgumentNullException(nameof(configuration));
-        }
-        
-        await _cacheLock.WaitAsync(cancellationToken);
-        try
-        {
-            // Ensure the configuration directory exists
-            await _fileSystem.CreateDirectoryAsync(_configPath, cancellationToken);
-            
-            var filePath = GetConfigurationFilePath<T>();
-            var json = JsonSerializer.Serialize(configuration, _jsonOptions);
-            
-            await _fileSystem.WriteTextAsync(filePath, json, cancellationToken);
-            
-            // Update cache
-            _cache[typeof(T)] = configuration;
-            
-            _logger.LogDebug("Saved configuration for {Type} to {FilePath}", typeof(T).Name, filePath);
-        }
-        finally
-        {
-            _cacheLock.Release();
         }
     }
 

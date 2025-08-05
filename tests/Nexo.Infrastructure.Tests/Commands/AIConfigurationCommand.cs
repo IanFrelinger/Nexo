@@ -32,9 +32,9 @@ public class AIConfigurationCommand
         try
         {
             var startTime = DateTime.UtcNow;
-            var mockLogger = new Moq.Mock<ILogger<AIConfigurationService>>();
+            var mockLogger = new Moq.Mock<ILogger<AiConfigurationService>>();
             
-            var service = new AIConfigurationService(mockLogger.Object);
+            var service = new AiConfigurationService(mockLogger.Object);
             
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)
@@ -67,12 +67,12 @@ public class AIConfigurationCommand
         try
         {
             var startTime = DateTime.UtcNow;
-            var mockLogger = new Moq.Mock<ILogger<AIConfigurationService>>();
+            var mockLogger = new Moq.Mock<ILogger<AiConfigurationService>>();
             
-            var service = new AIConfigurationService(mockLogger.Object);
+            var service = new AiConfigurationService(mockLogger.Object);
             using var cts = new CancellationTokenSource(timeoutMs);
             
-            var config = await service.GetConfigurationAsync(cts.Token);
+            var config = await service.GetConfigurationAsync();
 
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)
@@ -81,7 +81,7 @@ public class AIConfigurationCommand
                 return false;
             }
 
-            var result = config != null && config.Mode == AIMode.Development && config.Model != null;
+            var result = config != null && config.Mode == AiMode.Development && config.Model != null;
             _logger.LogInformation("AI Configuration get test completed: {Result}", result);
             
             return result;
@@ -110,12 +110,12 @@ public class AIConfigurationCommand
         try
         {
             var startTime = DateTime.UtcNow;
-            var mockLogger = new Moq.Mock<ILogger<AIConfigurationService>>();
+            var mockLogger = new Moq.Mock<ILogger<AiConfigurationService>>();
             
-            var service = new AIConfigurationService(mockLogger.Object);
+            var service = new AiConfigurationService(mockLogger.Object);
             using var cts = new CancellationTokenSource(timeoutMs);
             
-            var config = await service.LoadForModeAsync(AIMode.Production, cts.Token);
+            var config = await service.LoadForModeAsync(AiMode.Production);
 
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)
@@ -124,7 +124,7 @@ public class AIConfigurationCommand
                 return false;
             }
 
-            var result = config != null && config.Mode == AIMode.Production && config.Model?.Name == "gpt-4";
+            var result = config != null && config.Mode == AiMode.Production && config.Model?.Name == "gpt-4";
             _logger.LogInformation("AI Configuration load for mode test completed: {Result}", result);
             
             return result;
@@ -153,10 +153,10 @@ public class AIConfigurationCommand
         try
         {
             var startTime = DateTime.UtcNow;
-            var mockLogger = new Moq.Mock<ILogger<AIConfigurationService>>();
+            var mockLogger = new Moq.Mock<ILogger<AiConfigurationService>>();
             
-            var service = new AIConfigurationService(mockLogger.Object);
-            var config = service.GetDefaultConfiguration(AIMode.AIHeavy);
+            var service = new AiConfigurationService(mockLogger.Object);
+            var config = service.GetDefaultConfiguration(AiMode.AiHeavy);
 
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)
@@ -166,7 +166,7 @@ public class AIConfigurationCommand
             }
 
             var result = config != null && 
-                        config.Mode == AIMode.AIHeavy && 
+                        config.Mode == AiMode.AiHeavy && 
                         config.Model?.Name == "gpt-4-turbo" &&
                         config.Model?.MaxInputTokens == 16384;
             

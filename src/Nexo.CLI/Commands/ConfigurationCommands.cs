@@ -25,7 +25,7 @@ public static class ConfigurationCommands
     /// <param name="logger">Logger.</param>
     /// <returns>The configuration command.</returns>
     public static Command CreateConfigurationCommand(
-        IAIConfigurationService aiConfigurationService,
+        IAiConfigurationService aiConfigurationService,
         // IConfigurationProvider configurationProvider, // commented out
         ILogger logger)
     {
@@ -76,7 +76,7 @@ public static class ConfigurationCommands
         {
             try
             {
-                if (!Enum.TryParse<AIMode>(mode, true, out var aiMode))
+                if (!Enum.TryParse<AiMode>(mode, true, out var aiMode))
                 {
                     Console.WriteLine("Error: Invalid mode. Valid modes are: development, production, ai-heavy");
                     return;
@@ -152,10 +152,10 @@ public static class ConfigurationCommands
         {
             try
             {
-                var aiMode = AIMode.Development;
+                var aiMode = AiMode.Development;
                 if (!string.IsNullOrEmpty(mode))
                 {
-                    if (!Enum.TryParse<AIMode>(mode, true, out aiMode))
+                    if (!Enum.TryParse<AiMode>(mode, true, out aiMode))
                     {
                         Console.WriteLine("Error: Invalid mode. Valid modes are: development, production, ai-heavy");
                         return;

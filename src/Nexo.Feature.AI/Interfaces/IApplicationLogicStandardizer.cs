@@ -1,5 +1,4 @@
 using Nexo.Feature.AI.Models;
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,86 +26,57 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Applies security patterns to the application logic.
         /// </summary>
-        /// <param name="applicationLogic">The application logic to secure</param>
         /// <param name="securityOptions">Security configuration options</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Secured application logic result</returns>
-        Task<SecurityPatternResult> ApplySecurityPatternsAsync(
-            StandardizedApplicationLogic applicationLogic,
-            SecurityPatternOptions securityOptions,
-            CancellationToken cancellationToken = default);
+        Task<SecurityPatternResult> ApplySecurityPatternsAsync(SecurityPatternOptions securityOptions);
 
         /// <summary>
         /// Optimizes application logic for performance.
         /// </summary>
-        /// <param name="applicationLogic">The application logic to optimize</param>
         /// <param name="performanceOptions">Performance optimization options</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Performance optimized application logic result</returns>
-        Task<PerformanceOptimizationResult> OptimizeForPerformanceAsync(
-            StandardizedApplicationLogic applicationLogic,
-            PerformanceOptimizationOptions performanceOptions,
-            CancellationToken cancellationToken = default);
+        Task<PerformanceOptimizationResult> OptimizeForPerformanceAsync(PerformanceOptimizationOptions performanceOptions);
 
         /// <summary>
         /// Generates state management architecture for the application logic.
         /// </summary>
-        /// <param name="applicationLogic">The application logic to add state management to</param>
         /// <param name="stateManagementOptions">State management configuration options</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>State management architecture result</returns>
-        Task<StateManagementResult> GenerateStateManagementAsync(
-            StandardizedApplicationLogic applicationLogic,
-            StateManagementOptions stateManagementOptions,
-            CancellationToken cancellationToken = default);
+        Task<StateManagementResult> GenerateStateManagementAsync(StateManagementOptions stateManagementOptions);
 
         /// <summary>
         /// Creates API contracts for the application logic.
         /// </summary>
-        /// <param name="applicationLogic">The application logic to create API contracts for</param>
         /// <param name="apiContractOptions">API contract configuration options</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>API contract generation result</returns>
-        Task<ApiContractResult> GenerateApiContractsAsync(
-            StandardizedApplicationLogic applicationLogic,
-            ApiContractOptions apiContractOptions,
-            CancellationToken cancellationToken = default);
+        Task<ApiContractResult> GenerateApiContractsAsync(ApiContractOptions apiContractOptions);
 
         /// <summary>
         /// Optimizes data flow in the application logic.
         /// </summary>
-        /// <param name="applicationLogic">The application logic to optimize data flow for</param>
         /// <param name="dataFlowOptions">Data flow optimization options</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Data flow optimization result</returns>
-        Task<DataFlowOptimizationResult> OptimizeDataFlowAsync(
-            StandardizedApplicationLogic applicationLogic,
-            DataFlowOptimizationOptions dataFlowOptions,
-            CancellationToken cancellationToken = default);
+        Task<DataFlowOptimizationResult> OptimizeDataFlowAsync(DataFlowOptimizationOptions dataFlowOptions);
 
         /// <summary>
         /// Integrates caching strategies into the application logic.
         /// </summary>
         /// <param name="applicationLogic">The application logic to add caching to</param>
         /// <param name="cachingOptions">Caching configuration options</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Caching strategy integration result</returns>
         Task<CachingStrategyResult> IntegrateCachingStrategiesAsync(
             StandardizedApplicationLogic applicationLogic,
-            CachingStrategyOptions cachingOptions,
-            CancellationToken cancellationToken = default);
+            CachingStrategyOptions cachingOptions);
 
         /// <summary>
         /// Validates the standardized application logic.
         /// </summary>
         /// <param name="applicationLogic">The application logic to validate</param>
         /// <param name="validationOptions">Validation configuration options</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Application logic validation result</returns>
         Task<ApplicationLogicValidationResult> ValidateApplicationLogicAsync(
             StandardizedApplicationLogic applicationLogic,
-            ApplicationLogicValidationOptions validationOptions,
-            CancellationToken cancellationToken = default);
+            ApplicationLogicValidationOptions validationOptions);
 
         /// <summary>
         /// Gets supported application patterns.

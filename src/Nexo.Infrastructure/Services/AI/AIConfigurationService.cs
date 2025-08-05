@@ -4,34 +4,64 @@ using Nexo.Feature.AI.Interfaces;
 using Nexo.Feature.AI.Enums;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 
 namespace Nexo.Infrastructure.Services.AI
 {
     /// <summary>
-    /// Service for managing AI configuration settings.
+    /// Provides functionality for managing, validating, saving, and loading AI configuration settings in support of various AI modes.
     /// </summary>
-    public class AIConfigurationService : IAIConfigurationService
+    public class AiConfigurationService : IAiConfigurationService
     {
-        private readonly ILogger<AIConfigurationService> _logger;
-        private AIConfiguration _configuration;
+        /// <summary>
+        /// Logger instance used to log informational, warning, error, or debug messages
+        /// within the <see cref="AiConfigurationService"/> class. Provides a mechanism for
+        /// structured and consistent logging of events during the service's operation.
+        /// </summary>
+        private readonly ILogger<AiConfigurationService> _logger;
 
-        public AIConfigurationService(ILogger<AIConfigurationService> logger)
+        /// <summary>
+        /// Represents the current AI configuration used within the service.
+        /// </summary>
+        /// <remarks>
+        /// This variable holds an instance of <see cref="AiConfiguration"/>,
+        /// which defines various settings for AI operations, such as mode, model configuration,
+        /// providers, resource allocation, caching, fallback mechanisms, and monitoring parameters.
+        /// It is initialized with default configuration values and can be updated or retrieved
+        /// through corresponding service methods.
+        /// </remarks>
+        private AiConfiguration _configuration;
+
+        /// Provides functionality for managing AI configuration settings.
+        /// This service initializes and retrieves AI configurations based on
+        /// specific modes, such as Development or Production.
+        public AiConfigurationService(ILogger<AiConfigurationService> logger)
         {
             _logger = logger;
-            _configuration = GetDefaultConfiguration(AIMode.Development);
+            _configuration = GetDefaultConfiguration(AiMode.Development);
         }
 
-        public async Task<AIConfiguration> GetConfigurationAsync(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Asynchronously retrieves the current AI configuration.
+        /// </summary>
+        /// <returns>
+        /// A task representing the asynchronous operation. The task result contains
+        /// an instance of <see cref="AiConfiguration"/> representing the AI configuration.
+        /// </returns>
+        public async Task<AiConfiguration> GetConfigurationAsync()
         {
             _logger.LogInformation("Getting AI configuration");
             await Task.CompletedTask;
             return _configuration;
         }
 
-        public async Task SaveConfigurationAsync(AIConfiguration configuration, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Saves the specified AI configuration asynchronously.
+        /// </summary>
+        /// <param name="configuration">The AI configuration to save.</param>
+        /// <returns>A task that represents the asynchronous save operation.</returns>
+        public async Task SaveConfigurationAsync(AiConfiguration configuration)
         {
             if (configuration == null)
             {
@@ -44,17 +74,27 @@ namespace Nexo.Infrastructure.Services.AI
             _configuration = configuration;
         }
 
-        public async Task<AIConfiguration> LoadForModeAsync(AIMode mode, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Loads the AI configuration for the specified mode asynchronously.
+        /// </summary>
+        /// <param name="mode">The mode for which the AI configuration is being loaded. Possible values are defined in <see cref="AiMode"/>.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the loaded <see cref="AiConfiguration"/> for the specified mode.</returns>
+        public async Task<AiConfiguration> LoadForModeAsync(AiMode mode)
         {
             _logger.LogInformation("Loading AI configuration for mode: {Mode}", mode);
             await Task.CompletedTask;
             
             var config = GetDefaultConfiguration(mode);
-            await SaveConfigurationAsync(config, cancellationToken);
+            await SaveConfigurationAsync(config);
             return config;
         }
 
-        public AIConfiguration GetDefaultConfiguration(AIMode mode)
+        /// <summary>
+        /// Retrieves the default configuration for the specified AI mode.
+        /// </summary>
+        /// <param name="mode">The AI mode for which the default configuration is requested.</param>
+        /// <returns>The default AI configuration for the specified mode.</returns>
+        public AiConfiguration GetDefaultConfiguration(AiMode mode)
         {
             _logger.LogInformation("Getting default AI configuration for mode: {Mode}", mode);
 
@@ -84,7 +124,7 @@ namespace Nexo.Infrastructure.Services.AI
 
             switch (mode)
             {
-                case AIMode.Development:
+                case AiMode.Development:
                     modelName = "gpt-3.5-turbo";
                     maxInputTokens = 4096;
                     maxOutputTokens = 2048;
@@ -109,7 +149,7 @@ namespace Nexo.Infrastructure.Services.AI
                     maxResponseTimeAlert = 5000;
                     maxErrorRateAlert = 0.05;
                     break;
-                case AIMode.Production:
+                case AiMode.Production:
                     modelName = "gpt-4";
                     maxInputTokens = 8192;
                     maxOutputTokens = 4096;
@@ -134,7 +174,7 @@ namespace Nexo.Infrastructure.Services.AI
                     maxResponseTimeAlert = 10000;
                     maxErrorRateAlert = 0.02;
                     break;
-                case AIMode.AIHeavy:
+                case AiMode.AiHeavy:
                     modelName = "gpt-4-turbo";
                     maxInputTokens = 16384;
                     maxOutputTokens = 8192;
@@ -186,10 +226,10 @@ namespace Nexo.Infrastructure.Services.AI
                     break;
             }
 
-            return new AIConfiguration
+            return new AiConfiguration
             {
                 Mode = mode,
-                Model = new AIModelConfiguration
+                Model = new AiModelConfiguration
                 {
                     Name = modelName,
                     MaxInputTokens = maxInputTokens,
@@ -198,7 +238,7 @@ namespace Nexo.Infrastructure.Services.AI
                     EnableStreaming = true,
                     RequestTimeoutSeconds = requestTimeoutSeconds
                 },
-                Resources = new AIResourceConfiguration
+                Resources = new AiResourceConfiguration
                 {
                     MaxConcurrentRequests = maxConcurrentRequests,
                     MaxMemoryUsageBytes = maxMemoryUsageBytes,
@@ -208,40 +248,40 @@ namespace Nexo.Infrastructure.Services.AI
                     EnableResourceMonitoring = true,
                     ResourceMonitoringIntervalSeconds = 30
                 },
-                Performance = new AIPerformanceConfiguration
+                Performance = new AiPerformanceConfiguration
                 {
                     Mode = perfMode,
                     TargetResponseTimeMs = targetResponseTimeMs,
                     MaxResponseTimeMs = maxResponseTimeMs
                 },
-                Caching = new AICachingConfiguration
+                Caching = new AiCachingConfiguration
                 {
-                    Enabled = mode != AIMode.Development,
+                    Enabled = mode != AiMode.Development,
                     MaxCacheSizeBytes = maxCacheSizeBytes,
                     DefaultExpirationSeconds = defaultExpirationSeconds,
                     EvictionPolicy = CacheEvictionPolicy.LeastRecentlyUsed,
-                    EnableCompression = mode != AIMode.Development,
+                    EnableCompression = mode != AiMode.Development,
                     CompressionLevel = 6
                 },
-                Fallback = new AIFallbackConfiguration
+                Fallback = new AiFallbackConfiguration
                 {
-                    Enabled = mode != AIMode.Development,
+                    Enabled = mode != AiMode.Development,
                     MaxFallbackAttempts = maxFallbackAttempts,
                     FallbackDelaySeconds = fallbackDelaySeconds,
-                    EnableExponentialBackoff = mode != AIMode.Development,
-                    EnableOfflineMode = mode != AIMode.Development,
-                    EnableCachedResponseFallback = mode != AIMode.Development
+                    EnableExponentialBackoff = mode != AiMode.Development,
+                    EnableOfflineMode = mode != AiMode.Development,
+                    EnableCachedResponseFallback = mode != AiMode.Development
                 },
-                Monitoring = new AIMonitoringConfiguration
+                Monitoring = new AiMonitoringConfiguration
                 {
-                    Enabled = mode != AIMode.Development,
+                    Enabled = mode != AiMode.Development,
                     CollectionIntervalSeconds = collectionIntervalSeconds,
                     EnableRequestResponseLogging = true,
-                    EnablePerformanceMetrics = mode != AIMode.Development,
-                    EnableErrorTracking = mode != AIMode.Development,
-                    EnableUsageAnalytics = mode != AIMode.Development,
-                    EnableHealthChecks = mode != AIMode.Development,
-                    AlertThresholds = new AIAlertThresholds
+                    EnablePerformanceMetrics = mode != AiMode.Development,
+                    EnableErrorTracking = mode != AiMode.Development,
+                    EnableUsageAnalytics = mode != AiMode.Development,
+                    EnableHealthChecks = mode != AiMode.Development,
+                    AlertThresholds = new AiAlertThresholds
                     {
                         MaxResponseTimeMs = maxResponseTimeAlert,
                         MaxErrorRate = maxErrorRateAlert
@@ -250,7 +290,15 @@ namespace Nexo.Infrastructure.Services.AI
             };
         }
 
-        public async Task<AIConfigurationValidationResult> ValidateAsync(AIConfiguration configuration)
+        /// <summary>
+        /// Validates the provided AI configuration asynchronously and returns the validation result,
+        /// indicating whether the configuration adheres to the expected rules and requirements.
+        /// </summary>
+        /// <param name="configuration">The AI configuration to be validated. Must not be null.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains
+        /// an <see cref="AiConfigurationValidationResult"/> with validation status and a collection of errors if any.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if the <paramref name="configuration"/> is null.</exception>
+        public async Task<AiConfigurationValidationResult> ValidateAsync(AiConfiguration configuration)
         {
             if (configuration == null)
             {
@@ -260,14 +308,14 @@ namespace Nexo.Infrastructure.Services.AI
             _logger.LogInformation("Validating AI configuration");
             await Task.CompletedTask;
             
-            var result = new AIConfigurationValidationResult { IsValid = true };
+            var result = new AiConfigurationValidationResult { IsValid = true };
             
             // Validate model configuration
             if (configuration.Model != null)
             {
                 if (string.IsNullOrEmpty(configuration.Model.Name))
                 {
-                    result.Errors.Add(new AIConfigurationValidationError
+                    result.Errors.Add(new AiConfigurationValidationError
                     {
                         Code = "MODEL_NAME_EMPTY",
                         Message = "Model name is required",
@@ -279,31 +327,31 @@ namespace Nexo.Infrastructure.Services.AI
                 
                 if (configuration.Model.MaxInputTokens <= 0)
                 {
-                    result.Errors.Add(new AIConfigurationValidationError
+                    result.Errors.Add(new AiConfigurationValidationError
                     {
                         Code = "MAX_INPUT_TOKENS_INVALID",
                         Message = "Max input tokens must be greater than 0",
                         FieldPath = "model.maxInputTokens",
-                        Severity = Nexo.Feature.AI.Interfaces.ValidationSeverity.Error
+                        Severity = Feature.AI.Interfaces.ValidationSeverity.Error
                     });
                     result.IsValid = false;
                 }
                 
                 if (configuration.Model.MaxOutputTokens <= 0)
                 {
-                    result.Errors.Add(new AIConfigurationValidationError
+                    result.Errors.Add(new AiConfigurationValidationError
                     {
                         Code = "MAX_OUTPUT_TOKENS_INVALID",
                         Message = "Max output tokens must be greater than 0",
                         FieldPath = "model.maxOutputTokens",
-                        Severity = Nexo.Feature.AI.Interfaces.ValidationSeverity.Error
+                        Severity = Feature.AI.Interfaces.ValidationSeverity.Error
                     });
                     result.IsValid = false;
                 }
             }
             else
             {
-                result.Errors.Add(new AIConfigurationValidationError
+                result.Errors.Add(new AiConfigurationValidationError
                 {
                     Code = "MODEL_NULL",
                     Message = "Model configuration is required",
@@ -318,7 +366,7 @@ namespace Nexo.Infrastructure.Services.AI
             {
                 if (configuration.Resources.MaxConcurrentRequests <= 0)
                 {
-                    result.Errors.Add(new AIConfigurationValidationError
+                    result.Errors.Add(new AiConfigurationValidationError
                     {
                         Code = "MAX_CONCURRENT_REQUESTS_INVALID",
                         Message = "Max concurrent requests must be greater than 0",
@@ -330,12 +378,12 @@ namespace Nexo.Infrastructure.Services.AI
                 
                 if (configuration.Resources.MaxMemoryUsageBytes <= 0)
                 {
-                    result.Errors.Add(new AIConfigurationValidationError
+                    result.Errors.Add(new AiConfigurationValidationError
                     {
                         Code = "MAX_MEMORY_USAGE_INVALID",
                         Message = "Max memory usage must be greater than 0",
                         FieldPath = "resources.maxMemoryUsageBytes",
-                        Severity = Nexo.Feature.AI.Interfaces.ValidationSeverity.Error
+                        Severity = Feature.AI.Interfaces.ValidationSeverity.Error
                     });
                     result.IsValid = false;
                 }
@@ -349,33 +397,45 @@ namespace Nexo.Infrastructure.Services.AI
             return result;
         }
 
-        public async Task<AIConfiguration> MergeAsync(IEnumerable<AIConfiguration> configurations, CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Merges multiple AIConfiguration objects into a single configuration.
+        /// If the configurations list is empty, returns a default configuration.
+        /// If the configurations list is not empty, returns the last configuration in the list.
+        /// </summary>
+        /// <param name="configurations">A collection of AIConfiguration objects to merge.</param>
+        /// <returns>An AIConfiguration object representing the merged result.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the configurations parameter is null.</exception>
+        public async Task<AiConfiguration> MergeAsync(IEnumerable<AiConfiguration> configurations)
         {
-            if (configurations == null)
+            if (configurations != null)
             {
-                throw new ArgumentNullException(nameof(configurations));
+                _logger.LogInformation("Merging AI configurations");
+                await Task.CompletedTask;
+
+                var configList = configurations.ToList();
+                return !configList.Any() ? GetDefaultConfiguration(AiMode.Development) :
+                    // For now, return the last configuration
+                    // In a real implementation, this would merge all configurations
+                    configList.Last();
             }
-            
-            _logger.LogInformation("Merging AI configurations");
-            await Task.CompletedTask;
-            
-            var configList = configurations.ToList();
-            if (!configList.Any())
-            {
-                return GetDefaultConfiguration(AIMode.Development);
-            }
-            
-            // For now, return the last configuration
-            // In a real implementation, this would merge all configurations
-            return configList.Last();
+
+            throw new ArgumentNullException(nameof(configurations));
         }
 
+        /// <summary>
+        /// Retrieves the path of the AI configuration file.
+        /// </summary>
+        /// <returns>The path to the AI configuration file as a string.</returns>
         public string GetConfigurationPath()
         {
             return "ai-config.json";
         }
 
-        public async Task<bool> ExistsAsync(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Checks whether the AI configuration exists.
+        /// </summary>
+        /// <returns>A Task that represents the asynchronous operation, containing a boolean indicating whether the configuration exists.</returns>
+        public async Task<bool> ExistsAsync()
         {
             _logger.LogInformation("Checking if AI configuration exists");
             await Task.CompletedTask;
@@ -385,7 +445,11 @@ namespace Nexo.Infrastructure.Services.AI
             return true;
         }
 
-        public async Task<AIConfiguration> ReloadAsync(CancellationToken cancellationToken = default)
+        /// <summary>
+        /// Reloads the AI configuration, potentially refreshing it from the source such as a file or database.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous reload operation. The task result contains the reloaded <see cref="AiConfiguration"/>.</returns>
+        public async Task<AiConfiguration> ReloadAsync()
         {
             _logger.LogInformation("Reloading AI configuration");
             await Task.CompletedTask;

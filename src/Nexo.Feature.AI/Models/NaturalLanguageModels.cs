@@ -18,7 +18,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Extracted feature requirements.
         /// </summary>
-        public List<FeatureRequirement> Requirements { get; set; } = new List<FeatureRequirement>();
+        public List<FeatureRequirement> Requirements { get; set; } = [];
 
         /// <summary>
         /// Processing confidence score (0.0 to 1.0).
@@ -28,17 +28,17 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Processing warnings and issues.
         /// </summary>
-        public List<string> Warnings { get; set; } = new List<string>();
+        public List<string> Warnings { get; set; } = [];
 
         /// <summary>
         /// Processing errors.
         /// </summary>
-        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> Errors { get; set; } = [];
 
         /// <summary>
         /// Processing metadata and context.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -46,6 +46,11 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class FeatureRequirement
     {
+        public FeatureRequirement(RequirementStatus status)
+        {
+            Status = status;
+        }
+
         /// <summary>
         /// Unique identifier for the requirement.
         /// </summary>
@@ -94,47 +99,32 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// User stories associated with this requirement.
         /// </summary>
-        public List<UserStory> UserStories { get; set; } = new List<UserStory>();
+        public List<UserStory> UserStories { get; set; } = [];
 
         /// <summary>
         /// Acceptance criteria for the requirement.
         /// </summary>
-        public List<string> AcceptanceCriteria { get; set; } = new List<string>();
+        public List<string> AcceptanceCriteria { get; set; } = [];
 
         /// <summary>
         /// Business rules associated with the requirement.
         /// </summary>
-        public List<BusinessRule> BusinessRules { get; set; } = new List<BusinessRule>();
+        public List<BusinessRule> BusinessRules { get; set; } = [];
 
         /// <summary>
         /// Technical requirements and constraints.
         /// </summary>
-        public List<TechnicalRequirement> TechnicalRequirements { get; set; } = new List<TechnicalRequirement>();
+        public List<TechnicalRequirement> TechnicalRequirements { get; set; } = [];
 
         /// <summary>
         /// Integration points and dependencies.
         /// </summary>
-        public List<IntegrationPoint> IntegrationPoints { get; set; } = new List<IntegrationPoint>();
-
-        /// <summary>
-        /// Data models and entities involved.
-        /// </summary>
-        public List<DataModel> DataModels { get; set; } = new List<DataModel>();
-
-        /// <summary>
-        /// Workflows and process flows.
-        /// </summary>
-        public List<Workflow> Workflows { get; set; } = new List<Workflow>();
+        public List<IntegrationPoint> IntegrationPoints { get; set; } = [];
 
         /// <summary>
         /// Tags and categories for the requirement.
         /// </summary>
-        public List<string> Tags { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Stakeholders involved in this requirement.
-        /// </summary>
-        public List<string> Stakeholders { get; set; } = new List<string>();
+        public List<string> Tags { get; set; } = [];
 
         /// <summary>
         /// Creation timestamp.
@@ -150,16 +140,6 @@ namespace Nexo.Feature.AI.Models
         /// Status of the requirement.
         /// </summary>
         public RequirementStatus Status { get; set; }
-
-        /// <summary>
-        /// Dependencies of the requirement.
-        /// </summary>
-        public List<string> Dependencies { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Additional metadata for the requirement.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -167,35 +147,16 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class UserStory
     {
-        /// <summary>
-        /// Unique identifier for the user story.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public UserStory(RequirementPriority priority, int estimatedEffort)
+        {
+            Priority = priority;
+            EstimatedEffort = estimatedEffort;
+        }
 
         /// <summary>
         /// User story in the format "As a [role], I want [feature], so that [benefit]".
         /// </summary>
         public string Story { get; set; } = string.Empty;
-
-        /// <summary>
-        /// User role in the story.
-        /// </summary>
-        public string UserRole { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Desired feature or capability.
-        /// </summary>
-        public string Feature { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Expected benefit or outcome.
-        /// </summary>
-        public string Benefit { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Acceptance criteria for this user story.
-        /// </summary>
-        public List<string> AcceptanceCriteria { get; set; } = new List<string>();
 
         /// <summary>
         /// Priority of this user story.
@@ -264,30 +225,17 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class TechnicalRequirement
     {
-        /// <summary>
-        /// Unique identifier for the technical requirement.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// Name or title of the technical requirement.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Description of the technical requirement.
-        /// </summary>
-        public string Description { get; set; } = string.Empty;
+        public TechnicalRequirement(TechnicalRequirementType type, RequirementPriority priority, bool isMandatory)
+        {
+            Type = type;
+            Priority = priority;
+            IsMandatory = isMandatory;
+        }
 
         /// <summary>
         /// Type of technical requirement.
         /// </summary>
         public TechnicalRequirementType Type { get; set; }
-
-        /// <summary>
-        /// Technical specification or constraint.
-        /// </summary>
-        public string Specification { get; set; } = string.Empty;
 
         /// <summary>
         /// Priority of the technical requirement.
@@ -297,7 +245,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Whether the requirement is mandatory or optional.
         /// </summary>
-        public bool IsMandatory { get; set; } = true;
+        public bool IsMandatory { get; set; }
     }
 
     /// <summary>
@@ -305,20 +253,11 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class IntegrationPoint
     {
-        /// <summary>
-        /// Unique identifier for the integration point.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// Name or title of the integration point.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Description of the integration point.
-        /// </summary>
-        public string Description { get; set; } = string.Empty;
+        public IntegrationPoint(IntegrationType type, bool isRequired)
+        {
+            Type = type;
+            IsRequired = isRequired;
+        }
 
         /// <summary>
         /// Type of integration (API, database, service, etc.).
@@ -326,231 +265,9 @@ namespace Nexo.Feature.AI.Models
         public IntegrationType Type { get; set; }
 
         /// <summary>
-        /// Target system or service to integrate with.
-        /// </summary>
-        public string TargetSystem { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Integration protocol or method.
-        /// </summary>
-        public string Protocol { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Data format for the integration.
-        /// </summary>
-        public string DataFormat { get; set; } = string.Empty;
-
-        /// <summary>
         /// Whether the integration is required or optional.
         /// </summary>
-        public bool IsRequired { get; set; } = true;
-    }
-
-    /// <summary>
-    /// Data model associated with a feature requirement.
-    /// </summary>
-    public class DataModel
-    {
-        /// <summary>
-        /// Unique identifier for the data model.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// Name of the data model or entity.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Description of the data model.
-        /// </summary>
-        public string Description { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Type of data model (entity, value object, aggregate, etc.).
-        /// </summary>
-        public DataModelType Type { get; set; }
-
-        /// <summary>
-        /// Properties or fields of the data model.
-        /// </summary>
-        public List<DataProperty> Properties { get; set; } = new List<DataProperty>();
-
-        /// <summary>
-        /// Relationships with other data models.
-        /// </summary>
-        public List<DataRelationship> Relationships { get; set; } = new List<DataRelationship>();
-    }
-
-    /// <summary>
-    /// Property of a data model.
-    /// </summary>
-    public class DataProperty
-    {
-        /// <summary>
-        /// Name of the property.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Data type of the property.
-        /// </summary>
-        public string DataType { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Whether the property is required.
-        /// </summary>
         public bool IsRequired { get; set; }
-
-        /// <summary>
-        /// Default value for the property.
-        /// </summary>
-        public string DefaultValue { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Validation rules for the property.
-        /// </summary>
-        public List<string> ValidationRules { get; set; } = new List<string>();
-    }
-
-    /// <summary>
-    /// Relationship between data models.
-    /// </summary>
-    public class DataRelationship
-    {
-        /// <summary>
-        /// Name of the relationship.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Type of relationship (one-to-one, one-to-many, many-to-many).
-        /// </summary>
-        public RelationshipType Type { get; set; }
-
-        /// <summary>
-        /// Target data model for the relationship.
-        /// </summary>
-        public string TargetModel { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Whether the relationship is required.
-        /// </summary>
-        public bool IsRequired { get; set; }
-    }
-
-    /// <summary>
-    /// Workflow associated with a feature requirement.
-    /// </summary>
-    public class Workflow
-    {
-        /// <summary>
-        /// Unique identifier for the workflow.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// Name or title of the workflow.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Description of the workflow.
-        /// </summary>
-        public string Description { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Steps in the workflow.
-        /// </summary>
-        public List<RequirementWorkflowStep> Steps { get; set; } = new List<RequirementWorkflowStep>();
-
-        /// <summary>
-        /// Decision points in the workflow.
-        /// </summary>
-        public List<WorkflowDecision> Decisions { get; set; } = new List<WorkflowDecision>();
-    }
-
-    /// <summary>
-    /// Step in a requirement workflow.
-    /// </summary>
-    public class RequirementWorkflowStep
-    {
-        /// <summary>
-        /// Unique identifier for the step.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// Name or title of the step.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Description of what the step does.
-        /// </summary>
-        public string Description { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Order of the step in the workflow.
-        /// </summary>
-        public int Order { get; set; }
-
-        /// <summary>
-        /// Actor responsible for this step.
-        /// </summary>
-        public string Actor { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Whether the step is required or optional.
-        /// </summary>
-        public bool IsRequired { get; set; } = true;
-    }
-
-    /// <summary>
-    /// Decision point in a workflow.
-    /// </summary>
-    public class WorkflowDecision
-    {
-        /// <summary>
-        /// Unique identifier for the decision.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// Name or title of the decision.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Condition for the decision.
-        /// </summary>
-        public string Condition { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Possible outcomes of the decision.
-        /// </summary>
-        public List<DecisionOutcome> Outcomes { get; set; } = new List<DecisionOutcome>();
-    }
-
-    /// <summary>
-    /// Outcome of a workflow decision.
-    /// </summary>
-    public class DecisionOutcome
-    {
-        /// <summary>
-        /// Name of the outcome.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Condition for this outcome.
-        /// </summary>
-        public string Condition { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Next step or action for this outcome.
-        /// </summary>
-        public string NextAction { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -655,6 +372,11 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ExtractionResult
     {
+        public ExtractionResult(ExtractionType extractionType)
+        {
+            ExtractionType = extractionType;
+        }
+
         /// <summary>
         /// Whether the extraction was successful.
         /// </summary>
@@ -674,11 +396,6 @@ namespace Nexo.Feature.AI.Models
         /// Extraction confidence score (0.0 to 1.0).
         /// </summary>
         public double ConfidenceScore { get; set; }
-
-        /// <summary>
-        /// Extraction warnings and issues.
-        /// </summary>
-        public List<string> Warnings { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -686,30 +403,15 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ExtractedComponent
     {
-        /// <summary>
-        /// Type of the extracted component.
-        /// </summary>
-        public string Type { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Value or content of the component.
-        /// </summary>
-        public string Value { get; set; } = string.Empty;
+        public ExtractedComponent(double confidenceScore)
+        {
+            ConfidenceScore = confidenceScore;
+        }
 
         /// <summary>
         /// Confidence score for this component (0.0 to 1.0).
         /// </summary>
         public double ConfidenceScore { get; set; }
-
-        /// <summary>
-        /// Location or context where the component was found.
-        /// </summary>
-        public string Location { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Additional metadata for the component.
-        /// </summary>
-        public Dictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
     }
 
     /// <summary>
@@ -723,24 +425,14 @@ namespace Nexo.Feature.AI.Models
         public bool IsSuccess { get; set; }
 
         /// <summary>
-        /// Processed input with recognized terminology.
-        /// </summary>
-        public string ProcessedInput { get; set; } = string.Empty;
-
-        /// <summary>
         /// Recognized domain terms.
         /// </summary>
-        public List<DomainTerm> RecognizedTerms { get; set; } = new List<DomainTerm>();
+        public List<DomainTerm> RecognizedTerms { get; set; } = [];
 
         /// <summary>
         /// Unrecognized terms that may need attention.
         /// </summary>
-        public List<string> UnrecognizedTerms { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Domain-specific suggestions and recommendations.
-        /// </summary>
-        public List<string> Suggestions { get; set; } = new List<string>();
+        public List<string> UnrecognizedTerms { get; set; } = [];
     }
 
     /// <summary>
@@ -748,30 +440,15 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class DomainTerm
     {
-        /// <summary>
-        /// The term itself.
-        /// </summary>
-        public string Term { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Definition or meaning of the term.
-        /// </summary>
-        public string Definition { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Category or type of the term.
-        /// </summary>
-        public string Category { get; set; } = string.Empty;
+        public DomainTerm(double confidenceScore)
+        {
+            ConfidenceScore = confidenceScore;
+        }
 
         /// <summary>
         /// Confidence score for the term recognition (0.0 to 1.0).
         /// </summary>
         public double ConfidenceScore { get; set; }
-
-        /// <summary>
-        /// Synonyms or related terms.
-        /// </summary>
-        public List<string> Synonyms { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -787,17 +464,17 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Categorized and prioritized requirements.
         /// </summary>
-        public List<PrioritizedRequirement> PrioritizedRequirements { get; set; } = new List<PrioritizedRequirement>();
+        public List<PrioritizedRequirement> PrioritizedRequirements { get; set; } = [];
 
         /// <summary>
         /// Categories used for organization.
         /// </summary>
-        public List<RequirementCategory> Categories { get; set; } = new List<RequirementCategory>();
+        public List<RequirementCategory> Categories { get; set; } = [];
 
         /// <summary>
         /// Prioritization metrics and scores.
         /// </summary>
-        public PrioritizationMetrics Metrics { get; set; } = new PrioritizationMetrics();
+        public PrioritizationMetrics Metrics { get; set; } = new();
     }
 
     /// <summary>
@@ -960,26 +637,6 @@ namespace Nexo.Feature.AI.Models
         Functional,
 
         /// <summary>
-        /// Non-functional requirement.
-        /// </summary>
-        NonFunctional,
-
-        /// <summary>
-        /// User interface requirement.
-        /// </summary>
-        UserInterface,
-
-        /// <summary>
-        /// Data requirement.
-        /// </summary>
-        Data,
-
-        /// <summary>
-        /// Integration requirement.
-        /// </summary>
-        Integration,
-
-        /// <summary>
         /// Security requirement.
         /// </summary>
         Security,
@@ -987,22 +644,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Performance requirement.
         /// </summary>
-        Performance,
-
-        /// <summary>
-        /// Usability requirement.
-        /// </summary>
-        Usability,
-
-        /// <summary>
-        /// Maintainability requirement.
-        /// </summary>
-        Maintainability,
-
-        /// <summary>
-        /// Compliance requirement.
-        /// </summary>
-        Compliance
+        Performance
     }
 
     /// <summary>
@@ -1028,12 +670,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Low priority.
         /// </summary>
-        Low,
-
-        /// <summary>
-        /// Nice to have.
-        /// </summary>
-        NiceToHave
+        Low
     }
 
     /// <summary>
@@ -1041,45 +678,6 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public enum TechnicalRequirementType
     {
-        /// <summary>
-        /// Performance requirement.
-        /// </summary>
-        Performance,
-
-        /// <summary>
-        /// Security requirement.
-        /// </summary>
-        Security,
-
-        /// <summary>
-        /// Scalability requirement.
-        /// </summary>
-        Scalability,
-
-        /// <summary>
-        /// Reliability requirement.
-        /// </summary>
-        Reliability,
-
-        /// <summary>
-        /// Compatibility requirement.
-        /// </summary>
-        Compatibility,
-
-        /// <summary>
-        /// Usability requirement.
-        /// </summary>
-        Usability,
-
-        /// <summary>
-        /// Maintainability requirement.
-        /// </summary>
-        Maintainability,
-
-        /// <summary>
-        /// Portability requirement.
-        /// </summary>
-        Portability
     }
 
     /// <summary>
@@ -1087,107 +685,6 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public enum IntegrationType
     {
-        /// <summary>
-        /// API integration.
-        /// </summary>
-        API,
-
-        /// <summary>
-        /// Database integration.
-        /// </summary>
-        Database,
-
-        /// <summary>
-        /// Service integration.
-        /// </summary>
-        Service,
-
-        /// <summary>
-        /// File system integration.
-        /// </summary>
-        FileSystem,
-
-        /// <summary>
-        /// Message queue integration.
-        /// </summary>
-        MessageQueue,
-
-        /// <summary>
-        /// Event-driven integration.
-        /// </summary>
-        EventDriven,
-
-        /// <summary>
-        /// Batch processing integration.
-        /// </summary>
-        BatchProcessing
-    }
-
-    /// <summary>
-    /// Types of data models.
-    /// </summary>
-    public enum DataModelType
-    {
-        /// <summary>
-        /// Entity data model.
-        /// </summary>
-        Entity,
-
-        /// <summary>
-        /// Value object data model.
-        /// </summary>
-        ValueObject,
-
-        /// <summary>
-        /// Aggregate data model.
-        /// </summary>
-        Aggregate,
-
-        /// <summary>
-        /// Service data model.
-        /// </summary>
-        Service,
-
-        /// <summary>
-        /// Repository data model.
-        /// </summary>
-        Repository,
-
-        /// <summary>
-        /// Factory data model.
-        /// </summary>
-        Factory,
-
-        /// <summary>
-        /// Specification data model.
-        /// </summary>
-        Specification
-    }
-
-    /// <summary>
-    /// Types of relationships between data models.
-    /// </summary>
-    public enum RelationshipType
-    {
-        /// <summary>
-        /// One-to-one relationship.
-        /// </summary>
-        OneToOne,
-
-        /// <summary>
-        /// One-to-many relationship.
-        /// </summary>
-        OneToMany,
-
-        /// <summary>
-        /// Many-to-one relationship.
-        /// </summary>
-        ManyToOne,
-
-        /// <summary>
-        /// Many-to-many relationship.
-        /// </summary>
-        ManyToMany
     }
 
     /// <summary>
@@ -1201,11 +698,6 @@ namespace Nexo.Feature.AI.Models
         MissingRequiredField,
 
         /// <summary>
-        /// Ambiguous or unclear description.
-        /// </summary>
-        AmbiguousDescription,
-
-        /// <summary>
         /// Incomplete information.
         /// </summary>
         IncompleteInformation,
@@ -1216,24 +708,9 @@ namespace Nexo.Feature.AI.Models
         InconsistentTerminology,
 
         /// <summary>
-        /// Unclear acceptance criteria.
-        /// </summary>
-        UnclearAcceptanceCriteria,
-
-        /// <summary>
         /// Missing business rules.
         /// </summary>
-        MissingBusinessRules,
-
-        /// <summary>
-        /// Unclear technical requirements.
-        /// </summary>
-        UnclearTechnicalRequirements,
-
-        /// <summary>
-        /// Missing integration points.
-        /// </summary>
-        MissingIntegrationPoints
+        MissingBusinessRules
     }
 
     /// <summary>
@@ -1302,12 +779,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Domain-specific recommendations.
         /// </summary>
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> Recommendations { get; set; } = [];
 
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -1384,7 +861,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Related domain terms or concepts.
         /// </summary>
-        public List<string> RelatedConcepts { get; set; } = new List<string>();
+        public List<string> RelatedConcepts { get; set; } = [];
     }
 
     /// <summary>
@@ -1451,7 +928,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Business terminology suggestions.
         /// </summary>
-        public List<string> Suggestions { get; set; } = new List<string>();
+        public List<string> Suggestions { get; set; } = [];
 
         /// <summary>
         /// Confidence score for terminology recognition (0.0 to 1.0).
@@ -1461,7 +938,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -1497,12 +974,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Business synonyms or related terms.
         /// </summary>
-        public List<string> Synonyms { get; set; } = new List<string>();
+        public List<string> Synonyms { get; set; } = [];
 
         /// <summary>
         /// Business rules associated with the term.
         /// </summary>
-        public List<string> AssociatedRules { get; set; } = new List<string>();
+        public List<string> AssociatedRules { get; set; } = [];
     }
 
     /// <summary>
@@ -1518,12 +995,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Identified industry patterns.
         /// </summary>
-        public List<IndustryPattern> IdentifiedPatterns { get; set; } = new List<IndustryPattern>();
+        public List<IndustryPattern> IdentifiedPatterns { get; set; } = [];
 
         /// <summary>
         /// Industry-specific recommendations.
         /// </summary>
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> Recommendations { get; set; } = [];
 
         /// <summary>
         /// Confidence score for pattern recognition (0.0 to 1.0).
@@ -1533,7 +1010,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -1574,12 +1051,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Pattern implementation guidelines.
         /// </summary>
-        public List<string> Guidelines { get; set; } = new List<string>();
+        public List<string> Guidelines { get; set; } = [];
 
         /// <summary>
         /// Related patterns.
         /// </summary>
-        public List<string> RelatedPatterns { get; set; } = new List<string>();
+        public List<string> RelatedPatterns { get; set; } = [];
     }
 
     /// <summary>
@@ -1600,12 +1077,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Applied domain knowledge.
         /// </summary>
-        public List<DomainKnowledge> AppliedKnowledge { get; set; } = new List<DomainKnowledge>();
+        public List<DomainKnowledge> AppliedKnowledge { get; set; } = [];
 
         /// <summary>
         /// Knowledge gaps identified.
         /// </summary>
-        public List<string> KnowledgeGaps { get; set; } = new List<string>();
+        public List<string> KnowledgeGaps { get; set; } = [];
 
         /// <summary>
         /// Confidence score for knowledge integration (0.0 to 1.0).
@@ -1615,7 +1092,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -1656,7 +1133,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Related concepts or terms.
         /// </summary>
-        public List<string> RelatedConcepts { get; set; } = new List<string>();
+        public List<string> RelatedConcepts { get; set; } = [];
     }
 
     /// <summary>
@@ -1677,12 +1154,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Validation issues found.
         /// </summary>
-        public List<DomainValidationIssue> Issues { get; set; } = new List<DomainValidationIssue>();
+        public List<DomainValidationIssue> Issues { get; set; } = [];
 
         /// <summary>
         /// Domain-specific recommendations.
         /// </summary>
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> Recommendations { get; set; } = [];
 
         /// <summary>
         /// Overall validation score (0.0 to 1.0).
@@ -1692,7 +1169,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -1749,7 +1226,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Improvement suggestions for requirements.
         /// </summary>
-        public List<DomainImprovement> Improvements { get; set; } = new List<DomainImprovement>();
+        public List<DomainImprovement> Improvements { get; set; } = [];
 
         /// <summary>
         /// Overall improvement score (0.0 to 1.0).
@@ -1759,12 +1236,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Domain-specific best practices.
         /// </summary>
-        public List<string> BestPractices { get; set; } = new List<string>();
+        public List<string> BestPractices { get; set; } = [];
 
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -1810,7 +1287,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Related domain concepts.
         /// </summary>
-        public List<string> RelatedConcepts { get; set; } = new List<string>();
+        public List<string> RelatedConcepts { get; set; } = [];
     }
 
     /// <summary>
@@ -1832,11 +1309,6 @@ namespace Nexo.Feature.AI.Models
         /// Business context.
         /// </summary>
         public string BusinessContext { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Processing options.
-        /// </summary>
-        public Dictionary<string, string> Options { get; set; } = new Dictionary<string, string>();
     }
 
     /// <summary>
@@ -1852,32 +1324,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Regulatory compliance insight.
         /// </summary>
-        RegulatoryCompliance,
-
-        /// <summary>
-        /// Technical constraint insight.
-        /// </summary>
-        TechnicalConstraint,
-
-        /// <summary>
-        /// Stakeholder requirement insight.
-        /// </summary>
-        StakeholderRequirement,
-
-        /// <summary>
-        /// Industry best practice insight.
-        /// </summary>
-        IndustryBestPractice,
-
-        /// <summary>
-        /// Risk assessment insight.
-        /// </summary>
-        RiskAssessment,
-
-        /// <summary>
-        /// Opportunity identification insight.
-        /// </summary>
-        OpportunityIdentification
+        RegulatoryCompliance
     }
 
     /// <summary>
@@ -1898,17 +1345,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Medium impact.
         /// </summary>
-        Medium,
-
-        /// <summary>
-        /// Low impact.
-        /// </summary>
-        Low,
-
-        /// <summary>
-        /// Minimal impact.
-        /// </summary>
-        Minimal
+        Medium
     }
 
     /// <summary>
@@ -1917,44 +1354,9 @@ namespace Nexo.Feature.AI.Models
     public enum PatternCategory
     {
         /// <summary>
-        /// Business process pattern.
-        /// </summary>
-        BusinessProcess,
-
-        /// <summary>
-        /// Data management pattern.
-        /// </summary>
-        DataManagement,
-
-        /// <summary>
-        /// Integration pattern.
-        /// </summary>
-        Integration,
-
-        /// <summary>
         /// Security pattern.
         /// </summary>
-        Security,
-
-        /// <summary>
-        /// Compliance pattern.
-        /// </summary>
-        Compliance,
-
-        /// <summary>
-        /// User experience pattern.
-        /// </summary>
-        UserExperience,
-
-        /// <summary>
-        /// Performance pattern.
-        /// </summary>
-        Performance,
-
-        /// <summary>
-        /// Scalability pattern.
-        /// </summary>
-        Scalability
+        Security
     }
 
     /// <summary>
@@ -1963,44 +1365,9 @@ namespace Nexo.Feature.AI.Models
     public enum DomainValidationIssueType
     {
         /// <summary>
-        /// Missing domain-specific requirement.
-        /// </summary>
-        MissingDomainRequirement,
-
-        /// <summary>
-        /// Violation of domain rule.
-        /// </summary>
-        DomainRuleViolation,
-
-        /// <summary>
-        /// Inconsistent terminology.
-        /// </summary>
-        InconsistentTerminology,
-
-        /// <summary>
-        /// Missing compliance requirement.
-        /// </summary>
-        MissingComplianceRequirement,
-
-        /// <summary>
         /// Inadequate business context.
         /// </summary>
-        InadequateBusinessContext,
-
-        /// <summary>
-        /// Missing stakeholder consideration.
-        /// </summary>
-        MissingStakeholderConsideration,
-
-        /// <summary>
-        /// Inappropriate technical approach.
-        /// </summary>
-        InappropriateTechnicalApproach,
-
-        /// <summary>
-        /// Missing industry best practice.
-        /// </summary>
-        MissingIndustryBestPractice
+        InadequateBusinessContext
     }
 
     /// <summary>
@@ -2011,41 +1378,6 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Terminology improvement.
         /// </summary>
-        Terminology,
-
-        /// <summary>
-        /// Business rule improvement.
-        /// </summary>
-        BusinessRule,
-
-        /// <summary>
-        /// Compliance improvement.
-        /// </summary>
-        Compliance,
-
-        /// <summary>
-        /// Process improvement.
-        /// </summary>
-        Process,
-
-        /// <summary>
-        /// Technical improvement.
-        /// </summary>
-        Technical,
-
-        /// <summary>
-        /// User experience improvement.
-        /// </summary>
-        UserExperience,
-
-        /// <summary>
-        /// Performance improvement.
-        /// </summary>
-        Performance,
-
-        /// <summary>
-        /// Security improvement.
-        /// </summary>
-        Security
+        Terminology
     }
 }

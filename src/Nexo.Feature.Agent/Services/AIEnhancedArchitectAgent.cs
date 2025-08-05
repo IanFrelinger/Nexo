@@ -1,13 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Interfaces;
 using Nexo.Feature.AI.Interfaces;
-using Nexo.Core.Application.Models;
-using Nexo.Core.Domain.Entities;
-using Nexo.Core.Domain.Enums;
 using Nexo.Core.Domain.ValueObjects;
 using Nexo.Feature.Agent.Interfaces;
 using Nexo.Feature.AI.Models;
@@ -17,13 +12,24 @@ using Nexo.Feature.Agent.Models;
 namespace Nexo.Feature.Agent.Services
 {
     /// <summary>
-    /// AI-enhanced architect agent with specialized capabilities for architectural tasks.
+    /// Represents an AI-enhanced agent with a focus on architectural tasks,
+    /// inheriting foundational functionalities from the BaseAIEnhancedAgent class.
     /// </summary>
-    public class AIEnhancedArchitectAgent : BaseAIEnhancedAgent
+    public class AiEnhancedArchitectAgent : BaseAiEnhancedAgent
     {
-        public AIEnhancedArchitectAgent(
+        /// <summary>
+        /// Represents an AI-enhanced agent specializing in architectural disciplines. This agent focuses on
+        /// designing and optimizing various system architectures while leveraging its AI-driven analytical capabilities.
+        /// </summary>
+        /// <remarks>
+        /// The AI-Enhanced Architect Agent extends the functionality of the BaseAIEnhancedAgent class
+        /// by incorporating specific capabilities and focus areas related to system, solution, and enterprise architecture.
+        /// It is designed to perform tasks that require architectural expertise and provide AI-powered insights
+        /// for tasks such as code analysis, problem-solving, and process optimization.
+        /// </remarks>
+        public AiEnhancedArchitectAgent(
             IModelOrchestrator modelOrchestrator,
-            ILogger<AIEnhancedArchitectAgent> logger)
+            ILogger<AiEnhancedArchitectAgent> logger)
             : base(
                 new AgentId(Guid.NewGuid().ToString()),
                 new AgentName("AI-Enhanced Architect Agent"),
@@ -65,18 +71,24 @@ namespace Nexo.Feature.Agent.Services
             });
 
             // Configure AI capabilities
-            AICapabilities.CanAnalyzeCode = true;
-            AICapabilities.CanGenerateCode = false; // Architects focus on design, not implementation
-            AICapabilities.CanAnalyzeTasks = true;
-            AICapabilities.CanProvideSuggestions = true;
-            AICapabilities.CanSolveProblems = true;
-            AICapabilities.PreferredModel = "gpt-4";
-            AICapabilities.ProcessingStrategy = AIProcessingStrategy.Advanced;
+            AiCapabilities.CanAnalyzeCode = true;
+            AiCapabilities.CanGenerateCode = false; // Architects focus on design, not implementation
+            AiCapabilities.CanAnalyzeTasks = true;
+            AiCapabilities.CanProvideSuggestions = true;
+            AiCapabilities.CanSolveProblems = true;
+            AiCapabilities.PreferredModel = "gpt-4";
+            AiCapabilities.ProcessingStrategy = AiProcessingStrategy.Advanced;
         }
 
+        /// <summary>
+        /// Processes an incoming architecture-related agent request asynchronously based on its specified type.
+        /// </summary>
+        /// <param name="request">The agent request containing details about the operation to process.</param>
+        /// <param name="ct">A cancellation token that can be used to observe the request's cancellation status and handle operation termination.</param>
+        /// <returns>A task that represents the asynchronous processing operation. The task result contains the agent response encapsulating the outcome of the request.</returns>
         protected override async Task<AgentResponse> ProcessRequestInternalAsync(AgentRequest request, CancellationToken ct)
         {
-            _logger.LogInformation("Processing architect request: {RequestType}", request.Type);
+            Logger.LogInformation("Processing architect request: {RequestType}", request.Type);
 
             switch (request.Type)
             {
@@ -96,23 +108,43 @@ namespace Nexo.Feature.Agent.Services
                     return await HandlePerformanceAnalysisAsync(request, ct);
                 case AgentRequestType.TestCreation:
                     return await HandleMigrationStrategyAsync(request, ct);
+                case AgentRequestType.General:
+                case AgentRequestType.CodeReview:
+                case AgentRequestType.Communication:
                 default:
-                    return await HandleGenericRequestAsync(request, ct);
+                    return await HandleGenericRequestAsync(request);
             }
         }
 
+        /// <summary>
+        /// Executes logic to be performed when the agent starts. This is called during the agent's initialization phase.
+        /// </summary>
+        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         protected override async Task OnStartedAsync(CancellationToken ct)
         {
-            _logger.LogInformation("AI-Enhanced Architect Agent started");
+            Logger.LogInformation("AI-Enhanced Architect Agent started");
             await Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Executes cleanup and finalization logic when the AI agent is stopped.
+        /// </summary>
+        /// <param name="ct">The cancellation token used for propagating notifications that the operation should be canceled.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         protected override async Task OnStoppedAsync(CancellationToken ct)
         {
-            _logger.LogInformation("AI-Enhanced Architect Agent stopped");
+            Logger.LogInformation("AI-Enhanced Architect Agent stopped");
             await Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Handles the architecture review process by evaluating the provided architecture diagram or system description
+        /// and generating a response based on the assessment.
+        /// </summary>
+        /// <param name="request">The request object containing the context for the architecture review.</param>
+        /// <param name="ct">A token to observe while waiting for the task to complete.</param>
+        /// <returns>An <see cref="AgentResponse"/> object containing the result of the architecture review.</returns>
         private async Task<AgentResponse> HandleArchitectureReviewAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -121,24 +153,28 @@ namespace Nexo.Feature.Agent.Services
                 Content = "Architecture review completed"
             };
 
-            if (request.Context?.ContainsKey("architecture_diagram") == true ||
-                request.Context?.ContainsKey("system_description") == true)
-            {
-                var architectureInfo = request.Context.ContainsKey("architecture_diagram")
-                    ? request.Context["architecture_diagram"].ToString()
-                    : request.Context["system_description"].ToString();
+            if (request.Context?.ContainsKey("architecture_diagram") != true &&
+                request.Context?.ContainsKey("system_description") != true) return response;
+            var architectureInfo = request.Context.TryGetValue("architecture_diagram", out var value)
+                ? value.ToString()
+                : request.Context["system_description"].ToString();
                 
-                var reviewResult = await PerformArchitectureReviewAsync(architectureInfo, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = reviewResult
-                };
-            }
+            var reviewResult = await PerformArchitectureReviewAsync(architectureInfo, ct);
+            response = new AgentResponse
+            {
+                Success = true,
+                Content = reviewResult
+            };
 
             return response;
         }
 
+        /// <summary>
+        /// Processes a system design request based on the provided requirements and context.
+        /// </summary>
+        /// <param name="request">The agent request containing requirements and context for the system design.</param>
+        /// <param name="ct">A cancellation token to cancel the operation if necessary.</param>
+        /// <returns>A <see cref="AgentResponse"/> containing the outcome of the system design process.</returns>
         private async Task<AgentResponse> HandleSystemDesignAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -147,20 +183,30 @@ namespace Nexo.Feature.Agent.Services
                 Content = "System design completed"
             };
 
-            if (request.Context?.ContainsKey("requirements") == true)
+            if (request.Context == null || !request.Context.TryGetValue("requirements", out var value)) return response;
+            var requirements = value.ToString();
+            var systemDesign = await GenerateSystemDesignAsync(requirements, ct);
+            response = new AgentResponse
             {
-                var requirements = request.Context["requirements"].ToString();
-                var systemDesign = await GenerateSystemDesignAsync(requirements, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = systemDesign
-                };
-            }
+                Success = true,
+                Content = systemDesign
+            };
 
             return response;
         }
 
+        /// <summary>
+        /// Handles the process of selecting a suitable technology based on specified requirements and constraints.
+        /// </summary>
+        /// <param name="request">
+        /// The agent request containing the context information with requirements and constraints for technology selection.
+        /// </param>
+        /// <param name="ct">
+        /// A cancellation token to observe while waiting for the task to complete.
+        /// </param>
+        /// <returns>
+        /// An asynchronous task that returns an <see cref="AgentResponse"/> containing the results of the technology selection process.
+        /// </returns>
         private async Task<AgentResponse> HandleTechnologySelectionAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -169,22 +215,27 @@ namespace Nexo.Feature.Agent.Services
                 Content = "Technology selection analysis completed"
             };
 
-            if (request.Context?.ContainsKey("requirements") == true &&
-                request.Context?.ContainsKey("constraints") == true)
+            if (request.Context?.ContainsKey("requirements") != true ||
+                (request.Context == null || !request.Context.TryGetValue("constraints", out var value)))
+                return response;
+            var requirements = request.Context["requirements"].ToString();
+            var constraints = value.ToString();
+            var technologyRecommendations = await AnalyzeTechnologyOptionsAsync(requirements, constraints, ct);
+            response = new AgentResponse
             {
-                var requirements = request.Context["requirements"].ToString();
-                var constraints = request.Context["constraints"].ToString();
-                var technologyRecommendations = await AnalyzeTechnologyOptionsAsync(requirements, constraints, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = technologyRecommendations
-                };
-            }
+                Success = true,
+                Content = technologyRecommendations
+            };
 
             return response;
         }
 
+        /// <summary>
+        /// Handles the scalability analysis process based on the provided request and context.
+        /// </summary>
+        /// <param name="request">The agent request containing context and details required for scalability analysis.</param>
+        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A task representing the asynchronous operation that returns an <see cref="AgentResponse"/> indicating the success and result of the scalability analysis.</returns>
         private async Task<AgentResponse> HandleScalabilityAnalysisAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -193,22 +244,27 @@ namespace Nexo.Feature.Agent.Services
                 Content = "Scalability analysis completed"
             };
 
-            if (request.Context?.ContainsKey("current_architecture") == true &&
-                request.Context?.ContainsKey("scaling_requirements") == true)
+            if (request.Context?.ContainsKey("current_architecture") != true ||
+                (request.Context == null || !request.Context.TryGetValue("scaling_requirements", out var value)))
+                return response;
+            var currentArchitecture = request.Context["current_architecture"].ToString();
+            var scalingRequirements = value.ToString();
+            var scalabilityAnalysis = await AnalyzeScalabilityAsync(currentArchitecture, scalingRequirements, ct);
+            response = new AgentResponse
             {
-                var currentArchitecture = request.Context["current_architecture"].ToString();
-                var scalingRequirements = request.Context["scaling_requirements"].ToString();
-                var scalabilityAnalysis = await AnalyzeScalabilityAsync(currentArchitecture, scalingRequirements, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = scalabilityAnalysis
-                };
-            }
+                Success = true,
+                Content = scalabilityAnalysis
+            };
 
             return response;
         }
 
+        /// <summary>
+        /// Handles the security analysis of a given system architecture based on the agent's request context.
+        /// </summary>
+        /// <param name="request">The agent request containing the context information needed for security analysis.</param>
+        /// <param name="ct">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains an <see cref="AgentResponse"/> with the outcome of the security analysis.</returns>
         private async Task<AgentResponse> HandleSecurityAnalysisAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -217,20 +273,33 @@ namespace Nexo.Feature.Agent.Services
                 Content = "Security analysis completed"
             };
 
-            if (request.Context?.ContainsKey("system_architecture") == true)
+            if (request.Context == null || !request.Context.TryGetValue("system_architecture", out var value))
+                return response;
+            var systemArchitecture = value.ToString();
+            var securityAnalysis = await PerformSecurityAnalysisAsync(systemArchitecture, ct);
+            response = new AgentResponse
             {
-                var systemArchitecture = request.Context["system_architecture"].ToString();
-                var securityAnalysis = await PerformSecurityAnalysisAsync(systemArchitecture, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = securityAnalysis
-                };
-            }
+                Success = true,
+                Content = securityAnalysis
+            };
 
             return response;
         }
 
+        /// <summary>
+        /// Handles the design and planning of system integrations based on the provided request context.
+        /// </summary>
+        /// <param name="request">
+        /// The agent request containing the context and data required for integration design. The context
+        /// should provide a key "systems_to_integrate" with a value specifying the systems requiring integration.
+        /// </param>
+        /// <param name="ct">
+        /// A CancellationToken to observe while waiting for the task to complete.
+        /// </param>
+        /// <returns>
+        /// A task that represents the asynchronous operation. The task result is an <see cref="AgentResponse"/>
+        /// containing the outcome of the integration design process and any relevant content.
+        /// </returns>
         private async Task<AgentResponse> HandleIntegrationDesignAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -239,20 +308,33 @@ namespace Nexo.Feature.Agent.Services
                 Content = "Integration design completed"
             };
 
-            if (request.Context?.ContainsKey("systems_to_integrate") == true)
+            if (request.Context == null || !request.Context.TryGetValue("systems_to_integrate", out var value))
+                return response;
+            var systemsToIntegrate = value.ToString();
+            var integrationDesign = await DesignIntegrationAsync(systemsToIntegrate, ct);
+            response = new AgentResponse
             {
-                var systemsToIntegrate = request.Context["systems_to_integrate"].ToString();
-                var integrationDesign = await DesignIntegrationAsync(systemsToIntegrate, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = integrationDesign
-                };
-            }
+                Success = true,
+                Content = integrationDesign
+            };
 
             return response;
         }
 
+        /// <summary>
+        /// Handles the performance analysis of a system based on the provided architecture and performance requirements.
+        /// </summary>
+        /// <param name="request">
+        /// An <see cref="AgentRequest"/> object containing the context for the performance analysis, which may include
+        /// the system architecture and performance requirements.
+        /// </param>
+        /// <param name="ct">
+        /// A <see cref="CancellationToken"/> used to observe cancellation requests.
+        /// </param>
+        /// <returns>
+        /// An <see cref="AgentResponse"/> containing the result of the performance analysis. The response will
+        /// include a success status and the analysis content.
+        /// </returns>
         private async Task<AgentResponse> HandlePerformanceAnalysisAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -261,22 +343,27 @@ namespace Nexo.Feature.Agent.Services
                 Content = "Performance analysis completed"
             };
 
-            if (request.Context?.ContainsKey("system_architecture") == true &&
-                request.Context?.ContainsKey("performance_requirements") == true)
+            if (request.Context?.ContainsKey("system_architecture") != true ||
+                (request.Context == null || !request.Context.TryGetValue("performance_requirements", out var value)))
+                return response;
+            var systemArchitecture = request.Context["system_architecture"].ToString();
+            var performanceRequirements = value.ToString();
+            var performanceAnalysis = await AnalyzePerformanceAsync(systemArchitecture, performanceRequirements, ct);
+            response = new AgentResponse
             {
-                var systemArchitecture = request.Context["system_architecture"].ToString();
-                var performanceRequirements = request.Context["performance_requirements"].ToString();
-                var performanceAnalysis = await AnalyzePerformanceAsync(systemArchitecture, performanceRequirements, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = performanceAnalysis
-                };
-            }
+                Success = true,
+                Content = performanceAnalysis
+            };
 
             return response;
         }
 
+        /// <summary>
+        /// Handles the migration strategy generation for transitioning between a current system and a target architecture.
+        /// </summary>
+        /// <param name="request">The agent request containing the contextual data, including the current system and target architecture.</param>
+        /// <param name="ct">The cancellation token for monitoring abortion of the asynchronous operation.</param>
+        /// <returns>An asynchronous task that resolves to an <see cref="AgentResponse"/>, containing success status and migration strategy details.</returns>
         private async Task<AgentResponse> HandleMigrationStrategyAsync(AgentRequest request, CancellationToken ct)
         {
             var response = new AgentResponse
@@ -285,31 +372,43 @@ namespace Nexo.Feature.Agent.Services
                 Content = "Migration strategy completed"
             };
 
-            if (request.Context?.ContainsKey("current_system") == true &&
-                request.Context?.ContainsKey("target_architecture") == true)
+            if (request.Context?.ContainsKey("current_system") != true ||
+                (request.Context == null || !request.Context.TryGetValue("target_architecture", out var value)))
+                return response;
+            var currentSystem = request.Context["current_system"].ToString();
+            var targetArchitecture = value.ToString();
+            var migrationStrategy = await GenerateMigrationStrategyAsync(currentSystem, targetArchitecture, ct);
+            response = new AgentResponse
             {
-                var currentSystem = request.Context["current_system"].ToString();
-                var targetArchitecture = request.Context["target_architecture"].ToString();
-                var migrationStrategy = await GenerateMigrationStrategyAsync(currentSystem, targetArchitecture, ct);
-                response = new AgentResponse
-                {
-                    Success = true,
-                    Content = migrationStrategy
-                };
-            }
+                Success = true,
+                Content = migrationStrategy
+            };
 
             return response;
         }
 
-        private async Task<AgentResponse> HandleGenericRequestAsync(AgentRequest request, CancellationToken ct)
+        /// <summary>
+        /// Handles a general or undefined request and generates a default response.
+        /// </summary>
+        /// <param name="request">The request to be processed, containing the type and content of the request.</param>
+        /// <returns>A task representing the asynchronous operation, containing the response generated by the agent.</returns>
+        private Task<AgentResponse> HandleGenericRequestAsync(AgentRequest request)
         {
-            return new AgentResponse
+            return Task.FromResult(new AgentResponse
             {
                 Success = true,
                 Content = $"Architect agent processed request: {request.Content}"
-            };
+            });
         }
 
+        /// <summary>
+        /// Performs a comprehensive architecture review based on the provided architecture information.
+        /// Evaluates various aspects of the system architecture such as quality, design patterns, scalability,
+        /// security, performance, maintainability, technology stack, risks, and provides improvement recommendations.
+        /// </summary>
+        /// <param name="architectureInfo">The architectural information such as architecture diagram or system description to be reviewed.</param>
+        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A string containing the detailed results of the architecture review.</returns>
         private async Task<string> PerformArchitectureReviewAsync(string architectureInfo, CancellationToken ct)
         {
             var prompt = $@"Perform a comprehensive architecture review for the following system:
@@ -340,6 +439,20 @@ Focus on enterprise architecture best practices and modern architectural pattern
             return response.Content;
         }
 
+        /// <summary>
+        /// Generates a comprehensive system design architecture based on the provided requirements.
+        /// </summary>
+        /// <param name="requirements">
+        /// The detailed requirements for the system design. This should include all necessary specifications
+        /// to generate a robust architectural output.
+        /// </param>
+        /// <param name="ct">
+        /// A CancellationToken that can be used to cancel the operation.
+        /// </param>
+        /// <returns>
+        /// A string containing the generated system design, which includes high-level architecture,
+        /// component breakdown, technology stack recommendations, and other specified design considerations.
+        /// </returns>
         private async Task<string> GenerateSystemDesignAsync(string requirements, CancellationToken ct)
         {
             var prompt = $@"Design a comprehensive system architecture based on the following requirements:
@@ -371,6 +484,16 @@ Follow modern architectural patterns and best practices.";
             return response.Content;
         }
 
+        /// <summary>
+        /// Analyzes various technology options based on the provided requirements and constraints.
+        /// Generates recommendations considering factors such as technology stack, framework comparisons,
+        /// pros and cons analysis, risk assessment, cost, learning curve, community support, future-proofing,
+        /// and integration capabilities.
+        /// </summary>
+        /// <param name="requirements">The functional and non-functional requirements that guide the technology analysis.</param>
+        /// <param name="constraints">The constraints such as budget, time, or technical limitations to be considered during the analysis.</param>
+        /// <param name="ct">A CancellationToken to observe while waiting for the task to complete.</param>
+        /// <returns>A string containing detailed technology recommendations and insights based on the given parameters.</returns>
         private async Task<string> AnalyzeTechnologyOptionsAsync(string requirements, string constraints, CancellationToken ct)
         {
             var prompt = $@"Analyze technology options for the following requirements and constraints:
@@ -403,6 +526,17 @@ Consider enterprise-grade solutions and modern technology trends.";
             return response.Content;
         }
 
+        /// <summary>
+        /// Analyzes the scalability of a given architecture based on specified scaling requirements.
+        /// The method evaluates current scalability, identifies bottlenecks,
+        /// and provides recommendations for horizontal and vertical scaling,
+        /// load balancing, caching strategies, database scaling, and cloud-native patterns.
+        /// </summary>
+        /// <param name="currentArchitecture">The description or specification of the current architecture being analyzed.</param>
+        /// <param name="scalingRequirements">The specific scalability requirements or constraints for the analysis.</param>
+        /// <param name="ct">A CancellationToken that can be used to cancel the operation.</param>
+        /// <returns>A string containing a comprehensive analysis and recommendations
+        /// for improving the scalability of the given architecture.</returns>
         private async Task<string> AnalyzeScalabilityAsync(string currentArchitecture, string scalingRequirements, CancellationToken ct)
         {
             var prompt = $@"Analyze scalability for the following architecture and requirements:
@@ -435,6 +569,13 @@ Focus on practical, implementable solutions.";
             return response.Content;
         }
 
+        /// <summary>
+        /// Executes a security analysis for the provided system architecture by leveraging an AI model,
+        /// and returns a detailed analysis covering security aspects such as threats, vulnerabilities, compliance, and best practices.
+        /// </summary>
+        /// <param name="systemArchitecture">The architecture of the system to analyze, represented as a string.</param>
+        /// <param name="ct">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation, with the result being a string containing the security analysis.</returns>
         private async Task<string> PerformSecurityAnalysisAsync(string systemArchitecture, CancellationToken ct)
         {
             var prompt = $@"Perform a comprehensive security analysis for the following system architecture:
@@ -466,6 +607,15 @@ Follow security-by-design principles and industry standards.";
             return response.Content;
         }
 
+        /// <summary>
+        /// Designs an integration strategy for the specified systems based on modern integration patterns
+        /// and enterprise integration best practices. The strategy includes an array of considerations
+        /// such as integration architecture, API design, data synchronization, error handling,
+        /// and implementation phases.
+        /// </summary>
+        /// <param name="systemsToIntegrate">A string containing a list or description of systems to be integrated.</param>
+        /// <param name="ct">A <see cref="System.Threading.CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A task that represents the asynchronous operation, containing a string summarizing the integration design.</returns>
         private async Task<string> DesignIntegrationAsync(string systemsToIntegrate, CancellationToken ct)
         {
             var prompt = $@"Design an integration strategy for the following systems:
@@ -497,6 +647,16 @@ Consider modern integration patterns and enterprise integration best practices."
             return response.Content;
         }
 
+        /// <summary>
+        /// Analyzes the performance of a given system architecture based on specified performance requirements.
+        /// Provides a detailed report including bottleneck analysis, optimization strategies, caching recommendations,
+        /// database tuning, API performance considerations, frontend optimizations, infrastructure improvements,
+        /// monitoring strategies, load testing guidance, and SLA definitions.
+        /// </summary>
+        /// <param name="systemArchitecture">The architectural design of the system to be analyzed.</param>
+        /// <param name="performanceRequirements">The specific performance criteria or requirements that the analysis should address.</param>
+        /// <param name="ct">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>A string containing the detailed performance analysis report.</returns>
         private async Task<string> AnalyzePerformanceAsync(string systemArchitecture, string performanceRequirements, CancellationToken ct)
         {
             var prompt = $@"Analyze performance for the following system architecture and requirements:
@@ -529,6 +689,16 @@ Focus on measurable performance improvements.";
             return response.Content;
         }
 
+        /// <summary>
+        /// Asynchronously generates a migration strategy from the specified current system to the target architecture.
+        /// The generated strategy includes details such as approach, risk assessment, dependency analysis,
+        /// data migration strategy, testing strategy, rollback plan, timeline, resource requirements,
+        /// success criteria, and monitoring and validation steps.
+        /// </summary>
+        /// <param name="currentSystem">The name or description of the current system architecture.</param>
+        /// <param name="targetArchitecture">The name or description of the target architecture to migrate to.</param>
+        /// <param name="ct">The cancellation token to observe while waiting for the asynchronous operation to complete.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the generated migration strategy as a string.</returns>
         private async Task<string> GenerateMigrationStrategyAsync(string currentSystem, string targetArchitecture, CancellationToken ct)
         {
             var prompt = $@"Generate a migration strategy from the current system to the target architecture:

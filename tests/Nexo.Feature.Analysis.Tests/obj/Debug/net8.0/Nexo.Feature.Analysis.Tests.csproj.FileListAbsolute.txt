@@ -124,3 +124,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Analysis.Tests/obj/Debug/net8.0/Nexo.Feature.Analysis.Tests.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Analysis.Tests/obj/Debug/net8.0/Nexo.Feature.Analysis.Tests.genruntimeconfig.cache
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Analysis.Tests/obj/Debug/net8.0/ref/Nexo.Feature.Analysis.Tests.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Analysis.Tests/obj/Debug/net8.0/Nexo.Feature.Analysis.Tests.sourcelink.json

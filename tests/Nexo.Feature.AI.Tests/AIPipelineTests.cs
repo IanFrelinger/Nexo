@@ -73,9 +73,9 @@ public class AIPipelineTests
     {
         _logger.LogInformation("Starting AIMode enum validation");
         
-        Assert.True(Enum.IsDefined(typeof(AIMode), AIMode.Development));
-        Assert.True(Enum.IsDefined(typeof(AIMode), AIMode.Production));
-        Assert.True(Enum.IsDefined(typeof(AIMode), AIMode.AIHeavy));
+        Assert.True(Enum.IsDefined(typeof(AiMode), AiMode.Development));
+        Assert.True(Enum.IsDefined(typeof(AiMode), AiMode.Production));
+        Assert.True(Enum.IsDefined(typeof(AiMode), AiMode.AiHeavy));
         
         _logger.LogInformation("AIMode enum validation completed successfully");
     }

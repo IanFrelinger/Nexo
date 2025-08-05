@@ -16,32 +16,32 @@ namespace Nexo.Infrastructure.Services.Caching
 public class MemoryCacheAdapter : IDistributedCache
 {
     private readonly ILogger<MemoryCacheAdapter> _logger;
-    private readonly ConcurrentDictionary<string, CacheItem> _cache = new ConcurrentDictionary<string, CacheItem>();
+    private readonly ConcurrentDictionary<string, CacheItem> _cache = new();
     private readonly ICacheSerializer _serializer;
     private readonly ICacheEvictionPolicy _evictionPolicy;
-    private readonly SemaphoreSlim _cacheLock = new SemaphoreSlim(1, 1);
+    private readonly SemaphoreSlim _cacheLock = new(1, 1);
     private readonly Timer _cleanupTimer;
     private readonly long _maxSizeBytes;
     private readonly int _maxItems;
 
-    private readonly CacheStatistics _statistics = new CacheStatistics();
-    private long _currentSizeBytes = 0;
+    private readonly CacheStatistics _statistics = new();
+    private long _currentSizeBytes;
 
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _perKeyLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _perKeyLocks = new();
 
     public MemoryCacheAdapter(
         ILogger<MemoryCacheAdapter> logger,
         ICacheSerializer serializer,
-        ICacheEvictionPolicy evictionPolicy,
-        long maxSizeBytes = 100 * 1024 * 1024, // 100MB default
+        ICacheEvictionPolicy evictionPolicy, Timer cleanupTimer, long maxSizeBytes = 100 * 1024 * 1024, // 100MB default
         int maxItems = 10000)
     {
-        if (logger == null) throw new ArgumentNullException(nameof(logger));
-        if (serializer == null) serializer = new JsonCacheSerializer();
-        if (evictionPolicy == null) evictionPolicy = new LRUEvictionPolicy();
+            ArgumentNullException.ThrowIfNull(logger);
+            serializer ??= new JsonCacheSerializer();
+        evictionPolicy ??= new LruEvictionPolicy();
         _logger = logger;
         _serializer = serializer;
         _evictionPolicy = evictionPolicy;
+        _cleanupTimer = cleanupTimer;
         _maxSizeBytes = maxSizeBytes;
         _maxItems = maxItems;
 
@@ -75,8 +75,7 @@ public class MemoryCacheAdapter : IDistributedCache
                 _statistics.Hits++;
 
                 // Sliding expiration: update expiration on access
-                if (item.SlidingExpiration != null)
-                    item.ExpiresAt = DateTime.UtcNow.Add(item.SlidingExpiration);
+                item.ExpiresAt = DateTime.UtcNow.Add(item.SlidingExpiration);
 
                 _logger.LogDebug("Cache hit for key: {Key}", key);
                 Console.WriteLine($"[Cache] GetAsync END (hit) for key: {key}");
@@ -118,13 +117,13 @@ public class MemoryCacheAdapter : IDistributedCache
         }
     }
 
-    public async Task SetAsync(string key, string value, DistributedCacheEntryOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task SetAsync(string key, string value, DistributedCacheEntryOptions options = null!, CancellationToken cancellationToken = default(CancellationToken))
     {
         Console.WriteLine($"[Cache] SetAsync START for key: {key}");
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
-        if (value == null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
-        var itemSize = System.Text.Encoding.UTF8.GetByteCount(value);
+            var itemSize = System.Text.Encoding.UTF8.GetByteCount(value);
         if (itemSize > _maxSizeBytes)
             throw new InvalidOperationException($"Item size {itemSize} exceeds cache max size {_maxSizeBytes}");
 
@@ -154,11 +153,6 @@ public class MemoryCacheAdapter : IDistributedCache
             {
                 item.ExpiresAt = options.AbsoluteExpiration.UtcDateTime;
             }
-            else if (options?.SlidingExpiration != null)
-            {
-                item.ExpiresAt = DateTime.UtcNow.Add(options.SlidingExpiration);
-                item.SlidingExpiration = options.SlidingExpiration;
-            }
 
             // Check if we need to evict items
             await EnsureCapacityAsync(item.SizeBytes, cancellationToken);
@@ -177,26 +171,26 @@ public class MemoryCacheAdapter : IDistributedCache
         Console.WriteLine($"[Cache] SetAsync END for key: {key}");
     }
 
-    public async Task SetAsync<T>(string key, T value, DistributedCacheEntryOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task SetAsync<T>(string key, T value, DistributedCacheEntryOptions options = null!, CancellationToken cancellationToken = default(CancellationToken))
     {
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
         if (value == null) throw new ArgumentNullException(nameof(value));
 
         if (value is string str)
         {
-            await SetAsync(key, str, options, cancellationToken);
+            if (options != null) await SetAsync(key, str, options, cancellationToken);
             return;
         }
         var serializedValue = _serializer.Serialize(value);
         var itemSize = System.Text.Encoding.UTF8.GetByteCount(serializedValue);
         if (itemSize > _maxSizeBytes)
             throw new InvalidOperationException($"Item size {itemSize} exceeds cache max size {_maxSizeBytes}");
-        await SetAsync(key, serializedValue, options, cancellationToken);
+        if (options != null) await SetAsync(key, serializedValue, options, cancellationToken);
     }
 
-    public async Task RemoveAsync(string key, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug($"RemoveAsync START for key: {key}");
+        _logger.LogDebug("RemoveAsync START for key: {Key}", key);
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
 
         if (!await _cacheLock.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken))
@@ -251,9 +245,9 @@ public class MemoryCacheAdapter : IDistributedCache
     public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, DistributedCacheEntryOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
     {
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
-        if (factory == null) throw new ArgumentNullException(nameof(factory));
+            ArgumentNullException.ThrowIfNull(factory);
 
-        var cachedValue = await GetAsync<T>(key, cancellationToken);
+            var cachedValue = await GetAsync<T>(key, cancellationToken);
         if (cachedValue != null)
             return cachedValue;
 
@@ -288,17 +282,11 @@ public class MemoryCacheAdapter : IDistributedCache
     {
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
 
-        if (_cache.TryGetValue(key, out var item))
-        {
-            if (IsExpired(item))
-            {
-                await RemoveAsync(key, cancellationToken);
-                return false;
-            }
-            return true;
-        }
-
+        if (!_cache.TryGetValue(key, out var item)) return false;
+        if (!IsExpired(item)) return true;
+        await RemoveAsync(key, cancellationToken);
         return false;
+
     }
 
     public async Task<CacheStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -383,9 +371,9 @@ public class MemoryCacheAdapter : IDistributedCache
         }
     }
 
-    private bool IsExpired(CacheItem item)
+    private static bool IsExpired(CacheItem item)
     {
-        return item.ExpiresAt != null && item.ExpiresAt <= DateTime.UtcNow;
+        return item.ExpiresAt <= DateTime.UtcNow;
     }
 
     // Comment out the CleanupExpiredItems method
@@ -461,7 +449,7 @@ public class JsonCacheSerializer : ICacheSerializer
 /// <summary>
 /// LRU (Least Recently Used) eviction policy.
 /// </summary>
-public class LRUEvictionPolicy : ICacheEvictionPolicy
+public class LruEvictionPolicy : ICacheEvictionPolicy
 {
     public IEnumerable<CacheItem> SelectForEviction(IEnumerable<CacheItem> items, int count)
     {

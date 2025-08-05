@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-
 using Nexo.Core.Domain.Enums;
 using TaskStatus = Nexo.Core.Domain.Enums.TaskStatus;
 

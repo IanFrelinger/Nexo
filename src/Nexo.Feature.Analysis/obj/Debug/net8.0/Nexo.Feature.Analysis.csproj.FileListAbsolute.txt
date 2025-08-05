@@ -44,3 +44,4 @@
 /workspace/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Shared.pdb
 /workspace/src/Nexo.Feature.Analysis/obj/Debug/net8.0/Nexo.Feature.Analysis.csproj.AssemblyReference.cache
 /workspace/src/Nexo.Feature.Analysis/obj/Debug/net8.0/Nexo.Fea.826EBF19.Up2Date
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Debug/net8.0/Nexo.Feature.Analysis.sourcelink.json

@@ -29,11 +29,7 @@ namespace Nexo.Infrastructure.Services.Caching
             {
                 var redisKey = GetRedisKey(key);
                 var value = await _database.StringGetAsync(redisKey);
-                if (value.HasValue)
-                {
-                    return JsonSerializer.Deserialize<TValue>(value, _jsonOptions);
-                }
-                return default(TValue);
+                return value.HasValue ? JsonSerializer.Deserialize<TValue>(value, _jsonOptions) : default(TValue);
             }
             catch (Exception ex)
             {

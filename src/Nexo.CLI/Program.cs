@@ -83,7 +83,7 @@ namespace Nexo.CLI
                 if (ai)
                 {
                     var cachingProcessor = scope.ServiceProvider.GetRequiredService<CachingAsyncProcessor<ModelRequest, string, ModelResponse>>();
-                    var aiSettings = scope.ServiceProvider.GetRequiredService<Nexo.Feature.AI.Models.AISettings>();
+                    var aiSettings = scope.ServiceProvider.GetRequiredService<Nexo.Feature.AI.Models.AiSettings>();
                     
                     var effectiveProvider = !string.IsNullOrEmpty(provider) ? provider : aiSettings.PreferredProvider;
                     var effectiveModel = !string.IsNullOrEmpty(model) ? model : aiSettings.PreferredModel;
@@ -170,7 +170,7 @@ namespace Nexo.CLI
                 using var scope = host.Services.CreateScope();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
                 var cachingProcessor = scope.ServiceProvider.GetRequiredService<CachingAsyncProcessor<ModelRequest, string, ModelResponse>>();
-                var aiSettings = scope.ServiceProvider.GetRequiredService<Nexo.Feature.AI.Models.AISettings>();
+                var aiSettings = scope.ServiceProvider.GetRequiredService<Nexo.Feature.AI.Models.AiSettings>();
                 
                 logger.LogInformation("Getting AI suggestions for code of length: {Length}", code.Length);
                 if (!string.IsNullOrEmpty(context))
@@ -208,7 +208,7 @@ namespace Nexo.CLI
                 using var scope = host.Services.CreateScope();
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
                 var cachingProcessor = scope.ServiceProvider.GetRequiredService<CachingAsyncProcessor<ModelRequest, string, ModelResponse>>();
-                var aiSettings = scope.ServiceProvider.GetRequiredService<Nexo.Feature.AI.Models.AISettings>();
+                var aiSettings = scope.ServiceProvider.GetRequiredService<Nexo.Feature.AI.Models.AiSettings>();
                 
                 logger.LogInformation("Optimizing: {File}", file);
                 logger.LogInformation("Optimization level: {Level}", level ?? "basic");
@@ -426,7 +426,7 @@ namespace Nexo.CLI
             rootCommand.AddCommand(enhancedProjectCommand);
 
             // Configuration commands
-            var aiConfigurationService = scope.ServiceProvider.GetRequiredService<IAIConfigurationService>();
+            var aiConfigurationService = scope.ServiceProvider.GetRequiredService<IAiConfigurationService>();
             var configCommand = ConfigurationCommands.CreateConfigurationCommand(aiConfigurationService, logger);
             rootCommand.AddCommand(configCommand);
 

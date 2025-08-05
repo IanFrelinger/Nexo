@@ -16,11 +16,6 @@ namespace Nexo.Feature.AI.Enums
         CodeGeneration,
 
         /// <summary>
-        /// Code analysis model.
-        /// </summary>
-        CodeAnalysis,
-
-        /// <summary>
         /// Text embedding model.
         /// </summary>
         TextEmbedding,
@@ -31,18 +26,8 @@ namespace Nexo.Feature.AI.Enums
         ImageGeneration,
 
         /// <summary>
-        /// Image analysis model.
-        /// </summary>
-        ImageAnalysis,
-
-        /// <summary>
         /// Multimodal model.
         /// </summary>
-        Multimodal,
-
-        /// <summary>
-        /// Custom model.
-        /// </summary>
-        Custom
+        Multimodal
     }
 } 

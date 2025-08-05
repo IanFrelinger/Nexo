@@ -31,14 +31,14 @@ public class AIValidationCommand
         {
             var startTime = DateTime.UtcNow;
             
-            var config = new AIConfiguration
+            var config = new AiConfiguration
             {
-                Mode = AIMode.Production,
-                Model = new AIModelConfiguration { Name = "gpt-4" },
+                Mode = AiMode.Production,
+                Model = new AiModelConfiguration { Name = "gpt-4" },
                 ModelSelectionStrategy = ModelSelectionStrategy.Primary,
-                Caching = new AICachingConfiguration { Enabled = true },
-                Fallback = new AIFallbackConfiguration { Enabled = true },
-                Monitoring = new AIMonitoringConfiguration { Enabled = true }
+                Caching = new AiCachingConfiguration { Enabled = true },
+                Fallback = new AiFallbackConfiguration { Enabled = true },
+                Monitoring = new AiMonitoringConfiguration { Enabled = true }
             };
 
             var elapsed = DateTime.UtcNow - startTime;
@@ -48,7 +48,7 @@ public class AIValidationCommand
                 return false;
             }
 
-            var result = config.Mode == AIMode.Production &&
+            var result = config.Mode == AiMode.Production &&
                         config.Model.Name == "gpt-4" &&
                         config.ModelSelectionStrategy == ModelSelectionStrategy.Primary &&
                         config.Caching.Enabled &&
@@ -79,7 +79,7 @@ public class AIValidationCommand
         {
             var startTime = DateTime.UtcNow;
             
-            var modelConfig = new AIModelConfiguration
+            var modelConfig = new AiModelConfiguration
             {
                 Name = "gpt-4",
                 Version = "latest",
@@ -127,7 +127,7 @@ public class AIValidationCommand
         {
             var startTime = DateTime.UtcNow;
             
-            var cachingConfig = new AICachingConfiguration
+            var cachingConfig = new AiCachingConfiguration
             {
                 Enabled = true,
                 MaxCacheSizeBytes = 1024 * 1024 * 1024, // 1GB
@@ -171,9 +171,9 @@ public class AIValidationCommand
         {
             var startTime = DateTime.UtcNow;
             
-            var development = Enum.IsDefined(typeof(AIMode), AIMode.Development);
-            var production = Enum.IsDefined(typeof(AIMode), AIMode.Production);
-            var aiHeavy = Enum.IsDefined(typeof(AIMode), AIMode.AIHeavy);
+            var development = Enum.IsDefined(typeof(AiMode), AiMode.Development);
+            var production = Enum.IsDefined(typeof(AiMode), AiMode.Production);
+            var aiHeavy = Enum.IsDefined(typeof(AiMode), AiMode.AiHeavy);
 
             var textGen = Enum.IsDefined(typeof(ModelType), ModelType.TextGeneration);
             var codeGen = Enum.IsDefined(typeof(ModelType), ModelType.CodeGeneration);

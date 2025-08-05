@@ -20,17 +20,17 @@ namespace Nexo.Core.Domain.Entities
         /// <summary>
         /// Stores a collection of focus areas associated with the agent.
         /// </summary>
-        private readonly List<string> _focusAreas = new List<string>();
+        private readonly List<string> _focusAreas = [];
 
         /// <summary>
         /// Stores the list of capabilities associated with the agent.
         /// </summary>
-        private readonly List<string> _capabilities = new List<string>();
+        private readonly List<string> _capabilities = [];
 
         /// <summary>
         /// Stores agent-specific configuration settings as key-value pairs.
         /// </summary>
-        private readonly Dictionary<string, object> _configuration = new Dictionary<string, object>();
+        private readonly Dictionary<string, object> _configuration = new();
 
         /// <summary>
         /// Gets the unique identifier for the agent entity.
@@ -90,9 +90,9 @@ namespace Nexo.Core.Domain.Entities
         /// </summary>
         public Agent(AgentId id, AgentName name, AgentRole role)
         {
-            if (id == null) throw new ArgumentNullException(nameof(id));
-            if (name == null) throw new ArgumentNullException(nameof(name));
-            if (role == null) throw new ArgumentNullException(nameof(role));
+            ArgumentNullException.ThrowIfNull(id);
+            ArgumentNullException.ThrowIfNull(name);
+            ArgumentNullException.ThrowIfNull(role);
 
             Id = id;
             Name = name;
@@ -216,8 +216,7 @@ namespace Nexo.Core.Domain.Entities
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Value cannot be null or whitespace", nameof(key));
-            if (value == null)
-                throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             _configuration[key] = value;
         }
@@ -244,8 +243,7 @@ namespace Nexo.Core.Domain.Entities
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="newName"/> is null.</exception>
         public void UpdateName(AgentName newName)
         {
-            if (newName == null)
-                throw new ArgumentNullException(nameof(newName));
+            ArgumentNullException.ThrowIfNull(newName);
             Name = newName;
         }
 
@@ -256,8 +254,7 @@ namespace Nexo.Core.Domain.Entities
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="newRole"/> is null.</exception>
         public void UpdateRole(AgentRole newRole)
         {
-            if (newRole == null)
-                throw new ArgumentNullException(nameof(newRole));
+            ArgumentNullException.ThrowIfNull(newRole);
             Role = newRole;
         }
 
@@ -297,12 +294,10 @@ namespace Nexo.Core.Domain.Entities
             };
             agent._focusAreas.AddRange(focusAreas);
             agent._capabilities.AddRange(capabilities);
-            if (configuration != null)
+            if (configuration == null) return agent;
+            foreach (var kv in configuration)
             {
-                foreach (var kv in configuration)
-                {
-                    agent._configuration[kv.Key] = kv.Value;
-                }
+                agent._configuration[kv.Key] = kv.Value;
             }
             return agent;
         }

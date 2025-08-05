@@ -1,9 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-
 using Nexo.Feature.AI.Models;
 using Nexo.Feature.AI.Enums;
 
@@ -12,51 +8,47 @@ namespace Nexo.Feature.AI.Interfaces
     /// <summary>
     /// Service for managing AI-specific configuration settings.
     /// </summary>
-    public interface IAIConfigurationService
+    public interface IAiConfigurationService
     {
         /// <summary>
         /// Gets the current AI configuration.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The AI configuration.</returns>
-        Task<AIConfiguration> GetConfigurationAsync(CancellationToken cancellationToken = default);
+        Task<AiConfiguration> GetConfigurationAsync();
 
         /// <summary>
         /// Saves the AI configuration.
         /// </summary>
         /// <param name="configuration">The AI configuration to save.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        Task SaveConfigurationAsync(AIConfiguration configuration, CancellationToken cancellationToken = default);
+        Task SaveConfigurationAsync(AiConfiguration configuration);
 
         /// <summary>
         /// Loads AI configuration for a specific mode.
         /// </summary>
         /// <param name="mode">The AI mode to load configuration for.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The AI configuration for the specified mode.</returns>
-        Task<AIConfiguration> LoadForModeAsync(AIMode mode, CancellationToken cancellationToken = default);
+        Task<AiConfiguration> LoadForModeAsync(AiMode mode);
 
         /// <summary>
         /// Gets the default AI configuration for a mode.
         /// </summary>
         /// <param name="mode">The AI mode.</param>
         /// <returns>The default AI configuration for the mode.</returns>
-        AIConfiguration GetDefaultConfiguration(AIMode mode);
+        AiConfiguration GetDefaultConfiguration(AiMode mode);
 
         /// <summary>
         /// Validates the AI configuration.
         /// </summary>
         /// <param name="configuration">The AI configuration to validate.</param>
         /// <returns>Validation result.</returns>
-        Task<AIConfigurationValidationResult> ValidateAsync(AIConfiguration configuration);
+        Task<AiConfigurationValidationResult> ValidateAsync(AiConfiguration configuration);
 
         /// <summary>
         /// Merges multiple AI configurations.
         /// </summary>
         /// <param name="configurations">The configurations to merge.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The merged AI configuration.</returns>
-        Task<AIConfiguration> MergeAsync(IEnumerable<AIConfiguration> configurations, CancellationToken cancellationToken = default);
+        Task<AiConfiguration> MergeAsync(IEnumerable<AiConfiguration> configurations);
 
         /// <summary>
         /// Gets the configuration path for AI settings.
@@ -67,23 +59,23 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Checks if AI configuration exists.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>True if AI configuration exists; otherwise, false.</returns>
-        Task<bool> ExistsAsync(CancellationToken cancellationToken = default);
+        Task<bool> ExistsAsync();
 
         /// <summary>
         /// Reloads the AI configuration from storage.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The reloaded AI configuration.</returns>
-        Task<AIConfiguration> ReloadAsync(CancellationToken cancellationToken = default);
+        Task<AiConfiguration> ReloadAsync();
     }
 
     /// <summary>
     /// Result of AI configuration validation.
     /// </summary>
-    public class AIConfigurationValidationResult
+    public class AiConfigurationValidationResult
     {
+        private readonly List<AiConfigurationValidationWarning> _warnings = [];
+
         /// <summary>
         /// Gets or sets whether the configuration is valid.
         /// </summary>
@@ -92,18 +84,18 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Gets or sets the validation errors.
         /// </summary>
-        public List<AIConfigurationValidationError> Errors { get; set; } = new List<AIConfigurationValidationError>();
+        public List<AiConfigurationValidationError> Errors { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the validation warnings.
         /// </summary>
-        public List<AIConfigurationValidationWarning> Warnings { get; set; } = new List<AIConfigurationValidationWarning>();
+        public List<AiConfigurationValidationWarning> Warnings => _warnings;
     }
 
     /// <summary>
     /// AI configuration validation error.
     /// </summary>
-    public class AIConfigurationValidationError
+    public class AiConfigurationValidationError
     {
         /// <summary>
         /// Gets or sets the error code.
@@ -129,12 +121,12 @@ namespace Nexo.Feature.AI.Interfaces
     /// <summary>
     /// AI configuration validation warning.
     /// </summary>
-    public class AIConfigurationValidationWarning
+    public class AiConfigurationValidationWarning
     {
-        /// <summary>
-        /// Gets or sets the warning code.
-        /// </summary>
-        public string Code { get; set; } = string.Empty;
+        public AiConfigurationValidationWarning(ValidationSeverity severity)
+        {
+            Severity = severity;
+        }
 
         /// <summary>
         /// Gets or sets the warning message.
@@ -149,7 +141,7 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Gets or sets the severity.
         /// </summary>
-        public ValidationSeverity Severity { get; set; } = ValidationSeverity.Warning;
+        public ValidationSeverity Severity { get; set; }
     }
 
     /// <summary>
@@ -158,23 +150,8 @@ namespace Nexo.Feature.AI.Interfaces
     public enum ValidationSeverity
     {
         /// <summary>
-        /// Information level.
-        /// </summary>
-        Information,
-
-        /// <summary>
-        /// Warning level.
-        /// </summary>
-        Warning,
-
-        /// <summary>
         /// Error level.
         /// </summary>
-        Error,
-
-        /// <summary>
-        /// Critical level.
-        /// </summary>
-        Critical
+        Error
     }
 } 

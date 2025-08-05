@@ -11,30 +11,29 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using static Nexo.Feature.AI.Enums.ModelType;
 
 namespace Nexo.Infrastructure.Services.AI
 {
 /// <summary>
 /// OpenAI model provider implementation.
 /// </summary>
-public class OpenAIModelProvider : IModelProvider
+public class OpenAiModelProvider : IModelProvider
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger<OpenAIModelProvider> _logger;
+    private readonly ILogger<OpenAiModelProvider> _logger;
     private readonly string _apiKey;
-    private readonly string _baseUrl;
     private readonly Dictionary<string, object> _defaultParameters;
 
-    public OpenAIModelProvider(
+    public OpenAiModelProvider(
         HttpClient httpClient,
-        ILogger<OpenAIModelProvider> logger,
+        ILogger<OpenAiModelProvider> logger,
         string apiKey,
         string baseUrl = "https://api.openai.com/v1")
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
-        _baseUrl = baseUrl;
 
         // Configure default parameters
         _defaultParameters = new Dictionary<string, object>
@@ -47,7 +46,7 @@ public class OpenAIModelProvider : IModelProvider
         };
 
         // Configure HTTP client
-        _httpClient.BaseAddress = new Uri(_baseUrl);
+        _httpClient.BaseAddress = new Uri(baseUrl);
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Nexo-AI-Provider/1.0");
     }
@@ -58,12 +57,12 @@ public class OpenAIModelProvider : IModelProvider
     public string Description => "OpenAI GPT models for text generation and chat";
     public bool IsAvailable => !string.IsNullOrEmpty(_apiKey);
 
-    public IEnumerable<ModelType> SupportedModelTypes => new[]
-    {
-        ModelType.TextGeneration,
-        ModelType.CodeGeneration,
-        ModelType.TextEmbedding
-    };
+    public IEnumerable<ModelType> SupportedModelTypes =>
+    [
+        TextGeneration,
+        CodeGeneration,
+        TextEmbedding
+    ];
 
     public async Task<IEnumerable<ModelInfo>> GetAvailableModelsAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
@@ -72,8 +71,8 @@ public class OpenAIModelProvider : IModelProvider
             var response = await _httpClient.GetAsync("models", cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                string json = await response.Content.ReadAsStringAsync();
-                OpenAIModelsResponse modelsResponse = JsonSerializer.Deserialize<OpenAIModelsResponse>(json);
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var modelsResponse = JsonSerializer.Deserialize<OpenAiModelsResponse>(json);
                 return modelsResponse?.Data?.Select(m => new ModelInfo
                 {
                     Id = m.Id,
@@ -89,7 +88,7 @@ public class OpenAIModelProvider : IModelProvider
                         ["owned_by"] = m.OwnedBy,
                         ["permission"] = m.Permission
                     }
-                }) ?? Enumerable.Empty<ModelInfo>();
+                }) ?? [];
             }
         }
         catch (Exception ex)
@@ -97,7 +96,7 @@ public class OpenAIModelProvider : IModelProvider
             _logger.LogError(ex, "Error fetching OpenAI models");
         }
 
-        return Enumerable.Empty<ModelInfo>();
+        return [];
     }
 
     public async Task<IModel> LoadModelAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
@@ -108,18 +107,13 @@ public class OpenAIModelProvider : IModelProvider
             throw new InvalidOperationException($"Model {modelName} not found or not available");
         }
 
-        return new OpenAIModel(modelName, _httpClient, _logger);
+        return new OpenAiModel(modelName, _httpClient, _logger);
     }
 
     public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
         var models = await GetAvailableModelsAsync(cancellationToken);
-        foreach (var m in models)
-        {
-            if (m.Id == modelName || m.Name == modelName)
-                return m;
-        }
-        return null;
+        return models.FirstOrDefault(m => m.Id == modelName || m.Name == modelName);
     }
 
     public async Task<ModelValidationResult> ValidateModelAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
@@ -183,14 +177,14 @@ public class OpenAIModelProvider : IModelProvider
     public bool IsEnabled => IsAvailable;
     public bool IsPrimary => true;
 
-    public ModelCapabilities Capabilities => new ModelCapabilities
+    public ModelCapabilities Capabilities => new()
     {
         SupportsStreaming = true,
         SupportsFunctionCalling = true,
         SupportsTextEmbedding = true,
         MaxInputLength = 128000,
         MaxOutputLength = 128000,
-        SupportedLanguages = new List<string> { "en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh" }
+        SupportedLanguages = ["en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh"]
     };
 
     public async Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
@@ -205,10 +199,10 @@ public class OpenAIModelProvider : IModelProvider
             var model = GetModelFromRequest(request);
             
             // Create the OpenAI request
-            var openAIRequest = CreateOpenAIRequest(request, model);
+            var openAiRequest = CreateOpenAiRequest(request, model);
             
             // Execute the request
-            var response = await ExecuteOpenAIRequestAsync(openAIRequest, cancellationToken);
+            var response = await ExecuteOpenAiRequestAsync(openAiRequest, cancellationToken);
             
             var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
             
@@ -232,7 +226,7 @@ public class OpenAIModelProvider : IModelProvider
         }
     }
 
-    public async Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request)
+    public Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request)
     {
         var result = new ModelValidationResult { IsValid = true };
 
@@ -253,13 +247,11 @@ public class OpenAIModelProvider : IModelProvider
 
         // Validate token limits
         var estimatedTokens = EstimateTokenCount(request.Input);
-        if (estimatedTokens > 128000)
-        {
-            result.IsValid = false;
-            result.Errors.Add("Input exceeds maximum token limit");
-        }
+        if (estimatedTokens <= 128000) return Task.FromResult(result);
+        result.IsValid = false;
+        result.Errors.Add("Input exceeds maximum token limit");
 
-        return result;
+        return Task.FromResult(result);
     }
 
     private string GetModelFromRequest(ModelRequest request)
@@ -274,15 +266,15 @@ public class OpenAIModelProvider : IModelProvider
         return "gpt-4";
     }
 
-    private bool IsModelSupported(string model)
+    private static bool IsModelSupported(string model)
     {
         var supportedModels = new[] { "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", "gpt-3.5-turbo-16k" };
         return supportedModels.Contains(model.ToLower());
     }
 
-    private object CreateOpenAIRequest(ModelRequest request, string model)
+    private object CreateOpenAiRequest(ModelRequest request, string model)
     {
-        var openAIRequest = new Dictionary<string, object>
+        var openAiRequest = new Dictionary<string, object>
         {
             ["model"] = model,
             ["messages"] = CreateMessages(request),
@@ -293,7 +285,7 @@ public class OpenAIModelProvider : IModelProvider
             ["presence_penalty"] = request.Metadata.TryGetValue("presence_penalty", out var presPenaltyObj) ? presPenaltyObj : _defaultParameters["presence_penalty"]
         };
 
-        return openAIRequest;
+        return openAiRequest;
     }
 
     private List<object> CreateMessages(ModelRequest request)
@@ -312,7 +304,7 @@ public class OpenAIModelProvider : IModelProvider
         return messages;
     }
 
-    private async Task<OpenAIResponse> ExecuteOpenAIRequestAsync(object request, CancellationToken cancellationToken)
+    private async Task<OpenAiResponse> ExecuteOpenAiRequestAsync(object request, CancellationToken cancellationToken)
     {
         var json = JsonSerializer.Serialize(request);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -320,74 +312,74 @@ public class OpenAIModelProvider : IModelProvider
         var response = await _httpClient.PostAsync("chat/completions", content, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var responseContent = await response.Content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<OpenAIResponse>(responseContent) ?? new OpenAIResponse();
+        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JsonSerializer.Deserialize<OpenAiResponse>(responseContent) ?? new OpenAiResponse();
     }
 
-    private int EstimateTokenCount(string text)
+    private static int EstimateTokenCount(string text)
     {
         // Simple estimation: ~4 characters per token
         return text.Length / 4;
     }
 
-    private ModelType GetModelType(string modelId)
+    private static ModelType GetModelType(string modelId)
     {
         if (modelId.Contains("gpt"))
         {
-            return modelId.Contains("4") ? ModelType.TextGeneration : ModelType.TextGeneration;
+            return modelId.Contains('4') ? TextGeneration : TextGeneration;
         }
-        return ModelType.TextGeneration;
+        return TextGeneration;
     }
 
-    private class OpenAIResponse
+    private class OpenAiResponse
     {
         public string Id { get; set; }
         public string Object { get; set; }
         public long Created { get; set; }
         public string Model { get; set; }
-        public List<OpenAIChoice> Choices { get; set; }
-        public OpenAIUsage Usage { get; set; }
-        public OpenAIResponse()
+        public List<OpenAiChoice> Choices { get; set; }
+        public OpenAiUsage Usage { get; set; }
+        public OpenAiResponse()
         {
             Id = string.Empty;
             Object = string.Empty;
             Created = 0;
             Model = string.Empty;
-            Choices = new List<OpenAIChoice>();
-            Usage = new OpenAIUsage();
+            Choices = new List<OpenAiChoice>();
+            Usage = new OpenAiUsage();
         }
     }
 
-    private class OpenAIChoice
+    private class OpenAiChoice
     {
         public int Index { get; set; }
-        public OpenAIMessage Message { get; set; }
+        public OpenAiMessage Message { get; set; }
         public string FinishReason { get; set; }
-        public OpenAIChoice()
+        public OpenAiChoice()
         {
             Index = 0;
-            Message = new OpenAIMessage();
+            Message = new OpenAiMessage();
             FinishReason = string.Empty;
         }
     }
 
-    private class OpenAIMessage
+    private class OpenAiMessage
     {
         public string Role { get; set; }
         public string Content { get; set; }
-        public OpenAIMessage()
+        public OpenAiMessage()
         {
             Role = string.Empty;
             Content = string.Empty;
         }
     }
 
-    private class OpenAIUsage
+    private class OpenAiUsage
     {
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }
         public int TotalTokens { get; set; }
-        public OpenAIUsage()
+        public OpenAiUsage()
         {
             PromptTokens = 0;
             CompletionTokens = 0;
@@ -395,21 +387,21 @@ public class OpenAIModelProvider : IModelProvider
         }
     }
 
-    private class OpenAIModelsResponse
+    private class OpenAiModelsResponse
     {
-        public List<OpenAIModelData> Data { get; set; }
-        public OpenAIModelsResponse()
+        public List<OpenAiModelData> Data { get; set; }
+        public OpenAiModelsResponse()
         {
-            Data = new List<OpenAIModelData>();
+            Data = [];
         }
     }
 
-    private class OpenAIModelData
+    private class OpenAiModelData
     {
         public string Id { get; set; }
         public string OwnedBy { get; set; }
         public List<object> Permission { get; set; }
-        public OpenAIModelData()
+        public OpenAiModelData()
         {
             Id = string.Empty;
             OwnedBy = string.Empty;
@@ -421,14 +413,14 @@ public class OpenAIModelProvider : IModelProvider
 /// <summary>
 /// OpenAI model implementation.
 /// </summary>
-public class OpenAIModel : IModel
+public class OpenAiModel : IModel
 {
     private readonly string _modelName;
     private readonly HttpClient _httpClient;
     private readonly ILogger _logger;
     private ModelInfo _info;
 
-    public OpenAIModel(string modelName, HttpClient httpClient, ILogger logger)
+    public OpenAiModel(string modelName, HttpClient httpClient, ILogger logger)
     {
         _modelName = modelName;
         _httpClient = httpClient;
@@ -439,21 +431,17 @@ public class OpenAIModel : IModel
     {
         get
         {
-            if (_info == null)
+            return _info ??= new ModelInfo
             {
-                _info = new ModelInfo
-                {
-                    Id = _modelName,
-                    Name = _modelName,
-                    Description = "OpenAI " + _modelName + " model",
-                    Version = "1.0",
-                    Type = ModelType.TextGeneration,
-                    Provider = "openai",
-                    IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow
-                };
-            }
-            return _info;
+                Id = _modelName,
+                Name = _modelName,
+                Description = "OpenAI " + _modelName + " model",
+                Version = "1.0",
+                Type = TextGeneration,
+                Provider = "openai",
+                IsAvailable = true,
+                LastUpdated = DateTime.UtcNow
+            };
         }
     }
 
@@ -462,7 +450,7 @@ public class OpenAIModel : IModel
     public async Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
         // Create a new provider instance with a null logger to avoid type issues
-        var provider = new OpenAIModelProvider(_httpClient, NullLogger<OpenAIModelProvider>.Instance, "dummy-key");
+        var provider = new OpenAiModelProvider(_httpClient, NullLogger<OpenAiModelProvider>.Instance, "dummy-key");
         return await provider.ExecuteAsync(request, cancellationToken);
     }
 
@@ -480,7 +468,7 @@ public class OpenAIModel : IModel
             SupportsTextEmbedding = true,
             MaxInputLength = 128000,
             MaxOutputLength = 128000,
-            SupportedLanguages = new List<string> { "en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh" }
+            SupportedLanguages = ["en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh"]
         };
     }
 

@@ -1,22 +1,8 @@
-using System;
 using System.Collections.Generic;
 using Nexo.Feature.AI.Enums;
 
 namespace Nexo.Feature.AI.Models
 {
-    /// <summary>
-    /// Context for domain logic generation.
-    /// </summary>
-    public class DomainLogicContext
-    {
-        public string Domain { get; set; }
-        public string Industry { get; set; }
-        public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
-        public List<string> Constraints { get; set; } = new List<string>();
-        public List<string> Patterns { get; set; } = new List<string>();
-        public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
-    }
-
     /// <summary>
     /// Result of domain logic generation.
     /// </summary>
@@ -26,8 +12,8 @@ namespace Nexo.Feature.AI.Models
         public string ErrorMessage { get; set; }
         public DomainLogic GeneratedLogic { get; set; }
         public double ConfidenceScore { get; set; }
-        public List<string> Warnings { get; set; } = new List<string>();
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> Warnings { get; set; } = [];
+        public List<string> Recommendations { get; set; } = [];
         public ProcessingMetadata Metadata { get; set; }
 
         public DomainLogicResult()
@@ -42,13 +28,13 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class DomainLogic
     {
-        public List<DomainEntity> Entities { get; set; } = new List<DomainEntity>();
-        public List<ValueObject> ValueObjects { get; set; } = new List<ValueObject>();
-        public List<DomainService> Services { get; set; } = new List<DomainService>();
-        public List<DomainEvent> Events { get; set; } = new List<DomainEvent>();
-        public List<BusinessRule> BusinessRules { get; set; } = new List<BusinessRule>();
-        public List<DomainAggregate> Aggregates { get; set; } = new List<DomainAggregate>();
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public List<DomainEntity> Entities { get; set; } = [];
+        public List<ValueObject> ValueObjects { get; set; } = [];
+        public List<DomainService> Services { get; set; } = [];
+        public List<DomainEvent> Events { get; set; } = [];
+        public List<BusinessRule> BusinessRules { get; set; } = [];
+        public List<DomainAggregate> Aggregates { get; set; } = [];
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -56,6 +42,7 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class DomainEntity
     {
+        private List<BusinessRule> _invariants = new List<BusinessRule>();
         public string Name { get; set; }
         public string Description { get; set; }
         public List<EntityProperty> Properties { get; set; } = new List<EntityProperty>();
@@ -63,7 +50,13 @@ namespace Nexo.Feature.AI.Models
         public List<string> Dependencies { get; set; } = new List<string>();
         public EntityType Type { get; set; }
         public bool IsAggregateRoot { get; set; }
-        public List<BusinessRule> Invariants { get; set; } = new List<BusinessRule>();
+
+        public List<BusinessRule> Invariants
+        {
+            get => _invariants;
+            set => _invariants = value;
+        }
+
         public string GeneratedCode { get; set; }
     }
 
@@ -72,12 +65,19 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class EntityProperty
     {
+        private List<ValidationRule> _validations = [];
         public string Name { get; set; }
         public string Type { get; set; }
         public bool IsRequired { get; set; }
         public bool IsReadOnly { get; set; }
         public string DefaultValue { get; set; }
-        public List<ValidationRule> Validations { get; set; } = new List<ValidationRule>();
+
+        public List<ValidationRule> Validations
+        {
+            get => _validations;
+            set => _validations = value;
+        }
+
         public string Description { get; set; }
     }
 
@@ -86,13 +86,25 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class EntityMethod
     {
+        private List<MethodParameter> _parameters = [];
+
+        public EntityMethod(MethodType type, string generatedCode)
+        {
+            Type = type;
+            GeneratedCode = generatedCode;
+        }
+
         public string Name { get; set; }
         public string ReturnType { get; set; }
-        public List<MethodParameter> Parameters { get; set; } = new List<MethodParameter>();
+
+        public List<MethodParameter> Parameters
+        {
+            get => _parameters;
+            set => _parameters = value;
+        }
+
         public string Description { get; set; }
         public MethodType Type { get; set; }
-        public List<BusinessRule> Preconditions { get; set; } = new List<BusinessRule>();
-        public List<BusinessRule> Postconditions { get; set; } = new List<BusinessRule>();
         public string GeneratedCode { get; set; }
     }
 
@@ -101,6 +113,12 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class MethodParameter
     {
+        public MethodParameter(bool isRequired, string description)
+        {
+            IsRequired = isRequired;
+            Description = description;
+        }
+
         public string Name { get; set; }
         public string Type { get; set; }
         public bool IsRequired { get; set; }
@@ -112,12 +130,23 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ValueObject
     {
+        private List<ValidationRule> _validations = [];
         public string Name { get; set; }
         public string Description { get; set; }
-        public List<ValueObjectProperty> Properties { get; set; } = new List<ValueObjectProperty>();
-        public List<ValueObjectMethod> Methods { get; set; } = new List<ValueObjectMethod>();
+        public List<ValueObjectProperty> Properties { get; set; } = [];
+        public List<ValueObjectMethod> Methods { get; set; } = [];
         public bool IsImmutable { get; set; } = true;
-        public List<ValidationRule> Validations { get; set; } = new List<ValidationRule>();
+
+        public List<ValidationRule> Validations
+        {
+            get
+            {
+                var validationRules = _validations;
+                return validationRules;
+            }
+            set => _validations = value;
+        }
+
         public string GeneratedCode { get; set; }
     }
 
@@ -137,9 +166,16 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ValueObjectMethod
     {
+        public ValueObjectMethod(string name, string returnType, string description, string generatedCode)
+        {
+            Name = name;
+            ReturnType = returnType;
+            Description = description;
+            GeneratedCode = generatedCode;
+        }
+
         public string Name { get; set; }
         public string ReturnType { get; set; }
-        public List<MethodParameter> Parameters { get; set; } = new List<MethodParameter>();
         public string Description { get; set; }
         public string GeneratedCode { get; set; }
     }
@@ -149,12 +185,19 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class DomainService
     {
+        private List<ServiceMethod> _methods = [];
         public string Name { get; set; }
         public string Description { get; set; }
-        public List<ServiceMethod> Methods { get; set; } = new List<ServiceMethod>();
-        public List<string> Dependencies { get; set; } = new List<string>();
+
+        public List<ServiceMethod> Methods
+        {
+            get => _methods;
+            set => _methods = value;
+        }
+
+        public List<string> Dependencies { get; set; } = [];
         public ServiceType Type { get; set; }
-        public List<BusinessRule> BusinessRules { get; set; } = new List<BusinessRule>();
+        public List<BusinessRule> BusinessRules { get; set; } = [];
         public string GeneratedCode { get; set; }
     }
 
@@ -163,12 +206,16 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ServiceMethod
     {
+        public ServiceMethod(string returnType, string description, string generatedCode)
+        {
+            ReturnType = returnType;
+            Description = description;
+            GeneratedCode = generatedCode;
+        }
+
         public string Name { get; set; }
         public string ReturnType { get; set; }
-        public List<MethodParameter> Parameters { get; set; } = new List<MethodParameter>();
         public string Description { get; set; }
-        public List<BusinessRule> Preconditions { get; set; } = new List<BusinessRule>();
-        public List<BusinessRule> Postconditions { get; set; } = new List<BusinessRule>();
         public string GeneratedCode { get; set; }
     }
 
@@ -179,9 +226,9 @@ namespace Nexo.Feature.AI.Models
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        public List<EventProperty> Properties { get; set; } = new List<EventProperty>();
+        public List<EventProperty> Properties { get; set; } = [];
         public EventType Type { get; set; }
-        public List<string> Handlers { get; set; } = new List<string>();
+        public List<string> Handlers { get; set; } = [];
         public bool IsAsync { get; set; }
         public string GeneratedCode { get; set; }
     }
@@ -191,6 +238,14 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class EventProperty
     {
+        public EventProperty(string name, string type, bool isRequired, string description)
+        {
+            Name = name;
+            Type = type;
+            IsRequired = isRequired;
+            Description = description;
+        }
+
         public string Name { get; set; }
         public string Type { get; set; }
         public bool IsRequired { get; set; }
@@ -202,12 +257,17 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class DomainAggregate
     {
+        public DomainAggregate(string name, string description, DomainEntity rootEntity, string generatedCode)
+        {
+            Name = name;
+            Description = description;
+            RootEntity = rootEntity;
+            GeneratedCode = generatedCode;
+        }
+
         public string Name { get; set; }
         public string Description { get; set; }
         public DomainEntity RootEntity { get; set; }
-        public List<DomainEntity> ChildEntities { get; set; } = new List<DomainEntity>();
-        public List<DomainEvent> Events { get; set; } = new List<DomainEvent>();
-        public List<BusinessRule> Invariants { get; set; } = new List<BusinessRule>();
         public string GeneratedCode { get; set; }
     }
 
@@ -216,6 +276,13 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ValidationRule
     {
+        public ValidationRule(string expression, string errorMessage, ValidationSeverity severity)
+        {
+            Expression = expression;
+            ErrorMessage = errorMessage;
+            Severity = severity;
+        }
+
         public string Name { get; set; }
         public string Description { get; set; }
         public ValidationType Type { get; set; }
@@ -231,7 +298,7 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<BusinessRule> ExtractedRules { get; set; } = new List<BusinessRule>();
+        public List<BusinessRule> ExtractedRules { get; set; } = [];
         public double ConfidenceScore { get; set; }
         public ProcessingMetadata Metadata { get; set; }
     }
@@ -243,7 +310,7 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<DomainEntity> GeneratedEntities { get; set; } = new List<DomainEntity>();
+        public List<DomainEntity> GeneratedEntities { get; set; } = [];
         public double ConfidenceScore { get; set; }
         public ProcessingMetadata Metadata { get; set; }
     }
@@ -255,31 +322,7 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<ValueObject> GeneratedValueObjects { get; set; } = new List<ValueObject>();
-        public double ConfidenceScore { get; set; }
-        public ProcessingMetadata Metadata { get; set; }
-    }
-
-    /// <summary>
-    /// Result of domain service generation.
-    /// </summary>
-    public class DomainServiceResult
-    {
-        public bool IsSuccess { get; set; }
-        public string ErrorMessage { get; set; }
-        public List<DomainService> GeneratedServices { get; set; } = new List<DomainService>();
-        public double ConfidenceScore { get; set; }
-        public ProcessingMetadata Metadata { get; set; }
-    }
-
-    /// <summary>
-    /// Result of domain event generation.
-    /// </summary>
-    public class DomainEventResult
-    {
-        public bool IsSuccess { get; set; }
-        public string ErrorMessage { get; set; }
-        public List<DomainEvent> GeneratedEvents { get; set; } = new List<DomainEvent>();
+        public List<ValueObject> GeneratedValueObjects { get; set; } = [];
         public double ConfidenceScore { get; set; }
         public ProcessingMetadata Metadata { get; set; }
     }
@@ -291,9 +334,9 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
-        public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
+        public List<ValidationIssue> Issues { get; set; } = [];
         public double ValidationScore { get; set; }
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> Recommendations { get; set; } = [];
         public ProcessingMetadata Metadata { get; set; }
     }
 
@@ -317,12 +360,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// The list of feature requirements
         /// </summary>
-        public List<FeatureRequirement> Requirements { get; set; } = new List<FeatureRequirement>();
-
-        /// <summary>
-        /// Processing metadata
-        /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<FeatureRequirement> Requirements { get; set; } = [];
     }
 
     /// <summary>
@@ -330,13 +368,19 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class DomainLogicOptimizationOptions
     {
+        private Dictionary<string, object> _customOptions = new();
         public bool OptimizePerformance { get; set; } = true;
         public bool OptimizeMemory { get; set; } = true;
         public bool OptimizeReadability { get; set; } = true;
         public bool OptimizeMaintainability { get; set; } = true;
         public bool ApplyDesignPatterns { get; set; } = true;
         public bool OptimizeNamingConventions { get; set; } = true;
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
+
+        public Dictionary<string, object> CustomOptions
+        {
+            get => _customOptions;
+            set => _customOptions = value;
+        }
     }
 
     /// <summary>
@@ -346,10 +390,10 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public DomainLogic OptimizedLogic { get; set; } = new DomainLogic();
-        public List<string> Suggestions { get; set; } = new List<string>();
+        public DomainLogic OptimizedLogic { get; set; } = new();
+        public List<string> Suggestions { get; set; } = [];
         public double OptimizationScore { get; set; }
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
     // Test Suite Generation Models
@@ -361,7 +405,7 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<UnitTest> Tests { get; set; } = new List<UnitTest>();
+        public List<UnitTest> Tests { get; set; } = [];
         public int TotalTests { get; set; }
         public double CoveragePercentage { get; set; }
         public string Summary { get; set; } = string.Empty;
@@ -377,9 +421,7 @@ namespace Nexo.Feature.AI.Models
         public string TestClass { get; set; } = string.Empty;
         public string TestCode { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public List<string> TestCases { get; set; } = new List<string>();
         public string ExpectedBehavior { get; set; } = string.Empty;
-        public List<string> Dependencies { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -389,7 +431,7 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<IntegrationTest> Tests { get; set; } = new List<IntegrationTest>();
+        public List<IntegrationTest> Tests { get; set; } = [];
         public int TotalTests { get; set; }
         public double CoveragePercentage { get; set; }
         public string Summary { get; set; } = string.Empty;
@@ -405,9 +447,8 @@ namespace Nexo.Feature.AI.Models
         public string TestClass { get; set; } = string.Empty;
         public string TestCode { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public List<string> Components { get; set; } = new List<string>();
+        public List<string> Components { get; set; } = [];
         public string TestScenario { get; set; } = string.Empty;
-        public List<string> Dependencies { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -417,7 +458,7 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<EdgeCaseTest> Tests { get; set; } = new List<EdgeCaseTest>();
+        public List<EdgeCaseTest> Tests { get; set; } = [];
         public int TotalTests { get; set; }
         public double CoveragePercentage { get; set; }
         public string Summary { get; set; } = string.Empty;
@@ -443,23 +484,23 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class CompleteTestSuite
     {
-        public List<UnitTest> UnitTests { get; set; } = new List<UnitTest>();
-        public List<IntegrationTest> IntegrationTests { get; set; } = new List<IntegrationTest>();
-        public List<EdgeCaseTest> EdgeCaseTests { get; set; } = new List<EdgeCaseTest>();
+        public List<UnitTest> UnitTests { get; set; } = [];
+        public List<IntegrationTest> IntegrationTests { get; set; } = [];
+        public List<EdgeCaseTest> EdgeCaseTests { get; set; } = [];
         public int TotalTestCount { get; set; }
         public double OverallCoverage { get; set; }
         public string Summary { get; set; } = string.Empty;
     }
 
     /// <summary>
-    /// Result of complete test suite generation
+    /// Result of a complete test suite generation
     /// </summary>
     public class CompleteTestSuiteResult
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public CompleteTestSuite TestSuite { get; set; } = new CompleteTestSuite();
-        public TestCoverageValidationResult CoverageValidation { get; set; } = new TestCoverageValidationResult();
+        public CompleteTestSuite TestSuite { get; set; } = new();
+        public TestCoverageValidationResult CoverageValidation { get; set; } = new();
         public string Summary { get; set; } = string.Empty;
     }
 
@@ -471,9 +512,9 @@ namespace Nexo.Feature.AI.Models
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
         public double CoveragePercentage { get; set; }
-        public List<string> ValidationMessages { get; set; } = new List<string>();
-        public List<string> UncoveredAreas { get; set; } = new List<string>();
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> ValidationMessages { get; set; } = [];
+        public List<string> UncoveredAreas { get; set; } = [];
+        public List<string> Recommendations { get; set; } = [];
         public bool MeetsThreshold { get; set; }
         public double CoverageThreshold { get; set; } = 90.0;
         public string Summary { get; set; } = string.Empty;
@@ -484,16 +525,22 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class PerformanceValidationResult
     {
+        public PerformanceValidationResult(double performanceThreshold, string errorMessage)
+        {
+            PerformanceThreshold = performanceThreshold;
+            ErrorMessage = errorMessage;
+        }
+
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
         public double PerformanceScore { get; set; }
-        public List<string> PerformanceIssues { get; set; } = new List<string>();
-        public List<string> PerformanceRecommendations { get; set; } = new List<string>();
-        public Dictionary<string, double> PerformanceMetrics { get; set; } = new Dictionary<string, double>();
+        public List<string> PerformanceIssues { get; set; } = [];
+        public List<string> PerformanceRecommendations { get; set; } = [];
+        public Dictionary<string, double> PerformanceMetrics { get; set; } = new();
         public bool MeetsPerformanceThreshold { get; set; }
-        public double PerformanceThreshold { get; set; } = 0.8;
+        public double PerformanceThreshold { get; set; }
         public string Summary { get; set; } = string.Empty;
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -501,17 +548,23 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class SecurityValidationResult
     {
+        public SecurityValidationResult(string errorMessage, double securityThreshold)
+        {
+            ErrorMessage = errorMessage;
+            SecurityThreshold = securityThreshold;
+        }
+
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
         public double SecurityScore { get; set; }
-        public List<string> SecurityIssues { get; set; } = new List<string>();
-        public List<string> SecurityRecommendations { get; set; } = new List<string>();
-        public List<string> Vulnerabilities { get; set; } = new List<string>();
-        public List<string> SecurityBestPractices { get; set; } = new List<string>();
+        public List<string> SecurityIssues { get; set; } = [];
+        public List<string> SecurityRecommendations { get; set; } = [];
+        public List<string> Vulnerabilities { get; set; } = [];
+        public List<string> SecurityBestPractices { get; set; } = [];
         public bool MeetsSecurityThreshold { get; set; }
-        public double SecurityThreshold { get; set; } = 0.9;
+        public double SecurityThreshold { get; set; }
         public string Summary { get; set; } = string.Empty;
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -519,17 +572,23 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ArchitecturalValidationResult
     {
+        public ArchitecturalValidationResult(string errorMessage, double architecturalThreshold)
+        {
+            ErrorMessage = errorMessage;
+            ArchitecturalThreshold = architecturalThreshold;
+        }
+
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
         public double ArchitecturalScore { get; set; }
-        public List<string> ArchitecturalIssues { get; set; } = new List<string>();
-        public List<string> ArchitecturalRecommendations { get; set; } = new List<string>();
-        public List<string> PatternViolations { get; set; } = new List<string>();
-        public List<string> DesignPrinciples { get; set; } = new List<string>();
+        public List<string> ArchitecturalIssues { get; set; } = [];
+        public List<string> ArchitecturalRecommendations { get; set; } = [];
+        public List<string> PatternViolations { get; set; } = [];
+        public List<string> DesignPrinciples { get; set; } = [];
         public bool MeetsArchitecturalThreshold { get; set; }
-        public double ArchitecturalThreshold { get; set; } = 0.85;
+        public double ArchitecturalThreshold { get; set; }
         public string Summary { get; set; } = string.Empty;
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -537,18 +596,23 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ComprehensiveValidationResult
     {
+        public ComprehensiveValidationResult(string errorMessage)
+        {
+            ErrorMessage = errorMessage;
+        }
+
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
         public double OverallScore { get; set; }
-        public DomainLogicValidationResult BasicValidation { get; set; } = new DomainLogicValidationResult();
+        public DomainLogicValidationResult BasicValidation { get; set; } = new();
         public PerformanceValidationResult PerformanceValidation { get; set; } = new PerformanceValidationResult();
         public SecurityValidationResult SecurityValidation { get; set; } = new SecurityValidationResult();
         public ArchitecturalValidationResult ArchitecturalValidation { get; set; } = new ArchitecturalValidationResult();
-        public List<string> AllIssues { get; set; } = new List<string>();
-        public List<string> AllRecommendations { get; set; } = new List<string>();
+        public List<string> AllIssues { get; set; } = [];
+        public List<string> AllRecommendations { get; set; } = [];
         public bool MeetsAllThresholds { get; set; }
         public string Summary { get; set; } = string.Empty;
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -558,10 +622,9 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<TestDataItem> TestData { get; set; } = new List<TestDataItem>();
+        public List<TestDataItem> TestData { get; set; } = [];
         public int TotalDataItems { get; set; }
         public string Summary { get; set; } = string.Empty;
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -576,7 +639,6 @@ namespace Nexo.Feature.AI.Models
         public string Description { get; set; } = string.Empty;
         public bool IsValid { get; set; } = true;
         public string UseCase { get; set; } = string.Empty;
-        public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -586,10 +648,9 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<PerformanceTest> Tests { get; set; } = new List<PerformanceTest>();
+        public List<PerformanceTest> Tests { get; set; } = [];
         public int TotalTests { get; set; }
         public string Summary { get; set; } = string.Empty;
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -606,7 +667,6 @@ namespace Nexo.Feature.AI.Models
         public double ExpectedThreshold { get; set; }
         public string LoadProfile { get; set; } = string.Empty;
         public string TestScenario { get; set; } = string.Empty;
-        public List<string> Dependencies { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -616,10 +676,9 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public List<SecurityTest> Tests { get; set; } = new List<SecurityTest>();
+        public List<SecurityTest> Tests { get; set; } = [];
         public int TotalTests { get; set; }
         public string Summary { get; set; } = string.Empty;
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -636,7 +695,6 @@ namespace Nexo.Feature.AI.Models
         public string RiskLevel { get; set; } = string.Empty;
         public string AttackVector { get; set; } = string.Empty;
         public string MitigationStrategy { get; set; } = string.Empty;
-        public List<string> Dependencies { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -666,7 +724,6 @@ namespace Nexo.Feature.AI.Models
         public string ComplianceLevel { get; set; } = string.Empty;
         public string UserScenario { get; set; } = string.Empty;
         public string AssistiveTechnology { get; set; } = string.Empty;
-        public List<string> Dependencies { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -676,10 +733,10 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
-        public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
+        public List<ValidationIssue> Issues { get; set; } = [];
         public double ValidationScore { get; set; }
-        public List<string> Recommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> Recommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -689,10 +746,10 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
-        public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
+        public List<ValidationIssue> Issues { get; set; } = [];
         public double ValidationScore { get; set; }
-        public List<string> Recommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> Recommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -702,10 +759,10 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
-        public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
+        public List<ValidationIssue> Issues { get; set; } = [];
         public double ValidationScore { get; set; }
-        public List<string> Recommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> Recommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -715,10 +772,10 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
-        public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
+        public List<ValidationIssue> Issues { get; set; } = [];
         public double ValidationScore { get; set; }
-        public List<string> Recommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> Recommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -728,11 +785,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
-        public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
+        public List<ValidationIssue> Issues { get; set; } = [];
         public double ValidationScore { get; set; }
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> Recommendations { get; set; } = [];
         public double CompletenessPercentage { get; set; }
-        public List<string> MissingComponents { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> MissingComponents { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 }

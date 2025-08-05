@@ -55,9 +55,9 @@ namespace Nexo.CLI.Tests
             });
 
             // Add AI settings
-            services.AddSingleton<AISettings>(provider =>
+            services.AddSingleton<AiSettings>(provider =>
             {
-                return new AISettings
+                return new AiSettings
                 {
                     PreferredProvider = "mock",
                     PreferredModel = "mock-model"

@@ -1,26 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
-using System.Reflection;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Reactive.Subjects;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Nexo.Shared.Enums;
-using Nexo.Shared.Interfaces;
-using Nexo.Shared.Models;
 using Nexo.Core.Application.Interfaces;
 
-namespace Nexo.Infrastructure.Adapters
+namespace Nexo.Infrastructure.Adapters.FileSystem
 {
 
 /// <summary>
@@ -52,11 +39,10 @@ public sealed class FileSystemAdapter : IFileSystem
     /// </summary>
     public FileSystemAdapter(ILogger<FileSystemAdapter> logger)
     {
-        if (logger == null)
-        {
+        if (logger != null)
+            _logger = logger;
+        else
             throw new ArgumentNullException(nameof(logger));
-        }
-        _logger = logger;
     }
 
     /// <summary>
@@ -138,7 +124,7 @@ public sealed class FileSystemAdapter : IFileSystem
         
         try
         {
-            return File.ReadAllText(path);
+            return await File.ReadAllTextAsync(path, cancellationToken);
         }
         catch (FileNotFoundException ex)
         {
@@ -168,32 +154,35 @@ public sealed class FileSystemAdapter : IFileSystem
         {
             throw new ArgumentException("Path cannot be null or whitespace.", nameof(path));
         }
-        if (content == null)
+
+        if (content != null)
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                var directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                    _logger.LogDebug("Created directory for file: {Directory}", directory);
+                }
+
+                await File.WriteAllTextAsync(path, content, cancellationToken);
+                _logger.LogDebug("Wrote file: {Path} ({Length} bytes)", path, content.Length);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error writing file: {Path}", path);
+                throw;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+        else
         {
             throw new ArgumentNullException(nameof(content));
-        }
-        
-        await _semaphore.WaitAsync(cancellationToken);
-        try
-        {
-            var directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-                _logger.LogDebug("Created directory for file: {Directory}", directory);
-            }
-            
-            File.WriteAllText(path, content);
-            _logger.LogDebug("Wrote file: {Path} ({Length} bytes)", path, content.Length);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error writing file: {Path}", path);
-            throw;
-        }
-        finally
-        {
-            _semaphore.Release();
         }
     }
 

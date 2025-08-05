@@ -13,21 +13,6 @@ namespace Nexo.Feature.AI.Interfaces
     public interface IModelOrchestrator
     {
         /// <summary>
-        /// Gets the available model providers.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>List of available model providers.</returns>
-        Task<IEnumerable<IModelProvider>> GetProvidersAsync(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Selects the best model for a given request.
-        /// </summary>
-        /// <param name="request">The model request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>The selected model provider.</returns>
-        Task<IModelProvider> SelectModelAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
         /// Executes a model request.
         /// </summary>
         /// <param name="request">The model request.</param>
@@ -36,39 +21,11 @@ namespace Nexo.Feature.AI.Interfaces
         Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        /// Validates a model request.
-        /// </summary>
-        /// <param name="request">The model request to validate.</param>
-        /// <returns>Validation result.</returns>
-        Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request);
-
-        /// <summary>
-        /// Gets the health status of all model providers.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Health status of model providers.</returns>
-        Task<IEnumerable<ModelHealthStatus>> GetHealthStatusAsync(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Optimizes model selection based on performance metrics.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>Optimization recommendations.</returns>
-        Task<ModelOptimizationResult> OptimizeAsync(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
         /// Registers a new model provider.
         /// </summary>
         /// <param name="provider">The model provider to register.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         Task RegisterProviderAsync(IModelProvider provider, CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Unregisters a model provider.
-        /// </summary>
-        /// <param name="providerName">The name of the provider to unregister.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        Task UnregisterProviderAsync(string providerName, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets the best available model for a specific task.
@@ -101,29 +58,9 @@ namespace Nexo.Feature.AI.Interfaces
         string Name { get; }
 
         /// <summary>
-        /// Gets the type of the provider.
-        /// </summary>
-        string ProviderType { get; }
-
-        /// <summary>
-        /// Gets whether the provider is enabled.
-        /// </summary>
-        bool IsEnabled { get; }
-
-        /// <summary>
-        /// Gets whether the provider is the primary provider.
-        /// </summary>
-        bool IsPrimary { get; }
-
-        /// <summary>
         /// Gets the supported model types.
         /// </summary>
         IEnumerable<ModelType> SupportedModelTypes { get; }
-
-        /// <summary>
-        /// Gets the model capabilities.
-        /// </summary>
-        ModelCapabilities Capabilities { get; }
 
         /// <summary>
         /// Gets available models from this provider.
@@ -147,13 +84,6 @@ namespace Nexo.Feature.AI.Interfaces
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The model response.</returns>
         Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Validates a model request.
-        /// </summary>
-        /// <param name="request">The model request to validate.</param>
-        /// <returns>Validation result.</returns>
-        Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request);
 
         /// <summary>
         /// Gets the health status of the provider.

@@ -10,6 +10,13 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ModelInfo
     {
+        public ModelInfo(long sizeBytes, long parameterCount, int contextWindowSize)
+        {
+            SizeBytes = sizeBytes;
+            ParameterCount = parameterCount;
+            ContextWindowSize = contextWindowSize;
+        }
+
         /// <summary>
         /// Gets or sets the unique identifier for the model.
         /// </summary>
@@ -71,12 +78,6 @@ namespace Nexo.Feature.AI.Models
         public ModelCapabilities Capabilities { get; set; } = new ModelCapabilities();
 
         /// <summary>
-        /// Gets or sets the tags associated with the model.
-        /// </summary>
-        [JsonPropertyName("tags")]
-        public List<string> Tags { get; set; } = new List<string>();
-
-        /// <summary>
         /// Gets or sets whether the model is available for use.
         /// </summary>
         [JsonPropertyName("isAvailable")]
@@ -92,7 +93,7 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets additional metadata for the model.
         /// </summary>
         [JsonPropertyName("metadata")]
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
 
@@ -102,6 +103,12 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ModelResponse
     {
+        public ModelResponse(int inputTokens, int outputTokens)
+        {
+            InputTokens = inputTokens;
+            OutputTokens = outputTokens;
+        }
+
         /// <summary>
         /// Gets or sets the generated text or content.
         /// </summary>
@@ -144,12 +151,6 @@ namespace Nexo.Feature.AI.Models
         public decimal Cost { get; set; }
 
         /// <summary>
-        /// Gets or sets the finish reason.
-        /// </summary>
-        [JsonPropertyName("finishReason")]
-        public string FinishReason { get; set; } = string.Empty;
-
-        /// <summary>
         /// Gets or sets the processing time in milliseconds.
         /// </summary>
         [JsonPropertyName("processingTimeMs")]
@@ -159,7 +160,7 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the metadata for the response.
         /// </summary>
         [JsonPropertyName("metadata")]
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -195,7 +196,7 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the metadata for the chunk.
         /// </summary>
         [JsonPropertyName("metadata")]
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -213,19 +214,19 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the validation errors.
         /// </summary>
         [JsonPropertyName("errors")]
-        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> Errors { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the validation warnings.
         /// </summary>
         [JsonPropertyName("warnings")]
-        public List<string> Warnings { get; set; } = new List<string>();
+        public List<string> Warnings { get; set; } = [];
 
         /// <summary>
         /// Gets or sets the validation information messages.
         /// </summary>
         [JsonPropertyName("information")]
-        public List<string> Information { get; set; } = new List<string>();
+        public List<string> Information { get; set; } = [];
     }
 
     /// <summary>
@@ -285,6 +286,6 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets additional metadata for the provider.
         /// </summary>
         [JsonPropertyName("metadata")]
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 } 

@@ -9,7 +9,7 @@ namespace Nexo.Feature.AI.Interfaces
     /// </summary>
     /// <typeparam name="TKey">The type of the cache key.</typeparam>
     /// <typeparam name="TValue">The type of the cached value.</typeparam>
-    public interface ICacheStrategy<TKey, TValue>
+    public interface ICacheStrategy<in TKey, TValue>
     {
         /// <summary>
         /// Gets a value from the cache by key.
@@ -36,15 +36,5 @@ namespace Nexo.Feature.AI.Interfaces
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A task representing the remove operation.</returns>
         Task RemoveAsync(TKey key, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Removes all entries from the cache.
-        /// </summary>
-        Task ClearAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Invalidates the cache entry for the given key (alias for RemoveAsync).
-        /// </summary>
-        Task InvalidateAsync(TKey key, CancellationToken cancellationToken = default);
     }
 } 

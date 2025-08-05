@@ -1,13 +1,8 @@
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Nexo.Core.Application.Models;
-using Nexo.Core.Domain.Entities;
 using Nexo.Core.Domain.Enums;
 using Nexo.Core.Domain.ValueObjects;
-using Nexo.Feature.Agent.Models;
 
-namespace Nexo.Core.Application.Interfaces
+namespace Nexo.Feature.Agent.Interfaces
 {
     /// <summary>
     /// Defines the contract for an agent entity capable of handling specific tasks,
@@ -73,37 +68,5 @@ namespace Nexo.Core.Application.Interfaces
         /// The matching process often involves keyword extraction and comparison.
         /// </remarks>
         List<string> FocusAreas { get; }
-
-        /// <summary>
-        /// Processes a given request asynchronously and provides a corresponding response.
-        /// </summary>
-        /// <param name="request">The request to be processed, including its type, content, and context.</param>
-        /// <param name="ct">A cancellation token that can be used to cancel the operation.</param>
-        /// <returns>A task representing the asynchronous operation. The task result contains the response to the processed request.</returns>
-        Task<AgentResponse> ProcessRequestAsync(AgentRequest request, CancellationToken ct);
-
-        /// <summary>
-        /// Determines whether the agent can handle the specified sprint task based on its focus areas or capabilities.
-        /// </summary>
-        /// <param name="task">The sprint task to evaluate, containing details like description, priority, and story points.</param>
-        /// <param name="ct">The cancellation token to observe for task cancellation.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result is a boolean indicating whether the agent can handle the provided task.</returns>
-        Task<bool> CanHandleTaskAsync(SprintTask task, CancellationToken ct);
-
-        /// <summary>
-        /// Starts the agent asynchronously by performing necessary initialization,
-        /// registering the agent with the communication service, and updating its status to active.
-        /// </summary>
-        /// <param name="ct">A CancellationToken instance that can be used to observe and cancel the operation.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
-        Task StartAsync(CancellationToken ct);
-
-        /// <summary>
-        /// Stops the agent asynchronously by performing operations such as updating its status
-        /// and handling necessary cleanup processes.
-        /// </summary>
-        /// <param name="ct">A <see cref="CancellationToken"/> to observe while waiting for the operation to complete.</param>
-        /// <returns>A <see cref="Task"/> that represents the asynchronous stop operation.</returns>
-        Task StopAsync(CancellationToken ct);
     }
 }

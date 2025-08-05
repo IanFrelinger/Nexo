@@ -36,3 +36,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Feature.Pipeline.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Core.Application.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Feature.Pipeline.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/Debug/net8.0/Nexo.Feature.AI.sourcelink.json

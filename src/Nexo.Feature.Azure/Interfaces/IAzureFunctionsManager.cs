@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Nexo.Feature.Azure.Models;
+using Nexo.Feature.Azure.Enums;
 
 namespace Nexo.Feature.Azure.Interfaces;
 
@@ -145,130 +147,4 @@ public interface IAzureFunctionsManager
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Result indicating update success</returns>
     Task<AzureOperationResult> UpdateFunctionAppConfigurationAsync(string resourceGroupName, string functionAppName, FunctionAppConfiguration configuration, CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// Function app deployment information
-/// </summary>
-public record FunctionAppDeploymentInfo
-{
-    public string ResourceGroupName { get; init; } = string.Empty;
-    public string FunctionAppName { get; init; } = string.Empty;
-    public string DeploymentId { get; init; } = string.Empty;
-    public string Status { get; init; } = string.Empty;
-    public DateTime DeployedAt { get; init; }
-    public string Runtime { get; init; } = string.Empty;
-    public string Region { get; init; } = string.Empty;
-    public AppServicePlanType PlanType { get; init; }
-    public string Url { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Function app update information
-/// </summary>
-public record FunctionAppUpdateInfo
-{
-    public string ResourceGroupName { get; init; } = string.Empty;
-    public string FunctionAppName { get; init; } = string.Empty;
-    public string UpdateId { get; init; } = string.Empty;
-    public string Status { get; init; } = string.Empty;
-    public DateTime UpdatedAt { get; init; }
-    public long PackageSize { get; init; }
-}
-
-/// <summary>
-/// Function invocation result
-/// </summary>
-public record FunctionInvocationResult
-{
-    public string FunctionName { get; init; } = string.Empty;
-    public string StatusCode { get; init; } = string.Empty;
-    public object? Response { get; init; }
-    public Dictionary<string, string> Headers { get; init; } = new();
-    public TimeSpan ExecutionTime { get; init; }
-    public DateTime InvokedAt { get; init; }
-}
-
-/// <summary>
-/// Function app information
-/// </summary>
-public record FunctionAppInfo
-{
-    public string Name { get; init; } = string.Empty;
-    public string ResourceGroup { get; init; } = string.Empty;
-    public string Location { get; init; } = string.Empty;
-    public string State { get; init; } = string.Empty;
-    public string Runtime { get; init; } = string.Empty;
-    public string Url { get; init; } = string.Empty;
-    public AppServicePlanType PlanType { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime LastModified { get; init; }
-    public int FunctionCount { get; init; }
-    public Dictionary<string, string> Tags { get; init; } = new();
-}
-
-/// <summary>
-/// Function information
-/// </summary>
-public record FunctionInfo
-{
-    public string Name { get; init; } = string.Empty;
-    public string FunctionAppName { get; init; } = string.Empty;
-    public string ResourceGroup { get; init; } = string.Empty;
-    public string State { get; init; } = string.Empty;
-    public string Language { get; init; } = string.Empty;
-    public string TriggerType { get; init; } = string.Empty;
-    public string Url { get; init; } = string.Empty;
-    public DateTime CreatedAt { get; init; }
-    public DateTime LastModified { get; init; }
-    public Dictionary<string, string> Configuration { get; init; } = new();
-}
-
-/// <summary>
-/// Function log entry
-/// </summary>
-public record FunctionLogEntry
-{
-    public string FunctionName { get; init; } = string.Empty;
-    public string Level { get; init; } = string.Empty;
-    public string Message { get; init; } = string.Empty;
-    public DateTime Timestamp { get; init; }
-    public string InvocationId { get; init; } = string.Empty;
-    public Dictionary<string, object> Properties { get; init; } = new();
-}
-
-/// <summary>
-/// Deployment package information
-/// </summary>
-public record DeploymentPackageInfo
-{
-    public string PackagePath { get; init; } = string.Empty;
-    public long Size { get; init; }
-    public string Runtime { get; init; } = string.Empty;
-    public DateTime CreatedAt { get; init; }
-    public string Checksum { get; init; } = string.Empty;
-}
-
-/// <summary>
-/// Function app configuration
-/// </summary>
-public record FunctionAppConfiguration
-{
-    public Dictionary<string, string> AppSettings { get; init; } = new();
-    public Dictionary<string, string> ConnectionStrings { get; init; } = new();
-    public Dictionary<string, string> SiteConfig { get; init; } = new();
-    public List<string> EnabledFunctions { get; init; } = new();
-    public Dictionary<string, object> FunctionConfigurations { get; init; } = new();
-}
-
-/// <summary>
-/// App service plan types
-/// </summary>
-public enum AppServicePlanType
-{
-    Free,
-    Basic,
-    Standard,
-    Premium,
-    Isolated
 } 

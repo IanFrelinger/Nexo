@@ -4,58 +4,149 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Interfaces;
 using Nexo.Feature.AI.Interfaces;
-using Nexo.Core.Application.Models;
 using Nexo.Core.Domain.Entities;
 using Nexo.Core.Domain.Enums;
 using Nexo.Core.Domain.ValueObjects;
 using Nexo.Feature.Agent.Interfaces;
 using Nexo.Feature.AI.Models;
-using Nexo.Feature.AI.Enums;
 using Nexo.Feature.Agent.Models;
 
 namespace Nexo.Feature.Agent.Services
 {
     /// <summary>
-    /// Base implementation for AI-enhanced agents providing common AI processing capabilities.
+    /// Base class for AI-enhanced agents, providing core functionality for AI processing, task analysis, and suggestion generation.
     /// </summary>
-    public abstract class BaseAIEnhancedAgent : IAIEnhancedAgent
+    public abstract class BaseAiEnhancedAgent : IAiEnhancedAgent
     {
-        protected readonly ILogger<BaseAIEnhancedAgent> _logger;
+        /// <summary>
+        /// Provides logging functionality for classes that inherit from the BaseAiEnhancedAgent.
+        /// Used to log relevant information, such as the processing of requests or lifecycle events,
+        /// aiding in debugging, monitoring, and tracing operations within AI-enhanced agents.
+        /// </summary>
+        protected readonly ILogger<BaseAiEnhancedAgent> Logger;
+
+        /// <summary>
+        /// A protected, readonly instance of the <see cref="IModelOrchestrator"/> interface utilized for managing and executing
+        /// AI model-related operations within the <see cref="BaseAiEnhancedAgent"/>.
+        /// </summary>
+        /// <remarks>
+        /// This variable acts as the central component for interactions with AI models, providing functionalities such as
+        /// executing model requests and handling responses. It is initialized via dependency injection through the constructor
+        /// and is used extensively in methods that involve AI processing, such as task analysis, suggestion generation, and
+        /// AI-enhanced operations.
+        /// </remarks>
         protected readonly IModelOrchestrator _modelOrchestrator;
 
-        protected BaseAIEnhancedAgent(
+        /// <summary>
+        /// Represents the base implementation for AI-enhanced agent functionality.
+        /// </summary>
+        /// <remarks>
+        /// This abstract class serves as the foundation for all AI-enhanced agent types, providing core properties
+        /// and shared functionality such as agent identity, name, role, status, and capabilities.
+        /// Derived classes can extend its behavior as required for specific agent roles.
+        /// </remarks>
+        protected BaseAiEnhancedAgent(
             AgentId id,
             AgentName name,
             AgentRole role,
             IModelOrchestrator modelOrchestrator,
-            ILogger<BaseAIEnhancedAgent> logger)
+            ILogger<BaseAiEnhancedAgent> logger)
         {
             Id = id;
             Name = name;
             Role = role;
             Status = AgentStatus.Inactive;
             _modelOrchestrator = modelOrchestrator;
-            _logger = logger;
+            Logger = logger;
             
             Capabilities = new List<string>();
             FocusAreas = new List<string>();
-            AICapabilities = new AIAgentCapabilities();
+            AiCapabilities = new AiAgentCapabilities();
         }
 
+        /// <summary>
+        /// Gets the unique identifier of the AI-enhanced agent.
+        /// Represents an instance of <see cref="AgentId"/>, which serves as the agent's primary identifier.
+        /// </summary>
         public AgentId Id { get; }
-        public AgentName Name { get; }
-        public AgentRole Role { get; }
-        public AgentStatus Status { get; protected set; }
-        public List<string> Capabilities { get; }
-        public List<string> FocusAreas { get; }
-        public IModelOrchestrator ModelOrchestrator => _modelOrchestrator;
-        public AIAgentCapabilities AICapabilities { get; }
 
+        /// <summary>
+        /// Gets the name of the AI-enhanced agent.
+        /// </summary>
+        /// <remarks>
+        /// This property represents the unique, human-readable name of the agent.
+        /// The name is typically used for identification and logging purposes.
+        /// </remarks>
+        public AgentName Name { get; }
+
+        /// <summary>
+        /// Represents the functional role assigned to an AI-enhanced agent within the system.
+        /// </summary>
+        /// <remarks>
+        /// The <c>Role</c> property is used to define the specific responsibilities or designation
+        /// of an agent. It helps in tailoring the agent's behavior and capabilities based on its
+        /// assigned role.
+        /// </remarks>
+        public AgentRole Role { get; }
+
+        /// <summary>
+        /// Represents the current operational state of the agent.
+        /// </summary>
+        /// <remarks>
+        /// The status can be one of the following values defined in the AgentStatus enumeration:
+        /// Inactive, Active, Busy, or Failed. The status transitions are managed internally
+        /// based on the agent's activities, such as processing requests or encountering errors.
+        /// </remarks>
+        public AgentStatus Status { get; protected set; }
+
+        /// <summary>
+        /// Gets the list of capabilities specific to the AI-enhanced agent.
+        /// </summary>
+        /// <remarks>
+        /// This property represents a collection of strings that define the set of functionalities
+        /// or specializations associated with the agent. Derived classes can initialize and populate
+        /// this list with relevant capabilities based on their specific roles or purposes.
+        /// </remarks>
+        public List<string> Capabilities { get; }
+
+        /// <summary>
+        /// A collection representing the primary focus areas or domains of expertise
+        /// associated with this agent. This property outlines the key architectural
+        /// domains or patterns the agent specializes in, such as "Cloud-Native Architecture"
+        /// or "Domain-Driven Design". It provides an overview of the agent's specialization
+        /// for informed decision-making or task assignments.
+        /// </summary>
+        public List<string> FocusAreas { get; }
+
+        /// Represents a service responsible for handling and orchestrating interactions
+        /// with underlying AI models. Provides functionality to process and fulfill
+        /// model-related tasks requested by various agents within the system.
+        /// Typically injected into agents or other services requiring AI-enhanced capabilities.
+        /// The interface serves as an abstraction layer to encapsulate the behavior
+        /// of different AI models or orchestration implementations, enabling flexibility
+        /// and ease of integration across the system.
+        public IModelOrchestrator ModelOrchestrator => _modelOrchestrator;
+
+        /// <summary>
+        /// Gets the AI capabilities associated with the agent.
+        /// </summary>
+        /// <remarks>
+        /// Provides configurable capabilities for the AI agent, such as code analysis, task analysis,
+        /// problem-solving, and more. This property allows customization of AI functionality based on the
+        /// specific role and focus areas of the agent.
+        /// </remarks>
+        public AiAgentCapabilities AiCapabilities { get; }
+
+        /// <summary>
+        /// Processes a given agent request asynchronously, updating the agent's status throughout the operation.
+        /// </summary>
+        /// <param name="request">The agent request to process.</param>
+        /// <param name="ct">The cancellation token to observe for cancellation requests.</param>
+        /// <returns>Returns the response generated from processing the agent request.</returns>
         public virtual async Task<AgentResponse> ProcessRequestAsync(AgentRequest request, CancellationToken ct)
         {
-            _logger.LogInformation("Processing request for agent {AgentName}: {RequestType}", Name.Value, request.Type);
+            Logger.LogInformation("Processing request for agent {AgentName}: {RequestType}", Name.Value, request.Type);
 
             try
             {
@@ -68,35 +159,41 @@ namespace Nexo.Feature.Agent.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing request for agent {AgentName}", Name.Value);
+                Logger.LogError(ex, "Error processing request for agent {AgentName}", Name.Value);
                 Status = AgentStatus.Failed;
                 throw;
             }
         }
 
-        public virtual async Task<AIEnhancedAgentResponse> ProcessAIRequestAsync(AIEnhancedAgentRequest request, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// Processes an AI-enhanced request asynchronously and returns a response containing the results of the AI processing.
+        /// </summary>
+        /// <param name="request">The AI-enhanced request containing the details and parameters for the process.</param>
+        /// <param name="cancellationToken">A token that can be used to cancel the operation before completion.</param>
+        /// <returns>A task that represents the asynchronous operation, containing the AI-enhanced response with the processing results.</returns>
+        public virtual async Task<AiEnhancedAgentResponse> ProcessAiRequestAsync(AiEnhancedAgentRequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
-            _logger.LogInformation("Processing AI request for agent {AgentName}: {RequestType}", Name.Value, request.Type);
+            Logger.LogInformation("Processing AI request for agent {AgentName}: {RequestType}", Name.Value, request.Type);
 
             var startTime = DateTime.UtcNow;
-            var response = new AIEnhancedAgentResponse();
+            var response = new AiEnhancedAgentResponse();
 
             try
             {
                 Status = AgentStatus.Busy;
 
-                if (request.UseAI && AICapabilities.CanAnalyzeTasks)
+                if (request.UseAi && AiCapabilities.CanAnalyzeTasks)
                 {
                     // Process with AI enhancement
-                    var aiResponse = await ProcessWithAIAsync(request, cancellationToken);
-                    response.AIWasUsed = true;
-                    response.AIModelUsed = aiResponse.Model;
+                    var aiResponse = await ProcessWithAiAsync(request, cancellationToken);
+                    response.AiWasUsed = true;
+                    response.AiModelUsed = aiResponse.Model;
                     response.Content = aiResponse.Content;
                     response.Success = true;
-                    response.AIInsights = aiResponse.Metadata.ContainsKey("insights") 
+                    response.AiInsights = aiResponse.Metadata.ContainsKey("insights") 
                         ? (aiResponse.Metadata["insights"] as List<string>) ?? new List<string>()
                         : new List<string>();
-                    response.AIConfidenceScore = aiResponse.Metadata.ContainsKey("confidence") 
+                    response.AiConfidenceScore = aiResponse.Metadata.ContainsKey("confidence") 
                         ? Convert.ToDouble(aiResponse.Metadata["confidence"]) 
                         : 0.0;
                 }
@@ -104,35 +201,56 @@ namespace Nexo.Feature.Agent.Services
                 {
                     // Fall back to standard processing
                     var standardResponse = await ProcessRequestAsync(request, cancellationToken);
-                    response = new AIEnhancedAgentResponse
+                    response = new AiEnhancedAgentResponse
                     {
                         Content = standardResponse.Content,
                         Success = standardResponse.Success,
-                        AIWasUsed = false
+                        AiWasUsed = false
                     };
                 }
 
-                response.AIProcessingTimeMs = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
+                response.AiProcessingTimeMs = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
                 Status = AgentStatus.Active;
                 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing AI request for agent {AgentName}", Name.Value);
+                Logger.LogError(ex, "Error processing AI request for agent {AgentName}", Name.Value);
                 Status = AgentStatus.Failed;
-                return new AIEnhancedAgentResponse
+                return new AiEnhancedAgentResponse
                 {
                     Success = false,
                     Content = $"Error processing request: {ex.Message}",
-                    AIWasUsed = false
+                    AiWasUsed = false
                 };
             }
         }
 
-        public virtual async Task<AITaskAnalysisResult> AnalyzeTaskWithAIAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// Analyzes the provided sprint task using AI mechanisms to generate an evaluation or insight about the task.
+        /// This method interacts with AI model orchestrators to process the task information, analyze it, and
+        /// return a result that includes a summary and a confidence score based on AI processing.
+        /// The AI analysis is performed by forming a prompt containing task data, sending it to the AI model,
+        /// and processing the response to extract the required information.
+        /// In case of an error during the AI analysis process, it logs the details of the exception and returns
+        /// an analysis result indicating an error occurred.
+        /// </summary>
+        /// <param name="task">
+        /// The sprint task to be analyzed using AI technology. This object contains task-specific information
+        /// required for AI evaluation.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// Optional cancellation token to cancel the AI analysis operation if required.
+        /// </param>
+        /// <returns>
+        /// A Task that represents the asynchronous operation. The task result contains an instance of
+        /// <see cref="AiTaskAnalysisResult"/>, which holds the analysis details including a summary
+        /// and confidence score.
+        /// </returns>
+        public virtual async Task<AiTaskAnalysisResult> AnalyzeTaskWithAiAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken))
         {
-            _logger.LogInformation("Analyzing task with AI for agent {AgentName}: {TaskId}", Name.Value, task.Id);
+            Logger.LogInformation("Analyzing task with AI for agent {AgentName}: {TaskId}", Name.Value, task.Id);
 
             try
             {
@@ -149,8 +267,8 @@ namespace Nexo.Feature.Agent.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error analyzing task with AI for agent {AgentName}", Name.Value);
-                return new AITaskAnalysisResult
+                Logger.LogError(ex, "Error analyzing task with AI for agent {AgentName}", Name.Value);
+                return new AiTaskAnalysisResult
                 {
                     Summary = "Error occurred during AI analysis",
                     ConfidenceScore = 0.0
@@ -158,9 +276,15 @@ namespace Nexo.Feature.Agent.Services
             }
         }
 
-        public virtual async Task<AISuggestionsResult> GenerateSuggestionsAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken))
+        /// <summary>
+        /// Generates AI-based suggestions for a given sprint task.
+        /// </summary>
+        /// <param name="task">The <see cref="SprintTask"/> object for which suggestions are to be generated.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A <see cref="AiSuggestionsResult"/> containing the generated suggestions and related data.</returns>
+        public virtual async Task<AiSuggestionsResult> GenerateSuggestionsAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken))
         {
-            _logger.LogInformation("Generating suggestions with AI for agent {AgentName}: {TaskId}", Name.Value, task.Id);
+            Logger.LogInformation("Generating suggestions with AI for agent {AgentName}: {TaskId}", Name.Value, task.Id);
 
             try
             {
@@ -177,14 +301,23 @@ namespace Nexo.Feature.Agent.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating suggestions with AI for agent {AgentName}", Name.Value);
-                return new AISuggestionsResult
+                Logger.LogError(ex, "Error generating suggestions with AI for agent {AgentName}", Name.Value);
+                return new AiSuggestionsResult
                 {
                     ConfidenceScore = 0.0
                 };
             }
         }
 
+        /// <summary>
+        /// Determines whether the agent can handle the given task based on focus areas and AI task analysis.
+        /// </summary>
+        /// <param name="task">The sprint task to be evaluated.</param>
+        /// <param name="ct">The cancellation token used to observe cancellation requests.</param>
+        /// <returns>
+        /// A boolean value indicating whether the agent can handle the task.
+        /// Returns true if the task aligns with the agent's focus areas or if AI analysis determines high confidence; otherwise, false.
+        /// </returns>
         public virtual async Task<bool> CanHandleTaskAsync(SprintTask task, CancellationToken ct)
         {
             // Check if any focus areas match the task
@@ -198,41 +331,82 @@ namespace Nexo.Feature.Agent.Services
             }
 
             // Use AI to analyze task if capabilities allow
-            if (AICapabilities.CanAnalyzeTasks)
+            if (AiCapabilities.CanAnalyzeTasks)
             {
                 try
                 {
-                    var analysis = await AnalyzeTaskWithAIAsync(task, ct);
+                    var analysis = await AnalyzeTaskWithAiAsync(task, ct);
                     return analysis.ConfidenceScore > 0.6; // Threshold for AI confidence
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "AI task analysis failed for agent {AgentName}, falling back to basic matching", Name.Value);
+                    Logger.LogWarning(ex, "AI task analysis failed for agent {AgentName}, falling back to basic matching", Name.Value);
                 }
             }
 
             return false;
         }
 
+        /// <summary>
+        /// Starts the AI-enhanced agent and sets its status to active. Executes any additional start logic defined in the derived class.
+        /// </summary>
+        /// <param name="ct">A CancellationToken to observe while waiting for the operation's completion.</param>
+        /// <returns>A task representing the asynchronous start operation.</returns>
         public virtual async Task StartAsync(CancellationToken ct)
         {
-            _logger.LogInformation("Starting AI-enhanced agent {AgentName}", Name.Value);
+            Logger.LogInformation("Starting AI-enhanced agent {AgentName}", Name.Value);
             Status = AgentStatus.Active;
             await OnStartedAsync(ct);
         }
 
+        /// <summary>
+        /// Asynchronously stops the AI-enhanced agent and performs necessary cleanup operations.
+        /// Updates the agent's status to inactive and triggers the OnStoppedAsync method for additional handling.
+        /// </summary>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to signal the stop operation should be canceled.</param>
+        /// <returns>A <see cref="Task"/> that represents the asynchronous stop operation.</returns>
         public virtual async Task StopAsync(CancellationToken ct)
         {
-            _logger.LogInformation("Stopping AI-enhanced agent {AgentName}", Name.Value);
+            Logger.LogInformation("Stopping AI-enhanced agent {AgentName}", Name.Value);
             Status = AgentStatus.Inactive;
             await OnStoppedAsync(ct);
         }
 
+        /// <summary>
+        /// Processes an internal request asynchronously. This method is designed to be implemented by derived classes
+        /// to handle the specifics of request processing based on the agent's functionality.
+        /// </summary>
+        /// <param name="request">The request to be processed, represented by an instance of <see cref="AgentRequest"/>.</param>
+        /// <param name="ct">A <see cref="CancellationToken"/> used to observe cancellation requests.</param>
+        /// <returns>
+        /// A task representing the asynchronous operation. The task result contains an instance of <see cref="AgentResponse"/>
+        /// which represents the outcome of processing the request.
+        /// </returns>
         protected abstract Task<AgentResponse> ProcessRequestInternalAsync(AgentRequest request, CancellationToken ct);
+
+        /// <summary>
+        /// Invoked when the AI-enhanced agent starts, allowing for any necessary initializations or task preparations.
+        /// This method must be implemented by derived classes to define specific startup logic.
+        /// </summary>
+        /// <param name="ct">A cancellation token that can be used to observe cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
         protected abstract Task OnStartedAsync(CancellationToken ct);
+
+        /// <summary>
+        /// Performs actions required when the AI-enhanced agent is stopped.
+        /// This method is invoked during the stop lifecycle of the agent to handle cleanup or additional stopping logic.
+        /// </summary>
+        /// <param name="ct">A <see cref="CancellationToken"/> that propagates notification that the stop operation should be canceled.</param>
+        /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
         protected abstract Task OnStoppedAsync(CancellationToken ct);
 
-        protected virtual async Task<Nexo.Feature.AI.Models.ModelResponse> ProcessWithAIAsync(AIEnhancedAgentRequest request, CancellationToken cancellationToken)
+        /// <summary>
+        /// Processes an AI-enhanced request asynchronously using the specified AI model orchestrator.
+        /// </summary>
+        /// <param name="request">The AI-enhanced agent request containing the input for processing and associated metadata.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the AI model response.</returns>
+        protected async Task<ModelResponse> ProcessWithAiAsync(AiEnhancedAgentRequest request, CancellationToken cancellationToken)
         {
             var prompt = CreateProcessingPrompt(request);
             var modelRequest = new ModelRequest
@@ -240,13 +414,19 @@ namespace Nexo.Feature.Agent.Services
                 Input = prompt,
                 MaxTokens = 2000,
                 Temperature = 0.3,
-                Metadata = request.AIContext
+                Metadata = request.AiContext
             };
 
             return await _modelOrchestrator.ExecuteAsync(modelRequest, cancellationToken);
         }
 
-        protected virtual string CreateProcessingPrompt(AIEnhancedAgentRequest request)
+        /// <summary>
+        /// Constructs a processing prompt based on the specified AI-enhanced agent request,
+        /// including context about the agent's attributes and the request details.
+        /// </summary>
+        /// <param name="request">The AI-enhanced agent request containing the type and content to process.</param>
+        /// <returns>A formatted string representing the detailed processing prompt.</returns>
+        protected virtual string CreateProcessingPrompt(AiEnhancedAgentRequest request)
         {
             return $@"You are an AI-enhanced agent with the following characteristics:
 - Name: {Name.Value}
@@ -260,7 +440,14 @@ Request Content: {request.Content}
 Please provide a comprehensive response that leverages your AI capabilities to enhance the processing of this request. Consider the context and provide insights, suggestions, or improvements where applicable.";
         }
 
-        protected virtual string CreateTaskAnalysisPrompt(SprintTask task)
+        /// <summary>
+        /// Creates a formatted task analysis prompt for an AI-enhanced agent using task details and agent information.
+        /// The prompt is intended for generating a structured analysis of a task, including summary, complexity assessment,
+        /// estimated effort, recommended approach, potential risks, and confidence score in JSON format.
+        /// </summary>
+        /// <param name="task">The sprint task to be analyzed, containing details like ID, description, priority, and story points.</param>
+        /// <returns>A string containing the formatted task analysis prompt to be used by the AI model.</returns>
+        protected string CreateTaskAnalysisPrompt(SprintTask task)
         {
             return $@"Analyze the following task for an AI-enhanced agent:
 
@@ -287,6 +474,13 @@ Please provide a structured analysis including:
 Format your response as JSON with these fields: summary, complexityAssessment, estimatedEffort, recommendedApproach, potentialRisks, confidenceScore.";
         }
 
+        /// <summary>
+        /// Generates a prompt string for creating suggestions based on the given task.
+        /// The generated prompt includes information about the agent and the task, and
+        /// specifies the format for the suggestions to be provided in JSON.
+        /// </summary>
+        /// <param name="task">The task for which suggestions need to be generated. This includes details such as the description and priority.</param>
+        /// <returns>A formatted prompt string containing agent and task information, along with instructions for generating suggestions.</returns>
         protected virtual string CreateSuggestionsPrompt(SprintTask task)
         {
             return $@"Generate suggestions for the following task:
@@ -309,12 +503,17 @@ Please provide suggestions in the following categories:
 Format your response as JSON with these fields: improvementSuggestions, codeSuggestions, architecturalSuggestions, testingSuggestions, confidenceScore.";
         }
 
-        protected virtual AITaskAnalysisResult ParseTaskAnalysisResponse(string response)
+        /// <summary>
+        /// Parses an AI-generated task analysis response and extracts the relevant analysis information.
+        /// </summary>
+        /// <param name="response">The raw string response from the AI model containing task analysis details.</param>
+        /// <returns>An <see cref="AiTaskAnalysisResult"/> object containing the parsed analysis data such as summary, complexity assessment, and other insights.</returns>
+        protected AiTaskAnalysisResult ParseTaskAnalysisResponse(string response)
         {
             try
             {
                 // Simple JSON parsing - in production, use proper JSON deserialization
-                var result = new AITaskAnalysisResult();
+                var result = new AiTaskAnalysisResult();
                 
                 if (response.Contains("\"summary\""))
                 {
@@ -355,8 +554,8 @@ Format your response as JSON with these fields: improvementSuggestions, codeSugg
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to parse AI task analysis response");
-                return new AITaskAnalysisResult
+                Logger.LogWarning(ex, "Failed to parse AI task analysis response");
+                return new AiTaskAnalysisResult
                 {
                     Summary = "Failed to parse AI response",
                     ConfidenceScore = 0.0
@@ -364,11 +563,16 @@ Format your response as JSON with these fields: improvementSuggestions, codeSugg
             }
         }
 
-        protected virtual AISuggestionsResult ParseSuggestionsResponse(string response)
+        /// <summary>
+        /// Parses the response content received from the AI model to extract suggestion-related data into an <see cref="AiSuggestionsResult"/> object.
+        /// </summary>
+        /// <param name="response">The raw response string from the AI model containing suggestions and confidence score.</param>
+        /// <returns>An <see cref="AiSuggestionsResult"/> object containing parsed improvement, code, architectural, and testing suggestions along with a confidence score.</returns>
+        protected AiSuggestionsResult ParseSuggestionsResponse(string response)
         {
             try
             {
-                var result = new AISuggestionsResult();
+                var result = new AiSuggestionsResult();
                 
                 // Parse improvement suggestions
                 if (response.Contains("\"improvementSuggestions\""))
@@ -427,26 +631,30 @@ Format your response as JSON with these fields: improvementSuggestions, codeSugg
                 }
 
                 // Parse confidence score
-                if (response.Contains("\"confidenceScore\""))
-                {
-                    var confidenceMatch = System.Text.RegularExpressions.Regex.Match(response, "\"confidenceScore\":\\s*([0-9.]+)");
-                    if (confidenceMatch.Success && double.TryParse(confidenceMatch.Groups[1].Value, out var confidence))
-                        result.ConfidenceScore = confidence;
-                }
+                if (!response.Contains("\"confidenceScore\"")) return result;
+                var confidenceMatch = System.Text.RegularExpressions.Regex.Match(response, "\"confidenceScore\":\\s*([0-9.]+)");
+                if (confidenceMatch.Success && double.TryParse(confidenceMatch.Groups[1].Value, out var confidence))
+                    result.ConfidenceScore = confidence;
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to parse AI suggestions response");
-                return new AISuggestionsResult
+                Logger.LogWarning(ex, "Failed to parse AI suggestions response");
+                return new AiSuggestionsResult
                 {
                     ConfidenceScore = 0.0
                 };
             }
         }
 
-        protected virtual List<string> ExtractKeywords(string text)
+        /// <summary>
+        /// Extracts keywords from the given text. Keywords are identified as distinct words
+        /// with a length greater than 3, converted to lowercase, and stripped of certain special characters.
+        /// </summary>
+        /// <param name="text">The input text from which keywords will be extracted.</param>
+        /// <returns>A list of distinct, lowercase keywords derived from the input text.</returns>
+        protected List<string> ExtractKeywords(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return new List<string>();

@@ -81,9 +81,9 @@ namespace Nexo.CLI
             });
 
             // Add AI settings
-            services.AddSingleton<Nexo.Feature.AI.Models.AISettings>(provider =>
+            services.AddSingleton<Nexo.Feature.AI.Models.AiSettings>(provider =>
             {
-                return new Nexo.Feature.AI.Models.AISettings
+                return new Nexo.Feature.AI.Models.AiSettings
                 {
                     PreferredProvider = Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.AiProvider) ?? string.Empty,
                     PreferredModel = Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.AiModel) ?? string.Empty
@@ -101,10 +101,10 @@ namespace Nexo.CLI
 
             // Add AI services
             services.AddSingleton<IModelOrchestrator, ModelOrchestrator>();
-            services.AddSingleton<OpenAIModelProvider>();
+            services.AddSingleton<OpenAiModelProvider>();
             services.AddSingleton<OllamaModelProvider>();
-            services.AddSingleton<AzureOpenAIModelProvider>();
-            services.AddSingleton<IAIConfigurationService, AIConfigurationService>();
+            services.AddSingleton<AzureOpenAiModelProvider>();
+            services.AddSingleton<IAiConfigurationService, AiConfigurationService>();
 
             // Add Natural Language Processing services
             services.AddTransient<INaturalLanguageProcessor, NaturalLanguageProcessor>();
@@ -137,8 +137,8 @@ namespace Nexo.CLI
             services.AddTransient<ISemanticCacheKeyGenerator, SemanticCacheKeyGeneratorService>();
 
             // Add AI-enhanced agents
-            services.AddTransient<IAIEnhancedAgent, AIEnhancedArchitectAgent>();
-            services.AddTransient<IAIEnhancedAgent, AIEnhancedDeveloperAgent>();
+            services.AddTransient<IAiEnhancedAgent, AiEnhancedArchitectAgent>();
+            services.AddTransient<IAiEnhancedAgent, AiEnhancedDeveloperAgent>();
 
             // Add performance monitoring
             services.AddSingleton<PerformanceMonitor>();
@@ -175,7 +175,7 @@ namespace Nexo.CLI
             services.AddTransient<Nexo.Core.Application.Interfaces.IAsyncProcessor<Nexo.Feature.AI.Models.ModelRequest, Nexo.Feature.AI.Models.ModelResponse>>(provider =>
             {
                 var orchestrator = provider.GetRequiredService<IModelOrchestrator>();
-                var aiSettings = provider.GetRequiredService<Nexo.Feature.AI.Models.AISettings>();
+                var aiSettings = provider.GetRequiredService<Nexo.Feature.AI.Models.AiSettings>();
                 
                 return new Nexo.Core.Application.Services.AsyncProcessor<Nexo.Feature.AI.Models.ModelRequest, Nexo.Feature.AI.Models.ModelResponse>(
                     async (request, cancellationToken) =>
@@ -198,7 +198,7 @@ namespace Nexo.CLI
                 var coreProcessor = provider.GetRequiredService<Nexo.Core.Application.Interfaces.IAsyncProcessor<Nexo.Feature.AI.Models.ModelRequest, Nexo.Feature.AI.Models.ModelResponse>>();
                 var cache = provider.GetRequiredService<Nexo.Core.Application.Interfaces.ICacheStrategy<string, Nexo.Feature.AI.Models.ModelResponse>>();
                 var logger = provider.GetRequiredService<ILogger<Nexo.Core.Application.Services.CachingAsyncProcessor<Nexo.Feature.AI.Models.ModelRequest, string, Nexo.Feature.AI.Models.ModelResponse>>>();
-                var aiSettings = provider.GetRequiredService<Nexo.Feature.AI.Models.AISettings>();
+                var aiSettings = provider.GetRequiredService<Nexo.Feature.AI.Models.AiSettings>();
                 
                 return new Nexo.Core.Application.Services.CachingAsyncProcessor<Nexo.Feature.AI.Models.ModelRequest, string, Nexo.Feature.AI.Models.ModelResponse>(
                     coreProcessor,
@@ -231,9 +231,9 @@ namespace Nexo.CLI
             var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
 
             // Register OpenAI provider
-            var openAiProvider = new OpenAIModelProvider(
+            var openAiProvider = new OpenAiModelProvider(
                 httpClientFactory.CreateClient(),
-                loggerFactory.CreateLogger<OpenAIModelProvider>(),
+                loggerFactory.CreateLogger<OpenAiModelProvider>(),
                 Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.OpenAiApiKey) ?? Constants.EnvironmentVariables.OpenAiApiKey
             );
             orchestrator.RegisterProviderAsync(openAiProvider, CancellationToken.None).Wait();
@@ -246,9 +246,9 @@ namespace Nexo.CLI
             orchestrator.RegisterProviderAsync(ollamaProvider, CancellationToken.None).Wait();
 
             // Register Azure OpenAI provider
-            var azureProvider = new AzureOpenAIModelProvider(
+            var azureProvider = new AzureOpenAiModelProvider(
                 httpClientFactory.CreateClient(),
-                loggerFactory.CreateLogger<AzureOpenAIModelProvider>(),
+                loggerFactory.CreateLogger<AzureOpenAiModelProvider>(),
                 Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.AzureApiKey) ?? Constants.EnvironmentVariables.AzureApiKey,
                 Environment.GetEnvironmentVariable(Constants.EnvironmentVariables.AzureEndpoint) ?? "https://your-azure-endpoint.openai.azure.com/"
             );

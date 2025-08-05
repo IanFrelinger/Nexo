@@ -21,7 +21,6 @@ public class OllamaModelProvider : IModelProvider
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<OllamaModelProvider> _logger;
-    private readonly string _baseUrl;
 
     public OllamaModelProvider(
         HttpClient httpClient,
@@ -30,10 +29,9 @@ public class OllamaModelProvider : IModelProvider
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _baseUrl = baseUrl;
 
         // Configure HTTP client
-        _httpClient.BaseAddress = new Uri(_baseUrl);
+        _httpClient.BaseAddress = new Uri(baseUrl);
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "Nexo-AI-Provider/1.0");
     }
 
@@ -43,11 +41,11 @@ public class OllamaModelProvider : IModelProvider
     public string Description => "Local Ollama models for text generation and chat";
     public bool IsAvailable => true; // Assume available if we can reach the service
 
-    public IEnumerable<ModelType> SupportedModelTypes => new[]
-    {
+    public IEnumerable<ModelType> SupportedModelTypes =>
+    [
         ModelType.TextGeneration,
         ModelType.CodeGeneration
-    };
+    ];
 
     public async Task<IEnumerable<ModelInfo>> GetAvailableModelsAsync(CancellationToken cancellationToken = default(CancellationToken))
     {
@@ -56,8 +54,8 @@ public class OllamaModelProvider : IModelProvider
             var response = await _httpClient.GetAsync("api/tags", cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                string json = await response.Content.ReadAsStringAsync();
-                OllamaModelsResponse modelsResponse = JsonSerializer.Deserialize<OllamaModelsResponse>(json);
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var modelsResponse = JsonSerializer.Deserialize<OllamaModelsResponse>(json);
                 return modelsResponse?.Models?.Select(m => new ModelInfo
                 {
                     Id = m.Name,
@@ -73,7 +71,7 @@ public class OllamaModelProvider : IModelProvider
                         ["digest"] = m.Digest,
                         ["size"] = m.Size
                     }
-                }) ?? Enumerable.Empty<ModelInfo>();
+                }) ?? [];
             }
         }
         catch (Exception ex)
@@ -81,7 +79,7 @@ public class OllamaModelProvider : IModelProvider
             _logger.LogError(ex, "Error fetching Ollama models");
         }
 
-        return Enumerable.Empty<ModelInfo>();
+        return [];
     }
 
     public async Task<IModel> LoadModelAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
@@ -98,12 +96,7 @@ public class OllamaModelProvider : IModelProvider
     public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
         var models = await GetAvailableModelsAsync(cancellationToken);
-        foreach (var m in models)
-        {
-            if (m.Id == modelName || m.Name == modelName)
-                return m;
-        }
-        return null;
+        return models.FirstOrDefault(m => m.Id == modelName || m.Name == modelName);
     }
 
     public async Task<ModelValidationResult> ValidateModelAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
@@ -174,7 +167,7 @@ public class OllamaModelProvider : IModelProvider
         SupportsTextEmbedding = false,
         MaxInputLength = 4096,
         MaxOutputLength = 4096,
-        SupportedLanguages = new List<string> { "en" }
+        SupportedLanguages = ["en"]
     };
 
     public async Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
@@ -216,7 +209,7 @@ public class OllamaModelProvider : IModelProvider
         }
     }
 
-    public async Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request)
+    public Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request)
     {
         var result = new ModelValidationResult { IsValid = true };
 
@@ -237,16 +230,14 @@ public class OllamaModelProvider : IModelProvider
 
         // Validate token limits
         var estimatedTokens = EstimateTokenCount(request.Input);
-        if (estimatedTokens > 4096)
-        {
-            result.IsValid = false;
-            result.Errors.Add("Input exceeds maximum token limit");
-        }
+        if (estimatedTokens <= 4096) return Task.FromResult(result);
+        result.IsValid = false;
+        result.Errors.Add("Input exceeds maximum token limit");
 
-        return result;
+        return Task.FromResult(result);
     }
 
-    private string GetModelFromRequest(ModelRequest request)
+    private static string GetModelFromRequest(ModelRequest request)
     {
         // Try to get model from metadata first
         if (request.Metadata.TryGetValue("model", out var modelObj) && modelObj is string model)
@@ -258,7 +249,7 @@ public class OllamaModelProvider : IModelProvider
         return "llama2";
     }
 
-    private bool IsModelSupported(string model)
+    private static bool IsModelSupported(string model)
     {
         var supportedModels = new[] { "llama2", "llama2:7b", "llama2:13b", "llama2:70b", "codellama", "mistral" };
         return supportedModels.Contains(model.ToLower());
@@ -282,7 +273,7 @@ public class OllamaModelProvider : IModelProvider
         return ollamaRequest;
     }
 
-    private string CreatePrompt(ModelRequest request)
+    private static string CreatePrompt(ModelRequest request)
     {
         var prompt = new StringBuilder();
 
@@ -311,13 +302,13 @@ public class OllamaModelProvider : IModelProvider
         return JsonSerializer.Deserialize<OllamaResponse>(responseContent) ?? new OllamaResponse();
     }
 
-    private int EstimateTokenCount(string text)
+    private static int EstimateTokenCount(string text)
     {
         // Simple estimation: ~4 characters per token
         return text.Length / 4;
     }
 
-    private ModelType GetModelType(string modelId)
+    private static ModelType GetModelType(string modelId)
     {
         if (modelId.Contains("code") || modelId.Contains("codellama"))
         {
@@ -337,7 +328,7 @@ public class OllamaModelProvider : IModelProvider
             Model = string.Empty;
             Response = string.Empty;
             Done = false;
-            Context = new List<long>();
+            Context = [];
         }
     }
 
@@ -346,7 +337,7 @@ public class OllamaModelProvider : IModelProvider
         public List<OllamaModelData> Models { get; set; }
         public OllamaModelsResponse()
         {
-            Models = new List<OllamaModelData>();
+            Models = [];
         }
     }
 
@@ -385,21 +376,17 @@ public class OllamaModel : IModel
     {
         get
         {
-            if (_info == null)
+            return _info ??= new ModelInfo
             {
-                _info = new ModelInfo
-                {
-                    Id = _modelName,
-                    Name = _modelName,
-                    Description = "Ollama " + _modelName + " model",
-                    Version = "latest",
-                    Type = ModelType.TextGeneration,
-                    Provider = "ollama",
-                    IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow
-                };
-            }
-            return _info;
+                Id = _modelName,
+                Name = _modelName,
+                Description = "Ollama " + _modelName + " model",
+                Version = "latest",
+                Type = ModelType.TextGeneration,
+                Provider = "ollama",
+                IsAvailable = true,
+                LastUpdated = DateTime.UtcNow
+            };
         }
     }
 
@@ -426,7 +413,7 @@ public class OllamaModel : IModel
             SupportsTextEmbedding = false,
             MaxInputLength = 4096,
             MaxOutputLength = 4096,
-            SupportedLanguages = new List<string> { "en" }
+            SupportedLanguages = ["en"]
         };
     }
 

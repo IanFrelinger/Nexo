@@ -10,13 +10,31 @@ using Nexo.Feature.AI.Enums;
 namespace Nexo.Feature.AI.Services
 {
     /// <summary>
-    /// Intelligent development accelerator that provides code suggestions, refactoring, and test generation.
+    /// Provides advanced development support capabilities such as code suggestions, refactoring recommendations, test generation, optimizations, and documentation suggestions.
     /// </summary>
     public class DevelopmentAccelerator : IDevelopmentAccelerator
     {
+        /// <summary>
+        /// Logger instance used to log informational messages, errors, and trace the execution flow
+        /// for the <see cref="DevelopmentAccelerator" /> class.
+        /// </summary>
+        /// <remarks>
+        /// This logger facilitates tracking and debugging by outputting log entries for events such
+        /// as processing code suggestions, handling exceptions, and other key activities.
+        /// </remarks>
         private readonly ILogger<DevelopmentAccelerator> _logger;
+
+        /// <summary>
+        /// Represents the orchestrator responsible for managing and selecting the most appropriate AI models
+        /// based on the specific task requirements. Utilized for operations such as code generation, refactoring,
+        /// optimization, and test generation within the DevelopmentAccelerator service.
+        /// </summary>
         private readonly IModelOrchestrator _modelOrchestrator;
 
+        /// <summary>
+        /// Provides functionalities for accelerating software development through intelligent code suggestions,
+        /// refactoring assistance, test case generation, optimization recommendations, and documentation suggestions.
+        /// </summary>
         public DevelopmentAccelerator(
             ILogger<DevelopmentAccelerator> logger,
             IModelOrchestrator modelOrchestrator)
@@ -25,6 +43,23 @@ namespace Nexo.Feature.AI.Services
             _modelOrchestrator = modelOrchestrator ?? throw new ArgumentNullException(nameof(modelOrchestrator));
         }
 
+        /// <summary>
+        /// Suggests code snippets or modifications based on the provided source code and optional context.
+        /// </summary>
+        /// <param name="sourceCode">
+        /// The source code for which suggestions are requested. If null or empty, a default suggestion is returned.
+        /// </param>
+        /// <param name="context">
+        /// Optional additional metadata that may influence the code suggestion generation logic (e.g., programming language, frameworks).
+        /// Pass null if additional context is not required.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A token to monitor for cancellation requests while the task is being executed.
+        /// </param>
+        /// <returns>
+        /// A task that represents the asynchronous operation. The task result contains a list of suggested code snippets
+        /// or error messages if the operation encounters issues.
+        /// </returns>
         public async Task<IList<string>> SuggestCodeAsync(string sourceCode, IDictionary<string, object> context = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting code suggestions for source code of length: {Length}", sourceCode?.Length ?? 0);
@@ -57,6 +92,21 @@ namespace Nexo.Feature.AI.Services
             }
         }
 
+        /// <summary>
+        /// Asynchronously generates a list of code refactoring suggestions based on the provided source code and optional context.
+        /// </summary>
+        /// <param name="sourceCode">The source code to analyze and suggest refactorings for. Must be a non-null, non-empty string.</param>
+        /// <param name="context">
+        /// Optional context data to guide the refactoring process. This is a dictionary of key-value pairs where the keys are string identifiers
+        /// and the values provide additional information for customization.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A CancellationToken to observe while waiting for the task to complete. Allows the operation to be cancelled if needed.
+        /// </param>
+        /// <returns>
+        /// A task that represents the asynchronous operation. The task result contains a list of strings, where each string is a suggested refactoring,
+        /// or error messages if the operation fails.
+        /// </returns>
         public async Task<IList<string>> SuggestRefactoringsAsync(string sourceCode, IDictionary<string, object> context = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting refactoring suggestions for source code of length: {Length}", sourceCode?.Length ?? 0);
@@ -88,6 +138,13 @@ namespace Nexo.Feature.AI.Services
             }
         }
 
+        /// <summary>
+        /// Asynchronously generates test case suggestions based on the provided source code.
+        /// </summary>
+        /// <param name="sourceCode">The source code for which the tests should be generated.</param>
+        /// <param name="context">An optional dictionary containing additional context to aid in test generation.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a list of test case suggestions as strings.</returns>
         public async Task<IList<string>> GenerateTestsAsync(string sourceCode, IDictionary<string, object> context = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Generating tests for source code of length: {Length}", sourceCode?.Length ?? 0);
@@ -124,6 +181,21 @@ namespace Nexo.Feature.AI.Services
             }
         }
 
+        /// <summary>
+        /// Provides suggestions to optimize the provided source code, leveraging AI models to analyze and recommend improvements.
+        /// </summary>
+        /// <param name="sourceCode">
+        /// The source code to be analyzed for optimization suggestions. Must be a non-null/non-empty string.
+        /// </param>
+        /// <param name="context">
+        /// An optional dictionary containing additional context or metadata to tailor the optimization suggestions.
+        /// </param>
+        /// <param name="cancellationToken">
+        /// A token for cancelling the asynchronous operation, if necessary.
+        /// </param>
+        /// <returns>
+        /// A list of string suggestions representing potential optimizations for the given source code. If an error occurs or if the input is invalid, appropriate error messages are returned within the list.
+        /// </returns>
         public async Task<IList<string>> SuggestOptimizationsAsync(string sourceCode, IDictionary<string, object> context = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting optimization suggestions for source code of length: {Length}", sourceCode?.Length ?? 0);
@@ -155,6 +227,17 @@ namespace Nexo.Feature.AI.Services
             }
         }
 
+        /// <summary>
+        /// Provides documentation suggestions for the provided source code.
+        /// </summary>
+        /// <param name="sourceCode">The source code for which documentation suggestions are needed.</param>
+        /// <param name="context">A dictionary containing additional context or metadata that can influence the suggestion process.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A list of suggested documentation snippets based on the provided source code.</returns>
+        /// <remarks>
+        /// This method leverages an AI model to analyze the source code and generate relevant documentation suggestions.
+        /// If the input code is null or empty, a default message is returned. In case of errors, an error message is included in the response.
+        /// </remarks>
         public async Task<IList<string>> SuggestDocumentationAsync(string sourceCode, IDictionary<string, object> context = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting documentation suggestions for source code of length: {Length}", sourceCode?.Length ?? 0);
@@ -186,6 +269,14 @@ namespace Nexo.Feature.AI.Services
             }
         }
 
+        /// <summary>
+        /// Creates a prompt for generating intelligent code suggestions based on provided source code and context.
+        /// The prompt includes details about code improvement areas such as naming conventions, performance optimizations,
+        /// best practices, and potential design pattern applications.
+        /// </summary>
+        /// <param name="sourceCode">The source code for which suggestions are to be generated.</param>
+        /// <param name="context">Additional context or metadata to provide to the suggestion model, if available.</param>
+        /// <returns>A string containing the formatted prompt to be used for generating code suggestions.</returns>
         private string CreateCodeSuggestionPrompt(string sourceCode, IDictionary<string, object> context)
         {
             var contextInfo = context != null ? $"Context: {string.Join(", ", context.Values)}" : "";
@@ -209,6 +300,13 @@ Please provide suggestions for:
 Format your response as a numbered list of specific, actionable code suggestions. Include code examples where appropriate.";
         }
 
+        /// <summary>
+        /// Creates a prompt for generating refactoring suggestions for the provided source code.
+        /// The prompt includes predefined guidelines and context information for the refactoring analysis.
+        /// </summary>
+        /// <param name="sourceCode">The C# source code to be analyzed for refactoring suggestions.</param>
+        /// <param name="context">Optional context information to tailor the refactoring suggestions. It can include key-value pairs providing additional details or constraints for the analysis.</param>
+        /// <returns>A formatted string containing the refactoring prompt with guidelines to analyze the given source code and provide actionable recommendations.</returns>
         private string CreateRefactoringPrompt(string sourceCode, IDictionary<string, object> context)
         {
             var contextInfo = context != null ? $"Context: {string.Join(", ", context.Values)}" : "";
@@ -240,6 +338,19 @@ For each suggestion, provide:
 Format your response as a numbered list with detailed explanations.";
         }
 
+        /// <summary>
+        /// Constructs a prompt for test generation based on the provided C# source code and optional context.
+        /// </summary>
+        /// <param name="sourceCode">
+        /// The source code for which to generate test cases. This must be a valid C# code segment.
+        /// </param>
+        /// <param name="context">
+        /// Optional additional information that can assist in refining the generated test cases.
+        /// Contains key-value pairs relevant to the context of the source code.
+        /// </param>
+        /// <returns>
+        /// A structured string prompt to instruct the underlying model to generate comprehensive and diverse test cases.
+        /// </returns>
         private string CreateTestGenerationPrompt(string sourceCode, IDictionary<string, object> context)
         {
             var contextInfo = context != null ? $"Context: {string.Join(", ", context.Values)}" : "";
@@ -271,6 +382,19 @@ Use xUnit framework and follow AAA (Arrange-Act-Assert) pattern.
 Format your response as complete, compilable test code.";
         }
 
+        /// <summary>
+        /// Generates a detailed prompt for optimizing given source code with specific recommendations
+        /// regarding efficiency, performance, and resource management.
+        /// </summary>
+        /// <param name="sourceCode">The C# source code to be analyzed for optimization opportunities.</param>
+        /// <param name="context">
+        /// An optional dictionary containing contextual information that may influence the optimization suggestions.
+        /// This can include project-specific or environmental details.
+        /// </param>
+        /// <returns>
+        /// A string containing a formatted prompt that outlines areas for optimization,
+        /// including instructions on what suggestions should be generated.
+        /// </returns>
         private string CreateOptimizationPrompt(string sourceCode, IDictionary<string, object> context)
         {
             var contextInfo = context != null ? $"Context: {string.Join(", ", context.Values)}" : "";
@@ -302,37 +426,51 @@ For each suggestion, provide:
 Format your response as a numbered list with detailed explanations.";
         }
 
-        private string CreateDocumentationPrompt(string sourceCode, IDictionary<string, object> context)
+        /// <summary>
+        /// Constructs a documentation prompt for analyzing and generating documentation suggestions for the provided source code.
+        /// </summary>
+        /// <param name="sourceCode">The source code to analyze and generate documentation suggestions for.</param>
+        /// <param name="context">Optional additional context to be included in the documentation prompt. This could include project-specific details or metadata.</param>
+        /// <returns>A formatted string containing the documentation prompt that incorporates the source code and context information.</returns>
+        private static string CreateDocumentationPrompt(string sourceCode, IDictionary<string, object> context)
         {
             var contextInfo = context != null ? $"Context: {string.Join(", ", context.Values)}" : "";
             
-            return $@"Analyze the following C# code and provide documentation suggestions:
+            return $"""
+                    Analyze the following C# code and provide documentation suggestions:
 
-{sourceCode}
+                    {sourceCode}
 
-{contextInfo}
+                    {contextInfo}
 
-Please provide documentation suggestions for:
-1. XML documentation comments
-2. README file content
-3. API documentation
-4. Code examples
-5. Usage scenarios
-6. Configuration documentation
-7. Troubleshooting guides
-8. Performance considerations
-9. Security considerations
-10. Deployment instructions
+                    Please provide documentation suggestions for:
+                    1. XML documentation comments
+                    2. README file content
+                    3. API documentation
+                    4. Code examples
+                    5. Usage scenarios
+                    6. Configuration documentation
+                    7. Troubleshooting guides
+                    8. Performance considerations
+                    9. Security considerations
+                    10. Deployment instructions
 
-For each suggestion, provide:
-- The specific documentation need
-- Content recommendations
-- Target audience
-- Format suggestions
+                    For each suggestion, provide:
+                    - The specific documentation need
+                    - Content recommendations
+                    - Target audience
+                    - Format suggestions
 
-Format your response as a numbered list with detailed recommendations.";
+                    Format your response as a numbered list with detailed recommendations.
+                    """;
         }
 
+        /// <summary>
+        /// Parses the AI-generated response into a list of code suggestions.
+        /// The method splits the response by lines and extracts items prefixed with numbers or bullet points.
+        /// </summary>
+        /// <param name="aiResponse">The AI-generated response as a string containing code suggestions.</param>
+        /// <returns>A list of parsed code suggestion strings extracted from the AI response.</returns>
         private IList<string> ParseSuggestions(string aiResponse)
         {
             var suggestions = new List<string>();
@@ -343,46 +481,49 @@ Format your response as a numbered list with detailed recommendations.";
             }
 
             // Split by numbered lines or bullet points
-            var lines = aiResponse.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = aiResponse.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
             
             foreach (var line in lines)
             {
                 var trimmedLine = line.Trim();
-                if (!string.IsNullOrEmpty(trimmedLine) && 
-                    (trimmedLine.StartsWith("1.") || 
-                     trimmedLine.StartsWith("2.") || 
-                     trimmedLine.StartsWith("3.") || 
-                     trimmedLine.StartsWith("4.") || 
-                     trimmedLine.StartsWith("5.") || 
-                     trimmedLine.StartsWith("6.") || 
-                     trimmedLine.StartsWith("7.") || 
-                     trimmedLine.StartsWith("8.") || 
-                     trimmedLine.StartsWith("9.") || 
-                     trimmedLine.StartsWith("10.") ||
-                     trimmedLine.StartsWith("-") ||
-                     trimmedLine.StartsWith("•")))
+                if (string.IsNullOrEmpty(trimmedLine) ||
+                    (!trimmedLine.StartsWith("1.") &&
+                     !trimmedLine.StartsWith("2.") &&
+                     !trimmedLine.StartsWith("3.") &&
+                     !trimmedLine.StartsWith("4.") &&
+                     !trimmedLine.StartsWith("5.") &&
+                     !trimmedLine.StartsWith("6.") &&
+                     !trimmedLine.StartsWith("7.") &&
+                     !trimmedLine.StartsWith("8.") &&
+                     !trimmedLine.StartsWith("9.") &&
+                     !trimmedLine.StartsWith("10.") &&
+                     !trimmedLine.StartsWith("-") &&
+                     !trimmedLine.StartsWith("•"))) continue;
+                // Remove the number/bullet and clean up
+                var suggestion = trimmedLine;
+                if (suggestion.Contains("."))
                 {
-                    // Remove the number/bullet and clean up
-                    var suggestion = trimmedLine;
-                    if (suggestion.Contains("."))
-                    {
-                        suggestion = suggestion.Substring(suggestion.IndexOf(".") + 1).Trim();
-                    }
-                    else if (suggestion.StartsWith("-") || suggestion.StartsWith("•"))
-                    {
-                        suggestion = suggestion.Substring(1).Trim();
-                    }
+                    suggestion = suggestion.Substring(suggestion.IndexOf(".", StringComparison.Ordinal) + 1).Trim();
+                }
+                else if (suggestion.StartsWith("-") || suggestion.StartsWith("•"))
+                {
+                    suggestion = suggestion.Substring(1).Trim();
+                }
                     
-                    if (!string.IsNullOrEmpty(suggestion))
-                    {
-                        suggestions.Add(suggestion);
-                    }
+                if (!string.IsNullOrEmpty(suggestion))
+                {
+                    suggestions.Add(suggestion);
                 }
             }
 
             return suggestions;
         }
 
+        /// <summary>
+        /// Parses the AI-generated response for test method suggestions and organizes them into individual test cases.
+        /// </summary>
+        /// <param name="aiResponse">The raw response generated by the AI containing potential test methods.</param>
+        /// <returns>A list of parsed test method suggestions, where each entry represents a complete test case.</returns>
         private IList<string> ParseTestSuggestions(string aiResponse)
         {
             var suggestions = new List<string>();
@@ -394,7 +535,7 @@ Format your response as a numbered list with detailed recommendations.";
 
             // For test generation, we want to preserve the code structure
             // Split by test method patterns
-            var lines = aiResponse.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var lines = aiResponse.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
             var currentTest = new List<string>();
             
             foreach (var line in lines)

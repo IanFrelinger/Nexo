@@ -10,36 +10,6 @@ namespace Nexo.Feature.AI.Interfaces
     public interface ITestSuiteGenerator
     {
         /// <summary>
-        /// Generates comprehensive unit tests for domain logic
-        /// </summary>
-        /// <param name="domainLogic">The domain logic to generate tests for</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Generated unit test suite</returns>
-        Task<UnitTestSuiteResult> GenerateUnitTestsAsync(
-            DomainLogicResult domainLogic,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Generates integration tests for domain logic
-        /// </summary>
-        /// <param name="domainLogic">The domain logic to generate tests for</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Generated integration test suite</returns>
-        Task<IntegrationTestSuiteResult> GenerateIntegrationTestsAsync(
-            DomainLogicResult domainLogic,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Identifies and generates edge case tests
-        /// </summary>
-        /// <param name="domainLogic">The domain logic to analyze</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Generated edge case test suite</returns>
-        Task<EdgeCaseTestSuiteResult> GenerateEdgeCaseTestsAsync(
-            DomainLogicResult domainLogic,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Validates test coverage and generates additional tests if needed
         /// </summary>
         /// <param name="testSuite">The complete test suite to validate</param>

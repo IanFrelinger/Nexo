@@ -351,8 +351,7 @@ namespace Nexo.Feature.AI.Services
         /// </summary>
         public async Task<DomainLogicValidationResult> ValidateDomainLogicAsync(
             DomainLogicResult domainLogic,
-            ProcessedRequirements requirements,
-            CancellationToken cancellationToken = default)
+            ProcessedRequirements requirements)
         {
             if (domainLogic == null)
                 throw new ArgumentNullException(nameof(domainLogic));

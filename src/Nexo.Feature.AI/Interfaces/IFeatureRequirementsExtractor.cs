@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,18 +24,6 @@ namespace Nexo.Feature.AI.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Validates extracted requirements against business rules and domain context.
-        /// </summary>
-        /// <param name="requirements">Requirements to validate</param>
-        /// <param name="context">Validation context</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Validation result with issues and recommendations</returns>
-        Task<ValidationResult> ValidateRequirementsAsync(
-            List<FeatureRequirement> requirements,
-            ValidationContext context,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Enhances requirements with additional context, business rules, and technical specifications.
         /// </summary>
         /// <param name="requirements">Requirements to enhance</param>
@@ -53,22 +40,18 @@ namespace Nexo.Feature.AI.Interfaces
         /// </summary>
         /// <param name="requirements">Requirements to prioritize</param>
         /// <param name="context">Prioritization context</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Prioritization result with scores and recommendations</returns>
         Task<PrioritizationResult> PrioritizeRequirementsAsync(
             List<FeatureRequirement> requirements,
-            ProcessingContext context,
-            CancellationToken cancellationToken = default);
+            ProcessingContext context);
 
         /// <summary>
         /// Analyzes requirements for completeness, clarity, and consistency.
         /// </summary>
         /// <param name="requirements">Requirements to analyze</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Analysis result with metrics and insights</returns>
         Task<RequirementsAnalysisResult> AnalyzeRequirementsAsync(
-            List<FeatureRequirement> requirements,
-            CancellationToken cancellationToken = default);
+            List<FeatureRequirement> requirements);
 
         /// <summary>
         /// Generates acceptance criteria for requirements based on business rules and user stories.
@@ -116,22 +99,22 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Analysis insights and observations.
         /// </summary>
-        public List<RequirementInsight> Insights { get; set; } = new List<RequirementInsight>();
+        public List<RequirementInsight> Insights { get; set; } = [];
 
         /// <summary>
         /// Identified gaps and missing information.
         /// </summary>
-        public List<RequirementGap> Gaps { get; set; } = new List<RequirementGap>();
+        public List<RequirementGap> Gaps { get; set; } = [];
 
         /// <summary>
         /// Recommendations for improvement.
         /// </summary>
-        public List<string> Recommendations { get; set; } = new List<string>();
+        public List<string> Recommendations { get; set; } = [];
 
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -152,7 +135,7 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Related requirement IDs.
         /// </summary>
-        public List<string> RequirementIds { get; set; } = new List<string>();
+        public List<string> RequirementIds { get; set; } = [];
 
         /// <summary>
         /// Confidence score for the insight.
@@ -167,7 +150,7 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Suggested actions based on the insight.
         /// </summary>
-        public List<string> SuggestedActions { get; set; } = new List<string>();
+        public List<string> SuggestedActions { get; set; } = [];
     }
 
     /// <summary>
@@ -193,7 +176,7 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Related requirement IDs.
         /// </summary>
-        public List<string> RequirementIds { get; set; } = new List<string>();
+        public List<string> RequirementIds { get; set; } = [];
 
         /// <summary>
         /// Suggested resolution for the gap.
@@ -219,7 +202,7 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Generated acceptance criteria for each requirement.
         /// </summary>
-        public List<RequirementAcceptanceCriteria> Criteria { get; set; } = new List<RequirementAcceptanceCriteria>();
+        public List<RequirementAcceptanceCriteria> Criteria { get; set; } = [];
 
         /// <summary>
         /// Overall quality score of generated criteria.
@@ -229,7 +212,7 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Processing metadata.
         /// </summary>
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -245,12 +228,12 @@ namespace Nexo.Feature.AI.Interfaces
         /// <summary>
         /// Generated acceptance criteria.
         /// </summary>
-        public List<string> Criteria { get; set; } = new List<string>();
+        public List<string> Criteria { get; set; } = [];
 
         /// <summary>
         /// Test scenarios derived from the criteria.
         /// </summary>
-        public List<TestScenario> TestScenarios { get; set; } = new List<TestScenario>();
+        public List<TestScenario> TestScenarios { get; set; } = [];
 
         /// <summary>
         /// Quality score for the generated criteria.
@@ -264,11 +247,6 @@ namespace Nexo.Feature.AI.Interfaces
     public class TestScenario
     {
         /// <summary>
-        /// ID of the test scenario.
-        /// </summary>
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        /// <summary>
         /// Name of the test scenario.
         /// </summary>
         public string Name { get; set; } = string.Empty;
@@ -279,19 +257,14 @@ namespace Nexo.Feature.AI.Interfaces
         public string Description { get; set; } = string.Empty;
 
         /// <summary>
-        /// Preconditions for the test.
-        /// </summary>
-        public List<string> Preconditions { get; set; } = new List<string>();
-
-        /// <summary>
         /// Test steps.
         /// </summary>
-        public List<string> Steps { get; set; } = new List<string>();
+        public List<string> Steps { get; set; } = [];
 
         /// <summary>
         /// Expected results.
         /// </summary>
-        public List<string> ExpectedResults { get; set; } = new List<string>();
+        public List<string> ExpectedResults { get; set; } = [];
 
         /// <summary>
         /// Priority of the test scenario.
@@ -315,44 +288,9 @@ namespace Nexo.Feature.AI.Interfaces
         TechnicalComplexity,
 
         /// <summary>
-        /// Risk assessment insight.
-        /// </summary>
-        RiskAssessment,
-
-        /// <summary>
         /// Dependency insight.
         /// </summary>
-        Dependency,
-
-        /// <summary>
-        /// Integration insight.
-        /// </summary>
-        Integration,
-
-        /// <summary>
-        /// Performance insight.
-        /// </summary>
-        Performance,
-
-        /// <summary>
-        /// Security insight.
-        /// </summary>
-        Security,
-
-        /// <summary>
-        /// Usability insight.
-        /// </summary>
-        Usability,
-
-        /// <summary>
-        /// Compliance insight.
-        /// </summary>
-        Compliance,
-
-        /// <summary>
-        /// Scalability insight.
-        /// </summary>
-        Scalability
+        Dependency
     }
 
     /// <summary>
@@ -366,48 +304,8 @@ namespace Nexo.Feature.AI.Interfaces
         MissingFunctionalRequirement,
 
         /// <summary>
-        /// Missing non-functional requirement.
-        /// </summary>
-        MissingNonFunctionalRequirement,
-
-        /// <summary>
-        /// Missing business rule.
-        /// </summary>
-        MissingBusinessRule,
-
-        /// <summary>
         /// Missing acceptance criteria.
         /// </summary>
-        MissingAcceptanceCriteria,
-
-        /// <summary>
-        /// Missing technical specification.
-        /// </summary>
-        MissingTechnicalSpecification,
-
-        /// <summary>
-        /// Missing integration point.
-        /// </summary>
-        MissingIntegrationPoint,
-
-        /// <summary>
-        /// Missing data model.
-        /// </summary>
-        MissingDataModel,
-
-        /// <summary>
-        /// Missing workflow.
-        /// </summary>
-        MissingWorkflow,
-
-        /// <summary>
-        /// Missing stakeholder consideration.
-        /// </summary>
-        MissingStakeholderConsideration,
-
-        /// <summary>
-        /// Missing compliance requirement.
-        /// </summary>
-        MissingComplianceRequirement
+        MissingAcceptanceCriteria
     }
 } 

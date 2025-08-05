@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Nexo.Feature.AI.Models
@@ -10,6 +9,12 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class AdvancedModelRequest
     {
+        public AdvancedModelRequest(decimal maxCost, int timeoutMs)
+        {
+            MaxCost = maxCost;
+            TimeoutMs = timeoutMs;
+        }
+
         /// <summary>
         /// Gets or sets the input content for the model.
         /// </summary>
@@ -63,12 +68,12 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Gets or sets the maximum cost budget for this request.
         /// </summary>
-        public decimal MaxCost { get; set; } = 1.0m;
+        public decimal MaxCost { get; set; }
 
         /// <summary>
         /// Gets or sets the timeout for the request in milliseconds.
         /// </summary>
-        public int TimeoutMs { get; set; } = 30000;
+        public int TimeoutMs { get; set; }
     }
 
     /// <summary>
@@ -76,6 +81,11 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class AdvancedModelResponse
     {
+        public AdvancedModelResponse(double confidenceScore)
+        {
+            ConfidenceScore = confidenceScore;
+        }
+
         /// <summary>
         /// Gets or sets the generated content.
         /// </summary>
@@ -92,7 +102,7 @@ namespace Nexo.Feature.AI.Models
         public string ErrorMessage { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the model that was used for processing.
+        /// Gets or sets the model used for processing.
         /// </summary>
         public string ModelUsed { get; set; } = string.Empty;
 
@@ -122,11 +132,6 @@ namespace Nexo.Feature.AI.Models
         public double ConfidenceScore { get; set; }
 
         /// <summary>
-        /// Gets or sets additional metadata about the response.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
-
-        /// <summary>
         /// Gets or sets the post-processing results.
         /// </summary>
         public List<PostProcessingResult> PostProcessingResults { get; set; } = new List<PostProcessingResult>();
@@ -150,17 +155,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Gets or sets the workflow steps to execute.
         /// </summary>
-        public List<WorkflowStep> Steps { get; set; } = new List<WorkflowStep>();
-
-        /// <summary>
-        /// Gets or sets the workflow configuration.
-        /// </summary>
-        public WorkflowConfiguration Configuration { get; set; } = new WorkflowConfiguration();
-
-        /// <summary>
-        /// Gets or sets the workflow metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public List<WorkflowStep> Steps { get; set; } = [];
     }
 
     /// <summary>
@@ -217,16 +212,6 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the input placeholders for this step.
         /// </summary>
         public List<InputPlaceholder> InputPlaceholders { get; set; } = new List<InputPlaceholder>();
-
-        /// <summary>
-        /// Gets or sets the dependencies for this step.
-        /// </summary>
-        public List<string> Dependencies { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Gets or sets the step configuration.
-        /// </summary>
-        public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -261,112 +246,19 @@ namespace Nexo.Feature.AI.Models
         /// <returns>The extracted value.</returns>
         public string ExtractValue(WorkflowStepResult result)
         {
-            switch (ExtractionMethod.ToLower())
+            return ExtractionMethod.ToLower() switch
             {
-                case "content":
-                    return result.Content;
-                case "metadata":
-                    return result.Metadata?.ToString() ?? string.Empty;
-                case "processingtime":
-                    return result.ProcessingTimeMs.ToString();
-                case "static":
-                    return StaticValue;
-                default:
-                    return result.Content;
-            }
+                "content" => result.Content,
+                "metadata" => result.Metadata?.ToString() ?? string.Empty,
+                "processingtime" => result.ProcessingTimeMs.ToString(),
+                "static" => StaticValue,
+                _ => result.Content
+            };
         }
     }
 
     /// <summary>
-    /// Workflow configuration for multi-model workflows.
-    /// </summary>
-    public class WorkflowConfiguration
-    {
-        /// <summary>
-        /// Gets or sets whether to execute steps in parallel when possible.
-        /// </summary>
-        public bool EnableParallelExecution { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets the maximum number of parallel steps.
-        /// </summary>
-        public int MaxParallelSteps { get; set; } = 3;
-
-        /// <summary>
-        /// Gets or sets the timeout for the entire workflow in milliseconds.
-        /// </summary>
-        public int TimeoutMs { get; set; } = 300000; // 5 minutes
-
-        /// <summary>
-        /// Gets or sets whether to continue execution on non-critical step failures.
-        /// </summary>
-        public bool ContinueOnNonCriticalFailure { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets the retry configuration for failed steps.
-        /// </summary>
-        public RetryConfiguration RetryConfiguration { get; set; } = new RetryConfiguration();
-
-        /// <summary>
-        /// Gets or sets the logging configuration.
-        /// </summary>
-        public LoggingConfiguration LoggingConfiguration { get; set; } = new LoggingConfiguration();
-    }
-
-    /// <summary>
-    /// Retry configuration for workflow steps.
-    /// </summary>
-    public class RetryConfiguration
-    {
-        /// <summary>
-        /// Gets or sets the maximum number of retries.
-        /// </summary>
-        public int MaxRetries { get; set; } = 3;
-
-        /// <summary>
-        /// Gets or sets the delay between retries in milliseconds.
-        /// </summary>
-        public int RetryDelayMs { get; set; } = 1000;
-
-        /// <summary>
-        /// Gets or sets whether to use exponential backoff.
-        /// </summary>
-        public bool UseExponentialBackoff { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets the backoff multiplier.
-        /// </summary>
-        public double BackoffMultiplier { get; set; } = 2.0;
-    }
-
-    /// <summary>
-    /// Logging configuration for workflows.
-    /// </summary>
-    public class LoggingConfiguration
-    {
-        /// <summary>
-        /// Gets or sets whether to log step inputs.
-        /// </summary>
-        public bool LogStepInputs { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets whether to log step outputs.
-        /// </summary>
-        public bool LogStepOutputs { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets whether to log performance metrics.
-        /// </summary>
-        public bool LogPerformanceMetrics { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets the log level for workflow execution.
-        /// </summary>
-        public string LogLevel { get; set; } = "Information";
-    }
-
-    /// <summary>
-    /// Multi-model workflow response with step results.
+    /// Multimodel workflow response with step results.
     /// </summary>
     public class MultiModelResponse
     {
@@ -399,11 +291,6 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the total cost of the workflow.
         /// </summary>
         public decimal TotalCost { get; set; }
-
-        /// <summary>
-        /// Gets or sets the workflow metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -411,6 +298,14 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class WorkflowStepResult
     {
+        private Dictionary<string, object> _metadata = new Dictionary<string, object>();
+
+        public WorkflowStepResult(long tokensUsed, int retryCount)
+        {
+            TokensUsed = tokensUsed;
+            RetryCount = retryCount;
+        }
+
         /// <summary>
         /// Gets or sets the step name.
         /// </summary>
@@ -454,7 +349,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Gets or sets the step metadata.
         /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Metadata => _metadata;
 
         /// <summary>
         /// Gets or sets the retry count for this step.
@@ -508,6 +403,11 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class PostProcessingOption
     {
+        public PostProcessingOption(int priority)
+        {
+            Priority = priority;
+        }
+
         /// <summary>
         /// Gets or sets the post-processing type.
         /// </summary>
@@ -521,7 +421,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Gets or sets the priority of this post-processing option.
         /// </summary>
-        public int Priority { get; set; } = 1;
+        public int Priority { get; set; }
     }
 
     /// <summary>
@@ -548,11 +448,6 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the processing time in milliseconds.
         /// </summary>
         public long ProcessingTimeMs { get; set; }
-
-        /// <summary>
-        /// Gets or sets the post-processing metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -573,22 +468,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// Content enhancement.
         /// </summary>
-        Enhancement,
-
-        /// <summary>
-        /// Content summarization.
-        /// </summary>
-        Summarization,
-
-        /// <summary>
-        /// Content translation.
-        /// </summary>
-        Translation,
-
-        /// <summary>
-        /// Content analysis.
-        /// </summary>
-        Analysis
+        Enhancement
     }
 
     // Supporting classes for AdvancedModelOrchestrator
@@ -651,23 +531,18 @@ namespace Nexo.Feature.AI.Models
     public enum OptimizationType
     {
         Performance,
-        Cost,
-        Reliability,
-        Security
+        Cost
     }
 
     public enum OptimizationPriority
     {
-        Low,
         Medium,
-        High,
-        Critical
+        High
     }
 
     public class WorkflowContext
     {
         public Dictionary<string, WorkflowStepResult> StepResults { get; set; } = new Dictionary<string, WorkflowStepResult>();
-        public Dictionary<string, object> SharedData { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -704,31 +579,5 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the last check time.
         /// </summary>
         public DateTime LastCheckTime { get; set; }
-    }
-
-    /// <summary>
-    /// Model optimization recommendation.
-    /// </summary>
-    public class ModelOptimizationRecommendation
-    {
-        /// <summary>
-        /// Gets or sets the recommendation type.
-        /// </summary>
-        public string Type { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the recommendation message.
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the expected impact.
-        /// </summary>
-        public string Impact { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the priority.
-        /// </summary>
-        public int Priority { get; set; }
     }
 } 

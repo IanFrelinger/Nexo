@@ -1,12 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "HEh43mtn46g=",
+  "dgSpecHash": "VloKLnSBkUk=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/Nexo.Infrastructure.Tests.csproj",
   "expectedPackageFiles": [
     "/Users/ianfrelinger/.nuget/packages/castle.core/5.1.1/castle.core.5.1.1.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/coverlet.collector/6.0.0/coverlet.collector.6.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/fluentassertions/6.12.0/fluentassertions.6.12.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/jetbrains.annotations/2025.2.0/jetbrains.annotations.2025.2.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.analyzers/3.3.4/microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.common/4.8.0/microsoft.codeanalysis.common.4.8.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.csharp/4.8.0/microsoft.codeanalysis.csharp.4.8.0.nupkg.sha512",

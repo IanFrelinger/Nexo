@@ -3,7 +3,7 @@ namespace Nexo.Feature.AI.Enums
     /// <summary>
     /// Defines the different AI operation modes.
     /// </summary>
-    public enum AIMode
+    public enum AiMode
     {
         /// <summary>
         /// Development mode with minimal AI usage and fast responses.
@@ -18,6 +18,6 @@ namespace Nexo.Feature.AI.Enums
         /// <summary>
         /// AI-heavy mode with maximum AI capabilities and advanced features.
         /// </summary>
-        AIHeavy
+        AiHeavy
     }
 } 

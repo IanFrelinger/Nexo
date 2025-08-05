@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Nexo.Feature.Agent.Interfaces;
-using System.Linq;
 
 namespace Nexo.Feature.Agent.Models
 {
@@ -38,7 +37,7 @@ namespace Nexo.Feature.Agent.Models
         /// <summary>
         /// Gets or sets whether AI capabilities are required.
         /// </summary>
-        public bool RequireAICapabilities { get; set; } = false;
+        public bool RequireAiCapabilities { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the maximum number of agents to include.
@@ -49,11 +48,6 @@ namespace Nexo.Feature.Agent.Models
         /// Gets or sets the session configuration.
         /// </summary>
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
-
-        /// <summary>
-        /// Gets or sets the session metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -79,7 +73,7 @@ namespace Nexo.Feature.Agent.Models
         /// <summary>
         /// Gets or sets the participating agents.
         /// </summary>
-        public List<IAIEnhancedAgent> ParticipatingAgents { get; set; } = new List<IAIEnhancedAgent>();
+        public List<IAiEnhancedAgent> ParticipatingAgents { get; set; } = new List<IAiEnhancedAgent>();
 
         /// <summary>
         /// Gets or sets the session type.
@@ -105,11 +99,6 @@ namespace Nexo.Feature.Agent.Models
         /// Gets or sets the session configuration.
         /// </summary>
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
-
-        /// <summary>
-        /// Gets or sets the session metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -156,11 +145,6 @@ namespace Nexo.Feature.Agent.Models
         /// Gets or sets the task configuration.
         /// </summary>
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
-
-        /// <summary>
-        /// Gets or sets the task metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -252,12 +236,12 @@ namespace Nexo.Feature.Agent.Models
         /// <summary>
         /// Gets or sets whether AI was used by the agent.
         /// </summary>
-        public bool AIWasUsed { get; set; }
+        public bool AiWasUsed { get; set; }
 
         /// <summary>
         /// Gets or sets the AI model used by the agent.
         /// </summary>
-        public string AIModelUsed { get; set; } = string.Empty;
+        public string AiModelUsed { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the confidence score of the agent's response.
@@ -275,6 +259,12 @@ namespace Nexo.Feature.Agent.Models
     /// </summary>
     public class CollaborationMetrics
     {
+        public CollaborationMetrics(double successRate, decimal totalCost)
+        {
+            SuccessRate = successRate;
+            TotalCost = totalCost;
+        }
+
         /// <summary>
         /// Gets or sets the total processing time in milliseconds.
         /// </summary>
@@ -286,11 +276,6 @@ namespace Nexo.Feature.Agent.Models
         public int AgentCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the average processing time per agent in milliseconds.
-        /// </summary>
-        public double AverageProcessingTimePerAgentMs => AgentCount > 0 ? (double)TotalProcessingTimeMs / AgentCount : 0;
-
-        /// <summary>
         /// Gets or sets the success rate of agent tasks.
         /// </summary>
         public double SuccessRate { get; set; }
@@ -299,11 +284,6 @@ namespace Nexo.Feature.Agent.Models
         /// Gets or sets the total cost of the collaboration.
         /// </summary>
         public decimal TotalCost { get; set; }
-
-        /// <summary>
-        /// Gets or sets the average cost per agent.
-        /// </summary>
-        public decimal AverageCostPerAgent => AgentCount > 0 ? TotalCost / AgentCount : 0;
     }
 
     /// <summary>
@@ -335,11 +315,6 @@ namespace Nexo.Feature.Agent.Models
         /// Gets or sets the message priority.
         /// </summary>
         public CommunicationPriority Priority { get; set; } = CommunicationPriority.Normal;
-
-        /// <summary>
-        /// Gets or sets the communication metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -375,17 +350,12 @@ namespace Nexo.Feature.Agent.Models
         /// <summary>
         /// Gets or sets whether AI was used for processing.
         /// </summary>
-        public bool AIWasUsed { get; set; }
+        public bool AiWasUsed { get; set; }
 
         /// <summary>
         /// Gets or sets the AI model used for processing.
         /// </summary>
-        public string AIModelUsed { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Gets or sets the communication metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public string AiModelUsed { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -437,11 +407,6 @@ namespace Nexo.Feature.Agent.Models
         /// Gets or sets the collaboration recommendations.
         /// </summary>
         public List<CollaborationRecommendation> Recommendations { get; set; } = new List<CollaborationRecommendation>();
-
-        /// <summary>
-        /// Gets or sets the analysis metadata.
-        /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -460,24 +425,9 @@ namespace Nexo.Feature.Agent.Models
         TaskExecution,
 
         /// <summary>
-        /// Problem solving session.
-        /// </summary>
-        ProblemSolving,
-
-        /// <summary>
         /// Code review session.
         /// </summary>
-        CodeReview,
-
-        /// <summary>
-        /// Architecture design session.
-        /// </summary>
-        ArchitectureDesign,
-
-        /// <summary>
-        /// Testing and validation session.
-        /// </summary>
-        TestingValidation
+        CodeReview
     }
 
     /// <summary>
@@ -498,17 +448,7 @@ namespace Nexo.Feature.Agent.Models
         /// <summary>
         /// Session has been completed.
         /// </summary>
-        Completed,
-
-        /// <summary>
-        /// Session has been cancelled.
-        /// </summary>
-        Cancelled,
-
-        /// <summary>
-        /// Session has failed.
-        /// </summary>
-        Failed
+        Completed
     }
 
     /// <summary>
@@ -517,17 +457,12 @@ namespace Nexo.Feature.Agent.Models
     public enum TaskPriority
     {
         /// <summary>
-        /// Low priority task.
-        /// </summary>
-        Low,
-
-        /// <summary>
         /// Normal priority task.
         /// </summary>
         Normal,
 
         /// <summary>
-        /// High priority task.
+        /// High-priority task.
         /// </summary>
         High,
 

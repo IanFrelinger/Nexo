@@ -10,11 +10,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public StandardizedApplicationLogic StandardizedLogic { get; set; } = new StandardizedApplicationLogic();
+        public StandardizedApplicationLogic StandardizedLogic { get; set; } = new();
         public double StandardizationScore { get; set; }
-        public List<string> AppliedPatterns { get; set; } = new List<string>();
-        public List<string> Recommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> AppliedPatterns { get; set; } = [];
+        public List<string> Recommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -22,13 +22,13 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class StandardizedApplicationLogic
     {
-        public List<ApplicationPattern> Patterns { get; set; } = new List<ApplicationPattern>();
-        public List<SecurityPattern> SecurityPatterns { get; set; } = new List<SecurityPattern>();
-        public List<StateManagementPattern> StateManagementPatterns { get; set; } = new List<StateManagementPattern>();
-        public List<ApiContract> ApiContracts { get; set; } = new List<ApiContract>();
-        public List<DataFlowPattern> DataFlowPatterns { get; set; } = new List<DataFlowPattern>();
-        public List<CachingStrategy> CachingStrategies { get; set; } = new List<CachingStrategy>();
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public List<ApplicationPattern> Patterns { get; set; } = [];
+        public List<SecurityPattern> SecurityPatterns { get; set; } = [];
+        public List<StateManagementPattern> StateManagementPatterns { get; set; } = [];
+        public List<ApiContract> ApiContracts { get; set; } = [];
+        public List<DataFlowPattern> DataFlowPatterns { get; set; } = [];
+        public List<CachingStrategy> CachingStrategies { get; set; } = [];
+        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -40,8 +40,7 @@ namespace Nexo.Feature.AI.Models
         public string Description { get; set; } = string.Empty;
         public PatternType Type { get; set; }
         public string Implementation { get; set; } = string.Empty;
-        public List<string> Dependencies { get; set; } = new List<string>();
-        public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+        public List<string> Dependencies { get; set; } = [];
         public string GeneratedCode { get; set; } = string.Empty;
     }
 
@@ -54,8 +53,7 @@ namespace Nexo.Feature.AI.Models
         public string Description { get; set; } = string.Empty;
         public SecurityPatternType Type { get; set; }
         public string Implementation { get; set; } = string.Empty;
-        public List<string> SecurityMeasures { get; set; } = new List<string>();
-        public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+        public List<string> SecurityMeasures { get; set; } = [];
         public string GeneratedCode { get; set; } = string.Empty;
     }
 
@@ -68,8 +66,7 @@ namespace Nexo.Feature.AI.Models
         public string Description { get; set; } = string.Empty;
         public StateManagementType Type { get; set; }
         public string Implementation { get; set; } = string.Empty;
-        public List<string> StateTransitions { get; set; } = new List<string>();
-        public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+        public List<string> StateTransitions { get; set; } = [];
         public string GeneratedCode { get; set; } = string.Empty;
     }
 
@@ -82,9 +79,8 @@ namespace Nexo.Feature.AI.Models
         public string Description { get; set; } = string.Empty;
         public string Endpoint { get; set; } = string.Empty;
         public HttpMethod Method { get; set; }
-        public List<ApiParameter> Parameters { get; set; } = new List<ApiParameter>();
-        public ApiResponse Response { get; set; } = new ApiResponse();
-        public List<string> Validations { get; set; } = new List<string>();
+        public List<ApiParameter> Parameters { get; set; } = [];
+        public ApiResponse Response { get; set; } = new();
         public string GeneratedCode { get; set; } = string.Empty;
     }
 
@@ -97,8 +93,6 @@ namespace Nexo.Feature.AI.Models
         public string Type { get; set; } = string.Empty;
         public bool IsRequired { get; set; }
         public string Description { get; set; } = string.Empty;
-        public string DefaultValue { get; set; } = string.Empty;
-        public List<string> Validations { get; set; } = new List<string>();
     }
 
     /// <summary>
@@ -108,8 +102,7 @@ namespace Nexo.Feature.AI.Models
     {
         public string Type { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public List<ApiResponseField> Fields { get; set; } = new List<ApiResponseField>();
-        public List<string> ErrorCodes { get; set; } = new List<string>();
+        public List<ApiResponseField> Fields { get; set; } = [];
     }
 
     /// <summary>
@@ -132,9 +125,8 @@ namespace Nexo.Feature.AI.Models
         public string Description { get; set; } = string.Empty;
         public DataFlowType Type { get; set; }
         public string Implementation { get; set; } = string.Empty;
-        public List<string> DataSources { get; set; } = new List<string>();
-        public List<string> DataDestinations { get; set; } = new List<string>();
-        public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+        public List<string> DataSources { get; set; } = [];
+        public List<string> DataDestinations { get; set; } = [];
         public string GeneratedCode { get; set; } = string.Empty;
     }
 
@@ -148,8 +140,7 @@ namespace Nexo.Feature.AI.Models
         public CachingStrategyType Type { get; set; }
         public string Implementation { get; set; } = string.Empty;
         public TimeSpan ExpirationTime { get; set; }
-        public List<string> CacheKeys { get; set; } = new List<string>();
-        public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+        public List<string> CacheKeys { get; set; } = [];
         public string GeneratedCode { get; set; } = string.Empty;
     }
 
@@ -158,14 +149,17 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ApplicationLogicStandardizationOptions
     {
+        public ApplicationLogicStandardizationOptions(bool optimizeForPerformance)
+        {
+            OptimizeForPerformance = optimizeForPerformance;
+        }
+
         public bool ApplySecurityPatterns { get; set; } = true;
-        public bool OptimizeForPerformance { get; set; } = true;
+        public bool OptimizeForPerformance { get; set; }
         public bool GenerateStateManagement { get; set; } = true;
         public bool CreateApiContracts { get; set; } = true;
         public bool OptimizeDataFlow { get; set; } = true;
         public bool IntegrateCaching { get; set; } = true;
-        public List<string> PreferredPatterns { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -173,13 +167,17 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class SecurityPatternOptions
     {
+        public SecurityPatternOptions(bool enableDataEncryption, bool enableOutputSanitization)
+        {
+            EnableDataEncryption = enableDataEncryption;
+            EnableOutputSanitization = enableOutputSanitization;
+        }
+
         public bool EnableAuthentication { get; set; } = true;
         public bool EnableAuthorization { get; set; } = true;
-        public bool EnableDataEncryption { get; set; } = true;
+        public bool EnableDataEncryption { get; set; }
         public bool EnableInputValidation { get; set; } = true;
-        public bool EnableOutputSanitization { get; set; } = true;
-        public List<string> SecurityPatterns { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
+        public bool EnableOutputSanitization { get; set; }
     }
 
     /// <summary>
@@ -187,13 +185,17 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class PerformanceOptimizationOptions
     {
+        public PerformanceOptimizationOptions(bool enableConnectionPooling, bool enableQueryOptimization)
+        {
+            EnableConnectionPooling = enableConnectionPooling;
+            EnableQueryOptimization = enableQueryOptimization;
+        }
+
         public bool EnableAsyncProcessing { get; set; } = true;
         public bool EnableParallelProcessing { get; set; } = true;
         public bool EnableLazyLoading { get; set; } = true;
-        public bool EnableConnectionPooling { get; set; } = true;
-        public bool EnableQueryOptimization { get; set; } = true;
-        public List<string> OptimizationPatterns { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
+        public bool EnableConnectionPooling { get; set; }
+        public bool EnableQueryOptimization { get; set; }
     }
 
     /// <summary>
@@ -201,12 +203,16 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class StateManagementOptions
     {
+        public StateManagementOptions(bool enableStatePersistence, bool enableStateSynchronization)
+        {
+            EnableStatePersistence = enableStatePersistence;
+            EnableStateSynchronization = enableStateSynchronization;
+        }
+
         public bool EnableGlobalState { get; set; } = true;
         public bool EnableLocalState { get; set; } = true;
-        public bool EnableStatePersistence { get; set; } = true;
-        public bool EnableStateSynchronization { get; set; } = true;
-        public List<string> StateManagementPatterns { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
+        public bool EnableStatePersistence { get; set; }
+        public bool EnableStateSynchronization { get; set; }
     }
 
     /// <summary>
@@ -214,13 +220,19 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ApiContractOptions
     {
-        public bool EnableREST { get; set; } = true;
-        public bool EnableGraphQL { get; set; } = false;
-        public bool EnableWebSocket { get; set; } = false;
-        public bool EnableVersioning { get; set; } = true;
-        public bool EnableDocumentation { get; set; } = true;
-        public List<string> ApiPatterns { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
+        public ApiContractOptions(bool enableGraphQl, bool enableWebSocket, bool enableVersioning, bool enableDocumentation)
+        {
+            EnableGraphQl = enableGraphQl;
+            EnableWebSocket = enableWebSocket;
+            EnableVersioning = enableVersioning;
+            EnableDocumentation = enableDocumentation;
+        }
+
+        public bool EnableRest { get; set; } = true;
+        public bool EnableGraphQl { get; set; }
+        public bool EnableWebSocket { get; set; }
+        public bool EnableVersioning { get; set; }
+        public bool EnableDocumentation { get; set; }
     }
 
     /// <summary>
@@ -228,12 +240,18 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class DataFlowOptimizationOptions
     {
-        public bool EnableDataValidation { get; set; } = true;
-        public bool EnableDataTransformation { get; set; } = true;
-        public bool EnableDataAggregation { get; set; } = true;
-        public bool EnableDataFiltering { get; set; } = true;
-        public List<string> DataFlowPatterns { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
+        public DataFlowOptimizationOptions(bool enableDataValidation, bool enableDataTransformation, bool enableDataAggregation, bool enableDataFiltering)
+        {
+            EnableDataValidation = enableDataValidation;
+            EnableDataTransformation = enableDataTransformation;
+            EnableDataAggregation = enableDataAggregation;
+            EnableDataFiltering = enableDataFiltering;
+        }
+
+        public bool EnableDataValidation { get; set; }
+        public bool EnableDataTransformation { get; set; }
+        public bool EnableDataAggregation { get; set; }
+        public bool EnableDataFiltering { get; set; }
     }
 
     /// <summary>
@@ -241,12 +259,15 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class CachingStrategyOptions
     {
+        public CachingStrategyOptions(bool enableDistributedCache)
+        {
+            EnableDistributedCache = enableDistributedCache;
+        }
+
         public bool EnableMemoryCache { get; set; } = true;
-        public bool EnableDistributedCache { get; set; } = false;
+        public bool EnableDistributedCache { get; set; }
         public bool EnableResponseCache { get; set; } = true;
         public bool EnableQueryCache { get; set; } = true;
-        public List<string> CachingPatterns { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
@@ -254,13 +275,17 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public class ApplicationLogicValidationOptions
     {
+        public ApplicationLogicValidationOptions(bool validateStateManagement, bool validateApiContracts)
+        {
+            ValidateStateManagement = validateStateManagement;
+            ValidateApiContracts = validateApiContracts;
+        }
+
         public bool ValidatePatterns { get; set; } = true;
         public bool ValidateSecurity { get; set; } = true;
         public bool ValidatePerformance { get; set; } = true;
-        public bool ValidateStateManagement { get; set; } = true;
-        public bool ValidateApiContracts { get; set; } = true;
-        public List<string> ValidationRules { get; set; } = new List<string>();
-        public Dictionary<string, object> CustomOptions { get; set; } = new Dictionary<string, object>();
+        public bool ValidateStateManagement { get; set; }
+        public bool ValidateApiContracts { get; set; }
     }
 
     /// <summary>
@@ -270,11 +295,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public StandardizedApplicationLogic SecuredLogic { get; set; } = new StandardizedApplicationLogic();
+        public StandardizedApplicationLogic SecuredLogic { get; set; } = new();
         public double SecurityScore { get; set; }
-        public List<string> AppliedSecurityPatterns { get; set; } = new List<string>();
-        public List<string> SecurityRecommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> AppliedSecurityPatterns { get; set; } = [];
+        public List<string> SecurityRecommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -284,11 +309,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public StandardizedApplicationLogic OptimizedLogic { get; set; } = new StandardizedApplicationLogic();
+        public StandardizedApplicationLogic OptimizedLogic { get; set; } = new();
         public double PerformanceScore { get; set; }
-        public List<string> AppliedOptimizations { get; set; } = new List<string>();
-        public List<string> PerformanceRecommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> AppliedOptimizations { get; set; } = [];
+        public List<string> PerformanceRecommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -298,11 +323,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public StandardizedApplicationLogic StateManagedLogic { get; set; } = new StandardizedApplicationLogic();
+        public StandardizedApplicationLogic StateManagedLogic { get; set; } = new();
         public double StateManagementScore { get; set; }
-        public List<string> AppliedStatePatterns { get; set; } = new List<string>();
-        public List<string> StateManagementRecommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> AppliedStatePatterns { get; set; } = [];
+        public List<string> StateManagementRecommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -312,11 +337,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public StandardizedApplicationLogic ApiContractLogic { get; set; } = new StandardizedApplicationLogic();
+        public StandardizedApplicationLogic ApiContractLogic { get; set; } = new();
         public double ApiContractScore { get; set; }
-        public List<string> GeneratedApiContracts { get; set; } = new List<string>();
-        public List<string> ApiContractRecommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> GeneratedApiContracts { get; set; } = [];
+        public List<string> ApiContractRecommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -326,11 +351,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public StandardizedApplicationLogic DataFlowOptimizedLogic { get; set; } = new StandardizedApplicationLogic();
+        public StandardizedApplicationLogic DataFlowOptimizedLogic { get; set; } = new();
         public double DataFlowScore { get; set; }
-        public List<string> AppliedDataFlowPatterns { get; set; } = new List<string>();
-        public List<string> DataFlowRecommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> AppliedDataFlowPatterns { get; set; } = [];
+        public List<string> DataFlowRecommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -340,11 +365,11 @@ namespace Nexo.Feature.AI.Models
     {
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; }
-        public StandardizedApplicationLogic CachedLogic { get; set; } = new StandardizedApplicationLogic();
+        public StandardizedApplicationLogic CachedLogic { get; set; } = new();
         public double CachingScore { get; set; }
-        public List<string> AppliedCachingStrategies { get; set; } = new List<string>();
-        public List<string> CachingRecommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<string> AppliedCachingStrategies { get; set; } = [];
+        public List<string> CachingRecommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     /// <summary>
@@ -355,9 +380,9 @@ namespace Nexo.Feature.AI.Models
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; }
         public double ValidationScore { get; set; }
-        public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
-        public List<string> Recommendations { get; set; } = new List<string>();
-        public ProcessingMetadata Metadata { get; set; } = new ProcessingMetadata();
+        public List<ValidationIssue> Issues { get; set; } = [];
+        public List<string> Recommendations { get; set; } = [];
+        public ProcessingMetadata Metadata { get; set; } = new();
     }
 
     // Enums
@@ -371,22 +396,7 @@ namespace Nexo.Feature.AI.Models
         UnitOfWork,
         Command,
         Query,
-        Mediator,
-        Observer,
-        Strategy,
-        Factory,
-        Builder,
-        Adapter,
-        Facade,
-        Proxy,
-        Decorator,
-        ChainOfResponsibility,
-        TemplateMethod,
-        State,
-        Visitor,
-        Memento,
-        Iterator,
-        Interpreter
+        Mediator
     }
 
     /// <summary>
@@ -398,17 +408,7 @@ namespace Nexo.Feature.AI.Models
         Authorization,
         DataEncryption,
         InputValidation,
-        OutputSanitization,
-        SessionManagement,
-        TokenBasedSecurity,
-        OAuth2,
-        JWT,
-        CORS,
-        RateLimiting,
-        AuditLogging,
-        SecureCommunication,
-        DataMasking,
-        AccessControl
+        Jwt
     }
 
     /// <summary>
@@ -419,18 +419,7 @@ namespace Nexo.Feature.AI.Models
         GlobalState,
         LocalState,
         Redux,
-        MobX,
-        Vuex,
-        NgRx,
-        StateMachine,
-        EventSourcing,
-        CQRS,
-        Saga,
-        ProcessManager,
-        StateContainer,
-        ObservableState,
-        ImmutableState,
-        ReactiveState
+        StateMachine
     }
 
     /// <summary>
@@ -438,14 +427,7 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public enum HttpMethod
     {
-        GET,
-        POST,
-        PUT,
-        DELETE,
-        PATCH,
-        HEAD,
-        OPTIONS,
-        TRACE
+        Get
     }
 
     /// <summary>
@@ -453,21 +435,7 @@ namespace Nexo.Feature.AI.Models
     /// </summary>
     public enum DataFlowType
     {
-        Unidirectional,
-        Bidirectional,
-        EventDriven,
-        Reactive,
-        StreamBased,
-        Pipeline,
-        Batch,
-        RealTime,
-        Asynchronous,
-        Synchronous,
-        PubSub,
-        MessageQueue,
-        DataStream,
-        ETL,
-        DataPipeline
+        Unidirectional
     }
 
     /// <summary>
@@ -476,19 +444,7 @@ namespace Nexo.Feature.AI.Models
     public enum CachingStrategyType
     {
         MemoryCache,
-        DistributedCache,
         ResponseCache,
-        QueryCache,
-        ObjectCache,
-        PageCache,
-        FragmentCache,
-        DatabaseCache,
-        CDNCache,
-        BrowserCache,
-        ApplicationCache,
-        SessionCache,
-        PersistentCache,
-        LazyCache,
-        PreloadCache
+        QueryCache
     }
 } 

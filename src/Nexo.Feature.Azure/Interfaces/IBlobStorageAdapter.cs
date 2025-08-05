@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Nexo.Feature.Azure.Models;
+using Nexo.Feature.Azure.Enums;
 
 namespace Nexo.Feature.Azure.Interfaces;
 
@@ -148,104 +150,4 @@ public interface IBlobStorageAdapter
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Result indicating copy success</returns>
     Task<AzureOperationResult> CopyBlobAsync(string sourceContainerName, string sourceBlobName, string destinationContainerName, string destinationBlobName, CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// Blob upload information
-/// </summary>
-public record BlobUploadInfo
-{
-    public string ContainerName { get; init; } = string.Empty;
-    public string BlobName { get; init; } = string.Empty;
-    public long Size { get; init; }
-    public string ETag { get; init; } = string.Empty;
-    public DateTime LastModified { get; init; }
-    public Dictionary<string, string> Metadata { get; init; } = new();
-}
-
-/// <summary>
-/// Blob download information
-/// </summary>
-public record BlobDownloadInfo
-{
-    public string ContainerName { get; init; } = string.Empty;
-    public string BlobName { get; init; } = string.Empty;
-    public long Size { get; init; }
-    public string ETag { get; init; } = string.Empty;
-    public DateTime LastModified { get; init; }
-    public string ContentType { get; init; } = string.Empty;
-    public Dictionary<string, string> Metadata { get; init; } = new();
-}
-
-/// <summary>
-/// Blob information
-/// </summary>
-public record BlobInfo
-{
-    public string Name { get; init; } = string.Empty;
-    public long Size { get; init; }
-    public DateTime LastModified { get; init; }
-    public string ETag { get; init; } = string.Empty;
-    public string ContentType { get; init; } = string.Empty;
-    public Dictionary<string, string> Metadata { get; init; } = new();
-    public bool IsDeleted { get; init; }
-}
-
-/// <summary>
-/// Blob properties
-/// </summary>
-public record BlobProperties
-{
-    public string ETag { get; init; } = string.Empty;
-    public DateTime LastModified { get; init; }
-    public long ContentLength { get; init; }
-    public string ContentType { get; init; } = string.Empty;
-    public string ContentEncoding { get; init; } = string.Empty;
-    public string ContentLanguage { get; init; } = string.Empty;
-    public string ContentMD5 { get; init; } = string.Empty;
-    public string CacheControl { get; init; } = string.Empty;
-    public Dictionary<string, string> Metadata { get; init; } = new();
-    public Dictionary<string, string> Tags { get; init; } = new();
-}
-
-/// <summary>
-/// Container information
-/// </summary>
-public record ContainerInfo
-{
-    public string Name { get; init; } = string.Empty;
-    public DateTime LastModified { get; init; }
-    public string ETag { get; init; } = string.Empty;
-    public BlobContainerPublicAccessType PublicAccess { get; init; }
-    public Dictionary<string, string> Metadata { get; init; } = new();
-    public bool HasImmutabilityPolicy { get; init; }
-    public bool HasLegalHold { get; init; }
-}
-
-/// <summary>
-/// Blob SAS permissions
-/// </summary>
-[Flags]
-public enum BlobSasPermissions
-{
-    None = 0,
-    Read = 1,
-    Write = 2,
-    Delete = 4,
-    List = 8,
-    Add = 16,
-    Create = 32,
-    Update = 64,
-    Process = 128,
-    All = Read | Write | Delete | List | Add | Create | Update | Process
-}
-
-/// <summary>
-/// Blob container public access types
-/// </summary>
-public enum BlobContainerPublicAccessType
-{
-    None,
-    Blob,
-    Container
 } 

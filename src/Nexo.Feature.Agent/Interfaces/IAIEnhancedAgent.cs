@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Nexo.Core.Application.Interfaces;
 using Nexo.Feature.AI.Interfaces;
-using Nexo.Core.Application.Models;
 using Nexo.Core.Domain.Entities;
 using Nexo.Feature.Agent.Models;
 
@@ -13,7 +11,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// Defines the contract for an AI-enhanced agent that can leverage AI capabilities
     /// for enhanced task processing and decision-making.
     /// </summary>
-    public interface IAIEnhancedAgent : IAgent
+    public interface IAiEnhancedAgent : IAgent
     {
         /// <summary>
         /// Gets the AI model orchestrator used by this agent.
@@ -23,7 +21,7 @@ namespace Nexo.Feature.Agent.Interfaces
         /// <summary>
         /// Gets the AI capabilities of this agent.
         /// </summary>
-        AIAgentCapabilities AICapabilities { get; }
+        AiAgentCapabilities AiCapabilities { get; }
 
         /// <summary>
         /// Processes a request using AI-enhanced capabilities.
@@ -31,7 +29,7 @@ namespace Nexo.Feature.Agent.Interfaces
         /// <param name="request">The AI-enhanced agent request.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>AI-enhanced agent response.</returns>
-        Task<AIEnhancedAgentResponse> ProcessAIRequestAsync(AIEnhancedAgentRequest request, CancellationToken cancellationToken = default(CancellationToken));
+        Task<AiEnhancedAgentResponse> ProcessAiRequestAsync(AiEnhancedAgentRequest request, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Analyzes a task using AI to determine the best approach.
@@ -39,7 +37,7 @@ namespace Nexo.Feature.Agent.Interfaces
         /// <param name="task">The task to analyze.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>AI analysis result.</returns>
-        Task<AITaskAnalysisResult> AnalyzeTaskWithAIAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken));
+        Task<AiTaskAnalysisResult> AnalyzeTaskWithAiAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Generates AI-powered suggestions for task improvement.
@@ -47,13 +45,13 @@ namespace Nexo.Feature.Agent.Interfaces
         /// <param name="task">The task to generate suggestions for.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>AI suggestions result.</returns>
-        Task<AISuggestionsResult> GenerateSuggestionsAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken));
+        Task<AiSuggestionsResult> GenerateSuggestionsAsync(SprintTask task, CancellationToken cancellationToken = default(CancellationToken));
     }
 
     /// <summary>
     /// AI capabilities for an agent.
     /// </summary>
-    public class AIAgentCapabilities
+    public class AiAgentCapabilities
     {
         /// <summary>
         /// Gets or sets whether the agent can perform code analysis.
@@ -88,13 +86,13 @@ namespace Nexo.Feature.Agent.Interfaces
         /// <summary>
         /// Gets or sets the AI processing strategy.
         /// </summary>
-        public AIProcessingStrategy ProcessingStrategy { get; set; } = AIProcessingStrategy.Standard;
+        public AiProcessingStrategy ProcessingStrategy { get; set; } = AiProcessingStrategy.Standard;
     }
 
     /// <summary>
     /// AI processing strategy for agents.
     /// </summary>
-    public enum AIProcessingStrategy
+    public enum AiProcessingStrategy
     {
         /// <summary>
         /// Standard processing with basic AI capabilities.
@@ -115,17 +113,17 @@ namespace Nexo.Feature.Agent.Interfaces
     /// <summary>
     /// AI-enhanced agent request.
     /// </summary>
-    public class AIEnhancedAgentRequest : AgentRequest
+    public class AiEnhancedAgentRequest : AgentRequest
     {
         /// <summary>
         /// Gets or sets whether to use AI processing.
         /// </summary>
-        public bool UseAI { get; set; } = true;
+        public bool UseAi { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the AI processing strategy.
         /// </summary>
-        public AIProcessingStrategy ProcessingStrategy { get; set; }
+        public AiProcessingStrategy ProcessingStrategy { get; set; }
 
         /// <summary>
         /// Gets or sets the preferred AI model.
@@ -135,44 +133,44 @@ namespace Nexo.Feature.Agent.Interfaces
         /// <summary>
         /// Gets or sets additional AI context.
         /// </summary>
-        public Dictionary<string, object> AIContext { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> AiContext { get; set; } = new Dictionary<string, object>();
     }
 
     /// <summary>
     /// AI-enhanced agent response.
     /// </summary>
-    public class AIEnhancedAgentResponse : AgentResponse
+    public class AiEnhancedAgentResponse : AgentResponse
     {
         /// <summary>
         /// Gets or sets whether AI was used in processing.
         /// </summary>
-        public bool AIWasUsed { get; set; }
+        public bool AiWasUsed { get; set; }
 
         /// <summary>
         /// Gets or sets the AI model used.
         /// </summary>
-        public string AIModelUsed { get; set; } = string.Empty;
+        public string AiModelUsed { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the AI processing time in milliseconds.
         /// </summary>
-        public long AIProcessingTimeMs { get; set; }
+        public long AiProcessingTimeMs { get; set; }
 
         /// <summary>
         /// Gets or sets AI-generated insights.
         /// </summary>
-        public List<string> AIInsights { get; set; } = new List<string>();
+        public List<string> AiInsights { get; set; } = new List<string>();
 
         /// <summary>
         /// Gets or sets AI confidence score.
         /// </summary>
-        public double AIConfidenceScore { get; set; }
+        public double AiConfidenceScore { get; set; }
     }
 
     /// <summary>
     /// AI task analysis result.
     /// </summary>
-    public class AITaskAnalysisResult
+    public class AiTaskAnalysisResult
     {
         /// <summary>
         /// Gets or sets the analysis summary.
@@ -208,7 +206,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// <summary>
     /// AI suggestions result.
     /// </summary>
-    public class AISuggestionsResult
+    public class AiSuggestionsResult
     {
         /// <summary>
         /// Gets or sets the improvement suggestions.

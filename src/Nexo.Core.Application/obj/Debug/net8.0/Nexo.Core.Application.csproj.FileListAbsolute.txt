@@ -43,3 +43,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/refint/Nexo.Core.Application.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/ref/Nexo.Core.Application.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.sourcelink.json

@@ -13,13 +13,13 @@ namespace Nexo.Infrastructure.Tests.Services.AI;
 /// </summary>
 public class AIConfigurationServiceTests
 {
-    private readonly Mock<ILogger<AIConfigurationService>> _mockLogger;
-    private readonly AIConfigurationService _service;
+    private readonly Mock<ILogger<AiConfigurationService>> _mockLogger;
+    private readonly AiConfigurationService _service;
 
     public AIConfigurationServiceTests()
     {
-        _mockLogger = new Mock<ILogger<AIConfigurationService>>();
-        _service = new AIConfigurationService(_mockLogger.Object);
+        _mockLogger = new Mock<ILogger<AiConfigurationService>>();
+        _service = new AiConfigurationService(_mockLogger.Object);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class AIConfigurationServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(AIMode.Development, result.Mode);
+        Assert.Equal(AiMode.Development, result.Mode);
         Assert.Equal("gpt-3.5-turbo", result.Model.Name);
     }
 
@@ -38,10 +38,10 @@ public class AIConfigurationServiceTests
     public async Task SaveConfigurationAsync_WhenValidConfiguration_SavesSuccessfully()
     {
         // Arrange
-        var config = new AIConfiguration
+        var config = new AiConfiguration
         {
-            Mode = AIMode.AIHeavy,
-            Model = new AIModelConfiguration { Name = "gpt-4-turbo" }
+            Mode = AiMode.AiHeavy,
+            Model = new AiModelConfiguration { Name = "gpt-4-turbo" }
         };
 
         // Act
@@ -49,7 +49,7 @@ public class AIConfigurationServiceTests
 
         // Assert - Verify the configuration was saved by getting it back
         var savedConfig = await _service.GetConfigurationAsync();
-        Assert.Equal(AIMode.AIHeavy, savedConfig.Mode);
+        Assert.Equal(AiMode.AiHeavy, savedConfig.Mode);
         Assert.Equal("gpt-4-turbo", savedConfig.Model.Name);
     }
 
@@ -57,21 +57,21 @@ public class AIConfigurationServiceTests
     public async Task LoadForModeAsync_WhenModeIsDifferent_LoadsModeSpecificDefaults()
     {
         // Act
-        var result = await _service.LoadForModeAsync(AIMode.Production);
+        var result = await _service.LoadForModeAsync(AiMode.Production);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(AIMode.Production, result.Mode);
+        Assert.Equal(AiMode.Production, result.Mode);
         Assert.Equal("gpt-4", result.Model.Name);
         Assert.Equal(8192, result.Model.MaxInputTokens);
         Assert.Equal(0.5, result.Model.Temperature);
     }
 
     [Theory]
-    [InlineData(AIMode.Development, "gpt-3.5-turbo", 4096, 0.3)]
-    [InlineData(AIMode.Production, "gpt-4", 8192, 0.5)]
-    [InlineData(AIMode.AIHeavy, "gpt-4-turbo", 16384, 0.7)]
-    public void GetDefaultConfiguration_ForEachMode_ReturnsCorrectDefaults(AIMode mode, string expectedModel, int expectedInputTokens, double expectedTemperature)
+    [InlineData(AiMode.Development, "gpt-3.5-turbo", 4096, 0.3)]
+    [InlineData(AiMode.Production, "gpt-4", 8192, 0.5)]
+    [InlineData(AiMode.AiHeavy, "gpt-4-turbo", 16384, 0.7)]
+    public void GetDefaultConfiguration_ForEachMode_ReturnsCorrectDefaults(AiMode mode, string expectedModel, int expectedInputTokens, double expectedTemperature)
     {
         // Act
         var result = _service.GetDefaultConfiguration(mode);
@@ -88,16 +88,16 @@ public class AIConfigurationServiceTests
     public async Task ValidateAsync_WhenValidConfiguration_ReturnsValidResult()
     {
         // Arrange
-        var config = new AIConfiguration
+        var config = new AiConfiguration
         {
-            Model = new AIModelConfiguration
+            Model = new AiModelConfiguration
             {
                 Name = "gpt-4",
                 MaxInputTokens = 8192,
                 MaxOutputTokens = 4096,
                 Temperature = 0.5
             },
-            Resources = new AIResourceConfiguration
+            Resources = new AiResourceConfiguration
             {
                 MaxConcurrentRequests = 20,
                 MaxMemoryUsageBytes = 2L * 1024L * 1024L * 1024L
@@ -116,7 +116,7 @@ public class AIConfigurationServiceTests
     public async Task ValidateAsync_WhenModelIsNull_ReturnsInvalidResult()
     {
         // Arrange
-        var config = new AIConfiguration { Model = null! };
+        var config = new AiConfiguration { Model = null! };
 
         // Act
         var result = await _service.ValidateAsync(config);
@@ -130,9 +130,9 @@ public class AIConfigurationServiceTests
     public async Task ValidateAsync_WhenModelNameIsEmpty_ReturnsInvalidResult()
     {
         // Arrange
-        var config = new AIConfiguration
+        var config = new AiConfiguration
         {
-            Model = new AIModelConfiguration { Name = "" }
+            Model = new AiModelConfiguration { Name = "" }
         };
 
         // Act
@@ -148,9 +148,9 @@ public class AIConfigurationServiceTests
     public async Task ValidateAsync_WhenMaxInputTokensIsInvalid_ReturnsInvalidResult()
     {
         // Arrange
-        var config = new AIConfiguration
+        var config = new AiConfiguration
         {
-            Model = new AIModelConfiguration
+            Model = new AiModelConfiguration
             {
                 Name = "gpt-4",
                 MaxInputTokens = 0
@@ -170,9 +170,9 @@ public class AIConfigurationServiceTests
     public async Task ValidateAsync_WhenMaxOutputTokensIsInvalid_ReturnsInvalidResult()
     {
         // Arrange
-        var config = new AIConfiguration
+        var config = new AiConfiguration
         {
-            Model = new AIModelConfiguration
+            Model = new AiModelConfiguration
             {
                 Name = "gpt-4",
                 MaxInputTokens = 8192,
@@ -193,15 +193,15 @@ public class AIConfigurationServiceTests
     public async Task ValidateAsync_WhenMaxConcurrentRequestsIsInvalid_ReturnsInvalidResult()
     {
         // Arrange
-        var config = new AIConfiguration
+        var config = new AiConfiguration
         {
-            Model = new AIModelConfiguration
+            Model = new AiModelConfiguration
             {
                 Name = "gpt-4",
                 MaxInputTokens = 8192,
                 MaxOutputTokens = 4096
             },
-            Resources = new AIResourceConfiguration
+            Resources = new AiResourceConfiguration
             {
                 MaxConcurrentRequests = 0
             }
@@ -220,15 +220,15 @@ public class AIConfigurationServiceTests
     public async Task ValidateAsync_WhenMaxMemoryUsageIsInvalid_ReturnsInvalidResult()
     {
         // Arrange
-        var config = new AIConfiguration
+        var config = new AiConfiguration
         {
-            Model = new AIModelConfiguration
+            Model = new AiModelConfiguration
             {
                 Name = "gpt-4",
                 MaxInputTokens = 8192,
                 MaxOutputTokens = 4096
             },
-            Resources = new AIResourceConfiguration
+            Resources = new AiResourceConfiguration
             {
                 MaxConcurrentRequests = 20,
                 MaxMemoryUsageBytes = 0
@@ -248,16 +248,16 @@ public class AIConfigurationServiceTests
     public async Task MergeAsync_WhenMultipleConfigurations_ReturnsMergedConfiguration()
     {
         // Arrange
-        var config1 = new AIConfiguration
+        var config1 = new AiConfiguration
         {
-            Mode = AIMode.Development,
-            Model = new AIModelConfiguration { Name = "gpt-3.5-turbo" }
+            Mode = AiMode.Development,
+            Model = new AiModelConfiguration { Name = "gpt-3.5-turbo" }
         };
 
-        var config2 = new AIConfiguration
+        var config2 = new AiConfiguration
         {
-            Mode = AIMode.Production,
-            Model = new AIModelConfiguration { Name = "gpt-4" }
+            Mode = AiMode.Production,
+            Model = new AiModelConfiguration { Name = "gpt-4" }
         };
 
         var configs = new[] { config1, config2 };
@@ -267,7 +267,7 @@ public class AIConfigurationServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(AIMode.Production, result.Mode); // Last non-default mode
+        Assert.Equal(AiMode.Production, result.Mode); // Last non-default mode
         Assert.Equal("gpt-4", result.Model.Name); // Last model
     }
 
@@ -275,14 +275,14 @@ public class AIConfigurationServiceTests
     public async Task MergeAsync_WhenEmptyList_ReturnsDefaultConfiguration()
     {
         // Arrange
-        var configs = Enumerable.Empty<AIConfiguration>();
+        var configs = Enumerable.Empty<AiConfiguration>();
 
         // Act
         var result = await _service.MergeAsync(configs);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(AIMode.Development, result.Mode);
+        Assert.Equal(AiMode.Development, result.Mode);
     }
 
     [Fact]
@@ -313,14 +313,14 @@ public class AIConfigurationServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(AIMode.Development, result.Mode);
+        Assert.Equal(AiMode.Development, result.Mode);
     }
 
     [Fact]
     public void Constructor_WhenLoggerIsNull_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new AIConfigurationService(null!));
+        Assert.Throws<ArgumentNullException>(() => new AiConfigurationService(null!));
     }
 
     [Fact]

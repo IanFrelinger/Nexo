@@ -28,3 +28,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/Debug/net8.0/refint/Nexo.Shared.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/Debug/net8.0/Nexo.Shared.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/Debug/net8.0/ref/Nexo.Shared.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/Debug/net8.0/Nexo.Shared.sourcelink.json

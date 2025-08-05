@@ -14,7 +14,7 @@ namespace Nexo.Feature.Agent.Interfaces
         /// Registers an agent with the coordinator.
         /// </summary>
         /// <param name="agent">The agent to register.</param>
-        void RegisterAgent(IAIEnhancedAgent agent);
+        void RegisterAgent(IAiEnhancedAgent agent);
 
         /// <summary>
         /// Unregisters an agent from the coordinator.
@@ -57,7 +57,7 @@ namespace Nexo.Feature.Agent.Interfaces
         /// Gets all registered agents.
         /// </summary>
         /// <returns>List of registered agents.</returns>
-        List<IAIEnhancedAgent> GetRegisteredAgents();
+        List<IAiEnhancedAgent> GetRegisteredAgents();
 
         /// <summary>
         /// Gets agent capabilities by ID.

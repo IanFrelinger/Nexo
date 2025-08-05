@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nexo.Feature.AI.Models;
@@ -36,7 +35,7 @@ namespace Nexo.Feature.AI.Interfaces
         Task<IndustryPatternResult> IdentifyIndustryPatternsAsync(string input, string industry);
 
         /// <summary>
-        /// Integrates with domain knowledge base to enhance understanding.
+        /// Integrates with the domain knowledge base to enhance understanding.
         /// </summary>
         /// <param name="input">The input text to enhance.</param>
         /// <param name="domain">The target domain.</param>

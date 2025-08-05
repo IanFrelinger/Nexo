@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -29,7 +28,7 @@ namespace Nexo.Infrastructure.Services.Resource
             _resourceManager = resourceManager ?? throw new ArgumentNullException(nameof(resourceManager));
             
             _optimizationRules = new Dictionary<string, OptimizationRule>();
-            _optimizationHistory = new List<OptimizationHistory>();
+            _optimizationHistory = [];
 
             InitializeDefaultRules();
             _logger.LogInformation("Resource optimizer initialized");
@@ -50,17 +49,15 @@ namespace Nexo.Infrastructure.Services.Resource
                 var optimizationResult = new OptimizationResult
                 {
                     Timestamp = DateTime.UtcNow,
-                    Recommendations = new List<OptimizationRecommendation>()
+                    Recommendations = []
                 };
 
                 // Apply optimization rules
                 foreach (var rule in _optimizationRules.Values)
                 {
-                    if (await ShouldApplyRuleAsync(rule, systemResourceUsage, cancellationToken))
-                    {
-                                        var recommendation = await ApplyOptimizationRuleAsync(rule, systemResourceUsage, cancellationToken);
-                optimizationResult.Recommendations.Add(recommendation);
-                    }
+                    if (!await ShouldApplyRuleAsync(rule, systemResourceUsage)) continue;
+                    var recommendation = await ApplyOptimizationRuleAsync(rule, systemResourceUsage);
+                    optimizationResult.Recommendations.Add(recommendation);
                 }
 
                 // Convert SystemResourceUsage to ResourceUsage for history
@@ -105,10 +102,7 @@ namespace Nexo.Infrastructure.Services.Resource
             if (string.IsNullOrEmpty(ruleId))
                 throw new ArgumentException("Rule ID cannot be null or empty", nameof(ruleId));
 
-            if (rule == null)
-                throw new ArgumentNullException(nameof(rule));
-
-            _optimizationRules[ruleId] = rule;
+            _optimizationRules[ruleId] = rule ?? throw new ArgumentNullException(nameof(rule));
             _logger.LogDebug("Added optimization rule: {RuleId}", ruleId);
         }
 
@@ -150,33 +144,31 @@ namespace Nexo.Infrastructure.Services.Resource
                     RecommendedDelay = TimeSpan.Zero
                 };
 
-                // Check CPU usage
-                if (resourceUsage.CpuUsagePercentage > 90)
+                switch (resourceUsage.CpuUsagePercentage)
                 {
-                    throttlingResult.ShouldThrottle = true;
-                    throttlingResult.ThrottlingLevel = ThrottlingLevel.High;
-                    throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(5);
-                }
-                else if (resourceUsage.CpuUsagePercentage > 75)
-                {
-                    throttlingResult.ShouldThrottle = true;
-                    throttlingResult.ThrottlingLevel = ThrottlingLevel.Medium;
-                    throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(2);
-                }
-                else if (resourceUsage.CpuUsagePercentage > 60)
-                {
-                    throttlingResult.ShouldThrottle = true;
-                    throttlingResult.ThrottlingLevel = ThrottlingLevel.Low;
-                    throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(1);
+                    // Check CPU usage
+                    case > 90:
+                        throttlingResult.ShouldThrottle = true;
+                        throttlingResult.ThrottlingLevel = ThrottlingLevel.High;
+                        throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(5);
+                        break;
+                    case > 75:
+                        throttlingResult.ShouldThrottle = true;
+                        throttlingResult.ThrottlingLevel = ThrottlingLevel.Medium;
+                        throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(2);
+                        break;
+                    case > 60:
+                        throttlingResult.ShouldThrottle = true;
+                        throttlingResult.ThrottlingLevel = ThrottlingLevel.Low;
+                        throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(1);
+                        break;
                 }
 
                 // Check memory usage
-                if (resourceUsage.Memory.UsagePercentage > 85)
-                {
-                    throttlingResult.ShouldThrottle = true;
-                    throttlingResult.ThrottlingLevel = ThrottlingLevel.High;
-                    throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(10);
-                }
+                if (!(resourceUsage.Memory.UsagePercentage > 85)) return throttlingResult;
+                throttlingResult.ShouldThrottle = true;
+                throttlingResult.ThrottlingLevel = ThrottlingLevel.High;
+                throttlingResult.RecommendedDelay = TimeSpan.FromSeconds(10);
 
                 return throttlingResult;
             }
@@ -199,14 +191,14 @@ namespace Nexo.Infrastructure.Services.Resource
             {
                 Name = "High CPU Usage",
                 Description = "Optimize when CPU usage is high",
-                Condition = async (usage) => usage.UtilizationByType.TryGetValue(ResourceType.CPU, out var cpuUsage) && cpuUsage > 80,
-                Action = async (usage) => new OptimizationRecommendation
+                Condition = usage => Task.FromResult(usage.UtilizationByType.TryGetValue(ResourceType.CPU, out var cpuUsage) && cpuUsage > 80),
+                Action = _ => Task.FromResult(new OptimizationRecommendation
                 {
                     Type = "CPU_OPTIMIZATION",
                     Message = "Consider reducing concurrent operations or increasing CPU allocation",
                     Impact = "High",
                     Priority = 1
-                }
+                })
             });
 
             // Memory optimization rule
@@ -214,14 +206,14 @@ namespace Nexo.Infrastructure.Services.Resource
             {
                 Name = "High Memory Usage",
                 Description = "Optimize when memory usage is high",
-                Condition = async (usage) => usage.UtilizationByType.TryGetValue(ResourceType.Memory, out var memoryUsage) && memoryUsage > 85,
-                Action = async (usage) => new OptimizationRecommendation
+                Condition = usage => Task.FromResult(usage.UtilizationByType.TryGetValue(ResourceType.Memory, out var memoryUsage) && memoryUsage > 85),
+                Action = _ => Task.FromResult(new OptimizationRecommendation
                 {
                     Type = "MEMORY_OPTIMIZATION",
                     Message = "Consider garbage collection or reducing memory-intensive operations",
                     Impact = "High",
                     Priority = 1
-                }
+                })
             });
 
             // Storage optimization rule
@@ -229,21 +221,20 @@ namespace Nexo.Infrastructure.Services.Resource
             {
                 Name = "Low Storage Space",
                 Description = "Optimize when storage space is low",
-                Condition = async (usage) => usage.UtilizationByType.TryGetValue(ResourceType.Storage, out var storageUsage) && storageUsage > 90,
-                Action = async (usage) => new OptimizationRecommendation
+                Condition = (usage) => Task.FromResult(usage.UtilizationByType.TryGetValue(ResourceType.Storage, out var storageUsage) && storageUsage > 90),
+                Action = _ => Task.FromResult(new OptimizationRecommendation
                 {
                     Type = "STORAGE_OPTIMIZATION",
                     Message = "Consider cleaning up temporary files or increasing storage space",
                     Impact = "Medium",
                     Priority = 2
-                }
+                })
             });
         }
 
         private async Task<bool> ShouldApplyRuleAsync(
             OptimizationRule rule, 
-            SystemResourceUsage usage, 
-            CancellationToken cancellationToken)
+            SystemResourceUsage usage)
         {
             try
             {
@@ -260,8 +251,7 @@ namespace Nexo.Infrastructure.Services.Resource
 
         private async Task<OptimizationRecommendation> ApplyOptimizationRuleAsync(
             OptimizationRule rule, 
-            SystemResourceUsage usage, 
-            CancellationToken cancellationToken)
+            SystemResourceUsage usage)
         {
             try
             {

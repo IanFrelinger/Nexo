@@ -18,14 +18,14 @@ public class BasicResourceManager : IResourceManager
     private readonly ILogger<BasicResourceManager> _logger;
     private readonly ConcurrentDictionary<string, IResourceProvider> _providers = new ConcurrentDictionary<string, IResourceProvider>();
     private readonly ConcurrentDictionary<string, ResourceAllocation> _allocations = new ConcurrentDictionary<string, ResourceAllocation>();
-    private readonly SemaphoreSlim _allocationLock = new SemaphoreSlim(1, 1);
+    private readonly SemaphoreSlim _allocationLock = new(1, 1);
     private readonly Timer _monitoringTimer;
     private readonly PerformanceCounter _cpuCounter;
     private readonly PerformanceCounter _memoryCounter;
 
-    private readonly ResourceLimits _limits = new ResourceLimits();
-    private readonly List<ResourceAlert> _alerts = new List<ResourceAlert>();
-    private readonly Dictionary<ResourceType, ResourceMetrics> _metrics = new Dictionary<ResourceType, ResourceMetrics>();
+    private readonly ResourceLimits _limits = new();
+    private readonly List<ResourceAlert> _alerts = [];
+    private readonly Dictionary<ResourceType, ResourceMetrics> _metrics = new();
 
     public BasicResourceManager(ILogger<BasicResourceManager> logger)
     {
@@ -37,7 +37,7 @@ public class BasicResourceManager : IResourceManager
         // Initialize performance counters (if available)
         try
         {
-            _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            _cpuCounter = new PerformanceCounter($"Processor", "% Processor Time", "_Total");
             _memoryCounter = new PerformanceCounter("Memory", "Available MBytes");
             _logger.LogInformation("Performance counters initialized successfully");
         }
@@ -54,10 +54,9 @@ public class BasicResourceManager : IResourceManager
 
     public async Task<ResourceAllocationResult> AllocateAsync(ResourceAllocationRequest request, CancellationToken cancellationToken = default)
     {
-        if (request == null)
-            throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
 
-        await _allocationLock.WaitAsync(cancellationToken);
+            await _allocationLock.WaitAsync(cancellationToken);
         try
         {
             _logger.LogDebug("Allocating {Amount} of {ResourceType} for {RequesterId}", 
@@ -90,26 +89,24 @@ public class BasicResourceManager : IResourceManager
 
             // Allocate from provider
             var result = await provider.AllocateAsync(request, cancellationToken);
-            if (result.IsSuccessful)
+            if (!result.IsSuccessful) return result;
+            // Track allocation
+            var allocation = new ResourceAllocation
             {
-                // Track allocation
-                var allocation = new ResourceAllocation
-                {
-                    AllocationId = result.AllocationId,
-                    ResourceType = request.ResourceType,
-                    Amount = result.AllocatedAmount,
-                    RequesterId = request.RequesterId,
-                    AllocatedAt = DateTime.UtcNow,
-                    ExpiresAt = result.ExpiresAt,
-                    Priority = request.Priority
-                };
+                AllocationId = result.AllocationId,
+                ResourceType = request.ResourceType,
+                Amount = result.AllocatedAmount,
+                RequesterId = request.RequesterId,
+                AllocatedAt = DateTime.UtcNow,
+                ExpiresAt = result.ExpiresAt,
+                Priority = request.Priority
+            };
 
-                _allocations[result.AllocationId] = allocation;
-                UpdateMetrics(request.ResourceType, true);
+            _allocations[result.AllocationId] = allocation;
+            UpdateMetrics(request.ResourceType, true);
 
-                _logger.LogInformation("Successfully allocated {Amount} of {ResourceType} for {RequesterId}", 
-                    result.AllocatedAmount, request.ResourceType, request.RequesterId);
-            }
+            _logger.LogInformation("Successfully allocated {Amount} of {ResourceType} for {RequesterId}", 
+                result.AllocatedAmount, request.ResourceType, request.RequesterId);
 
             return result;
         }
@@ -179,13 +176,11 @@ public class BasicResourceManager : IResourceManager
             var available = 0L;
             foreach (var provider in _providers.Values)
             {
-                if (provider.SupportedResourceTypes.Contains(resourceTypeEnum))
+                if (!provider.SupportedResourceTypes.Contains(resourceTypeEnum)) continue;
+                var availability = await provider.GetAvailabilityAsync(cancellationToken);
+                if (availability.AvailableByType.TryGetValue(resourceTypeEnum, out var providerAvailable))
                 {
-                    var availability = await provider.GetAvailabilityAsync(cancellationToken);
-                    if (availability.AvailableByType.TryGetValue(resourceTypeEnum, out var providerAvailable))
-                    {
-                        available += providerAvailable;
-                    }
+                    available += providerAvailable;
                 }
             }
             usage.AvailableByType[resourceTypeEnum] = available;
@@ -233,36 +228,38 @@ public class BasicResourceManager : IResourceManager
             var resourceType = kvp.Key;
             var utilization = kvp.Value;
 
-            if (utilization > 90)
+            switch (utilization)
             {
-                result.Recommendations.Add(new ResourceOptimizationRecommendation
-                {
-                    Type = "HighUtilization",
-                    Message = $"High utilization ({utilization:F1}%) detected for {resourceType}",
-                    Impact = "Consider scaling up or redistributing load",
-                    Priority = 1
-                });
-            }
-            else if (utilization < 20)
-            {
-                result.Recommendations.Add(new ResourceOptimizationRecommendation
-                {
-                    Type = "LowUtilization",
-                    Message = $"Low utilization ({utilization:F1}%) detected for {resourceType}",
-                    Impact = "Consider scaling down to reduce costs",
-                    Priority = 3
-                });
+                case > 90:
+                    result.Recommendations.Add(new ResourceOptimizationRecommendation
+                    {
+                        Type = "HighUtilization",
+                        Message = $"High utilization ({utilization:F1}%) detected for {resourceType}",
+                        Impact = "Consider scaling up or redistributing load",
+                        Priority = 1
+                    });
+                    break;
+                case < 20:
+                    result.Recommendations.Add(new ResourceOptimizationRecommendation
+                    {
+                        Type = "LowUtilization",
+                        Message = $"Low utilization ({utilization:F1}%) detected for {resourceType}",
+                        Impact = "Consider scaling down to reduce costs",
+                        Priority = 3
+                    });
+                    break;
             }
         }
 
         // Check for expired allocations
         var expiredAllocations = _allocations.Values.Where(a => a.ExpiresAt <= DateTime.UtcNow);
-        if (expiredAllocations.Any())
+        var resourceAllocations = expiredAllocations as ResourceAllocation[] ?? expiredAllocations.ToArray();
+        if (resourceAllocations.Any())
         {
             result.Recommendations.Add(new ResourceOptimizationRecommendation
             {
                 Type = "ExpiredAllocations",
-                Message = $"{expiredAllocations.Count()} expired allocations found",
+                Message = $"{resourceAllocations.Count()} expired allocations found",
                 Impact = "Release expired allocations to free up resources",
                 Priority = 2
             });
@@ -274,10 +271,9 @@ public class BasicResourceManager : IResourceManager
 
     public async Task RegisterProviderAsync(IResourceProvider provider, CancellationToken cancellationToken = default)
     {
-        if (provider == null)
-            throw new ArgumentNullException(nameof(provider));
+            ArgumentNullException.ThrowIfNull(provider);
 
-        _providers[provider.ProviderId] = provider;
+            _providers[provider.ProviderId] = provider;
         _logger.LogInformation("Registered resource provider: {ProviderName} ({ProviderId})", 
             provider.Name, provider.ProviderId);
 
@@ -302,10 +298,10 @@ public class BasicResourceManager : IResourceManager
     {
         // Set default limits based on system capabilities
         var processorCount = Environment.ProcessorCount;
-        var memoryMB = GC.GetTotalMemory(false) / (1024 * 1024);
+        var memoryMb = GC.GetTotalMemory(false) / (1024 * 1024);
 
         _limits.MaximumByType[ResourceType.CPU] = processorCount * 100; // CPU percentage
-        _limits.MaximumByType[ResourceType.Memory] = memoryMB * 1024 * 1024; // Memory in bytes
+        _limits.MaximumByType[ResourceType.Memory] = memoryMb * 1024 * 1024; // Memory in bytes
         _limits.MaximumByType[ResourceType.GPU] = 1; // Default to 1 GPU
         _limits.MaximumByType[ResourceType.Storage] = 100 * 1024 * 1024 * 1024L; // 100GB default
         _limits.MaximumByType[ResourceType.Network] = 100 * 1024 * 1024; // 100MB/s default
@@ -389,14 +385,12 @@ public class BasicResourceManager : IResourceManager
             }
         }
 
-        if (_limits.SoftLimitsByType.TryGetValue(request.ResourceType, out var softLimit))
+        if (!_limits.SoftLimitsByType.TryGetValue(request.ResourceType, out var softLimit)) return true;
+        if (newTotal > softLimit)
         {
-            if (newTotal > softLimit)
-            {
-                _logger.LogWarning("Allocation would exceed soft limit for {ResourceType}: {Requested} > {Limit}", 
-                    request.ResourceType, newTotal, softLimit);
-                // Allow but log warning
-            }
+            _logger.LogWarning("Allocation would exceed soft limit for {ResourceType}: {Requested} > {Limit}", 
+                request.ResourceType, newTotal, softLimit);
+            // Allow but log warning
         }
 
         return true;
@@ -404,12 +398,13 @@ public class BasicResourceManager : IResourceManager
 
     private void UpdateMetrics(ResourceType resourceType, bool isAllocation)
     {
-        if (!_metrics.ContainsKey(resourceType))
+        if (!_metrics.TryGetValue(resourceType, out ResourceMetrics value))
         {
-            _metrics[resourceType] = new ResourceMetrics();
+                value = new ResourceMetrics();
+                _metrics[resourceType] = value;
         }
 
-        var metrics = _metrics[resourceType];
+        var metrics = value;
         if (isAllocation)
         {
             metrics.AllocationCount++;
@@ -435,22 +430,25 @@ public class BasicResourceManager : IResourceManager
             var resourceType = kvp.Key;
             var utilization = kvp.Value;
 
-            if (utilization > 95)
+            switch (utilization)
             {
-                healthStatus.StatusByType[resourceType] = ResourceHealth.Unhealthy;
-                overallHealth = ResourceHealth.Unhealthy;
-            }
-            else if (utilization > 80)
-            {
-                healthStatus.StatusByType[resourceType] = ResourceHealth.Degraded;
-                if (overallHealth == ResourceHealth.Healthy)
+                case > 95:
+                    healthStatus.StatusByType[resourceType] = ResourceHealth.Unhealthy;
+                    overallHealth = ResourceHealth.Unhealthy;
+                    break;
+                case > 80:
                 {
-                    overallHealth = ResourceHealth.Degraded;
+                    healthStatus.StatusByType[resourceType] = ResourceHealth.Degraded;
+                    if (overallHealth == ResourceHealth.Healthy)
+                    {
+                        overallHealth = ResourceHealth.Degraded;
+                    }
+
+                    break;
                 }
-            }
-            else
-            {
-                healthStatus.StatusByType[resourceType] = ResourceHealth.Healthy;
+                default:
+                    healthStatus.StatusByType[resourceType] = ResourceHealth.Healthy;
+                    break;
             }
         }
 
@@ -473,14 +471,14 @@ public class BasicResourceManager : IResourceManager
                 _metrics[ResourceType.CPU].PeakUtilization = Math.Max(_metrics[ResourceType.CPU].PeakUtilization, cpuUsage);
             }
 
-            if (_memoryCounter != null)
+            if (_memoryCounter is not null)
             {
                 var availableMemory = _memoryCounter.NextValue();
                 // Convert to utilization percentage (assuming total memory from limits)
                 if (_limits.MaximumByType.TryGetValue(ResourceType.Memory, out var totalMemory))
                 {
-                    var totalMemoryMB = totalMemory / (1024 * 1024);
-                    var memoryUtilization = ((totalMemoryMB - availableMemory) / totalMemoryMB) * 100;
+                    var totalMemoryMb = totalMemory / (1024 * 1024);
+                    var memoryUtilization = ((totalMemoryMb - availableMemory) / totalMemoryMb) * 100;
 
                     if (!_metrics.ContainsKey(ResourceType.Memory))
                         _metrics[ResourceType.Memory] = new ResourceMetrics();
@@ -505,29 +503,18 @@ public class BasicResourceManager : IResourceManager
         _alerts.RemoveAll(a => a.Timestamp < DateTime.UtcNow.AddMinutes(-5));
 
         // Check for high utilization
-        foreach (var kvp in _metrics)
+        foreach (var alert in from kvp in _metrics let resourceType = kvp.Key let metrics = kvp.Value where metrics.AverageUtilization > 90 select new ResourceAlert
+                 {
+                     AlertId = Guid.NewGuid().ToString(),
+                     Type = ResourceAlertType.HighUtilization,
+                     Severity = ResourceAlertSeverity.Warning,
+                     Message = $"High {resourceType} utilization: {metrics.AverageUtilization:F1}%",
+                     ResourceType = resourceType,
+                     Timestamp = DateTime.UtcNow
+                 } into alert where !_alerts.Any(a => a.Type == alert.Type && a.ResourceType == alert.ResourceType) select alert)
         {
-            var resourceType = kvp.Key;
-            var metrics = kvp.Value;
-
-            if (metrics.AverageUtilization > 90)
-            {
-                var alert = new ResourceAlert
-                {
-                    AlertId = Guid.NewGuid().ToString(),
-                    Type = ResourceAlertType.HighUtilization,
-                    Severity = ResourceAlertSeverity.Warning,
-                    Message = $"High {resourceType} utilization: {metrics.AverageUtilization:F1}%",
-                    ResourceType = resourceType,
-                    Timestamp = DateTime.UtcNow
-                };
-
-                if (!_alerts.Any(a => a.Type == alert.Type && a.ResourceType == alert.ResourceType))
-                {
-                    _alerts.Add(alert);
-                    _logger.LogWarning("Resource alert: {Message}", alert.Message);
-                }
-            }
+            _alerts.Add(alert);
+            _logger.LogWarning("Resource alert: {Message}", alert.Message);
         }
     }
 

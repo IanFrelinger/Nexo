@@ -1,13 +1,22 @@
 using System.Text.Json.Serialization;
-using System.Collections.Generic;
 
 namespace Nexo.Feature.AI.Models
 {
     /// <summary>
     /// Configuration for AI fallback behavior when primary models are unavailable.
     /// </summary>
-    public class AIFallbackConfiguration
+    public class AiFallbackConfiguration
     {
+        public AiFallbackConfiguration(int maxFallbackDelaySeconds, string offlineModeResponseTemplate, bool enableLocalModelFallback, int maxCachedResponseAgeSeconds, bool enableDegradedResponseMode, double degradedResponseQualityThreshold)
+        {
+            MaxFallbackDelaySeconds = maxFallbackDelaySeconds;
+            OfflineModeResponseTemplate = offlineModeResponseTemplate;
+            EnableLocalModelFallback = enableLocalModelFallback;
+            MaxCachedResponseAgeSeconds = maxCachedResponseAgeSeconds;
+            EnableDegradedResponseMode = enableDegradedResponseMode;
+            DegradedResponseQualityThreshold = degradedResponseQualityThreshold;
+        }
+
         /// <summary>
         /// Whether to enable fallback behavior.
         /// </summary>
@@ -36,7 +45,7 @@ namespace Nexo.Feature.AI.Models
         /// The maximum fallback delay in seconds.
         /// </summary>
         [JsonPropertyName("maxFallbackDelaySeconds")]
-        public int MaxFallbackDelaySeconds { get; set; } = 60;
+        public int MaxFallbackDelaySeconds { get; set; }
         
         /// <summary>
         /// Whether to enable offline mode when all models are unavailable.
@@ -48,20 +57,14 @@ namespace Nexo.Feature.AI.Models
         /// The offline mode response template.
         /// </summary>
         [JsonPropertyName("offlineModeResponseTemplate")]
-        public string OfflineModeResponseTemplate { get; set; } = "I'm currently offline and cannot process your request. Please try again later.";
+        public string OfflineModeResponseTemplate { get; set; }
         
         /// <summary>
-        /// Whether to enable local model fallback.
+        /// Whether to enable a local model fallback.
         /// </summary>
         [JsonPropertyName("enableLocalModelFallback")]
-        public bool EnableLocalModelFallback { get; set; } = false;
-        
-        /// <summary>
-        /// The local model configuration for fallback.
-        /// </summary>
-        [JsonPropertyName("localModelConfiguration")]
-        public AIModelConfiguration LocalModelConfiguration { get; set; } = new AIModelConfiguration();
-        
+        public bool EnableLocalModelFallback { get; set; }
+
         /// <summary>
         /// Whether to enable cached response fallback.
         /// </summary>
@@ -72,24 +75,18 @@ namespace Nexo.Feature.AI.Models
         /// The maximum age of cached responses to use for fallback in seconds.
         /// </summary>
         [JsonPropertyName("maxCachedResponseAgeSeconds")]
-        public int MaxCachedResponseAgeSeconds { get; set; } = 86400; // 24 hours
+        public int MaxCachedResponseAgeSeconds { get; set; } // 24 hours
         
         /// <summary>
         /// Whether to enable degraded response mode.
         /// </summary>
         [JsonPropertyName("enableDegradedResponseMode")]
-        public bool EnableDegradedResponseMode { get; set; } = true;
+        public bool EnableDegradedResponseMode { get; set; }
         
         /// <summary>
         /// The degraded response quality threshold (0.0 to 1.0).
         /// </summary>
         [JsonPropertyName("degradedResponseQualityThreshold")]
-        public double DegradedResponseQualityThreshold { get; set; } = 0.5;
-        
-        /// <summary>
-        /// Custom fallback settings.
-        /// </summary>
-        [JsonPropertyName("customSettings")]
-        public Dictionary<string, object> CustomSettings { get; set; } = new Dictionary<string, object>();
+        public double DegradedResponseQualityThreshold { get; set; }
     }
 } 

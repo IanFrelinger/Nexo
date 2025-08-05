@@ -4,6 +4,7 @@ using Nexo.Shared.Models;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Nexo.Infrastructure.Adapters.Command;
 
 namespace Nexo.Infrastructure.Tests.Commands;
 

@@ -49,7 +49,7 @@ namespace Nexo.CLI.Tests
             
             // Test that all core services can be resolved
             var cacheSettings = scope.ServiceProvider.GetRequiredService<Nexo.Shared.Models.CacheSettings>();
-            var aiSettings = scope.ServiceProvider.GetRequiredService<AISettings>();
+            var aiSettings = scope.ServiceProvider.GetRequiredService<AiSettings>();
             var pipelineContext = scope.ServiceProvider.GetRequiredService<IPipelineContext>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<IntegrationTests>>();
 

@@ -86,7 +86,7 @@ namespace Nexo.Infrastructure.Services.Resource
                 var processMemory = _currentProcess.WorkingSet64;
                 
                 // Estimate total system memory (this is approximate)
-                memoryInfo.TotalBytes = Environment.WorkingSet * 100; // Rough estimate
+                memoryInfo.TotalBytes = Environment.WorkingSet * 100; // Estimate
                 memoryInfo.AvailableBytes = memoryInfo.TotalBytes - totalMemory;
 
                 return await Task.FromResult(memoryInfo);
@@ -177,7 +177,7 @@ namespace Nexo.Infrastructure.Services.Resource
                 var totalMsPassed = (endTime - startTime).TotalMilliseconds;
 
                 // Calculate CPU usage as percentage
-                var cpuUsagePercent = (cpuUsedMs / totalMsPassed) * 100;
+                var cpuUsagePercent = cpuUsedMs / totalMsPassed * 100;
 
                 return Math.Min(100, Math.Max(0, cpuUsagePercent));
             }

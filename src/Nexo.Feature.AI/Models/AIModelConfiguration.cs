@@ -1,13 +1,21 @@
 using System.Text.Json.Serialization;
-using System.Collections.Generic;
 
 namespace Nexo.Feature.AI.Models
 {
     /// <summary>
     /// Configuration for AI model settings and parameters.
     /// </summary>
-    public class AIModelConfiguration
+    public class AiModelConfiguration
     {
+        public AiModelConfiguration(double topP, double frequencyPenalty, double presencePenalty, int maxRetries, int retryDelaySeconds)
+        {
+            TopP = topP;
+            FrequencyPenalty = frequencyPenalty;
+            PresencePenalty = presencePenalty;
+            MaxRetries = maxRetries;
+            RetryDelaySeconds = retryDelaySeconds;
+        }
+
         /// <summary>
         /// The name or identifier of the AI model.
         /// </summary>
@@ -42,19 +50,19 @@ namespace Nexo.Feature.AI.Models
         /// The top-p setting for nucleus sampling (0.0 to 1.0).
         /// </summary>
         [JsonPropertyName("topP")]
-        public double TopP { get; set; } = 0.9;
+        public double TopP { get; set; }
         
         /// <summary>
         /// The frequency penalty for reducing repetition (-2.0 to 2.0).
         /// </summary>
         [JsonPropertyName("frequencyPenalty")]
-        public double FrequencyPenalty { get; set; } = 0.0;
+        public double FrequencyPenalty { get; set; }
         
         /// <summary>
         /// The presence penalty for encouraging new topics (-2.0 to 2.0).
         /// </summary>
         [JsonPropertyName("presencePenalty")]
-        public double PresencePenalty { get; set; } = 0.0;
+        public double PresencePenalty { get; set; }
         
         /// <summary>
         /// Whether to enable streaming responses.
@@ -63,7 +71,7 @@ namespace Nexo.Feature.AI.Models
         public bool EnableStreaming { get; set; } = true;
         
         /// <summary>
-        /// The timeout for model requests in seconds.
+        /// The timeout for the model requests in seconds.
         /// </summary>
         [JsonPropertyName("requestTimeoutSeconds")]
         public int RequestTimeoutSeconds { get; set; } = 60;
@@ -72,18 +80,12 @@ namespace Nexo.Feature.AI.Models
         /// The number of retry attempts for failed requests.
         /// </summary>
         [JsonPropertyName("maxRetries")]
-        public int MaxRetries { get; set; } = 3;
+        public int MaxRetries { get; set; }
         
         /// <summary>
         /// The delay between retry attempts in seconds.
         /// </summary>
         [JsonPropertyName("retryDelaySeconds")]
-        public int RetryDelaySeconds { get; set; } = 2;
-        
-        /// <summary>
-        /// Custom parameters specific to the model provider.
-        /// </summary>
-        [JsonPropertyName("customParameters")]
-        public Dictionary<string, object> CustomParameters { get; set; } = new Dictionary<string, object>();
+        public int RetryDelaySeconds { get; set; }
     }
 } 
