@@ -275,7 +275,7 @@ namespace Nexo.Feature.Platform.Tests.Services
                     new SecurityPattern
                     {
                         Name = "JWT Authentication",
-                        Type = SecurityPatternType.JWT,
+                        Type = SecurityPatternType.Jwt,
                         Implementation = "JWT token authentication"
                     }
                 },
@@ -294,7 +294,7 @@ namespace Nexo.Feature.Platform.Tests.Services
                     {
                         Name = "User API",
                         Endpoint = "/api/users",
-                        Method = Nexo.Feature.AI.Models.HttpMethod.GET,
+                        Method = Nexo.Feature.AI.Models.HttpMethod.Get,
                         Parameters = new List<ApiParameter>(),
                         Response = new ApiResponse()
                     }

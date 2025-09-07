@@ -407,8 +407,8 @@ namespace Nexo.Feature.AI.Tests
             Assert.True(result.Success);
             Assert.NotEmpty(result.Response);
             Assert.True(result.ProcessingTimeMs > 0);
-            Assert.True(result.AIWasUsed);
-            Assert.NotEmpty(result.AIModelUsed);
+            Assert.True(result.AiWasUsed);
+            Assert.NotEmpty(result.AiModelUsed);
         }
 
         [Fact]
@@ -602,26 +602,26 @@ namespace Nexo.Feature.AI.Tests
             // and verify that the fallback model was used
         }
 
-        private IAIEnhancedAgent CreateMockAgent(string id, string name, string role)
+        private IAiEnhancedAgent CreateMockAgent(string id, string name, string role)
         {
-            var mockAgent = new Mock<IAIEnhancedAgent>();
+            var mockAgent = new Mock<IAiEnhancedAgent>();
             
             mockAgent.Setup(x => x.Id).Returns(new AgentId(id));
             mockAgent.Setup(x => x.Name).Returns(new AgentName(name));
             mockAgent.Setup(x => x.Role).Returns(new AgentRole(role));
             mockAgent.Setup(x => x.Capabilities).Returns(new List<string> { "code_review", "security_analysis", "performance_analysis" });
             mockAgent.Setup(x => x.FocusAreas).Returns(new List<string> { "backend", "security" });
-            mockAgent.Setup(x => x.AICapabilities).Returns(new AIAgentCapabilities { CanAnalyzeTasks = true });
+            mockAgent.Setup(x => x.AiCapabilities).Returns(new AiAgentCapabilities { CanAnalyzeTasks = true });
 
-            mockAgent.Setup(x => x.ProcessAIRequestAsync(It.IsAny<AIEnhancedAgentRequest>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((AIEnhancedAgentRequest request, CancellationToken token) => new AIEnhancedAgentResponse
+            mockAgent.Setup(x => x.ProcessAiRequestAsync(It.IsAny<AiEnhancedAgentRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((AiEnhancedAgentRequest request, CancellationToken token) => new AiEnhancedAgentResponse
                 {
                     Success = true,
                     Content = $"Mock response from {name}: {request.Content}",
-                    AIWasUsed = true,
-                    AIModelUsed = "gpt-4",
-                    AIProcessingTimeMs = 100,
-                    AIConfidenceScore = 0.85
+                    AiWasUsed = true,
+                    AiModelUsed = "gpt-4",
+                    AiProcessingTimeMs = 100,
+                    AiConfidenceScore = 0.85
                 });
 
             return mockAgent.Object;
