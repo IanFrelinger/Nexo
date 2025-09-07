@@ -75,7 +75,7 @@ public sealed class Project
     public Project(ProjectName name, ProjectPath path, ContainerRuntime runtime)
     {
             ArgumentNullException.ThrowIfNull(name);
-            if (path != null)
+            if (path is not null)
             {
                 ArgumentNullException.ThrowIfNull(runtime);
 
@@ -282,7 +282,7 @@ public sealed class Project
         DateTimeOffset createdAt,
         Nullable<DateTimeOffset> modifiedAt,
         IEnumerable<Agent> agents,
-        IDictionary<string, object> metadata = null)
+        IDictionary<string, object>? metadata = null)
     {
         var project = new Project(name, path, runtime)
         {

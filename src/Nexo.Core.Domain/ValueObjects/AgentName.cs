@@ -32,12 +32,12 @@ namespace Nexo.Core.Domain.ValueObjects
             var hash = Value.GetHashCode();
             return hash;
         }
-        public static bool operator ==(AgentName left, AgentName right)
+        public static bool operator ==(AgentName? left, AgentName? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
             return left.Equals(right);
         }
-        public static bool operator !=(AgentName left, AgentName right) => !(left == right);
+        public static bool operator !=(AgentName? left, AgentName? right) => !(left == right);
     }
 }

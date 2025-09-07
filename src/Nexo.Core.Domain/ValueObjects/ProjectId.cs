@@ -27,6 +27,6 @@ namespace Nexo.Core.Domain.ValueObjects
         }
         public static implicit operator Guid(ProjectId id) { return id.Value; }
         public override string ToString() { return Value.ToString(); }
-        public int CompareTo(ProjectId other) { return other == null ? 1 : Value.CompareTo(other.Value); }
+        public int CompareTo(ProjectId? other) { return other == null ? 1 : Value.CompareTo(other.Value); }
     }
 }

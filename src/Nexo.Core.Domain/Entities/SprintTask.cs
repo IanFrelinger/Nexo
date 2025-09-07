@@ -44,7 +44,7 @@ namespace Nexo.Core.Domain.Entities
         /// <summary>
         /// Gets or sets the identifier of the assignee for the task.
         /// </summary>
-        public string AssigneeId { get; set; }
+        public string? AssigneeId { get; set; }
 
         /// <summary>
         /// Represents a task within a sprint.

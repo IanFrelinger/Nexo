@@ -23,7 +23,7 @@ namespace Nexo.Core.Domain.ValueObjects
         }
         public static implicit operator string(ProjectPath path) { return path.Value; }
         public override string ToString() { return Value; }
-        public int CompareTo(ProjectPath other) { return string.Compare(Value, other == null ? null : other.Value, StringComparison.Ordinal); }
+        public int CompareTo(ProjectPath? other) { return string.Compare(Value, other?.Value, StringComparison.Ordinal); }
         public ProjectPath Combine(params string[] paths)
         {
             var combined = Value;
@@ -32,12 +32,12 @@ namespace Nexo.Core.Domain.ValueObjects
         }
         public string GetDirectoryName() { return Path.GetDirectoryName(Value); }
         public string GetFileName() { return Path.GetFileName(Value); }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             var result = Equals(obj as ProjectPath);
             return result;
         }
-        public bool Equals(ProjectPath other)
+        public bool Equals(ProjectPath? other)
         {
             var result = (ReferenceEquals(this, other)) || (other != null && string.Equals(Value, other.Value, StringComparison.Ordinal));
             return result;

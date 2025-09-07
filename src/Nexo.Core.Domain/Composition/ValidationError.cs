@@ -16,12 +16,12 @@ namespace Nexo.Core.Domain.Composition
         /// <summary>
         /// Gets the property or field that caused the validation error.
         /// </summary>
-        public string Property { get; }
+        public string? Property { get; }
         
         /// <summary>
         /// Gets the error code that can be used for programmatic handling.
         /// </summary>
-        public string Code { get; }
+        public string? Code { get; }
         
         /// <summary>
         /// Gets the timestamp when this error was created.

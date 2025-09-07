@@ -15,7 +15,7 @@ namespace Nexo.Core.Domain.Composition
         private readonly string _expression;
         private readonly string _errorMessage;
         private readonly ValidationSeverity _severity;
-        private readonly Func<object, bool> _validationFunc;
+        private readonly Func<object, bool>? _validationFunc;
         private readonly List<ValidationRule> _composedRules = new();
         
         /// <summary>

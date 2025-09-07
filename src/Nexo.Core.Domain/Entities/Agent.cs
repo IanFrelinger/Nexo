@@ -83,7 +83,7 @@ namespace Nexo.Core.Domain.Entities
         /// <summary>
         /// Gets the reason for the agent's failure when its status is set to Failed.
         /// </summary>
-        public string FailureReason { get; private set; }
+        public string? FailureReason { get; private set; }
 
         /// <summary>
         /// Represents an agent in the system, encapsulating its identity, name, role, status, focus areas, and other related attributes.
