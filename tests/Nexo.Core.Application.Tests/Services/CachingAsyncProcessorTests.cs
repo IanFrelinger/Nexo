@@ -5,7 +5,6 @@ using Nexo.Core.Application.Interfaces;
 using Nexo.Core.Application.Services;
 using Xunit;
 using System.Collections.Generic;
-using Nexo.Core.Application.Services;
 using Nexo.Shared;
 
 namespace Nexo.Core.Application.Tests.Services
@@ -21,7 +20,7 @@ namespace Nexo.Core.Application.Tests.Services
                     throw new ArgumentException("TestKey.Value cannot be null or empty", nameof(value));
                 Value = value;
             }
-            public override bool Equals(object obj) => obj is TestKey other && Value == other.Value;
+            public override bool Equals(object? obj) => obj is TestKey other && Value == other.Value;
             public override int GetHashCode() => Value.GetHashCode();
             public override string ToString() => Value;
             public static implicit operator TestKey(string value) => new TestKey(value);
@@ -69,7 +68,7 @@ namespace Nexo.Core.Application.Tests.Services
             var cache = new CacheStrategy<TestKey, int>();
             var key1 = new TestKey("test");
             var key2 = new TestKey("test");
-            Assert.False(object.ReferenceEquals(key1, key2)); // Should be different instances
+            Assert.True(key1.Equals(key2)); // Should have same value
             await cache.SetAsync(key1, 555);
             int value;
             var found = cache.TryGetValue(key2, out value);
@@ -85,10 +84,10 @@ namespace Nexo.Core.Application.Tests.Services
         public async Task Minimal_CachingAsyncProcessor_StructKey_DifferentInstances_SameValue_Works()
         {
             var callCount = 0;
-            var innerProcessor = new AsyncProcessor<TestKey, int>(async (input, ct) =>
+            var innerProcessor = new AsyncProcessor<TestKey, int>((input, ct) =>
             {
                 callCount++;
-                return 777;
+                return Task.FromResult(777);
             });
 
             var cache = new CacheStrategy<TestKey, int>();
@@ -100,7 +99,7 @@ namespace Nexo.Core.Application.Tests.Services
 
             var key1 = new TestKey("test");
             var key2 = new TestKey("test");
-            Assert.False(object.ReferenceEquals(key1, key2));
+            Assert.True(key1.Equals(key2));
 
             // First call should set the cache
             var result1 = await processor.ProcessAsync(key1);
@@ -120,7 +119,7 @@ namespace Nexo.Core.Application.Tests.Services
         public async Task IdenticalSemanticKeys_ResultsAreCached()
         {
             int callCount = 0;
-            var inner = new AsyncProcessor<string, int>(async (input, ct) => { callCount++; return 42; });
+            var inner = new AsyncProcessor<string, int>((input, ct) => { callCount++; return Task.FromResult(42); });
             var cache = new CacheStrategy<string, int>();
             var processor = new CachingAsyncProcessor<string, string, int>(
                 inner,
@@ -140,7 +139,7 @@ namespace Nexo.Core.Application.Tests.Services
         public async Task DifferentSemanticKeys_NotCachedTogether()
         {
             int callCount = 0;
-            var inner = new AsyncProcessor<string, int>(async (input, ct) => { callCount++; return input.Length; });
+            var inner = new AsyncProcessor<string, int>((input, ct) => { callCount++; return Task.FromResult(input.Length); });
             var cache = new CacheStrategy<string, int>();
             var processor = new CachingAsyncProcessor<string, string, int>(
                 inner,
@@ -163,7 +162,7 @@ namespace Nexo.Core.Application.Tests.Services
         public async Task ContextAndModelParameters_AffectCacheKey()
         {
             int callCount = 0;
-            var inner = new AsyncProcessor<string, int>(async (input, ct) => { callCount++; return 99; });
+            var inner = new AsyncProcessor<string, int>((input, ct) => { callCount++; return Task.FromResult(99); });
             var cache = new CacheStrategy<string, int>();
             var processor = new CachingAsyncProcessor<string, string, int>(
                 inner,
