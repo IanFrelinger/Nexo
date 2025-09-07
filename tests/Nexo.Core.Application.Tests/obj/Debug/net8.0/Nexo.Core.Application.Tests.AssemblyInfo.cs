@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Nexo.Core.Application.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+359a63656dc9ab07a3a44e02e703fa47c539e7d7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+29467f8d2dcf6c700b2f98e0f1f611157cc2f923")]
 [assembly: System.Reflection.AssemblyProductAttribute("Nexo.Core.Application.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Nexo.Core.Application.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

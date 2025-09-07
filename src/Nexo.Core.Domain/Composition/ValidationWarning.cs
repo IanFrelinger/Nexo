@@ -40,7 +40,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="property">The property that caused the warning (optional)</param>
         /// <param name="code">The warning code (optional)</param>
         /// <param name="severity">The severity level of the warning (optional)</param>
-        public ValidationWarning(string message, string property = null, string code = null, WarningSeverity severity = WarningSeverity.Medium)
+        public ValidationWarning(string message, string? property = null, string? code = null, WarningSeverity severity = WarningSeverity.Medium)
         {
             Message = message ?? throw new ArgumentNullException(nameof(message));
             Property = property;
@@ -57,7 +57,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="code">The warning code (optional)</param>
         /// <param name="severity">The severity level of the warning (optional)</param>
         /// <returns>A new validation warning</returns>
-        public static ValidationWarning ForProperty(string property, string message, string code = null, WarningSeverity severity = WarningSeverity.Medium)
+        public static ValidationWarning ForProperty(string property, string message, string? code = null, WarningSeverity severity = WarningSeverity.Medium)
         {
             return new ValidationWarning(message, property, code, severity);
         }
@@ -70,7 +70,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="property">The property that caused the warning (optional)</param>
         /// <param name="severity">The severity level of the warning (optional)</param>
         /// <returns>A new validation warning</returns>
-        public static ValidationWarning WithCode(string code, string message, string property = null, WarningSeverity severity = WarningSeverity.Medium)
+        public static ValidationWarning WithCode(string code, string message, string? property = null, WarningSeverity severity = WarningSeverity.Medium)
         {
             return new ValidationWarning(message, property, code, severity);
         }
@@ -82,7 +82,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="property">The property that caused the warning (optional)</param>
         /// <param name="code">The warning code (optional)</param>
         /// <returns>A new high severity validation warning</returns>
-        public static ValidationWarning High(string message, string property = null, string code = null)
+        public static ValidationWarning High(string message, string? property = null, string? code = null)
         {
             return new ValidationWarning(message, property, code, WarningSeverity.High);
         }
@@ -94,7 +94,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="property">The property that caused the warning (optional)</param>
         /// <param name="code">The warning code (optional)</param>
         /// <returns>A new medium severity validation warning</returns>
-        public static ValidationWarning Medium(string message, string property = null, string code = null)
+        public static ValidationWarning Medium(string message, string? property = null, string? code = null)
         {
             return new ValidationWarning(message, property, code, WarningSeverity.Medium);
         }
@@ -106,7 +106,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="property">The property that caused the warning (optional)</param>
         /// <param name="code">The warning code (optional)</param>
         /// <returns>A new low severity validation warning</returns>
-        public static ValidationWarning Low(string message, string property = null, string code = null)
+        public static ValidationWarning Low(string message, string? property = null, string? code = null)
         {
             return new ValidationWarning(message, property, code, WarningSeverity.Low);
         }
@@ -136,7 +136,7 @@ namespace Nexo.Core.Domain.Composition
         /// </summary>
         /// <param name="obj">The object to compare with</param>
         /// <returns>True if the warnings are equal, false otherwise</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is ValidationWarning other)
             {

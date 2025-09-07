@@ -22,19 +22,19 @@ namespace Nexo.Core.Domain.ValueObjects
         }
         public static implicit operator string(ProjectName name) { return name.Value; }
         public override string ToString() { return Value; }
-        public int CompareTo(ProjectName other) { return string.Compare(Value, other == null ? null : other.Value, StringComparison.Ordinal); }
+        public int CompareTo(ProjectName? other) { return string.Compare(Value, other?.Value, StringComparison.Ordinal); }
         public static bool IsValid(string value)
         {
             return !string.IsNullOrWhiteSpace(value) &&
                    value.Length >= MinLength && value.Length <= MaxLength &&
                    ValidNamePattern.IsMatch(value);
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             var result = Equals(obj as ProjectName);
             return result;
         }
-        public bool Equals(ProjectName other)
+        public bool Equals(ProjectName? other)
         {
             var result = (ReferenceEquals(this, other)) || (other != null && string.Equals(Value, other.Value, StringComparison.Ordinal));
             return result;

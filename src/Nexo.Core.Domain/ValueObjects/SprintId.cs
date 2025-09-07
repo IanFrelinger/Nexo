@@ -15,6 +15,6 @@ namespace Nexo.Core.Domain.ValueObjects
         public static SprintId New() { return new SprintId(Guid.NewGuid()); }
         public static implicit operator Guid(SprintId id) { return id.Value; }
         public override string ToString() { return Value.ToString(); }
-        public int CompareTo(SprintId other) { return other == null ? 1 : Value.CompareTo(other.Value); }
+        public int CompareTo(SprintId? other) { return other == null ? 1 : Value.CompareTo(other.Value); }
     }
 } 

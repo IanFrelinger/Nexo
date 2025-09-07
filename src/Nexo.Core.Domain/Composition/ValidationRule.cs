@@ -70,7 +70,7 @@ namespace Nexo.Core.Domain.Composition
             string expression,
             string errorMessage,
             ValidationSeverity severity,
-            Func<object, bool> validationFunc = null)
+            Func<object, bool>? validationFunc = null)
         {
             _name = name ?? throw new ArgumentNullException(nameof(name));
             _description = description ?? throw new ArgumentNullException(nameof(description));

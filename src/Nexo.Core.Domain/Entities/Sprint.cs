@@ -329,7 +329,7 @@ namespace Nexo.Core.Domain.Entities
             Nullable<DateTimeOffset> endDate,
             IEnumerable<SprintTask> tasks,
             IEnumerable<string> definitionOfDone,
-            IDictionary<string, object> metrics = null)
+            IDictionary<string, object>? metrics = null)
         {
             var sprint = new Sprint(goal, capacityDays, sprintNumber)
             {
