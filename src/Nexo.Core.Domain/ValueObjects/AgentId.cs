@@ -15,6 +15,6 @@ namespace Nexo.Core.Domain.ValueObjects
         public static AgentId New() { return new AgentId("agent-" + Guid.NewGuid().ToString()); }
         public static implicit operator string(AgentId id) { return id.Value; }
         public override string ToString() { return Value; }
-        public int CompareTo(AgentId other) { return string.Compare(Value, other == null ? null : other.Value, StringComparison.Ordinal); }
+        public int CompareTo(AgentId? other) { return string.Compare(Value, other?.Value, StringComparison.Ordinal); }
     }
 } 

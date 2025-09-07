@@ -34,7 +34,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="message">The error message</param>
         /// <param name="property">The property that caused the error (optional)</param>
         /// <param name="code">The error code (optional)</param>
-        public ValidationError(string message, string property = null, string code = null)
+        public ValidationError(string message, string? property = null, string? code = null)
         {
             Message = message ?? throw new ArgumentNullException(nameof(message));
             Property = property;
@@ -49,7 +49,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="message">The error message</param>
         /// <param name="code">The error code (optional)</param>
         /// <returns>A new validation error</returns>
-        public static ValidationError ForProperty(string property, string message, string code = null)
+        public static ValidationError ForProperty(string property, string message, string? code = null)
         {
             return new ValidationError(message, property, code);
         }
@@ -61,7 +61,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="message">The error message</param>
         /// <param name="property">The property that caused the error (optional)</param>
         /// <returns>A new validation error</returns>
-        public static ValidationError WithCode(string code, string message, string property = null)
+        public static ValidationError WithCode(string code, string message, string? property = null)
         {
             return new ValidationError(message, property, code);
         }
@@ -90,7 +90,7 @@ namespace Nexo.Core.Domain.Composition
         /// </summary>
         /// <param name="obj">The object to compare with</param>
         /// <returns>True if the errors are equal, false otherwise</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is ValidationError other)
             {

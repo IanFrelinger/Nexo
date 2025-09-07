@@ -23,13 +23,13 @@ namespace Nexo.Core.Domain.ValueObjects
         public static AgentRole Tester { get { return new AgentRole("Tester"); } }
         public static implicit operator string(AgentRole role) { return role.Value; }
         public override string ToString() { return Value; }
-        public int CompareTo(AgentRole other) { return string.Compare(Value, other == null ? null : other.Value, StringComparison.Ordinal); }
-        public override bool Equals(object obj)
+        public int CompareTo(AgentRole? other) { return string.Compare(Value, other?.Value, StringComparison.Ordinal); }
+        public override bool Equals(object? obj)
         {
             var result = Equals(obj as AgentRole);
             return result;
         }
-        public bool Equals(AgentRole other)
+        public bool Equals(AgentRole? other)
         {
             var result = (ReferenceEquals(this, other)) || (other != null && string.Equals(Value, other.Value, StringComparison.Ordinal));
             return result;

@@ -26,6 +26,6 @@ namespace Nexo.Core.Domain.ValueObjects
         public bool IsAvailable { get { return Value != "none"; } }
         public static implicit operator string(ContainerRuntime runtime) { return runtime.Value; }
         public override string ToString() { return Value; }
-        public int CompareTo(ContainerRuntime other) { return string.Compare(Value, other == null ? null : other.Value, StringComparison.Ordinal); }
+        public int CompareTo(ContainerRuntime? other) { return string.Compare(Value, other?.Value, StringComparison.Ordinal); }
     }
 } 

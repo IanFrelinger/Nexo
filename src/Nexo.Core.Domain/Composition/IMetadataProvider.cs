@@ -28,7 +28,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="key">The metadata key</param>
         /// <param name="defaultValue">The default value to return if the key doesn't exist</param>
         /// <returns>The metadata value if it exists and matches the expected type; otherwise, the default value</returns>
-        T GetMetadata<T>(string key, T defaultValue = default(T));
+        T GetMetadata<T>(string key, T defaultValue = default!);
         
         /// <summary>
         /// Checks if a metadata key exists.

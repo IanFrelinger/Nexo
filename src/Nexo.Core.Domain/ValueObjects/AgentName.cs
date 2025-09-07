@@ -16,13 +16,13 @@ namespace Nexo.Core.Domain.ValueObjects
         }
         public static implicit operator string(AgentName name) { return name.Value; }
         public override string ToString() { return Value; }
-        public int CompareTo(AgentName other) { return string.Compare(Value, other == null ? null : other.Value, StringComparison.Ordinal); }
-        public override bool Equals(object obj)
+        public int CompareTo(AgentName? other) { return string.Compare(Value, other?.Value, StringComparison.Ordinal); }
+        public override bool Equals(object? obj)
         {
             var result = Equals(obj as AgentName);
             return result;
         }
-        public bool Equals(AgentName other)
+        public bool Equals(AgentName? other)
         {
             var result = (ReferenceEquals(this, other)) || (other != null && string.Equals(Value, other.Value, StringComparison.Ordinal));
             return result;

@@ -283,7 +283,7 @@ namespace Nexo.Core.Domain.Entities
             string failureReason,
             IEnumerable<string> focusAreas,
             IEnumerable<string> capabilities,
-            IDictionary<string, object> configuration = null)
+            IDictionary<string, object>? configuration = null)
         {
             var agent = new Agent(id, name, role)
             {

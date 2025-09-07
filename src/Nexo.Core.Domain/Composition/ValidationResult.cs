@@ -93,7 +93,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="message">The error message</param>
         /// <param name="property">The property that caused the error (optional)</param>
         /// <param name="code">The error code (optional)</param>
-        public void AddError(string message, string property = null, string code = null)
+        public void AddError(string message, string? property = null, string? code = null)
         {
             _errors.Add(new ValidationError(message, property, code));
         }
@@ -114,7 +114,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="message">The warning message</param>
         /// <param name="property">The property that caused the warning (optional)</param>
         /// <param name="code">The warning code (optional)</param>
-        public void AddWarning(string message, string property = null, string code = null)
+        public void AddWarning(string message, string? property = null, string? code = null)
         {
             _warnings.Add(new ValidationWarning(message, property, code));
         }
