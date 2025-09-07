@@ -25,3 +25,5 @@
 /workspace/src/Nexo.Feature.Pipeline/obj/Release/net48/Nexo.Fea.B98C04A9.Up2Date
 /workspace/src/Nexo.Feature.Pipeline/obj/Release/net48/Nexo.Feature.Pipeline.dll
 /workspace/src/Nexo.Feature.Pipeline/obj/Release/net48/Nexo.Feature.Pipeline.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Release/net48/Nexo.Feature.Pipeline.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Release/net48/Nexo.Feature.Pipeline.pdb

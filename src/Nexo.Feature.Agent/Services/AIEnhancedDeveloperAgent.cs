@@ -348,7 +348,7 @@ Please provide:
 
 Format your response in a clear, structured manner.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 2000,
@@ -383,7 +383,7 @@ Please provide:
 
 Format your response with clear code examples.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1500,
@@ -416,7 +416,7 @@ Please provide:
 
 Ensure the code follows C# best practices and design patterns.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -449,7 +449,7 @@ Please provide:
 
 Ensure good test coverage and follow testing best practices.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 2500,
@@ -483,7 +483,7 @@ Please provide:
 
 Focus on improving readability, maintainability, and performance.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 2000,
@@ -522,7 +522,7 @@ Please provide:
 
 Follow Microsoft documentation standards.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 2000,

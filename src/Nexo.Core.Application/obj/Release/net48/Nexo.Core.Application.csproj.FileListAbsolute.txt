@@ -29,3 +29,5 @@
 /workspace/src/Nexo.Core.Application/obj/Release/net48/Nexo.Cor.F3C1F77E.Up2Date
 /workspace/src/Nexo.Core.Application/obj/Release/net48/Nexo.Core.Application.dll
 /workspace/src/Nexo.Core.Application/obj/Release/net48/Nexo.Core.Application.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Release/net48/Nexo.Core.Application.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Release/net48/Nexo.Core.Application.pdb

@@ -183,7 +183,7 @@ namespace Nexo.Infrastructure.Services.AI
         /// This includes the features supported by the model, such as
         /// streaming, function calling, text embedding, and the constraints
         /// like maximum input and output lengths, as well as supported languages.
-        public ModelCapabilities Capabilities => new()
+        public ModelCapabilities Capabilities => new ModelCapabilities(true, true, true, false, false)
         {
             SupportsStreaming = true,
             SupportsFunctionCalling = true,
@@ -205,7 +205,7 @@ namespace Nexo.Infrastructure.Services.AI
             // In production, you may want to load from configuration or a management API.
             return Task.FromResult<IEnumerable<ModelInfo>>(new List<ModelInfo>
             {
-                new()
+                new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
                 {
                     Id = "gpt-35-turbo",
                     Name = "gpt-35-turbo",
@@ -216,7 +216,7 @@ namespace Nexo.Infrastructure.Services.AI
                     IsAvailable = true,
                     LastUpdated = DateTime.UtcNow
                 },
-                new()
+                new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
                 {
                     Id = "gpt-4",
                     Name = "gpt-4",
@@ -312,7 +312,7 @@ namespace Nexo.Infrastructure.Services.AI
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var openAIResponse = JsonSerializer.Deserialize<AzureOpenAiResponse>(responseContent);
                 var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
-                return new ModelResponse
+                return new ModelResponse(openAIResponse?.Usage?.PromptTokens ?? 0, openAIResponse?.Usage?.CompletionTokens ?? 0)
                 {
                     Content = openAIResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
                     Model = model,
@@ -657,7 +657,7 @@ namespace Nexo.Infrastructure.Services.AI
             {
                 get
                 {
-                    return _info ??= new ModelInfo
+                    return _info ??= new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
                     {
                         Id = _modelName,
                         Name = _modelName,
@@ -699,7 +699,7 @@ namespace Nexo.Infrastructure.Services.AI
                     var responseContent = await response.Content.ReadAsStringAsync();
                     var openAiResponse = JsonSerializer.Deserialize<AzureOpenAiResponse>(responseContent);
                     var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
-                    return new ModelResponse
+                    return new ModelResponse(openAiResponse?.Usage?.PromptTokens ?? 0, openAiResponse?.Usage?.CompletionTokens ?? 0)
                     {
                         Content = openAiResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
                         Model = _modelName,
@@ -770,7 +770,7 @@ namespace Nexo.Infrastructure.Services.AI
             /// </returns>
             public ModelCapabilities GetCapabilities()
             {
-                return new ModelCapabilities
+                return new ModelCapabilities(true, true, true, false, false)
                 {
                     SupportsStreaming = true,
                     SupportsFunctionCalling = true,

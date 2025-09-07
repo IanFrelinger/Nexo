@@ -73,7 +73,7 @@ public class OpenAiModelProvider : IModelProvider
             {
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
                 var modelsResponse = JsonSerializer.Deserialize<OpenAiModelsResponse>(json);
-                return modelsResponse?.Data?.Select(m => new ModelInfo
+                return modelsResponse?.Data?.Select(m => new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
                 {
                     Id = m.Id,
                     Name = m.Id,
@@ -177,7 +177,7 @@ public class OpenAiModelProvider : IModelProvider
     public bool IsEnabled => IsAvailable;
     public bool IsPrimary => true;
 
-    public ModelCapabilities Capabilities => new()
+    public ModelCapabilities Capabilities => new ModelCapabilities(true, true, true, false, false)
     {
         SupportsStreaming = true,
         SupportsFunctionCalling = true,
@@ -206,7 +206,7 @@ public class OpenAiModelProvider : IModelProvider
             
             var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
             
-            return new ModelResponse
+            return new ModelResponse(response.Usage?.PromptTokens ?? 0, response.Usage?.CompletionTokens ?? 0)
             {
                 Content = response.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
                 Model = model,
@@ -431,7 +431,7 @@ public class OpenAiModel : IModel
     {
         get
         {
-            return _info ??= new ModelInfo
+            return _info ??= new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
             {
                 Id = _modelName,
                 Name = _modelName,
@@ -461,7 +461,7 @@ public class OpenAiModel : IModel
 
     public ModelCapabilities GetCapabilities()
     {
-        return new ModelCapabilities
+        return new ModelCapabilities(true, true, true, false, false)
         {
             SupportsStreaming = true,
             SupportsFunctionCalling = true,

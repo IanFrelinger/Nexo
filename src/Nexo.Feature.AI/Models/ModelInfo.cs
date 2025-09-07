@@ -75,7 +75,7 @@ namespace Nexo.Feature.AI.Models
         /// Gets or sets the capabilities of the model.
         /// </summary>
         [JsonPropertyName("capabilities")]
-        public ModelCapabilities Capabilities { get; set; } = new ModelCapabilities();
+        public ModelCapabilities Capabilities { get; set; } = new ModelCapabilities(true, true, true, false, false);
 
         /// <summary>
         /// Gets or sets whether the model is available for use.

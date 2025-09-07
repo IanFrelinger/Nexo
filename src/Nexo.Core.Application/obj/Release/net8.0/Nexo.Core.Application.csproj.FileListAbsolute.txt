@@ -2,11 +2,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Core.Application.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Core.Application.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Core.Domain.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Feature.AI.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Feature.Pipeline.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Shared.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Core.Domain.pdb
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Feature.AI.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Feature.Pipeline.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/bin/Release/net8.0/Nexo.Shared.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Release/net8.0/Nexo.Core.Application.csproj.AssemblyReference.cache
@@ -40,3 +38,4 @@
 /workspace/src/Nexo.Core.Application/obj/Release/net8.0/refint/Nexo.Core.Application.dll
 /workspace/src/Nexo.Core.Application/obj/Release/net8.0/Nexo.Core.Application.pdb
 /workspace/src/Nexo.Core.Application/obj/Release/net8.0/ref/Nexo.Core.Application.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Release/net8.0/Nexo.Core.Application.sourcelink.json

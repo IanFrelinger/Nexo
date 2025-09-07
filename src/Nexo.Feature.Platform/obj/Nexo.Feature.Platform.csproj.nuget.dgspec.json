@@ -13,14 +13,11 @@
         "packagesPath": "/Users/ianfrelinger/.nuget/packages/",
         "outputPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/",
         "projectStyle": "PackageReference",
-        "crossTargeting": true,
         "configFilePaths": [
           "/Users/ianfrelinger/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net48",
-          "net8.0",
-          "netstandard2.0"
+          "net8.0"
         ],
         "sources": {
           "/usr/local/share/dotnet/library-packs": {},
@@ -29,34 +26,6 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "net48": {
-            "targetAlias": "net48",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "netstandard2.0": {
-            "targetAlias": "netstandard2.0",
             "projectReferences": {
               "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
                 "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
@@ -111,57 +80,6 @@
             }
           },
           "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/PortableRuntimeIdentifierGraph.json"
-        },
-        "net48": {
-          "targetAlias": "net48",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "Microsoft.NETFramework.ReferenceAssemblies": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[1.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
-        },
-        "netstandard2.0": {
-          "targetAlias": "netstandard2.0",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "NETStandard.Library": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
         }
       }
     },
@@ -174,14 +92,11 @@
         "packagesPath": "/Users/ianfrelinger/.nuget/packages/",
         "outputPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/",
         "projectStyle": "PackageReference",
-        "crossTargeting": true,
         "configFilePaths": [
           "/Users/ianfrelinger/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net48",
-          "net8.0",
-          "netstandard2.0"
+          "net8.0"
         ],
         "sources": {
           "/usr/local/share/dotnet/library-packs": {},
@@ -190,14 +105,6 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {}
-          },
-          "net48": {
-            "targetAlias": "net48",
-            "projectReferences": {}
-          },
-          "netstandard2.0": {
-            "targetAlias": "netstandard2.0",
             "projectReferences": {}
           }
         },
@@ -238,109 +145,6 @@
             }
           },
           "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/PortableRuntimeIdentifierGraph.json"
-        },
-        "net48": {
-          "targetAlias": "net48",
-          "dependencies": {
-            "Microsoft.NETFramework.ReferenceAssemblies": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[1.0.3, )",
-              "autoReferenced": true
-            },
-            "NETStandard.Library": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.0.3, )"
-            },
-            "System.Collections": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.ComponentModel.Annotations": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.IO": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.Linq": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.Reflection": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.Runtime": {
-              "target": "Package",
-              "version": "[4.3.1, )"
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            },
-            "System.Threading.Tasks": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
-        },
-        "netstandard2.0": {
-          "targetAlias": "netstandard2.0",
-          "dependencies": {
-            "NETStandard.Library": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.0.3, )"
-            },
-            "System.Collections": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.ComponentModel.Annotations": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.IO": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.Linq": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.Reflection": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            },
-            "System.Runtime": {
-              "target": "Package",
-              "version": "[4.3.1, )"
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            },
-            "System.Threading.Tasks": {
-              "target": "Package",
-              "version": "[4.3.0, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
         }
       }
     },
@@ -353,14 +157,11 @@
         "packagesPath": "/Users/ianfrelinger/.nuget/packages/",
         "outputPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/",
         "projectStyle": "PackageReference",
-        "crossTargeting": true,
         "configFilePaths": [
           "/Users/ianfrelinger/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net48",
-          "net8.0",
-          "netstandard2.0"
+          "net8.0"
         ],
         "sources": {
           "/usr/local/share/dotnet/library-packs": {},
@@ -369,28 +170,6 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "net48": {
-            "targetAlias": "net48",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "netstandard2.0": {
-            "targetAlias": "netstandard2.0",
             "projectReferences": {
               "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj": {
                 "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
@@ -442,57 +221,6 @@
             }
           },
           "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/PortableRuntimeIdentifierGraph.json"
-        },
-        "net48": {
-          "targetAlias": "net48",
-          "dependencies": {
-            "JetBrains.Annotations": {
-              "target": "Package",
-              "version": "[2025.2.0, )"
-            },
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "Microsoft.NETFramework.ReferenceAssemblies": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[1.0.3, )",
-              "autoReferenced": true
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
-        },
-        "netstandard2.0": {
-          "targetAlias": "netstandard2.0",
-          "dependencies": {
-            "JetBrains.Annotations": {
-              "target": "Package",
-              "version": "[2025.2.0, )"
-            },
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "NETStandard.Library": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.0.3, )",
-              "autoReferenced": true
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
         }
       }
     },
@@ -505,14 +233,11 @@
         "packagesPath": "/Users/ianfrelinger/.nuget/packages/",
         "outputPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/",
         "projectStyle": "PackageReference",
-        "crossTargeting": true,
         "configFilePaths": [
           "/Users/ianfrelinger/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net48",
-          "net8.0",
-          "netstandard2.0"
+          "net8.0"
         ],
         "sources": {
           "/usr/local/share/dotnet/library-packs": {},
@@ -521,22 +246,6 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "net48": {
-            "targetAlias": "net48",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "netstandard2.0": {
-            "targetAlias": "netstandard2.0",
             "projectReferences": {
               "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
                 "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
@@ -585,57 +294,6 @@
             }
           },
           "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/PortableRuntimeIdentifierGraph.json"
-        },
-        "net48": {
-          "targetAlias": "net48",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "Microsoft.NETFramework.ReferenceAssemblies": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[1.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
-        },
-        "netstandard2.0": {
-          "targetAlias": "netstandard2.0",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "NETStandard.Library": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
         }
       }
     },
@@ -648,14 +306,11 @@
         "packagesPath": "/Users/ianfrelinger/.nuget/packages/",
         "outputPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Platform/obj/",
         "projectStyle": "PackageReference",
-        "crossTargeting": true,
         "configFilePaths": [
           "/Users/ianfrelinger/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net48",
-          "net8.0",
-          "netstandard2.0"
+          "net8.0"
         ],
         "sources": {
           "/usr/local/share/dotnet/library-packs": {},
@@ -664,28 +319,6 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "net48": {
-            "targetAlias": "net48",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj"
-              },
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
-              }
-            }
-          },
-          "netstandard2.0": {
-            "targetAlias": "netstandard2.0",
             "projectReferences": {
               "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj": {
                 "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj"
@@ -737,57 +370,6 @@
             }
           },
           "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/PortableRuntimeIdentifierGraph.json"
-        },
-        "net48": {
-          "targetAlias": "net48",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "Microsoft.NETFramework.ReferenceAssemblies": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[1.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
-        },
-        "netstandard2.0": {
-          "targetAlias": "netstandard2.0",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "NETStandard.Library": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
         }
       }
     },
@@ -800,14 +382,11 @@
         "packagesPath": "/Users/ianfrelinger/.nuget/packages/",
         "outputPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/",
         "projectStyle": "PackageReference",
-        "crossTargeting": true,
         "configFilePaths": [
           "/Users/ianfrelinger/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net48",
-          "net8.0",
-          "netstandard2.0"
+          "net8.0"
         ],
         "sources": {
           "/usr/local/share/dotnet/library-packs": {},
@@ -816,22 +395,6 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
-              }
-            }
-          },
-          "net48": {
-            "targetAlias": "net48",
-            "projectReferences": {
-              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
-                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
-              }
-            }
-          },
-          "netstandard2.0": {
-            "targetAlias": "netstandard2.0",
             "projectReferences": {
               "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
                 "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
@@ -880,57 +443,6 @@
             }
           },
           "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/PortableRuntimeIdentifierGraph.json"
-        },
-        "net48": {
-          "targetAlias": "net48",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "Microsoft.NETFramework.ReferenceAssemblies": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[1.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
-        },
-        "netstandard2.0": {
-          "targetAlias": "netstandard2.0",
-          "dependencies": {
-            "Microsoft.Extensions.Logging.Abstractions": {
-              "target": "Package",
-              "version": "[8.0.0, )"
-            },
-            "NETStandard.Library": {
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[2.0.3, )",
-              "autoReferenced": true
-            },
-            "System.Text.Json": {
-              "target": "Package",
-              "version": "[9.0.7, )"
-            }
-          },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48",
-            "net481"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/RuntimeIdentifierGraph.json"
         }
       }
     }

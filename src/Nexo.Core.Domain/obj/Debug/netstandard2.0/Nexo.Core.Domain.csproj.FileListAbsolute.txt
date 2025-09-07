@@ -18,3 +18,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/netstandard2.0/Nexo.Core.Domain.csproj.CoreCompileInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/netstandard2.0/Nexo.Core.Domain.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/netstandard2.0/Nexo.Core.Domain.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/netstandard2.0/Nexo.Core.Domain.sourcelink.json

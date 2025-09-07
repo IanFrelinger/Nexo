@@ -64,3 +64,5 @@
 /workspace/src/Nexo.Feature.Analysis/bin/Debug/net48/Nexo.Shared.pdb
 /workspace/src/Nexo.Feature.Analysis/obj/Debug/net48/Nexo.Feature.Analysis.csproj.AssemblyReference.cache
 /workspace/src/Nexo.Feature.Analysis/obj/Debug/net48/Nexo.Fea.826EBF19.Up2Date
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net48/JetBrains.Annotations.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Debug/net48/Nexo.Feature.Analysis.sourcelink.json

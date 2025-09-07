@@ -32,6 +32,11 @@ namespace Nexo.Feature.AI.Enums
     /// </summary>
     public enum RequirementStatus
     {
+        Draft,
+        InReview,
+        Approved,
+        Implemented,
+        Rejected
     }
 
     /// <summary>

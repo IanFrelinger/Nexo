@@ -808,7 +808,7 @@ namespace Nexo.Feature.AI.Services
                 var meetsThreshold = performanceScore >= 0.6; // More lenient threshold for test data
                 var duration = DateTime.UtcNow - startTime;
 
-                return new PerformanceValidationResult
+                return new PerformanceValidationResult(0.8, "Performance validation completed")
                 {
                     IsValid = meetsThreshold,
                     PerformanceScore = performanceScore,
@@ -892,7 +892,7 @@ namespace Nexo.Feature.AI.Services
                 var meetsThreshold = securityScore >= 0.5; // Even more lenient threshold for test data
                 var duration = DateTime.UtcNow - startTime;
 
-                return new SecurityValidationResult
+                return new SecurityValidationResult("Security validation completed", 0.8)
                 {
                     IsValid = meetsThreshold,
                     SecurityScore = securityScore,
@@ -977,7 +977,7 @@ namespace Nexo.Feature.AI.Services
                 var meetsThreshold = architecturalScore >= 0.6; // More lenient threshold for test data
                 var duration = DateTime.UtcNow - startTime;
 
-                return new ArchitecturalValidationResult
+                return new ArchitecturalValidationResult("Architectural validation completed", 0.8)
                 {
                     IsValid = meetsThreshold,
                     ArchitecturalScore = architecturalScore,
@@ -1056,7 +1056,7 @@ namespace Nexo.Feature.AI.Services
 
                 var duration = DateTime.UtcNow - startTime;
 
-                return new ComprehensiveValidationResult
+                return new ComprehensiveValidationResult("Comprehensive validation completed")
                 {
                     IsValid = meetsAllThresholds,
                     OverallScore = overallScore,

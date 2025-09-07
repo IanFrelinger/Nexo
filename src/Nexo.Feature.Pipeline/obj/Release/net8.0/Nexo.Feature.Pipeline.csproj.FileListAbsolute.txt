@@ -32,3 +32,4 @@
 /workspace/src/Nexo.Feature.Pipeline/obj/Release/net8.0/refint/Nexo.Feature.Pipeline.dll
 /workspace/src/Nexo.Feature.Pipeline/obj/Release/net8.0/Nexo.Feature.Pipeline.pdb
 /workspace/src/Nexo.Feature.Pipeline/obj/Release/net8.0/ref/Nexo.Feature.Pipeline.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Release/net8.0/Nexo.Feature.Pipeline.sourcelink.json

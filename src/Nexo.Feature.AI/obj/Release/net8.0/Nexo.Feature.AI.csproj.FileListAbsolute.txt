@@ -32,3 +32,8 @@
 /workspace/src/Nexo.Feature.AI/obj/Release/net8.0/refint/Nexo.Feature.AI.dll
 /workspace/src/Nexo.Feature.AI/obj/Release/net8.0/Nexo.Feature.AI.pdb
 /workspace/src/Nexo.Feature.AI/obj/Release/net8.0/ref/Nexo.Feature.AI.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/Release/net8.0/Nexo.Feature.AI.sourcelink.json
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Release/net8.0/Nexo.Core.Application.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Release/net8.0/Nexo.Feature.Pipeline.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Release/net8.0/Nexo.Core.Application.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Release/net8.0/Nexo.Feature.Pipeline.pdb

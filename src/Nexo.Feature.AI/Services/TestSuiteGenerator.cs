@@ -1266,7 +1266,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateConstructorTestPrompt(entity);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1500,
@@ -1303,7 +1303,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             foreach (var property in entity.Properties)
             {
                 var prompt = CreatePropertyTestPrompt(entity, property);
-                var modelRequest = new ModelRequest
+                var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 1200,
@@ -1342,7 +1342,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             foreach (var property in entity.Properties.Where(p => p.Validations.Any()))
             {
                 var prompt = CreateValidationTestPrompt(entity, property);
-                var modelRequest = new ModelRequest
+                var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 1000,
@@ -1380,7 +1380,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             foreach (var businessRule in entity.Invariants)
             {
                 var prompt = CreateEntityBusinessRuleTestPrompt(entity, businessRule);
-                var modelRequest = new ModelRequest
+                var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 1200,
@@ -1416,7 +1416,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateValueObjectCreationTestPrompt(valueObject);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1000,
@@ -1451,7 +1451,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateValueObjectValidationTestPrompt(valueObject);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1000,
@@ -1486,7 +1486,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateValueObjectComparisonTestPrompt(valueObject);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1000,
@@ -1521,7 +1521,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateBusinessRuleValidationTestPrompt(businessRule);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1000,
@@ -1556,7 +1556,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateBusinessRuleEdgeCaseTestPrompt(businessRule);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1000,
@@ -1591,7 +1591,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateBusinessRuleIntegrationTestPrompt(businessRule);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1200,
@@ -1626,7 +1626,7 @@ public void Validate_EdgeCaseInput_HandlesCorrectly()
             var tests = new List<UnitTest>();
             
             var prompt = CreateMethodTestPrompt(entity, method);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 1200,

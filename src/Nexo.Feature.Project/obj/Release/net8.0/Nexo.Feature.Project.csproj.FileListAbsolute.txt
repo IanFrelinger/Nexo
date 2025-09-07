@@ -56,3 +56,4 @@
 /workspace/src/Nexo.Feature.Project/obj/Release/net8.0/refint/Nexo.Feature.Project.dll
 /workspace/src/Nexo.Feature.Project/obj/Release/net8.0/Nexo.Feature.Project.pdb
 /workspace/src/Nexo.Feature.Project/obj/Release/net8.0/ref/Nexo.Feature.Project.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Project/obj/Release/net8.0/Nexo.Feature.Project.sourcelink.json

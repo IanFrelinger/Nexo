@@ -37,7 +37,7 @@ namespace Nexo.Feature.Template.Services
             try
             {
                 var prompt = CreateTemplateGenerationPrompt(description, parameters);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2500,
@@ -77,7 +77,7 @@ namespace Nexo.Feature.Template.Services
             {
                 var originalTemplate = await _baseTemplateService.GetTemplateAsync(templateName, cancellationToken);
                 var prompt = CreateTemplateAdaptationPrompt(originalTemplate, adaptations);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 3000,
@@ -142,7 +142,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateTemplateImprovementPrompt(template, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -180,7 +180,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateProjectStructurePrompt(projectType, requirements);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 4000,
@@ -218,7 +218,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateConfigurationTemplatePrompt(configurationType, settings);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2500,
@@ -256,7 +256,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateDocumentationTemplatePrompt(documentationType, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 3000,

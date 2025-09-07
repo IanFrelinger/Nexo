@@ -21,3 +21,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Template/obj/Release/net8.0/refint/Nexo.Feature.Template.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Template/obj/Release/net8.0/Nexo.Feature.Template.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Template/obj/Release/net8.0/ref/Nexo.Feature.Template.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Template/obj/Release/net8.0/Nexo.Feature.Template.sourcelink.json

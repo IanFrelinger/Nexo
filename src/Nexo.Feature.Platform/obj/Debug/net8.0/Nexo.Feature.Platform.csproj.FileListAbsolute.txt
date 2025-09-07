@@ -38,3 +38,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Platform/bin/Debug/net8.0/Nexo.Feature.AI.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Platform/bin/Debug/net8.0/Nexo.Core.Application.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Platform/bin/Debug/net8.0/Nexo.Feature.Pipeline.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Platform/obj/Debug/net8.0/Nexo.Feature.Platform.sourcelink.json

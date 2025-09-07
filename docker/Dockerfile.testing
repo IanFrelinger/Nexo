@@ -1,0 +1,49 @@
+# Dockerfile for Nexo Feature Factory Testing Environment
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS base
+
+# Set environment variables
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+ENV DOTNET_NOLOGO=1
+
+# Install additional tools
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Ollama for local AI testing
+RUN curl -fsSL https://ollama.ai/install.sh | sh
+
+# Create working directory
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Restore dependencies
+RUN dotnet restore
+
+# Build the project
+RUN dotnet build --configuration Release --no-restore
+
+# Create test results directory
+RUN mkdir -p /app/test-results
+
+# Set up test environment
+ENV AI_PROVIDER=ollama
+ENV AI_MODEL=codellama
+ENV FEATURE_FACTORY_CACHE_ENABLED=true
+ENV FEATURE_FACTORY_MAX_PARALLEL_AGENTS=2
+
+# Expose port for Ollama (if needed)
+EXPOSE 11434
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD dotnet test --no-build --verbosity minimal --logger "console;verbosity=minimal" || exit 1
+
+# Default command
+CMD ["dotnet", "test", "--configuration", "Release", "--logger", "trx", "--results-directory", "/app/test-results"]

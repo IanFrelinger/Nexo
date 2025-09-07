@@ -823,7 +823,7 @@ namespace Nexo.Feature.AI.Services
                           Provide a comprehensive domain context analysis.
                           """;
 
-            var request = new ModelRequest();
+            var request = new ModelRequest(0.9, 0.0, 0.0, false);
             request.Input = prompt;
             request.MaxTokens = 1000;
             await _modelOrchestrator.ExecuteAsync(request);
@@ -915,7 +915,7 @@ Input: {input}
 
 Extract business terms with their definitions, categories, and context. Focus on domain-specific terminology.";
 
-            var request = new ModelRequest();
+            var request = new ModelRequest(0.9, 0.0, 0.0, false);
             request.Input = prompt;
             request.MaxTokens = 500;
             await _modelOrchestrator.ExecuteAsync(request);
@@ -984,7 +984,7 @@ Extract business terms with their definitions, categories, and context. Focus on
             try
             {
                 // Use model orchestrator to extract industry patterns
-                await _modelOrchestrator.ExecuteAsync(new ModelRequest
+                await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = $"Extract industry patterns for the following input in the {industry} industry: {input}",
                     SystemPrompt = "You are an industry pattern expert. Identify relevant industry patterns and best practices.",
@@ -1032,7 +1032,7 @@ Extract business terms with their definitions, categories, and context. Focus on
             try
             {
                 // Use model orchestrator to generate industry recommendations
-                await _modelOrchestrator.ExecuteAsync(new ModelRequest
+                await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = $"Generate industry recommendations for the following input in the {industry} industry: {input}",
                     SystemPrompt = "You are an industry expert. Provide actionable recommendations based on industry best practices.",
@@ -1079,7 +1079,7 @@ Extract business terms with their definitions, categories, and context. Focus on
                           Retrieve domain-specific knowledge, best practices, and guidelines that are relevant to this input.
                           """;
 
-            var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest
+            var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 500
@@ -1135,7 +1135,7 @@ Extract business terms with their definitions, categories, and context. Focus on
             var issues = new List<DomainValidationIssue>();
 
             // Use model orchestrator to validate the requirement
-            var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest
+            var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = $"Validate requirement: {requirement.Title} - {requirement.Description} for domain: {domain}",
                 SystemPrompt = "You are a domain validation expert. Analyze the requirement and identify any domain-specific issues.",
@@ -1196,7 +1196,7 @@ Extract business terms with their definitions, categories, and context. Focus on
             var improvements = new List<DomainImprovement>();
 
             // Use model orchestrator to generate improvements
-            var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest
+            var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = $"Generate improvements for requirement: {requirement.Title} - {requirement.Description} in domain: {domain}",
                 SystemPrompt = "You are a domain improvement expert. Suggest improvements for the requirement based on domain best practices.",

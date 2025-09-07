@@ -160,7 +160,7 @@ namespace Nexo.Feature.AI.Services
                 var prompt = CreateBusinessRuleExtractionPrompt(requirements, domainContext);
                 
                 // Create a model request for the orchestrator
-                var modelRequest = new ModelRequest
+                var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -230,7 +230,7 @@ namespace Nexo.Feature.AI.Services
 
                 var prompt = CreateEntityGenerationPrompt(requirements, businessRules);
                 
-                var modelRequest = new ModelRequest
+                var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -298,7 +298,7 @@ namespace Nexo.Feature.AI.Services
 
                 var prompt = CreateValueObjectGenerationPrompt(requirements, businessRules);
                 
-                var modelRequest = new ModelRequest
+                var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,

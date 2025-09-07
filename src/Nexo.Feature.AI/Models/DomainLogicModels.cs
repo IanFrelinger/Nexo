@@ -605,9 +605,9 @@ namespace Nexo.Feature.AI.Models
         public string ErrorMessage { get; set; }
         public double OverallScore { get; set; }
         public DomainLogicValidationResult BasicValidation { get; set; } = new();
-        public PerformanceValidationResult PerformanceValidation { get; set; } = new PerformanceValidationResult();
-        public SecurityValidationResult SecurityValidation { get; set; } = new SecurityValidationResult();
-        public ArchitecturalValidationResult ArchitecturalValidation { get; set; } = new ArchitecturalValidationResult();
+        public PerformanceValidationResult PerformanceValidation { get; set; } = new PerformanceValidationResult(0.8, "Default performance validation");
+        public SecurityValidationResult SecurityValidation { get; set; } = new SecurityValidationResult("Default security validation", 0.8);
+        public ArchitecturalValidationResult ArchitecturalValidation { get; set; } = new ArchitecturalValidationResult("Default architectural validation", 0.8);
         public List<string> AllIssues { get; set; } = [];
         public List<string> AllRecommendations { get; set; } = [];
         public bool MeetsAllThresholds { get; set; }

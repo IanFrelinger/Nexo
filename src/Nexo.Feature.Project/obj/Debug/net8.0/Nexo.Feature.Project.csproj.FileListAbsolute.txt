@@ -50,3 +50,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Project/obj/Debug/net8.0/refint/Nexo.Feature.Project.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Project/obj/Debug/net8.0/Nexo.Feature.Project.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Project/obj/Debug/net8.0/ref/Nexo.Feature.Project.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Project/obj/Debug/net8.0/Nexo.Feature.Project.sourcelink.json

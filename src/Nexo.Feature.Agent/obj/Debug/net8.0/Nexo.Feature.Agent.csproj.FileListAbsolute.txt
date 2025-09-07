@@ -44,3 +44,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Agent/obj/Debug/net8.0/refint/Nexo.Feature.Agent.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Agent/obj/Debug/net8.0/Nexo.Feature.Agent.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Agent/obj/Debug/net8.0/ref/Nexo.Feature.Agent.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Agent/obj/Debug/net8.0/Nexo.Feature.Agent.sourcelink.json

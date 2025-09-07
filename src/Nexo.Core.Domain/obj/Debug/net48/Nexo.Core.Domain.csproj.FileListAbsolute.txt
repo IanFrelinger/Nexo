@@ -40,3 +40,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net48/Nexo.Cor.9A195DFA.Up2Date
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net48/Nexo.Core.Domain.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net48/Nexo.Core.Domain.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net48/Nexo.Core.Domain.sourcelink.json

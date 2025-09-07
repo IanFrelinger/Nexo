@@ -302,7 +302,7 @@ namespace Nexo.Feature.AI.Services
             try
             {
                 var prioritizedRequirements = new List<PrioritizedRequirement>();
-                var categories = new List<RequirementCategory>();
+                List<RequirementCategory> categories;
 
                 foreach (var requirement in requirements)
                 {
@@ -555,7 +555,7 @@ Please provide:
 
 Respond in JSON format.";
 
-                var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest
+                var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     SystemPrompt = "You are an expert at enhancing software requirements with detailed specifications.",
@@ -1093,7 +1093,7 @@ Generate 3-5 clear, testable acceptance criteria. Each criterion should be speci
 
 Respond with a numbered list of acceptance criteria.";
 
-                var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest
+                var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     SystemPrompt = "You are an expert at writing clear, testable acceptance criteria for software requirements.",

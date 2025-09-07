@@ -52,3 +52,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/refint/Nexo.Infrastructure.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/ref/Nexo.Infrastructure.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.sourcelink.json

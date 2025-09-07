@@ -485,7 +485,7 @@ namespace Nexo.Feature.AI.Models
         /// <summary>
         /// The feature requirement.
         /// </summary>
-        public FeatureRequirement Requirement { get; set; } = new FeatureRequirement();
+        public FeatureRequirement Requirement { get; set; } = new FeatureRequirement(RequirementStatus.Draft);
 
         /// <summary>
         /// Priority score (0.0 to 1.0).

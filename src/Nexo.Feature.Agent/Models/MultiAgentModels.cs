@@ -185,7 +185,7 @@ namespace Nexo.Feature.Agent.Models
         /// <summary>
         /// Gets or sets the collaboration metrics.
         /// </summary>
-        public CollaborationMetrics CollaborationMetrics { get; set; } = new CollaborationMetrics();
+        public CollaborationMetrics CollaborationMetrics { get; set; } = new CollaborationMetrics(0.0, 0.0m);
 
         /// <summary>
         /// Gets or sets the collaboration metadata.

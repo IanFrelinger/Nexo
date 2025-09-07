@@ -22,3 +22,4 @@
 /workspace/src/Nexo.Core.Domain/obj/Release/net8.0/refint/Nexo.Core.Domain.dll
 /workspace/src/Nexo.Core.Domain/obj/Release/net8.0/Nexo.Core.Domain.pdb
 /workspace/src/Nexo.Core.Domain/obj/Release/net8.0/ref/Nexo.Core.Domain.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net8.0/Nexo.Core.Domain.sourcelink.json

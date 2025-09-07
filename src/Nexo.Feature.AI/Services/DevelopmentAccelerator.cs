@@ -72,7 +72,7 @@ namespace Nexo.Feature.AI.Services
                 }
 
                 var prompt = CreateCodeSuggestionPrompt(sourceCode, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -119,7 +119,7 @@ namespace Nexo.Feature.AI.Services
                 }
 
                 var prompt = CreateRefactoringPrompt(sourceCode, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2500,
@@ -157,7 +157,7 @@ namespace Nexo.Feature.AI.Services
                 }
 
                 var prompt = CreateTestGenerationPrompt(sourceCode, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 3000,
@@ -208,7 +208,7 @@ namespace Nexo.Feature.AI.Services
                 }
 
                 var prompt = CreateOptimizationPrompt(sourceCode, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -250,7 +250,7 @@ namespace Nexo.Feature.AI.Services
                 }
 
                 var prompt = CreateDocumentationPrompt(sourceCode, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,

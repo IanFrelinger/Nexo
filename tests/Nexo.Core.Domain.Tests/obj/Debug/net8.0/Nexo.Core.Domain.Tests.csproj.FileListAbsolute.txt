@@ -228,3 +228,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Domain.Tests/obj/Debug/net8.0/Nexo.Core.Domain.Tests.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Domain.Tests/obj/Debug/net8.0/Nexo.Core.Domain.Tests.genruntimeconfig.cache
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Domain.Tests/obj/Debug/net8.0/ref/Nexo.Core.Domain.Tests.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Domain.Tests/obj/Debug/net8.0/Nexo.Core.Domain.Tests.sourcelink.json

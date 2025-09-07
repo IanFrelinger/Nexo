@@ -122,7 +122,7 @@ namespace Nexo.Feature.AI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in advanced model execution: {ErrorMessage}", ex.Message);
-                return new AdvancedModelResponse
+                return new AdvancedModelResponse(0.0)
                 {
                     Success = false,
                     ErrorMessage = ex.Message,
@@ -427,7 +427,7 @@ namespace Nexo.Feature.AI.Services
             try
             {
                 // Convert to base model request
-                var baseRequest = new ModelRequest
+                var baseRequest = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = request.Input,
                     MaxTokens = request.MaxTokens,
@@ -439,7 +439,7 @@ namespace Nexo.Feature.AI.Services
                 var baseResponse = await _baseOrchestrator.ExecuteAsync(baseRequest, cancellationToken);
                 _logger.LogDebug("[ExecuteWithModelAsync] Base orchestrator response: Content={Content}, TokensUsed={TokensUsed}, Cost={Cost}", baseResponse.Content, baseResponse.TokensUsed, baseResponse.Cost);
                 
-                var response = new AdvancedModelResponse
+                var response = new AdvancedModelResponse(0.8)
                 {
                     Content = baseResponse.Content,
                     Success = true,
@@ -503,7 +503,7 @@ namespace Nexo.Feature.AI.Services
                 var stepInput = await PrepareStepInputAsync(step, context, cancellationToken);
                 
                 // Execute step
-                var stepRequest = new AdvancedModelRequest
+                var stepRequest = new AdvancedModelRequest(10.0m, 30000)
                 {
                     Input = stepInput,
                     TaskType = step.TaskType,
@@ -515,7 +515,7 @@ namespace Nexo.Feature.AI.Services
 
                 var stepResponse = await ExecuteAdvancedAsync(stepRequest, cancellationToken);
                 
-                return new WorkflowStepResult
+                return new WorkflowStepResult(stepResponse.TokensUsed, 0)
                 {
                     StepName = step.Name,
                     Success = stepResponse.Success,
@@ -527,7 +527,7 @@ namespace Nexo.Feature.AI.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error executing workflow step: {StepName}", step.Name);
-                return new WorkflowStepResult
+                return new WorkflowStepResult(0, 0)
                 {
                     StepName = step.Name,
                     Success = false,

@@ -32,3 +32,4 @@
 /workspace/src/Nexo.Feature.Logging/obj/Release/net8.0/refint/Nexo.Feature.Logging.dll
 /workspace/src/Nexo.Feature.Logging/obj/Release/net8.0/Nexo.Feature.Logging.pdb
 /workspace/src/Nexo.Feature.Logging/obj/Release/net8.0/ref/Nexo.Feature.Logging.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Release/net8.0/Nexo.Feature.Logging.sourcelink.json

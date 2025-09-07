@@ -1,0 +1,15 @@
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.AssemblyInfoInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.AssemblyInfo.cs
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.sourcelink.json
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/bin/Debug/net8.0/FeatureFactoryDemo
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/bin/Debug/net8.0/FeatureFactoryDemo.deps.json
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/bin/Debug/net8.0/FeatureFactoryDemo.runtimeconfig.json
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/bin/Debug/net8.0/FeatureFactoryDemo.dll
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/bin/Debug/net8.0/FeatureFactoryDemo.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.dll
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/refint/FeatureFactoryDemo.dll
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/FeatureFactoryDemo.genruntimeconfig.cache
+/Users/ianfrelinger/RiderProjects/Nexo/FeatureFactoryDemo/obj/Debug/net8.0/ref/FeatureFactoryDemo.dll

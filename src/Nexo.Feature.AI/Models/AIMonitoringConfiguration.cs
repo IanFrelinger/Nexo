@@ -76,7 +76,7 @@ namespace Nexo.Feature.AI.Models
         /// The alert thresholds for monitoring.
         /// </summary>
         [JsonPropertyName("alertThresholds")]
-        public AiAlertThresholds AlertThresholds { get; set; } = new();
+        public AiAlertThresholds AlertThresholds { get; set; } = new AiAlertThresholds(1000000000, 80.0, 90.0, 0.01, 100.0, 100, 50, 0.1, 0.05);
         
         /// <summary>
         /// Whether to enable telemetry collection.

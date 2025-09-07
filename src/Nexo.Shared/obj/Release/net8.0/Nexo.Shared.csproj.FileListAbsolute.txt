@@ -28,3 +28,4 @@
 /workspace/src/Nexo.Shared/obj/Release/net8.0/refint/Nexo.Shared.dll
 /workspace/src/Nexo.Shared/obj/Release/net8.0/Nexo.Shared.pdb
 /workspace/src/Nexo.Shared/obj/Release/net8.0/ref/Nexo.Shared.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/Release/net8.0/Nexo.Shared.sourcelink.json

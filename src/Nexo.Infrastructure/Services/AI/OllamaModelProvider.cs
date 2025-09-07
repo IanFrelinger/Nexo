@@ -56,7 +56,7 @@ public class OllamaModelProvider : IModelProvider
             {
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
                 var modelsResponse = JsonSerializer.Deserialize<OllamaModelsResponse>(json);
-                return modelsResponse?.Models?.Select(m => new ModelInfo
+                return modelsResponse?.Models?.Select(m => new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
                 {
                     Id = m.Name,
                     Name = m.Name,
@@ -160,7 +160,7 @@ public class OllamaModelProvider : IModelProvider
     public bool IsEnabled => true;
     public bool IsPrimary => false;
 
-    public ModelCapabilities Capabilities => new ModelCapabilities
+    public ModelCapabilities Capabilities => new ModelCapabilities(true, true, true, false, false)
     {
         SupportsStreaming = true,
         SupportsFunctionCalling = false,
@@ -189,7 +189,7 @@ public class OllamaModelProvider : IModelProvider
             
             var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
             
-            return new ModelResponse
+            return new ModelResponse(0, 0)
             {
                 Content = response.Response,
                 Model = model,
@@ -376,7 +376,7 @@ public class OllamaModel : IModel
     {
         get
         {
-            return _info ??= new ModelInfo
+            return _info ??= new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
             {
                 Id = _modelName,
                 Name = _modelName,
@@ -406,7 +406,7 @@ public class OllamaModel : IModel
 
     public ModelCapabilities GetCapabilities()
     {
-        return new ModelCapabilities
+        return new ModelCapabilities(true, true, true, false, false)
         {
             SupportsStreaming = true,
             SupportsFunctionCalling = false,

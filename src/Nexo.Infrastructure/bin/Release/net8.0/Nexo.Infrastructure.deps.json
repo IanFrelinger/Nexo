@@ -27,6 +27,14 @@
           "Nexo.Infrastructure.dll": {}
         }
       },
+      "JetBrains.Annotations/2025.2.0": {
+        "runtime": {
+          "lib/netstandard2.0/JetBrains.Annotations.dll": {
+            "assemblyVersion": "4242.42.42.42",
+            "fileVersion": "2025.2.0.0"
+          }
+        }
+      },
       "Microsoft.CodeAnalysis.Analyzers/3.3.4": {},
       "Microsoft.CodeAnalysis.Common/4.8.0": {
         "dependencies": {
@@ -337,16 +345,12 @@
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Nexo.Core.Domain": "1.0.0",
-          "Nexo.Feature.AI": "1.0.0",
           "Nexo.Feature.Pipeline": "1.0.0",
           "Nexo.Shared": "1.0.0",
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Core.Application.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Core.Application.dll": {}
         }
       },
       "Nexo.Core.Domain/1.0.0": {
@@ -354,23 +358,18 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Core.Domain.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Core.Domain.dll": {}
         }
       },
       "Nexo.Feature.AI/1.0.0": {
         "dependencies": {
+          "JetBrains.Annotations": "2025.2.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "Nexo.Core.Application": "1.0.0",
+          "Nexo.Shared": "1.0.0"
         },
         "runtime": {
-          "Nexo.Feature.AI.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Feature.AI.dll": {}
         }
       },
       "Nexo.Feature.Logging/1.0.0": {
@@ -380,10 +379,7 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Feature.Logging.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Feature.Logging.dll": {}
         }
       },
       "Nexo.Feature.Pipeline/1.0.0": {
@@ -393,10 +389,7 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Feature.Pipeline.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Feature.Pipeline.dll": {}
         }
       },
       "Nexo.Feature.Validation/1.0.0": {
@@ -406,10 +399,7 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Feature.Validation.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Feature.Validation.dll": {}
         }
       },
       "Nexo.Shared/1.0.0": {
@@ -419,10 +409,7 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Shared.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Shared.dll": {}
         }
       }
     }
@@ -432,6 +419,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "JetBrains.Annotations/2025.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2BvMkOSW+50EbQFhWFIPWTqmcDLiyyjwkMN7lN386bhP2vN/7ts5t59qu11HtenmHFxqDzaD8J1fFoh+QTOzVA==",
+      "path": "jetbrains.annotations/2025.2.0",
+      "hashPath": "jetbrains.annotations.2025.2.0.nupkg.sha512"
     },
     "Microsoft.CodeAnalysis.Analyzers/3.3.4": {
       "type": "package",

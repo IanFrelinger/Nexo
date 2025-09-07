@@ -28,6 +28,7 @@ using Nexo.Feature.Pipeline.Services;
 // using Nexo.Feature.Pipeline.Configuration; // Commented out - namespace doesn't exist
 using Nexo.Infrastructure.Services.Resource;
 using Nexo.Shared.Interfaces.Resource;
+using Nexo.Feature.Factory;
 using System;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -215,6 +216,15 @@ namespace Nexo.CLI
                     logger);
             });
 #endif
+
+            // Add Feature Factory services
+            services.AddFeatureFactory();
+
+            // Add simple test runner services (prevents hanging)
+            services.AddTransient<Nexo.CLI.Commands.SimpleTestRunner, Nexo.CLI.Commands.SimpleTestRunner>();
+            services.AddTransient<Nexo.Feature.Factory.Testing.Progress.IProgressReporter, Nexo.Feature.Factory.Testing.Progress.ConsoleProgressReporter>();
+            services.AddTransient<Nexo.Feature.Factory.Testing.Coverage.ITestCoverageAnalyzer, Nexo.Feature.Factory.Testing.Coverage.ReflectionBasedCoverageAnalyzer>();
+            services.AddTransient<Nexo.Feature.Factory.Testing.Timeout.ITimeoutManager, Nexo.Feature.Factory.Testing.Timeout.AggressiveTimeoutManager>();
 
             return services;
         }

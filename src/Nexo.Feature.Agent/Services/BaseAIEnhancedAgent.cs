@@ -255,7 +255,7 @@ namespace Nexo.Feature.Agent.Services
             try
             {
                 var prompt = CreateTaskAnalysisPrompt(task);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 1000,
@@ -289,7 +289,7 @@ namespace Nexo.Feature.Agent.Services
             try
             {
                 var prompt = CreateSuggestionsPrompt(task);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 1500,
@@ -409,7 +409,7 @@ namespace Nexo.Feature.Agent.Services
         protected async Task<ModelResponse> ProcessWithAiAsync(AiEnhancedAgentRequest request, CancellationToken cancellationToken)
         {
             var prompt = CreateProcessingPrompt(request);
-            var modelRequest = new ModelRequest
+            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 2000,

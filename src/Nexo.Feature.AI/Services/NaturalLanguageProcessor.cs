@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Feature.AI.Interfaces;
 using Nexo.Feature.AI.Models;
+using Nexo.Feature.AI.Enums;
 
 namespace Nexo.Feature.AI.Services
 {
@@ -151,7 +152,7 @@ namespace Nexo.Feature.AI.Services
         public async Task<ExtractionResult> ExtractComponentsAsync(string input, ExtractionType extractionType, ExtractionContext context)
         {
             // Placeholder implementation
-            return new ExtractionResult
+            return new ExtractionResult(extractionType)
             {
                 IsSuccess = true,
                 Components = new List<ExtractedComponent>(),
@@ -275,7 +276,7 @@ namespace Nexo.Feature.AI.Services
             try
             {
                 // Call the model orchestrator to extract requirements
-                var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest
+                var response = await _modelOrchestrator.ExecuteAsync(new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = $"Extract feature requirements from the following input: {input}",
                     SystemPrompt = "You are an expert at extracting software requirements from natural language descriptions. Extract clear, actionable requirements.",
@@ -291,7 +292,7 @@ namespace Nexo.Feature.AI.Services
                 }, CancellationToken.None);
 
                 // Create a requirement based on the response
-                var requirement = new FeatureRequirement
+                var requirement = new FeatureRequirement(RequirementStatus.Draft)
                 {
                     Id = Guid.NewGuid().ToString(),
                     Title = ExtractTitleFromInput(input),

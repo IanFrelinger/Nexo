@@ -23,3 +23,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/obj/Debug/net8.0/refint/Nexo.Feature.Factory.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/obj/Debug/net8.0/Nexo.Feature.Factory.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/obj/Debug/net8.0/ref/Nexo.Feature.Factory.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/obj/Debug/net8.0/Nexo.Feature.Factory.sourcelink.json

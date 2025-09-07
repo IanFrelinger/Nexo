@@ -229,7 +229,7 @@ namespace Nexo.Infrastructure.Services.AI
             return new AiConfiguration
             {
                 Mode = mode,
-                Model = new AiModelConfiguration
+                Model = new AiModelConfiguration(0.9, 0.0, 0.0, 3, 5)
                 {
                     Name = modelName,
                     MaxInputTokens = maxInputTokens,
@@ -238,7 +238,7 @@ namespace Nexo.Infrastructure.Services.AI
                     EnableStreaming = true,
                     RequestTimeoutSeconds = requestTimeoutSeconds
                 },
-                Resources = new AiResourceConfiguration
+                Resources = new AiResourceConfiguration(1000000000, 1000000000, ResourceAllocationStrategy.Balanced, true, 0.5, 0.8)
                 {
                     MaxConcurrentRequests = maxConcurrentRequests,
                     MaxMemoryUsageBytes = maxMemoryUsageBytes,
@@ -248,13 +248,13 @@ namespace Nexo.Infrastructure.Services.AI
                     EnableResourceMonitoring = true,
                     ResourceMonitoringIntervalSeconds = 30
                 },
-                Performance = new AiPerformanceConfiguration
+                Performance = new AiPerformanceConfiguration(true, 10, 1000, true, 5000, true, 10, 30, true, true, 6, true, 100)
                 {
                     Mode = perfMode,
                     TargetResponseTimeMs = targetResponseTimeMs,
                     MaxResponseTimeMs = maxResponseTimeMs
                 },
-                Caching = new AiCachingConfiguration
+                Caching = new AiCachingConfiguration(true, 30, true, 300, true, "/tmp/nexo-cache", 60, 3600)
                 {
                     Enabled = mode != AiMode.Development,
                     MaxCacheSizeBytes = maxCacheSizeBytes,
@@ -263,7 +263,7 @@ namespace Nexo.Infrastructure.Services.AI
                     EnableCompression = mode != AiMode.Development,
                     CompressionLevel = 6
                 },
-                Fallback = new AiFallbackConfiguration
+                Fallback = new AiFallbackConfiguration(30, "Service temporarily unavailable", true, 300, true, 0.8)
                 {
                     Enabled = mode != AiMode.Development,
                     MaxFallbackAttempts = maxFallbackAttempts,
@@ -272,7 +272,7 @@ namespace Nexo.Infrastructure.Services.AI
                     EnableOfflineMode = mode != AiMode.Development,
                     EnableCachedResponseFallback = mode != AiMode.Development
                 },
-                Monitoring = new AiMonitoringConfiguration
+                Monitoring = new AiMonitoringConfiguration(true, 30, true, "http://localhost:8080/telemetry", true, 0.1, true)
                 {
                     Enabled = mode != AiMode.Development,
                     CollectionIntervalSeconds = collectionIntervalSeconds,
@@ -281,7 +281,7 @@ namespace Nexo.Infrastructure.Services.AI
                     EnableErrorTracking = mode != AiMode.Development,
                     EnableUsageAnalytics = mode != AiMode.Development,
                     EnableHealthChecks = mode != AiMode.Development,
-                    AlertThresholds = new AiAlertThresholds
+                    AlertThresholds = new AiAlertThresholds(1000000000, 80.0, 80.0, 0.01, 100.0, 100, 50, 0.1, 0.05)
                     {
                         MaxResponseTimeMs = maxResponseTimeAlert,
                         MaxErrorRate = maxErrorRateAlert

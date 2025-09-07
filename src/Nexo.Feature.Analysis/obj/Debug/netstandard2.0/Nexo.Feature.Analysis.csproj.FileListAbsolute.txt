@@ -40,3 +40,4 @@
 /workspace/src/Nexo.Feature.Analysis/bin/Debug/netstandard2.0/Nexo.Feature.Pipeline.pdb
 /workspace/src/Nexo.Feature.Analysis/bin/Debug/netstandard2.0/Nexo.Shared.pdb
 /workspace/src/Nexo.Feature.Analysis/obj/Debug/netstandard2.0/Nexo.Fea.826EBF19.Up2Date
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Debug/netstandard2.0/Nexo.Feature.Analysis.sourcelink.json

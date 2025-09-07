@@ -428,7 +428,7 @@ Please provide:
 
 Focus on enterprise architecture best practices and modern architectural patterns.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -473,7 +473,7 @@ Please provide:
 
 Follow modern architectural patterns and best practices.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 4000,
@@ -515,7 +515,7 @@ Please provide:
 
 Consider enterprise-grade solutions and modern technology trends.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -558,7 +558,7 @@ Please provide:
 
 Focus on practical, implementable solutions.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -596,7 +596,7 @@ Please provide:
 
 Follow security-by-design principles and industry standards.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -636,7 +636,7 @@ Please provide:
 
 Consider modern integration patterns and enterprise integration best practices.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -678,7 +678,7 @@ Please provide:
 
 Focus on measurable performance improvements.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -720,7 +720,7 @@ Please provide:
 
 Consider business continuity and minimal disruption.";
 
-            var request = new ModelRequest
+            var request = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = prompt,
                 MaxTokens = 3000,

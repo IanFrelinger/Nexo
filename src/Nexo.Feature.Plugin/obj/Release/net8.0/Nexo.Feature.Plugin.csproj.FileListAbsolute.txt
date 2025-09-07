@@ -32,3 +32,4 @@
 /workspace/src/Nexo.Feature.Plugin/obj/Release/net8.0/refint/Nexo.Feature.Plugin.dll
 /workspace/src/Nexo.Feature.Plugin/obj/Release/net8.0/Nexo.Feature.Plugin.pdb
 /workspace/src/Nexo.Feature.Plugin/obj/Release/net8.0/ref/Nexo.Feature.Plugin.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Plugin/obj/Release/net8.0/Nexo.Feature.Plugin.sourcelink.json

@@ -19,3 +19,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Web/obj/Debug/net8.0/refint/Nexo.Feature.Web.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Web/obj/Debug/net8.0/Nexo.Feature.Web.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Web/obj/Debug/net8.0/ref/Nexo.Feature.Web.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Web/obj/Debug/net8.0/Nexo.Feature.Web.sourcelink.json

@@ -21,3 +21,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Release/net8.0/refint/Nexo.Feature.Analysis.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Release/net8.0/Nexo.Feature.Analysis.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Release/net8.0/ref/Nexo.Feature.Analysis.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Release/net8.0/Nexo.Feature.Analysis.sourcelink.json

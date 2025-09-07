@@ -32,3 +32,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/refint/Nexo.Feature.Container.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/ref/Nexo.Feature.Container.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.sourcelink.json

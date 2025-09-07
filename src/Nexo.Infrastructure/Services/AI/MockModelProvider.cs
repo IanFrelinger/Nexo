@@ -134,7 +134,7 @@ namespace Nexo.Infrastructure.Services.AI
         {
             get
             {
-                var capabilities = new ModelCapabilities
+                var capabilities = new ModelCapabilities(true, true, true, false, false)
             {
                 SupportsStreaming = true,
                 SupportsFunctionCalling = true,
@@ -263,7 +263,7 @@ namespace Nexo.Infrastructure.Services.AI
             
             var executionTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
             
-            return new ModelResponse
+            return new ModelResponse(request.Input.Length / 4, request.Input.Length / 4)
             {
                 Content = $"Mock response to: {request.Input}",
                 Model = "mock-model",
@@ -327,7 +327,7 @@ namespace Nexo.Infrastructure.Services.AI
         {
             return new Dictionary<string, ModelInfo>
             {
-                ["mock-text"] = new()
+                ["mock-text"] = new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
                 {
                     Id = "mock-text",
                     Name = "Mock Text Model",
@@ -337,7 +337,7 @@ namespace Nexo.Infrastructure.Services.AI
                     Provider = ProviderId,
                     IsAvailable = true,
                     LastUpdated = DateTime.UtcNow,
-                    Capabilities = new ModelCapabilities
+                    Capabilities = new ModelCapabilities(true, true, true, false, false)
                     {
                         SupportsStreaming = true,
                         SupportsFunctionCalling = false,
@@ -347,7 +347,7 @@ namespace Nexo.Infrastructure.Services.AI
                         SupportedLanguages = new List<string> { "en" }
                     }
                 },
-                ["mock-code"] = new()
+                ["mock-code"] = new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
                 {
                     Id = "mock-code",
                     Name = "Mock Code Model",
@@ -357,7 +357,7 @@ namespace Nexo.Infrastructure.Services.AI
                     Provider = ProviderId,
                     IsAvailable = true,
                     LastUpdated = DateTime.UtcNow,
-                    Capabilities = new ModelCapabilities
+                    Capabilities = new ModelCapabilities(true, true, true, false, false)
                     {
                         SupportsStreaming = true,
                         SupportsFunctionCalling = true,
@@ -470,7 +470,7 @@ namespace Nexo.Infrastructure.Services.AI
             // Generate task-specific responses based on the request content
             var content = GenerateTaskSpecificResponse(request);
             
-            return new ModelResponse
+            return new ModelResponse(request.Input?.Length / 4 ?? 0, request.Input?.Length / 4 ?? 0)
             {
                 Content = content,
                 Model = _modelName,

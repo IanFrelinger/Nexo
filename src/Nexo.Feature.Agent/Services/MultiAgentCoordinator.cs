@@ -212,7 +212,7 @@ namespace Nexo.Feature.Agent.Services
                     TaskName = task.TaskName,
                     Success = true,
                     AgentResults = new List<AgentTaskResult>(),
-                    CollaborationMetrics = new CollaborationMetrics()
+                    CollaborationMetrics = new CollaborationMetrics(0.0, 0.0m)
                 };
 
                 var startTime = DateTime.UtcNow;
@@ -568,7 +568,7 @@ Please provide a comprehensive synthesis that:
 4. Highlights the most valuable insights from each agent
 5. Suggests next steps or recommendations";
 
-            var synthesisRequest = new ModelRequest
+            var synthesisRequest = new ModelRequest(0.9, 0.0, 0.0, false)
             {
                 Input = synthesisPrompt,
                 MaxTokens = 2000,

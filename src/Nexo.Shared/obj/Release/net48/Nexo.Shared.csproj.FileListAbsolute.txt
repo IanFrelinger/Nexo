@@ -23,3 +23,5 @@
 /workspace/src/Nexo.Shared/obj/Release/net48/Nexo.Sha.CB6B3416.Up2Date
 /workspace/src/Nexo.Shared/obj/Release/net48/Nexo.Shared.dll
 /workspace/src/Nexo.Shared/obj/Release/net48/Nexo.Shared.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/Release/net48/Nexo.Shared.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/obj/Release/net48/Nexo.Shared.pdb

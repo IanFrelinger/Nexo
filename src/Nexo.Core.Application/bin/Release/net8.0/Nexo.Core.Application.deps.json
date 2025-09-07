@@ -10,7 +10,6 @@
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Nexo.Core.Domain": "1.0.0",
-          "Nexo.Feature.AI": "1.0.0",
           "Nexo.Feature.Pipeline": "1.0.0",
           "Nexo.Shared": "1.0.0",
           "System.Text.Json": "9.0.7"
@@ -79,23 +78,7 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Core.Domain.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
-      },
-      "Nexo.Feature.AI/1.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
-        },
-        "runtime": {
-          "Nexo.Feature.AI.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Core.Domain.dll": {}
         }
       },
       "Nexo.Feature.Pipeline/1.0.0": {
@@ -105,10 +88,7 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Feature.Pipeline.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Feature.Pipeline.dll": {}
         }
       },
       "Nexo.Shared/1.0.0": {
@@ -118,10 +98,7 @@
           "System.Text.Json": "9.0.7"
         },
         "runtime": {
-          "Nexo.Shared.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Nexo.Shared.dll": {}
         }
       }
     }
@@ -168,11 +145,6 @@
       "hashPath": "system.text.json.9.0.7.nupkg.sha512"
     },
     "Nexo.Core.Domain/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "Nexo.Feature.AI/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

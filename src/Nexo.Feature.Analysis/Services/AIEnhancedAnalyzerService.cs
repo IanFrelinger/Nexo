@@ -53,7 +53,7 @@ namespace Nexo.Feature.Analysis.Services
                 }
 
                 var prompt = CreateAnalysisPrompt(code, context);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 3000,
@@ -85,7 +85,7 @@ namespace Nexo.Feature.Analysis.Services
             try
             {
                 var prompt = CreateArchitecturalCompliancePrompt(code, architectureGuidelines);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2500,
@@ -111,7 +111,7 @@ namespace Nexo.Feature.Analysis.Services
             try
             {
                 var prompt = CreatePerformanceAnalysisPrompt(code);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -137,7 +137,7 @@ namespace Nexo.Feature.Analysis.Services
             try
             {
                 var prompt = CreateSecurityAnalysisPrompt(code);
-                var request = new ModelRequest
+                var request = new ModelRequest(0.9, 0.0, 0.0, false)
                 {
                     Input = prompt,
                     MaxTokens = 2000,

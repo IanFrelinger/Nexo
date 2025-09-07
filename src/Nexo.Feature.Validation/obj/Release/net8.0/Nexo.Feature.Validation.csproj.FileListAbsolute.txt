@@ -32,3 +32,4 @@
 /workspace/src/Nexo.Feature.Validation/obj/Release/net8.0/refint/Nexo.Feature.Validation.dll
 /workspace/src/Nexo.Feature.Validation/obj/Release/net8.0/Nexo.Feature.Validation.pdb
 /workspace/src/Nexo.Feature.Validation/obj/Release/net8.0/ref/Nexo.Feature.Validation.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Release/net8.0/Nexo.Feature.Validation.sourcelink.json

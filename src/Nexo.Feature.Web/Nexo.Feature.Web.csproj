@@ -1,12 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net48;netstandard2.0</TargetFrameworks>
-    <ImplicitUsings Condition="'$(TargetFramework)' == 'net8.0'">enable</ImplicitUsings>
-    <Nullable Condition="'$(TargetFramework)' == 'net8.0'">enable</Nullable>
-    <LangVersion Condition="'$(TargetFramework)' == 'net8.0'">10.0</LangVersion>
-    <LangVersion Condition="'$(TargetFramework)' == 'net48'">7.3</LangVersion>
-    <LangVersion Condition="'$(TargetFramework)' == 'netstandard2.0'">7.3</LangVersion>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

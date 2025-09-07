@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # Ollama service for local AI model testing
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nexo-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - nexo-testing
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: nexo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexo-testing
+
+  # Nexo Feature Factory Testing
+  nexo-testing:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.testing
+    container_name: nexo-feature-factory-testing
+    depends_on:
+      ollama:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../test-results:/app/test-results
+      - ../demo-output:/app/demo-output
+    environment:
+      - AI_PROVIDER=ollama
+      - AI_MODEL=codellama
+      - OLLAMA_HOST=ollama:11434
+      - REDIS_HOST=redis:6379
+      - FEATURE_FACTORY_CACHE_ENABLED=true
+      - FEATURE_FACTORY_MAX_PARALLEL_AGENTS=2
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+      - DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+    networks:
+      - nexo-testing
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama to be ready...' &&
+        sleep 30 &&
+        echo 'Pulling AI model...' &&
+        ollama pull codellama &&
+        echo 'Starting Feature Factory tests with C# test runner...' &&
+        dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj test feature-factory --validate-e2e --output /app/test-results --verbose --timeout 15 --ai-timeout 120 --domain-timeout 8 --code-timeout 12 --e2e-timeout 15 --perf-timeout 8 --filter critical
+      "
+
+  # Test runner for end-to-end validation
+  e2e-test-runner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.testing
+    container_name: nexo-e2e-test-runner
+    depends_on:
+      nexo-testing:
+        condition: service_completed_successfully
+    volumes:
+      - ../test-results:/app/test-results
+      - ../demo-output:/app/demo-output
+    environment:
+      - AI_PROVIDER=ollama
+      - AI_MODEL=codellama
+      - OLLAMA_HOST=ollama:11434
+      - REDIS_HOST=redis:6379
+      - FEATURE_FACTORY_CACHE_ENABLED=true
+    networks:
+      - nexo-testing
+    command: >
+      sh -c "
+        echo 'Running end-to-end validation tests...' &&
+        dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj test feature-factory --validate-e2e --output /app/test-results
+      "
+
+volumes:
+  ollama_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  nexo-testing:
+    driver: bridge

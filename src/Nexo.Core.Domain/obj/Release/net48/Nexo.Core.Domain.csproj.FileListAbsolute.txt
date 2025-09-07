@@ -19,3 +19,11 @@
 /workspace/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Cor.9A195DFA.Up2Date
 /workspace/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.dll
 /workspace/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.csproj.AssemblyReference.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.AssemblyInfoInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.AssemblyInfo.cs
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.sourcelink.json
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Release/net48/Nexo.Core.Domain.pdb

@@ -25,3 +25,5 @@
 /workspace/src/Nexo.Feature.AI/obj/Release/net48/Nexo.Fea.108EDD29.Up2Date
 /workspace/src/Nexo.Feature.AI/obj/Release/net48/Nexo.Feature.AI.dll
 /workspace/src/Nexo.Feature.AI/obj/Release/net48/Nexo.Feature.AI.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/Release/net48/Nexo.Feature.AI.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/Release/net48/Nexo.Feature.AI.pdb
