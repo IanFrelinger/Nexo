@@ -107,7 +107,7 @@ namespace Nexo.CLI.Commands
             sessionCommand.AddOption(sessionJoinOption);
             sessionCommand.AddOption(sessionStopOption);
             
-            sessionCommand.SetHandler(async (start, list, join, stop) =>
+            sessionCommand.SetHandler((start, list, join, stop) =>
             {
                 try
                 {

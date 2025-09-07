@@ -88,7 +88,7 @@ namespace Nexo.CLI
                     var effectiveProvider = !string.IsNullOrEmpty(provider) ? provider : aiSettings.PreferredProvider;
                     var effectiveModel = !string.IsNullOrEmpty(model) ? model : aiSettings.PreferredModel;
 
-                    var request = new ModelRequest { Input = $"Analyze: {path}" };
+                    var request = new ModelRequest(0.9, 0.0, 0.0, false) { Input = $"Analyze: {path}" };
                     var response = await cachingProcessor.ProcessAsync(request);
                     Console.WriteLine("AI Analysis Result: " + response.Content);
                 }
@@ -127,7 +127,7 @@ namespace Nexo.CLI
                                     Parameters = new Dictionary<string, object>
                                     {
                                         { "path", path },
-                                        { "output", output }
+                                        { "output", output ?? "text" }
                                     }
                                 }
                             }
@@ -190,7 +190,7 @@ namespace Nexo.CLI
                     logger.LogInformation("Using model: {Model}", effectiveModel);
                 }
 
-                var request = new ModelRequest { Input = code };
+                var request = new ModelRequest(0.9, 0.0, 0.0, false) { Input = code };
                 var response = await cachingProcessor.ProcessAsync(request);
                 Console.WriteLine("AI Suggestion: " + response.Content);
             }, codeArgument, contextOption, new Option<string>("--model", "Preferred AI model"), new Option<string>("--provider", "Preferred AI provider"));
@@ -217,7 +217,7 @@ namespace Nexo.CLI
                 var effectiveProvider = !string.IsNullOrEmpty(provider) ? provider : aiSettings.PreferredProvider;
                 var effectiveModel = !string.IsNullOrEmpty(model) ? model : aiSettings.PreferredModel;
 
-                var request = new ModelRequest { Input = $"Optimize: {file}" };
+                var request = new ModelRequest(0.9, 0.0, 0.0, false) { Input = $"Optimize: {file}" };
                 var response = await cachingProcessor.ProcessAsync(request);
                 Console.WriteLine("AI Optimization Result: " + response.Content);
             }, fileArgument, levelOption, preserveOption, new Option<string>("--provider", "Preferred AI provider"), new Option<string>("--model", "Preferred AI model"));
@@ -354,9 +354,9 @@ namespace Nexo.CLI
                         else
                         {
                             Console.WriteLine($"Pipeline validation failed:");
-                            foreach (var error in validationResult.Errors)
+                            foreach (var issue in validationResult.Issues)
                             {
-                                Console.WriteLine($"  - {error.Message} at {error.Location}");
+                                Console.WriteLine($"  - {issue.Message} in {issue.Field}");
                             }
                         }
                     }
@@ -430,9 +430,9 @@ namespace Nexo.CLI
             var configCommand = ConfigurationCommands.CreateConfigurationCommand(aiConfigurationService, logger);
             rootCommand.AddCommand(configCommand);
 
-            // Testing commands
-            var testingCommand = TestingCommands.CreateTestingCommand(logger);
-            rootCommand.AddCommand(testingCommand);
+            // Standalone testing commands (prevents hanging)
+            var standaloneTestingCommand = StandaloneTestRunner.CreateStandaloneTestCommand(logger);
+            rootCommand.AddCommand(standaloneTestingCommand);
 
             // Web commands
             var webCodeGenerator = scope.ServiceProvider.GetRequiredService<Nexo.Feature.Web.Interfaces.IWebCodeGenerator>();
@@ -440,6 +440,12 @@ namespace Nexo.CLI
             var generateWebCodeUseCase = scope.ServiceProvider.GetRequiredService<Nexo.Feature.Web.UseCases.GenerateWebCodeUseCase>();
             var webCommand = WebCommands.CreateWebCommand(webCodeGenerator, wasmOptimizer, generateWebCodeUseCase, logger);
             rootCommand.AddCommand(webCommand);
+
+            // Feature Factory commands
+            var featureFactoryCommand = FeatureFactoryCommands.CreateFeatureFactoryCommand(scope.ServiceProvider, logger);
+            rootCommand.AddCommand(featureFactoryCommand);
+
+            // Remove duplicate testing commands - using simple testing commands above
 
             rootCommand.Description = "Nexo CLI provides AI-enhanced development environment orchestration capabilities.";
 
@@ -464,7 +470,7 @@ namespace Nexo.CLI
         public bool EnableResourceManagement => false;
         public long MaxMemoryUsageBytes => Constants.Limits.DefaultMaxMemoryUsageBytes;
         public double MaxCpuUsagePercentage => Constants.Limits.DefaultMaxCpuUsagePercentage;
-        public T GetValue<T>(string key, T defaultValue = default(T)) => defaultValue;
+        public T GetValue<T>(string key, T defaultValue = default(T)!) => defaultValue;
         public void SetValue<T>(string key, T value) { }
         public IEnumerable<string> GetKeys() => Array.Empty<string>();
         public bool HasKey(string key) => false;

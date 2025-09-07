@@ -153,7 +153,7 @@ namespace Nexo.CLI.Commands
             templateCommand.AddOption(templateUpdateOption);
             templateCommand.AddOption(templateDeleteOption);
             
-            templateCommand.SetHandler(async (list, create, show, update, delete) =>
+            templateCommand.SetHandler((list, create, show, update, delete) =>
             {
                 try
                 {
@@ -218,7 +218,7 @@ namespace Nexo.CLI.Commands
             scaffoldCommand.AddOption(scaffoldPathOption);
             scaffoldCommand.AddOption(scaffoldOptionsOption);
             
-            scaffoldCommand.SetHandler(async (type, name, path, options) =>
+            scaffoldCommand.SetHandler((type, name, path, options) =>
             {
                 try
                 {
@@ -275,7 +275,7 @@ namespace Nexo.CLI.Commands
             envCommand.AddOption(envUpdateOption);
             envCommand.AddOption(envCleanOption);
             
-            envCommand.SetHandler(async (setup, check, update, clean) =>
+            envCommand.SetHandler((setup, check, update, clean) =>
             {
                 try
                 {

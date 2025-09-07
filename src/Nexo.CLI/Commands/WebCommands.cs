@@ -529,7 +529,7 @@ namespace Nexo.CLI.Commands
 
             validateCommand.AddOption(configFileOption);
 
-            validateCommand.SetHandler(async (config) =>
+            validateCommand.SetHandler((config) =>
             {
                 try
                 {
