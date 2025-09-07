@@ -27,9 +27,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.AssemblyInfoInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.AssemblyInfo.cs
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.sourcelink.json
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Fea.298A17C7.Up2Date
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/refint/Nexo.Feature.Container.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/ref/Nexo.Feature.Container.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Container/obj/Debug/net8.0/Nexo.Feature.Container.sourcelink.json

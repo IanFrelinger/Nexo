@@ -134,21 +134,14 @@ namespace Nexo.Infrastructure.Services.AI
         {
             get
             {
-                var capabilities = new ModelCapabilities(true, true, true, false, false)
-            {
-                SupportsStreaming = true,
-                SupportsFunctionCalling = true,
-                SupportsTextEmbedding = true,
-                MaxInputLength = 8192,
-                MaxOutputLength = 8192,
-                SupportedLanguages =
-                [
-                    "en",
-                    "es",
-                    "fr",
-                    "de"
-                ]
-            };
+                var capabilities = new ModelCapabilities
+                {
+                    SupportsTextGeneration = true,
+                    SupportsCodeGeneration = true,
+                    SupportsAnalysis = true,
+                    SupportsOptimization = false,
+                    SupportsStreaming = true
+                };
                 return capabilities;
             }
         }
@@ -218,13 +211,16 @@ namespace Nexo.Infrastructure.Services.AI
             _logger.LogInformation("Validating mock model: {ModelName}", modelName);
             await Task.CompletedTask;
             
-            var result = new ModelValidationResult { IsValid = true };
+            if (_mockModels.ContainsKey(modelName))
+            {
+                return new ModelValidationResult { IsValid = true };
+            }
 
-            if (_mockModels.ContainsKey(modelName)) return result;
-            result.IsValid = false;
-            result.Errors.Add($"Mock model '{modelName}' not found");
-
-            return result;
+            return new ModelValidationResult
+            {
+                IsValid = false,
+                Errors = new List<string> { $"Mock model '{modelName}' not found" }
+            };
         }
 
         /// <summary>
@@ -239,12 +235,11 @@ namespace Nexo.Infrastructure.Services.AI
             
             return new ModelHealthStatus
             {
-                ProviderName = DisplayName,
                 IsHealthy = true,
+                Status = "Healthy",
+                LastChecked = DateTime.UtcNow,
                 ResponseTimeMs = 10,
-                ErrorRate = 0.0,
-                LastError = "",
-                LastCheckTime = DateTime.UtcNow
+                ErrorRate = 0.0
             };
         }
 
@@ -263,11 +258,11 @@ namespace Nexo.Infrastructure.Services.AI
             
             var executionTime = (DateTime.UtcNow - startTime).TotalMilliseconds;
             
-            return new ModelResponse(request.Input.Length / 4, request.Input.Length / 4)
+            return new ModelResponse
             {
-                Content = $"Mock response to: {request.Input}",
-                Model = "mock-model",
-                TotalTokens = request.Input.Length / 4, // Rough token estimation
+                Response = $"Mock response to: {request.Input}",
+                InputTokens = request.Input.Length / 4,
+                OutputTokens = request.Input.Length / 4,
                 ProcessingTimeMs = (long)executionTime,
                 Metadata = new Dictionary<string, object>
                 {
@@ -300,17 +295,23 @@ namespace Nexo.Infrastructure.Services.AI
             _logger.LogInformation("Validating mock model request");
             await Task.CompletedTask;
             
-            var result = new ModelValidationResult { IsValid = true };
+            var errors = new List<string>();
             
             if (string.IsNullOrEmpty(request.Input))
             {
-                result.IsValid = false;
-                result.Errors.Add("Input is required");
+                errors.Add("Input is required");
             }
 
-            if (!(request.Input?.Length > 10000)) return result;
-            result.IsValid = false;
-            result.Errors.Add("Input too long (max 10000 characters)");
+            if (request.Input?.Length > 10000)
+            {
+                errors.Add("Input too long (max 10000 characters)");
+            }
+
+            var result = new ModelValidationResult 
+            { 
+                IsValid = errors.Count == 0,
+                Errors = errors
+            };
 
             return result;
         }
@@ -327,44 +328,38 @@ namespace Nexo.Infrastructure.Services.AI
         {
             return new Dictionary<string, ModelInfo>
             {
-                ["mock-text"] = new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+                ["mock-text"] = new ModelInfo
                 {
-                    Id = "mock-text",
                     Name = "Mock Text Model",
-                    Description = "Mock model for text generation",
-                    Version = "1.0",
-                    Type = ModelType.TextGeneration,
-                    Provider = ProviderId,
+                    DisplayName = "Mock Text Model",
+                    ModelType = ModelType.TextGeneration,
                     IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow,
-                    Capabilities = new ModelCapabilities(true, true, true, false, false)
+                    SizeBytes = 1024 * 1024 * 1024,
+                    MaxContextLength = 4096,
+                    Capabilities = new ModelCapabilities
                     {
-                        SupportsStreaming = true,
-                        SupportsFunctionCalling = false,
-                        SupportsTextEmbedding = false,
-                        MaxInputLength = 4096,
-                        MaxOutputLength = 4096,
-                        SupportedLanguages = new List<string> { "en" }
+                        SupportsTextGeneration = true,
+                        SupportsCodeGeneration = true,
+                        SupportsAnalysis = true,
+                        SupportsOptimization = false,
+                        SupportsStreaming = true
                     }
                 },
-                ["mock-code"] = new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+                ["mock-code"] = new ModelInfo
                 {
-                    Id = "mock-code",
                     Name = "Mock Code Model",
-                    Description = "Mock model for code generation",
-                    Version = "1.0",
-                    Type = ModelType.CodeGeneration,
-                    Provider = ProviderId,
+                    DisplayName = "Mock Code Model",
+                    ModelType = ModelType.CodeGeneration,
                     IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow,
-                    Capabilities = new ModelCapabilities(true, true, true, false, false)
+                    SizeBytes = 1024 * 1024 * 1024,
+                    MaxContextLength = 4096,
+                    Capabilities = new ModelCapabilities
                     {
-                        SupportsStreaming = true,
-                        SupportsFunctionCalling = true,
-                        SupportsTextEmbedding = false,
-                        MaxInputLength = 8192,
-                        MaxOutputLength = 8192,
-                        SupportedLanguages = ["csharp", "javascript", "python"]
+                        SupportsTextGeneration = true,
+                        SupportsCodeGeneration = true,
+                        SupportsAnalysis = true,
+                        SupportsOptimization = false,
+                        SupportsStreaming = true
                     }
                 }
             };
@@ -391,13 +386,7 @@ namespace Nexo.Infrastructure.Services.AI
                 {
                     Content = chunks[i] + (i < chunks.Length - 1 ? " " : ""),
                     IsFinal = i == chunks.Length - 1,
-                    Index = i,
-                    FinishReason = i == chunks.Length - 1 ? "stop" : null,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["provider"] = ProviderId,
-                        ["mock"] = true
-                    }
+                    Index = i
                 };
                 
                 Task.Delay(50, cancellationToken).Wait(cancellationToken); // Simulate streaming delay
@@ -454,6 +443,21 @@ namespace Nexo.Infrastructure.Services.AI
         public bool IsLoaded => true;
 
         /// <summary>
+        /// Unique identifier for this model instance
+        /// </summary>
+        public string ModelId => _modelName;
+
+        /// <summary>
+        /// Human-readable name of the model
+        /// </summary>
+        public string Name => _modelName;
+
+        /// <summary>
+        /// Type of model
+        /// </summary>
+        public Nexo.Feature.AI.Enums.ModelType ModelType => _modelInfo.ModelType;
+
+        /// <summary>
         /// Processes a model request asynchronously and generates a response based on the input data.
         /// </summary>
         /// <param name="request">The model request containing input data to be processed.</param>
@@ -470,16 +474,16 @@ namespace Nexo.Infrastructure.Services.AI
             // Generate task-specific responses based on the request content
             var content = GenerateTaskSpecificResponse(request);
             
-            return new ModelResponse(request.Input?.Length / 4 ?? 0, request.Input?.Length / 4 ?? 0)
+            return new ModelResponse
             {
-                Content = content,
-                Model = _modelName,
-                TotalTokens = request.Input?.Length / 4 ?? 0,
+                Response = content,
+                InputTokens = request.Input?.Length / 4 ?? 0,
+                OutputTokens = request.Input?.Length / 4 ?? 0,
                 ProcessingTimeMs = (long)executionTime,
                 Metadata = new Dictionary<string, object>
                 {
                     ["mock"] = true,
-                    ["model_type"] = _modelInfo.Type.ToString()
+                    ["model_type"] = _modelInfo.ModelType.ToString()
                 }
             };
         }
@@ -510,6 +514,21 @@ namespace Nexo.Infrastructure.Services.AI
         }
 
         /// <summary>
+        /// Loads the model into memory asynchronously.
+        /// </summary>
+        /// <param name="cancellationToken">
+        /// A token to monitor for cancellation requests.
+        /// </param>
+        /// <returns>
+        /// A task that represents the asynchronous operation.
+        /// </returns>
+        public Task LoadAsync(CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Loading mock model: {ModelName}", _modelName);
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         /// Asynchronously unloads the model, releasing any resources held by it.
         /// </summary>
         /// <param name="cancellationToken">
@@ -533,7 +552,7 @@ namespace Nexo.Infrastructure.Services.AI
         /// <returns>
         /// A sequence of <see cref="ModelResponseChunk"/> objects simulating a streaming response.
         /// </returns>
-        private IEnumerable<ModelResponseChunk> GenerateMockStream(ModelRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+        private IEnumerable<ModelResponseChunk> GenerateMockStream(ModelRequest request, CancellationToken cancellationToken)
         {
             var response = $"Mock {_modelName} streaming response to: {request.Input}";
             var chunks = response.Split(' ').ToArray();
@@ -547,13 +566,7 @@ namespace Nexo.Infrastructure.Services.AI
                 {
                     Content = chunks[i] + (i < chunks.Length - 1 ? " " : ""),
                     IsFinal = i == chunks.Length - 1,
-                    Index = i,
-                    FinishReason = i == chunks.Length - 1 ? "stop" : null,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["mock"] = true,
-                        ["model_name"] = _modelName
-                    }
+                    Index = i
                 };
                 
                 Task.Delay(50, cancellationToken).Wait(cancellationToken);

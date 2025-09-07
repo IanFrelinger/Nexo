@@ -428,7 +428,7 @@ Please provide:
 
 Focus on enterprise architecture best practices and modern architectural patterns.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -436,7 +436,7 @@ Focus on enterprise architecture best practices and modern architectural pattern
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -473,7 +473,7 @@ Please provide:
 
 Follow modern architectural patterns and best practices.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 4000,
@@ -481,7 +481,7 @@ Follow modern architectural patterns and best practices.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -515,7 +515,7 @@ Please provide:
 
 Consider enterprise-grade solutions and modern technology trends.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -523,7 +523,7 @@ Consider enterprise-grade solutions and modern technology trends.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -558,7 +558,7 @@ Please provide:
 
 Focus on practical, implementable solutions.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -566,7 +566,7 @@ Focus on practical, implementable solutions.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -596,7 +596,7 @@ Please provide:
 
 Follow security-by-design principles and industry standards.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -604,7 +604,7 @@ Follow security-by-design principles and industry standards.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -636,7 +636,7 @@ Please provide:
 
 Consider modern integration patterns and enterprise integration best practices.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -644,7 +644,7 @@ Consider modern integration patterns and enterprise integration best practices."
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -678,7 +678,7 @@ Please provide:
 
 Focus on measurable performance improvements.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -686,7 +686,7 @@ Focus on measurable performance improvements.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -720,7 +720,7 @@ Please provide:
 
 Consider business continuity and minimal disruption.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -728,7 +728,7 @@ Consider business continuity and minimal disruption.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
     }
 } 

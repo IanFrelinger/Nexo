@@ -20,8 +20,8 @@ public class BasicResourceManager : IResourceManager
     private readonly ConcurrentDictionary<string, ResourceAllocation> _allocations = new ConcurrentDictionary<string, ResourceAllocation>();
     private readonly SemaphoreSlim _allocationLock = new(1, 1);
     private readonly Timer _monitoringTimer;
-    private readonly PerformanceCounter _cpuCounter;
-    private readonly PerformanceCounter _memoryCounter;
+    private readonly PerformanceCounter? _cpuCounter;
+    private readonly PerformanceCounter? _memoryCounter;
 
     private readonly ResourceLimits _limits = new();
     private readonly List<ResourceAlert> _alerts = [];

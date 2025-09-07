@@ -348,7 +348,7 @@ Please provide:
 
 Format your response in a clear, structured manner.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 2000,
@@ -356,7 +356,7 @@ Format your response in a clear, structured manner.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// Generates a detailed bug fix analysis based on a provided error message and code context.
@@ -383,7 +383,7 @@ Please provide:
 
 Format your response with clear code examples.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 1500,
@@ -391,7 +391,7 @@ Format your response with clear code examples.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -416,7 +416,7 @@ Please provide:
 
 Ensure the code follows C# best practices and design patterns.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 3000,
@@ -424,7 +424,7 @@ Ensure the code follows C# best practices and design patterns.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -449,7 +449,7 @@ Please provide:
 
 Ensure good test coverage and follow testing best practices.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 2500,
@@ -457,7 +457,7 @@ Ensure good test coverage and follow testing best practices.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -483,7 +483,7 @@ Please provide:
 
 Focus on improving readability, maintainability, and performance.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 2000,
@@ -491,7 +491,7 @@ Focus on improving readability, maintainability, and performance.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
 
         /// <summary>
@@ -522,7 +522,7 @@ Please provide:
 
 Follow Microsoft documentation standards.";
 
-            var request = new ModelRequest(0.9, 0.0, 0.0, false)
+            var request = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 2000,
@@ -530,7 +530,7 @@ Follow Microsoft documentation standards.";
             };
 
             var response = await ModelOrchestrator.ExecuteAsync(request, ct);
-            return response.Content;
+            return response.Response;
         }
     }
 } 

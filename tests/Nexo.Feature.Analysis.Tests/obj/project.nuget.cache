@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "pt/NoF43sTM=",
+  "dgSpecHash": "9g6fxAGsS9E=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Analysis.Tests/Nexo.Feature.Analysis.Tests.csproj",
   "expectedPackageFiles": [
@@ -9,8 +9,11 @@
     "/Users/ianfrelinger/.nuget/packages/fluentassertions/6.12.0/fluentassertions.6.12.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/jetbrains.annotations/2025.2.0/jetbrains.annotations.2025.2.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codecoverage/17.8.0/microsoft.codecoverage.17.8.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.configuration.abstractions/8.0.0/microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.0/microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.options/8.0.0/microsoft.extensions.options.8.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.primitives/8.0.0/microsoft.extensions.primitives.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.net.test.sdk/17.8.0/microsoft.net.test.sdk.17.8.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.testplatform.objectmodel/17.8.0/microsoft.testplatform.objectmodel.17.8.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.testplatform.testhost/17.8.0/microsoft.testplatform.testhost.17.8.0.nupkg.sha512",

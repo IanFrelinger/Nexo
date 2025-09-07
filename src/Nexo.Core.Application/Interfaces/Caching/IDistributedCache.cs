@@ -34,7 +34,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
         /// <param name="value">The value to cache.</param>
         /// <param name="options">Cache options.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        Task SetAsync(string key, string value, DistributedCacheEntryOptions options = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task SetAsync(string key, string value, DistributedCacheEntryOptions? options = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Sets a value in the cache by serializing the object.
@@ -44,7 +44,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
         /// <param name="value">The value to cache.</param>
         /// <param name="options">Cache options.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
-        Task SetAsync<T>(string key, T value, DistributedCacheEntryOptions options = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task SetAsync<T>(string key, T value, DistributedCacheEntryOptions? options = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Removes a value from the cache.
@@ -69,7 +69,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
         /// <param name="options">Cache options.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The cached or newly created value.</returns>
-        Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, DistributedCacheEntryOptions options = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, DistributedCacheEntryOptions? options = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Checks if a key exists in the cache.

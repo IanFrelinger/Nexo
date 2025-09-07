@@ -46,17 +46,23 @@ public class IterationStrategySelector : IIterationStrategySelector
             .Select(strategy => new
             {
                 Strategy = strategy,
-                Score = CalculateStrategyScore(strategy as IIterationStrategy<object>, context)
+                Score = CalculateStrategyScore(strategy as IIterationStrategy<object> ?? new ForeachStrategy<object>(), context)
             })
+            .Where(x => x.Strategy != null && x.Score > 0)
             .OrderByDescending(x => x.Score)
             .ToList();
         
-        var selected = scoredStrategies.First().Strategy;
+        var selected = scoredStrategies.FirstOrDefault()?.Strategy;
         
-        _logger.LogDebug("Selected iteration strategy {StrategyId} for context {Context}", 
-            selected.StrategyId, context);
+        if (selected != null)
+        {
+            _logger.LogDebug("Selected iteration strategy {StrategyId} for context {Context}", 
+                selected.StrategyId, context);
+            return selected;
+        }
         
-        return selected;
+        _logger.LogWarning("No compatible strategies found, using fallback");
+        return new ForeachStrategy<T>();
     }
     
     public IIterationStrategy<T> SelectStrategy<T>(IEnumerable<T> source, IterationRequirements requirements)
@@ -73,10 +79,14 @@ public class IterationStrategySelector : IIterationStrategySelector
     
     private double CalculateStrategyScore(IIterationStrategy<object> strategy, IterationContext context)
     {
+        if (strategy == null) return 0;
+        
         double score = 0;
         
-        // Platform compatibility
-        if (strategy.PlatformCompatibility.HasFlag(context.EnvironmentProfile.PlatformType))
+        // Platform compatibility - use context's environment profile if available, otherwise use internal one
+        var platformType = context.EnvironmentProfile?.PlatformType ?? _environmentProfile?.PlatformType ?? PlatformCompatibility.DotNet;
+        
+        if (strategy.PlatformCompatibility.HasFlag(platformType))
             score += 100;
         else
             return 0; // Incompatible platform
@@ -95,11 +105,11 @@ public class IterationStrategySelector : IIterationStrategySelector
         score += context.Requirements.RequiresParallelization && profile.SupportsParallelization ? 30 : 0;
         
         // Environment characteristics
-        score += _environmentProfile.CpuCores > 4 && profile.SupportsParallelization ? 20 : 0;
-        score += _environmentProfile.AvailableMemoryMB < 1024 && profile.MemoryEfficiency == PerformanceLevel.Excellent ? 15 : 0;
+        score += _environmentProfile?.CpuCores > 4 && profile.SupportsParallelization ? 20 : 0;
+        score += _environmentProfile?.AvailableMemoryMB < 1024 && profile.MemoryEfficiency == PerformanceLevel.Excellent ? 15 : 0;
         
         // Debug mode considerations
-        if (_environmentProfile.IsDebugMode && strategy.StrategyId == "Linq")
+        if (_environmentProfile?.IsDebugMode == true && strategy.StrategyId == "Linq")
         {
             score += 10; // Prefer readable code in debug mode
         }

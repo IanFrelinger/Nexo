@@ -1,15 +1,27 @@
 {
   "version": 2,
-  "dgSpecHash": "vUlqlxzanSI=",
+  "dgSpecHash": "OGiOXl7EJMQ=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj",
   "expectedPackageFiles": [
     "/Users/ianfrelinger/.nuget/packages/jetbrains.annotations/2025.2.0/jetbrains.annotations.2025.2.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.bcl.asyncinterfaces/9.0.7/microsoft.bcl.asyncinterfaces.9.0.7.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.configuration.abstractions/8.0.0/microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.0/microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.options/8.0.0/microsoft.extensions.options.8.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.primitives/8.0.0/microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/netstandard.library/2.0.3/netstandard.library.2.0.3.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.buffers/4.5.1/system.buffers.4.5.1.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.componentmodel.annotations/5.0.0/system.componentmodel.annotations.5.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/system.io.pipelines/9.0.7/system.io.pipelines.9.0.7.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.memory/4.5.5/system.memory.4.5.5.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.numerics.vectors/4.4.0/system.numerics.vectors.4.4.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/system.text.encodings.web/9.0.7/system.text.encodings.web.9.0.7.nupkg.sha512",
-    "/Users/ianfrelinger/.nuget/packages/system.text.json/9.0.7/system.text.json.9.0.7.nupkg.sha512"
+    "/Users/ianfrelinger/.nuget/packages/system.text.json/9.0.7/system.text.json.9.0.7.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.threading.tasks.extensions/4.5.4/system.threading.tasks.extensions.4.5.4.nupkg.sha512"
   ],
   "logs": []
 }

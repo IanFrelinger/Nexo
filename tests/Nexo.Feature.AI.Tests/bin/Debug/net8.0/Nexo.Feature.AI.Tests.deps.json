@@ -9,16 +9,13 @@
       "Nexo.Feature.AI.Tests/1.0.0": {
         "dependencies": {
           "FluentAssertions": "6.12.0",
+          "Microsoft.Extensions.DependencyInjection": "8.0.0",
+          "Microsoft.Extensions.Logging": "8.0.0",
           "Microsoft.Extensions.Logging.Console": "8.0.0",
           "Microsoft.NET.Test.Sdk": "17.8.0",
           "Moq": "4.20.70",
-          "Nexo.Core.Application": "1.0.0",
-          "Nexo.Core.Domain": "1.0.0",
+          "Nexo.Core.Application.Tests": "1.0.0",
           "Nexo.Feature.AI": "1.0.0",
-          "Nexo.Feature.Agent": "1.0.0",
-          "Nexo.Feature.Analysis": "1.0.0",
-          "Nexo.Feature.Template": "1.0.0",
-          "Nexo.Infrastructure": "1.0.0",
           "coverlet.collector": "6.0.0",
           "xunit": "2.6.6",
           "xunit.runner.visualstudio": "2.5.6"
@@ -29,7 +26,7 @@
       },
       "Castle.Core/5.1.1": {
         "dependencies": {
-          "System.Diagnostics.EventLog": "8.0.0"
+          "System.Diagnostics.EventLog": "6.0.0"
         },
         "runtime": {
           "lib/net6.0/Castle.Core.dll": {
@@ -41,7 +38,7 @@
       "coverlet.collector/6.0.0": {},
       "FluentAssertions/6.12.0": {
         "dependencies": {
-          "System.Configuration.ConfigurationManager": "8.0.0"
+          "System.Configuration.ConfigurationManager": "4.4.0"
         },
         "runtime": {
           "lib/net6.0/FluentAssertions.dll": {
@@ -50,111 +47,11 @@
           }
         }
       },
-      "Microsoft.CodeAnalysis.Analyzers/3.3.4": {},
-      "Microsoft.CodeAnalysis.Common/4.8.0": {
-        "dependencies": {
-          "Microsoft.CodeAnalysis.Analyzers": "3.3.4",
-          "System.Collections.Immutable": "7.0.0",
-          "System.Reflection.Metadata": "7.0.0",
-          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
-        },
+      "JetBrains.Annotations/2025.2.0": {
         "runtime": {
-          "lib/net7.0/Microsoft.CodeAnalysis.dll": {
-            "assemblyVersion": "4.8.0.0",
-            "fileVersion": "4.800.23.55801"
-          }
-        },
-        "resources": {
-          "lib/net7.0/cs/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "cs"
-          },
-          "lib/net7.0/de/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "de"
-          },
-          "lib/net7.0/es/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "es"
-          },
-          "lib/net7.0/fr/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "fr"
-          },
-          "lib/net7.0/it/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "it"
-          },
-          "lib/net7.0/ja/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "ja"
-          },
-          "lib/net7.0/ko/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "ko"
-          },
-          "lib/net7.0/pl/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "pl"
-          },
-          "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "pt-BR"
-          },
-          "lib/net7.0/ru/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "ru"
-          },
-          "lib/net7.0/tr/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "tr"
-          },
-          "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "zh-Hans"
-          },
-          "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll": {
-            "locale": "zh-Hant"
-          }
-        }
-      },
-      "Microsoft.CodeAnalysis.CSharp/4.8.0": {
-        "dependencies": {
-          "Microsoft.CodeAnalysis.Common": "4.8.0"
-        },
-        "runtime": {
-          "lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll": {
-            "assemblyVersion": "4.8.0.0",
-            "fileVersion": "4.800.23.55801"
-          }
-        },
-        "resources": {
-          "lib/net7.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "cs"
-          },
-          "lib/net7.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "de"
-          },
-          "lib/net7.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "es"
-          },
-          "lib/net7.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "fr"
-          },
-          "lib/net7.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "it"
-          },
-          "lib/net7.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "ja"
-          },
-          "lib/net7.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "ko"
-          },
-          "lib/net7.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "pl"
-          },
-          "lib/net7.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "pt-BR"
-          },
-          "lib/net7.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "ru"
-          },
-          "lib/net7.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "tr"
-          },
-          "lib/net7.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "zh-Hans"
-          },
-          "lib/net7.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll": {
-            "locale": "zh-Hant"
+          "lib/netstandard2.0/JetBrains.Annotations.dll": {
+            "assemblyVersion": "4242.42.42.42",
+            "fileVersion": "2025.2.0.0"
           }
         }
       },
@@ -321,7 +218,7 @@
       "Microsoft.TestPlatform.ObjectModel/17.8.0": {
         "dependencies": {
           "NuGet.Frameworks": "6.5.0",
-          "System.Reflection.Metadata": "7.0.0"
+          "System.Reflection.Metadata": "1.6.0"
         },
         "runtime": {
           "lib/netcoreapp3.1/Microsoft.TestPlatform.CoreUtilities.dll": {
@@ -592,80 +489,36 @@
           }
         }
       },
-      "Pipelines.Sockets.Unofficial/2.2.8": {
+      "System.Configuration.ConfigurationManager/4.4.0": {
         "dependencies": {
-          "System.IO.Pipelines": "9.0.7"
+          "System.Security.Cryptography.ProtectedData": "4.4.0"
         },
         "runtime": {
-          "lib/net5.0/Pipelines.Sockets.Unofficial.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "2.2.8.1080"
+          "lib/netstandard2.0/System.Configuration.ConfigurationManager.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.6.25519.3"
           }
         }
       },
-      "StackExchange.Redis/2.7.17": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Pipelines.Sockets.Unofficial": "2.2.8"
-        },
+      "System.Diagnostics.EventLog/6.0.0": {
         "runtime": {
-          "lib/net6.0/StackExchange.Redis.dll": {
-            "assemblyVersion": "2.0.0.0",
-            "fileVersion": "2.7.17.27058"
-          }
-        }
-      },
-      "System.Collections.Immutable/7.0.0": {},
-      "System.Configuration.ConfigurationManager/8.0.0": {
-        "dependencies": {
-          "System.Diagnostics.EventLog": "8.0.0",
-          "System.Security.Cryptography.ProtectedData": "8.0.0"
-        },
-        "runtime": {
-          "lib/net8.0/System.Configuration.ConfigurationManager.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
-        }
-      },
-      "System.Diagnostics.EventLog/8.0.0": {
-        "runtime": {
-          "lib/net8.0/System.Diagnostics.EventLog.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
+          "lib/net6.0/System.Diagnostics.EventLog.dll": {
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.0.21.52210"
           }
         },
         "runtimeTargets": {
-          "runtimes/win/lib/net8.0/System.Diagnostics.EventLog.Messages.dll": {
+          "runtimes/win/lib/net6.0/System.Diagnostics.EventLog.Messages.dll": {
             "rid": "win",
             "assetType": "runtime",
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.0.21.52210"
           },
-          "runtimes/win/lib/net8.0/System.Diagnostics.EventLog.dll": {
+          "runtimes/win/lib/net6.0/System.Diagnostics.EventLog.dll": {
             "rid": "win",
             "assetType": "runtime",
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
-        }
-      },
-      "System.Diagnostics.PerformanceCounter/8.0.0": {
-        "dependencies": {
-          "System.Configuration.ConfigurationManager": "8.0.0"
-        },
-        "runtime": {
-          "lib/net8.0/System.Diagnostics.PerformanceCounter.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/win/lib/net8.0/System.Diagnostics.PerformanceCounter.dll": {
-            "rid": "win",
-            "assetType": "runtime",
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
+            "assemblyVersion": "6.0.0.0",
+            "fileVersion": "6.0.21.52210"
           }
         }
       },
@@ -677,25 +530,20 @@
           }
         }
       },
-      "System.Reactive/6.0.1": {
+      "System.Reflection.Metadata/1.6.0": {},
+      "System.Security.Cryptography.ProtectedData/4.4.0": {
         "runtime": {
-          "lib/net6.0/System.Reactive.dll": {
-            "assemblyVersion": "6.0.0.0",
-            "fileVersion": "6.0.1.7420"
+          "lib/netstandard2.0/System.Security.Cryptography.ProtectedData.dll": {
+            "assemblyVersion": "4.0.2.0",
+            "fileVersion": "4.6.25519.3"
           }
-        }
-      },
-      "System.Reflection.Metadata/7.0.0": {
-        "dependencies": {
-          "System.Collections.Immutable": "7.0.0"
-        }
-      },
-      "System.Runtime.CompilerServices.Unsafe/6.0.0": {},
-      "System.Security.Cryptography.ProtectedData/8.0.0": {
-        "runtime": {
-          "lib/net8.0/System.Security.Cryptography.ProtectedData.dll": {
-            "assemblyVersion": "8.0.0.0",
-            "fileVersion": "8.0.23.53103"
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/netstandard2.0/System.Security.Cryptography.ProtectedData.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "4.0.2.0",
+            "fileVersion": "4.6.25519.3"
           }
         }
       },
@@ -782,65 +630,51 @@
       "xunit.runner.visualstudio/2.5.6": {},
       "Nexo.Core.Application/1.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0",
           "Nexo.Core.Domain": "1.0.0",
           "Nexo.Feature.Pipeline": "1.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "Nexo.Shared": "1.0.0"
         },
         "runtime": {
           "Nexo.Core.Application.dll": {}
         }
       },
+      "Nexo.Core.Application.Tests/1.0.0": {
+        "dependencies": {
+          "FluentAssertions": "6.12.0",
+          "Microsoft.Extensions.Logging": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.NET.Test.Sdk": "17.8.0",
+          "Moq": "4.20.70",
+          "Nexo.Core.Application": "1.0.0",
+          "Nexo.Core.Domain": "1.0.0",
+          "xunit": "2.6.6"
+        },
+        "runtime": {
+          "Nexo.Core.Application.Tests.dll": {}
+        }
+      },
       "Nexo.Core.Domain/1.0.0": {
         "dependencies": {
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0"
         },
         "runtime": {
           "Nexo.Core.Domain.dll": {}
         }
       },
-      "Nexo.Feature.Agent/1.0.0": {
+      "Nexo.Feature.AI/1.0.0": {
         "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Nexo.Core.Application": "1.0.0",
           "Nexo.Core.Domain": "1.0.0",
-          "Nexo.Feature.AI": "1.0.0",
           "Nexo.Shared": "1.0.0",
           "System.Text.Json": "9.0.7"
-        },
-        "runtime": {
-          "Nexo.Feature.Agent.dll": {}
-        }
-      },
-      "Nexo.Feature.AI/1.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Application": "1.0.0",
-          "Nexo.Shared": "1.0.0"
         },
         "runtime": {
           "Nexo.Feature.AI.dll": {}
-        }
-      },
-      "Nexo.Feature.Analysis/1.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Application": "1.0.0",
-          "Nexo.Feature.AI": "1.0.0"
-        },
-        "runtime": {
-          "Nexo.Feature.Analysis.dll": {}
-        }
-      },
-      "Nexo.Feature.Logging/1.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
-        },
-        "runtime": {
-          "Nexo.Feature.Logging.dll": {}
         }
       },
       "Nexo.Feature.Pipeline/1.0.0": {
@@ -853,52 +687,10 @@
           "Nexo.Feature.Pipeline.dll": {}
         }
       },
-      "Nexo.Feature.Template/1.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Application": "1.0.0",
-          "Nexo.Feature.AI": "1.0.0"
-        },
-        "runtime": {
-          "Nexo.Feature.Template.dll": {}
-        }
-      },
-      "Nexo.Feature.Validation/1.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
-        },
-        "runtime": {
-          "Nexo.Feature.Validation.dll": {}
-        }
-      },
-      "Nexo.Infrastructure/1.0.0": {
-        "dependencies": {
-          "Microsoft.CodeAnalysis.Analyzers": "3.3.4",
-          "Microsoft.CodeAnalysis.CSharp": "4.8.0",
-          "Microsoft.Extensions.Logging": "8.0.0",
-          "Microsoft.Extensions.Options": "8.0.0",
-          "Nexo.Core.Application": "1.0.0",
-          "Nexo.Feature.AI": "1.0.0",
-          "Nexo.Feature.Logging": "1.0.0",
-          "Nexo.Feature.Pipeline": "1.0.0",
-          "Nexo.Feature.Validation": "1.0.0",
-          "Nexo.Shared": "1.0.0",
-          "StackExchange.Redis": "2.7.17",
-          "System.Diagnostics.PerformanceCounter": "8.0.0",
-          "System.Reactive": "6.0.1",
-          "System.Text.Json": "9.0.7"
-        },
-        "runtime": {
-          "Nexo.Infrastructure.dll": {}
-        }
-      },
       "Nexo.Shared/1.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Domain": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0",
+          "Nexo.Core.Domain": "1.0.0"
         },
         "runtime": {
           "Nexo.Shared.dll": {}
@@ -933,26 +725,12 @@
       "path": "fluentassertions/6.12.0",
       "hashPath": "fluentassertions.6.12.0.nupkg.sha512"
     },
-    "Microsoft.CodeAnalysis.Analyzers/3.3.4": {
+    "JetBrains.Annotations/2025.2.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-AxkxcPR+rheX0SmvpLVIGLhOUXAKG56a64kV9VQZ4y9gR9ZmPXnqZvHJnmwLSwzrEP6junUF11vuc+aqo5r68g==",
-      "path": "microsoft.codeanalysis.analyzers/3.3.4",
-      "hashPath": "microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512"
-    },
-    "Microsoft.CodeAnalysis.Common/4.8.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-/jR+e/9aT+BApoQJABlVCKnnggGQbvGh7BKq2/wI1LamxC+LbzhcLj4Vj7gXCofl1n4E521YfF9w0WcASGg/KA==",
-      "path": "microsoft.codeanalysis.common/4.8.0",
-      "hashPath": "microsoft.codeanalysis.common.4.8.0.nupkg.sha512"
-    },
-    "Microsoft.CodeAnalysis.CSharp/4.8.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-+3+qfdb/aaGD8PZRCrsdobbzGs1m9u119SkkJt8e/mk3xLJz/udLtS2T6nY27OTXxBBw10HzAbC8Z9w08VyP/g==",
-      "path": "microsoft.codeanalysis.csharp/4.8.0",
-      "hashPath": "microsoft.codeanalysis.csharp.4.8.0.nupkg.sha512"
+      "sha512": "sha512-2BvMkOSW+50EbQFhWFIPWTqmcDLiyyjwkMN7lN386bhP2vN/7ts5t59qu11HtenmHFxqDzaD8J1fFoh+QTOzVA==",
+      "path": "jetbrains.annotations/2025.2.0",
+      "hashPath": "jetbrains.annotations.2025.2.0.nupkg.sha512"
     },
     "Microsoft.CodeCoverage/17.8.0": {
       "type": "package",
@@ -1087,47 +865,19 @@
       "path": "nuget.frameworks/6.5.0",
       "hashPath": "nuget.frameworks.6.5.0.nupkg.sha512"
     },
-    "Pipelines.Sockets.Unofficial/2.2.8": {
+    "System.Configuration.ConfigurationManager/4.4.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-zG2FApP5zxSx6OcdJQLbZDk2AVlN2BNQD6MorwIfV6gVj0RRxWPEp2LXAxqDGZqeNV1Zp0BNPcNaey/GXmTdvQ==",
-      "path": "pipelines.sockets.unofficial/2.2.8",
-      "hashPath": "pipelines.sockets.unofficial.2.2.8.nupkg.sha512"
+      "sha512": "sha512-gWwQv/Ug1qWJmHCmN17nAbxJYmQBM/E94QxKLksvUiiKB1Ld3Sc/eK1lgmbSjDFxkQhVuayI/cGFZhpBSodLrg==",
+      "path": "system.configuration.configurationmanager/4.4.0",
+      "hashPath": "system.configuration.configurationmanager.4.4.0.nupkg.sha512"
     },
-    "StackExchange.Redis/2.7.17": {
+    "System.Diagnostics.EventLog/6.0.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-PduekHww3CrCBr1ebIPX4k4zdah9wjJ4AQZXfp+JfGJQfwf8s1SHSY7kthDi9MP0ULcYrNw4xnbRXFMbCryIig==",
-      "path": "stackexchange.redis/2.7.17",
-      "hashPath": "stackexchange.redis.2.7.17.nupkg.sha512"
-    },
-    "System.Collections.Immutable/7.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-dQPcs0U1IKnBdRDBkrCTi1FoajSTBzLcVTpjO4MBCMC7f4pDOIPzgBoX8JjG7X6uZRJ8EBxsi8+DR1JuwjnzOQ==",
-      "path": "system.collections.immutable/7.0.0",
-      "hashPath": "system.collections.immutable.7.0.0.nupkg.sha512"
-    },
-    "System.Configuration.ConfigurationManager/8.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-JlYi9XVvIREURRUlGMr1F6vOFLk7YSY4p1vHo4kX3tQ0AGrjqlRWHDi66ImHhy6qwXBG3BJ6Y1QlYQ+Qz6Xgww==",
-      "path": "system.configuration.configurationmanager/8.0.0",
-      "hashPath": "system.configuration.configurationmanager.8.0.0.nupkg.sha512"
-    },
-    "System.Diagnostics.EventLog/8.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-fdYxcRjQqTTacKId/2IECojlDSFvp7LP5N78+0z/xH7v/Tuw5ZAxu23Y6PTCRinqyu2ePx+Gn1098NC6jM6d+A==",
-      "path": "system.diagnostics.eventlog/8.0.0",
-      "hashPath": "system.diagnostics.eventlog.8.0.0.nupkg.sha512"
-    },
-    "System.Diagnostics.PerformanceCounter/8.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-lX6DXxtJqVGWw7N/QmVoiCyVQ+Q/Xp+jVXPr3gLK1jJExSn1qmAjJQeb8gnOYeeBTG3E3PmG1nu92eYj/TEjpg==",
-      "path": "system.diagnostics.performancecounter/8.0.0",
-      "hashPath": "system.diagnostics.performancecounter.8.0.0.nupkg.sha512"
+      "sha512": "sha512-lcyUiXTsETK2ALsZrX+nWuHSIQeazhqPphLfaRxzdGaG93+0kELqpgEHtwWOlQe7+jSFnKwaCAgL4kjeZCQJnw==",
+      "path": "system.diagnostics.eventlog/6.0.0",
+      "hashPath": "system.diagnostics.eventlog.6.0.0.nupkg.sha512"
     },
     "System.IO.Pipelines/9.0.7": {
       "type": "package",
@@ -1136,33 +886,19 @@
       "path": "system.io.pipelines/9.0.7",
       "hashPath": "system.io.pipelines.9.0.7.nupkg.sha512"
     },
-    "System.Reactive/6.0.1": {
+    "System.Reflection.Metadata/1.6.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-rHaWtKDwCi9qJ3ObKo8LHPMuuwv33YbmQi7TcUK1C264V3MFnOr5Im7QgCTdLniztP3GJyeiSg5x8NqYJFqRmg==",
-      "path": "system.reactive/6.0.1",
-      "hashPath": "system.reactive.6.0.1.nupkg.sha512"
+      "sha512": "sha512-COC1aiAJjCoA5GBF+QKL2uLqEBew4JsCkQmoHKbN3TlOZKa2fKLz5CpiRQKDz0RsAOEGsVKqOD5bomsXq/4STQ==",
+      "path": "system.reflection.metadata/1.6.0",
+      "hashPath": "system.reflection.metadata.1.6.0.nupkg.sha512"
     },
-    "System.Reflection.Metadata/7.0.0": {
+    "System.Security.Cryptography.ProtectedData/4.4.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-MclTG61lsD9sYdpNz9xsKBzjsmsfCtcMZYXz/IUr2zlhaTaABonlr1ESeompTgM+Xk+IwtGYU7/voh3YWB/fWw==",
-      "path": "system.reflection.metadata/7.0.0",
-      "hashPath": "system.reflection.metadata.7.0.0.nupkg.sha512"
-    },
-    "System.Runtime.CompilerServices.Unsafe/6.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg==",
-      "path": "system.runtime.compilerservices.unsafe/6.0.0",
-      "hashPath": "system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512"
-    },
-    "System.Security.Cryptography.ProtectedData/8.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-+TUFINV2q2ifyXauQXRwy4CiBhqvDEDZeVJU7qfxya4aRYOKzVBpN+4acx25VcPB9ywUN6C0n8drWl110PhZEg==",
-      "path": "system.security.cryptography.protecteddata/8.0.0",
-      "hashPath": "system.security.cryptography.protecteddata.8.0.0.nupkg.sha512"
+      "sha512": "sha512-cJV7ScGW7EhatRsjehfvvYVBvtiSMKgN8bOVI0bQhnF5bU7vnHVIsH49Kva7i7GWaWYvmEzkYVk1TC+gZYBEog==",
+      "path": "system.security.cryptography.protecteddata/4.4.0",
+      "hashPath": "system.security.cryptography.protecteddata.4.4.0.nupkg.sha512"
     },
     "System.Text.Encodings.Web/9.0.7": {
       "type": "package",
@@ -1239,12 +975,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "Nexo.Core.Domain/1.0.0": {
+    "Nexo.Core.Application.Tests/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
-    "Nexo.Feature.Agent/1.0.0": {
+    "Nexo.Core.Domain/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -1254,32 +990,7 @@
       "serviceable": false,
       "sha512": ""
     },
-    "Nexo.Feature.Analysis/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "Nexo.Feature.Logging/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
     "Nexo.Feature.Pipeline/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "Nexo.Feature.Template/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "Nexo.Feature.Validation/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "Nexo.Infrastructure/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

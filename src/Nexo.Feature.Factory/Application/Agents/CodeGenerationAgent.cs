@@ -479,7 +479,7 @@ Generate only the use case unit test code without any additional text or explana
 
         private async Task<string> CallAIAsync(string prompt, CancellationToken cancellationToken)
         {
-            var request = new Nexo.Feature.AI.Models.ModelRequest(0.7, 0.0, 0.0, false)
+            var request = new Nexo.Feature.AI.Models.ModelRequest
             {
                 Input = prompt,
                 SystemPrompt = "You are a Clean Architecture expert. Generate high-quality, production-ready C# code that follows Clean Architecture principles, SOLID principles, and C# best practices. Return only the code without any additional text, explanations, or markdown formatting.",
@@ -488,7 +488,7 @@ Generate only the use case unit test code without any additional text or explana
             };
 
             var response = await _modelOrchestrator.ExecuteAsync(request, cancellationToken);
-            return response.Content;
+            return response.Response;
         }
     }
 }

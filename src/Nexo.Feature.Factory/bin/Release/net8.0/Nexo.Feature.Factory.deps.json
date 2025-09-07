@@ -350,11 +350,11 @@
       },
       "Nexo.Core.Application/1.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0",
           "Nexo.Core.Domain": "1.0.0",
           "Nexo.Feature.Pipeline": "1.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "Nexo.Shared": "1.0.0"
         },
         "runtime": {
           "Nexo.Core.Application.dll": {}
@@ -362,7 +362,7 @@
       },
       "Nexo.Core.Domain/1.0.0": {
         "dependencies": {
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0"
         },
         "runtime": {
           "Nexo.Core.Domain.dll": {}
@@ -391,9 +391,8 @@
       },
       "Nexo.Shared/1.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Domain": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0",
+          "Nexo.Core.Domain": "1.0.0"
         },
         "runtime": {
           "Nexo.Shared.dll": {}

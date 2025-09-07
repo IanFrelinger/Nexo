@@ -1501,11 +1501,11 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0",
           "Nexo.Core.Domain": "1.0.0",
           "Nexo.Feature.Pipeline": "1.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "Nexo.Shared": "1.0.0"
         },
         "compile": {
           "bin/placeholder/Nexo.Core.Application.dll": {}
@@ -1518,7 +1518,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0"
         },
         "compile": {
           "bin/placeholder/Nexo.Core.Domain.dll": {}
@@ -1549,10 +1549,13 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "JetBrains.Annotations": "2025.2.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Nexo.Core.Application": "1.0.0",
-          "Nexo.Shared": "1.0.0"
+          "Nexo.Core.Domain": "1.0.0",
+          "Nexo.Shared": "1.0.0",
+          "System.Text.Json": "9.0.7"
         },
         "compile": {
           "bin/placeholder/Nexo.Feature.AI.dll": {}
@@ -1645,10 +1648,13 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.CodeAnalysis.Analyzers": "3.3.4",
+          "Microsoft.CodeAnalysis.CSharp": "4.8.0",
+          "Microsoft.CodeAnalysis.VisualBasic": "4.8.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0",
           "Nexo.Feature.AI": "1.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "Nexo.Shared": "1.0.0"
         },
         "compile": {
           "bin/placeholder/Nexo.Feature.Platform.dll": {}
@@ -1771,9 +1777,8 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Domain": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0",
+          "Nexo.Core.Domain": "1.0.0"
         },
         "compile": {
           "bin/placeholder/Nexo.Shared.dll": {}

@@ -53,18 +53,17 @@ namespace Nexo.Feature.Analysis.Services
                 }
 
                 var prompt = CreateAnalysisPrompt(code, context);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 3000,
-                    Temperature = 0.3,
-                    Metadata = new Dictionary<string, object> { ["analysisType"] = "code" }
+                    Temperature = 0.3
                 };
 
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("code analysis", ModelType.TextGeneration, cancellationToken);
                 var response = await model.ExecuteAsync(request, cancellationToken);
-                return ParseSuggestions(response.Content);
+                return ParseSuggestions(response.Response);
             }
             catch (OperationCanceledException)
             {
@@ -85,7 +84,7 @@ namespace Nexo.Feature.Analysis.Services
             try
             {
                 var prompt = CreateArchitecturalCompliancePrompt(code, architectureGuidelines);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 2500,
@@ -95,7 +94,7 @@ namespace Nexo.Feature.Analysis.Services
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("architectural analysis", ModelType.TextGeneration, cancellationToken);
                 var response = await model.ExecuteAsync(request, cancellationToken);
-                return ParseSuggestions(response.Content);
+                return ParseSuggestions(response.Response);
             }
             catch (Exception ex)
             {
@@ -111,7 +110,7 @@ namespace Nexo.Feature.Analysis.Services
             try
             {
                 var prompt = CreatePerformanceAnalysisPrompt(code);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -121,7 +120,7 @@ namespace Nexo.Feature.Analysis.Services
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("performance analysis", ModelType.TextGeneration, cancellationToken);
                 var response = await model.ExecuteAsync(request, cancellationToken);
-                return ParseSuggestions(response.Content);
+                return ParseSuggestions(response.Response);
             }
             catch (Exception ex)
             {
@@ -137,7 +136,7 @@ namespace Nexo.Feature.Analysis.Services
             try
             {
                 var prompt = CreateSecurityAnalysisPrompt(code);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -147,7 +146,7 @@ namespace Nexo.Feature.Analysis.Services
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("security analysis", ModelType.TextGeneration, cancellationToken);
                 var response = await model.ExecuteAsync(request, cancellationToken);
-                return ParseSuggestions(response.Content);
+                return ParseSuggestions(response.Response);
             }
             catch (Exception ex)
             {

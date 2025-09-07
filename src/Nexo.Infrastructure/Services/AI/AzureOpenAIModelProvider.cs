@@ -183,14 +183,13 @@ namespace Nexo.Infrastructure.Services.AI
         /// This includes the features supported by the model, such as
         /// streaming, function calling, text embedding, and the constraints
         /// like maximum input and output lengths, as well as supported languages.
-        public ModelCapabilities Capabilities => new ModelCapabilities(true, true, true, false, false)
+        public ModelCapabilities Capabilities => new ModelCapabilities
         {
-            SupportsStreaming = true,
-            SupportsFunctionCalling = true,
-            SupportsTextEmbedding = true,
-            MaxInputLength = 128000,
-            MaxOutputLength = 128000,
-            SupportedLanguages = ["en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh"]
+            SupportsTextGeneration = true,
+            SupportsCodeGeneration = true,
+            SupportsAnalysis = true,
+            SupportsOptimization = false,
+            SupportsStreaming = true
         };
 
         /// <summary>
@@ -205,27 +204,39 @@ namespace Nexo.Infrastructure.Services.AI
             // In production, you may want to load from configuration or a management API.
             return Task.FromResult<IEnumerable<ModelInfo>>(new List<ModelInfo>
             {
-                new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+                new ModelInfo
                 {
-                    Id = "gpt-35-turbo",
                     Name = "gpt-35-turbo",
-                    Description = "Azure OpenAI GPT-3.5 Turbo",
-                    Version = _apiVersion,
-                    Type = ModelType.TextGeneration,
-                    Provider = ProviderId,
+                    DisplayName = "gpt-35-turbo",
+                    ModelType = ModelType.TextGeneration,
                     IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow
+                    SizeBytes = 1024 * 1024 * 1024,
+                    MaxContextLength = 4096,
+                    Capabilities = new ModelCapabilities
+                    {
+                        SupportsTextGeneration = true,
+                        SupportsCodeGeneration = true,
+                        SupportsAnalysis = true,
+                        SupportsOptimization = false,
+                        SupportsStreaming = true
+                    }
                 },
-                new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+                new ModelInfo
                 {
-                    Id = "gpt-4",
                     Name = "gpt-4",
-                    Description = "Azure OpenAI GPT-4",
-                    Version = _apiVersion,
-                    Type = ModelType.TextGeneration,
-                    Provider = ProviderId,
+                    DisplayName = "gpt-4",
+                    ModelType = ModelType.TextGeneration,
                     IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow
+                    SizeBytes = 1024 * 1024 * 1024,
+                    MaxContextLength = 4096,
+                    Capabilities = new ModelCapabilities
+                    {
+                        SupportsTextGeneration = true,
+                        SupportsCodeGeneration = true,
+                        SupportsAnalysis = true,
+                        SupportsOptimization = false,
+                        SupportsStreaming = true
+                    }
                 }
             });
         }
@@ -256,7 +267,7 @@ namespace Nexo.Infrastructure.Services.AI
         public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default)
         {
             var models = await GetAvailableModelsAsync(cancellationToken);
-            return models.FirstOrDefault(m => m.Id == modelName || m.Name == modelName);
+            return models.FirstOrDefault(m => m.Name == modelName);
         }
 
         /// <summary>
@@ -272,22 +283,24 @@ namespace Nexo.Infrastructure.Services.AI
         /// along with any validation errors, warnings, or additional information.</returns>
         public async Task<ModelValidationResult> ValidateModelAsync(string modelName, CancellationToken cancellationToken = default)
         {
-            var result = new ModelValidationResult { IsValid = true };
+            var errors = new List<string>();
             try
             {
                 var modelInfo = await GetModelInfoAsync(modelName, cancellationToken);
                 if (modelInfo == null)
                 {
-                    result.IsValid = false;
-                    result.Errors.Add($"Model {modelName} not found");
+                    errors.Add($"Model {modelName} not found");
                 }
             }
             catch (Exception ex)
             {
-                result.IsValid = false;
-                result.Errors.Add($"Error validating model: {ex.Message}");
+                errors.Add($"Error validating model: {ex.Message}");
             }
-            return result;
+            return new ModelValidationResult
+            {
+                IsValid = errors.Count == 0,
+                Errors = errors
+            };
         }
 
         /// <summary>
@@ -303,7 +316,7 @@ namespace Nexo.Infrastructure.Services.AI
             try
             {
                 var startTime = DateTime.UtcNow;
-                var model = request.Metadata.TryGetValue("model", out var modelObj) ? modelObj as string : "gpt-35-turbo";
+                var model = request.Context?.TryGetValue("model", out var modelObj) == true ? modelObj as string : "gpt-35-turbo";
                 var url = $"openai/deployments/{model}/chat/completions?api-version={_apiVersion}";
                 var azureRequest = CreateAzureOpenAIRequest(request, model);
                 var content = new StringContent(JsonSerializer.Serialize(azureRequest), Encoding.UTF8, "application/json");
@@ -312,11 +325,11 @@ namespace Nexo.Infrastructure.Services.AI
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var openAIResponse = JsonSerializer.Deserialize<AzureOpenAiResponse>(responseContent);
                 var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
-                return new ModelResponse(openAIResponse?.Usage?.PromptTokens ?? 0, openAIResponse?.Usage?.CompletionTokens ?? 0)
+                return new ModelResponse
                 {
-                    Content = openAIResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
-                    Model = model,
-                    TotalTokens = openAIResponse?.Usage?.TotalTokens ?? 0,
+                    Response = openAIResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
+                    InputTokens = openAIResponse?.Usage?.PromptTokens ?? 0,
+                    OutputTokens = openAIResponse?.Usage?.CompletionTokens ?? 0,
                     ProcessingTimeMs = executionTime,
                     Metadata = new Dictionary<string, object>
                     {
@@ -345,10 +358,14 @@ namespace Nexo.Infrastructure.Services.AI
             var parameters = new Dictionary<string, object>(_defaultParameters);
 
             // Override with request-specific parameters
-            if (request.Metadata.TryGetValue("temperature", out var temp))
+            if (request.Context?.TryGetValue("temperature", out var temp) == true)
                 parameters["temperature"] = Convert.ToDouble(temp);
-            if (request.Metadata.TryGetValue("max_tokens", out var maxTokens))
+            else
+                parameters["temperature"] = request.Temperature;
+            if (request.Context?.TryGetValue("max_tokens", out var maxTokens) == true)
                 parameters["max_tokens"] = Convert.ToInt32(maxTokens);
+            else
+                parameters["max_tokens"] = request.MaxTokens;
 
             // Add required fields
             parameters["model"] = model;
@@ -368,9 +385,9 @@ namespace Nexo.Infrastructure.Services.AI
             var messages = new List<object>();
             
             // Add system message if provided
-            if (request.Metadata.TryGetValue("system_message", out var systemMessage) && !string.IsNullOrEmpty(systemMessage as string))
+            if (!string.IsNullOrEmpty(request.SystemPrompt))
             {
-                messages.Add(new { role = "system", content = systemMessage });
+                messages.Add(new { role = "system", content = request.SystemPrompt });
             }
 
             // Add user message
@@ -530,23 +547,27 @@ namespace Nexo.Infrastructure.Services.AI
         {
             var result = new ModelValidationResult { IsValid = true };
 
+            var errors = new List<string>();
+
             // Validate required fields
             if (string.IsNullOrEmpty(request.Input))
             {
-                result.IsValid = false;
-                result.Errors.Add("Input is required");
+                errors.Add("Input is required");
             }
 
             // Validate model
-            var model = request.Metadata.TryGetValue("model", out var modelObj) ? modelObj as string : "gpt-35-turbo";
+            var model = request.Context?.TryGetValue("model", out var modelObj) == true ? modelObj as string : "gpt-35-turbo";
             var availableModels = await GetAvailableModelsAsync();
-            if (!availableModels.Any(m => m.Id == model))
+            if (!availableModels.Any(m => m.Name == model))
             {
-                result.IsValid = false;
-                result.Errors.Add($"Model {model} is not available");
+                errors.Add($"Model {model} is not available");
             }
 
-            return result;
+            return new ModelValidationResult
+            {
+                IsValid = errors.Count == 0,
+                Errors = errors
+            };
         }
 
         /// <summary>
@@ -571,12 +592,9 @@ namespace Nexo.Infrastructure.Services.AI
                 var responseTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
                 return new ModelHealthStatus
                 {
-                    ProviderName = DisplayName,
-                    IsHealthy = response.IsSuccessStatusCode,
-                    ResponseTimeMs = responseTime,
-                    ErrorRate = response.IsSuccessStatusCode ? 0.0 : 1.0,
-                    LastError = response.IsSuccessStatusCode ? "" : $"HTTP {response.StatusCode}",
-                    LastCheckTime = DateTime.UtcNow
+                    Status = response.IsSuccessStatusCode ? "Healthy" : "Unhealthy",
+                    LastChecked = DateTime.UtcNow,
+                    ResponseTimeMs = responseTime
                 };
             }
             catch (Exception ex)
@@ -584,12 +602,9 @@ namespace Nexo.Infrastructure.Services.AI
                 _logger.LogError(ex, "Error checking Azure OpenAI health status");
                 return new ModelHealthStatus
                 {
-                    ProviderName = DisplayName,
-                    IsHealthy = false,
-                    ResponseTimeMs = 0,
-                    ErrorRate = 1.0,
-                    LastError = ex.Message,
-                    LastCheckTime = DateTime.UtcNow
+                    Status = "Unhealthy",
+                    LastChecked = DateTime.UtcNow,
+                    ResponseTimeMs = 0
                 };
             }
         }
@@ -633,7 +648,7 @@ namespace Nexo.Infrastructure.Services.AI
             /// such as model name, version, provider, and capabilities. This variable is lazily
             /// initialized and provides details about the model when accessed through the getter.
             /// </summary>
-            private ModelInfo _info;
+            private ModelInfo? _info;
 
             /// <summary>
             /// Represents an Azure OpenAI model implementation.
@@ -657,16 +672,22 @@ namespace Nexo.Infrastructure.Services.AI
             {
                 get
                 {
-                    return _info ??= new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+                    return _info ??= new ModelInfo
                     {
-                        Id = _modelName,
                         Name = _modelName,
-                        Description = "Azure OpenAI " + _modelName + " model",
-                        Version = _apiVersion,
-                        Type = ModelType.TextGeneration,
-                        Provider = "azure-openai",
+                        DisplayName = _modelName,
+                        ModelType = Nexo.Feature.AI.Enums.ModelType.TextGeneration,
                         IsAvailable = true,
-                        LastUpdated = DateTime.UtcNow
+                        SizeBytes = 1024 * 1024 * 1024,
+                        MaxContextLength = 4096,
+                        Capabilities = new ModelCapabilities
+                        {
+                            SupportsTextGeneration = true,
+                            SupportsCodeGeneration = true,
+                            SupportsAnalysis = true,
+                            SupportsOptimization = false,
+                            SupportsStreaming = true
+                        }
                     };
                 }
             }
@@ -678,6 +699,21 @@ namespace Nexo.Infrastructure.Services.AI
             /// This property returns true if the model is loaded and ready to process requests. Otherwise, it returns false.
             /// </remarks>
             public bool IsLoaded => true;
+
+            /// <summary>
+            /// Unique identifier for this model instance
+            /// </summary>
+            public string ModelId => _modelName;
+
+            /// <summary>
+            /// Human-readable name of the model
+            /// </summary>
+            public string Name => _modelName;
+
+            /// <summary>
+            /// Type of model
+            /// </summary>
+            public Nexo.Feature.AI.Enums.ModelType ModelType => Nexo.Feature.AI.Enums.ModelType.TextGeneration;
 
             /// <summary>
             /// Processes the given model request and returns a response generated by the Azure OpenAI model.
@@ -699,11 +735,11 @@ namespace Nexo.Infrastructure.Services.AI
                     var responseContent = await response.Content.ReadAsStringAsync();
                     var openAiResponse = JsonSerializer.Deserialize<AzureOpenAiResponse>(responseContent);
                     var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
-                    return new ModelResponse(openAiResponse?.Usage?.PromptTokens ?? 0, openAiResponse?.Usage?.CompletionTokens ?? 0)
+                    return new ModelResponse
                     {
-                        Content = openAiResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
-                        Model = _modelName,
-                        TotalTokens = openAiResponse?.Usage?.TotalTokens ?? 0,
+                        Response = openAiResponse?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
+                        InputTokens = openAiResponse?.Usage?.PromptTokens ?? 0,
+                        OutputTokens = openAiResponse?.Usage?.CompletionTokens ?? 0,
                         ProcessingTimeMs = executionTime,
                         Metadata = new Dictionary<string, object>
                         {
@@ -730,17 +766,21 @@ namespace Nexo.Infrastructure.Services.AI
             private Dictionary<string, object> CreateAzureOpenAIRequest(ModelRequest request, string model)
             {
                 var messages = new List<object>();
-                if (request.Metadata.TryGetValue("system_message", out var systemMessage) && !string.IsNullOrEmpty(systemMessage as string))
+                if (!string.IsNullOrEmpty(request.SystemPrompt))
                 {
-                    messages.Add(new { role = "system", content = (string)systemMessage });
+                    messages.Add(new { role = "system", content = request.SystemPrompt });
                 }
                 messages.Add(new { role = "user", content = request.Input });
 
                 var parameters = new Dictionary<string, object>();
-                if (request.Metadata.TryGetValue("temperature", out var temp))
+                if (request.Context?.TryGetValue("temperature", out var temp) == true)
                     parameters["temperature"] = Convert.ToDouble(temp);
-                if (request.Metadata.TryGetValue("max_tokens", out var maxTokens))
+                else
+                    parameters["temperature"] = request.Temperature;
+                if (request.Context?.TryGetValue("max_tokens", out var maxTokens) == true)
                     parameters["max_tokens"] = Convert.ToInt32(maxTokens);
+                else
+                    parameters["max_tokens"] = request.MaxTokens;
 
                 parameters["model"] = model;
                 parameters["messages"] = messages;
@@ -770,14 +810,13 @@ namespace Nexo.Infrastructure.Services.AI
             /// </returns>
             public ModelCapabilities GetCapabilities()
             {
-                return new ModelCapabilities(true, true, true, false, false)
+                return new ModelCapabilities
                 {
-                    SupportsStreaming = true,
-                    SupportsFunctionCalling = true,
-                    SupportsTextEmbedding = true,
-                    MaxInputLength = 128000,
-                    MaxOutputLength = 128000,
-                    SupportedLanguages = ["en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh"]
+                    SupportsTextGeneration = true,
+                    SupportsCodeGeneration = true,
+                    SupportsAnalysis = true,
+                    SupportsOptimization = false,
+                    SupportsStreaming = true
                 };
             }
 
@@ -790,6 +829,12 @@ namespace Nexo.Infrastructure.Services.AI
             /// <returns>
             /// A Task representing the asynchronous unload operation.
             /// </returns>
+            public Task LoadAsync(CancellationToken cancellationToken = default)
+            {
+                // Azure OpenAI models are loaded on demand
+                return Task.CompletedTask;
+            }
+
             public Task UnloadAsync(CancellationToken cancellationToken = default)
             {
                 // No cleanup needed for Azure OpenAI models

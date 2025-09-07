@@ -1,33 +1,32 @@
-namespace Nexo.Feature.AI.Enums
+namespace Nexo.Feature.AI.Enums;
+
+/// <summary>
+/// Types of AI models supported by the system
+/// </summary>
+public enum ModelType
 {
     /// <summary>
-    /// Represents the type of AI model.
+    /// Text generation models (GPT, Claude, etc.)
     /// </summary>
-    public enum ModelType
-    {
-        /// <summary>
-        /// Text generation model.
-        /// </summary>
-        TextGeneration,
-
-        /// <summary>
-        /// Code generation model.
-        /// </summary>
-        CodeGeneration,
-
-        /// <summary>
-        /// Text embedding model.
-        /// </summary>
-        TextEmbedding,
-
-        /// <summary>
-        /// Image generation model.
-        /// </summary>
-        ImageGeneration,
-
-        /// <summary>
-        /// Multimodal model.
-        /// </summary>
-        Multimodal
-    }
-} 
+    TextGeneration,
+    
+    /// <summary>
+    /// Code generation models (Codex, Copilot, etc.)
+    /// </summary>
+    CodeGeneration,
+    
+    /// <summary>
+    /// Analysis and reasoning models
+    /// </summary>
+    Analysis,
+    
+    /// <summary>
+    /// Optimization models
+    /// </summary>
+    Optimization,
+    
+    /// <summary>
+    /// Text embedding models
+    /// </summary>
+    TextEmbedding
+}

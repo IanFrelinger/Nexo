@@ -47,7 +47,7 @@ namespace Nexo.Core.Application.Services
         /// <param name="durationMs">The duration in milliseconds.</param>
         /// <param name="category">The category of the metric.</param>
         /// <param name="metadata">Additional metadata.</param>
-        public void RecordMetric(string metricName, long durationMs, string category = "default", object metadata = null)
+        public void RecordMetric(string metricName, long durationMs, string category = "default", object? metadata = null)
         {
             var key = $"{category}:{metricName}";
             
@@ -109,7 +109,7 @@ namespace Nexo.Core.Application.Services
             return summary;
         }
 
-        private void CleanupOldMetrics(object state)
+        private void CleanupOldMetrics(object? state)
         {
             try
             {
@@ -177,9 +177,9 @@ namespace Nexo.Core.Application.Services
         public long TotalDurationMs { get; private set; }
         public int RequestCount { get; private set; }
         public DateTime LastUpdated { get; private set; }
-        public object Metadata { get; private set; }
+        public object? Metadata { get; private set; }
 
-        public PerformanceMetric(string name, string category, long durationMs, object metadata = null)
+        public PerformanceMetric(string name, string category, long durationMs, object? metadata = null)
         {
             Name = name;
             Category = category;
@@ -192,7 +192,7 @@ namespace Nexo.Core.Application.Services
             Metadata = metadata;
         }
 
-        public PerformanceMetric AddMeasurement(long durationMs, object metadata = null)
+        public PerformanceMetric AddMeasurement(long durationMs, object? metadata = null)
         {
             MinDurationMs = Math.Min(MinDurationMs, durationMs);
             MaxDurationMs = Math.Max(MaxDurationMs, durationMs);
@@ -219,7 +219,7 @@ namespace Nexo.Core.Application.Services
         public int Categories { get; set; }
         public double AverageResponseTimeMs { get; set; }
         public long TotalRequests { get; set; }
-        public PerformanceMetric SlowestMetric { get; set; }
-        public PerformanceMetric FastestMetric { get; set; }
+        public PerformanceMetric? SlowestMetric { get; set; }
+        public PerformanceMetric? FastestMetric { get; set; }
     }
 } 

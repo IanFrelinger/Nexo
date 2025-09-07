@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Nexo.CLI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+68615a63f04c6146e15f09b026b7974edee87b4f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0efee2d4423df0fd0169955e2baa9976036a4cac")]
 [assembly: System.Reflection.AssemblyProductAttribute("Nexo.CLI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Nexo.CLI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

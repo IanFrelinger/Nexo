@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Services.Caching
         private readonly string _keyPrefix;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public RedisCacheStrategy(IConnectionMultiplexer redis, string keyPrefix = "nexo:cache:", JsonSerializerOptions jsonOptions = null)
+        public RedisCacheStrategy(IConnectionMultiplexer redis, string keyPrefix = "nexo:cache:", JsonSerializerOptions? jsonOptions = null)
         {
             _database = redis.GetDatabase();
             _keyPrefix = keyPrefix;

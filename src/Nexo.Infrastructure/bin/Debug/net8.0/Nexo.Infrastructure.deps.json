@@ -143,6 +143,17 @@
           }
         }
       },
+      "Microsoft.Extensions.Configuration.Abstractions/8.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "8.0.0"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
       "Microsoft.Extensions.DependencyInjection/8.0.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0"
@@ -343,11 +354,11 @@
       },
       "Nexo.Core.Application/1.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Options": "8.0.0",
           "Nexo.Core.Domain": "1.0.0",
           "Nexo.Feature.Pipeline": "1.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "Nexo.Shared": "1.0.0"
         },
         "runtime": {
           "Nexo.Core.Application.dll": {}
@@ -355,7 +366,7 @@
       },
       "Nexo.Core.Domain/1.0.0": {
         "dependencies": {
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0"
         },
         "runtime": {
           "Nexo.Core.Domain.dll": {}
@@ -363,10 +374,13 @@
       },
       "Nexo.Feature.AI/1.0.0": {
         "dependencies": {
-          "JetBrains.Annotations": "2025.2.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Nexo.Core.Application": "1.0.0",
-          "Nexo.Shared": "1.0.0"
+          "Nexo.Core.Domain": "1.0.0",
+          "Nexo.Shared": "1.0.0",
+          "System.Text.Json": "9.0.7"
         },
         "runtime": {
           "Nexo.Feature.AI.dll": {}
@@ -404,9 +418,8 @@
       },
       "Nexo.Shared/1.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Domain": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0",
+          "Nexo.Core.Domain": "1.0.0"
         },
         "runtime": {
           "Nexo.Shared.dll": {}
@@ -447,6 +460,13 @@
       "sha512": "sha512-+3+qfdb/aaGD8PZRCrsdobbzGs1m9u119SkkJt8e/mk3xLJz/udLtS2T6nY27OTXxBBw10HzAbC8Z9w08VyP/g==",
       "path": "microsoft.codeanalysis.csharp/4.8.0",
       "hashPath": "microsoft.codeanalysis.csharp.4.8.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Configuration.Abstractions/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-3lE/iLSutpgX1CC0NOW70FJoGARRHbyKmG7dc0klnUZ9Dd9hS6N/POPWhKhMLCEuNN5nXEY5agmlFtH562vqhQ==",
+      "path": "microsoft.extensions.configuration.abstractions/8.0.0",
+      "hashPath": "microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512"
     },
     "Microsoft.Extensions.DependencyInjection/8.0.0": {
       "type": "package",

@@ -27,9 +27,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Feature.Validation.AssemblyInfoInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Feature.Validation.AssemblyInfo.cs
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Feature.Validation.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Feature.Validation.sourcelink.json
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Fea.A3A66232.Up2Date
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Feature.Validation.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/refint/Nexo.Feature.Validation.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Feature.Validation.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/ref/Nexo.Feature.Validation.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Validation/obj/Debug/net8.0/Nexo.Feature.Validation.sourcelink.json

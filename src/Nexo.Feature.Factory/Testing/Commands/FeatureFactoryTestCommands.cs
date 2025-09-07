@@ -42,7 +42,7 @@ namespace Nexo.Feature.Factory.Testing.Commands
                 var orchestrator = _serviceProvider.GetRequiredService<Nexo.Feature.AI.Interfaces.IModelOrchestrator>();
                 
                 // Test basic connectivity
-                var testRequest = new Nexo.Feature.AI.Models.ModelRequest(0.7, 0.0, 0.0, false)
+                var testRequest = new Nexo.Feature.AI.Models.ModelRequest
                 {
                     Input = "Test connectivity",
                     SystemPrompt = "Respond with 'OK' if you can process this request",
@@ -52,11 +52,11 @@ namespace Nexo.Feature.Factory.Testing.Commands
 
                 var response = await orchestrator.ExecuteAsync(testRequest, cancellationToken);
                 
-                outputData["AiResponse"] = response.Content;
+                outputData["AiResponse"] = response.Response;
                 outputData["AiApiCalls"] = 1;
                 outputData["AiProcessingTime"] = TimeSpan.FromMilliseconds(100); // Estimated
 
-                var isSuccess = !string.IsNullOrWhiteSpace(response.Content) && response.Content.Contains("OK");
+                var isSuccess = !string.IsNullOrWhiteSpace(response.Response) && response.Response.Contains("OK");
                 
                 if (isSuccess)
                 {
@@ -64,7 +64,7 @@ namespace Nexo.Feature.Factory.Testing.Commands
                 }
                 else
                 {
-                    _logger.LogWarning("AI connectivity test failed: {Response}", response.Content);
+                    _logger.LogWarning("AI connectivity test failed: {Response}", response.Response);
                 }
 
                 return isSuccess;

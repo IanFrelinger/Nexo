@@ -280,7 +280,7 @@ Return only valid JSON:";
 
         private async Task<string> CallAIAsync(string prompt, CancellationToken cancellationToken)
         {
-            var request = new Nexo.Feature.AI.Models.ModelRequest(0.7, 0.0, 0.0, false)
+            var request = new Nexo.Feature.AI.Models.ModelRequest
             {
                 Input = prompt,
                 SystemPrompt = "You are a domain analysis expert. Analyze the given description and extract structured domain information. Return only valid JSON without any additional text or explanations.",
@@ -289,7 +289,7 @@ Return only valid JSON:";
             };
 
             var response = await _modelOrchestrator.ExecuteAsync(request, cancellationToken);
-            return response.Content;
+            return response.Response;
         }
 
         private List<EntityDefinition> ParseEntityDefinitions(string jsonResponse)

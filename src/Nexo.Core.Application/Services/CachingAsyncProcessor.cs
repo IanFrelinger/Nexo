@@ -11,18 +11,18 @@ namespace Nexo.Core.Application.Services
     /// </summary>
     /// <typeparam name="TRequest">The type of the request.</typeparam>
     /// <typeparam name="TResponse">The type of the response.</typeparam>
-    public class CachingAsyncProcessor<TRequest, TKey, TResponse> : IAsyncProcessor<TRequest, TResponse>
+    public class CachingAsyncProcessor<TRequest, TKey, TResponse> : IAsyncProcessor<TRequest, TResponse> where TKey : notnull
     {
         private readonly IAsyncProcessor<TRequest, TResponse> _innerProcessor;
         private readonly ICacheStrategy<TKey, TResponse> _cache;
         private readonly Func<TRequest, TKey> _keySelector;
-        private readonly ILogger<CachingAsyncProcessor<TRequest, TKey, TResponse>> _logger;
+        private readonly ILogger<CachingAsyncProcessor<TRequest, TKey, TResponse>>? _logger;
 
         public CachingAsyncProcessor(
             IAsyncProcessor<TRequest, TResponse> innerProcessor,
             ICacheStrategy<TKey, TResponse> cache,
             Func<TRequest, TKey> keySelector,
-            ILogger<CachingAsyncProcessor<TRequest, TKey, TResponse>> logger = null)
+            ILogger<CachingAsyncProcessor<TRequest, TKey, TResponse>>? logger = null)
         {
             _innerProcessor = innerProcessor ?? throw new ArgumentNullException(nameof(innerProcessor));
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
@@ -37,7 +37,7 @@ namespace Nexo.Core.Application.Services
             
             var cacheStrategy = _cache as CacheStrategy<TKey, TResponse>;
             bool found = false;
-            TResponse cachedResponse = default(TResponse);
+            TResponse cachedResponse = default(TResponse)!;
             
             if (cacheStrategy != null)
             {

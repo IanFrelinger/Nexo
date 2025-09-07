@@ -82,7 +82,7 @@ public sealed class ProcessCommandExecutor : ICommandExecutor
         await _semaphore.WaitAsync(cancellationToken);
         try
         {
-            return await ExecuteInternalAsync(request, null, null, cancellationToken);
+            return await ExecuteInternalAsync(request, null!, null!, cancellationToken);
         }
         finally
         {

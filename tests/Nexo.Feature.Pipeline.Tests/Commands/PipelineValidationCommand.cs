@@ -77,11 +77,11 @@ public class PipelineValidationCommand
             var executionPhase = new PipelineExecutionPhase();
             
             // Test enum-based models
-            var commandCategory = CommandCategory.Analysis;
-            var behaviorStrategy = BehaviorExecutionStrategy.Sequential;
-            var aggregatorStrategy = AggregatorExecutionStrategy.Parallel;
-            var executionStatus = ExecutionStatus.Pending;
-            var commandPriority = CommandPriority.Normal;
+            _ = CommandCategory.Analysis;
+            _ = BehaviorExecutionStrategy.Sequential;
+            _ = AggregatorExecutionStrategy.Parallel;
+            _ = ExecutionStatus.Pending;
+            _ = CommandPriority.Normal;
             
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)

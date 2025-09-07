@@ -61,7 +61,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
                     ? $"{message} (Runtime: {runtimeInfo})" 
                     : $"Expected exception of type {typeof(T).Name} was not thrown (Runtime: {runtimeInfo})";
                 
-                Assert.True(false, fullMessage);
+                Assert.Fail(fullMessage);
                 return null; // This should never be reached
             }
             catch (T ex)
@@ -73,7 +73,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
             {
                 var runtimeInfo = RuntimeDetection.GetRuntimeInfo();
                 var fullMessage = $"Expected exception of type {typeof(T).Name}, but got {ex.GetType().Name} (Runtime: {runtimeInfo})";
-                Assert.True(false, fullMessage);
+                Assert.Fail(fullMessage);
                 return null; // This should never be reached
             }
         }

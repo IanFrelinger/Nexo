@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Services.Resource
     public class SystemResourceMonitor : IResourceMonitor
     {
         private readonly ILogger<SystemResourceMonitor> _logger;
-        private readonly PerformanceCounter _cpuCounter;
+        private readonly PerformanceCounter? _cpuCounter;
         private readonly Process _currentProcess;
 
         public SystemResourceMonitor(ILogger<SystemResourceMonitor> logger)

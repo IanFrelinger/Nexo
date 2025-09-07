@@ -568,7 +568,7 @@ Please provide a comprehensive synthesis that:
 4. Highlights the most valuable insights from each agent
 5. Suggests next steps or recommendations";
 
-            var synthesisRequest = new ModelRequest(0.9, 0.0, 0.0, false)
+            var synthesisRequest = new ModelRequest
             {
                 Input = synthesisPrompt,
                 MaxTokens = 2000,
@@ -576,7 +576,7 @@ Please provide a comprehensive synthesis that:
             };
 
             var synthesisResponse = await _modelOrchestrator.ExecuteAsync(synthesisRequest, cancellationToken);
-            return synthesisResponse.Content;
+            return synthesisResponse.Response;
         }
 
         /// <summary>

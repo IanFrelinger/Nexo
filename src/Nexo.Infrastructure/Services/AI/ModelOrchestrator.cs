@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Feature.AI.Enums;
 using Nexo.Feature.AI.Models;
 using Nexo.Feature.AI.Interfaces;
+using static Nexo.Feature.AI.Models.HealthStatus;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -99,7 +100,7 @@ public class ModelOrchestrator : IModelOrchestrator
     public async Task<IEnumerable<ModelInfo>> GetAvailableModelsAsync(ModelType modelType, CancellationToken cancellationToken = default(CancellationToken))
     {
         var allModels = await GetAllAvailableModelsAsync(cancellationToken);
-        return allModels.Where(m => m.Type == modelType);
+        return allModels.Where(m => m.ModelType == modelType);
     }
 
     public async Task<IModel> LoadModelAsync(string modelName, string preferredProvider, CancellationToken cancellationToken = default(CancellationToken))
@@ -178,12 +179,11 @@ public class ModelOrchestrator : IModelOrchestrator
                 _logger.LogError(ex, "Error getting health status for provider {ProviderId}", provider.ProviderId);
                 healthStatuses.Add(new ModelHealthStatus
                 {
-                    ProviderName = provider.Name,
                     IsHealthy = false,
+                    Status = $"Error: {ex.Message}",
+                    LastChecked = DateTime.UtcNow,
                     ResponseTimeMs = 0,
-                    ErrorRate = 1.0,
-                    LastError = ex.Message,
-                    LastCheckTime = DateTime.UtcNow
+                    ErrorRate = 1.0
                 });
             }
         }
@@ -197,13 +197,11 @@ public class ModelOrchestrator : IModelOrchestrator
         
         var result = new ModelOptimizationResult
         {
-            Success = true,
-            ErrorMessage = "",
-            PerformanceAnalysis = [],
-            Bottlenecks = [],
-            Recommendations = [],
-            AnalysisTimestamp = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object>()
+            IsSuccessful = true,
+            ModelName = "orchestration",
+            PerformanceImprovement = 0.0,
+            MemoryReduction = 0.0,
+            Recommendations = new List<string> { "Model orchestration optimized successfully" }
         };
 
         return Task.FromResult(result);
@@ -236,7 +234,7 @@ public class ModelOrchestrator : IModelOrchestrator
             try
             {
                 var models = await provider.GetAvailableModelsAsync(cancellationToken);
-                if (models.Any(m => m.Id == firstModel.Id))
+                if (models.Any(m => m.Name == firstModel.Name))
                 {
                     return provider;
                 }
@@ -261,18 +259,14 @@ public class ModelOrchestrator : IModelOrchestrator
                 var healthStatus = await provider.GetHealthStatusAsync(cancellationToken);
                 healthStatuses.Add(new ProviderHealthStatus
                 {
-                    ProviderId = provider.ProviderId,
-                    ProviderName = healthStatus.ProviderName,
-                    IsHealthy = healthStatus.IsHealthy,
-                    StatusMessage = healthStatus.IsHealthy ? "Healthy" : healthStatus.LastError,
+                    ProviderName = provider.ProviderId,
+                    Status = healthStatus.IsHealthy ? HealthStatus.Healthy : HealthStatus.Unhealthy,
+                    LastChecked = healthStatus.LastChecked,
                     ResponseTimeMs = healthStatus.ResponseTimeMs,
-                    LastHealthCheck = healthStatus.LastCheckTime,
-                    AvailableModelsCount = 0, // Would need to get this from provider
-                    ErrorCount = healthStatus.IsHealthy ? 0 : 1,
-                    Metadata = new Dictionary<string, object>
+                    Metrics = new Dictionary<string, object>
                     {
                         ["error_rate"] = healthStatus.ErrorRate,
-                        ["last_error"] = healthStatus.LastError
+                        ["status"] = healthStatus.Status
                     }
                 });
             }
@@ -281,15 +275,12 @@ public class ModelOrchestrator : IModelOrchestrator
                 _logger.LogError(ex, "Error getting health status for provider {ProviderId}", provider.ProviderId);
                 healthStatuses.Add(new ProviderHealthStatus
                 {
-                    ProviderId = provider.ProviderId,
-                    ProviderName = provider.DisplayName,
-                    IsHealthy = false,
-                    StatusMessage = $"Error: {ex.Message}",
+                    ProviderName = provider.ProviderId,
+                    Status = HealthStatus.Unhealthy,
+                    LastChecked = DateTime.UtcNow,
                     ResponseTimeMs = 0,
-                    LastHealthCheck = DateTime.UtcNow,
-                    AvailableModelsCount = 0,
-                    ErrorCount = 1,
-                    Metadata = new Dictionary<string, object>
+                    ErrorMessage = ex.Message,
+                    Metrics = new Dictionary<string, object>
                     {
                         ["error"] = ex.Message
                     }
@@ -319,22 +310,26 @@ public class ModelOrchestrator : IModelOrchestrator
     {
         _logger.LogInformation("Validating model request");
 
-        var result = new ModelValidationResult { IsValid = true };
+        var errors = new List<string>();
 
         // Basic validation
         if (string.IsNullOrEmpty(request.Input))
         {
-            result.IsValid = false;
-            result.Errors.Add("Input is required");
+            errors.Add("Input is required");
         }
 
         // Check if any provider is available
         var healthyProviders = await GetHealthyProvidersAsync();
-        if (healthyProviders.Any()) return result;
-        result.IsValid = false;
-        result.Errors.Add("No healthy model providers available");
+        if (!healthyProviders.Any())
+        {
+            errors.Add("No healthy model providers available");
+        }
 
-        return result;
+        return new ModelValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors
+        };
     }
 
     private async Task<IEnumerable<IModelProvider>> GetHealthyProvidersAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -367,18 +362,11 @@ public class ModelOrchestrator : IModelOrchestrator
 
         var result = new ModelOptimizationResult
         {
-            Success = true,
-            ErrorMessage = "",
-            PerformanceAnalysis = [],
-            Bottlenecks = [],
-            Recommendations = [],
-            AnalysisTimestamp = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object>
-            {
-                ["model_name"] = modelName,
-                ["optimization_type"] = "basic",
-                ["timestamp"] = DateTime.UtcNow
-            }
+            IsSuccessful = true,
+            ModelName = modelName,
+            PerformanceImprovement = 0.0,
+            MemoryReduction = 0.0,
+            Recommendations = new List<string> { $"Model {modelName} optimized successfully" }
         };
 
         // Placeholder for optimization logic
@@ -394,15 +382,12 @@ public class ModelOrchestrator : IModelOrchestrator
         {
             return new ProviderHealthStatus
             {
-                ProviderId = providerId,
-                ProviderName = "Unknown",
-                IsHealthy = false,
-                StatusMessage = "Provider not found",
+                ProviderName = providerId,
+                Status = HealthStatus.Unhealthy,
+                LastChecked = DateTime.UtcNow,
                 ResponseTimeMs = 0,
-                LastHealthCheck = DateTime.UtcNow,
-                AvailableModelsCount = 0,
-                ErrorCount = 1,
-                Metadata = new Dictionary<string, object>
+                ErrorMessage = "Provider not found",
+                Metrics = new Dictionary<string, object>
                 {
                     ["error"] = "Provider not found"
                 }
@@ -412,18 +397,14 @@ public class ModelOrchestrator : IModelOrchestrator
         var healthStatus = await provider.GetHealthStatusAsync(cancellationToken);
         return new ProviderHealthStatus
         {
-            ProviderId = providerId,
-            ProviderName = healthStatus.ProviderName,
-            IsHealthy = healthStatus.IsHealthy,
-            StatusMessage = healthStatus.IsHealthy ? "Healthy" : healthStatus.LastError,
+            ProviderName = providerId,
+            Status = healthStatus.IsHealthy ? HealthStatus.Healthy : HealthStatus.Unhealthy,
+            LastChecked = healthStatus.LastChecked,
             ResponseTimeMs = healthStatus.ResponseTimeMs,
-            LastHealthCheck = healthStatus.LastCheckTime,
-            AvailableModelsCount = 0, // Would need to get this from provider
-            ErrorCount = healthStatus.IsHealthy ? 0 : 1,
-            Metadata = new Dictionary<string, object>
+            Metrics = new Dictionary<string, object>
             {
                 ["error_rate"] = healthStatus.ErrorRate,
-                ["last_error"] = healthStatus.LastError
+                ["status"] = healthStatus.Status
             }
         };
     }

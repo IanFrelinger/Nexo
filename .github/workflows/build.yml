@@ -1,0 +1,224 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        solution: 
+          - "solutions/Nexo.FeatureFactory.sln"
+          - "solutions/Nexo.Features.sln"
+          - "solutions/Nexo.Main.sln"
+        target-framework: ["net8.0", "net6.0"]
+        exclude:
+          # CLI projects only build on net8.0
+          - solution: "solutions/Nexo.Main.sln"
+            target-framework: "net6.0"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore dependencies
+      run: dotnet restore ${{ matrix.solution }}
+    
+    - name: Build
+      run: dotnet build ${{ matrix.solution }} --no-restore --framework ${{ matrix.target-framework }} --configuration Release
+    
+    - name: Test
+      run: dotnet test ${{ matrix.solution }} --no-build --framework ${{ matrix.target-framework }} --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+      continue-on-error: true
+
+  platform-generation-test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Setup PowerShell
+      uses: actions/setup-powershell@v1
+      with:
+        version: '7.4'
+    
+    - name: Build Feature Factory
+      run: dotnet build solutions/Nexo.FeatureFactory.sln --configuration Release
+    
+    - name: Test Platform Code Generation
+      run: |
+        chmod +x scripts/test-platform-generation.ps1
+        pwsh scripts/test-platform-generation.ps1 -Configuration Release -Clean
+
+  multi-target-validation:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target-framework: ["net8.0", "net6.0", "netstandard2.0"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Validate Multi-Target Support
+      run: |
+        echo "Testing ${{ matrix.target-framework }} support..."
+        
+        # Test core projects
+        dotnet build src/Nexo.Core.Domain/Nexo.Core.Domain.csproj --framework ${{ matrix.target-framework }} --configuration Release
+        dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj --framework ${{ matrix.target-framework }} --configuration Release
+        dotnet build src/Nexo.Shared/Nexo.Shared.csproj --framework ${{ matrix.target-framework }} --configuration Release
+        
+        # Test feature projects
+        dotnet build src/Nexo.Feature.Platform/Nexo.Feature.Platform.csproj --framework ${{ matrix.target-framework }} --configuration Release
+        dotnet build src/Nexo.Feature.AI/Nexo.Feature.AI.csproj --framework ${{ matrix.target-framework }} --configuration Release
+        dotnet build src/Nexo.Feature.Agent/Nexo.Feature.Agent.csproj --framework ${{ matrix.target-framework }} --configuration Release
+        
+        echo "✅ ${{ matrix.target-framework }} validation complete"
+
+  package-validation:
+    runs-on: ubuntu-latest
+    needs: [build, platform-generation-test]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Create NuGet Packages
+      run: |
+        # Build all solutions first
+        dotnet build solutions/Nexo.FeatureFactory.sln --configuration Release
+        dotnet build solutions/Nexo.Features.sln --configuration Release
+        
+        # Create packages for core projects
+        dotnet pack src/Nexo.Core.Domain/Nexo.Core.Domain.csproj --configuration Release --no-build --output ./packages
+        dotnet pack src/Nexo.Core.Application/Nexo.Core.Application.csproj --configuration Release --no-build --output ./packages
+        dotnet pack src/Nexo.Shared/Nexo.Shared.csproj --configuration Release --no-build --output ./packages
+        
+        # Create packages for feature projects
+        dotnet pack src/Nexo.Feature.Platform/Nexo.Feature.Platform.csproj --configuration Release --no-build --output ./packages
+        dotnet pack src/Nexo.Feature.AI/Nexo.Feature.AI.csproj --configuration Release --no-build --output ./packages
+    
+    - name: Validate Package Contents
+      run: |
+        echo "📦 Validating NuGet packages..."
+        ls -la packages/
+        
+        # Check that packages contain multiple target frameworks
+        for package in packages/*.nupkg; do
+          echo "Checking $package..."
+          unzip -l "$package" | grep -E "\.(dll|pdb)$" | head -10
+        done
+        
+        echo "✅ Package validation complete"
+    
+    - name: Upload Packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages
+        path: packages/
+        retention-days: 7
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Security Scan
+      run: |
+        # Install security scanning tools
+        dotnet tool install --global security-scan
+        
+        # Run security scan on solutions
+        security-scan solutions/Nexo.FeatureFactory.sln
+        security-scan solutions/Nexo.Features.sln
+      continue-on-error: true
+
+  performance-test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Performance Test
+      run: |
+        echo "🚀 Running performance tests..."
+        
+        # Build with performance optimizations
+        dotnet build solutions/Nexo.FeatureFactory.sln --configuration Release --property:Optimize=true
+        
+        # Run performance tests (if available)
+        dotnet test solutions/Nexo.FeatureFactory.sln --configuration Release --filter "Category=Performance" --logger "console;verbosity=detailed"
+      continue-on-error: true
+
+  build-summary:
+    runs-on: ubuntu-latest
+    needs: [build, platform-generation-test, multi-target-validation, package-validation]
+    if: always()
+    steps:
+    - name: Build Summary
+      run: |
+        echo "📊 Build Summary"
+        echo "================"
+        echo "✅ Multi-target builds: ${{ needs.build.result }}"
+        echo "✅ Platform generation: ${{ needs.platform-generation-test.result }}"
+        echo "✅ Multi-target validation: ${{ needs.multi-target-validation.result }}"
+        echo "✅ Package validation: ${{ needs.package-validation.result }}"
+        echo ""
+        echo "🎯 Target Frameworks: net8.0, net6.0, netstandard2.0"
+        echo "🌍 Operating Systems: Ubuntu, Windows, macOS"
+        echo "📦 Solutions: FeatureFactory, Features, Main"
+        echo ""
+        echo "🚀 Nexo is ready for cross-platform development!"

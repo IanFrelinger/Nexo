@@ -11,11 +11,11 @@ namespace Nexo.Core.Application.Services
     /// </summary>
     /// <typeparam name="TKey">The type of the cache key.</typeparam>
     /// <typeparam name="TValue">The type of the cached value.</typeparam>
-    public class CacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue>
+    public class CacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue> where TKey : notnull
     {
         private class CacheEntry
         {
-            public TValue Value { get; set; }
+            public TValue Value { get; set; } = default(TValue)!;
             public DateTimeOffset? Expiration { get; set; }
         }
         private readonly ConcurrentDictionary<TKey, CacheEntry> _cache = new ConcurrentDictionary<TKey, CacheEntry>();
@@ -35,11 +35,11 @@ namespace Nexo.Core.Application.Services
                 {
                     // Expired, remove
                     _cache.TryRemove(key, out _);
-                    return Task.FromResult(default(TValue));
+                    return Task.FromResult(default(TValue)!);
                 }
                 return Task.FromResult(entry.Value);
             }
-            return Task.FromResult(default(TValue));
+            return Task.FromResult(default(TValue)!);
         }
 
         /// <inheritdoc />
@@ -81,13 +81,13 @@ namespace Nexo.Core.Application.Services
                 if (entry.Expiration.HasValue && entry.Expiration.Value < DateTimeOffset.UtcNow)
                 {
                     _cache.TryRemove(key, out _);
-                    value = default(TValue);
+                    value = default(TValue)!;
                     return false;
                 }
                 value = entry.Value;
                 return true;
             }
-            value = default(TValue);
+            value = default(TValue)!;
             return false;
         }
     }

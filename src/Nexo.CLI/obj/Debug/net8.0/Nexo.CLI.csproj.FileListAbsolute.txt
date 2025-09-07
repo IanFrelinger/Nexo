@@ -144,3 +144,7 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.CLI/bin/Debug/net8.0/zh-Hant/Microsoft.CodeAnalysis.VisualBasic.resources.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.CLI/bin/Debug/net8.0/Nexo.Feature.Web.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.CLI/bin/Debug/net8.0/Nexo.Feature.Web.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.CLI/bin/Debug/net8.0/JetBrains.Annotations.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.CLI/bin/Debug/net8.0/Nexo.Feature.Factory.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.CLI/bin/Debug/net8.0/Nexo.Feature.Factory.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.CLI/obj/Debug/net8.0/Nexo.CLI.sourcelink.json

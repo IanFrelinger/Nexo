@@ -1,12 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "3CAW1YSExok=",
+  "dgSpecHash": "rsGCm6lv/WY=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Template.Tests/Nexo.Feature.Template.Tests.csproj",
   "expectedPackageFiles": [
     "/Users/ianfrelinger/.nuget/packages/castle.core/5.1.1/castle.core.5.1.1.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/coverlet.collector/6.0.0/coverlet.collector.6.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/jetbrains.annotations/2025.2.0/jetbrains.annotations.2025.2.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codecoverage/17.8.0/microsoft.codecoverage.17.8.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.configuration.abstractions/8.0.0/microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection/8.0.0/microsoft.extensions.dependencyinjection.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.logging/8.0.0/microsoft.extensions.logging.8.0.0.nupkg.sha512",

@@ -37,12 +37,11 @@ namespace Nexo.Feature.Template.Services
             try
             {
                 var prompt = CreateTemplateGenerationPrompt(description, parameters);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 2500,
-                    Temperature = 0.4,
-                    Metadata = new Dictionary<string, object> { ["templateType"] = "intelligent" }
+                    Temperature = 0.4
                 };
 
                 // Get the best provider for the task
@@ -50,12 +49,12 @@ namespace Nexo.Feature.Template.Services
                 if (provider == null)
                     throw new InvalidOperationException("No suitable model provider available");
                 var availableModels = await provider.GetAvailableModelsAsync(cancellationToken);
-                var modelInfo = availableModels.FirstOrDefault(m => m.Type == ModelType.TextGeneration);
+                var modelInfo = availableModels.FirstOrDefault(m => m.ModelType == ModelType.TextGeneration);
                 if (modelInfo == null)
                     throw new InvalidOperationException("No suitable model available");
-                var model = await provider.LoadModelAsync(modelInfo.Id, cancellationToken);
+                var model = await provider.LoadModelAsync(modelInfo.Name, cancellationToken);
                 var response = await model.ProcessAsync(request, cancellationToken);
-                return response.Content;
+                return response.Response;
             }
             catch (OperationCanceledException)
             {
@@ -77,12 +76,11 @@ namespace Nexo.Feature.Template.Services
             {
                 var originalTemplate = await _baseTemplateService.GetTemplateAsync(templateName, cancellationToken);
                 var prompt = CreateTemplateAdaptationPrompt(originalTemplate, adaptations);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 3000,
-                    Temperature = 0.3,
-                    Metadata = new Dictionary<string, object> { ["templateType"] = "adaptation" }
+                    Temperature = 0.3
                 };
 
                 // Get the best provider for the task
@@ -90,12 +88,12 @@ namespace Nexo.Feature.Template.Services
                 if (provider == null)
                     throw new InvalidOperationException("No suitable model provider available");
                 var availableModels = await provider.GetAvailableModelsAsync(cancellationToken);
-                var modelInfo = availableModels.FirstOrDefault(m => m.Type == ModelType.TextGeneration);
+                var modelInfo = availableModels.FirstOrDefault(m => m.ModelType == ModelType.TextGeneration);
                 if (modelInfo == null)
                     throw new InvalidOperationException("No suitable model available");
-                var model = await provider.LoadModelAsync(modelInfo.Id, cancellationToken);
+                var model = await provider.LoadModelAsync(modelInfo.Name, cancellationToken);
                 var response = await model.ProcessAsync(request, cancellationToken);
-                return response.Content;
+                return response.Response;
             }
             catch (Exception ex)
             {
@@ -142,7 +140,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateTemplateImprovementPrompt(template, context);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 2000,
@@ -154,12 +152,12 @@ namespace Nexo.Feature.Template.Services
                 if (provider == null)
                     throw new InvalidOperationException("No suitable model provider available");
                 var availableModels = await provider.GetAvailableModelsAsync(cancellationToken);
-                var modelInfo = availableModels.FirstOrDefault(m => m.Type == ModelType.TextGeneration);
+                var modelInfo = availableModels.FirstOrDefault(m => m.ModelType == ModelType.TextGeneration);
                 if (modelInfo == null)
                     throw new InvalidOperationException("No suitable model available");
-                var model = await provider.LoadModelAsync(modelInfo.Id, cancellationToken);
+                var model = await provider.LoadModelAsync(modelInfo.Name, cancellationToken);
                 var response = await model.ProcessAsync(request, cancellationToken);
-                return ParseSuggestions(response.Content);
+                return ParseSuggestions(response.Response);
             }
             catch (Exception ex)
             {
@@ -180,7 +178,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateProjectStructurePrompt(projectType, requirements);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 4000,
@@ -192,12 +190,12 @@ namespace Nexo.Feature.Template.Services
                 if (provider == null)
                     throw new InvalidOperationException("No suitable model provider available");
                 var availableModels = await provider.GetAvailableModelsAsync(cancellationToken);
-                var modelInfo = availableModels.FirstOrDefault(m => m.Type == ModelType.TextGeneration);
+                var modelInfo = availableModels.FirstOrDefault(m => m.ModelType == ModelType.TextGeneration);
                 if (modelInfo == null)
                     throw new InvalidOperationException("No suitable model available");
-                var model = await provider.LoadModelAsync(modelInfo.Id, cancellationToken);
+                var model = await provider.LoadModelAsync(modelInfo.Name, cancellationToken);
                 var response = await model.ProcessAsync(request, cancellationToken);
-                return response.Content;
+                return response.Response;
             }
             catch (Exception ex)
             {
@@ -218,7 +216,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateConfigurationTemplatePrompt(configurationType, settings);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 2500,
@@ -230,12 +228,12 @@ namespace Nexo.Feature.Template.Services
                 if (provider == null)
                     throw new InvalidOperationException("No suitable model provider available");
                 var availableModels = await provider.GetAvailableModelsAsync(cancellationToken);
-                var modelInfo = availableModels.FirstOrDefault(m => m.Type == ModelType.TextGeneration);
+                var modelInfo = availableModels.FirstOrDefault(m => m.ModelType == ModelType.TextGeneration);
                 if (modelInfo == null)
                     throw new InvalidOperationException("No suitable model available");
-                var model = await provider.LoadModelAsync(modelInfo.Id, cancellationToken);
+                var model = await provider.LoadModelAsync(modelInfo.Name, cancellationToken);
                 var response = await model.ProcessAsync(request, cancellationToken);
-                return response.Content;
+                return response.Response;
             }
             catch (Exception ex)
             {
@@ -256,7 +254,7 @@ namespace Nexo.Feature.Template.Services
                 }
 
                 var prompt = CreateDocumentationTemplatePrompt(documentationType, context);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 3000,
@@ -268,12 +266,12 @@ namespace Nexo.Feature.Template.Services
                 if (provider == null)
                     throw new InvalidOperationException("No suitable model provider available");
                 var availableModels = await provider.GetAvailableModelsAsync(cancellationToken);
-                var modelInfo = availableModels.FirstOrDefault(m => m.Type == ModelType.TextGeneration);
+                var modelInfo = availableModels.FirstOrDefault(m => m.ModelType == ModelType.TextGeneration);
                 if (modelInfo == null)
                     throw new InvalidOperationException("No suitable model available");
-                var model = await provider.LoadModelAsync(modelInfo.Id, cancellationToken);
+                var model = await provider.LoadModelAsync(modelInfo.Name, cancellationToken);
                 var response = await model.ProcessAsync(request, cancellationToken);
-                return response.Content;
+                return response.Response;
             }
             catch (Exception ex)
             {

@@ -136,7 +136,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Nexo.Core.Application.Tests.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Castle.Core.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/FluentAssertions.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/JetBrains.Annotations.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/bin/Debug/net8.0/Microsoft.Extensions.Logging.dll
@@ -246,6 +248,7 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/obj/Debug/net8.0/Nexo.Core.Application.Tests.AssemblyInfoInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/obj/Debug/net8.0/Nexo.Core.Application.Tests.AssemblyInfo.cs
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/obj/Debug/net8.0/Nexo.Core.Application.Tests.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/obj/Debug/net8.0/Nexo.Core.Application.Tests.sourcelink.json
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/obj/Debug/net8.0/Nexo.Cor.466D4130.Up2Date
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/obj/Debug/net8.0/Nexo.Core.Application.Tests.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Core.Application.Tests/obj/Debug/net8.0/refint/Nexo.Core.Application.Tests.dll

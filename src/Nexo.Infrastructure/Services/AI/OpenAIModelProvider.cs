@@ -59,9 +59,9 @@ public class OpenAiModelProvider : IModelProvider
 
     public IEnumerable<ModelType> SupportedModelTypes =>
     [
-        TextGeneration,
-        CodeGeneration,
-        TextEmbedding
+        ModelType.TextGeneration,
+        ModelType.CodeGeneration,
+        ModelType.TextEmbedding
     ];
 
     public async Task<IEnumerable<ModelInfo>> GetAvailableModelsAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -73,20 +73,21 @@ public class OpenAiModelProvider : IModelProvider
             {
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
                 var modelsResponse = JsonSerializer.Deserialize<OpenAiModelsResponse>(json);
-                return modelsResponse?.Data?.Select(m => new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+                return modelsResponse?.Data?.Select(m => new ModelInfo
                 {
-                    Id = m.Id,
                     Name = m.Id,
-                    Description = $"OpenAI {m.Id} model",
-                    Version = "1.0",
-                    Type = GetModelType(m.Id),
-                    Provider = ProviderId,
+                    DisplayName = m.Id,
+                    ModelType = GetModelType(m.Id),
                     IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, object>
+                    SizeBytes = 1024 * 1024 * 1024,
+                    MaxContextLength = 4096,
+                    Capabilities = new ModelCapabilities
                     {
-                        ["owned_by"] = m.OwnedBy,
-                        ["permission"] = m.Permission
+                        SupportsTextGeneration = true,
+                        SupportsCodeGeneration = true,
+                        SupportsAnalysis = true,
+                        SupportsOptimization = false,
+                        SupportsStreaming = true
                     }
                 }) ?? [];
             }
@@ -113,29 +114,31 @@ public class OpenAiModelProvider : IModelProvider
     public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
         var models = await GetAvailableModelsAsync(cancellationToken);
-        return models.FirstOrDefault(m => m.Id == modelName || m.Name == modelName);
+        return models.FirstOrDefault(m => m.Name == modelName);
     }
 
     public async Task<ModelValidationResult> ValidateModelAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
-        var result = new ModelValidationResult { IsValid = true };
+        var errors = new List<string>();
 
         try
         {
             var modelInfo = await GetModelInfoAsync(modelName, cancellationToken);
             if (modelInfo == null)
             {
-                result.IsValid = false;
-                result.Errors.Add($"Model {modelName} not found");
+                errors.Add($"Model {modelName} not found");
             }
         }
         catch (Exception ex)
         {
-            result.IsValid = false;
-            result.Errors.Add($"Error validating model: {ex.Message}");
+            errors.Add($"Error validating model: {ex.Message}");
         }
 
-        return result;
+        return new ModelValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors
+        };
     }
 
     public async Task<ModelHealthStatus> GetHealthStatusAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -148,12 +151,11 @@ public class OpenAiModelProvider : IModelProvider
 
             return new ModelHealthStatus
             {
-                ProviderName = DisplayName,
                 IsHealthy = response.IsSuccessStatusCode,
+                Status = response.IsSuccessStatusCode ? "Healthy" : $"HTTP {response.StatusCode}",
+                LastChecked = DateTime.UtcNow,
                 ResponseTimeMs = responseTime,
-                ErrorRate = response.IsSuccessStatusCode ? 0.0 : 1.0,
-                LastError = response.IsSuccessStatusCode ? "" : $"HTTP {response.StatusCode}",
-                LastCheckTime = DateTime.UtcNow
+                ErrorRate = response.IsSuccessStatusCode ? 0.0 : 1.0
             };
         }
         catch (Exception ex)
@@ -161,12 +163,11 @@ public class OpenAiModelProvider : IModelProvider
             _logger.LogError(ex, "Error checking OpenAI health status");
             return new ModelHealthStatus
             {
-                ProviderName = DisplayName,
                 IsHealthy = false,
+                Status = $"Error: {ex.Message}",
+                LastChecked = DateTime.UtcNow,
                 ResponseTimeMs = 0,
-                ErrorRate = 1.0,
-                LastError = ex.Message,
-                LastCheckTime = DateTime.UtcNow
+                ErrorRate = 1.0
             };
         }
     }
@@ -177,19 +178,18 @@ public class OpenAiModelProvider : IModelProvider
     public bool IsEnabled => IsAvailable;
     public bool IsPrimary => true;
 
-    public ModelCapabilities Capabilities => new ModelCapabilities(true, true, true, false, false)
+    public ModelCapabilities Capabilities => new ModelCapabilities
     {
-        SupportsStreaming = true,
-        SupportsFunctionCalling = true,
-        SupportsTextEmbedding = true,
-        MaxInputLength = 128000,
-        MaxOutputLength = 128000,
-        SupportedLanguages = ["en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh"]
+        SupportsTextGeneration = true,
+        SupportsCodeGeneration = true,
+        SupportsAnalysis = true,
+        SupportsOptimization = false,
+        SupportsStreaming = true
     };
 
     public async Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
-        _logger.LogInformation("Executing OpenAI request with model {Model}", request.Metadata.TryGetValue("model", out var modelObj) ? modelObj as string : "gpt-4");
+        _logger.LogInformation("Executing OpenAI request with model {Model}", request.Context?.TryGetValue("model", out var modelObj) == true ? modelObj as string : "gpt-4");
 
         try
         {
@@ -206,11 +206,11 @@ public class OpenAiModelProvider : IModelProvider
             
             var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
             
-            return new ModelResponse(response.Usage?.PromptTokens ?? 0, response.Usage?.CompletionTokens ?? 0)
+            return new ModelResponse
             {
-                Content = response.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
-                Model = model,
-                TotalTokens = response.Usage?.TotalTokens ?? 0,
+                Response = response.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty,
+                InputTokens = response.Usage?.PromptTokens ?? 0,
+                OutputTokens = response.Usage?.CompletionTokens ?? 0,
                 ProcessingTimeMs = executionTime,
                 Metadata = new Dictionary<string, object>
                 {
@@ -228,36 +228,39 @@ public class OpenAiModelProvider : IModelProvider
 
     public Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request)
     {
-        var result = new ModelValidationResult { IsValid = true };
+        var errors = new List<string>();
 
         // Validate required fields
         if (string.IsNullOrEmpty(request.Input))
         {
-            result.IsValid = false;
-            result.Errors.Add("Input is required");
+            errors.Add("Input is required");
         }
 
         // Validate model
         var model = GetModelFromRequest(request);
         if (!IsModelSupported(model))
         {
-            result.IsValid = false;
-            result.Errors.Add($"Model {model} is not supported");
+            errors.Add($"Model {model} is not supported");
         }
 
         // Validate token limits
         var estimatedTokens = EstimateTokenCount(request.Input);
-        if (estimatedTokens <= 128000) return Task.FromResult(result);
-        result.IsValid = false;
-        result.Errors.Add("Input exceeds maximum token limit");
+        if (estimatedTokens > 128000)
+        {
+            errors.Add("Input exceeds maximum token limit");
+        }
 
-        return Task.FromResult(result);
+        return Task.FromResult(new ModelValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors
+        });
     }
 
     private string GetModelFromRequest(ModelRequest request)
     {
-        // Try to get model from metadata first
-        if (request.Metadata.TryGetValue("model", out var modelObj) && modelObj is string model)
+        // Try to get model from context first
+        if (request.Context?.TryGetValue("model", out var modelObj) == true && modelObj is string model)
         {
             return model;
         }
@@ -278,11 +281,11 @@ public class OpenAiModelProvider : IModelProvider
         {
             ["model"] = model,
             ["messages"] = CreateMessages(request),
-            ["temperature"] = request.Metadata.TryGetValue("temperature", out var tempObj) ? tempObj : _defaultParameters["temperature"],
-            ["max_tokens"] = request.Metadata.TryGetValue("max_tokens", out var maxTokensObj) ? maxTokensObj : _defaultParameters["max_tokens"],
-            ["top_p"] = request.Metadata.TryGetValue("top_p", out var topPObj) ? topPObj : _defaultParameters["top_p"],
-            ["frequency_penalty"] = request.Metadata.TryGetValue("frequency_penalty", out var freqPenaltyObj) ? freqPenaltyObj : _defaultParameters["frequency_penalty"],
-            ["presence_penalty"] = request.Metadata.TryGetValue("presence_penalty", out var presPenaltyObj) ? presPenaltyObj : _defaultParameters["presence_penalty"]
+            ["temperature"] = request.Context?.TryGetValue("temperature", out var tempObj) == true ? tempObj : request.Temperature,
+            ["max_tokens"] = request.Context?.TryGetValue("max_tokens", out var maxTokensObj) == true ? maxTokensObj : request.MaxTokens,
+            ["top_p"] = request.Context?.TryGetValue("top_p", out var topPObj) == true ? topPObj : 0.9,
+            ["frequency_penalty"] = request.Context?.TryGetValue("frequency_penalty", out var freqPenaltyObj) == true ? freqPenaltyObj : 0.0,
+            ["presence_penalty"] = request.Context?.TryGetValue("presence_penalty", out var presPenaltyObj) == true ? presPenaltyObj : 0.0
         };
 
         return openAiRequest;
@@ -418,7 +421,7 @@ public class OpenAiModel : IModel
     private readonly string _modelName;
     private readonly HttpClient _httpClient;
     private readonly ILogger _logger;
-    private ModelInfo _info;
+    private ModelInfo? _info;
 
     public OpenAiModel(string modelName, HttpClient httpClient, ILogger logger)
     {
@@ -431,21 +434,42 @@ public class OpenAiModel : IModel
     {
         get
         {
-            return _info ??= new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+            return _info ??= new ModelInfo
             {
-                Id = _modelName,
                 Name = _modelName,
-                Description = "OpenAI " + _modelName + " model",
-                Version = "1.0",
-                Type = TextGeneration,
-                Provider = "openai",
+                DisplayName = _modelName,
+                ModelType = Nexo.Feature.AI.Enums.ModelType.TextGeneration,
                 IsAvailable = true,
-                LastUpdated = DateTime.UtcNow
+                SizeBytes = 1024 * 1024 * 1024,
+                MaxContextLength = 4096,
+                Capabilities = new ModelCapabilities
+                {
+                    SupportsTextGeneration = true,
+                    SupportsCodeGeneration = true,
+                    SupportsAnalysis = true,
+                    SupportsOptimization = false,
+                    SupportsStreaming = true
+                }
             };
         }
     }
 
     public bool IsLoaded => true;
+
+    /// <summary>
+    /// Unique identifier for this model instance
+    /// </summary>
+    public string ModelId => _modelName;
+
+    /// <summary>
+    /// Human-readable name of the model
+    /// </summary>
+    public string Name => _modelName;
+
+    /// <summary>
+    /// Type of model
+    /// </summary>
+    public Nexo.Feature.AI.Enums.ModelType ModelType => Nexo.Feature.AI.Enums.ModelType.TextGeneration;
 
     public async Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
@@ -461,15 +485,20 @@ public class OpenAiModel : IModel
 
     public ModelCapabilities GetCapabilities()
     {
-        return new ModelCapabilities(true, true, true, false, false)
+        return new ModelCapabilities
         {
-            SupportsStreaming = true,
-            SupportsFunctionCalling = true,
-            SupportsTextEmbedding = true,
-            MaxInputLength = 128000,
-            MaxOutputLength = 128000,
-            SupportedLanguages = ["en", "es", "fr", "de", "it", "pt", "nl", "pl", "ru", "ja", "ko", "zh"]
+            SupportsTextGeneration = true,
+            SupportsCodeGeneration = true,
+            SupportsAnalysis = true,
+            SupportsOptimization = false,
+            SupportsStreaming = true
         };
+    }
+
+    public Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // OpenAI models are loaded on demand
+        return Task.CompletedTask;
     }
 
     public Task UnloadAsync(CancellationToken cancellationToken = default(CancellationToken))

@@ -27,9 +27,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Feature.Logging.AssemblyInfoInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Feature.Logging.AssemblyInfo.cs
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Feature.Logging.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Feature.Logging.sourcelink.json
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Fea.61AEA67D.Up2Date
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Feature.Logging.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/refint/Nexo.Feature.Logging.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Feature.Logging.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/ref/Nexo.Feature.Logging.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Logging/obj/Debug/net8.0/Nexo.Feature.Logging.sourcelink.json

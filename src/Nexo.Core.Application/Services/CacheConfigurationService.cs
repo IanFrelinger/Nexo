@@ -24,7 +24,7 @@ namespace Nexo.Core.Application.Services
         /// <typeparam name="TKey">The type of the cache key.</typeparam>
         /// <typeparam name="TValue">The type of the cached value.</typeparam>
         /// <returns>A configured cache strategy instance.</returns>
-        public ICacheStrategy<TKey, TValue> CreateCacheStrategy<TKey, TValue>()
+        public ICacheStrategy<TKey, TValue> CreateCacheStrategy<TKey, TValue>() where TKey : notnull
         {
             var backend = _settings.Backend?.ToLowerInvariant();
             if (backend == "redis")
@@ -44,7 +44,7 @@ namespace Nexo.Core.Application.Services
         /// <summary>
         /// Creates an in-memory cache strategy with configured TTL.
         /// </summary>
-        private ICacheStrategy<TKey, TValue> CreateInMemoryCacheStrategy<TKey, TValue>()
+        private ICacheStrategy<TKey, TValue> CreateInMemoryCacheStrategy<TKey, TValue>() where TKey : notnull
         {
             var ttl = _settings.DefaultTtlSeconds > 0 
                 ? TimeSpan.FromSeconds(_settings.DefaultTtlSeconds) 
@@ -71,21 +71,21 @@ namespace Nexo.Core.Application.Services
         /// Validates the current cache configuration.
         /// </summary>
         /// <returns>True if the configuration is valid, false otherwise.</returns>
-        public async Task<bool> ValidateConfigurationAsync(CancellationToken cancellationToken = default)
+        public Task<bool> ValidateConfigurationAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 if (_settings.Backend?.ToLowerInvariant() == "redis")
                 {
                     // Redis validation is handled in Infrastructure layer
-                    return false; // Indicate that Redis validation is not available in this layer
+                    return Task.FromResult(false); // Indicate that Redis validation is not available in this layer
                 }
 
-                return true; // In-memory cache is always valid
+                return Task.FromResult(true); // In-memory cache is always valid
             }
             catch
             {
-                return false;
+                return Task.FromResult(false);
             }
         }
     }

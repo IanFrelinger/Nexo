@@ -9,6 +9,8 @@
       "Nexo.Shared.Tests/1.0.0": {
         "dependencies": {
           "FluentAssertions": "6.12.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.NET.Test.Sdk": "17.8.0",
           "Nexo.Shared": "1.0.0",
           "coverlet.collector": "6.0.0",
@@ -28,6 +30,14 @@
           "lib/net6.0/FluentAssertions.dll": {
             "assemblyVersion": "6.12.0.0",
             "fileVersion": "6.12.0.0"
+          }
+        }
+      },
+      "JetBrains.Annotations/2025.2.0": {
+        "runtime": {
+          "lib/netstandard2.0/JetBrains.Annotations.dll": {
+            "assemblyVersion": "4242.42.42.42",
+            "fileVersion": "2025.2.0.0"
           }
         }
       },
@@ -338,14 +348,6 @@
           }
         }
       },
-      "System.IO.Pipelines/9.0.7": {
-        "runtime": {
-          "lib/net8.0/System.IO.Pipelines.dll": {
-            "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.725.31616"
-          }
-        }
-      },
       "System.Reflection.Metadata/1.6.0": {},
       "System.Security.Cryptography.ProtectedData/4.4.0": {
         "runtime": {
@@ -360,34 +362,6 @@
             "assetType": "runtime",
             "assemblyVersion": "4.0.2.0",
             "fileVersion": "4.6.25519.3"
-          }
-        }
-      },
-      "System.Text.Encodings.Web/9.0.7": {
-        "runtime": {
-          "lib/net8.0/System.Text.Encodings.Web.dll": {
-            "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.725.31616"
-          }
-        },
-        "runtimeTargets": {
-          "runtimes/browser/lib/net8.0/System.Text.Encodings.Web.dll": {
-            "rid": "browser",
-            "assetType": "runtime",
-            "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.725.31616"
-          }
-        }
-      },
-      "System.Text.Json/9.0.7": {
-        "dependencies": {
-          "System.IO.Pipelines": "9.0.7",
-          "System.Text.Encodings.Web": "9.0.7"
-        },
-        "runtime": {
-          "lib/net8.0/System.Text.Json.dll": {
-            "assemblyVersion": "9.0.0.0",
-            "fileVersion": "9.0.725.31616"
           }
         }
       },
@@ -446,7 +420,7 @@
       "xunit.runner.visualstudio/2.5.6": {},
       "Nexo.Core.Domain/1.0.0": {
         "dependencies": {
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0"
         },
         "runtime": {
           "Nexo.Core.Domain.dll": {}
@@ -454,9 +428,8 @@
       },
       "Nexo.Shared/1.0.0": {
         "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Core.Domain": "1.0.0",
-          "System.Text.Json": "9.0.7"
+          "JetBrains.Annotations": "2025.2.0",
+          "Nexo.Core.Domain": "1.0.0"
         },
         "runtime": {
           "Nexo.Shared.dll": {}
@@ -483,6 +456,13 @@
       "sha512": "sha512-ZXhHT2YwP9lajrwSKbLlFqsmCCvFJMoRSK9t7sImfnCyd0OB3MhgxdoMcVqxbq1iyxD6mD2fiackWmBb7ayiXQ==",
       "path": "fluentassertions/6.12.0",
       "hashPath": "fluentassertions.6.12.0.nupkg.sha512"
+    },
+    "JetBrains.Annotations/2025.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2BvMkOSW+50EbQFhWFIPWTqmcDLiyyjwkMN7lN386bhP2vN/7ts5t59qu11HtenmHFxqDzaD8J1fFoh+QTOzVA==",
+      "path": "jetbrains.annotations/2025.2.0",
+      "hashPath": "jetbrains.annotations.2025.2.0.nupkg.sha512"
     },
     "Microsoft.CodeCoverage/17.8.0": {
       "type": "package",
@@ -547,13 +527,6 @@
       "path": "system.configuration.configurationmanager/4.4.0",
       "hashPath": "system.configuration.configurationmanager.4.4.0.nupkg.sha512"
     },
-    "System.IO.Pipelines/9.0.7": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-I9KHYFNKQkufs/Ec7evpPPSu2HkuW+jNpq1kT0WOWjzuN6BjxRYy7CuWNLjQmuBzcKd9vKrHaPGcHVxSF5DadQ==",
-      "path": "system.io.pipelines/9.0.7",
-      "hashPath": "system.io.pipelines.9.0.7.nupkg.sha512"
-    },
     "System.Reflection.Metadata/1.6.0": {
       "type": "package",
       "serviceable": true,
@@ -567,20 +540,6 @@
       "sha512": "sha512-cJV7ScGW7EhatRsjehfvvYVBvtiSMKgN8bOVI0bQhnF5bU7vnHVIsH49Kva7i7GWaWYvmEzkYVk1TC+gZYBEog==",
       "path": "system.security.cryptography.protecteddata/4.4.0",
       "hashPath": "system.security.cryptography.protecteddata.4.4.0.nupkg.sha512"
-    },
-    "System.Text.Encodings.Web/9.0.7": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-WswuKENaV4gC4ZYZi8BhehJHHRdyZQzXEYv/lV8DHW9FwkdnKaTutdRbK/S1wHZtKUUzzptBPAX2XOxdoURkMw==",
-      "path": "system.text.encodings.web/9.0.7",
-      "hashPath": "system.text.encodings.web.9.0.7.nupkg.sha512"
-    },
-    "System.Text.Json/9.0.7": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-u/lN2FEEXs3ghj2ta8tWA4r2MS9Yni07K7jDmnz8h1UPDf0lIIIEMkWx383Zz4fJjJio7gDl+00RYuQ/7R8ZQw==",
-      "path": "system.text.json/9.0.7",
-      "hashPath": "system.text.json.9.0.7.nupkg.sha512"
     },
     "xunit/2.6.6": {
       "type": "package",

@@ -1,335 +1,233 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Moq;
 using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
-using Nexo.Feature.AI.Services;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 using Xunit;
 
 namespace Nexo.Feature.AI.Tests;
 
 /// <summary>
-/// Tests for the AI-powered iteration code generator
+/// Tests for the IterationCodeGenerator service
 /// </summary>
-public class IterationCodeGeneratorTests
+public class IterationCodeGeneratorTests : IDisposable
 {
-    private readonly IServiceProvider _serviceProvider;
-    
+    private readonly ServiceProvider _serviceProvider;
+    private readonly Mock<IModelOrchestrator> _mockOrchestrator;
+
     public IterationCodeGeneratorTests()
     {
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole());
         services.AddIterationStrategies();
-        services.AddTransient<IModelOrchestrator, MockModelOrchestrator>();
+        
+        _mockOrchestrator = new Mock<IModelOrchestrator>();
+        services.AddTransient<IModelOrchestrator>(_ => _mockOrchestrator.Object);
+        services.AddTransient<Nexo.Feature.AI.Interfaces.IIterationCodeGenerator, Services.IterationCodeGenerator>();
+        
         _serviceProvider = services.BuildServiceProvider();
     }
-    
-    [Fact]
-    public async Task GenerateOptimalIterationCodeAsync_ShouldReturnValidCode()
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var request = new IterationCodeRequest
-        {
-            Context = new IterationContext
-            {
-                DataSize = 1000,
-                EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-            },
-            CodeGeneration = new CodeGenerationContext
-            {
-                PlatformTarget = PlatformTarget.CSharp,
-                CollectionName = "items",
-                IterationBodyTemplate = "ProcessItem({item});"
-            },
-            UseAIEnhancement = false
-        };
-        
-        // Act
-        var code = await generator.GenerateOptimalIterationCodeAsync(request);
-        
-        // Assert
-        Assert.NotNull(code);
-        Assert.NotEmpty(code);
-        Assert.Contains("items", code);
-    }
-    
-    [Fact]
-    public async Task GenerateOptimalIterationCodeAsync_WithAIEnhancement_ShouldReturnEnhancedCode()
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var request = new IterationCodeRequest
-        {
-            Context = new IterationContext
-            {
-                DataSize = 1000,
-                EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-            },
-            CodeGeneration = new CodeGenerationContext
-            {
-                PlatformTarget = PlatformTarget.CSharp,
-                CollectionName = "users",
-                IterationBodyTemplate = "ValidateUser({item});"
-            },
-            UseAIEnhancement = true
-        };
-        
-        // Act
-        var code = await generator.GenerateOptimalIterationCodeAsync(request);
-        
-        // Assert
-        Assert.NotNull(code);
-        Assert.NotEmpty(code);
-        Assert.Contains("users", code);
-    }
-    
-    [Fact]
-    public async Task GenerateMultiplePlatformIterationsAsync_ShouldReturnCodeForAllPlatforms()
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var platforms = new[] { PlatformTarget.CSharp, PlatformTarget.JavaScript, PlatformTarget.Python, PlatformTarget.Swift };
-        
-        var request = new IterationCodeRequest
-        {
-            Context = new IterationContext
-            {
-                DataSize = 1000,
-                EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-            },
-            CodeGeneration = new CodeGenerationContext
-            {
-                CollectionName = "products",
-                IterationBodyTemplate = "ProcessProduct({item});"
-            },
-            UseAIEnhancement = false,
-            TargetPlatforms = platforms
-        };
-        
-        // Act
-        var codes = await generator.GenerateMultiplePlatformIterationsAsync(request);
-        
-        // Assert
-        Assert.NotNull(codes);
-        Assert.Equal(platforms.Length, codes.Count());
-        
-        foreach (var code in codes)
-        {
-            Assert.NotNull(code);
-            Assert.NotEmpty(code);
-            Assert.Contains("products", code);
-        }
-    }
-    
-    [Theory]
-    [InlineData(PlatformTarget.CSharp)]
-    [InlineData(PlatformTarget.JavaScript)]
-    [InlineData(PlatformTarget.Python)]
-    [InlineData(PlatformTarget.Swift)]
-    [InlineData(PlatformTarget.Unity2022)]
-    [InlineData(PlatformTarget.Unity2023)]
-    public async Task GenerateOptimalIterationCodeAsync_ShouldWorkForAllPlatforms(PlatformTarget platform)
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var request = new IterationCodeRequest
-        {
-            Context = new IterationContext
-            {
-                DataSize = 1000,
-                EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-            },
-            CodeGeneration = new CodeGenerationContext
-            {
-                PlatformTarget = platform,
-                CollectionName = "items",
-                IterationBodyTemplate = "ProcessItem({item});"
-            },
-            UseAIEnhancement = false
-        };
-        
-        // Act
-        var code = await generator.GenerateOptimalIterationCodeAsync(request);
-        
-        // Assert
-        Assert.NotNull(code);
-        Assert.NotEmpty(code);
-        Assert.Contains("items", code);
-    }
-    
-    [Fact]
-    public async Task GenerateOptimalIterationCodeAsync_ShouldHandleDifferentDataSizes()
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var dataSizes = new[] { 100, 1000, 10000, 100000 };
-        
-        foreach (var dataSize in dataSizes)
-        {
-            var request = new IterationCodeRequest
-            {
-                Context = new IterationContext
-                {
-                    DataSize = dataSize,
-                    EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-                },
-                CodeGeneration = new CodeGenerationContext
-                {
-                    PlatformTarget = PlatformTarget.CSharp,
-                    CollectionName = "data",
-                    IterationBodyTemplate = "ProcessData({item});"
-                },
-                UseAIEnhancement = false
-            };
-            
-            // Act
-            var code = await generator.GenerateOptimalIterationCodeAsync(request);
-            
-            // Assert
-            Assert.NotNull(code);
-            Assert.NotEmpty(code);
-            Assert.Contains("data", code);
-        }
-    }
-    
-    [Fact]
-    public async Task GenerateOptimalIterationCodeAsync_ShouldHandleDifferentRequirements()
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var requirements = new[]
-        {
-            new IterationRequirements { PrioritizeCpu = true },
-            new IterationRequirements { PrioritizeMemory = true },
-            new IterationRequirements { RequiresParallelization = true },
-            new IterationRequirements { RequiresOrdering = false },
-            new IterationRequirements { AllowSideEffects = false }
-        };
-        
-        foreach (var requirement in requirements)
-        {
-            var request = new IterationCodeRequest
-            {
-                Context = new IterationContext
-                {
-                    DataSize = 1000,
-                    Requirements = requirement,
-                    EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-                },
-                CodeGeneration = new CodeGenerationContext
-                {
-                    PlatformTarget = PlatformTarget.CSharp,
-                    CollectionName = "items",
-                    IterationBodyTemplate = "ProcessItem({item});"
-                },
-                UseAIEnhancement = false
-            };
-            
-            // Act
-            var code = await generator.GenerateOptimalIterationCodeAsync(request);
-            
-            // Assert
-            Assert.NotNull(code);
-            Assert.NotEmpty(code);
-            Assert.Contains("items", code);
-        }
-    }
-    
-    [Fact]
-    public async Task GenerateOptimalIterationCodeAsync_ShouldHandleComplexCodeGenerationContext()
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var request = new IterationCodeRequest
-        {
-            Context = new IterationContext
-            {
-                DataSize = 1000,
-                EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-            },
-            CodeGeneration = new CodeGenerationContext
-            {
-                PlatformTarget = PlatformTarget.CSharp,
-                CollectionName = "users",
-                ItemName = "user",
-                IterationBodyTemplate = "ValidateUser({item});",
-                ActionTemplate = "u => ValidateUser(u)",
-                PredicateTemplate = "u => u.IsActive",
-                TransformTemplate = "u => u.Name",
-                HasWhere = true,
-                HasSelect = true,
-                HasAsync = false
-            },
-            UseAIEnhancement = false
-        };
-        
-        // Act
-        var code = await generator.GenerateOptimalIterationCodeAsync(request);
-        
-        // Assert
-        Assert.NotNull(code);
-        Assert.NotEmpty(code);
-        Assert.Contains("users", code);
-    }
-    
-    [Fact]
-    public async Task GenerateOptimalIterationCodeAsync_ShouldHandleErrorsGracefully()
-    {
-        // Arrange
-        var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
-        var request = new IterationCodeRequest
-        {
-            Context = new IterationContext
-            {
-                DataSize = -1, // Invalid data size
-                EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-            },
-            CodeGeneration = new CodeGenerationContext
-            {
-                PlatformTarget = PlatformTarget.CSharp,
-                CollectionName = "",
-                IterationBodyTemplate = ""
-            },
-            UseAIEnhancement = false
-        };
-        
-        // Act
-        var code = await generator.GenerateOptimalIterationCodeAsync(request);
-        
-        // Assert
-        Assert.NotNull(code);
-        Assert.NotEmpty(code);
-        // Should return fallback code even with invalid input
-    }
-}
 
-/// <summary>
-/// Mock model orchestrator for testing
-/// </summary>
-public class MockModelOrchestrator : IModelOrchestrator
-{
-    public Task<ModelResponse> ProcessAsync(string prompt)
+    [Fact]
+    public async Task GenerateOptimalIterationCodeAsync_ShouldReturnGeneratedCode()
     {
-        // Mock response that enhances the base code
-        var enhancedCode = $"""
-        // Enhanced code with error handling
-        try {{
-            {prompt}
-        }}
-        catch (Exception ex) {{
-            Console.WriteLine($"Error: {{ex.Message}}");
-        }}
-        """;
-        
-        return Task.FromResult(new ModelResponse
+        // Arrange
+        var generator = _serviceProvider.GetRequiredService<Nexo.Feature.AI.Interfaces.IIterationCodeGenerator>();
+        var context = new IterationContext
         {
-            Response = enhancedCode,
+            DataSize = 1000,
+            Requirements = new IterationRequirements
+            {
+                PrioritizeCpu = true
+            },
+            EnvironmentProfile = new RuntimeEnvironmentProfile
+            {
+                PlatformType = PlatformCompatibility.DotNet,
+                CpuCores = 4,
+                AvailableMemoryMB = 8192
+            }
+        };
+        
+        var codeContext = new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            ItemName = "item",
+            ActionTemplate = "x => ProcessItem(x)"
+        };
+
+        var expectedResponse = new ModelResponse
+        {
+            Response = "foreach (var item in items) { ProcessItem(item); }",
+            Success = true,
+            InputTokens = 100,
+            OutputTokens = 20
+        };
+
+        _mockOrchestrator
+            .Setup(x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await generator.GenerateOptimalIterationCodeAsync(context, codeContext);
+
+        // Assert
+        result.Should().NotBeNullOrEmpty();
+        result.Should().Contain("foreach");
+        result.Should().Contain("ProcessItem");
+        
+        _mockOrchestrator.Verify(
+            x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task GenerateOptimalIterationCodeAsync_ShouldReturnFallbackCode_WhenAIRequestFails()
+    {
+        // Arrange
+        var generator = _serviceProvider.GetRequiredService<Nexo.Feature.AI.Interfaces.IIterationCodeGenerator>();
+        var context = new IterationContext();
+        var codeContext = new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            ItemName = "item"
+        };
+
+        var failedResponse = new ModelResponse
+        {
+            Success = false,
+            ErrorMessage = "AI service unavailable"
+        };
+
+        _mockOrchestrator
+            .Setup(x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failedResponse);
+
+        // Act
+        var result = await generator.GenerateOptimalIterationCodeAsync(context, codeContext);
+
+        // Assert
+        result.Should().NotBeNullOrEmpty();
+        result.Should().Contain("foreach");
+        result.Should().Contain("items");
+    }
+
+    [Fact]
+    public async Task GenerateMultiPlatformCodeAsync_ShouldReturnCodeForEachPlatform()
+    {
+        // Arrange
+        var generator = _serviceProvider.GetRequiredService<Nexo.Feature.AI.Interfaces.IIterationCodeGenerator>();
+        var context = new IterationContext();
+        var platforms = new[] { PlatformTarget.CSharp, PlatformTarget.JavaScript };
+
+        var expectedResponse = new ModelResponse
+        {
+            Response = "Generated code for platform",
             Success = true
-        });
+        };
+
+        _mockOrchestrator
+            .Setup(x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await generator.GenerateMultiPlatformCodeAsync(context, platforms);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().ContainKey(PlatformTarget.CSharp);
+        result.Should().ContainKey(PlatformTarget.JavaScript);
+        result[PlatformTarget.CSharp].Should().NotBeNullOrEmpty();
+        result[PlatformTarget.JavaScript].Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task EnhanceIterationCodeAsync_ShouldReturnEnhancedCode()
+    {
+        // Arrange
+        var generator = _serviceProvider.GetRequiredService<Nexo.Feature.AI.Interfaces.IIterationCodeGenerator>();
+        var existingCode = "foreach (var item in items) { ProcessItem(item); }";
+        var context = new IterationContext();
+
+        var expectedResponse = new ModelResponse
+        {
+            Response = "// Enhanced code with error handling\nforeach (var item in items) {\n    if (item != null) {\n        ProcessItem(item);\n    }\n}",
+            Success = true
+        };
+
+        _mockOrchestrator
+            .Setup(x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
+
+        // Act
+        var result = await generator.EnhanceIterationCodeAsync(existingCode, context);
+
+        // Assert
+        result.Should().NotBeNullOrEmpty();
+        result.Should().Contain("Enhanced");
+        result.Should().Contain("error handling");
+        
+        _mockOrchestrator.Verify(
+            x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task EnhanceIterationCodeAsync_ShouldReturnOriginalCode_WhenEnhancementFails()
+    {
+        // Arrange
+        var generator = _serviceProvider.GetRequiredService<Nexo.Feature.AI.Interfaces.IIterationCodeGenerator>();
+        var existingCode = "foreach (var item in items) { ProcessItem(item); }";
+        var context = new IterationContext();
+
+        var failedResponse = new ModelResponse
+        {
+            Success = false,
+            ErrorMessage = "Enhancement failed"
+        };
+
+        _mockOrchestrator
+            .Setup(x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(failedResponse);
+
+        // Act
+        var result = await generator.EnhanceIterationCodeAsync(existingCode, context);
+
+        // Assert
+        result.Should().Be(existingCode);
+    }
+
+    [Fact]
+    public async Task GenerateOptimalIterationCodeAsync_ShouldHandleException()
+    {
+        // Arrange
+        var generator = _serviceProvider.GetRequiredService<Nexo.Feature.AI.Interfaces.IIterationCodeGenerator>();
+        var context = new IterationContext();
+        var codeContext = new CodeGenerationContext();
+
+        _mockOrchestrator
+            .Setup(x => x.ExecuteAsync(It.IsAny<ModelRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("Network error"));
+
+        // Act
+        var result = await generator.GenerateOptimalIterationCodeAsync(context, codeContext);
+
+        // Assert
+        result.Should().NotBeNullOrEmpty();
+        result.Should().Contain("foreach"); // Fallback code contains foreach
+    }
+
+    public void Dispose()
+    {
+        _serviceProvider?.Dispose();
     }
 }

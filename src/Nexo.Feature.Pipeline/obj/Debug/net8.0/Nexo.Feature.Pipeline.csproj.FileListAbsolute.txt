@@ -27,9 +27,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Feature.Pipeline.AssemblyInfoInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Feature.Pipeline.AssemblyInfo.cs
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Feature.Pipeline.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Feature.Pipeline.sourcelink.json
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Fea.B98C04A9.Up2Date
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Feature.Pipeline.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/refint/Nexo.Feature.Pipeline.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Feature.Pipeline.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/ref/Nexo.Feature.Pipeline.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/obj/Debug/net8.0/Nexo.Feature.Pipeline.sourcelink.json

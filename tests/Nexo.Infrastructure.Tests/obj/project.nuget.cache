@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "VloKLnSBkUk=",
+  "dgSpecHash": "zk26Rh54wSQ=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/Nexo.Infrastructure.Tests.csproj",
   "expectedPackageFiles": [
@@ -12,6 +12,7 @@
     "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.common/4.8.0/microsoft.codeanalysis.common.4.8.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.csharp/4.8.0/microsoft.codeanalysis.csharp.4.8.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.codecoverage/17.8.0/microsoft.codecoverage.17.8.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.configuration.abstractions/8.0.0/microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection/8.0.0/microsoft.extensions.dependencyinjection.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.logging/8.0.0/microsoft.extensions.logging.8.0.0.nupkg.sha512",

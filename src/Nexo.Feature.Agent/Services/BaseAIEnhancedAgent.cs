@@ -187,13 +187,13 @@ namespace Nexo.Feature.Agent.Services
                     // Process with AI enhancement
                     var aiResponse = await ProcessWithAiAsync(request, cancellationToken);
                     response.AiWasUsed = true;
-                    response.AiModelUsed = aiResponse.Model;
-                    response.Content = aiResponse.Content;
+                    response.AiModelUsed = "AI Model"; // Model name not available in new API
+                    response.Content = aiResponse.Response;
                     response.Success = true;
-                    response.AiInsights = aiResponse.Metadata.ContainsKey("insights") 
+                    response.AiInsights = aiResponse.Metadata?.ContainsKey("insights") == true 
                         ? (aiResponse.Metadata["insights"] as List<string>) ?? new List<string>()
                         : new List<string>();
-                    response.AiConfidenceScore = aiResponse.Metadata.ContainsKey("confidence") 
+                    response.AiConfidenceScore = aiResponse.Metadata?.ContainsKey("confidence") == true 
                         ? Convert.ToDouble(aiResponse.Metadata["confidence"]) 
                         : 0.0;
                 }
@@ -255,7 +255,7 @@ namespace Nexo.Feature.Agent.Services
             try
             {
                 var prompt = CreateTaskAnalysisPrompt(task);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 1000,
@@ -263,7 +263,7 @@ namespace Nexo.Feature.Agent.Services
                 };
 
                 var response = await _modelOrchestrator.ExecuteAsync(request, cancellationToken);
-                return ParseTaskAnalysisResponse(response.Content);
+                return ParseTaskAnalysisResponse(response.Response);
             }
             catch (Exception ex)
             {
@@ -289,7 +289,7 @@ namespace Nexo.Feature.Agent.Services
             try
             {
                 var prompt = CreateSuggestionsPrompt(task);
-                var request = new ModelRequest(0.9, 0.0, 0.0, false)
+                var request = new ModelRequest
                 {
                     Input = prompt,
                     MaxTokens = 1500,
@@ -297,7 +297,7 @@ namespace Nexo.Feature.Agent.Services
                 };
 
                 var response = await _modelOrchestrator.ExecuteAsync(request, cancellationToken);
-                return ParseSuggestionsResponse(response.Content);
+                return ParseSuggestionsResponse(response.Response);
             }
             catch (Exception ex)
             {
@@ -409,12 +409,11 @@ namespace Nexo.Feature.Agent.Services
         protected async Task<ModelResponse> ProcessWithAiAsync(AiEnhancedAgentRequest request, CancellationToken cancellationToken)
         {
             var prompt = CreateProcessingPrompt(request);
-            var modelRequest = new ModelRequest(0.9, 0.0, 0.0, false)
+            var modelRequest = new ModelRequest
             {
                 Input = prompt,
                 MaxTokens = 2000,
-                Temperature = 0.3,
-                Metadata = request.AiContext
+                Temperature = 0.3
             };
 
             return await _modelOrchestrator.ExecuteAsync(modelRequest, cancellationToken);

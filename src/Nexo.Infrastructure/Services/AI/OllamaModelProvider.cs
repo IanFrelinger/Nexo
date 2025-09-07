@@ -56,20 +56,21 @@ public class OllamaModelProvider : IModelProvider
             {
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
                 var modelsResponse = JsonSerializer.Deserialize<OllamaModelsResponse>(json);
-                return modelsResponse?.Models?.Select(m => new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+                return modelsResponse?.Models?.Select(m => new ModelInfo
                 {
-                    Id = m.Name,
                     Name = m.Name,
-                    Description = $"Ollama {m.Name} model",
-                    Version = m.Digest?.Substring(0, Math.Min(12, m.Digest.Length)) ?? "latest",
-                    Type = GetModelType(m.Name),
-                    Provider = ProviderId,
+                    DisplayName = m.Name,
+                    ModelType = GetModelType(m.Name),
                     IsAvailable = true,
-                    LastUpdated = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, object>
+                    SizeBytes = m.Size,
+                    MaxContextLength = 4096,
+                    Capabilities = new ModelCapabilities
                     {
-                        ["digest"] = m.Digest,
-                        ["size"] = m.Size
+                        SupportsTextGeneration = true,
+                        SupportsCodeGeneration = true,
+                        SupportsAnalysis = true,
+                        SupportsOptimization = false,
+                        SupportsStreaming = true
                     }
                 }) ?? [];
             }
@@ -96,29 +97,31 @@ public class OllamaModelProvider : IModelProvider
     public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
         var models = await GetAvailableModelsAsync(cancellationToken);
-        return models.FirstOrDefault(m => m.Id == modelName || m.Name == modelName);
+        return models.FirstOrDefault(m => m.Name == modelName);
     }
 
     public async Task<ModelValidationResult> ValidateModelAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
-        var result = new ModelValidationResult { IsValid = true };
+        var errors = new List<string>();
 
         try
         {
             var modelInfo = await GetModelInfoAsync(modelName, cancellationToken);
             if (modelInfo == null)
             {
-                result.IsValid = false;
-                result.Errors.Add($"Model {modelName} not found");
+                errors.Add($"Model {modelName} not found");
             }
         }
         catch (Exception ex)
         {
-            result.IsValid = false;
-            result.Errors.Add($"Error validating model: {ex.Message}");
+            errors.Add($"Error validating model: {ex.Message}");
         }
 
-        return result;
+        return new ModelValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors
+        };
     }
 
     public async Task<ModelHealthStatus> GetHealthStatusAsync(CancellationToken cancellationToken = default(CancellationToken))
@@ -131,12 +134,11 @@ public class OllamaModelProvider : IModelProvider
 
             return new ModelHealthStatus
             {
-                ProviderName = DisplayName,
                 IsHealthy = response.IsSuccessStatusCode,
+                Status = response.IsSuccessStatusCode ? "Healthy" : $"HTTP {response.StatusCode}",
+                LastChecked = DateTime.UtcNow,
                 ResponseTimeMs = responseTime,
-                ErrorRate = response.IsSuccessStatusCode ? 0.0 : 1.0,
-                LastError = response.IsSuccessStatusCode ? "" : $"HTTP {response.StatusCode}",
-                LastCheckTime = DateTime.UtcNow
+                ErrorRate = response.IsSuccessStatusCode ? 0.0 : 1.0
             };
         }
         catch (Exception ex)
@@ -144,12 +146,11 @@ public class OllamaModelProvider : IModelProvider
             _logger.LogError(ex, "Error checking Ollama health status");
             return new ModelHealthStatus
             {
-                ProviderName = DisplayName,
                 IsHealthy = false,
+                Status = $"Error: {ex.Message}",
+                LastChecked = DateTime.UtcNow,
                 ResponseTimeMs = 0,
-                ErrorRate = 1.0,
-                LastError = ex.Message,
-                LastCheckTime = DateTime.UtcNow
+                ErrorRate = 1.0
             };
         }
     }
@@ -160,19 +161,18 @@ public class OllamaModelProvider : IModelProvider
     public bool IsEnabled => true;
     public bool IsPrimary => false;
 
-    public ModelCapabilities Capabilities => new ModelCapabilities(true, true, true, false, false)
+    public ModelCapabilities Capabilities => new ModelCapabilities
     {
-        SupportsStreaming = true,
-        SupportsFunctionCalling = false,
-        SupportsTextEmbedding = false,
-        MaxInputLength = 4096,
-        MaxOutputLength = 4096,
-        SupportedLanguages = ["en"]
+        SupportsTextGeneration = true,
+        SupportsCodeGeneration = true,
+        SupportsAnalysis = true,
+        SupportsOptimization = false,
+        SupportsStreaming = true
     };
 
     public async Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
-        _logger.LogInformation("Executing Ollama request with model {Model}", request.Metadata.TryGetValue("model", out var modelObj) ? modelObj as string : "llama2");
+        _logger.LogInformation("Executing Ollama request with model {Model}", request.Context?.TryGetValue("model", out var modelObj) == true ? modelObj as string : "llama2");
 
         try
         {
@@ -189,11 +189,11 @@ public class OllamaModelProvider : IModelProvider
             
             var executionTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
             
-            return new ModelResponse(0, 0)
+            return new ModelResponse
             {
-                Content = response.Response,
-                Model = model,
-                TotalTokens = 0, // Ollama doesn't provide token usage
+                Response = response.Response,
+                InputTokens = 0,
+                OutputTokens = 0,
                 ProcessingTimeMs = executionTime,
                 Metadata = new Dictionary<string, object>
                 {
@@ -211,36 +211,39 @@ public class OllamaModelProvider : IModelProvider
 
     public Task<ModelValidationResult> ValidateRequestAsync(ModelRequest request)
     {
-        var result = new ModelValidationResult { IsValid = true };
+        var errors = new List<string>();
 
         // Validate required fields
         if (string.IsNullOrEmpty(request.Input))
         {
-            result.IsValid = false;
-            result.Errors.Add("Input is required");
+            errors.Add("Input is required");
         }
 
         // Validate model
         var model = GetModelFromRequest(request);
         if (!IsModelSupported(model))
         {
-            result.IsValid = false;
-            result.Errors.Add($"Model {model} is not supported");
+            errors.Add($"Model {model} is not supported");
         }
 
         // Validate token limits
         var estimatedTokens = EstimateTokenCount(request.Input);
-        if (estimatedTokens <= 4096) return Task.FromResult(result);
-        result.IsValid = false;
-        result.Errors.Add("Input exceeds maximum token limit");
+        if (estimatedTokens > 4096)
+        {
+            errors.Add("Input exceeds maximum token limit");
+        }
 
-        return Task.FromResult(result);
+        return Task.FromResult(new ModelValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors
+        });
     }
 
     private static string GetModelFromRequest(ModelRequest request)
     {
-        // Try to get model from metadata first
-        if (request.Metadata.TryGetValue("model", out var modelObj) && modelObj is string model)
+        // Try to get model from context first
+        if (request.Context?.TryGetValue("model", out var modelObj) == true && modelObj is string model)
         {
             return model;
         }
@@ -264,9 +267,9 @@ public class OllamaModelProvider : IModelProvider
             ["stream"] = false,
             ["options"] = new Dictionary<string, object>
             {
-                ["temperature"] = request.Metadata.TryGetValue("temperature", out var tempObj) ? tempObj : 0.7,
-                ["top_p"] = request.Metadata.TryGetValue("top_p", out var topPObj) ? topPObj : 0.9,
-                ["num_predict"] = request.Metadata.TryGetValue("max_tokens", out var maxTokensObj) ? maxTokensObj : 2000
+                ["temperature"] = request.Context?.TryGetValue("temperature", out var tempObj) == true ? tempObj : request.Temperature,
+                ["top_p"] = request.Context?.TryGetValue("top_p", out var topPObj) == true ? topPObj : 0.9,
+                ["num_predict"] = request.Context?.TryGetValue("max_tokens", out var maxTokensObj) == true ? maxTokensObj : request.MaxTokens
             }
         };
 
@@ -363,7 +366,7 @@ public class OllamaModel : IModel
     private readonly string _modelName;
     private readonly HttpClient _httpClient;
     private readonly ILogger _logger;
-    private ModelInfo _info;
+    private ModelInfo? _info;
 
     public OllamaModel(string modelName, HttpClient httpClient, ILogger logger)
     {
@@ -376,21 +379,42 @@ public class OllamaModel : IModel
     {
         get
         {
-            return _info ??= new ModelInfo(1024 * 1024 * 1024, 1000000000, 4096)
+            return _info ??= new ModelInfo
             {
-                Id = _modelName,
                 Name = _modelName,
-                Description = "Ollama " + _modelName + " model",
-                Version = "latest",
-                Type = ModelType.TextGeneration,
-                Provider = "ollama",
+                DisplayName = _modelName,
+                ModelType = Nexo.Feature.AI.Enums.ModelType.TextGeneration,
                 IsAvailable = true,
-                LastUpdated = DateTime.UtcNow
+                SizeBytes = 1024 * 1024 * 1024,
+                MaxContextLength = 4096,
+                Capabilities = new ModelCapabilities
+                {
+                    SupportsTextGeneration = true,
+                    SupportsCodeGeneration = true,
+                    SupportsAnalysis = true,
+                    SupportsOptimization = false,
+                    SupportsStreaming = false
+                }
             };
         }
     }
 
     public bool IsLoaded => true;
+
+    /// <summary>
+    /// Unique identifier for this model instance
+    /// </summary>
+    public string ModelId => _modelName;
+
+    /// <summary>
+    /// Human-readable name of the model
+    /// </summary>
+    public string Name => _modelName;
+
+    /// <summary>
+    /// Type of model
+    /// </summary>
+    public Nexo.Feature.AI.Enums.ModelType ModelType => Nexo.Feature.AI.Enums.ModelType.TextGeneration;
 
     public async Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
@@ -406,15 +430,20 @@ public class OllamaModel : IModel
 
     public ModelCapabilities GetCapabilities()
     {
-        return new ModelCapabilities(true, true, true, false, false)
+        return new ModelCapabilities
         {
-            SupportsStreaming = true,
-            SupportsFunctionCalling = false,
-            SupportsTextEmbedding = false,
-            MaxInputLength = 4096,
-            MaxOutputLength = 4096,
-            SupportedLanguages = ["en"]
+            SupportsTextGeneration = true,
+            SupportsCodeGeneration = true,
+            SupportsAnalysis = true,
+            SupportsOptimization = false,
+            SupportsStreaming = true
         };
+    }
+
+    public Task LoadAsync(CancellationToken cancellationToken = default(CancellationToken))
+    {
+        // Ollama models are loaded on demand
+        return Task.CompletedTask;
     }
 
     public Task UnloadAsync(CancellationToken cancellationToken = default(CancellationToken))

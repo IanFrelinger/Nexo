@@ -117,7 +117,7 @@ public class MemoryCacheAdapter : IDistributedCache
         }
     }
 
-    public async Task SetAsync(string key, string value, DistributedCacheEntryOptions options = null!, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task SetAsync(string key, string value, DistributedCacheEntryOptions? options = null, CancellationToken cancellationToken = default(CancellationToken))
     {
         Console.WriteLine($"[Cache] SetAsync START for key: {key}");
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
@@ -171,7 +171,7 @@ public class MemoryCacheAdapter : IDistributedCache
         Console.WriteLine($"[Cache] SetAsync END for key: {key}");
     }
 
-    public async Task SetAsync<T>(string key, T value, DistributedCacheEntryOptions options = null!, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task SetAsync<T>(string key, T value, DistributedCacheEntryOptions? options = null, CancellationToken cancellationToken = default(CancellationToken))
     {
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
         if (value == null) throw new ArgumentNullException(nameof(value));
@@ -242,7 +242,7 @@ public class MemoryCacheAdapter : IDistributedCache
         _logger.LogDebug($"RefreshAsync END for key: {key}");
     }
 
-    public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, DistributedCacheEntryOptions options = null, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, DistributedCacheEntryOptions? options = null, CancellationToken cancellationToken = default(CancellationToken))
     {
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
             ArgumentNullException.ThrowIfNull(factory);
@@ -309,7 +309,6 @@ public class MemoryCacheAdapter : IDistributedCache
             _cacheLock.Release();
             _logger.LogDebug($"GetStatisticsAsync RELEASED LOCK");
         }
-        _logger.LogDebug($"GetStatisticsAsync END");
     }
 
     public async Task ClearAsync(CancellationToken cancellationToken = default(CancellationToken))

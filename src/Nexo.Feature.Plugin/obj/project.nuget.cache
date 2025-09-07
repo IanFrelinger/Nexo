@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "893pdaDVxZ8=",
+  "dgSpecHash": "qNBzmXpKevU=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Plugin/Nexo.Feature.Plugin.csproj",
   "expectedPackageFiles": [
+    "/Users/ianfrelinger/.nuget/packages/jetbrains.annotations/2025.2.0/jetbrains.annotations.2025.2.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.logging.abstractions/8.0.0/microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/system.io.pipelines/9.0.7/system.io.pipelines.9.0.7.nupkg.sha512",

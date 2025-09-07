@@ -47,9 +47,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.AssemblyInfoInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.AssemblyInfo.cs
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.sourcelink.json
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Inf.C940D311.Up2Date
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/refint/Nexo.Infrastructure.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/ref/Nexo.Infrastructure.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Infrastructure/obj/Debug/net8.0/Nexo.Infrastructure.sourcelink.json
