@@ -1,6 +1,0 @@
-/workspace/tests/UnityCompatibilityTests/bin/Release/netstandard2.0/CoverletSourceRootsMapping_UnityCompatibilityTests
-/workspace/tests/UnityCompatibilityTests/obj/Release/netstandard2.0/UnityCompatibilityTests.csproj.AssemblyReference.cache
-/workspace/tests/UnityCompatibilityTests/obj/Release/netstandard2.0/UnityCompatibilityTests.GeneratedMSBuildEditorConfig.editorconfig
-/workspace/tests/UnityCompatibilityTests/obj/Release/netstandard2.0/UnityCompatibilityTests.AssemblyInfoInputs.cache
-/workspace/tests/UnityCompatibilityTests/obj/Release/netstandard2.0/UnityCompatibilityTests.AssemblyInfo.cs
-/workspace/tests/UnityCompatibilityTests/obj/Release/netstandard2.0/UnityCompatibilityTests.csproj.CoreCompileInputs.cache

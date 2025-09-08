@@ -1,0 +1,70 @@
+# Build artifacts
+bin/
+obj/
+*.dll
+*.pdb
+*.exe
+*.cache
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test results
+TestResults/
+test-results/
+*.trx
+*.coverage
+
+# Package files
+packages/
+*.nupkg
+
+# Node modules (if any)
+node_modules/
+
+# Python (if any)
+__pycache__/
+*.pyc
+*.pyo
+
+# Unity (if any)
+Library/
+Temp/
+obj/
+Build/
+Builds/
+
+# Unreal Engine (if any)
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# Archive directories
+archive/
+backup/

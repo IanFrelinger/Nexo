@@ -1,6 +1,0 @@
-/workspace/tests/Nexo.Shared.Tests/bin/Release/netstandard2.0/CoverletSourceRootsMapping_Nexo.Shared.Tests
-/workspace/tests/Nexo.Shared.Tests/obj/Release/netstandard2.0/Nexo.Shared.Tests.csproj.AssemblyReference.cache
-/workspace/tests/Nexo.Shared.Tests/obj/Release/netstandard2.0/Nexo.Shared.Tests.GeneratedMSBuildEditorConfig.editorconfig
-/workspace/tests/Nexo.Shared.Tests/obj/Release/netstandard2.0/Nexo.Shared.Tests.AssemblyInfoInputs.cache
-/workspace/tests/Nexo.Shared.Tests/obj/Release/netstandard2.0/Nexo.Shared.Tests.AssemblyInfo.cs
-/workspace/tests/Nexo.Shared.Tests/obj/Release/netstandard2.0/Nexo.Shared.Tests.csproj.CoreCompileInputs.cache
