@@ -42,7 +42,7 @@ namespace Nexo.Feature.Analysis.UseCases
             _architectureAnalyzer = architectureAnalyzer;
         }
 
-        public async Task<CommandValidationResult> ValidateAsync(IPipelineContext context)
+        public Task<CommandValidationResult> ValidateAsync(IPipelineContext context)
         {
             try
             {
@@ -50,37 +50,37 @@ namespace Nexo.Feature.Analysis.UseCases
 
                 if (context == null)
                 {
-                    return CommandValidationResult.Invalid("Pipeline context is required");
+                    return Task.FromResult(CommandValidationResult.Invalid("Pipeline context is required"));
                 }
 
                 // Check if analysis request is available in context
                 if (!context.HasValue("AnalysisRequest"))
                 {
-                    return CommandValidationResult.Invalid("AnalysisRequest not found in pipeline context");
+                    return Task.FromResult(CommandValidationResult.Invalid("AnalysisRequest not found in pipeline context"));
                 }
 
                 var request = context.GetValue<AnalysisRequest>("AnalysisRequest");
                 if (request == null)
                 {
-                    return CommandValidationResult.Invalid("Invalid AnalysisRequest in pipeline context");
+                    return Task.FromResult(CommandValidationResult.Invalid("Invalid AnalysisRequest in pipeline context"));
                 }
 
                 if (string.IsNullOrEmpty(request.TargetPath))
                 {
-                    return CommandValidationResult.Invalid("Target path is required for analysis");
+                    return Task.FromResult(CommandValidationResult.Invalid("Target path is required for analysis"));
                 }
 
                 _logger.LogInformation("AnalysisPipelineCommand validation successful");
-                return CommandValidationResult.Valid();
+                return Task.FromResult(CommandValidationResult.Valid());
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating AnalysisPipelineCommand");
-                return CommandValidationResult.Invalid($"Validation error: {ex.Message}");
+                return Task.FromResult(CommandValidationResult.Invalid($"Validation error: {ex.Message}"));
             }
         }
 
-        public async Task<Nexo.Feature.Pipeline.Models.CommandResult> ExecuteAsync(IPipelineContext context)
+        public Task<Nexo.Feature.Pipeline.Models.CommandResult> ExecuteAsync(IPipelineContext context)
         {
             var startTime = DateTime.UtcNow;
             
@@ -89,6 +89,11 @@ namespace Nexo.Feature.Analysis.UseCases
                 _logger.LogInformation("Executing AnalysisPipelineCommand");
 
                 var request = context.GetValue<AnalysisRequest>("AnalysisRequest");
+                if (request == null)
+                {
+                    return Task.FromResult(Nexo.Feature.Pipeline.Models.CommandResult.Failure("AnalysisRequest not found in context", null, 0, DateTime.UtcNow, DateTime.UtcNow));
+                }
+                
                 var results = new List<string>();
 
                 // Perform code analysis
@@ -115,8 +120,8 @@ namespace Nexo.Feature.Analysis.UseCases
 
                 _logger.LogInformation("AnalysisPipelineCommand executed successfully in {ExecutionTime}ms", executionTime);
 
-                return Nexo.Feature.Pipeline.Models.CommandResult.Success(results, executionTime, startTime, endTime)
-                    .AddInformation($"Analyzed {results.Count} aspects of the codebase");
+                return Task.FromResult(Nexo.Feature.Pipeline.Models.CommandResult.Success(results, executionTime, startTime, endTime)
+                    .AddInformation($"Analyzed {results.Count} aspects of the codebase"));
             }
             catch (Exception ex)
             {
@@ -124,11 +129,11 @@ namespace Nexo.Feature.Analysis.UseCases
                 var executionTime = (long)(endTime - startTime).TotalMilliseconds;
                 
                 _logger.LogError(ex, "Error executing AnalysisPipelineCommand");
-                return Nexo.Feature.Pipeline.Models.CommandResult.Failure($"Analysis execution failed: {ex.Message}", ex, executionTime, startTime, endTime);
+                return Task.FromResult(Nexo.Feature.Pipeline.Models.CommandResult.Failure($"Analysis execution failed: {ex.Message}", ex, executionTime, startTime, endTime));
             }
         }
 
-        public async Task CleanupAsync(IPipelineContext context)
+        public Task CleanupAsync(IPipelineContext context)
         {
             try
             {
@@ -141,10 +146,12 @@ namespace Nexo.Feature.Analysis.UseCases
                 }
                 
                 _logger.LogInformation("AnalysisPipelineCommand cleanup completed");
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during AnalysisPipelineCommand cleanup");
+                return Task.CompletedTask;
             }
         }
 

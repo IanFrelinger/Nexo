@@ -15,6 +15,7 @@ namespace FeatureFactoryDemo.Data
         public DbSet<CommandHistory> CommandHistories { get; set; }
         public DbSet<CodebaseContext> CodebaseContexts { get; set; }
         public DbSet<CodePattern> CodePatterns { get; set; }
+        public DbSet<E2ETestHistory> E2ETestHistories { get; set; }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,6 +48,18 @@ namespace FeatureFactoryDemo.Data
                 entity.HasIndex(e => e.UsageCount);
                 entity.HasIndex(e => e.SuccessRate);
                 entity.Property(e => e.Template).HasColumnType("TEXT");
+            });
+            
+            // Configure E2ETestHistory
+            modelBuilder.Entity<E2ETestHistory>(entity =>
+            {
+                entity.HasIndex(e => e.Platform);
+                entity.HasIndex(e => e.GeneratedAt);
+                entity.HasIndex(e => e.ExecutedAt);
+                entity.HasIndex(e => e.IsSuccessful);
+                entity.Property(e => e.GeneratedCode).HasColumnType("TEXT");
+                entity.Property(e => e.TestSuite).HasColumnType("TEXT");
+                entity.Property(e => e.TestResult).HasColumnType("TEXT");
             });
         }
     }

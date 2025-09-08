@@ -57,7 +57,10 @@ namespace Nexo.Infrastructure.Services.Resource
                 {
                     if (!await ShouldApplyRuleAsync(rule, systemResourceUsage)) continue;
                     var recommendation = await ApplyOptimizationRuleAsync(rule, systemResourceUsage);
-                    optimizationResult.Recommendations.Add(recommendation);
+                    if (recommendation != null)
+                    {
+                        optimizationResult.Recommendations.Add(recommendation);
+                    }
                 }
 
                 // Convert SystemResourceUsage to ResourceUsage for history

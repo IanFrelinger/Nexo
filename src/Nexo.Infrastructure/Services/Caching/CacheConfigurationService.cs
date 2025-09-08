@@ -26,7 +26,7 @@ namespace Nexo.Infrastructure.Services.Caching
         /// <typeparam name="TKey">The type of the cache key.</typeparam>
         /// <typeparam name="TValue">The type of the cached value.</typeparam>
         /// <returns>A configured cache strategy instance.</returns>
-        public new ICacheStrategy<TKey, TValue> CreateCacheStrategy<TKey, TValue>()
+        public new ICacheStrategy<TKey, TValue> CreateCacheStrategy<TKey, TValue>() where TKey : notnull
         {
             var backend = GetSettings().Backend?.ToLowerInvariant();
             if (backend == "redis")
@@ -48,7 +48,7 @@ namespace Nexo.Infrastructure.Services.Caching
         /// <typeparam name="TKey">The type of the cache key.</typeparam>
         /// <typeparam name="TValue">The type of the cached value.</typeparam>
         /// <returns>An in-memory cache strategy configured with the specified TTL.</returns>
-        private ICacheStrategy<TKey, TValue> CreateInMemoryCacheStrategy<TKey, TValue>()
+        private ICacheStrategy<TKey, TValue> CreateInMemoryCacheStrategy<TKey, TValue>() where TKey : notnull
         {
             var settings = GetSettings();
             var ttl = settings.DefaultTtlSeconds > 0 

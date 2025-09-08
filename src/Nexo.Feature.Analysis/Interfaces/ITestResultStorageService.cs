@@ -28,8 +28,8 @@ namespace Nexo.Feature.Analysis.Interfaces
         Task<List<TestResultAggregation>> GetTestResultsAsync(
             DateTime startDate, 
             DateTime endDate, 
-            string environment = null, 
-            string project = null);
+            string? environment = null, 
+            string? project = null);
 
         /// <summary>
         /// Gets test result trends over time.
@@ -37,7 +37,7 @@ namespace Nexo.Feature.Analysis.Interfaces
         /// <param name="days">Number of days to analyze.</param>
         /// <param name="environment">Optional environment filter.</param>
         /// <returns>Test result trends.</returns>
-        Task<TestResultTrends> GetTestResultTrendsAsync(int days = 30, string environment = null);
+        Task<TestResultTrends> GetTestResultTrendsAsync(int days = 30, string? environment = null);
 
         /// <summary>
         /// Gets performance metrics for test execution.
@@ -45,7 +45,7 @@ namespace Nexo.Feature.Analysis.Interfaces
         /// <param name="days">Number of days to analyze.</param>
         /// <param name="environment">Optional environment filter.</param>
         /// <returns>Performance metrics.</returns>
-        Task<TestPerformanceMetrics> GetPerformanceMetricsAsync(int days = 30, string environment = null);
+        Task<TestPerformanceMetrics> GetPerformanceMetricsAsync(int days = 30, string? environment = null);
 
         /// <summary>
         /// Cleans up old test result files.

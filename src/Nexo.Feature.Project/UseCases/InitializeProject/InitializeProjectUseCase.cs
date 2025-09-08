@@ -95,11 +95,12 @@ namespace Nexo.Core.Application.UseCases.InitializeProject
         /// <exception cref="ArgumentException">Thrown if the provided container runtime is invalid.</exception>
         /// <exception cref="InvalidOperationException">Thrown if the target project already exists and overwriting is not permitted.</exception>
         /// <exception cref="Exception">Thrown if project initialization fails, along with rollback errors if applicable.</exception>
-        public async Task ExecuteAsync(string projectName, string projectPath, CancellationToken cancellationToken = default(CancellationToken))
+        public Task ExecuteAsync(string projectName, string projectPath, CancellationToken cancellationToken = default(CancellationToken))
         {
             // Minimal implementation for C# 7.3 compatibility
             _logger.LogInformation("Initializing project: {Name} at {Path}", projectName, projectPath);
             // Add your initialization logic here, or adapt from the previous method
+            return Task.CompletedTask;
         }
     }
 }

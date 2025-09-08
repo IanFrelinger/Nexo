@@ -46,7 +46,7 @@ namespace Nexo.Feature.Pipeline.Services
 
         public void SetValue<T>(string key, T value)
         {
-            Settings[key] = value;
+            Settings[key] = value!;
         }
 
         public IEnumerable<string> GetKeys()

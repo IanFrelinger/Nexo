@@ -226,7 +226,7 @@ namespace Nexo.Feature.Analysis.UseCases
             return false;
         }
 
-        public async Task<BehaviorExecutionPlan> GetExecutionPlanAsync(IPipelineContext context)
+        public Task<BehaviorExecutionPlan> GetExecutionPlanAsync(IPipelineContext context)
         {
             try
             {
@@ -240,12 +240,12 @@ namespace Nexo.Feature.Analysis.UseCases
                 };
 
                 _logger.LogInformation("Generated execution plan with {CommandCount} commands", _commands.Count);
-                return plan;
+                return Task.FromResult(plan);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating execution plan for AnalysisPipelineBehavior");
-                throw;
+                return Task.FromException<BehaviorExecutionPlan>(ex);
             }
         }
     }

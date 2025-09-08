@@ -207,7 +207,7 @@ namespace Nexo.Feature.Analysis.Services
                 CreateNoWindow = true
             };
 
-            Process process = null;
+            Process? process = null;
             try
             {
                 process = new Process { StartInfo = startInfo };

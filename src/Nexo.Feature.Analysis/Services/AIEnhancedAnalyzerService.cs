@@ -52,7 +52,7 @@ namespace Nexo.Feature.Analysis.Services
                     return new List<string> { "No code provided for analysis" };
                 }
 
-                var prompt = CreateAnalysisPrompt(code, context);
+                var prompt = CreateAnalysisPrompt(code, context ?? new Dictionary<string, object>());
                 var request = new ModelRequest
                 {
                     Input = prompt,
@@ -62,6 +62,10 @@ namespace Nexo.Feature.Analysis.Services
 
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("code analysis", ModelType.TextGeneration, cancellationToken);
+                if (model == null)
+                {
+                    return new List<string> { "No suitable model available for code analysis" };
+                }
                 var response = await model.ExecuteAsync(request, cancellationToken);
                 return ParseSuggestions(response.Response);
             }
@@ -93,6 +97,10 @@ namespace Nexo.Feature.Analysis.Services
 
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("architectural analysis", ModelType.TextGeneration, cancellationToken);
+                if (model == null)
+                {
+                    return new List<string> { "No suitable model available for architectural analysis" };
+                }
                 var response = await model.ExecuteAsync(request, cancellationToken);
                 return ParseSuggestions(response.Response);
             }
@@ -119,6 +127,10 @@ namespace Nexo.Feature.Analysis.Services
 
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("performance analysis", ModelType.TextGeneration, cancellationToken);
+                if (model == null)
+                {
+                    return new List<string> { "No suitable model available for performance analysis" };
+                }
                 var response = await model.ExecuteAsync(request, cancellationToken);
                 return ParseSuggestions(response.Response);
             }
@@ -145,6 +157,10 @@ namespace Nexo.Feature.Analysis.Services
 
                 // Get the best model for the task
                 var model = await _modelOrchestrator.GetBestModelForTaskAsync("security analysis", ModelType.TextGeneration, cancellationToken);
+                if (model == null)
+                {
+                    return new List<string> { "No suitable model available for security analysis" };
+                }
                 var response = await model.ExecuteAsync(request, cancellationToken);
                 return ParseSuggestions(response.Response);
             }

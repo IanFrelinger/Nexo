@@ -196,7 +196,7 @@ namespace Nexo.Infrastructure.Services.AI
             _logger.LogInformation("Getting mock model info: {ModelName}", modelName);
             await Task.CompletedTask;
             
-            ModelInfo modelInfo;
+            ModelInfo? modelInfo;
             return _mockModels.TryGetValue(modelName, out modelInfo) ? modelInfo : new ModelInfo { Name = modelName, IsAvailable = false };
         }
 

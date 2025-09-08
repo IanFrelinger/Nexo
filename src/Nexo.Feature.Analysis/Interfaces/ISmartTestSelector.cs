@@ -140,7 +140,7 @@ namespace Nexo.Feature.Analysis.Interfaces
         /// <summary>
         /// Detailed test impact analysis.
         /// </summary>
-        public TestImpactAnalysis ImpactAnalysis { get; set; }
+        public TestImpactAnalysis ImpactAnalysis { get; set; } = new TestImpactAnalysis();
 
         /// <summary>
         /// Changed files that were analyzed.

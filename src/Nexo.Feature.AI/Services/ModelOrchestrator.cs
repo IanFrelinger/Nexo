@@ -72,14 +72,14 @@ public class ModelOrchestrator : IModelOrchestrator
         if (!suitableProviders.Any())
         {
             _logger.LogWarning("No providers found for task: {Task} with model type: {ModelType}", task, modelType);
-            return Task.FromResult<IModelProvider>(null!);
+            return Task.FromResult<IModelProvider?>(null);
         }
 
         // Simple selection logic - in a real implementation, this would be more sophisticated
         var bestProvider = suitableProviders.First();
         _logger.LogDebug("Selected provider {ProviderName} for task: {Task}", bestProvider.DisplayName, task);
         
-        return Task.FromResult(bestProvider);
+        return Task.FromResult<IModelProvider?>(bestProvider);
     }
 
     private async Task<IModelProvider?> GetBestProviderForRequest(ModelRequest request, CancellationToken cancellationToken)

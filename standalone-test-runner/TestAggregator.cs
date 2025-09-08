@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace StandaloneTestRunner
 {
@@ -150,11 +152,16 @@ namespace StandaloneTestRunner
                 )
             };
 
+            // Add logging tests
+            var loggingTestSuite = new LoggingTestSuite(_verbose);
+            var loggingTests = loggingTestSuite.DiscoverLoggingTests();
+            defaultTests.AddRange(loggingTests);
+
             AddTests(defaultTests);
             
             if (_verbose)
             {
-                Console.WriteLine($"Discovered and added {defaultTests.Count} default tests");
+                Console.WriteLine($"Discovered and added {defaultTests.Count} default tests ({loggingTests.Count} logging tests)");
             }
         }
 
@@ -440,6 +447,7 @@ namespace StandaloneTestRunner
                 "aggregator-performance-test" => RunPerformanceTest(),
                 "aggregator-integration-test" => RunIntegrationTest(),
                 "aggregator-security-test" => RunSecurityTest(),
+                _ when testId.StartsWith("logging-") => RunLoggingTest(testId), // Handle logging tests
                 _ when testId.StartsWith("large-test-") => RunGenericTest(), // Handle large test collection
                 _ when testId.StartsWith("smoke-") => RunGenericTest(), // Handle smoke tests
                 _ => RunGenericTest() // Default fallback for any unknown test
@@ -487,6 +495,23 @@ namespace StandaloneTestRunner
         {
             Thread.Sleep(500); // Simulate some work for generic tests
             return true;
+        }
+
+        private bool RunLoggingTest(string testId)
+        {
+            try
+            {
+                var loggingTestSuite = new LoggingTestSuite(_verbose);
+                return loggingTestSuite.ExecuteLoggingTest(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"Logging test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
         }
     }
 

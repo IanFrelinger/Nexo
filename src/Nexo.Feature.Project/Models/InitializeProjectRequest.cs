@@ -21,8 +21,8 @@ namespace Nexo.Core.Application.Models
             string path,
             string runtime,
             bool force = false,
-            IEnumerable<string> agentIds = null,
-            IDictionary<string, object> metadata = null)
+            IEnumerable<string>? agentIds = null,
+            IDictionary<string, object>? metadata = null)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Project name cannot be null or whitespace", nameof(name));

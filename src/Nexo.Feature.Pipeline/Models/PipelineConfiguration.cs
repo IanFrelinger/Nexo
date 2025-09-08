@@ -114,7 +114,7 @@ namespace Nexo.Feature.Pipeline.Models
 
         public void SetValue<T>(string key, T value)
         {
-            Variables[key] = value;
+            Variables[key] = value!;
         }
 
         public IEnumerable<string> GetKeys()

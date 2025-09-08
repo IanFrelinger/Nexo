@@ -25,9 +25,11 @@ namespace FeatureFactoryDemo.Commands
             // Register commands
             _commands["analyze"] = new AnalyzeCommand(serviceProvider, serviceProvider.GetRequiredService<ILogger<AnalyzeCommand>>());
             _commands["generate"] = new GenerateCommand(serviceProvider, serviceProvider.GetRequiredService<ILogger<GenerateCommand>>());
+            _commands["generate-e2e"] = new GenerateWithE2ECommand(serviceProvider, serviceProvider.GetRequiredService<ILogger<GenerateWithE2ECommand>>());
             _commands["validate"] = new ValidateCommand(serviceProvider, serviceProvider.GetRequiredService<ILogger<ValidateCommand>>());
             _commands["stats"] = new StatsCommand(serviceProvider, serviceProvider.GetRequiredService<ILogger<StatsCommand>>());
             _commands["help"] = new HelpCommand(serviceProvider, serviceProvider.GetRequiredService<ILogger<HelpCommand>>(), _commands);
+            _commands["test-logging"] = new LoggingTestCommand(serviceProvider, serviceProvider.GetRequiredService<ILogger<LoggingTestCommand>>());
             
             _logger.LogInformation("Registered {CommandCount} commands", _commands.Count);
         }

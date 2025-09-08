@@ -13,3 +13,11 @@
 /Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/obj/Debug/net8.0/standalone-test-runner.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/obj/Debug/net8.0/standalone-test-runner.genruntimeconfig.cache
 /Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/obj/Debug/net8.0/ref/standalone-test-runner.dll
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.dll
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/bin/Debug/net8.0/Microsoft.Extensions.Logging.dll
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/bin/Debug/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/bin/Debug/net8.0/Microsoft.Extensions.Options.dll
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/bin/Debug/net8.0/Microsoft.Extensions.Primitives.dll
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/obj/Debug/net8.0/standalone-test-runner.csproj.AssemblyReference.cache
+/Users/ianfrelinger/RiderProjects/Nexo/standalone-test-runner/obj/Debug/net8.0/standalo.CCBBC295.Up2Date

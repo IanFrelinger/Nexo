@@ -36,7 +36,7 @@ namespace Nexo.Feature.Template.Services
 
             try
             {
-                var prompt = CreateTemplateGenerationPrompt(description, parameters);
+                var prompt = CreateTemplateGenerationPrompt(description, parameters ?? new Dictionary<string, object>());
                 var request = new ModelRequest
                 {
                     Input = prompt,
@@ -139,7 +139,7 @@ namespace Nexo.Feature.Template.Services
                     return new List<string> { "No template provided for improvement suggestions" };
                 }
 
-                var prompt = CreateTemplateImprovementPrompt(template, context);
+                var prompt = CreateTemplateImprovementPrompt(template, context ?? new Dictionary<string, object>());
                 var request = new ModelRequest
                 {
                     Input = prompt,

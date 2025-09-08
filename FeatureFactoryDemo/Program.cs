@@ -776,6 +776,7 @@ public class BadExample
         services.AddScoped<CommandHistoryService>();
         services.AddScoped<CodebaseAnalysisService>();
         services.AddScoped<FeatureValidationService>();
+        services.AddScoped<E2ETestGeneratorService>();
         services.AddScoped<CommandManager>();
         
         var serviceProvider = services.BuildServiceProvider();

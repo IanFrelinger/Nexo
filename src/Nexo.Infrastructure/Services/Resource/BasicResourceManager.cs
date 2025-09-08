@@ -37,9 +37,12 @@ public class BasicResourceManager : IResourceManager
         // Initialize performance counters (if available)
         try
         {
-            _cpuCounter = new PerformanceCounter($"Processor", "% Processor Time", "_Total");
-            _memoryCounter = new PerformanceCounter("Memory", "Available MBytes");
-            _logger.LogInformation("Performance counters initialized successfully");
+            if (OperatingSystem.IsWindows())
+            {
+                _cpuCounter = new PerformanceCounter($"Processor", "% Processor Time", "_Total");
+                _memoryCounter = new PerformanceCounter("Memory", "Available MBytes");
+                _logger.LogInformation("Performance counters initialized successfully");
+            }
         }
         catch (Exception ex)
         {
@@ -461,7 +464,7 @@ public class BasicResourceManager : IResourceManager
         try
         {
             // Update CPU and memory metrics
-            if (_cpuCounter != null)
+            if (_cpuCounter != null && OperatingSystem.IsWindows())
             {
                 var cpuUsage = _cpuCounter.NextValue();
                 if (!_metrics.ContainsKey(ResourceType.CPU))
@@ -471,7 +474,7 @@ public class BasicResourceManager : IResourceManager
                 _metrics[ResourceType.CPU].PeakUtilization = Math.Max(_metrics[ResourceType.CPU].PeakUtilization, cpuUsage);
             }
 
-            if (_memoryCounter is not null)
+            if (_memoryCounter is not null && OperatingSystem.IsWindows())
             {
                 var availableMemory = _memoryCounter.NextValue();
                 // Convert to utilization percentage (assuming total memory from limits)

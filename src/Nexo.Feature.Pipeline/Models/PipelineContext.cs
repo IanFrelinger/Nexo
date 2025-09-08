@@ -50,7 +50,7 @@ namespace Nexo.Feature.Pipeline.Models
 
         public void SetValue<T>(string key, T value)
         {
-            SharedData[key] = value;
+            SharedData[key] = value!;
         }
 
         public bool RemoveValue(string key)

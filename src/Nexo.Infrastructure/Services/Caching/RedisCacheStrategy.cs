@@ -29,13 +29,13 @@ namespace Nexo.Infrastructure.Services.Caching
             {
                 var redisKey = GetRedisKey(key);
                 var value = await _database.StringGetAsync(redisKey);
-                return value.HasValue ? JsonSerializer.Deserialize<TValue>(value, _jsonOptions) : default(TValue);
+                return value.HasValue ? JsonSerializer.Deserialize<TValue>(value!, _jsonOptions) ?? default(TValue)! : default(TValue)!;
             }
             catch (Exception ex)
             {
                 // Log error and return default
                 Console.WriteLine($"[RedisCacheStrategy] Error getting key {key}: {ex.Message}");
-                return default(TValue);
+                return default(TValue)!;
             }
         }
 

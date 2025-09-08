@@ -52,7 +52,7 @@ namespace Nexo.Infrastructure.Services.Resource
             
             try
             {
-                if (_cpuCounter != null)
+                if (_cpuCounter != null && OperatingSystem.IsWindows())
                 {
                     // Use performance counter on Windows
                     return await Task.FromResult(_cpuCounter.NextValue());

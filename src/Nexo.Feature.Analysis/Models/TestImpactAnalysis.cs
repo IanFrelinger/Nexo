@@ -121,7 +121,7 @@ namespace Nexo.Feature.Analysis.Models
         /// </summary>
         /// <param name="filePath">Test file path.</param>
         /// <returns>Test node or null if not found.</returns>
-        public TestNode GetNode(string filePath)
+        public TestNode? GetNode(string filePath)
         {
             return Nodes.FirstOrDefault(n => n.FilePath == filePath);
         }
