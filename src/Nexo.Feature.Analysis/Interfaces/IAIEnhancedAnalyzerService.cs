@@ -16,6 +16,6 @@ namespace Nexo.Feature.Analysis.Interfaces
         /// <param name="context">Optional context or metadata for the analysis engine.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A list of AI-generated suggestions.</returns>
-        Task<IList<string>> GetAISuggestionsAsync(string code, IDictionary<string, object> context = null, CancellationToken cancellationToken = default);
+        Task<IList<string>> GetAISuggestionsAsync(string code, IDictionary<string, object>? context = null, CancellationToken cancellationToken = default);
     }
 } 

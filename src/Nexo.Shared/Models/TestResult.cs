@@ -28,7 +28,7 @@ namespace Nexo.Shared.Models
         /// <summary>
         /// Gets or sets the test output.
         /// </summary>
-        public string Output { get; set; }
+        public string Output { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the execution time in milliseconds.

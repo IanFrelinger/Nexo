@@ -94,7 +94,7 @@ public class OllamaModelProvider : IModelProvider
         return new OllamaModel(modelName, _httpClient, _logger);
     }
 
-    public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<ModelInfo?> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
         var models = await GetAvailableModelsAsync(cancellationToken);
         return models.FirstOrDefault(m => m.Name == modelName);

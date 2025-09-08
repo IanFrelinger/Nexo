@@ -132,6 +132,9 @@ namespace Nexo.CLI
             services.AddTransient<ITemplateService, TemplateService>();
             services.AddTransient<IIntelligentTemplateService, IntelligentTemplateService>();
 
+            // Add Analysis feature services including coding standards
+            services.AddAnalysisFeature();
+
             // Add Phase 4: Development Acceleration services
             services.AddTransient<IAdvancedCachingService, AdvancedCachingService>();
             services.AddTransient<IParallelProcessingOptimizer, ParallelProcessingOptimizer>();

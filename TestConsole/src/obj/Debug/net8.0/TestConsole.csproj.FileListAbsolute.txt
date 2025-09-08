@@ -54,3 +54,5 @@
 /Users/ianfrelinger/RiderProjects/Nexo/TestConsole/src/bin/Debug/net8.0/Nexo.Feature.Pipeline.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/TestConsole/src/bin/Debug/net8.0/Nexo.Core.Domain.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/TestConsole/src/bin/Debug/net8.0/Nexo.Shared.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/TestConsole/src/obj/Debug/net8.0/TestConsole.sourcelink.json
+/Users/ianfrelinger/RiderProjects/Nexo/TestConsole/src/bin/Debug/net8.0/JetBrains.Annotations.dll

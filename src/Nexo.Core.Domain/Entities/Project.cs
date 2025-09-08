@@ -132,7 +132,7 @@ public sealed class Project
     /// </summary>
     /// <param name="agentId">The identifier of the agent to retrieve.</param>
     /// <returns>The agent associated with the specified ID if found; otherwise, null.</returns>
-    public Agent GetAgent(AgentId agentId) =>
+    public Agent? GetAgent(AgentId agentId) =>
         _agents.FirstOrDefault(a => a.Id == agentId);
 
     /// <summary>
@@ -248,7 +248,7 @@ public sealed class Project
             return typedValue;
         }
 
-        return default(T);
+        return default(T)!;
     }
 
     /// <summary>

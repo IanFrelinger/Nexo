@@ -12,7 +12,7 @@ namespace Nexo.Shared.Models
         public bool IsSuccess { get; set; }
         public int FilesSynchronized { get; set; }
         public int FilesFailed { get; set; }
-        public string ErrorMessage { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
         public long ExecutionTimeMs { get; set; }
         public List<string> SynchronizedFiles { get; set; } = new List<string>();
         public List<string> FailedFiles { get; set; } = new List<string>();

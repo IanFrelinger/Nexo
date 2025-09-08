@@ -185,7 +185,7 @@ namespace Nexo.Core.Domain.Entities
         /// </summary>
         /// <param name="taskId">The unique identifier of the task to retrieve.</param>
         /// <returns>The matching <see cref="SprintTask"/> if found; otherwise, null.</returns>
-        public SprintTask GetTask(string taskId) =>
+        public SprintTask? GetTask(string taskId) =>
             _tasks.FirstOrDefault(t => t.Id == taskId);
 
         /// <summary>

@@ -190,7 +190,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineExecutionMetrics> GetPipelineMetricsAsync(
+        public Task<PipelineExecutionMetrics> GetPipelineMetricsAsync(
             string executionId,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -202,14 +202,14 @@ namespace Nexo.Feature.Pipeline.Services
             try
             {
                 // For now, return basic metrics
-                return new PipelineExecutionMetrics
+                return Task.FromResult(new PipelineExecutionMetrics
                 {
                     TotalExecutionTimeMs = 300000, // 5 minutes
                     MemoryUsageBytes = 1024 * 1024, // 1 MB
                     CpuUsagePercentage = 50.0,
                     StartTime = DateTime.UtcNow.AddMinutes(-5),
                     EndTime = DateTime.UtcNow
-                };
+                });
             }
             catch (Exception ex)
             {
@@ -218,7 +218,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<bool> CancelPipelineAsync(
+        public Task<bool> CancelPipelineAsync(
             string executionId,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -230,7 +230,7 @@ namespace Nexo.Feature.Pipeline.Services
             try
             {
                 // For now, return true to indicate successful cancellation
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
@@ -239,7 +239,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineExecutionStatus> GetPipelineStatusAsync(
+        public Task<PipelineExecutionStatus> GetPipelineStatusAsync(
             string executionId,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -251,7 +251,7 @@ namespace Nexo.Feature.Pipeline.Services
             try
             {
                 // For now, return a default status since GetStatusAsync is not implemented
-                return PipelineExecutionStatus.Completed;
+                return Task.FromResult(PipelineExecutionStatus.Completed);
             }
             catch (Exception ex)
             {
@@ -260,13 +260,13 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineHealthStatus> GetPipelineHealthAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<PipelineHealthStatus> GetPipelineHealthAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.LogInformation("Getting pipeline health status");
 
             try
             {
-                return new PipelineHealthStatus
+                return Task.FromResult(new PipelineHealthStatus
                 {
                     LastHealthCheck = DateTime.UtcNow,
                     OverallHealth = true,
@@ -278,7 +278,7 @@ namespace Nexo.Feature.Pipeline.Services
                     ActiveExecutions = _activeExecutions.Count,
                     Issues = new List<string>(),
                     Metrics = new Dictionary<string, object>()
-                };
+                });
             }
             catch (Exception ex)
             {

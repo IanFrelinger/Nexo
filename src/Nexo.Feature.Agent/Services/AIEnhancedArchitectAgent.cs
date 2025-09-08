@@ -156,8 +156,8 @@ namespace Nexo.Feature.Agent.Services
             if (request.Context?.ContainsKey("architecture_diagram") != true &&
                 request.Context?.ContainsKey("system_description") != true) return response;
             var architectureInfo = request.Context.TryGetValue("architecture_diagram", out var value)
-                ? value.ToString()
-                : request.Context["system_description"].ToString();
+                ? value?.ToString() ?? "No architecture diagram provided"
+                : request.Context["system_description"]?.ToString() ?? "No system description provided";
                 
             var reviewResult = await PerformArchitectureReviewAsync(architectureInfo, ct);
             response = new AgentResponse
@@ -184,7 +184,7 @@ namespace Nexo.Feature.Agent.Services
             };
 
             if (request.Context == null || !request.Context.TryGetValue("requirements", out var value)) return response;
-            var requirements = value.ToString();
+            var requirements = value?.ToString() ?? "No requirements provided";
             var systemDesign = await GenerateSystemDesignAsync(requirements, ct);
             response = new AgentResponse
             {
@@ -218,8 +218,8 @@ namespace Nexo.Feature.Agent.Services
             if (request.Context?.ContainsKey("requirements") != true ||
                 (request.Context == null || !request.Context.TryGetValue("constraints", out var value)))
                 return response;
-            var requirements = request.Context["requirements"].ToString();
-            var constraints = value.ToString();
+            var requirements = request.Context["requirements"]?.ToString() ?? "No requirements provided";
+            var constraints = value?.ToString() ?? "No constraints provided";
             var technologyRecommendations = await AnalyzeTechnologyOptionsAsync(requirements, constraints, ct);
             response = new AgentResponse
             {
@@ -247,8 +247,8 @@ namespace Nexo.Feature.Agent.Services
             if (request.Context?.ContainsKey("current_architecture") != true ||
                 (request.Context == null || !request.Context.TryGetValue("scaling_requirements", out var value)))
                 return response;
-            var currentArchitecture = request.Context["current_architecture"].ToString();
-            var scalingRequirements = value.ToString();
+            var currentArchitecture = request.Context["current_architecture"]?.ToString() ?? "No current architecture provided";
+            var scalingRequirements = value?.ToString() ?? "No scaling requirements provided";
             var scalabilityAnalysis = await AnalyzeScalabilityAsync(currentArchitecture, scalingRequirements, ct);
             response = new AgentResponse
             {
@@ -275,7 +275,7 @@ namespace Nexo.Feature.Agent.Services
 
             if (request.Context == null || !request.Context.TryGetValue("system_architecture", out var value))
                 return response;
-            var systemArchitecture = value.ToString();
+            var systemArchitecture = value?.ToString() ?? "No system architecture provided";
             var securityAnalysis = await PerformSecurityAnalysisAsync(systemArchitecture, ct);
             response = new AgentResponse
             {
@@ -310,7 +310,7 @@ namespace Nexo.Feature.Agent.Services
 
             if (request.Context == null || !request.Context.TryGetValue("systems_to_integrate", out var value))
                 return response;
-            var systemsToIntegrate = value.ToString();
+            var systemsToIntegrate = value?.ToString() ?? "No systems to integrate provided";
             var integrationDesign = await DesignIntegrationAsync(systemsToIntegrate, ct);
             response = new AgentResponse
             {
@@ -346,8 +346,8 @@ namespace Nexo.Feature.Agent.Services
             if (request.Context?.ContainsKey("system_architecture") != true ||
                 (request.Context == null || !request.Context.TryGetValue("performance_requirements", out var value)))
                 return response;
-            var systemArchitecture = request.Context["system_architecture"].ToString();
-            var performanceRequirements = value.ToString();
+            var systemArchitecture = request.Context["system_architecture"]?.ToString() ?? "No system architecture provided";
+            var performanceRequirements = value?.ToString() ?? "No performance requirements provided";
             var performanceAnalysis = await AnalyzePerformanceAsync(systemArchitecture, performanceRequirements, ct);
             response = new AgentResponse
             {
@@ -375,8 +375,8 @@ namespace Nexo.Feature.Agent.Services
             if (request.Context?.ContainsKey("current_system") != true ||
                 (request.Context == null || !request.Context.TryGetValue("target_architecture", out var value)))
                 return response;
-            var currentSystem = request.Context["current_system"].ToString();
-            var targetArchitecture = value.ToString();
+            var currentSystem = request.Context["current_system"]?.ToString() ?? "No current system provided";
+            var targetArchitecture = value?.ToString() ?? "No target architecture provided";
             var migrationStrategy = await GenerateMigrationStrategyAsync(currentSystem, targetArchitecture, ct);
             response = new AgentResponse
             {

@@ -219,7 +219,7 @@ namespace Nexo.Core.Domain.Composition
         /// <returns>A combined validation result</returns>
         public static ValidationResult ValidateAll(params T[] valueObjects)
         {
-            var results = valueObjects?.Select(vo => vo?.Validate()) ?? Array.Empty<ValidationResult>();
+            var results = valueObjects?.Select(vo => vo?.Validate()).Where(r => r != null).Cast<ValidationResult>() ?? Array.Empty<ValidationResult>();
             return ValidationResult.Combine(results.ToArray());
         }
         

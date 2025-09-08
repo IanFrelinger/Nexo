@@ -10,8 +10,8 @@ namespace Nexo.Feature.Platform.Models
     public class IOSCodeGenerationResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
-        public IOSGeneratedCode GeneratedCode { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public IOSGeneratedCode GeneratedCode { get; set; } = new IOSGeneratedCode();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
         public double GenerationScore { get; set; }
@@ -28,7 +28,7 @@ namespace Nexo.Feature.Platform.Models
         public List<SwiftUIFile> SwiftUIFiles { get; set; } = new List<SwiftUIFile>();
         public List<CoreDataFile> CoreDataFiles { get; set; } = new List<CoreDataFile>();
         public List<MetalFile> MetalFiles { get; set; } = new List<MetalFile>();
-        public IOSAppConfiguration AppConfiguration { get; set; }
+        public IOSAppConfiguration AppConfiguration { get; set; } = new IOSAppConfiguration();
         public List<IOSUIPattern> AppliedUIPatterns { get; set; } = new List<IOSUIPattern>();
         public List<IOSPerformanceOptimization> AppliedOptimizations { get; set; } = new List<IOSPerformanceOptimization>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -39,9 +39,9 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class SwiftFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public SwiftFileType FileType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -52,9 +52,9 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class SwiftUIFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public SwiftUIViewType ViewType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -65,9 +65,9 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class CoreDataFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public CoreDataFileType FileType { get; set; }
         public List<CoreDataEntity> Entities { get; set; } = new List<CoreDataEntity>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -78,9 +78,9 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class MetalFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public MetalFileType FileType { get; set; }
         public List<MetalGraphicsFeature> Features { get; set; } = new List<MetalGraphicsFeature>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -91,10 +91,10 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class IOSAppConfiguration
     {
-        public string AppName { get; set; }
-        public string BundleIdentifier { get; set; }
-        public string Version { get; set; }
-        public string BuildNumber { get; set; }
+        public string AppName { get; set; } = string.Empty;
+        public string BundleIdentifier { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public string BuildNumber { get; set; } = string.Empty;
         public List<string> SupportedDevices { get; set; } = new List<string>();
         public List<string> RequiredPermissions { get; set; } = new List<string>();
         public Dictionary<string, object> InfoPlist { get; set; } = new Dictionary<string, object>();
@@ -106,7 +106,7 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class CoreDataEntity
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public List<CoreDataAttribute> Attributes { get; set; } = new List<CoreDataAttribute>();
         public List<CoreDataRelationship> Relationships { get; set; } = new List<CoreDataRelationship>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -117,11 +117,11 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class CoreDataAttribute
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public CoreDataAttributeType Type { get; set; }
         public bool IsOptional { get; set; }
         public bool IsIndexed { get; set; }
-        public object DefaultValue { get; set; }
+        public object? DefaultValue { get; set; }
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
@@ -130,12 +130,12 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class CoreDataRelationship
     {
-        public string Name { get; set; }
-        public string DestinationEntity { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string DestinationEntity { get; set; } = string.Empty;
         public CoreDataRelationshipType Type { get; set; }
         public bool IsOptional { get; set; }
         public bool IsToMany { get; set; }
-        public string DeleteRule { get; set; }
+        public string DeleteRule { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
@@ -144,10 +144,10 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class IOSUIPattern
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public IOSUIPatternType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -158,10 +158,10 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class IOSPerformanceOptimization
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public IOSPerformanceType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public double PerformanceImpact { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
@@ -173,10 +173,10 @@ namespace Nexo.Feature.Platform.Models
     /// </summary>
     public class MetalGraphicsFeature
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public MetalGraphicsFeatureType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -186,7 +186,7 @@ namespace Nexo.Feature.Platform.Models
     public class CoreDataIntegrationResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<CoreDataFile> GeneratedFiles { get; set; } = new List<CoreDataFile>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -198,7 +198,7 @@ namespace Nexo.Feature.Platform.Models
     public class MetalGraphicsResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<MetalFile> GeneratedFiles { get; set; } = new List<MetalFile>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -210,7 +210,7 @@ namespace Nexo.Feature.Platform.Models
     public class IOSUIPatternResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<IOSUIPattern> GeneratedPatterns { get; set; } = new List<IOSUIPattern>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -222,7 +222,7 @@ namespace Nexo.Feature.Platform.Models
     public class IOSPerformanceResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<IOSPerformanceOptimization> GeneratedOptimizations { get; set; } = new List<IOSPerformanceOptimization>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -234,8 +234,8 @@ namespace Nexo.Feature.Platform.Models
     public class IOSAppConfigResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
-        public IOSAppConfiguration GeneratedConfiguration { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public IOSAppConfiguration GeneratedConfiguration { get; set; } = new IOSAppConfiguration();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
         public double ConfigurationScore { get; set; }
@@ -246,7 +246,7 @@ namespace Nexo.Feature.Platform.Models
     public class IOSCodeValidationResult
     {
         public bool IsValid { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<string> ValidationErrors { get; set; } = new List<string>();
         public List<string> ValidationWarnings { get; set; } = new List<string>();
         public double ValidationScore { get; set; }
@@ -328,8 +328,8 @@ namespace Nexo.Feature.Platform.Models
     public class AndroidCodeGenerationResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
-        public AndroidGeneratedCode GeneratedCode { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public AndroidGeneratedCode GeneratedCode { get; set; } = new AndroidGeneratedCode();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
         public double GenerationScore { get; set; }
@@ -343,7 +343,7 @@ namespace Nexo.Feature.Platform.Models
         public List<ComposeFile> ComposeFiles { get; set; } = new List<ComposeFile>();
         public List<RoomFile> RoomFiles { get; set; } = new List<RoomFile>();
         public List<CoroutinesFile> CoroutinesFiles { get; set; } = new List<CoroutinesFile>();
-        public AndroidAppConfiguration AppConfiguration { get; set; }
+        public AndroidAppConfiguration AppConfiguration { get; set; } = new AndroidAppConfiguration();
         public List<AndroidUIPattern> AppliedUIPatterns { get; set; } = new List<AndroidUIPattern>();
         public List<AndroidPerformanceOptimization> AppliedOptimizations { get; set; } = new List<AndroidPerformanceOptimization>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -351,9 +351,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class KotlinFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public KotlinFileType FileType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -361,9 +361,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class ComposeFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public ComposeViewType ViewType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -371,9 +371,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class RoomFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public RoomFileType FileType { get; set; }
         public List<RoomEntity> Entities { get; set; } = new List<RoomEntity>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -381,9 +381,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class CoroutinesFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public CoroutinesFileType FileType { get; set; }
         public List<KotlinCoroutinesFeature> Features { get; set; } = new List<KotlinCoroutinesFeature>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -391,9 +391,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class AndroidAppConfiguration
     {
-        public string AppName { get; set; }
-        public string PackageName { get; set; }
-        public string VersionName { get; set; }
+        public string AppName { get; set; } = string.Empty;
+        public string PackageName { get; set; } = string.Empty;
+        public string VersionName { get; set; } = string.Empty;
         public int VersionCode { get; set; }
         public int MinSdkVersion { get; set; }
         public int TargetSdkVersion { get; set; }
@@ -404,7 +404,7 @@ namespace Nexo.Feature.Platform.Models
 
     public class RoomEntity
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public List<RoomColumn> Columns { get; set; } = new List<RoomColumn>();
         public List<RoomRelationship> Relationships { get; set; } = new List<RoomRelationship>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -412,31 +412,31 @@ namespace Nexo.Feature.Platform.Models
 
     public class RoomColumn
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public RoomColumnType Type { get; set; }
         public bool IsPrimaryKey { get; set; }
         public bool IsNullable { get; set; }
-        public object DefaultValue { get; set; }
+        public object? DefaultValue { get; set; }
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     public class RoomRelationship
     {
-        public string Name { get; set; }
-        public string TargetEntity { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string TargetEntity { get; set; } = string.Empty;
         public RoomRelationshipType Type { get; set; }
         public bool IsNullable { get; set; }
         public bool IsToMany { get; set; }
-        public string OnDelete { get; set; }
+        public string OnDelete { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     }
 
     public class AndroidUIPattern
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public AndroidUIPatternType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -444,10 +444,10 @@ namespace Nexo.Feature.Platform.Models
 
     public class AndroidPerformanceOptimization
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public AndroidPerformanceType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public double PerformanceImpact { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
@@ -456,10 +456,10 @@ namespace Nexo.Feature.Platform.Models
 
     public class KotlinCoroutinesFeature
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public KotlinCoroutinesFeatureType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -469,7 +469,7 @@ namespace Nexo.Feature.Platform.Models
     public class RoomDatabaseResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<RoomFile> GeneratedFiles { get; set; } = new List<RoomFile>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -481,7 +481,7 @@ namespace Nexo.Feature.Platform.Models
     public class KotlinCoroutinesResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<CoroutinesFile> GeneratedFiles { get; set; } = new List<CoroutinesFile>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -493,7 +493,7 @@ namespace Nexo.Feature.Platform.Models
     public class AndroidUIPatternResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<AndroidUIPattern> GeneratedPatterns { get; set; } = new List<AndroidUIPattern>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -505,7 +505,7 @@ namespace Nexo.Feature.Platform.Models
     public class AndroidPerformanceResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<AndroidPerformanceOptimization> GeneratedOptimizations { get; set; } = new List<AndroidPerformanceOptimization>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -517,8 +517,8 @@ namespace Nexo.Feature.Platform.Models
     public class AndroidAppConfigResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
-        public AndroidAppConfiguration GeneratedConfiguration { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public AndroidAppConfiguration GeneratedConfiguration { get; set; } = new AndroidAppConfiguration();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
         public double ConfigurationScore { get; set; }
@@ -529,7 +529,7 @@ namespace Nexo.Feature.Platform.Models
     public class AndroidCodeValidationResult
     {
         public bool IsValid { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<string> ValidationErrors { get; set; } = new List<string>();
         public List<string> ValidationWarnings { get; set; } = new List<string>();
         public double ValidationScore { get; set; }
@@ -611,8 +611,8 @@ namespace Nexo.Feature.Platform.Models
     public class WebCodeGenerationResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
-        public WebGeneratedCode GeneratedCode { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public WebGeneratedCode GeneratedCode { get; set; } = new WebGeneratedCode();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
         public double GenerationScore { get; set; }
@@ -627,7 +627,7 @@ namespace Nexo.Feature.Platform.Models
         public List<CSSFile> CSSFiles { get; set; } = new List<CSSFile>();
         public List<HTMLFile> HTMLFiles { get; set; } = new List<HTMLFile>();
         public List<WebAssemblyFile> WebAssemblyFiles { get; set; } = new List<WebAssemblyFile>();
-        public WebAppConfiguration AppConfiguration { get; set; }
+        public WebAppConfiguration AppConfiguration { get; set; } = new WebAppConfiguration();
         public List<WebUIPattern> AppliedUIPatterns { get; set; } = new List<WebUIPattern>();
         public List<WebPerformanceOptimization> AppliedOptimizations { get; set; } = new List<WebPerformanceOptimization>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -635,9 +635,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class JavaScriptFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public JavaScriptFileType FileType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -645,9 +645,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class TypeScriptFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public TypeScriptFileType FileType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -655,9 +655,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class CSSFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public CSSFileType FileType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -665,9 +665,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class HTMLFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public HTMLFileType FileType { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -675,9 +675,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class WebAssemblyFile
     {
-        public string FileName { get; set; }
-        public string FilePath { get; set; }
-        public string Content { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
         public WebAssemblyFileType FileType { get; set; }
         public List<WebAssemblyFeature> Features { get; set; } = new List<WebAssemblyFeature>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -685,9 +685,9 @@ namespace Nexo.Feature.Platform.Models
 
     public class WebAppConfiguration
     {
-        public string AppName { get; set; }
-        public string AppVersion { get; set; }
-        public string Description { get; set; }
+        public string AppName { get; set; } = string.Empty;
+        public string AppVersion { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public List<string> SupportedBrowsers { get; set; } = new List<string>();
         public List<string> Features { get; set; } = new List<string>();
         public Dictionary<string, object> Manifest { get; set; } = new Dictionary<string, object>();
@@ -696,10 +696,10 @@ namespace Nexo.Feature.Platform.Models
 
     public class WebUIPattern
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public WebUIPatternType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -707,10 +707,10 @@ namespace Nexo.Feature.Platform.Models
 
     public class WebPerformanceOptimization
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public WebPerformanceType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public double PerformanceImpact { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
@@ -719,10 +719,10 @@ namespace Nexo.Feature.Platform.Models
 
     public class WebAssemblyFeature
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public WebAssemblyFeatureType Type { get; set; }
-        public string Implementation { get; set; }
+        public string Implementation { get; set; } = string.Empty;
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
@@ -732,7 +732,7 @@ namespace Nexo.Feature.Platform.Models
     public class WebAssemblyResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<WebAssemblyFile> GeneratedFiles { get; set; } = new List<WebAssemblyFile>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -744,7 +744,7 @@ namespace Nexo.Feature.Platform.Models
     public class ProgressiveWebAppResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<JavaScriptFile> GeneratedFiles { get; set; } = new List<JavaScriptFile>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -756,7 +756,7 @@ namespace Nexo.Feature.Platform.Models
     public class WebUIPatternResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<WebUIPattern> GeneratedPatterns { get; set; } = new List<WebUIPattern>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -768,7 +768,7 @@ namespace Nexo.Feature.Platform.Models
     public class WebPerformanceResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<WebPerformanceOptimization> GeneratedOptimizations { get; set; } = new List<WebPerformanceOptimization>();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
@@ -780,8 +780,8 @@ namespace Nexo.Feature.Platform.Models
     public class WebAppConfigResult
     {
         public bool IsSuccess { get; set; }
-        public string Message { get; set; }
-        public WebAppConfiguration GeneratedConfiguration { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public WebAppConfiguration GeneratedConfiguration { get; set; } = new WebAppConfiguration();
         public List<string> Warnings { get; set; } = new List<string>();
         public List<string> Errors { get; set; } = new List<string>();
         public double ConfigurationScore { get; set; }
@@ -792,7 +792,7 @@ namespace Nexo.Feature.Platform.Models
     public class WebCodeValidationResult
     {
         public bool IsValid { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
         public List<string> ValidationErrors { get; set; } = new List<string>();
         public List<string> ValidationWarnings { get; set; } = new List<string>();
         public double ValidationScore { get; set; }

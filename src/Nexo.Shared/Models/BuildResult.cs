@@ -9,8 +9,8 @@ namespace Nexo.Shared.Models
     public class BuildResult
     {
         public bool IsSuccess { get; set; }
-        public string Output { get; set; }
-        public string Errors { get; set; }
+        public string Output { get; set; } = string.Empty;
+        public string Errors { get; set; } = string.Empty;
         public long ExecutionTimeMs { get; set; }
         public List<string> OutputFiles { get; set; } = new List<string>();
     }

@@ -18,12 +18,12 @@ namespace Nexo.Shared.Models
         /// <summary>
         /// Gets or sets the standard output.
         /// </summary>
-        public string Output { get; set; }
+        public string Output { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the error output.
         /// </summary>
-        public string Error { get; set; }
+        public string Error { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the execution time in milliseconds.

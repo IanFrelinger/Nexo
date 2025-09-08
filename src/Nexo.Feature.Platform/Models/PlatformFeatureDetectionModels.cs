@@ -248,7 +248,7 @@ namespace Nexo.Feature.Platform.Models
         public bool IsSuccess { get; set; }
         public string Message { get; set; } = string.Empty;
         public string APIName { get; set; } = string.Empty;
-        public object Result { get; set; }
+        public object? Result { get; set; }
         public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
         public TimeSpan ExecutionTime { get; set; }
         public List<string> Warnings { get; set; } = new List<string>();

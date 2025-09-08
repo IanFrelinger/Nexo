@@ -61,7 +61,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<WorkflowConfiguration> LoadFromJsonAsync(string json, CancellationToken cancellationToken = default)
+        public Task<WorkflowConfiguration> LoadFromJsonAsync(string json, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(json))
                 throw new ArgumentException("JSON cannot be null or empty", nameof(json));
@@ -81,7 +81,7 @@ namespace Nexo.Feature.Pipeline.Services
                 }
 
                 _logger.LogInformation("Successfully loaded workflow configuration from JSON: {Name}", configuration.Name);
-                return configuration;
+                return Task.FromResult(configuration);
             }
             catch (Exception ex)
             {
@@ -117,7 +117,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<WorkflowConfiguration> GetDefaultConfigurationAsync(WorkflowType type, CancellationToken cancellationToken = default)
+        public Task<WorkflowConfiguration> GetDefaultConfigurationAsync(WorkflowType type, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting default configuration for workflow type: {Type}", type);
 
@@ -125,29 +125,29 @@ namespace Nexo.Feature.Pipeline.Services
             if (_templates.TryGetValue(templateName, out var template))
             {
                 // Clone the template to avoid modifying the original
-                return CloneConfiguration(template);
+                return Task.FromResult(CloneConfiguration(template));
             }
 
             // Create a basic default configuration
-            return CreateDefaultConfiguration(type);
+            return Task.FromResult(CreateDefaultConfiguration(type));
         }
 
-        public async Task<IEnumerable<string>> GetAvailableTemplatesAsync(CancellationToken cancellationToken = default)
+        public Task<IEnumerable<string>> GetAvailableTemplatesAsync(CancellationToken cancellationToken = default)
         {
-            return _templates.Keys.ToList();
+            return Task.FromResult(_templates.Keys.ToList().AsEnumerable());
         }
 
-        public async Task<string> GetTemplateDocumentationAsync(string templateName, CancellationToken cancellationToken = default)
+        public Task<string> GetTemplateDocumentationAsync(string templateName, CancellationToken cancellationToken = default)
         {
             if (_templates.TryGetValue(templateName, out var template))
             {
-                return template.Description;
+                return Task.FromResult(template.Description);
             }
 
-            return $"Template '{templateName}' not found.";
+            return Task.FromResult($"Template '{templateName}' not found.");
         }
 
-        public async Task<WorkflowValidationResult> ValidateAsync(WorkflowConfiguration configuration, CancellationToken cancellationToken = default)
+        public Task<WorkflowValidationResult> ValidateAsync(WorkflowConfiguration configuration, CancellationToken cancellationToken = default)
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
@@ -212,7 +212,7 @@ namespace Nexo.Feature.Pipeline.Services
                 }
             }
 
-            return result;
+            return Task.FromResult(result);
         }
 
         private void InitializeDefaultTemplates()
@@ -382,7 +382,7 @@ namespace Nexo.Feature.Pipeline.Services
         private WorkflowConfiguration CloneConfiguration(WorkflowConfiguration source)
         {
             var json = JsonSerializer.Serialize(source);
-            return JsonSerializer.Deserialize<WorkflowConfiguration>(json);
+            return JsonSerializer.Deserialize<WorkflowConfiguration>(json) ?? source;
         }
 
         private bool HasCircularDependencies(List<WorkflowStep> steps)

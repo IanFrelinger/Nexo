@@ -52,7 +52,7 @@ public class MemoryCacheAdapter : IDistributedCache
             maxSizeBytes / (1024 * 1024), maxItems);
     }
 
-    public async Task<string> GetAsync(string key, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<string?> GetAsync(string key, CancellationToken cancellationToken = default(CancellationToken))
     {
         Console.WriteLine($"[Cache] GetAsync START for key: {key}");
         if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
@@ -95,16 +95,16 @@ public class MemoryCacheAdapter : IDistributedCache
         }
     }
 
-    public async Task<T> GetAsync<T>(string key, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default(CancellationToken))
     {
         if (typeof(T) == typeof(string))
         {
             var value = await GetAsync(key, cancellationToken);
-            return value == null ? default(T) : (T)(object)value;
+            return value == null ? default(T?) : (T)(object)value;
         }
         var valueStr = await GetAsync(key, cancellationToken);
         if (valueStr == null)
-            return default(T);
+            return default(T?);
         try
         {
             return _serializer.Deserialize<T>(valueStr);
@@ -113,7 +113,7 @@ public class MemoryCacheAdapter : IDistributedCache
         {
             _logger.LogError(ex, "Error deserializing cached value for key: {Key}", key);
             await RemoveAsync(key, cancellationToken);
-            return default(T);
+            return default(T?);
         }
     }
 
@@ -432,7 +432,7 @@ public class JsonCacheSerializer : ICacheSerializer
         return serialized;
     }
 
-    public T Deserialize<T>(string value)
+    public T? Deserialize<T>(string value)
     {
         if (typeof(T) == typeof(string))
         {

@@ -14,7 +14,7 @@ namespace Nexo.Core.Domain.ValueObjects
         }
         public static ProjectId New() { return new ProjectId(Guid.NewGuid()); }
         public static ProjectId Parse(string value) { return new ProjectId(Guid.Parse(value)); }
-        public static bool TryParse(string value, out ProjectId projectId)
+        public static bool TryParse(string value, out ProjectId? projectId)
         {
             projectId = null;
             Guid guid;

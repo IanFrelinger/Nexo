@@ -28,7 +28,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// <summary>
         /// Gets or sets the error message if execution failed.
         /// </summary>
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
 
         /// <summary>
         /// Gets or sets the start time of the execution.
@@ -48,7 +48,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// <summary>
         /// Gets or sets the execution plan that was used.
         /// </summary>
-        public PipelineExecutionPlan ExecutionPlan { get; set; }
+        public PipelineExecutionPlan ExecutionPlan { get; set; } = new PipelineExecutionPlan();
 
         /// <summary>
         /// Gets or sets the results from individual aggregators.

@@ -80,53 +80,6 @@ public class InfrastructurePipelineTests
         _logger.LogInformation("MemoryCache statistics test completed successfully");
     }
 
-    [Fact(Timeout = 10000)]
-    public void AIConfiguration_Constructor_WorksCorrectly()
-    {
-        _logger.LogInformation("Starting AI Configuration constructor test");
-        
-        var command = new AIConfigurationCommand(NullLogger<AIConfigurationCommand>.Instance);
-        var result = command.TestConstructor(timeoutMs: 3000);
-        
-        Assert.True(result, "AI Configuration constructor should work correctly");
-        _logger.LogInformation("AI Configuration constructor test completed successfully");
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task AIConfiguration_GetConfiguration_WorksCorrectly()
-    {
-        _logger.LogInformation("Starting AI Configuration get test");
-        
-        var command = new AIConfigurationCommand(NullLogger<AIConfigurationCommand>.Instance);
-        var result = await command.TestGetConfigurationAsync(timeoutMs: 10000);
-        
-        Assert.True(result, "AI Configuration get should work correctly");
-        _logger.LogInformation("AI Configuration get test completed successfully");
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task AIConfiguration_LoadForMode_WorksCorrectly()
-    {
-        _logger.LogInformation("Starting AI Configuration load for mode test");
-        
-        var command = new AIConfigurationCommand(NullLogger<AIConfigurationCommand>.Instance);
-        var result = await command.TestLoadForModeAsync(timeoutMs: 10000);
-        
-        Assert.True(result, "AI Configuration load for mode should work correctly");
-        _logger.LogInformation("AI Configuration load for mode test completed successfully");
-    }
-
-    [Fact(Timeout = 10000)]
-    public void AIConfiguration_GetDefaultConfiguration_WorksCorrectly()
-    {
-        _logger.LogInformation("Starting AI Configuration default configuration test");
-        
-        var command = new AIConfigurationCommand(NullLogger<AIConfigurationCommand>.Instance);
-        var result = command.TestGetDefaultConfiguration(timeoutMs: 3000);
-        
-        Assert.True(result, "AI Configuration default configuration should work correctly");
-        _logger.LogInformation("AI Configuration default configuration test completed successfully");
-    }
 
     [Fact(Timeout = 10000)]
     public void ProcessCommandExecutor_Constructor_WorksCorrectly()

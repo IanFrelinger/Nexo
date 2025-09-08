@@ -189,8 +189,8 @@ namespace Nexo.Feature.Agent.Services
             if (request.Context?.ContainsKey("error_message") != true ||
                 (request.Context == null || !request.Context.TryGetValue("code_context", out var value)))
                 return response;
-            var errorMessage = request.Context["error_message"].ToString();
-            var codeContext = value.ToString();
+            var errorMessage = request.Context["error_message"]?.ToString() ?? "No error message provided";
+            var codeContext = value?.ToString() ?? "No code context provided";
             var fixSuggestion = await GenerateBugFixAsync(errorMessage, codeContext, ct);
             response = new AgentResponse
             {
@@ -216,7 +216,7 @@ namespace Nexo.Feature.Agent.Services
             };
 
             if (request.Context == null || !request.Context.TryGetValue("requirements", out var value)) return response;
-            var requirements = value.ToString();
+            var requirements = value?.ToString() ?? "No requirements provided";
             var generatedCode = await GenerateCodeAsync(requirements, ct);
             response = new AgentResponse
             {
@@ -242,7 +242,7 @@ namespace Nexo.Feature.Agent.Services
             };
 
             if (request.Context == null || !request.Context.TryGetValue("code_to_test", out var value)) return response;
-            var codeToTest = value.ToString();
+            var codeToTest = value?.ToString() ?? "No code to test provided";
             var testCode = await GenerateTestsAsync(codeToTest, ct);
             response = new AgentResponse
             {
@@ -269,7 +269,7 @@ namespace Nexo.Feature.Agent.Services
 
             if (request.Context == null || !request.Context.TryGetValue("code_to_refactor", out var value))
                 return response;
-            var codeToRefactor = value.ToString();
+            var codeToRefactor = value?.ToString() ?? "No code to refactor provided";
             var refactoredCode = await SuggestRefactoringAsync(codeToRefactor, ct);
             response = new AgentResponse
             {
@@ -296,7 +296,7 @@ namespace Nexo.Feature.Agent.Services
 
             if (request.Context == null || !request.Context.TryGetValue("code_to_document", out var value))
                 return response;
-            var codeToDocument = value.ToString();
+            var codeToDocument = value?.ToString() ?? "No code to document provided";
             var documentation = await GenerateDocumentationAsync(codeToDocument, ct);
             response = new AgentResponse
             {

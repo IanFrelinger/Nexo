@@ -40,8 +40,8 @@ namespace Nexo.Feature.Container.Models
         public ExecuteInContainerRequest(
             string containerName,
             string[] command,
-            string workingDirectory = null,
-            IDictionary<string, string> environmentVariables = null,
+            string? workingDirectory = null,
+            IDictionary<string, string>? environmentVariables = null,
             int timeoutMs = 30000)
         {
             if (string.IsNullOrWhiteSpace(containerName))

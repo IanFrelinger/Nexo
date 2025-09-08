@@ -32,5 +32,5 @@ public interface IModelOrchestrator
     /// <param name="modelType">Type of model needed</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The best provider for the task</returns>
-    Task<IModelProvider> GetBestModelForTaskAsync(string task, Enums.ModelType modelType, CancellationToken cancellationToken = default);
+    Task<IModelProvider?> GetBestModelForTaskAsync(string task, Enums.ModelType modelType, CancellationToken cancellationToken = default);
 }

@@ -9,9 +9,9 @@ namespace Nexo.Shared.Models
     public class ValidationWarning
     {
         public string Message { get; set; }
-        public string Field { get; set; }
+        public string? Field { get; set; }
         public Dictionary<string, object> Details { get; set; } = new Dictionary<string, object>();
-        public ValidationWarning(string message, string field = null)
+        public ValidationWarning(string message, string? field = null)
         {
             Message = message;
             Field = field;

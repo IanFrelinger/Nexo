@@ -11,9 +11,9 @@ namespace Nexo.Shared.Models
     {
         public string Message { get; set; }
         public ValidationSeverity Severity { get; set; }
-        public string Field { get; set; }
+        public string? Field { get; set; }
         public Dictionary<string, object> Details { get; set; } = new Dictionary<string, object>();
-        public ValidationError(string message, ValidationSeverity severity = ValidationSeverity.Error, string field = null)
+        public ValidationError(string message, ValidationSeverity severity = ValidationSeverity.Error, string? field = null)
         {
             Message = message;
             Severity = severity;

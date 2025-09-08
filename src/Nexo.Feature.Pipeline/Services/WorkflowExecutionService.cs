@@ -37,7 +37,7 @@ namespace Nexo.Feature.Pipeline.Services
         public long MaxMemoryUsageBytes => 1024 * 1024 * 1024; // 1GB
         public double MaxCpuUsagePercentage => 80.0;
 
-        public T GetValue<T>(string key, T defaultValue = default(T))
+        public T? GetValue<T>(string key, T? defaultValue = default(T))
         {
             if (Settings.TryGetValue(key, out var value) && value is T tValue)
                 return tValue;
@@ -82,7 +82,7 @@ namespace Nexo.Feature.Pipeline.Services
         public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(
             WorkflowType type,
             string projectPath,
-            string configPath = null,
+            string? configPath = null,
             CancellationToken cancellationToken = default)
         {
             var result = new WorkflowExecutionResult
@@ -132,7 +132,7 @@ namespace Nexo.Feature.Pipeline.Services
 
         private async Task<WorkflowConfiguration> LoadWorkflowConfigurationAsync(
             WorkflowType type,
-            string configPath,
+            string? configPath,
             CancellationToken cancellationToken)
         {
             if (!string.IsNullOrEmpty(configPath))
@@ -276,8 +276,9 @@ namespace Nexo.Feature.Pipeline.Services
                 var waitForExitAsyncMethod = typeof(Process).GetMethod("WaitForExitAsync", new[] { typeof(CancellationToken) });
                 if (waitForExitAsyncMethod != null)
                 {
-                    var task = (Task)waitForExitAsyncMethod.Invoke(process, new object[] { cancellationToken });
-                    await task;
+                    var task = (Task?)waitForExitAsyncMethod.Invoke(process, new object[] { cancellationToken });
+                    if (task != null)
+                        await task;
                     return true;
                 }
             }
@@ -374,7 +375,7 @@ namespace Nexo.Feature.Pipeline.Services
             result.Output = JsonSerializer.Serialize(pipelineResult, new JsonSerializerOptions { WriteIndented = true });
         }
 
-        private async Task ExecuteFileOperationStepAsync(
+        private Task ExecuteFileOperationStepAsync(
             WorkflowStep step,
             string projectPath,
             WorkflowStepResult result,
@@ -384,9 +385,10 @@ namespace Nexo.Feature.Pipeline.Services
             // For now, just log the operation
             _logger.LogInformation("File operation: {Command} {Arguments}", step.Command, string.Join(" ", step.Arguments));
             result.ExitCode = 0;
+            return Task.CompletedTask;
         }
 
-        private async Task ExecuteHttpRequestStepAsync(
+        private Task ExecuteHttpRequestStepAsync(
             WorkflowStep step,
             string projectPath,
             WorkflowStepResult result,
@@ -396,9 +398,10 @@ namespace Nexo.Feature.Pipeline.Services
             // For now, just log the operation
             _logger.LogInformation("HTTP request: {Command} {Arguments}", step.Command, string.Join(" ", step.Arguments));
             result.ExitCode = 0;
+            return Task.CompletedTask;
         }
 
-        private async Task ExecuteCustomStepAsync(
+        private Task ExecuteCustomStepAsync(
             WorkflowStep step,
             string projectPath,
             WorkflowStepResult result,
@@ -408,6 +411,7 @@ namespace Nexo.Feature.Pipeline.Services
             // For now, just log the operation
             _logger.LogInformation("Custom step: {Command} {Arguments}", step.Command, string.Join(" ", step.Arguments));
             result.ExitCode = 0;
+            return Task.CompletedTask;
         }
 
         private List<WorkflowStep> SortStepsByDependencies(List<WorkflowStep> steps)

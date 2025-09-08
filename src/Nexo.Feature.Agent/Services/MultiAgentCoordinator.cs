@@ -615,7 +615,7 @@ Please provide a comprehensive synthesis that:
             {
                 AverageSessionDuration = completedSessions
                     .Where(s => s.CompletedAt.HasValue)
-                    .Average(s => (s.CompletedAt.Value - s.CreatedAt).TotalMilliseconds),
+                    .Average(s => (s.CompletedAt!.Value - s.CreatedAt).TotalMilliseconds),
                 AverageAgentsPerSession = completedSessions.Average(s => s.ParticipatingAgents.Count),
                 SuccessRate = (double)completedSessions.Count(s => s.Status == CollaborationSessionStatus.Completed) / completedSessions.Count
             };

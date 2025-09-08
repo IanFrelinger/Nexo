@@ -197,7 +197,7 @@ namespace Nexo.Infrastructure.Services.AI
             await Task.CompletedTask;
             
             ModelInfo modelInfo;
-            return _mockModels.TryGetValue(modelName, out modelInfo) ? modelInfo : null;
+            return _mockModels.TryGetValue(modelName, out modelInfo) ? modelInfo : new ModelInfo { Name = modelName, IsAvailable = false };
         }
 
         /// <summary>

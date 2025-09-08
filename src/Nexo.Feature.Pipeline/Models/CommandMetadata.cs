@@ -94,7 +94,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Deprecation message if this command is deprecated.
     /// </summary>
-    public string DeprecationMessage { get; set; }
+    public string? DeprecationMessage { get; set; }
     
     /// <summary>
     /// Additional metadata about this command.
@@ -118,8 +118,8 @@ namespace Nexo.Feature.Pipeline.Models
             Priority = command.Priority,
             CanExecuteInParallel = command.CanExecuteInParallel,
             Dependencies = command.Dependencies.ToList(),
-            TypeName = command.GetType().FullName != null ? command.GetType().FullName : command.GetType().Name,
-            AssemblyName = command.GetType().Assembly.GetName().Name != null ? command.GetType().Assembly.GetName().Name : string.Empty
+            TypeName = command.GetType().FullName ?? command.GetType().Name,
+            AssemblyName = command.GetType().Assembly.GetName().Name ?? string.Empty
         };
     }
 }
@@ -152,7 +152,7 @@ public class CommandParameter
     /// <summary>
     /// Default value for the parameter.
     /// </summary>
-    public object DefaultValue { get; set; }
+    public object? DefaultValue { get; set; }
     
     /// <summary>
     /// Allowed values for the parameter (for enums or constrained parameters).

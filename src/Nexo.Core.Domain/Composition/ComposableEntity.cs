@@ -218,7 +218,7 @@ namespace Nexo.Core.Domain.Composition
         /// This method can be overridden by derived classes to add entity-specific validation logic.
         /// </summary>
         /// <returns>A validation result for entity-specific validation, or null if no entity-specific validation is needed</returns>
-        protected virtual ValidationResult ValidateEntity()
+        protected virtual ValidationResult? ValidateEntity()
         {
             return null;
         }
@@ -242,7 +242,7 @@ namespace Nexo.Core.Domain.Composition
         /// </summary>
         /// <param name="other">The other entity to compare with</param>
         /// <returns>True if the entities are equal, false otherwise</returns>
-        public virtual bool Equals(TEntity other)
+        public virtual bool Equals(TEntity? other)
         {
             if (other == null) return false;
             return Id.Equals(other.Id);
@@ -289,7 +289,7 @@ namespace Nexo.Core.Domain.Composition
         /// <returns>A combined validation result</returns>
         public static ValidationResult ValidateAll(params TEntity[] entities)
         {
-            var results = entities?.Select(e => e?.Validate()) ?? Array.Empty<ValidationResult>();
+            var results = entities?.Select(e => e?.Validate()).Where(r => r != null).Cast<ValidationResult>() ?? Array.Empty<ValidationResult>();
             return ValidationResult.Combine(results.ToArray());
         }
         
@@ -304,7 +304,7 @@ namespace Nexo.Core.Domain.Composition
             
             foreach (var entity in entities ?? Array.Empty<TEntity>())
             {
-                if (entity != null)
+                if (entity is not null)
                 {
                     foreach (var kvp in entity.GetMetadata())
                     {
@@ -322,7 +322,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="left">The left entity</param>
         /// <param name="right">The right entity</param>
         /// <returns>True if the entities are equal, false otherwise</returns>
-        public static bool operator ==(ComposableEntity<TId, TEntity> left, ComposableEntity<TId, TEntity> right)
+        public static bool operator ==(ComposableEntity<TId, TEntity>? left, ComposableEntity<TId, TEntity>? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
@@ -335,7 +335,7 @@ namespace Nexo.Core.Domain.Composition
         /// <param name="left">The left entity</param>
         /// <param name="right">The right entity</param>
         /// <returns>True if the entities are not equal, false otherwise</returns>
-        public static bool operator !=(ComposableEntity<TId, TEntity> left, ComposableEntity<TId, TEntity> right)
+        public static bool operator !=(ComposableEntity<TId, TEntity>? left, ComposableEntity<TId, TEntity>? right)
         {
             return !(left == right);
         }

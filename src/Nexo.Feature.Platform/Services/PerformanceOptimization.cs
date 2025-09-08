@@ -26,8 +26,8 @@ namespace Nexo.Feature.Platform.Services
         private PlatformType _currentPlatform;
         private bool _isInitialized;
         private bool _isMonitoring;
-        private Timer _monitoringTimer;
-        private PerformanceMonitoringConfig _monitoringConfig;
+        private Timer? _monitoringTimer;
+        private PerformanceMonitoringConfig? _monitoringConfig;
 
         public PerformanceOptimization(ILogger<PerformanceOptimization> logger)
         {

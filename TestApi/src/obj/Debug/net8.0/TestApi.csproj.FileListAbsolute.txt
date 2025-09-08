@@ -28,3 +28,4 @@
 /Users/ianfrelinger/RiderProjects/Nexo/TestApi/src/obj/Debug/net8.0/TestApi.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/TestApi/src/obj/Debug/net8.0/TestApi.genruntimeconfig.cache
 /Users/ianfrelinger/RiderProjects/Nexo/TestApi/src/obj/Debug/net8.0/ref/TestApi.dll
+/Users/ianfrelinger/RiderProjects/Nexo/TestApi/src/obj/Debug/net8.0/TestApi.sourcelink.json

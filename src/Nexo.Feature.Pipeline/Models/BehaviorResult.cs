@@ -17,12 +17,12 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Error message if the behavior failed.
     /// </summary>
-    public string ErrorMessage { get; set; }
+    public string? ErrorMessage { get; set; }
     
     /// <summary>
     /// Exception that occurred during execution, if any.
     /// </summary>
-    public Exception Exception { get; set; }
+    public Exception? Exception { get; set; }
     
     /// <summary>
     /// Results of individual command executions within the behavior.
@@ -32,7 +32,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Data returned by the behavior execution.
     /// </summary>
-    public object Data { get; set; }
+    public object? Data { get; set; }
     
     /// <summary>
     /// Execution time in milliseconds.
@@ -87,7 +87,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <param name="startTime">Start time.</param>
     /// <param name="endTime">End time.</param>
     /// <returns>A successful behavior result.</returns>
-    public static BehaviorResult Success(object data = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
+    public static BehaviorResult Success(object? data = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
     {
         return new BehaviorResult
         {
@@ -108,7 +108,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <param name="startTime">Start time.</param>
     /// <param name="endTime">End time.</param>
     /// <returns>A failed behavior result.</returns>
-    public static BehaviorResult Failure(string errorMessage, Exception exception = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
+    public static BehaviorResult Failure(string errorMessage, Exception? exception = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
     {
         return new BehaviorResult
         {

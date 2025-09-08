@@ -57,7 +57,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
         /// <param name="key">The key to retrieve.</param>
         /// <param name="defaultValue">Default value if key doesn't exist.</param>
         /// <returns>The value if found and of correct type, otherwise the default value.</returns>
-        T GetValue<T>(string key, T defaultValue = default(T));
+        T? GetValue<T>(string key, T? defaultValue = default(T));
         
         /// <summary>
         /// Sets a value in the shared data store.

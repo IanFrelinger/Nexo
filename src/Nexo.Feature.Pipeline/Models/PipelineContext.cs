@@ -41,7 +41,7 @@ namespace Nexo.Feature.Pipeline.Models
             _metrics.StartTime = StartTime;
         }
 
-        public T GetValue<T>(string key, T defaultValue = default(T))
+        public T? GetValue<T>(string key, T? defaultValue = default(T))
         {
             if (SharedData.TryGetValue(key, out var value) && value is T tValue)
                 return tValue;

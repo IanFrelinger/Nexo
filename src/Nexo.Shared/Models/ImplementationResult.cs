@@ -8,7 +8,7 @@ namespace Nexo.Shared.Models
     /// </summary>
     public sealed class ImplementationResult
     {
-        public string FeatureName { get; set; }
+        public string FeatureName { get; set; } = string.Empty;
         public List<string> GeneratedFiles { get; set; }
         public List<string> ModifiedFiles { get; set; }
         public List<string> ExecutedCommands { get; set; }

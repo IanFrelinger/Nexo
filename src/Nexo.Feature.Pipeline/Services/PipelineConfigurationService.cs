@@ -61,7 +61,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineConfiguration> LoadFromJsonAsync(string json, CancellationToken cancellationToken = default)
+        public Task<PipelineConfiguration> LoadFromJsonAsync(string json, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(json))
                 throw new ArgumentException("JSON cannot be null or empty", nameof(json));
@@ -81,7 +81,7 @@ namespace Nexo.Feature.Pipeline.Services
                 }
 
                 _logger.LogInformation("Successfully loaded pipeline configuration from JSON: {Name}", configuration.Name);
-                return configuration;
+                return Task.FromResult(configuration);
             }
             catch (Exception ex)
             {
@@ -90,7 +90,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineConfiguration> LoadFromCommandLineAsync(string[] args, CancellationToken cancellationToken = default)
+        public Task<PipelineConfiguration> LoadFromCommandLineAsync(string[] args, CancellationToken cancellationToken = default)
         {
             if (args == null || args.Length == 0)
                 throw new ArgumentException("Command line arguments cannot be null or empty", nameof(args));
@@ -137,7 +137,7 @@ namespace Nexo.Feature.Pipeline.Services
                 }
 
                 _logger.LogInformation("Successfully created pipeline configuration from command line arguments");
-                return configuration;
+                return Task.FromResult(configuration);
             }
             catch (Exception ex)
             {
@@ -146,7 +146,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineConfiguration> LoadFromTemplateAsync(string templateName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
+        public Task<PipelineConfiguration> LoadFromTemplateAsync(string templateName, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(templateName))
                 throw new ArgumentException("Template name cannot be null or empty", nameof(templateName));
@@ -173,7 +173,7 @@ namespace Nexo.Feature.Pipeline.Services
                 }
 
                 _logger.LogInformation("Successfully loaded pipeline configuration from template: {TemplateName}", templateName);
-                return configuration;
+                return Task.FromResult(configuration);
             }
             catch (Exception ex)
             {
@@ -209,7 +209,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<Models.PipelineValidationResult> ValidateAsync(PipelineConfiguration configuration, CancellationToken cancellationToken = default)
+        public Task<Models.PipelineValidationResult> ValidateAsync(PipelineConfiguration configuration, CancellationToken cancellationToken = default)
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
@@ -246,7 +246,7 @@ namespace Nexo.Feature.Pipeline.Services
                 }
 
                 // Validate execution settings
-                if (configuration.Execution.MaxParallelExecutions <= 0)
+                if (configuration.Execution?.MaxParallelExecutions <= 0)
                 {
                     result.IsValid = false;
                     result.Issues.Add(new Models.ValidationIssue
@@ -309,7 +309,7 @@ namespace Nexo.Feature.Pipeline.Services
                 _logger.LogInformation("Pipeline configuration validation completed. IsValid: {IsValid}, Issues: {IssueCount}, Warnings: {WarningCount}", 
                     result.IsValid, result.Issues.Count, result.Warnings.Count);
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
@@ -318,7 +318,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineConfiguration> MergeAsync(IEnumerable<PipelineConfiguration> configurations, CancellationToken cancellationToken = default)
+        public Task<PipelineConfiguration> MergeAsync(IEnumerable<PipelineConfiguration> configurations, CancellationToken cancellationToken = default)
         {
             if (configurations == null)
                 throw new ArgumentNullException(nameof(configurations));
@@ -383,7 +383,7 @@ namespace Nexo.Feature.Pipeline.Services
                 }
 
                 _logger.LogInformation("Successfully merged {Count} pipeline configurations", configList.Count);
-                return merged;
+                return Task.FromResult(merged);
             }
             catch (Exception ex)
             {
@@ -392,14 +392,14 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<IEnumerable<string>> GetAvailableTemplatesAsync(CancellationToken cancellationToken = default)
+        public Task<IEnumerable<string>> GetAvailableTemplatesAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("Getting available pipeline templates");
                 var templates = _templates.Keys.ToList();
                 _logger.LogInformation("Found {Count} available templates", templates.Count.ToString());
-                return templates;
+                return Task.FromResult(templates.AsEnumerable());
             }
             catch (Exception ex)
             {
@@ -408,7 +408,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<string> GetTemplateDocumentationAsync(string templateName, CancellationToken cancellationToken = default)
+        public Task<string> GetTemplateDocumentationAsync(string templateName, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(templateName))
                 throw new ArgumentException("Template name cannot be null or empty", nameof(templateName));
@@ -452,7 +452,7 @@ Use this template with: `nexo pipeline create {templateName} --param key=value`
 ";
 
                 _logger.LogInformation("Successfully retrieved documentation for template: {TemplateName}", templateName);
-                return documentation;
+                return Task.FromResult(documentation);
             }
             catch (Exception ex)
             {
@@ -578,21 +578,21 @@ Use this template with: `nexo pipeline create {templateName} --param key=value`
                 Tags = new List<string>(source.Tags),
                 Execution = new PipelineExecutionSettings
                 {
-                    MaxParallelExecutions = source.Execution.MaxParallelExecutions,
-                    CommandTimeoutMs = source.Execution.CommandTimeoutMs,
-                    BehaviorTimeoutMs = source.Execution.BehaviorTimeoutMs,
-                    AggregatorTimeoutMs = source.Execution.AggregatorTimeoutMs,
-                    MaxRetries = source.Execution.MaxRetries,
-                    RetryDelayMs = source.Execution.RetryDelayMs,
-                    EnableDetailedLogging = source.Execution.EnableDetailedLogging,
-                    EnablePerformanceMonitoring = source.Execution.EnablePerformanceMonitoring,
-                    EnableExecutionHistory = source.Execution.EnableExecutionHistory,
-                    MaxExecutionHistoryEntries = source.Execution.MaxExecutionHistoryEntries,
-                    EnableParallelExecution = source.Execution.EnableParallelExecution,
-                    EnableDependencyResolution = source.Execution.EnableDependencyResolution,
-                    EnableResourceManagement = source.Execution.EnableResourceManagement,
-                    MaxMemoryUsageBytes = source.Execution.MaxMemoryUsageBytes,
-                    MaxCpuUsagePercentage = source.Execution.MaxCpuUsagePercentage
+                    MaxParallelExecutions = source.Execution?.MaxParallelExecutions ?? 1,
+                    CommandTimeoutMs = source.Execution?.CommandTimeoutMs ?? 30000,
+                    BehaviorTimeoutMs = source.Execution?.BehaviorTimeoutMs ?? 60000,
+                    AggregatorTimeoutMs = source.Execution?.AggregatorTimeoutMs ?? 120000,
+                    MaxRetries = source.Execution?.MaxRetries ?? 3,
+                    RetryDelayMs = source.Execution?.RetryDelayMs ?? 1000,
+                    EnableDetailedLogging = source.Execution?.EnableDetailedLogging ?? false,
+                    EnablePerformanceMonitoring = source.Execution?.EnablePerformanceMonitoring ?? false,
+                    EnableExecutionHistory = source.Execution?.EnableExecutionHistory ?? false,
+                    MaxExecutionHistoryEntries = source.Execution?.MaxExecutionHistoryEntries ?? 100,
+                    EnableParallelExecution = source.Execution?.EnableParallelExecution ?? true,
+                    EnableDependencyResolution = source.Execution?.EnableDependencyResolution ?? true,
+                    EnableResourceManagement = source.Execution?.EnableResourceManagement ?? false,
+                    MaxMemoryUsageBytes = source.Execution?.MaxMemoryUsageBytes ?? 1073741824,
+                    MaxCpuUsagePercentage = source.Execution?.MaxCpuUsagePercentage ?? 80.0
                 },
                 Commands = new List<PipelineCommandConfiguration>(source.Commands),
                 Behaviors = new List<PipelineBehaviorConfiguration>(source.Behaviors),

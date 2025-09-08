@@ -10,9 +10,9 @@ namespace Nexo.Shared.Models
     /// </summary>
     public class FeatureSpecification
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string Version { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
         public List<string> ImplementationSteps { get; set; } = new List<string>();
         public List<string> Dependencies { get; set; } = new List<string>();
         public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();

@@ -8,18 +8,18 @@ namespace Nexo.Core.Application.Models
 {
     public sealed class SolutionScaffoldingResult
     {
-        public string ScaffoldingId { get; set; }
-        public string SolutionName { get; set; }
-        public string SolutionPath { get; set; }
-        public string TemplateName { get; set; }
+        public string ScaffoldingId { get; set; } = string.Empty;
+        public string SolutionName { get; set; } = string.Empty;
+        public string SolutionPath { get; set; } = string.Empty;
+        public string TemplateName { get; set; } = string.Empty;
         public ScaffoldingStatus Status { get; set; }
-        public List<ScaffoldedProject> Projects { get; set; }
-        public List<GeneratedFile> GeneratedFiles { get; set; }
+        public List<ScaffoldedProject> Projects { get; set; } = new List<ScaffoldedProject>();
+        public List<GeneratedFile> GeneratedFiles { get; set; } = new List<GeneratedFile>();
         public DateTime ScaffoldingStartTime { get; set; }
         public DateTime ScaffoldingEndTime { get; set; }
-        public List<string> Errors { get; set; }
-        public List<string> Warnings { get; set; }
-        public SolutionBuildResult BuildResult { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> Warnings { get; set; } = new List<string>();
+        public SolutionBuildResult? BuildResult { get; set; }
 
         public SolutionScaffoldingResult()
         {
@@ -46,15 +46,15 @@ namespace Nexo.Core.Application.Models
 
     public sealed class ScaffoldedProject
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public ProjectType Type { get; set; }
-        public string ProjectFilePath { get; set; }
-        public string TargetFramework { get; set; }
-        public List<string> Files { get; set; }
-        public List<NuGetPackage> NuGetPackages { get; set; }
-        public List<string> ProjectReferences { get; set; }
+        public string ProjectFilePath { get; set; } = string.Empty;
+        public string TargetFramework { get; set; } = string.Empty;
+        public List<string> Files { get; set; } = new List<string>();
+        public List<NuGetPackage> NuGetPackages { get; set; } = new List<NuGetPackage>();
+        public List<string> ProjectReferences { get; set; } = new List<string>();
         public bool IsCreated { get; set; }
-        public List<string> Errors { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
 
         public ScaffoldedProject()
         {
@@ -72,12 +72,12 @@ namespace Nexo.Core.Application.Models
 
     public sealed class GeneratedFile
     {
-        public string Name { get; set; }
-        public string FilePath { get; set; }
-        public string Template { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public string Template { get; set; } = string.Empty;
         public long FileSize { get; set; }
         public bool IsGenerated { get; set; }
-        public List<string> Errors { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
 
         public GeneratedFile()
         {
@@ -94,18 +94,18 @@ namespace Nexo.Core.Application.Models
 
     public sealed class SolutionBuildResult
     {
-        public string BuildId { get; set; }
-        public string SolutionPath { get; set; }
-        public string BuildConfiguration { get; set; }
-        public string Platform { get; set; }
+        public string BuildId { get; set; } = string.Empty;
+        public string SolutionPath { get; set; } = string.Empty;
+        public string BuildConfiguration { get; set; } = string.Empty;
+        public string Platform { get; set; } = string.Empty;
         public BuildStatus Status { get; set; }
-        public List<ProjectBuildResult> ProjectResults { get; set; }
-        public List<GeneratedDll> GeneratedDlls { get; set; }
+        public List<ProjectBuildResult> ProjectResults { get; set; } = new List<ProjectBuildResult>();
+        public List<GeneratedDll> GeneratedDlls { get; set; } = new List<GeneratedDll>();
         public DateTime BuildStartTime { get; set; }
         public DateTime BuildEndTime { get; set; }
-        public List<BuildError> Errors { get; set; }
-        public List<BuildWarning> Warnings { get; set; }
-        public string OutputDirectory { get; set; }
+        public List<BuildError> Errors { get; set; } = new List<BuildError>();
+        public List<BuildWarning> Warnings { get; set; } = new List<BuildWarning>();
+        public string OutputDirectory { get; set; } = string.Empty;
 
         public SolutionBuildResult()
         {
@@ -131,13 +131,13 @@ namespace Nexo.Core.Application.Models
 
     public sealed class ProjectBuildResult
     {
-        public string ProjectName { get; set; }
-        public string ProjectFilePath { get; set; }
+        public string ProjectName { get; set; } = string.Empty;
+        public string ProjectFilePath { get; set; } = string.Empty;
         public BuildStatus Status { get; set; }
-        public string OutputAssemblyPath { get; set; }
-        public string OutputDirectory { get; set; }
-        public List<BuildError> Errors { get; set; }
-        public List<BuildWarning> Warnings { get; set; }
+        public string OutputAssemblyPath { get; set; } = string.Empty;
+        public string OutputDirectory { get; set; } = string.Empty;
+        public List<BuildError> Errors { get; set; } = new List<BuildError>();
+        public List<BuildWarning> Warnings { get; set; } = new List<BuildWarning>();
         public bool IsSuccessful { get { return Status == BuildStatus.Success && Errors.Count == 0; } }
 
         public ProjectBuildResult()
@@ -154,15 +154,15 @@ namespace Nexo.Core.Application.Models
 
     public sealed class GeneratedDll
     {
-        public string Name { get; set; }
-        public string FilePath { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
         public long FileSize { get; set; }
-        public string ProjectName { get; set; }
-        public string BuildConfiguration { get; set; }
-        public string Platform { get; set; }
-        public string AssemblyVersion { get; set; }
-        public string FileVersion { get; set; }
-        public string ProductVersion { get; set; }
+        public string ProjectName { get; set; } = string.Empty;
+        public string BuildConfiguration { get; set; } = string.Empty;
+        public string Platform { get; set; } = string.Empty;
+        public string AssemblyVersion { get; set; } = string.Empty;
+        public string FileVersion { get; set; } = string.Empty;
+        public string ProductVersion { get; set; } = string.Empty;
         public bool IsGenerated { get; set; }
 
         public GeneratedDll()
@@ -182,15 +182,15 @@ namespace Nexo.Core.Application.Models
 
     public sealed class SolutionBuildRequest
     {
-        public string SolutionPath { get; set; }
-        public string BuildConfiguration { get; set; }
-        public string Platform { get; set; }
+        public string SolutionPath { get; set; } = string.Empty;
+        public string BuildConfiguration { get; set; } = string.Empty;
+        public string Platform { get; set; } = string.Empty;
         public bool Clean { get; set; }
         public bool Restore { get; set; }
         public bool Incremental { get; set; }
-        public string OutputDirectory { get; set; }
+        public string OutputDirectory { get; set; } = string.Empty;
         public BuildVerbosity Verbosity { get; set; }
-        public Dictionary<string, string> Properties { get; set; }
+        public Dictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();
 
         public SolutionBuildRequest()
         {
@@ -208,14 +208,14 @@ namespace Nexo.Core.Application.Models
 
     public sealed class ProjectScaffoldingRequest
     {
-        public string ProjectName { get; set; }
-        public string SolutionPath { get; set; }
+        public string ProjectName { get; set; } = string.Empty;
+        public string SolutionPath { get; set; } = string.Empty;
         public ProjectType ProjectType { get; set; }
-        public string TargetFramework { get; set; }
-        public string Template { get; set; }
+        public string TargetFramework { get; set; } = string.Empty;
+        public string Template { get; set; } = string.Empty;
         public bool AddToSolution { get; set; }
-        public string SolutionFolder { get; set; }
-        public Dictionary<string, object> Parameters { get; set; }
+        public string SolutionFolder { get; set; } = string.Empty;
+        public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
 
         public ProjectScaffoldingRequest()
         {
@@ -232,14 +232,14 @@ namespace Nexo.Core.Application.Models
 
     public sealed class ProjectScaffoldingResult
     {
-        public string ScaffoldingId { get; set; }
-        public string ProjectName { get; set; }
-        public string ProjectFilePath { get; set; }
+        public string ScaffoldingId { get; set; } = string.Empty;
+        public string ProjectName { get; set; } = string.Empty;
+        public string ProjectFilePath { get; set; } = string.Empty;
         public ProjectType ProjectType { get; set; }
         public ScaffoldingStatus Status { get; set; }
-        public List<GeneratedFile> GeneratedFiles { get; set; }
+        public List<GeneratedFile> GeneratedFiles { get; set; } = new List<GeneratedFile>();
         public bool AddedToSolution { get; set; }
-        public List<string> Errors { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
         public bool IsSuccessful { get { return Status == ScaffoldingStatus.Success && Errors.Count == 0; } }
 
         public ProjectScaffoldingResult()
@@ -257,11 +257,11 @@ namespace Nexo.Core.Application.Models
 
     public sealed class CodeGenerationRequest
     {
-        public string Template { get; set; }
-        public string OutputPath { get; set; }
-        public Dictionary<string, object> Parameters { get; set; }
+        public string Template { get; set; } = string.Empty;
+        public string OutputPath { get; set; } = string.Empty;
+        public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
         public bool Overwrite { get; set; }
-        public string Encoding { get; set; }
+        public string Encoding { get; set; } = string.Empty;
 
         public CodeGenerationRequest()
         {
@@ -275,13 +275,13 @@ namespace Nexo.Core.Application.Models
 
     public sealed class CodeGenerationResult
     {
-        public string GenerationId { get; set; }
-        public string Template { get; set; }
-        public string OutputPath { get; set; }
+        public string GenerationId { get; set; } = string.Empty;
+        public string Template { get; set; } = string.Empty;
+        public string OutputPath { get; set; } = string.Empty;
         public ScaffoldingStatus Status { get; set; }
-        public string GeneratedContent { get; set; }
+        public string GeneratedContent { get; set; } = string.Empty;
         public long FileSize { get; set; }
-        public List<string> Errors { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
         public bool IsSuccessful { get { return Status == ScaffoldingStatus.Success && Errors.Count == 0; } }
 
         public CodeGenerationResult()
@@ -299,9 +299,9 @@ namespace Nexo.Core.Application.Models
     public sealed class ScaffoldingValidationResult
     {
         public bool IsValid { get; set; }
-        public List<string> Errors { get; set; }
-        public List<string> Warnings { get; set; }
-        public List<string> Suggestions { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
+        public List<string> Warnings { get; set; } = new List<string>();
+        public List<string> Suggestions { get; set; } = new List<string>();
 
         public ScaffoldingValidationResult()
         {
@@ -314,13 +314,13 @@ namespace Nexo.Core.Application.Models
 
     public sealed class SolutionTemplate
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string Author { get; set; }
-        public string Version { get; set; }
-        public List<string> Tags { get; set; }
-        public string TemplatePath { get; set; }
-        public List<TemplateParameter> Parameters { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Author { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public List<string> Tags { get; set; } = new List<string>();
+        public string TemplatePath { get; set; } = string.Empty;
+        public List<TemplateParameter> Parameters { get; set; } = new List<TemplateParameter>();
         public bool IsBuiltIn { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastModified { get; set; }
@@ -342,12 +342,12 @@ namespace Nexo.Core.Application.Models
 
     public sealed class TemplateParameter
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public ParameterType Type { get; set; }
-        public object DefaultValue { get; set; }
+        public object? DefaultValue { get; set; }
         public bool IsRequired { get; set; }
-        public List<object> AllowedValues { get; set; }
+        public List<object> AllowedValues { get; set; } = new List<object>();
 
         public TemplateParameter()
         {

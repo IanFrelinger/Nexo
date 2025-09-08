@@ -119,7 +119,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        public async Task<PipelineExecutionPlan> GenerateExecutionPlanAsync(
+        public Task<PipelineExecutionPlan> GenerateExecutionPlanAsync(
             IPipelineContext context,
             List<string> aggregatorIds,
             CancellationToken cancellationToken = default)
@@ -186,10 +186,10 @@ namespace Nexo.Feature.Pipeline.Services
             _logger.LogDebug("Generated execution plan with {PhaseCount} phases, estimated time: {EstimatedTime}ms", 
                 phases.Count, totalEstimatedTime);
 
-            return plan;
+            return Task.FromResult(plan);
         }
 
-        public async Task<ExecutionValidationResult> ValidateDependenciesAsync(
+        public Task<ExecutionValidationResult> ValidateDependenciesAsync(
             PipelineExecutionPlan plan,
             CancellationToken cancellationToken = default)
         {
@@ -204,7 +204,7 @@ namespace Nexo.Feature.Pipeline.Services
                     {
                         validationResult.IsValid = false;
                         validationResult.ErrorMessage = $"Aggregator '{aggregatorId}' not found";
-                        return validationResult;
+                        return Task.FromResult(validationResult);
                     }
                 }
             }
@@ -214,7 +214,7 @@ namespace Nexo.Feature.Pipeline.Services
             {
                 validationResult.IsValid = false;
                 validationResult.ErrorMessage = "Circular dependencies detected in execution plan";
-                return validationResult;
+                return Task.FromResult(validationResult);
             }
 
             // Validate aggregator dependencies
@@ -229,13 +229,13 @@ namespace Nexo.Feature.Pipeline.Services
                         {
                             validationResult.IsValid = false;
                             validationResult.ErrorMessage = $"Dependency '{dependency.DependentAggregatorId}' for aggregator '{aggregatorId}' is not satisfied";
-                            return validationResult;
+                            return Task.FromResult(validationResult);
                         }
                     }
                 }
             }
 
-            return validationResult;
+            return Task.FromResult(validationResult);
         }
 
         public void RegisterAggregator(IAggregator aggregator)
@@ -459,7 +459,7 @@ namespace Nexo.Feature.Pipeline.Services
             }
         }
 
-        private async Task<bool> ShouldExecuteAggregatorAsync(
+        private Task<bool> ShouldExecuteAggregatorAsync(
             IPipelineContext context,
             IAggregator aggregator,
             CancellationToken cancellationToken)
@@ -475,12 +475,12 @@ namespace Nexo.Feature.Pipeline.Services
                     {
                         _logger.LogDebug("Skipping aggregator {AggregatorName} due to unmet condition: {Condition}", 
                             aggregator.Name, dependency.DependentAggregatorId);
-                        return false;
+                        return Task.FromResult(false);
                     }
                 }
             }
 
-            return true;
+            return Task.FromResult(true);
         }
 
         private long EstimateExecutionTime(IAggregator aggregator)

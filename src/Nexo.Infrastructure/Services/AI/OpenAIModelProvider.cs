@@ -114,7 +114,7 @@ public class OpenAiModelProvider : IModelProvider
     public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
     {
         var models = await GetAvailableModelsAsync(cancellationToken);
-        return models.FirstOrDefault(m => m.Name == modelName);
+        return models.FirstOrDefault(m => m.Name == modelName) ?? new ModelInfo { Name = modelName, IsAvailable = false };
     }
 
     public async Task<ModelValidationResult> ValidateModelAsync(string modelName, CancellationToken cancellationToken = default(CancellationToken))
@@ -215,7 +215,7 @@ public class OpenAiModelProvider : IModelProvider
                 Metadata = new Dictionary<string, object>
                 {
                     ["finish_reason"] = response.Choices?.FirstOrDefault()?.FinishReason ?? "unknown",
-                    ["usage"] = response.Usage
+                    ["usage"] = response.Usage ?? new object()
                 }
             };
         }

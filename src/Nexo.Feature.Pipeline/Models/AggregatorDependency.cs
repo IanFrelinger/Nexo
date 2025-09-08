@@ -28,7 +28,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// <summary>
         /// Condition that must be met for the dependency to be satisfied.
         /// </summary>
-        public string Condition { get; set; }
+        public string? Condition { get; set; }
         
         /// <summary>
         /// Additional metadata about the dependency.

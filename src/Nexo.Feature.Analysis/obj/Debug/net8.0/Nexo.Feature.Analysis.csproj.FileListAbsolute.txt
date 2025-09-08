@@ -27,6 +27,7 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Core.Application.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Core.Domain.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Feature.AI.dll
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Feature.Factory.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Feature.Pipeline.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Shared.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Core.Application.pdb
@@ -34,6 +35,7 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Core.Domain.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Feature.Pipeline.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Shared.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/bin/Debug/net8.0/Nexo.Feature.Factory.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Debug/net8.0/Nexo.Feature.Analysis.csproj.AssemblyReference.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Debug/net8.0/Nexo.Feature.Analysis.GeneratedMSBuildEditorConfig.editorconfig
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Analysis/obj/Debug/net8.0/Nexo.Feature.Analysis.AssemblyInfoInputs.cache

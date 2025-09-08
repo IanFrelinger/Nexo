@@ -30,7 +30,7 @@ namespace Nexo.Core.Domain.ValueObjects
             foreach (var p in paths) { combined = Path.Combine(combined, p); }
             return new ProjectPath(combined);
         }
-        public string GetDirectoryName() { return Path.GetDirectoryName(Value); }
+        public string? GetDirectoryName() { return Path.GetDirectoryName(Value); }
         public string GetFileName() { return Path.GetFileName(Value); }
         public override bool Equals(object? obj)
         {
@@ -47,12 +47,12 @@ namespace Nexo.Core.Domain.ValueObjects
             var hash = Value.GetHashCode();
             return hash;
         }
-        public static bool operator ==(ProjectPath left, ProjectPath right)
+        public static bool operator ==(ProjectPath? left, ProjectPath? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
             return left.Equals(right);
         }
-        public static bool operator !=(ProjectPath left, ProjectPath right) => !(left == right);
+        public static bool operator !=(ProjectPath? left, ProjectPath? right) => !(left == right);
     }
 } 

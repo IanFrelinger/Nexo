@@ -326,3 +326,6 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/obj/Debug/net8.0/Nexo.Infrastructure.Tests.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/obj/Debug/net8.0/Nexo.Infrastructure.Tests.genruntimeconfig.cache
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/obj/Debug/net8.0/ref/Nexo.Infrastructure.Tests.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/obj/Debug/net8.0/Nexo.Infrastructure.Tests.sourcelink.json
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/bin/Debug/net8.0/JetBrains.Annotations.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Infrastructure.Tests/bin/Debug/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll

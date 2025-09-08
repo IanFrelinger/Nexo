@@ -92,7 +92,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// <summary>
         /// Deprecation message if this aggregator is deprecated.
         /// </summary>
-        public string DeprecationMessage { get; set; }
+        public string? DeprecationMessage { get; set; }
         
         /// <summary>
         /// Additional metadata about this aggregator.

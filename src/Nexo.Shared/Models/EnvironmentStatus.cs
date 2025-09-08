@@ -8,9 +8,9 @@ namespace Nexo.Shared.Models
     public class EnvironmentStatus
     {
         public bool IsReady { get; set; }
-        public string Name { get; set; }
-        public string Version { get; set; }
-        public string StatusMessage { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public string StatusMessage { get; set; } = string.Empty;
         public Dictionary<string, object> Resources { get; set; } = new Dictionary<string, object>();
     }
 }

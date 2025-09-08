@@ -10,11 +10,11 @@ namespace Nexo.Feature.Container.Models
     /// </summary>
     public sealed class DevelopmentSession
     {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string ProjectPath { get; set; }
-        public string ContainerName { get; set; }
-        public SessionConfiguration Configuration { get; set; }
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string ProjectPath { get; set; } = string.Empty;
+        public string ContainerName { get; set; } = string.Empty;
+        public SessionConfiguration Configuration { get; set; } = new SessionConfiguration();
         public DateTime CreatedAt { get; set; }
         public DateTime LastAccessedAt { get; set; }
         public SessionStatus Status { get; set; }

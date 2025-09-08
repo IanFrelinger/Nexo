@@ -494,6 +494,9 @@
               },
               "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj": {
                 "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj"
+              },
+              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj": {
+                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj"
               }
             }
           }
@@ -516,6 +519,97 @@
             "Microsoft.Extensions.Logging.Abstractions": {
               "target": "Package",
               "version": "[8.0.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.303/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj",
+        "projectName": "Nexo.Feature.Factory",
+        "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj",
+        "packagesPath": "/Users/ianfrelinger/.nuget/packages/",
+        "outputPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/ianfrelinger/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "/usr/local/share/dotnet/library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj": {
+                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
+              },
+              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
+                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
+              },
+              "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj": {
+                "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.Extensions.Hosting.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Microsoft.Extensions.Logging.Abstractions": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "System.Diagnostics.Process": {
+              "target": "Package",
+              "version": "[4.3.0, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[9.0.7, )"
             }
           },
           "imports": [

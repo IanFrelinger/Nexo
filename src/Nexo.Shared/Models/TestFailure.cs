@@ -5,12 +5,12 @@ namespace Nexo.Core.Application.Models
     /// </summary>
     public sealed class TestFailure
     {
-        public string TestName { get; set; }
-        public string Message { get; set; }
-        public string StackTrace { get; set; }
-        public string SourceFile { get; set; }
+        public string TestName { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string StackTrace { get; set; } = string.Empty;
+        public string? SourceFile { get; set; }
         public int LineNumber { get; set; }
-        public TestFailure(string testName, string message, string stackTrace, string sourceFile = null, int lineNumber = 0)
+        public TestFailure(string testName, string message, string stackTrace, string? sourceFile = null, int lineNumber = 0)
         {
             TestName = testName;
             Message = message;

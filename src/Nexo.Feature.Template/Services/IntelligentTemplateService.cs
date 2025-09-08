@@ -30,7 +30,7 @@ namespace Nexo.Feature.Template.Services
             _baseTemplateService = baseTemplateService ?? throw new ArgumentNullException(nameof(baseTemplateService));
         }
 
-        public async Task<string> GenerateTemplateAsync(string description, IDictionary<string, object> parameters = null, CancellationToken cancellationToken = default)
+        public async Task<string> GenerateTemplateAsync(string description, IDictionary<string, object>? parameters = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Generating intelligent template for description: {Description}", description);
 
@@ -128,7 +128,7 @@ namespace Nexo.Feature.Template.Services
             return await _baseTemplateService.ValidateTemplateAsync(templateName, cancellationToken);
         }
 
-        public async Task<IList<string>> SuggestTemplateImprovementsAsync(string template, IDictionary<string, object> context = null, CancellationToken cancellationToken = default)
+        public async Task<IList<string>> SuggestTemplateImprovementsAsync(string template, IDictionary<string, object>? context = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting template improvement suggestions");
 

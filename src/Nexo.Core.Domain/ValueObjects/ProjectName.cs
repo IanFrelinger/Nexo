@@ -44,12 +44,12 @@ namespace Nexo.Core.Domain.ValueObjects
             var hash = Value.GetHashCode();
             return hash;
         }
-        public static bool operator ==(ProjectName left, ProjectName right)
+        public static bool operator ==(ProjectName? left, ProjectName? right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
             return left.Equals(right);
         }
-        public static bool operator !=(ProjectName left, ProjectName right) => !(left == right);
+        public static bool operator !=(ProjectName? left, ProjectName? right) => !(left == right);
     }
 }

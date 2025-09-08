@@ -66,7 +66,7 @@ public class ModelOrchestrator : IModelOrchestrator
         }
     }
 
-    public IModelProvider GetProvider(string providerId)
+    public IModelProvider? GetProvider(string providerId)
     {
         if (string.IsNullOrEmpty(providerId))
             return null;
@@ -155,7 +155,7 @@ public class ModelOrchestrator : IModelOrchestrator
         return Task.FromResult(Providers);
     }
 
-    public Task<IModelProvider> SelectModelAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
+    public Task<IModelProvider?> SelectModelAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
         _logger.LogInformation("Selecting model for request");
         
@@ -219,7 +219,7 @@ public class ModelOrchestrator : IModelOrchestrator
         await Task.CompletedTask;
     }
 
-    public async Task<IModelProvider> GetBestModelForTaskAsync(string task, ModelType modelType, CancellationToken cancellationToken = default(CancellationToken))
+    public async Task<IModelProvider?> GetBestModelForTaskAsync(string task, ModelType modelType, CancellationToken cancellationToken = default(CancellationToken))
     {
         _logger.LogInformation("Getting best model provider for task: {Task}, type: {ModelType}", task, modelType);
 
@@ -418,7 +418,7 @@ public class ModelOrchestrator : IModelOrchestrator
         }
     }
 
-    public IModel GetLoadedModel(string modelName)
+    public IModel? GetLoadedModel(string modelName)
     {
         lock (_lock)
         {

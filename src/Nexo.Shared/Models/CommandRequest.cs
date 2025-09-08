@@ -5,9 +5,9 @@ namespace Nexo.Shared.Models
     /// </summary>
     public class CommandRequest
     {
-        public string Command { get; set; }
-        public string Arguments { get; set; }
-        public string WorkingDirectory { get; set; }
+        public string Command { get; set; } = string.Empty;
+        public string Arguments { get; set; } = string.Empty;
+        public string WorkingDirectory { get; set; } = string.Empty;
         public int TimeoutSeconds { get; set; }
         public bool CaptureOutput { get; set; }
     }

@@ -333,7 +333,7 @@ public class BasicResourceManager : IResourceManager
         }
     }
 
-    private async Task<IResourceProvider> FindSuitableProviderAsync(ResourceAllocationRequest request, CancellationToken cancellationToken)
+    private async Task<IResourceProvider?> FindSuitableProviderAsync(ResourceAllocationRequest request, CancellationToken cancellationToken)
     {
         var suitableProviders = _providers.Values
             .Where(p => p.SupportedResourceTypes.Contains(request.ResourceType))
@@ -398,7 +398,7 @@ public class BasicResourceManager : IResourceManager
 
     private void UpdateMetrics(ResourceType resourceType, bool isAllocation)
     {
-        if (!_metrics.TryGetValue(resourceType, out ResourceMetrics value))
+        if (!_metrics.TryGetValue(resourceType, out ResourceMetrics? value))
         {
                 value = new ResourceMetrics();
                 _metrics[resourceType] = value;
@@ -456,7 +456,7 @@ public class BasicResourceManager : IResourceManager
         return healthStatus;
     }
 
-    private void MonitorResources(object state)
+    private void MonitorResources(object? state)
     {
         try
         {

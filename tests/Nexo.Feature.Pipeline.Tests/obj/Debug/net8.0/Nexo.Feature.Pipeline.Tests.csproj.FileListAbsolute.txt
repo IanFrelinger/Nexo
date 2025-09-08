@@ -139,6 +139,9 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.Hosting.Abstractions.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.Logging.Abstractions.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.Options.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Microsoft.Extensions.Primitives.dll
@@ -275,6 +278,7 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Core.Domain.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.AI.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.Analysis.dll
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.Factory.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.Pipeline.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.Platform.dll
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Shared.dll
@@ -285,6 +289,7 @@
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.Analysis.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.Platform.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Shared.pdb
+/Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/bin/Debug/net8.0/Nexo.Feature.Factory.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/obj/Debug/net8.0/Nexo.Feature.Pipeline.Tests.csproj.AssemblyReference.cache
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/obj/Debug/net8.0/Nexo.Feature.Pipeline.Tests.GeneratedMSBuildEditorConfig.editorconfig
 /Users/ianfrelinger/RiderProjects/Nexo/tests/Nexo.Feature.Pipeline.Tests/obj/Debug/net8.0/Nexo.Feature.Pipeline.Tests.AssemblyInfoInputs.cache

@@ -20,8 +20,8 @@ namespace Nexo.Shared
         /// <returns>A SHA256-based hex string cache key.</returns>
         public static string Generate(
             string input,
-            IDictionary<string, object> context = null,
-            IDictionary<string, object> modelParameters = null)
+            IDictionary<string, object>? context = null,
+            IDictionary<string, object>? modelParameters = null)
         {
             // Normalize input: trim, lowercase, remove all whitespace
             var normalizedInput = Normalize(input);

@@ -1,0 +1,282 @@
+{
+  "id": "nexo-default-standards",
+  "name": "Nexo Default Coding Standards",
+  "description": "Default coding standards configuration for the Nexo framework code generation agents",
+  "version": "1.0.0",
+  "isEnabled": true,
+  "standards": [
+    {
+      "id": "csharp-clean-architecture",
+      "name": "C# Clean Architecture Standards",
+      "description": "Coding standards for Clean Architecture C# projects",
+      "version": "1.0.0",
+      "language": "csharp",
+      "framework": "dotnet",
+      "isEnabled": true,
+      "priority": 10,
+      "rules": [
+        {
+          "id": "class-naming-pascal",
+          "name": "Class Naming - PascalCase",
+          "description": "Classes must use PascalCase naming convention",
+          "category": "Naming",
+          "severity": "Error",
+          "type": "Naming",
+          "pattern": "^[A-Z][a-zA-Z0-9]*$",
+          "errorMessage": "Class names must use PascalCase (e.g., UserService, not userService)",
+          "suggestedFix": "Rename class to use PascalCase",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"],
+          "parameters": {
+            "target": "class"
+          }
+        },
+        {
+          "id": "method-naming-pascal",
+          "name": "Method Naming - PascalCase",
+          "description": "Public methods must use PascalCase naming convention",
+          "category": "Naming",
+          "severity": "Error",
+          "type": "Naming",
+          "pattern": "^[A-Z][a-zA-Z0-9]*$",
+          "errorMessage": "Public method names must use PascalCase (e.g., GetUser, not getUser)",
+          "suggestedFix": "Rename method to use PascalCase",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"],
+          "parameters": {
+            "target": "method",
+            "visibility": "public"
+          }
+        },
+        {
+          "id": "interface-naming-prefix",
+          "name": "Interface Naming - I Prefix",
+          "description": "Interfaces must be prefixed with 'I'",
+          "category": "Naming",
+          "severity": "Error",
+          "type": "Naming",
+          "pattern": "^I[A-Z][a-zA-Z0-9]*$",
+          "errorMessage": "Interface names must be prefixed with 'I' (e.g., IUserService, not UserService)",
+          "suggestedFix": "Add 'I' prefix to interface name",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"],
+          "parameters": {
+            "target": "interface"
+          }
+        },
+        {
+          "id": "no-magic-numbers",
+          "name": "No Magic Numbers",
+          "description": "Avoid magic numbers in code",
+          "category": "Code Quality",
+          "severity": "Warning",
+          "type": "Pattern",
+          "pattern": "(?<!\\w)(?:[0-9]{2,}|[0-9]+\\.[0-9]+)(?!\\w)",
+          "errorMessage": "Magic number detected. Consider using named constants",
+          "suggestedFix": "Replace magic number with a named constant",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"],
+          "parameters": {
+            "excludePatterns": ["0", "1", "-1", "true", "false"]
+          }
+        },
+        {
+          "id": "max-line-length",
+          "name": "Maximum Line Length",
+          "description": "Lines should not exceed 120 characters",
+          "category": "Formatting",
+          "severity": "Warning",
+          "type": "Formatting",
+          "pattern": "max-line-length",
+          "errorMessage": "Line length exceeds 120 characters",
+          "suggestedFix": "Break line into multiple lines",
+          "isEnabled": true,
+          "filePatterns": ["*.cs", "*.js", "*.ts"],
+          "parameters": {
+            "maxLength": 120
+          }
+        },
+        {
+          "id": "no-trailing-whitespace",
+          "name": "No Trailing Whitespace",
+          "description": "Lines should not have trailing whitespace",
+          "category": "Formatting",
+          "severity": "Info",
+          "type": "Formatting",
+          "pattern": "no-trailing-whitespace",
+          "errorMessage": "Line contains trailing whitespace",
+          "suggestedFix": "Remove trailing whitespace",
+          "isEnabled": true,
+          "filePatterns": ["*.cs", "*.js", "*.ts", "*.py", "*.java"]
+        },
+        {
+          "id": "require-xml-documentation",
+          "name": "Require XML Documentation",
+          "description": "Public members should have XML documentation",
+          "category": "Documentation",
+          "severity": "Warning",
+          "type": "Pattern",
+          "pattern": "public\\s+(?:class|interface|struct|enum|delegate|method|property)\\s+[^{]+\\{",
+          "errorMessage": "Public member should have XML documentation",
+          "suggestedFix": "Add XML documentation comments above the public member",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"],
+          "parameters": {
+            "requireXmlDoc": true
+          }
+        },
+        {
+          "id": "async-method-naming",
+          "name": "Async Method Naming",
+          "description": "Async methods should end with 'Async'",
+          "category": "Naming",
+          "severity": "Error",
+          "type": "Pattern",
+          "pattern": "public\\s+(?:static\\s+)?(?:async\\s+)?Task<[^>]*>\\s+([A-Z][a-zA-Z0-9]*)\\s*\\(",
+          "errorMessage": "Async methods should end with 'Async' suffix",
+          "suggestedFix": "Add 'Async' suffix to method name",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"],
+          "parameters": {
+            "requireAsyncSuffix": true
+          }
+        }
+      ],
+      "metadata": {
+        "source": "Nexo Framework",
+        "lastUpdated": "2024-01-01",
+        "appliesTo": ["code-generation-agent", "domain-analysis-agent"]
+      }
+    },
+    {
+      "id": "security-standards",
+      "name": "Security Coding Standards",
+      "description": "Security-focused coding standards",
+      "version": "1.0.0",
+      "language": "csharp",
+      "isEnabled": true,
+      "priority": 20,
+      "rules": [
+        {
+          "id": "no-hardcoded-secrets",
+          "name": "No Hardcoded Secrets",
+          "description": "No hardcoded passwords, API keys, or secrets",
+          "category": "Security",
+          "severity": "Critical",
+          "type": "Security",
+          "pattern": "(?:password|secret|key|token)\\s*=\\s*[\"'][^\"']*[\"']",
+          "errorMessage": "Hardcoded secret detected. Use secure configuration instead",
+          "suggestedFix": "Move secret to secure configuration or environment variables",
+          "isEnabled": true,
+          "filePatterns": ["*.cs", "*.js", "*.ts", "*.py", "*.java"]
+        },
+        {
+          "id": "sql-injection-prevention",
+          "name": "SQL Injection Prevention",
+          "description": "Use parameterized queries to prevent SQL injection",
+          "category": "Security",
+          "severity": "Critical",
+          "type": "Security",
+          "pattern": "(?:SqlCommand|ExecuteReader|ExecuteScalar).*\\+.*",
+          "errorMessage": "Potential SQL injection vulnerability. Use parameterized queries",
+          "suggestedFix": "Use SqlParameter or parameterized queries",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"]
+        },
+        {
+          "id": "input-validation",
+          "name": "Input Validation",
+          "description": "Validate all user inputs",
+          "category": "Security",
+          "severity": "Error",
+          "type": "Security",
+          "pattern": "public\\s+.*\\s+\\w+\\s*\\([^)]*string\\s+\\w+[^)]*\\)",
+          "errorMessage": "Public method with string parameter should validate input",
+          "suggestedFix": "Add input validation (null check, length check, etc.)",
+          "isEnabled": true,
+          "filePatterns": ["*.cs"]
+        }
+      ],
+      "metadata": {
+        "source": "Security Best Practices",
+        "lastUpdated": "2024-01-01"
+      }
+    }
+  ],
+  "globalSettings": {
+    "failOnCriticalViolations": true,
+    "failOnErrorViolations": false,
+    "maxViolationsAllowed": 10,
+    "minimumQualityScore": 80,
+    "autoFixEnabled": true,
+    "validationTimeoutMs": 30000,
+    "includeSuggestions": true,
+    "verbosityLevel": "Normal",
+    "includePatterns": ["*.cs", "*.js", "*.ts", "*.py", "*.java"],
+    "excludePatterns": ["*.generated.cs", "*.designer.cs", "bin/**", "obj/**", "node_modules/**"]
+  },
+  "agentSettings": {
+    "code-generation-agent": {
+      "agentId": "code-generation-agent",
+      "isEnabled": true,
+      "appliedStandards": ["csharp-clean-architecture", "security-standards"],
+      "excludedRules": [],
+      "severityThreshold": "Warning",
+      "autoFixEnabled": true,
+      "customSettings": {
+        "strictMode": true,
+        "generateDocumentation": true
+      }
+    },
+    "domain-analysis-agent": {
+      "agentId": "domain-analysis-agent",
+      "isEnabled": true,
+      "appliedStandards": ["csharp-clean-architecture"],
+      "excludedRules": ["max-line-length"],
+      "severityThreshold": "Error",
+      "autoFixEnabled": false,
+      "customSettings": {
+        "focusOnArchitecture": true
+      }
+    }
+  },
+  "fileTypeSettings": {
+    ".cs": {
+      "filePattern": "*.cs",
+      "isEnabled": true,
+      "appliedStandards": ["csharp-clean-architecture", "security-standards"],
+      "excludedRules": [],
+      "severityThreshold": "Warning",
+      "customSettings": {
+        "enforceCSharpConventions": true
+      }
+    },
+    ".js": {
+      "filePattern": "*.js",
+      "isEnabled": true,
+      "appliedStandards": ["security-standards"],
+      "excludedRules": [],
+      "severityThreshold": "Warning",
+      "customSettings": {
+        "enforceJavaScriptConventions": true
+      }
+    },
+    ".ts": {
+      "filePattern": "*.ts",
+      "isEnabled": true,
+      "appliedStandards": ["security-standards"],
+      "excludedRules": [],
+      "severityThreshold": "Warning",
+      "customSettings": {
+        "enforceTypeScriptConventions": true
+      }
+    }
+  },
+  "metadata": {
+    "createdBy": "Nexo Framework",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "lastModified": "2024-01-01T00:00:00Z",
+    "version": "1.0.0",
+    "description": "Default coding standards for Nexo framework code generation agents"
+  }
+}

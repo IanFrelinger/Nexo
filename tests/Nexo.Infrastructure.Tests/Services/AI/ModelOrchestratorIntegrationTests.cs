@@ -58,7 +58,7 @@ namespace Nexo.Infrastructure.Tests.Services.AI
             orchestrator.RegisterProvider(openAiProvider);
             var healthStatuses = await orchestrator.GetAllProviderHealthStatusAsync();
             Assert.NotNull(healthStatuses);
-            Assert.Contains(healthStatuses, h => h.ProviderId == "openai");
+            Assert.Contains(healthStatuses, h => h.ProviderName == "openai");
         }
     }
 } 

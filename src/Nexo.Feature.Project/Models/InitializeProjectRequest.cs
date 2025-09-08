@@ -9,12 +9,12 @@ namespace Nexo.Core.Application.Models
     /// </summary>
     public sealed class InitializeProjectRequest
     {
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public string Runtime { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
+        public string Runtime { get; set; } = string.Empty;
         public bool Force { get; set; }
-        public List<string> AgentIds { get; set; }
-        public Dictionary<string, object> Metadata { get; set; }
+        public List<string> AgentIds { get; set; } = new List<string>();
+        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
         public InitializeProjectRequest(
             string name,

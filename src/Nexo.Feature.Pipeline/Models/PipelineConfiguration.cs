@@ -44,7 +44,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// Gets or sets the pipeline execution settings.
         /// </summary>
         [JsonPropertyName("execution")]
-        public PipelineExecutionSettings Execution { get; set; } = new PipelineExecutionSettings();
+        public PipelineExecutionSettings? Execution { get; set; } = new PipelineExecutionSettings();
 
         /// <summary>
         /// Gets or sets the pipeline commands configuration.
@@ -89,23 +89,23 @@ namespace Nexo.Feature.Pipeline.Models
         public PipelineDocumentationConfiguration Documentation { get; set; } = new PipelineDocumentationConfiguration();
 
         // IPipelineConfiguration implementation
-        public int MaxParallelExecutions => Execution.MaxParallelExecutions;
-        public int CommandTimeoutMs => Execution.CommandTimeoutMs;
-        public int BehaviorTimeoutMs => Execution.BehaviorTimeoutMs;
-        public int AggregatorTimeoutMs => Execution.AggregatorTimeoutMs;
-        public int MaxRetries => Execution.MaxRetries;
-        public int RetryDelayMs => Execution.RetryDelayMs;
-        public bool EnableDetailedLogging => Execution.EnableDetailedLogging;
-        public bool EnablePerformanceMonitoring => Execution.EnablePerformanceMonitoring;
-        public bool EnableExecutionHistory => Execution.EnableExecutionHistory;
-        public int MaxExecutionHistoryEntries => Execution.MaxExecutionHistoryEntries;
-        public bool EnableParallelExecution => Execution.EnableParallelExecution;
-        public bool EnableDependencyResolution => Execution.EnableDependencyResolution;
-        public bool EnableResourceManagement => Execution.EnableResourceManagement;
-        public long MaxMemoryUsageBytes => Execution.MaxMemoryUsageBytes;
-        public double MaxCpuUsagePercentage => Execution.MaxCpuUsagePercentage;
+        public int MaxParallelExecutions => Execution?.MaxParallelExecutions ?? 1;
+        public int CommandTimeoutMs => Execution?.CommandTimeoutMs ?? 30000;
+        public int BehaviorTimeoutMs => Execution?.BehaviorTimeoutMs ?? 60000;
+        public int AggregatorTimeoutMs => Execution?.AggregatorTimeoutMs ?? 120000;
+        public int MaxRetries => Execution?.MaxRetries ?? 3;
+        public int RetryDelayMs => Execution?.RetryDelayMs ?? 1000;
+        public bool EnableDetailedLogging => Execution?.EnableDetailedLogging ?? false;
+        public bool EnablePerformanceMonitoring => Execution?.EnablePerformanceMonitoring ?? false;
+        public bool EnableExecutionHistory => Execution?.EnableExecutionHistory ?? false;
+        public int MaxExecutionHistoryEntries => Execution?.MaxExecutionHistoryEntries ?? 100;
+        public bool EnableParallelExecution => Execution?.EnableParallelExecution ?? true;
+        public bool EnableDependencyResolution => Execution?.EnableDependencyResolution ?? true;
+        public bool EnableResourceManagement => Execution?.EnableResourceManagement ?? false;
+        public long MaxMemoryUsageBytes => Execution?.MaxMemoryUsageBytes ?? 1073741824; // 1GB
+        public double MaxCpuUsagePercentage => Execution?.MaxCpuUsagePercentage ?? 80.0;
 
-        public T GetValue<T>(string key, T defaultValue = default(T))
+        public T? GetValue<T>(string key, T? defaultValue = default(T))
         {
             if (Variables.TryGetValue(key, out var value) && value is T tValue)
                 return tValue;
@@ -287,7 +287,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// Gets or sets the command retry settings.
         /// </summary>
         [JsonPropertyName("retry")]
-        public CommandRetryConfiguration Retry { get; set; }
+        public CommandRetryConfiguration? Retry { get; set; }
 
         /// <summary>
         /// Gets or sets the command validation rules.
@@ -419,7 +419,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// Gets or sets the aggregator resource requirements.
         /// </summary>
         [JsonPropertyName("resourceRequirements")]
-        public ResourceRequirementsConfiguration ResourceRequirements { get; set; }
+        public ResourceRequirementsConfiguration? ResourceRequirements { get; set; }
     }
 
     /// <summary>
@@ -473,7 +473,7 @@ namespace Nexo.Feature.Pipeline.Models
         /// Gets or sets the environment-specific execution settings.
         /// </summary>
         [JsonPropertyName("execution")]
-        public PipelineExecutionSettings Execution { get; set; }
+        public PipelineExecutionSettings Execution { get; set; } = new PipelineExecutionSettings();
 
         /// <summary>
         /// Gets or sets the environment-specific command overrides.

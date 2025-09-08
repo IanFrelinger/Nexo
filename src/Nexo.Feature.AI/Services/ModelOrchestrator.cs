@@ -63,7 +63,7 @@ public class ModelOrchestrator : IModelOrchestrator
         return Task.CompletedTask;
     }
 
-    public Task<IModelProvider> GetBestModelForTaskAsync(string task, Enums.ModelType modelType, CancellationToken cancellationToken = default)
+    public Task<IModelProvider?> GetBestModelForTaskAsync(string task, Enums.ModelType modelType, CancellationToken cancellationToken = default)
     {
         var suitableProviders = _providers
             .Where(p => p.SupportedModelTypes.Contains(modelType))

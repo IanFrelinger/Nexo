@@ -41,7 +41,7 @@ namespace Nexo.Feature.Analysis.Services
             PerformBasicAnalysis(code);
         }
 
-        public async Task<IList<string>> GetAISuggestionsAsync(string code, IDictionary<string, object> context = null, CancellationToken cancellationToken = default)
+        public async Task<IList<string>> GetAISuggestionsAsync(string code, IDictionary<string, object>? context = null, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting AI suggestions for code of length: {Length}", code?.Length ?? 0);
 

@@ -8,15 +8,15 @@ namespace Nexo.Feature.Container.Models
     /// </summary>
     public sealed class SessionConfiguration
     {
-        public string ProjectPath { get; set; }
-        public string ContainerImage { get; set; }
-        public string WorkingDirectory { get; set; }
+        public string ProjectPath { get; set; } = string.Empty;
+        public string ContainerImage { get; set; } = string.Empty;
+        public string WorkingDirectory { get; set; } = string.Empty;
         public Dictionary<string, string> EnvironmentVariables { get; set; }
         public List<VolumeMount> VolumeMounts { get; set; }
         public List<PortMapping> PortMappings { get; set; }
         public List<string> AdditionalPackages { get; set; }
-        public SessionOptions Options { get; set; }
-        public string SessionName { get; set; }
+        public SessionOptions Options { get; set; } = new SessionOptions();
+        public string SessionName { get; set; } = string.Empty;
 
         public SessionConfiguration()
         {

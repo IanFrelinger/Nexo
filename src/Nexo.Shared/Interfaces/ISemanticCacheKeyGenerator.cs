@@ -13,6 +13,6 @@ namespace Nexo.Shared.Interfaces
         /// <param name="input">The input to generate a key for.</param>
         /// <param name="metadata">Optional metadata to include in the key generation.</param>
         /// <returns>A semantic cache key.</returns>
-        string Generate(string input, IDictionary<string, object> metadata = null);
+        string Generate(string input, IDictionary<string, object>? metadata = null);
     }
 } 

@@ -257,7 +257,7 @@ namespace Nexo.Core.Domain.Tests.Composition
             Assert.Equal(ValidationSeverity.Error, rule.Severity);
             Assert.True(rule.Validate("test"));
             Assert.False(rule.Validate(""));
-            Assert.False(rule.Validate(null));
+            Assert.False(rule.Validate(null!));
         }
         
         [Fact]
@@ -356,7 +356,7 @@ namespace Nexo.Core.Domain.Tests.Composition
             // Act & Assert
             Assert.True(rule1.CanComposeWith(rule2));
             Assert.True(rule2.CanComposeWith(rule1));
-            Assert.False(rule1.CanComposeWith(null));
+            Assert.False(rule1.CanComposeWith(null!));
         }
         
         [Fact]
@@ -468,7 +468,7 @@ namespace Nexo.Core.Domain.Tests.Composition
             // Act & Assert
             Assert.Equal(error1, error2);
             Assert.NotEqual(error1, error3);
-            Assert.NotEqual(error1, null);
+            Assert.NotEqual(error1, null!);
         }
         
         [Fact]
@@ -482,14 +482,14 @@ namespace Nexo.Core.Domain.Tests.Composition
             // Act & Assert
             Assert.Equal(warning1, warning2);
             Assert.NotEqual(warning1, warning3);
-            Assert.NotEqual(warning1, null);
+            Assert.NotEqual(warning1, null!);
         }
         
         [Fact]
         public void ValidationResult_Combine_WithNullResults_HandlesGracefully()
         {
             // Act
-            var combined = ValidationResult.Combine(null, ValidationResult.Success(), null);
+            var combined = ValidationResult.Combine(null!, ValidationResult.Success(), null!);
             
             // Assert
             Assert.True(combined.IsValid);
@@ -503,21 +503,21 @@ namespace Nexo.Core.Domain.Tests.Composition
             var result = new ValidationResult();
             
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => result.Merge(null));
+            Assert.Throws<ArgumentNullException>(() => result.Merge(null!));
         }
         
         [Fact]
         public void ValidationError_WithNullMessage_ThrowsException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ValidationError(null));
+            Assert.Throws<ArgumentNullException>(() => new ValidationError(null!));
         }
         
         [Fact]
         public void ValidationWarning_WithNullMessage_ThrowsException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ValidationWarning(null));
+            Assert.Throws<ArgumentNullException>(() => new ValidationWarning(null!));
         }
         
         [Fact]

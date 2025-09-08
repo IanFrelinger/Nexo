@@ -16,17 +16,17 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Error message if the command failed.
     /// </summary>
-    public string ErrorMessage { get; set; }
+    public string? ErrorMessage { get; set; }
     
     /// <summary>
     /// Exception that occurred during execution, if any.
     /// </summary>
-    public Exception Exception { get; set; }
+    public Exception? Exception { get; set; }
     
     /// <summary>
     /// Data returned by the command execution.
     /// </summary>
-    public object Data { get; set; }
+    public object? Data { get; set; }
     
     /// <summary>
     /// Execution time in milliseconds.
@@ -66,7 +66,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <param name="startTime">Start time.</param>
     /// <param name="endTime">End time.</param>
     /// <returns>A successful command result.</returns>
-    public static CommandResult Success(object data = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
+    public static CommandResult Success(object? data = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
     {
         return new CommandResult
         {
@@ -87,7 +87,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <param name="startTime">Start time.</param>
     /// <param name="endTime">End time.</param>
     /// <returns>A failed command result.</returns>
-    public static CommandResult Failure(string errorMessage, Exception exception = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
+    public static CommandResult Failure(string errorMessage, Exception? exception = null, long executionTimeMs = 0, DateTime startTime = default(DateTime), DateTime endTime = default(DateTime))
     {
         return new CommandResult
         {

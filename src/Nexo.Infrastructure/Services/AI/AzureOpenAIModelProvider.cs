@@ -267,7 +267,7 @@ namespace Nexo.Infrastructure.Services.AI
         public async Task<ModelInfo> GetModelInfoAsync(string modelName, CancellationToken cancellationToken = default)
         {
             var models = await GetAvailableModelsAsync(cancellationToken);
-            return models.FirstOrDefault(m => m.Name == modelName);
+            return models.FirstOrDefault(m => m.Name == modelName) ?? new ModelInfo { Name = modelName, IsAvailable = false };
         }
 
         /// <summary>
@@ -318,7 +318,7 @@ namespace Nexo.Infrastructure.Services.AI
                 var startTime = DateTime.UtcNow;
                 var model = request.Context?.TryGetValue("model", out var modelObj) == true ? modelObj as string : "gpt-35-turbo";
                 var url = $"openai/deployments/{model}/chat/completions?api-version={_apiVersion}";
-                var azureRequest = CreateAzureOpenAIRequest(request, model);
+                var azureRequest = CreateAzureOpenAIRequest(request, model ?? "gpt-35-turbo");
                 var content = new StringContent(JsonSerializer.Serialize(azureRequest), Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync(url, content, cancellationToken);
                 response.EnsureSuccessStatusCode();
@@ -334,7 +334,7 @@ namespace Nexo.Infrastructure.Services.AI
                     Metadata = new Dictionary<string, object>
                     {
                         ["finish_reason"] = openAIResponse?.Choices?.FirstOrDefault()?.FinishReason ?? "unknown",
-                        ["usage"] = openAIResponse?.Usage
+                        ["usage"] = openAIResponse?.Usage ?? new object()
                     }
                 };
             }
@@ -744,7 +744,7 @@ namespace Nexo.Infrastructure.Services.AI
                         Metadata = new Dictionary<string, object>
                         {
                             ["finish_reason"] = openAiResponse?.Choices?.FirstOrDefault()?.FinishReason ?? "unknown",
-                            ["usage"] = openAiResponse?.Usage
+                            ["usage"] = openAiResponse?.Usage ?? new object()
                         }
                     };
                 }

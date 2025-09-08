@@ -16,7 +16,7 @@ namespace Nexo.Feature.Template.Interfaces
         /// <param name="parameters">Optional parameters for template generation.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The generated template content.</returns>
-        Task<string> GenerateTemplateAsync(string description, IDictionary<string, object> parameters = null, CancellationToken cancellationToken = default);
+        Task<string> GenerateTemplateAsync(string description, IDictionary<string, object>? parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Adapts an existing template based on new requirements.
@@ -34,7 +34,7 @@ namespace Nexo.Feature.Template.Interfaces
         /// <param name="context">Optional context for the analysis.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>List of improvement suggestions.</returns>
-        Task<IList<string>> SuggestTemplateImprovementsAsync(string template, IDictionary<string, object> context = null, CancellationToken cancellationToken = default);
+        Task<IList<string>> SuggestTemplateImprovementsAsync(string template, IDictionary<string, object>? context = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates a complete project structure.

@@ -20,7 +20,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
         Task<WorkflowExecutionResult> ExecuteWorkflowAsync(
             WorkflowType type,
             string projectPath,
-            string configPath = null,
+            string? configPath = null,
             CancellationToken cancellationToken = default);
     }
 }

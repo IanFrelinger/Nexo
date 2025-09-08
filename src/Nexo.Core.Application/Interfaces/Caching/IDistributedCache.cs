@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
         /// <param name="key">The cache key.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The cached value, or null if not found.</returns>
-        Task<string> GetAsync(string key, CancellationToken cancellationToken = default(CancellationToken));
+        Task<string?> GetAsync(string key, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Gets a value from the cache and deserializes it to the specified type.
@@ -25,7 +25,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
         /// <param name="key">The cache key.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>The deserialized value, or null if not found.</returns>
-        Task<T> GetAsync<T>(string key, CancellationToken cancellationToken = default(CancellationToken));
+        Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         /// Sets a value in the cache.
@@ -215,7 +215,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
         /// <typeparam name="T">The type to deserialize to.</typeparam>
         /// <param name="value">The string to deserialize.</param>
         /// <returns>The deserialized object.</returns>
-        T Deserialize<T>(string value);
+        T? Deserialize<T>(string value);
     }
 
     /// <summary>

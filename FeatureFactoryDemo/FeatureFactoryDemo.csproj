@@ -7,4 +7,17 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../src/Nexo.Feature.Analysis/Nexo.Feature.Analysis.csproj" />
+    <ProjectReference Include="../src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj" />
+    <ProjectReference Include="../src/Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="../src/Nexo.Shared/Nexo.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+  </ItemGroup>
+
 </Project>

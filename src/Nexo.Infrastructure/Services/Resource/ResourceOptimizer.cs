@@ -249,7 +249,7 @@ namespace Nexo.Infrastructure.Services.Resource
             }
         }
 
-        private async Task<OptimizationRecommendation> ApplyOptimizationRuleAsync(
+        private async Task<OptimizationRecommendation?> ApplyOptimizationRuleAsync(
             OptimizationRule rule, 
             SystemResourceUsage usage)
         {

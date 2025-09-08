@@ -11,17 +11,17 @@ namespace Nexo.Core.Application.Models
     /// </summary>
     public sealed class SolutionScaffoldingRequest
     {
-        public string SolutionName { get; set; }
-        public string OutputPath { get; set; }
-        public string TemplateName { get; set; }
-        public SolutionScaffoldingConfiguration Configuration { get; set; }
+        public string SolutionName { get; set; } = string.Empty;
+        public string OutputPath { get; set; } = string.Empty;
+        public string TemplateName { get; set; } = string.Empty;
+        public SolutionScaffoldingConfiguration Configuration { get; set; } = new SolutionScaffoldingConfiguration();
         public bool Force { get; set; }
-        public Dictionary<string, object> TemplateParameters { get; set; }
-        public string TargetFramework { get; set; }
-        public string Language { get; set; }
+        public Dictionary<string, object> TemplateParameters { get; set; } = new Dictionary<string, object>();
+        public string TargetFramework { get; set; } = string.Empty;
+        public string Language { get; set; } = string.Empty;
         public bool CreateGitRepository { get; set; }
         public bool InitializeSolution { get; set; }
-        public BuildConfiguration BuildConfiguration { get; set; }
+        public BuildConfiguration BuildConfiguration { get; set; } = new BuildConfiguration();
 
         public SolutionScaffoldingRequest()
         {
@@ -48,13 +48,13 @@ namespace Nexo.Core.Application.Models
 
     public sealed class SolutionScaffoldingConfiguration
     {
-        public List<ProjectConfiguration> Projects { get; set; }
-        public SolutionStructureConfiguration Structure { get; set; }
-        public TestingConfiguration Testing { get; set; }
-        public CiCdConfiguration CiCd { get; set; }
-        public DocumentationConfiguration Documentation { get; set; }
-        public SecurityConfiguration Security { get; set; }
-        public PerformanceConfiguration Performance { get; set; }
+        public List<ProjectConfiguration> Projects { get; set; } = new List<ProjectConfiguration>();
+        public SolutionStructureConfiguration Structure { get; set; } = new SolutionStructureConfiguration();
+        public TestingConfiguration Testing { get; set; } = new TestingConfiguration();
+        public CiCdConfiguration? CiCd { get; set; }
+        public DocumentationConfiguration Documentation { get; set; } = new DocumentationConfiguration();
+        public SecurityConfiguration Security { get; set; } = new SecurityConfiguration();
+        public PerformanceConfiguration Performance { get; set; } = new PerformanceConfiguration();
 
         public SolutionScaffoldingConfiguration()
         {
@@ -70,14 +70,14 @@ namespace Nexo.Core.Application.Models
 
     public sealed class ProjectConfiguration
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public ProjectType Type { get; set; }
-        public string TargetFramework { get; set; }
-        public string Template { get; set; }
-        public List<ProjectDependency> Dependencies { get; set; }
-        public List<NuGetPackage> NuGetPackages { get; set; }
-        public List<string> Folders { get; set; }
-        public List<FileConfiguration> Files { get; set; }
+        public string TargetFramework { get; set; } = string.Empty;
+        public string Template { get; set; } = string.Empty;
+        public List<ProjectDependency> Dependencies { get; set; } = new List<ProjectDependency>();
+        public List<NuGetPackage> NuGetPackages { get; set; } = new List<NuGetPackage>();
+        public List<string> Folders { get; set; } = new List<string>();
+        public List<FileConfiguration> Files { get; set; } = new List<FileConfiguration>();
         public bool IncludeTests { get; set; }
         public TestFramework TestFramework { get; set; }
 
@@ -99,9 +99,9 @@ namespace Nexo.Core.Application.Models
     public sealed class SolutionStructureConfiguration
     {
         public FolderStructure FolderStructure { get; set; }
-        public Dictionary<string, string> CustomFolderMappings { get; set; }
+        public Dictionary<string, string> CustomFolderMappings { get; set; } = new Dictionary<string, string>();
         public bool UseSolutionFolders { get; set; }
-        public List<SolutionFolderConfiguration> SolutionFolders { get; set; }
+        public List<SolutionFolderConfiguration> SolutionFolders { get; set; } = new List<SolutionFolderConfiguration>();
 
         public SolutionStructureConfiguration()
         {
@@ -114,9 +114,9 @@ namespace Nexo.Core.Application.Models
 
     public sealed class SolutionFolderConfiguration
     {
-        public string Name { get; set; }
-        public List<string> Projects { get; set; }
-        public List<SolutionFolderConfiguration> Subfolders { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public List<string> Projects { get; set; } = new List<string>();
+        public List<SolutionFolderConfiguration> Subfolders { get; set; } = new List<SolutionFolderConfiguration>();
 
         public SolutionFolderConfiguration()
         {
@@ -128,7 +128,7 @@ namespace Nexo.Core.Application.Models
 
     public sealed class ProjectDependency
     {
-        public string ProjectName { get; set; }
+        public string ProjectName { get; set; } = string.Empty;
         public ProjectDependencyType Type { get; set; }
         public bool IsRequired { get; set; }
 
@@ -142,8 +142,8 @@ namespace Nexo.Core.Application.Models
 
     public sealed class NuGetPackage
     {
-        public string PackageId { get; set; }
-        public string Version { get; set; }
+        public string PackageId { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
         public PackageType Type { get; set; }
         public bool IncludePrerelease { get; set; }
 
@@ -158,10 +158,10 @@ namespace Nexo.Core.Application.Models
 
     public sealed class FileConfiguration
     {
-        public string Name { get; set; }
-        public string Template { get; set; }
-        public string Path { get; set; }
-        public Dictionary<string, object> Parameters { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Template { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
+        public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
         public bool Overwrite { get; set; }
 
         public FileConfiguration()
@@ -195,8 +195,8 @@ namespace Nexo.Core.Application.Models
     public sealed class CiCdConfiguration
     {
         public CiCdPlatform Platform { get; set; }
-        public List<BuildTrigger> Triggers { get; set; }
-        public List<string> Environments { get; set; }
+        public List<BuildTrigger> Triggers { get; set; } = new List<BuildTrigger>();
+        public List<string> Environments { get; set; } = new List<string>();
         public bool EnableAutomatedTesting { get; set; }
         public bool EnableAutomatedDeployment { get; set; }
 
@@ -215,7 +215,7 @@ namespace Nexo.Core.Application.Models
         public DocumentationFormat Format { get; set; }
         public bool GenerateApiDocumentation { get; set; }
         public bool IncludeCodeExamples { get; set; }
-        public List<string> Templates { get; set; }
+        public List<string> Templates { get; set; } = new List<string>();
 
         public DocumentationConfiguration()
         {
@@ -229,7 +229,7 @@ namespace Nexo.Core.Application.Models
     public sealed class SecurityConfiguration
     {
         public bool EnableSecurityScanning { get; set; }
-        public List<SecurityTool> Tools { get; set; }
+        public List<SecurityTool> Tools { get; set; } = new List<SecurityTool>();
         public bool EnableSecretScanning { get; set; }
         public bool EnableDependencyVulnerabilityScanning { get; set; }
 
@@ -245,9 +245,9 @@ namespace Nexo.Core.Application.Models
     public sealed class PerformanceConfiguration
     {
         public bool EnablePerformanceMonitoring { get; set; }
-        public List<PerformanceTool> Tools { get; set; }
+        public List<PerformanceTool> Tools { get; set; } = new List<PerformanceTool>();
         public bool EnableProfiling { get; set; }
-        public Dictionary<string, double> Thresholds { get; set; }
+        public Dictionary<string, double> Thresholds { get; set; } = new Dictionary<string, double>();
 
         public PerformanceConfiguration()
         {

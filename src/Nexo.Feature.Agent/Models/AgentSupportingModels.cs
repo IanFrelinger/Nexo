@@ -12,7 +12,7 @@ namespace Nexo.Feature.Agent.Models
         /// <summary>
         /// Represents an individual or entity authorized to perform specific actions on behalf of others or within a system.
         /// </summary>
-        public IAiEnhancedAgent Agent { get; set; }
+        public IAiEnhancedAgent Agent { get; set; } = null!;
 
         /// <summary>
         /// Represents the score or points achieved during an event, game, or process.
@@ -81,7 +81,7 @@ namespace Nexo.Feature.Agent.Models
         /// This property is required to establish the context of the communication and facilitate AI-driven
         /// interactions if applicable.
         /// </remarks>
-        public IAiEnhancedAgent SenderAgent { get; set; } = null;
+        public IAiEnhancedAgent? SenderAgent { get; set; } = null;
 
         /// <summary>
         /// Represents the recipient agent in an agent-to-agent communication context.
@@ -92,7 +92,7 @@ namespace Nexo.Feature.Agent.Models
         /// It uses the <c>IAiEnhancedAgent</c> interface, which provides capabilities such as
         /// AI-based processing and task analysis.
         /// </remarks>
-        public IAiEnhancedAgent RecipientAgent { get; set; } = null;
+        public IAiEnhancedAgent? RecipientAgent { get; set; } = null;
 
         /// <summary>
         /// Represents the content or text of a communication or notification.

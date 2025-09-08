@@ -52,12 +52,12 @@ namespace Nexo.Feature.Pipeline.Models
         /// <summary>
         /// Error message if this step failed.
         /// </summary>
-        public string ErrorMessage { get; set; }
+        public string? ErrorMessage { get; set; }
         
         /// <summary>
         /// Exception that occurred during this step, if any.
         /// </summary>
-        public Exception Exception { get; set; }
+        public Exception? Exception { get; set; }
         
         /// <summary>
         /// Additional metadata about this step.

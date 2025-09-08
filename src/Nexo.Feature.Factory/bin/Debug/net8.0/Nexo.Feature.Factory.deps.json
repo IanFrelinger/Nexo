@@ -370,10 +370,13 @@
       },
       "Nexo.Feature.AI/1.0.0": {
         "dependencies": {
-          "JetBrains.Annotations": "2025.2.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Nexo.Core.Application": "1.0.0",
-          "Nexo.Shared": "1.0.0"
+          "Nexo.Core.Domain": "1.0.0",
+          "Nexo.Shared": "1.0.0",
+          "System.Text.Json": "9.0.7"
         },
         "runtime": {
           "Nexo.Feature.AI.dll": {}

@@ -90,7 +90,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
         /// <param name="key">The configuration key.</param>
         /// <param name="defaultValue">Default value if key doesn't exist.</param>
         /// <returns>The configuration value.</returns>
-        T GetValue<T>(string key, T defaultValue = default(T));
+        T? GetValue<T>(string key, T? defaultValue = default(T));
         
         /// <summary>
         /// Sets a configuration value.

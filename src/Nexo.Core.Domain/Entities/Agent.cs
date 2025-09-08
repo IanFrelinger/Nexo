@@ -233,7 +233,7 @@ namespace Nexo.Core.Domain.Entities
             {
                 return typedValue;
             }
-            return default(T);
+            return default(T)!;
         }
 
         /// <summary>

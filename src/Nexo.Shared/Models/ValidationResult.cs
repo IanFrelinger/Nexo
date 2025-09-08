@@ -24,12 +24,12 @@ namespace Nexo.Shared.Models
         /// <summary>
         /// Gets the first error message, if any.
         /// </summary>
-        public string ErrorMessage { get { return Errors.Count > 0 ? Errors[0].Message : null; } }
+        public string? ErrorMessage { get { return Errors.Count > 0 ? Errors[0].Message : null; } }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ValidationResult"/> class.
         /// </summary>
-        public ValidationResult(bool isValid, IEnumerable<ValidationError> errors = null)
+        public ValidationResult(bool isValid, IEnumerable<ValidationError>? errors = null)
         {
             IsValid = isValid;
             var errorList = errors != null ? new List<ValidationError>(errors) : new List<ValidationError>();

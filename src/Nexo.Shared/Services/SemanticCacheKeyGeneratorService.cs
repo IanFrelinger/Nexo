@@ -14,7 +14,7 @@ namespace Nexo.Shared.Services
         /// <param name="input">The input to generate a key for.</param>
         /// <param name="metadata">Optional metadata to include in the key generation.</param>
         /// <returns>A semantic cache key.</returns>
-        public string Generate(string input, IDictionary<string, object> metadata = null)
+        public string Generate(string input, IDictionary<string, object>? metadata = null)
         {
             return SemanticCacheKeyGenerator.Generate(input, metadata);
         }

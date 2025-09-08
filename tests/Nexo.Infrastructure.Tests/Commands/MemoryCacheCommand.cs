@@ -35,7 +35,7 @@ public class MemoryCacheCommand : IDisposable
             var startTime = DateTime.UtcNow;
             var mockLogger = new Moq.Mock<ILogger<MemoryCacheAdapter>>();
             
-            _cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy());
+            _cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy(), new Timer(_ => { }));
             
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)
@@ -71,7 +71,7 @@ public class MemoryCacheCommand : IDisposable
             var mockLogger = new Moq.Mock<ILogger<MemoryCacheAdapter>>();
             
             // Test only the constructor and basic interface compliance
-            var cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy(), maxSizeBytes: 1024 * 1024 * 1024, maxItems: 100000);
+            var cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy(), new Timer(_ => { }), maxSizeBytes: 1024 * 1024 * 1024, maxItems: 100000);
             
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)
@@ -113,7 +113,7 @@ public class MemoryCacheCommand : IDisposable
             var mockLogger = new Moq.Mock<ILogger<MemoryCacheAdapter>>();
             
             // Test only the constructor and basic interface compliance
-            var cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy(), maxSizeBytes: 1024 * 1024 * 1024, maxItems: 100000);
+            var cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy(), new Timer(_ => { }), maxSizeBytes: 1024 * 1024 * 1024, maxItems: 100000);
             
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)
@@ -155,7 +155,7 @@ public class MemoryCacheCommand : IDisposable
             var mockLogger = new Moq.Mock<ILogger<MemoryCacheAdapter>>();
             
             // Test only the constructor and basic interface compliance
-            var cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy(), maxSizeBytes: 1024 * 1024 * 1024, maxItems: 100000);
+            var cache = new MemoryCacheAdapter(mockLogger.Object, new JsonCacheSerializer(), new LruEvictionPolicy(), new Timer(_ => { }), maxSizeBytes: 1024 * 1024 * 1024, maxItems: 100000);
             
             var elapsed = DateTime.UtcNow - startTime;
             if (elapsed.TotalMilliseconds > timeoutMs)

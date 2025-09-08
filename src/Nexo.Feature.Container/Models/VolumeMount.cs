@@ -8,8 +8,8 @@ namespace Nexo.Feature.Container.Models
     /// </summary>
     public sealed class VolumeMount
     {
-        public string HostPath { get; set; }
-        public string ContainerPath { get; set; }
+        public string HostPath { get; set; } = string.Empty;
+        public string ContainerPath { get; set; } = string.Empty;
         public MountType Type { get; set; }
         public bool ReadOnly { get; set; }
 

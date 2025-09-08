@@ -5,9 +5,9 @@ namespace Nexo.Core.Application.Models
     /// </summary>
     public sealed class BuildError
     {
-        public string Code { get; set; }
-        public string Message { get; set; }
-        public string File { get; set; }
+        public string Code { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string File { get; set; } = string.Empty;
         public int Line { get; set; }
         public int Column { get; set; }
         public BuildError(string code, string message, string file, int line, int column)
