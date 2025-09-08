@@ -1,313 +1,511 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Application.Services.Iteration;
-using Nexo.Core.Application.Services.Iteration.Strategies;
 using Nexo.Core.Domain.Entities.Iteration;
-using Nexo.Feature.AI.Services;
 
 namespace Nexo.CLI.Commands;
 
 /// <summary>
-/// CLI commands for testing and demonstrating iteration strategies
+/// CLI commands for iteration analysis and optimization
 /// </summary>
-[Command("iteration")]
 public class IterationCommands
 {
-    private readonly IIterationStrategySelector _strategySelector;
-    private readonly IIterationCodeGenerator _codeGenerator;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<IterationCommands> _logger;
     
-    public IterationCommands(
-        IIterationStrategySelector strategySelector,
-        IIterationCodeGenerator codeGenerator,
-        ILogger<IterationCommands> logger)
+    public IterationCommands(IServiceProvider serviceProvider, ILogger<IterationCommands> logger)
     {
-        _strategySelector = strategySelector;
-        _codeGenerator = codeGenerator;
-        _logger = logger;
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
-    [Command("benchmark")]
-    public async Task BenchmarkStrategies(
-        [Option] int dataSize = 10000,
-        [Option] bool parallel = false,
-        [Option] string platform = "dotnet")
+    /// <summary>
+    /// Create the iteration analyze command
+    /// </summary>
+    public Command CreateIterationAnalyzeCommand()
     {
-        Console.WriteLine($"Benchmarking iteration strategies for {dataSize} items...");
+        var command = new Command("analyze", "Analyze iteration environment and capabilities");
         
-        var data = Enumerable.Range(1, dataSize).ToList();
-        var requirements = new IterationRequirements
+        var detailedOption = new Option<bool>(
+            name: "--detailed",
+            description: "Show detailed analysis including strategy recommendations");
+        command.AddOption(detailedOption);
+        
+        var platformOption = new Option<string>(
+            name: "--platform",
+            description: "Target platform for analysis (auto, dotnet, unity, web, mobile, server)");
+        platformOption.SetDefaultValue("auto");
+        command.AddOption(platformOption);
+        
+        command.SetHandler(async (bool detailed, string platform) =>
         {
-            RequiresParallelization = parallel
-        };
+            await AnalyzeEnvironment(detailed, platform);
+        }, detailedOption, platformOption);
         
-        // Test each strategy
-        var strategies = new IIterationStrategy<int>[]
-        {
-            new ForLoopStrategy<int>(),
-            new ForeachStrategy<int>(),
-            new LinqStrategy<int>(),
-            new ParallelLinqStrategy<int>()
-        };
-        
-        var results = new List<(string Strategy, long Milliseconds)>();
-        
-        foreach (var strategy in strategies)
-        {
-            try
-            {
-                var stopwatch = Stopwatch.StartNew();
-                
-                strategy.Execute(data, x => Math.Sqrt(x));
-                
-                stopwatch.Stop();
-                results.Add((strategy.StrategyId, stopwatch.ElapsedMilliseconds));
-                Console.WriteLine($"{strategy.StrategyId}: {stopwatch.ElapsedMilliseconds}ms");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"{strategy.StrategyId}: ERROR - {ex.Message}");
-            }
-        }
-        
-        // Show optimal selection
-        var context = new IterationContext
-        {
-            DataSize = dataSize,
-            Requirements = requirements,
-            EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-        };
-        
-        var optimal = _strategySelector.SelectStrategy<int>(context);
-        Console.WriteLine($"\nOptimal strategy: {optimal.StrategyId}");
-        
-        // Show performance comparison
-        if (results.Any())
-        {
-            var fastest = results.OrderBy(r => r.Milliseconds).First();
-            var slowest = results.OrderByDescending(r => r.Milliseconds).First();
-            var speedup = (double)slowest.Milliseconds / fastest.Milliseconds;
-            
-            Console.WriteLine($"\nPerformance Analysis:");
-            Console.WriteLine($"Fastest: {fastest.Strategy} ({fastest.Milliseconds}ms)");
-            Console.WriteLine($"Slowest: {slowest.Strategy} ({slowest.Milliseconds}ms)");
-            Console.WriteLine($"Speedup: {speedup:F2}x");
-        }
+        return command;
     }
     
-    [Command("generate")]
-    public async Task GenerateIterationCode(
-        [Option] string platform = "csharp",
-        [Option] string collection = "items",
-        [Option] string action = "ProcessItem({item})",
-        [Option] bool aiEnhance = true)
+    /// <summary>
+    /// Create the iteration benchmark command
+    /// </summary>
+    public Command CreateIterationBenchmarkCommand()
+    {
+        var command = new Command("benchmark", "Benchmark iteration strategies");
+        
+        var dataSizeOption = new Option<int>(
+            name: "--data-size",
+            description: "Data size for benchmarking");
+        dataSizeOption.SetDefaultValue(10000);
+        command.AddOption(dataSizeOption);
+        
+        var platformOption = new Option<string>(
+            name: "--platform",
+            description: "Target platform for benchmarking");
+        platformOption.SetDefaultValue("current");
+        command.AddOption(platformOption);
+        
+        var iterationsOption = new Option<int>(
+            name: "--iterations",
+            description: "Number of benchmark iterations");
+        iterationsOption.SetDefaultValue(5);
+        command.AddOption(iterationsOption);
+        
+        command.SetHandler(async (int dataSize, string platform, int iterations) =>
+        {
+            await BenchmarkStrategies(dataSize, platform, iterations);
+        }, dataSizeOption, platformOption, iterationsOption);
+        
+        return command;
+    }
+    
+    /// <summary>
+    /// Create the iteration generate command
+    /// </summary>
+    public Command CreateIterationGenerateCommand()
+    {
+        var command = new Command("generate", "Generate optimized iteration code");
+        
+        var descriptionOption = new Option<string>(
+            name: "--description",
+            description: "Description of the iteration requirements");
+        descriptionOption.IsRequired = true;
+        command.AddOption(descriptionOption);
+        
+        var platformOption = new Option<string>(
+            name: "--platform",
+            description: "Target platform for code generation");
+        platformOption.SetDefaultValue("auto");
+        command.AddOption(platformOption);
+        
+        var dataSizeOption = new Option<int>(
+            name: "--data-size",
+            description: "Estimated data size");
+        dataSizeOption.SetDefaultValue(1000);
+        command.AddOption(dataSizeOption);
+        
+        var outputOption = new Option<string>(
+            name: "--output",
+            description: "Output file path (optional)");
+        command.AddOption(outputOption);
+        
+        command.SetHandler(async (string description, string platform, int dataSize, string? output) =>
+        {
+            await GenerateOptimizedIteration(description, platform, dataSize, output);
+        }, descriptionOption, platformOption, dataSizeOption, outputOption);
+        
+        return command;
+    }
+    
+    /// <summary>
+    /// Create the iteration optimize command
+    /// </summary>
+    public Command CreateIterationOptimizeCommand()
+    {
+        var command = new Command("optimize", "Optimize existing iteration code");
+        
+        var inputOption = new Option<string>(
+            name: "--input",
+            description: "Input file path containing iteration code");
+        inputOption.IsRequired = true;
+        command.AddOption(inputOption);
+        
+        var platformOption = new Option<string>(
+            name: "--platform",
+            description: "Target platform for optimization");
+        platformOption.SetDefaultValue("auto");
+        command.AddOption(platformOption);
+        
+        var outputOption = new Option<string>(
+            name: "--output",
+            description: "Output file path (optional)");
+        command.AddOption(outputOption);
+        
+        command.SetHandler(async (string input, string platform, string? output) =>
+        {
+            await OptimizeIterationCode(input, platform, output);
+        }, inputOption, platformOption, outputOption);
+        
+        return command;
+    }
+    
+    /// <summary>
+    /// Create the iteration recommendations command
+    /// </summary>
+    public Command CreateIterationRecommendationsCommand()
+    {
+        var command = new Command("recommendations", "Get iteration strategy recommendations");
+        
+        var platformOption = new Option<string>(
+            name: "--platform",
+            description: "Target platform for recommendations");
+        platformOption.SetDefaultValue("auto");
+        command.AddOption(platformOption);
+        
+        command.SetHandler(async (string platform) =>
+        {
+            await ShowRecommendations(platform);
+        }, platformOption);
+        
+        return command;
+    }
+    
+    private async Task AnalyzeEnvironment(bool detailed, string platform)
     {
         try
         {
-            var platformTarget = Enum.Parse<PlatformTarget>(platform, true);
+            Console.WriteLine("🔍 Nexo Iteration Environment Analysis");
+            Console.WriteLine("=====================================");
             
-            var request = new IterationCodeRequest
-            {
-                Context = new IterationContext
-                {
-                    DataSize = 1000,
-                    Requirements = new IterationRequirements(),
-                    EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-                },
-                CodeGeneration = new CodeGenerationContext
-                {
-                    PlatformTarget = platformTarget,
-                    CollectionName = collection,
-                    IterationBodyTemplate = action
-                },
-                UseAIEnhancement = aiEnhance
-            };
-            
-            var code = await _codeGenerator.GenerateOptimalIterationCodeAsync(request);
-            
-            Console.WriteLine($"Generated {platform} iteration code:");
-            Console.WriteLine("=" * 50);
-            Console.WriteLine(code);
-            Console.WriteLine("=" * 50);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error generating code: {ex.Message}");
-            _logger.LogError(ex, "Error in generate command");
-        }
-    }
-    
-    [Command("analyze")]
-    public async Task AnalyzeEnvironment()
-    {
-        try
-        {
             var profile = RuntimeEnvironmentDetector.DetectCurrent();
+            var analyzer = _serviceProvider.GetRequiredService<IIterationStrategySelector>();
             
-            Console.WriteLine("Runtime Environment Analysis:");
-            Console.WriteLine("=" * 40);
             Console.WriteLine($"Platform: {profile.PlatformType}");
             Console.WriteLine($"CPU Cores: {profile.CpuCores}");
             Console.WriteLine($"Available Memory: {profile.AvailableMemoryMB} MB");
-            Console.WriteLine($"Debug Mode: {profile.IsDebugMode}");
-            Console.WriteLine($"Framework: {profile.FrameworkVersion}");
-            Console.WriteLine($"Optimization: {profile.OptimizationLevel}");
+            Console.WriteLine($"Constrained Environment: {profile.IsConstrained}");
+            Console.WriteLine($"Mobile Environment: {profile.IsMobile}");
+            Console.WriteLine($"Web Environment: {profile.IsWeb}");
+            Console.WriteLine($"Unity Environment: {profile.IsUnity}");
+            Console.WriteLine();
             
-            // Show recommended strategies for different scenarios
-            var scenarios = new[]
+            if (detailed)
             {
-                ("Small Dataset (100 items)", new IterationContext { DataSize = 100, EnvironmentProfile = profile }),
-                ("Medium Dataset (10,000 items)", new IterationContext { DataSize = 10000, EnvironmentProfile = profile }),
-                ("Large Dataset (1,000,000 items)", new IterationContext { DataSize = 1000000, EnvironmentProfile = profile }),
-                ("CPU-Intensive", new IterationContext { DataSize = 10000, Requirements = new IterationRequirements { PrioritizeCpu = true }, EnvironmentProfile = profile }),
-                ("Memory-Conscious", new IterationContext { DataSize = 10000, Requirements = new IterationRequirements { PrioritizeMemory = true }, EnvironmentProfile = profile }),
-                ("Parallel Processing", new IterationContext { DataSize = 10000, Requirements = new IterationRequirements { RequiresParallelization = true }, EnvironmentProfile = profile })
-            };
-            
-            Console.WriteLine("\nRecommended Strategies:");
-            Console.WriteLine("=" * 40);
-            
-            foreach (var (scenario, context) in scenarios)
-            {
-                var strategy = _strategySelector.SelectStrategy<object>(context);
-                Console.WriteLine($"{scenario}: {strategy.StrategyId}");
+                await ShowDetailedAnalysis(analyzer, profile);
             }
+            
+            Console.WriteLine("✅ Environment analysis completed");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error analyzing environment: {ex.Message}");
-            _logger.LogError(ex, "Error in analyze command");
+            _logger.LogError(ex, "Error analyzing environment");
+            Console.WriteLine($"❌ Error analyzing environment: {ex.Message}");
         }
     }
     
-    [Command("multi-platform")]
-    public async Task GenerateMultiPlatformCode(
-        [Option] string collection = "items",
-        [Option] string action = "ProcessItem({item})",
-        [Option] bool aiEnhance = true)
+    private async Task ShowDetailedAnalysis(IIterationStrategySelector analyzer, RuntimeEnvironmentProfile profile)
+    {
+        Console.WriteLine("📊 Detailed Analysis");
+        Console.WriteLine("-------------------");
+        
+        // Get recommendations for the current platform
+        var recommendations = analyzer.GetRecommendations(profile.PlatformType);
+        
+        Console.WriteLine($"Strategy Recommendations for {profile.PlatformType}:");
+        foreach (var recommendation in recommendations)
+        {
+            Console.WriteLine($"  • {recommendation.Scenario}");
+            Console.WriteLine($"    Strategy: {recommendation.RecommendedStrategyId}");
+            Console.WriteLine($"    Reasoning: {recommendation.Reasoning}");
+            Console.WriteLine($"    Data Size Range: {recommendation.DataSizeRange.Min} - {recommendation.DataSizeRange.Max}");
+            Console.WriteLine($"    Performance: {recommendation.PerformanceCharacteristics}");
+            Console.WriteLine();
+        }
+        
+        // Show strategy comparison for different scenarios
+        var scenarios = new[]
+        {
+            new { Name = "Small Dataset (100 items)", DataSize = 100 },
+            new { Name = "Medium Dataset (1,000 items)", DataSize = 1000 },
+            new { Name = "Large Dataset (10,000 items)", DataSize = 10000 },
+            new { Name = "Very Large Dataset (100,000 items)", DataSize = 100000 }
+        };
+        
+        foreach (var scenario in scenarios)
+        {
+            Console.WriteLine($"Strategy Comparison for {scenario.Name}:");
+            
+            var context = new IterationContext
+            {
+                DataSize = scenario.DataSize,
+                Requirements = new PerformanceRequirements(),
+                EnvironmentProfile = profile,
+                TargetPlatform = GetPlatformTargetFromProfile(profile)
+            };
+            
+            var comparison = await analyzer.CompareStrategies<object>(context);
+            
+            foreach (var result in comparison.Take(3))
+            {
+                var status = result.IsRecommended ? "✅" : "⚪";
+                Console.WriteLine($"  {status} {result.Strategy.StrategyId}");
+                Console.WriteLine($"    Suitability: {result.SuitabilityScore:F1}%");
+                Console.WriteLine($"    Performance: {result.PerformanceEstimate.PerformanceScore:F1}");
+                Console.WriteLine($"    Reasoning: {result.Reasoning}");
+            }
+            Console.WriteLine();
+        }
+    }
+    
+    private async Task BenchmarkStrategies(int dataSize, string platform, int iterations)
     {
         try
         {
-            var platforms = new[] { PlatformTarget.CSharp, PlatformTarget.JavaScript, PlatformTarget.Python, PlatformTarget.Swift };
+            Console.WriteLine($"🏃 Benchmarking iteration strategies for {dataSize} items...");
+            Console.WriteLine("========================================================");
+            
+            var benchmarker = _serviceProvider.GetRequiredService<IIterationBenchmarker>();
+            
+            var results = await benchmarker.BenchmarkAllStrategies(dataSize, platform, iterations);
+            
+            Console.WriteLine("Benchmark Results:");
+            Console.WriteLine("-----------------");
+            
+            foreach (var result in results.OrderBy(r => r.ExecutionTime))
+            {
+                var status = result.IsRecommended ? "✅" : "⚪";
+                Console.WriteLine($"{status} {result.StrategyId}");
+                Console.WriteLine($"  Execution Time: {result.ExecutionTime:F2}ms");
+                Console.WriteLine($"  Memory Usage: {result.MemoryUsageMB:F2}MB");
+                Console.WriteLine($"  Performance Score: {result.PerformanceScore:F1}");
+                Console.WriteLine($"  Platform: {result.Platform}");
+                Console.WriteLine();
+            }
+            
+            Console.WriteLine("✅ Benchmarking completed");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error benchmarking strategies");
+            Console.WriteLine($"❌ Error benchmarking strategies: {ex.Message}");
+        }
+    }
+    
+    private async Task GenerateOptimizedIteration(string description, string platform, int dataSize, string? output)
+    {
+        try
+        {
+            Console.WriteLine("🚀 Generating optimized iteration code...");
+            Console.WriteLine("=========================================");
+            
+            var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
             
             var request = new IterationCodeRequest
             {
-                Context = new IterationContext
-                {
-                    DataSize = 1000,
-                    Requirements = new IterationRequirements(),
-                    EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
-                },
-                CodeGeneration = new CodeGenerationContext
-                {
-                    CollectionName = collection,
-                    IterationBodyTemplate = action
-                },
-                UseAIEnhancement = aiEnhance,
-                TargetPlatforms = platforms
+                Description = description,
+                TargetPlatform = ParsePlatform(platform),
+                EstimatedDataSize = dataSize
             };
             
-            var codes = await _codeGenerator.GenerateMultiplePlatformIterationsAsync(request);
+            var code = await generator.GenerateOptimalIterationAsync(request);
             
-            Console.WriteLine("Multi-Platform Iteration Code Generation:");
-            Console.WriteLine("=" * 50);
+            Console.WriteLine("Generated Code:");
+            Console.WriteLine("--------------");
+            Console.WriteLine(code);
             
-            foreach (var code in codes)
+            if (!string.IsNullOrEmpty(output))
             {
-                Console.WriteLine(code);
-                Console.WriteLine();
+                await System.IO.File.WriteAllTextAsync(output, code);
+                Console.WriteLine($"✅ Code saved to: {output}");
             }
+            
+            Console.WriteLine("✅ Code generation completed");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error generating multi-platform code: {ex.Message}");
-            _logger.LogError(ex, "Error in multi-platform command");
+            _logger.LogError(ex, "Error generating iteration code");
+            Console.WriteLine($"❌ Error generating iteration code: {ex.Message}");
         }
     }
     
-    [Command("test-strategies")]
-    public async Task TestAllStrategies()
+    private async Task OptimizeIterationCode(string input, string platform, string? output)
+    {
+        try
+            {
+            Console.WriteLine("⚡ Optimizing iteration code...");
+            Console.WriteLine("===============================");
+            
+            var existingCode = await System.IO.File.ReadAllTextAsync(input);
+            var optimizer = _serviceProvider.GetRequiredService<IIterationCodeOptimizer>();
+            
+            var request = new IterationOptimizationRequest
+            {
+                ExistingCode = existingCode,
+                TargetPlatform = ParsePlatform(platform),
+                Requirements = new PerformanceRequirements(),
+                EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent()
+            };
+            
+            var result = await optimizer.OptimizeIterationCodeAsync(request);
+            
+            Console.WriteLine("Optimization Results:");
+            Console.WriteLine("-------------------");
+            Console.WriteLine($"Performance Improvement: {result.OptimizationMetrics.PerformanceImprovementPercentage:F1}%");
+            Console.WriteLine($"Memory Improvement: {result.OptimizationMetrics.MemoryImprovementPercentage:F1}%");
+            Console.WriteLine($"Selected Strategy: {result.SelectedStrategy?.StrategyId}");
+            Console.WriteLine();
+            
+            Console.WriteLine("Optimized Code:");
+            Console.WriteLine("--------------");
+            Console.WriteLine(result.OptimizedCode);
+            
+            if (!string.IsNullOrEmpty(output))
+            {
+                await System.IO.File.WriteAllTextAsync(output, result.OptimizedCode);
+                Console.WriteLine($"✅ Optimized code saved to: {output}");
+            }
+            
+            Console.WriteLine("✅ Code optimization completed");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error optimizing iteration code");
+            Console.WriteLine($"❌ Error optimizing iteration code: {ex.Message}");
+        }
+    }
+    
+    private async Task ShowRecommendations(string platform)
     {
         try
         {
-            Console.WriteLine("Testing all iteration strategies...");
+            Console.WriteLine("💡 Iteration Strategy Recommendations");
+            Console.WriteLine("=====================================");
             
-            var testData = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-            var strategies = new IIterationStrategy<int>[]
-            {
-                new ForLoopStrategy<int>(),
-                new ForeachStrategy<int>(),
-                new LinqStrategy<int>(),
-                new ParallelLinqStrategy<int>(),
-                new UnityOptimizedStrategy<int>(),
-                new WasmOptimizedStrategy<int>()
-            };
+            var analyzer = _serviceProvider.GetRequiredService<IIterationStrategySelector>();
+            var platformType = ParsePlatformType(platform);
             
-            foreach (var strategy in strategies)
+            var recommendations = analyzer.GetRecommendations(platformType);
+            
+            Console.WriteLine($"Recommendations for {platformType}:");
+            Console.WriteLine();
+            
+            foreach (var recommendation in recommendations)
             {
-                Console.WriteLine($"\nTesting {strategy.StrategyId}:");
-                Console.WriteLine($"Platform Compatibility: {strategy.PlatformCompatibility}");
-                Console.WriteLine($"CPU Efficiency: {strategy.PerformanceProfile.CpuEfficiency}");
-                Console.WriteLine($"Memory Efficiency: {strategy.PerformanceProfile.MemoryEfficiency}");
-                Console.WriteLine($"Supports Parallelization: {strategy.PerformanceProfile.SupportsParallelization}");
-                
-                // Test basic execution
-                var results = new List<int>();
-                strategy.Execute(testData, x => results.Add(x * 2));
-                Console.WriteLine($"Basic execution result: [{string.Join(", ", results)}]");
-                
-                // Test transformation
-                var transformed = strategy.Execute(testData, x => x * 3);
-                Console.WriteLine($"Transformation result: [{string.Join(", ", transformed)}]");
-                
-                // Test filtering and transformation
-                var filtered = strategy.ExecuteWhere(testData, x => x % 2 == 0, x => x * 4);
-                Console.WriteLine($"Filtered result: [{string.Join(", ", filtered)}]");
-                
-                // Test code generation
-                var codeContext = new CodeGenerationContext
-                {
-                    PlatformTarget = PlatformTarget.CSharp,
-                    CollectionName = "numbers",
-                    IterationBodyTemplate = "Console.WriteLine({item});"
-                };
-                var generatedCode = strategy.GenerateCode(codeContext);
-                Console.WriteLine($"Generated code:\n{generatedCode}");
+                Console.WriteLine($"📋 {recommendation.Scenario}");
+                Console.WriteLine($"   Strategy: {recommendation.RecommendedStrategyId}");
+                Console.WriteLine($"   Reasoning: {recommendation.Reasoning}");
+                Console.WriteLine($"   Data Size Range: {recommendation.DataSizeRange.Min} - {recommendation.DataSizeRange.Max}");
+                Console.WriteLine($"   Performance: {recommendation.PerformanceCharacteristics}");
+                Console.WriteLine();
             }
+            
+            Console.WriteLine("✅ Recommendations completed");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error testing strategies: {ex.Message}");
-            _logger.LogError(ex, "Error in test-strategies command");
+            _logger.LogError(ex, "Error showing recommendations");
+            Console.WriteLine($"❌ Error showing recommendations: {ex.Message}");
         }
     }
-}
-
-/// <summary>
-/// Command attribute for CLI commands
-/// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public class CommandAttribute : Attribute
-{
-    public string Name { get; }
     
-    public CommandAttribute(string name)
+    private PlatformTarget ParsePlatform(string platform)
     {
-        Name = name;
+        return platform.ToLower() switch
+        {
+            "auto" => PlatformTarget.DotNet,
+            "dotnet" => PlatformTarget.DotNet,
+            "unity" => PlatformTarget.Unity2023,
+            "web" => PlatformTarget.JavaScript,
+            "mobile" => PlatformTarget.Swift,
+            "server" => PlatformTarget.Server,
+            _ => PlatformTarget.DotNet
+        };
+    }
+    
+    private PlatformType ParsePlatformType(string platform)
+    {
+        return platform.ToLower() switch
+        {
+            "auto" => PlatformType.DotNet,
+            "dotnet" => PlatformType.DotNet,
+            "unity" => PlatformType.Unity,
+            "web" => PlatformType.Web,
+            "mobile" => PlatformType.Mobile,
+            "server" => PlatformType.Server,
+            _ => PlatformType.DotNet
+        };
+    }
+    
+    private PlatformTarget GetPlatformTargetFromProfile(RuntimeEnvironmentProfile profile)
+    {
+        return profile.PlatformType switch
+        {
+            PlatformType.Unity => PlatformTarget.Unity2023,
+            PlatformType.Web => PlatformTarget.JavaScript,
+            PlatformType.Mobile => PlatformTarget.Swift,
+            PlatformType.Server => PlatformTarget.Server,
+            _ => PlatformTarget.DotNet
+        };
     }
 }
 
 /// <summary>
-/// Option attribute for command parameters
+/// Interface for iteration benchmarking
 /// </summary>
-[AttributeUsage(AttributeTargets.Parameter)]
-public class OptionAttribute : Attribute
+public interface IIterationBenchmarker
 {
-    public string? Name { get; set; }
-    public string? Description { get; set; }
+    Task<IEnumerable<BenchmarkResult>> BenchmarkAllStrategies(int dataSize, string platform, int iterations);
+}
+
+/// <summary>
+/// Interface for iteration code generation
+/// </summary>
+public interface IIterationCodeGenerator
+{
+    Task<string> GenerateOptimalIterationAsync(IterationCodeRequest request);
+}
+
+/// <summary>
+/// Interface for iteration code optimization
+/// </summary>
+public interface IIterationCodeOptimizer
+{
+    Task<IterationOptimizationResult> OptimizeIterationCodeAsync(IterationOptimizationRequest request);
+}
+
+/// <summary>
+/// Request for iteration code generation
+/// </summary>
+public record IterationCodeRequest
+{
+    public string Description { get; init; } = string.Empty;
+    public PlatformTarget TargetPlatform { get; init; } = PlatformTarget.DotNet;
+    public int EstimatedDataSize { get; init; } = 1000;
+}
+
+/// <summary>
+/// Result from iteration optimization
+/// </summary>
+public record IterationOptimizationResult
+{
+    public string OptimizedCode { get; init; } = string.Empty;
+    public OptimizationMetrics OptimizationMetrics { get; init; } = new();
+    public IIterationStrategy<object>? SelectedStrategy { get; init; }
+}
+
+/// <summary>
+/// Benchmark result
+/// </summary>
+public record BenchmarkResult
+{
+    public string StrategyId { get; init; } = string.Empty;
+    public double ExecutionTime { get; init; }
+    public double MemoryUsageMB { get; init; }
+    public double PerformanceScore { get; init; }
+    public string Platform { get; init; } = string.Empty;
+    public bool IsRecommended { get; init; }
 }

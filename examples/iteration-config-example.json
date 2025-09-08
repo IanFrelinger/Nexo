@@ -1,0 +1,168 @@
+{
+  "Iteration": {
+    "EnableAutoOptimization": true,
+    "DefaultOptimizationLevel": "Balanced",
+    "PlatformPreferences": {
+      "Unity": "Nexo.UnityOptimized",
+      "DotNet": "Nexo.ForLoop",
+      "Web": "Nexo.ForLoop",
+      "Mobile": "Nexo.ForLoop",
+      "Server": "Nexo.ParallelLinq",
+      "WebAssembly": "Nexo.ForLoop",
+      "JavaScript": "Nexo.ForLoop",
+      "Swift": "Nexo.ForLoop",
+      "Kotlin": "Nexo.ForLoop"
+    },
+    "Benchmark": {
+      "DefaultSampleSize": 10000,
+      "Iterations": 5,
+      "EnableWarmup": true,
+      "WarmupIterations": 2,
+      "TimeoutMs": 30000,
+      "IncludeMemoryUsage": true,
+      "IncludeCpuUsage": false
+    },
+    "PerformanceThresholds": {
+      "MaxExecutionTimeMs": 1000,
+      "MaxMemoryUsageMB": 100,
+      "MinPerformanceScore": 70.0,
+      "MinConfidenceLevel": 0.8,
+      "DataSizeThresholds": {
+        "Small": 100,
+        "Medium": 1000,
+        "Large": 10000,
+        "VeryLarge": 100000
+      }
+    },
+    "StrategyConfigurations": {
+      "Nexo.ForLoop": {
+        "Enabled": true,
+        "DefaultPriority": 90,
+        "PlatformPriorities": {
+          "Unity": 95,
+          "Mobile": 90,
+          "Web": 85,
+          "Server": 80
+        },
+        "OptimalDataSizeRange": [0, 100000],
+        "SupportsParallelization": false,
+        "SuitableForRealTime": true,
+        "Parameters": {
+          "PreferIListAccess": true,
+          "MinimizeAllocations": true
+        }
+      },
+      "Nexo.Foreach": {
+        "Enabled": true,
+        "DefaultPriority": 70,
+        "PlatformPriorities": {
+          "Unity": 60,
+          "Mobile": 65,
+          "Web": 70,
+          "Server": 75
+        },
+        "OptimalDataSizeRange": [0, 50000],
+        "SupportsParallelization": false,
+        "SuitableForRealTime": true,
+        "Parameters": {
+          "ReadabilityFirst": true
+        }
+      },
+      "Nexo.Linq": {
+        "Enabled": true,
+        "DefaultPriority": 60,
+        "PlatformPriorities": {
+          "Unity": 40,
+          "Mobile": 45,
+          "Web": 60,
+          "Server": 70
+        },
+        "OptimalDataSizeRange": [0, 10000],
+        "SupportsParallelization": false,
+        "SuitableForRealTime": false,
+        "Parameters": {
+          "FunctionalProgramming": true,
+          "ReadabilityFirst": true
+        }
+      },
+      "Nexo.ParallelLinq": {
+        "Enabled": true,
+        "DefaultPriority": 80,
+        "PlatformPriorities": {
+          "Unity": 30,
+          "Mobile": 40,
+          "Web": 50,
+          "Server": 95
+        },
+        "OptimalDataSizeRange": [1000, 1000000],
+        "SupportsParallelization": true,
+        "SuitableForRealTime": false,
+        "Parameters": {
+          "MinDataSize": 1000,
+          "MaxDegreeOfParallelism": 0,
+          "ForceParallelism": false
+        }
+      },
+      "Nexo.UnityOptimized": {
+        "Enabled": true,
+        "DefaultPriority": 100,
+        "PlatformPriorities": {
+          "Unity": 100,
+          "Mobile": 0,
+          "Web": 0,
+          "Server": 0
+        },
+        "OptimalDataSizeRange": [0, 10000],
+        "SupportsParallelization": false,
+        "SuitableForRealTime": true,
+        "Parameters": {
+          "UnitySpecific": true,
+          "MinimizeGC": true,
+          "FrameRateOptimized": true
+        }
+      }
+    },
+    "EnvironmentOverrides": {
+      "Development": {
+        "EnableAutoOptimization": true,
+        "DefaultOptimizationLevel": "Balanced",
+        "Benchmark": {
+          "DefaultSampleSize": 1000,
+          "Iterations": 3,
+          "EnableWarmup": false
+        },
+        "PerformanceThresholds": {
+          "MaxExecutionTimeMs": 2000,
+          "MinPerformanceScore": 60.0
+        }
+      },
+      "Production": {
+        "EnableAutoOptimization": true,
+        "DefaultOptimizationLevel": "High",
+        "Benchmark": {
+          "DefaultSampleSize": 50000,
+          "Iterations": 10,
+          "EnableWarmup": true
+        },
+        "PerformanceThresholds": {
+          "MaxExecutionTimeMs": 500,
+          "MinPerformanceScore": 80.0,
+          "MinConfidenceLevel": 0.9
+        }
+      },
+      "Testing": {
+        "EnableAutoOptimization": false,
+        "DefaultOptimizationLevel": "Low",
+        "Benchmark": {
+          "DefaultSampleSize": 100,
+          "Iterations": 1,
+          "EnableWarmup": false
+        },
+        "PerformanceThresholds": {
+          "MaxExecutionTimeMs": 5000,
+          "MinPerformanceScore": 50.0
+        }
+      }
+    }
+  }
+}

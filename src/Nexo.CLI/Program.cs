@@ -19,6 +19,7 @@ using Nexo.Feature.Template.Interfaces;
 using Nexo.Shared.Models;
 using Nexo.Shared;
 using Nexo.CLI.Commands;
+using Nexo.CLI.Commands.Unity;
 
 namespace Nexo.CLI
 {
@@ -445,9 +446,58 @@ namespace Nexo.CLI
             var featureFactoryCommand = FeatureFactoryCommands.CreateFeatureFactoryCommand(scope.ServiceProvider, logger);
             rootCommand.AddCommand(featureFactoryCommand);
 
+            // Enhanced CLI commands
+            var interactiveCLI = scope.ServiceProvider.GetRequiredService<Nexo.CLI.Interactive.IInteractiveCLI>();
+            var realTimeDashboard = scope.ServiceProvider.GetRequiredService<Nexo.CLI.Dashboard.IRealTimeDashboard>();
+            var interactiveHelpSystem = scope.ServiceProvider.GetRequiredService<Nexo.CLI.Help.IInteractiveHelpSystem>();
+            
+            var enhancedInteractiveCommand = EnhancedCLICommands.CreateEnhancedInteractiveCommand(interactiveCLI, realTimeDashboard, interactiveHelpSystem, logger);
+            rootCommand.AddCommand(enhancedInteractiveCommand);
+            
+            var enhancedHelpCommand = EnhancedCLICommands.CreateEnhancedHelpCommand(interactiveHelpSystem, logger);
+            rootCommand.AddCommand(enhancedHelpCommand);
+            
+            var enhancedDashboardCommand = EnhancedCLICommands.CreateEnhancedDashboardCommand(realTimeDashboard, logger);
+            rootCommand.AddCommand(enhancedDashboardCommand);
+            
+            var enhancedStatusCommand = EnhancedCLICommands.CreateEnhancedStatusCommand(interactiveCLI, logger);
+            rootCommand.AddCommand(enhancedStatusCommand);
+
+            // Unity commands
+            var unityCommand = UnityCommands.CreateUnityCommand(scope.ServiceProvider);
+            rootCommand.AddCommand(unityCommand);
+
+            // Game development commands
+            var gameCommand = GameDevelopmentCommands.CreateGameDevelopmentCommand(scope.ServiceProvider);
+            rootCommand.AddCommand(gameCommand);
+
+            // Adaptation commands
+            var adaptationCommand = AdaptationCommands.CreateAdaptationCommand(scope.ServiceProvider);
+            rootCommand.AddCommand(adaptationCommand);
+
+            // Agent management commands
+            var agentManagementCommands = new AgentManagementCommands(scope.ServiceProvider, logger);
+            var agentCommand = new Command("agents", "Manage specialized AI agents");
+            agentCommand.AddCommand(agentManagementCommands.CreateAgentListCommand());
+            agentCommand.AddCommand(agentManagementCommands.CreateAgentAnalyzeCommand());
+            agentCommand.AddCommand(agentManagementCommands.CreateAgentPerformanceCommand());
+            agentCommand.AddCommand(agentManagementCommands.CreateAgentTestCommand());
+            agentCommand.AddCommand(agentManagementCommands.CreateAgentRegistryCommand());
+            rootCommand.AddCommand(agentCommand);
+
+            // Iteration commands
+            var iterationCommands = new IterationCommands(scope.ServiceProvider, logger);
+            var iterationCommand = new Command("iteration", "Iteration strategy analysis and optimization");
+            iterationCommand.AddCommand(iterationCommands.CreateIterationAnalyzeCommand());
+            iterationCommand.AddCommand(iterationCommands.CreateIterationBenchmarkCommand());
+            iterationCommand.AddCommand(iterationCommands.CreateIterationGenerateCommand());
+            iterationCommand.AddCommand(iterationCommands.CreateIterationOptimizeCommand());
+            iterationCommand.AddCommand(iterationCommands.CreateIterationRecommendationsCommand());
+            rootCommand.AddCommand(iterationCommand);
+
             // Remove duplicate testing commands - using simple testing commands above
 
-            rootCommand.Description = "Nexo CLI provides AI-enhanced development environment orchestration capabilities.";
+            rootCommand.Description = "Nexo CLI provides AI-enhanced development environment orchestration capabilities with interactive mode, real-time dashboards, intelligent suggestions, and Unity game development tools.";
 
             return await rootCommand.InvokeAsync(args);
         }

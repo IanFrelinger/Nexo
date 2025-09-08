@@ -29,6 +29,8 @@ using Nexo.Feature.Pipeline.Services;
 using Nexo.Infrastructure.Services.Resource;
 using Nexo.Shared.Interfaces.Resource;
 using Nexo.Feature.Factory;
+using Nexo.Feature.Unity;
+using Nexo.Core.Application.Services.Adaptation;
 using System;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -229,6 +231,21 @@ namespace Nexo.CLI
             services.AddTransient<Nexo.Feature.Factory.Testing.Coverage.ITestCoverageAnalyzer, Nexo.Feature.Factory.Testing.Coverage.ReflectionBasedCoverageAnalyzer>();
             services.AddTransient<Nexo.Feature.Factory.Testing.Timeout.ITimeoutManager, Nexo.Feature.Factory.Testing.Timeout.AggressiveTimeoutManager>();
 
+            // Add Enhanced CLI services
+            services.AddEnhancedCLIServices();
+
+            // Add Unity feature services
+            services.AddUnityFeature();
+
+            // Add adaptation services
+            services.AddAdaptationServices();
+
+            // Add specialized AI agents
+            services.AddSpecializedAIAgents();
+
+            // Add iteration strategy services
+            services.AddNexoIterationStrategies();
+
             return services;
         }
 
@@ -268,5 +285,40 @@ namespace Nexo.CLI
             orchestrator.RegisterProviderAsync(azureProvider, CancellationToken.None).Wait();
         }
 #endif
+    }
+
+    /// <summary>
+    /// Extension methods for registering enhanced CLI services
+    /// </summary>
+    public static class EnhancedCLIServiceExtensions
+    {
+        /// <summary>
+        /// Adds enhanced CLI services including interactive mode, dashboard, and help system
+        /// </summary>
+        public static IServiceCollection AddEnhancedCLIServices(this IServiceCollection services)
+        {
+            // Interactive CLI services
+            services.AddTransient<Nexo.CLI.Interactive.IInteractiveCLI, Nexo.CLI.Interactive.InteractiveCLI>();
+            services.AddTransient<Nexo.CLI.Interactive.ICommandSuggestionEngine, Nexo.CLI.Interactive.CommandSuggestionEngine>();
+            services.AddTransient<Nexo.CLI.Interactive.ICLIStateManager, Nexo.CLI.Interactive.CLIStateManager>();
+            
+            // Dashboard services
+            services.AddTransient<Nexo.CLI.Dashboard.IRealTimeDashboard, Nexo.CLI.Dashboard.RealTimeDashboard>();
+            services.AddTransient<Nexo.CLI.Dashboard.IDashboardWidget, Nexo.CLI.Dashboard.PerformanceWidget>();
+            services.AddTransient<Nexo.CLI.Dashboard.IDashboardWidget, Nexo.CLI.Dashboard.AdaptationWidget>();
+            services.AddTransient<Nexo.CLI.Dashboard.IDashboardWidget, Nexo.CLI.Dashboard.ProjectStatusWidget>();
+            services.AddTransient<Nexo.CLI.Dashboard.IDashboardWidget, Nexo.CLI.Dashboard.SystemHealthWidget>();
+            
+            // Progress tracking services
+            services.AddTransient<Nexo.CLI.Progress.IProgressTracker, Nexo.CLI.Progress.ProgressTracker>();
+            services.AddTransient<Nexo.CLI.Progress.IMultiStepProgressDisplay, Nexo.CLI.Progress.MultiStepProgressDisplay>();
+            
+            // Help system services
+            services.AddTransient<Nexo.CLI.Help.IInteractiveHelpSystem, Nexo.CLI.Help.InteractiveHelpSystem>();
+            services.AddTransient<Nexo.CLI.Help.IDocumentationGenerator, Nexo.CLI.Help.CommandDocumentationGenerator>();
+            services.AddTransient<Nexo.CLI.Help.IExampleRepository, Nexo.CLI.Help.ExampleRepository>();
+            
+            return services;
+        }
     }
 } 

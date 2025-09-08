@@ -1,7 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Agents.Specialized;
+using Nexo.Feature.AI.Agents.Coordination;
+using Nexo.Feature.AI.Learning;
+using Nexo.Feature.AI.Monitoring;
+using Nexo.Feature.AI.Services;
 
 namespace Nexo.Feature.AI.Services;
 
@@ -59,6 +65,60 @@ public static class AIServiceExtensions
         
         return services;
     }
+
+    /// <summary>
+    /// Adds specialized AI agent services with coordination capabilities
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddSpecializedAIAgents(this IServiceCollection services)
+    {
+        // Add core AI services first
+        services.AddAIServices();
+        
+        // Register specialized agents
+        services.AddTransient<ISpecializedAgent, PerformanceOptimizationAgent>();
+        services.AddTransient<ISpecializedAgent, SecurityAnalysisAgent>();
+        services.AddTransient<ISpecializedAgent, UnityOptimizationAgent>();
+        services.AddTransient<ISpecializedAgent, WebOptimizationAgent>();
+        services.AddTransient<ISpecializedAgent, MobileOptimizationAgent>();
+        
+        // Register agent coordination services
+        services.AddTransient<IAgentCoordinator, AgentCoordinator>();
+        services.AddTransient<IAgentWorkflowPlanner, AgentWorkflowPlanner>();
+        services.AddTransient<IAgentCommunicationHub, AgentCommunicationHub>();
+        
+        // Register agent registry
+        services.AddSingleton<ISpecializedAgentRegistry, SpecializedAgentRegistry>();
+        
+        // Register learning and adaptation services
+        services.AddTransient<IAgentLearningSystem, AgentLearningSystem>();
+        services.AddTransient<IPerformanceFeedbackCollector, PerformanceFeedbackCollector>();
+        services.AddTransient<IAgentKnowledgeStore, AgentKnowledgeStore>();
+        
+        // Register monitoring services
+        services.AddTransient<IPerformanceMetricsCollector, PerformanceMetricsCollector>();
+        services.AddHostedService<RealTimeAdaptationService>();
+        
+        // Register enhanced Feature Factory orchestrator
+        services.AddTransient<IEnhancedFeatureFactoryOrchestrator, EnhancedFeatureFactoryOrchestrator>();
+        
+        return services;
+    }
+
+    /// <summary>
+    /// Adds specialized AI agents with custom configuration
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="configureOptions">Action to configure agent options</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddSpecializedAIAgents(
+        this IServiceCollection services, 
+        Action<SpecializedAgentOptions> configureOptions)
+    {
+        services.Configure(configureOptions);
+        return services.AddSpecializedAIAgents();
+    }
 }
 
 /// <summary>
@@ -90,4 +150,40 @@ public class AIServiceOptions
     /// Timeout for AI requests in milliseconds
     /// </summary>
     public int RequestTimeoutMs { get; set; } = 30000;
+}
+
+/// <summary>
+/// Configuration options for specialized AI agents
+/// </summary>
+public class SpecializedAgentOptions
+{
+    /// <summary>
+    /// Whether to enable specialized agent coordination
+    /// </summary>
+    public bool EnableAgentCoordination { get; set; } = true;
+    
+    /// <summary>
+    /// Whether to enable real-time adaptation
+    /// </summary>
+    public bool EnableRealTimeAdaptation { get; set; } = true;
+    
+    /// <summary>
+    /// Whether to enable agent learning
+    /// </summary>
+    public bool EnableAgentLearning { get; set; } = true;
+    
+    /// <summary>
+    /// Adaptation interval in minutes
+    /// </summary>
+    public int AdaptationIntervalMinutes { get; set; } = 5;
+    
+    /// <summary>
+    /// Minimum records required for learning cycle
+    /// </summary>
+    public int MinimumRecordsForLearning { get; set; } = 10;
+    
+    /// <summary>
+    /// Maximum learning records to keep per agent
+    /// </summary>
+    public int MaxLearningRecordsPerAgent { get; set; } = 1000;
 }

@@ -1,119 +1,226 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
 
 namespace Nexo.Core.Application.Services.Iteration;
 
 /// <summary>
-/// Detects runtime environment characteristics for strategy optimization
+/// Detects the current runtime environment for iteration strategy selection
 /// </summary>
 public static class RuntimeEnvironmentDetector
 {
+    /// <summary>
+    /// Detect the current runtime environment
+    /// </summary>
+    /// <returns>Runtime environment profile</returns>
     public static RuntimeEnvironmentProfile DetectCurrent()
     {
+        var platformType = DetectPlatformType();
+        var cpuCores = Environment.ProcessorCount;
+        var availableMemory = GetAvailableMemoryMB();
+        var isConstrained = IsConstrainedEnvironment();
+        var isMobile = IsMobileEnvironment();
+        var isWeb = IsWebEnvironment();
+        var isUnity = IsUnityEnvironment();
+        
         return new RuntimeEnvironmentProfile
         {
-            PlatformType = DetectPlatformType(),
-            CpuCores = Environment.ProcessorCount,
-            AvailableMemoryMB = GetAvailableMemoryMB(),
-            IsDebugMode = IsDebugBuild(),
-            FrameworkVersion = GetFrameworkVersion(),
-            OptimizationLevel = DetectOptimizationLevel()
+            PlatformType = platformType,
+            CpuCores = cpuCores,
+            AvailableMemoryMB = availableMemory,
+            IsConstrained = isConstrained,
+            IsMobile = isMobile,
+            IsWeb = isWeb,
+            IsUnity = isUnity
         };
     }
     
-    private static PlatformCompatibility DetectPlatformType()
+    private static PlatformType DetectPlatformType()
     {
-        var platform = PlatformCompatibility.None;
-        
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
-            RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-            RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        // Check for Unity
+        if (IsUnityEnvironment())
         {
-            platform |= PlatformCompatibility.DotNet;
+            return PlatformType.Unity;
         }
         
-        // Unity detection
-        #if UNITY_2022_1_OR_NEWER || UNITY_2023_1_OR_NEWER
-        platform |= PlatformCompatibility.Unity;
-        #endif
-        
-        // WebAssembly detection
-        if (RuntimeInformation.OSDescription.Contains("WebAssembly", StringComparison.OrdinalIgnoreCase))
+        // Check for WebAssembly
+        if (IsWebAssemblyEnvironment())
         {
-            platform |= PlatformCompatibility.WebAssembly;
+            return PlatformType.WebAssembly;
         }
         
-        // Mobile detection (heuristic based on environment variables)
-        var mobileIndicators = new[]
+        // Check for mobile platforms
+        if (IsMobileEnvironment())
         {
-            "XAMARIN", "MAUI", "UNITY_MOBILE", "ANDROID", "IOS"
-        };
+            return PlatformType.Mobile;
+        }
         
-        foreach (var indicator in mobileIndicators)
+        // Check for web environment
+        if (IsWebEnvironment())
         {
-            if (Environment.GetEnvironmentVariable(indicator) != null)
+            return PlatformType.Web;
+        }
+        
+        // Check for JavaScript
+        if (IsJavaScriptEnvironment())
+        {
+            return PlatformType.JavaScript;
+        }
+        
+        // Check for native platforms
+        if (IsNativeEnvironment())
+        {
+            return PlatformType.Native;
+        }
+        
+        // Default to .NET
+        return PlatformType.DotNet;
+    }
+    
+    private static bool IsUnityEnvironment()
+    {
+        try
+        {
+            // Check for Unity-specific assemblies
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var assembly in assemblies)
             {
-                platform |= PlatformCompatibility.Mobile;
-                break;
+                if (assembly.FullName?.Contains("UnityEngine") == true ||
+                    assembly.FullName?.Contains("UnityEditor") == true)
+                {
+                    return true;
+                }
             }
+            
+            // Check for Unity-specific types
+            return Type.GetType("UnityEngine.Application") != null ||
+                   Type.GetType("UnityEngine.GameObject") != null;
         }
-        
-        // Server detection (heuristic)
-        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != null ||
-            Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") != null ||
-            Environment.GetEnvironmentVariable("SERVER_ENVIRONMENT") != null)
+        catch
         {
-            platform |= PlatformCompatibility.Server;
+            return false;
         }
-        
-        // Browser detection
-        if (Environment.GetEnvironmentVariable("BROWSER") != null ||
-            RuntimeInformation.OSDescription.Contains("Browser", StringComparison.OrdinalIgnoreCase))
+    }
+    
+    private static bool IsWebAssemblyEnvironment()
+    {
+        try
         {
-            platform |= PlatformCompatibility.Browser;
+            // Check for WebAssembly-specific runtime
+            return RuntimeInformation.OSDescription.Contains("Browser") ||
+                   Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER")?.Contains("browser") == true ||
+                   Type.GetType("System.Runtime.InteropServices.JavaScript.JSImportAttribute") != null;
         }
-        
-        return platform != PlatformCompatibility.None ? platform : PlatformCompatibility.DotNet;
+        catch
+        {
+            return false;
+        }
+    }
+    
+    private static bool IsMobileEnvironment()
+    {
+        try
+        {
+            // Check for mobile-specific environment variables or assemblies
+            var runtimeId = Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER");
+            return runtimeId?.Contains("android") == true ||
+                   runtimeId?.Contains("ios") == true ||
+                   runtimeId?.Contains("mobile") == true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    private static bool IsWebEnvironment()
+    {
+        try
+        {
+            // Check for web-specific environment
+            return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != null ||
+                   Environment.GetEnvironmentVariable("WEB_ENVIRONMENT") != null ||
+                   Type.GetType("Microsoft.AspNetCore.Http.HttpContext") != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    private static bool IsJavaScriptEnvironment()
+    {
+        try
+        {
+            // Check for JavaScript-specific runtime
+            return Type.GetType("System.Runtime.InteropServices.JavaScript.JSImportAttribute") != null ||
+                   Environment.GetEnvironmentVariable("JAVASCRIPT_ENVIRONMENT") != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    private static bool IsNativeEnvironment()
+    {
+        try
+        {
+            // Check for native-specific runtime
+            var runtimeId = Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER");
+            return runtimeId?.Contains("native") == true ||
+                   runtimeId?.Contains("linux") == true ||
+                   runtimeId?.Contains("win") == true ||
+                   runtimeId?.Contains("osx") == true;
+        }
+        catch
+        {
+            return false;
+        }
     }
     
     private static long GetAvailableMemoryMB()
     {
         try
         {
-            using var process = Process.GetCurrentProcess();
-            return process.WorkingSet64 / (1024 * 1024);
+            // Try to get available memory
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // Windows-specific memory detection
+                return GC.GetTotalMemory(false) / 1024 / 1024;
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                // Unix-based systems
+                return GC.GetTotalMemory(false) / 1024 / 1024;
+            }
+            else
+            {
+                // Fallback
+                return GC.GetTotalMemory(false) / 1024 / 1024;
+            }
         }
         catch
         {
-            return 1024; // Default assumption
+            // Fallback to a reasonable default
+            return 1024; // 1GB
         }
     }
     
-    private static bool IsDebugBuild()
+    private static bool IsConstrainedEnvironment()
     {
-        #if DEBUG
-        return true;
-        #else
-        return false;
-        #endif
-    }
-    
-    private static string GetFrameworkVersion()
-    {
-        return RuntimeInformation.FrameworkDescription;
-    }
-    
-    private static OptimizationLevel DetectOptimizationLevel()
-    {
-        if (IsDebugBuild())
-            return OptimizationLevel.Debug;
-        
-        return Environment.ProcessorCount > 4 ? 
-            OptimizationLevel.Aggressive : 
-            OptimizationLevel.Balanced;
+        try
+        {
+            // Check for constrained environments
+            var availableMemory = GetAvailableMemoryMB();
+            var cpuCores = Environment.ProcessorCount;
+            
+            // Consider constrained if low memory or low CPU cores
+            return availableMemory < 512 || cpuCores < 2;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
