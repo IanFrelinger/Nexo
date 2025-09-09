@@ -142,7 +142,7 @@ namespace Nexo.Feature.Pipeline.Services
                     Strategy = ExecutionStrategy.Sequential,
                     Steps = new List<ExecutionStep>(),
                     EstimatedExecutionTime = TimeSpan.FromMinutes(5),
-                    ResourceRequirements = new Models.ResourceRequirements(),
+                    ResourceRequirements = new Interfaces.ResourceRequirements(),
                     OptimizationLevel = OptimizationLevel.Balanced
                 };
 
