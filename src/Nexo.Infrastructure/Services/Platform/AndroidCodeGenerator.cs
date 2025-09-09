@@ -1,0 +1,932 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Interfaces.Platform;
+using Nexo.Core.Application.Interfaces.AI;
+
+namespace Nexo.Infrastructure.Services.Platform
+{
+    /// <summary>
+    /// Android native code generator for Phase 6.
+    /// Generates native Android code with Jetpack Compose, Room, and Kotlin coroutines.
+    /// </summary>
+    public class AndroidCodeGenerator : IAndroidCodeGenerator
+    {
+        private readonly ILogger<AndroidCodeGenerator> _logger;
+        private readonly IModelOrchestrator _modelOrchestrator;
+
+        public AndroidCodeGenerator(
+            ILogger<AndroidCodeGenerator> logger,
+            IModelOrchestrator modelOrchestrator)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _modelOrchestrator = modelOrchestrator ?? throw new ArgumentNullException(nameof(modelOrchestrator));
+        }
+
+        /// <summary>
+        /// Generates native Android code from application logic.
+        /// </summary>
+        public async Task<AndroidGenerationResult> GenerateCodeAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Starting Android code generation for application: {ApplicationName}", 
+                applicationLogic.ApplicationName);
+
+            var result = new AndroidGenerationResult
+            {
+                ApplicationName = applicationLogic.ApplicationName,
+                StartTime = DateTimeOffset.UtcNow,
+                Options = options
+            };
+
+            try
+            {
+                // 1. Generate Jetpack Compose UI
+                if (options.GenerateComposeUI)
+                {
+                    result.ComposeUI = await GenerateJetpackComposeUIAsync(applicationLogic, options, cancellationToken);
+                }
+
+                // 2. Generate Room Database
+                if (options.GenerateRoomDatabase)
+                {
+                    result.RoomDatabase = await GenerateRoomDatabaseAsync(applicationLogic, options, cancellationToken);
+                }
+
+                // 3. Generate ViewModels
+                if (options.GenerateViewModels)
+                {
+                    result.ViewModels = await GenerateViewModelsAsync(applicationLogic, options, cancellationToken);
+                }
+
+                // 4. Generate Repositories
+                if (options.GenerateRepositories)
+                {
+                    result.Repositories = await GenerateRepositoriesAsync(applicationLogic, options, cancellationToken);
+                }
+
+                // 5. Generate Services
+                if (options.GenerateServices)
+                {
+                    result.Services = await GenerateServicesAsync(applicationLogic, options, cancellationToken);
+                }
+
+                // 6. Generate Dependency Injection
+                if (options.GenerateDependencyInjection)
+                {
+                    result.DependencyInjection = await GenerateDependencyInjectionAsync(applicationLogic, options, cancellationToken);
+                }
+
+                // 7. Generate App Configuration
+                if (options.GenerateAppConfiguration)
+                {
+                    result.AppConfiguration = await GenerateAppConfigurationAsync(applicationLogic, options, cancellationToken);
+                }
+
+                // 8. Generate Tests
+                if (options.GenerateTests)
+                {
+                    result.Tests = await GenerateTestsAsync(applicationLogic, options, cancellationToken);
+                }
+
+                result.EndTime = DateTimeOffset.UtcNow;
+                result.Duration = result.EndTime - result.StartTime;
+                result.Success = true;
+
+                _logger.LogInformation("Android code generation completed successfully in {Duration}ms", 
+                    result.Duration.TotalMilliseconds);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during Android code generation");
+                result.Success = false;
+                result.ErrorMessage = ex.Message;
+                result.EndTime = DateTimeOffset.UtcNow;
+                result.Duration = result.EndTime - result.StartTime;
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Generates Jetpack Compose UI from application logic.
+        /// </summary>
+        public async Task<IEnumerable<ComposeScreen>> GenerateJetpackComposeUIAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            var screens = new List<ComposeScreen>();
+
+            try
+            {
+                foreach (var feature in applicationLogic.Features)
+                {
+                    var screen = await GenerateComposeScreenForFeatureAsync(feature, options, cancellationToken);
+                    screens.Add(screen);
+                }
+
+                return screens;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Jetpack Compose UI");
+                return screens;
+            }
+        }
+
+        /// <summary>
+        /// Generates Room database from application logic.
+        /// </summary>
+        public async Task<RoomDatabase> GenerateRoomDatabaseAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            var database = new RoomDatabase
+            {
+                Name = $"{applicationLogic.ApplicationName}Database",
+                ApplicationName = applicationLogic.ApplicationName
+            };
+
+            try
+            {
+                // Generate entities
+                var entities = new List<RoomEntity>();
+                foreach (var entity in applicationLogic.Entities)
+                {
+                    var roomEntity = await GenerateRoomEntityAsync(entity, options, cancellationToken);
+                    entities.Add(roomEntity);
+                }
+
+                // Generate DAOs
+                var daos = new List<RoomDAO>();
+                foreach (var entity in applicationLogic.Entities)
+                {
+                    var dao = await GenerateRoomDAOAsync(entity, options, cancellationToken);
+                    daos.Add(dao);
+                }
+
+                // Generate database class
+                var databaseCode = await GenerateRoomDatabaseClassAsync(entities, daos, options, cancellationToken);
+
+                database.Entities = entities;
+                database.DAOs = daos;
+                database.DatabaseCode = databaseCode;
+                database.GeneratedAt = DateTimeOffset.UtcNow;
+                database.Success = true;
+
+                return database;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Room database");
+                database.Success = false;
+                database.ErrorMessage = ex.Message;
+                return database;
+            }
+        }
+
+        /// <summary>
+        /// Generates ViewModels from application logic.
+        /// </summary>
+        public async Task<IEnumerable<AndroidViewModel>> GenerateViewModelsAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            var viewModels = new List<AndroidViewModel>();
+
+            try
+            {
+                foreach (var feature in applicationLogic.Features)
+                {
+                    var viewModel = await GenerateViewModelForFeatureAsync(feature, options, cancellationToken);
+                    viewModels.Add(viewModel);
+                }
+
+                return viewModels;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating ViewModels");
+                return viewModels;
+            }
+        }
+
+        /// <summary>
+        /// Generates repositories from application logic.
+        /// </summary>
+        public async Task<IEnumerable<AndroidRepository>> GenerateRepositoriesAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            var repositories = new List<AndroidRepository>();
+
+            try
+            {
+                foreach (var entity in applicationLogic.Entities)
+                {
+                    var repository = await GenerateRepositoryForEntityAsync(entity, options, cancellationToken);
+                    repositories.Add(repository);
+                }
+
+                return repositories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating repositories");
+                return repositories;
+            }
+        }
+
+        /// <summary>
+        /// Generates services from application logic.
+        /// </summary>
+        public async Task<IEnumerable<AndroidService>> GenerateServicesAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            var services = new List<AndroidService>();
+
+            try
+            {
+                foreach (var service in applicationLogic.Services)
+                {
+                    var androidService = await GenerateServiceAsync(service, options, cancellationToken);
+                    services.Add(androidService);
+                }
+
+                return services;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating services");
+                return services;
+            }
+        }
+
+        /// <summary>
+        /// Generates dependency injection configuration.
+        /// </summary>
+        public async Task<DependencyInjectionConfig> GenerateDependencyInjectionAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            var config = new DependencyInjectionConfig
+            {
+                ApplicationName = applicationLogic.ApplicationName
+            };
+
+            try
+            {
+                // Generate Hilt modules
+                var modules = await GenerateHiltModulesAsync(applicationLogic, options, cancellationToken);
+                
+                // Generate Application class
+                var applicationClass = await GenerateApplicationClassAsync(applicationLogic, options, cancellationToken);
+
+                config.Modules = modules;
+                config.ApplicationClass = applicationClass;
+                config.GeneratedAt = DateTimeOffset.UtcNow;
+                config.Success = true;
+
+                return config;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating dependency injection");
+                config.Success = false;
+                config.ErrorMessage = ex.Message;
+                return config;
+            }
+        }
+
+        /// <summary>
+        /// Generates app configuration files.
+        /// </summary>
+        public async Task<AndroidAppConfiguration> GenerateAppConfigurationAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var configuration = new AndroidAppConfiguration
+                {
+                    AppName = applicationLogic.ApplicationName,
+                    PackageName = $"com.{applicationLogic.ApplicationName.ToLower()}.app",
+                    VersionName = "1.0.0",
+                    VersionCode = 1,
+                    MinSdkVersion = 24,
+                    TargetSdkVersion = 34,
+                    CompileSdkVersion = 34,
+                    RequiredPermissions = GetRequiredPermissions(applicationLogic),
+                    ManifestSettings = GenerateManifestSettings(applicationLogic),
+                    BuildGradleSettings = GenerateBuildGradleSettings(options)
+                };
+
+                return configuration;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating app configuration");
+                return new AndroidAppConfiguration();
+            }
+        }
+
+        /// <summary>
+        /// Generates unit tests for Android code.
+        /// </summary>
+        public async Task<IEnumerable<AndroidTest>> GenerateTestsAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken = default)
+        {
+            var tests = new List<AndroidTest>();
+
+            try
+            {
+                // Generate tests for each component
+                foreach (var feature in applicationLogic.Features)
+                {
+                    var featureTests = await GenerateTestsForFeatureAsync(feature, options, cancellationToken);
+                    tests.AddRange(featureTests);
+                }
+
+                return tests;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating tests");
+                return tests;
+            }
+        }
+
+        #region Private Methods
+
+        private async Task<ComposeScreen> GenerateComposeScreenForFeatureAsync(
+            Feature feature,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var screen = new ComposeScreen
+            {
+                Name = $"{feature.Name}Screen",
+                FeatureName = feature.Name,
+                Description = feature.Description
+            };
+
+            try
+            {
+                // Generate Jetpack Compose code using AI
+                var prompt = $@"
+Generate a Jetpack Compose screen for the following feature:
+- Name: {feature.Name}
+- Description: {feature.Description}
+- Requirements: {string.Join(", ", feature.Requirements)}
+
+Requirements:
+- Use Jetpack Compose with Material 3
+- Follow MVVM pattern
+- Include proper state management
+- Add accessibility support
+- Include error handling
+- Use modern Kotlin syntax
+- Follow Android Material Design guidelines
+- Use coroutines for async operations
+
+Generate complete, production-ready Jetpack Compose code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                
+                screen.Code = response.Content;
+                screen.GeneratedAt = DateTimeOffset.UtcNow;
+                screen.Success = true;
+
+                return screen;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Compose screen for feature: {FeatureName}", feature.Name);
+                screen.Success = false;
+                screen.ErrorMessage = ex.Message;
+                return screen;
+            }
+        }
+
+        private async Task<RoomEntity> GenerateRoomEntityAsync(
+            Entity entity,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var roomEntity = new RoomEntity
+            {
+                Name = entity.Name,
+                EntityName = entity.Name,
+                Description = entity.Description
+            };
+
+            try
+            {
+                // Generate Room entity using AI
+                var prompt = $@"
+Generate a Room entity for the following:
+- Name: {entity.Name}
+- Description: {entity.Description}
+- Properties: {string.Join(", ", entity.Properties.Select(p => $"{p.Name}: {p.Type}"))}
+
+Requirements:
+- Use Room annotations (@Entity, @PrimaryKey, @ColumnInfo)
+- Include proper data types
+- Add validation annotations
+- Use modern Kotlin data classes
+- Follow Room best practices
+
+Generate complete, production-ready Room entity code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                
+                roomEntity.Code = response.Content;
+                roomEntity.GeneratedAt = DateTimeOffset.UtcNow;
+                roomEntity.Success = true;
+
+                return roomEntity;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Room entity for: {EntityName}", entity.Name);
+                roomEntity.Success = false;
+                roomEntity.ErrorMessage = ex.Message;
+                return roomEntity;
+            }
+        }
+
+        private async Task<RoomDAO> GenerateRoomDAOAsync(
+            Entity entity,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var dao = new RoomDAO
+            {
+                Name = $"{entity.Name}DAO",
+                EntityName = entity.Name,
+                Description = $"DAO for {entity.Name}"
+            };
+
+            try
+            {
+                // Generate Room DAO using AI
+                var prompt = $@"
+Generate a Room DAO for the following entity:
+- Entity Name: {entity.Name}
+- Properties: {string.Join(", ", entity.Properties.Select(p => $"{p.Name}: {p.Type}"))}
+
+Requirements:
+- Use Room annotations (@Dao, @Query, @Insert, @Update, @Delete)
+- Include CRUD operations
+- Add proper query methods
+- Use suspend functions for coroutines
+- Include transaction support
+- Follow Room DAO best practices
+
+Generate complete, production-ready Room DAO code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                
+                dao.Code = response.Content;
+                dao.GeneratedAt = DateTimeOffset.UtcNow;
+                dao.Success = true;
+
+                return dao;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Room DAO for: {EntityName}", entity.Name);
+                dao.Success = false;
+                dao.ErrorMessage = ex.Message;
+                return dao;
+            }
+        }
+
+        private async Task<string> GenerateRoomDatabaseClassAsync(
+            List<RoomEntity> entities,
+            List<RoomDAO> daos,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var prompt = $@"
+Generate a Room database class with the following:
+- Entities: {string.Join(", ", entities.Select(e => e.Name))}
+- DAOs: {string.Join(", ", daos.Select(d => d.Name))}
+
+Requirements:
+- Use @Database annotation
+- Include all entities and DAOs
+- Add migration support
+- Include proper versioning
+- Use modern Room patterns
+- Follow Room database best practices
+
+Generate complete, production-ready Room database code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                return response.Content;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Room database class");
+                return string.Empty;
+            }
+        }
+
+        private async Task<AndroidViewModel> GenerateViewModelForFeatureAsync(
+            Feature feature,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var viewModel = new AndroidViewModel
+            {
+                Name = $"{feature.Name}ViewModel",
+                FeatureName = feature.Name,
+                Description = feature.Description
+            };
+
+            try
+            {
+                // Generate ViewModel using AI
+                var prompt = $@"
+Generate an Android ViewModel for the following feature:
+- Name: {feature.Name}
+- Description: {feature.Description}
+- Requirements: {string.Join(", ", feature.Requirements)}
+
+Requirements:
+- Use AndroidX ViewModel
+- Include proper state management
+- Use StateFlow/Flow for reactive programming
+- Include proper error handling
+- Use coroutines for async operations
+- Follow MVVM pattern
+- Include unit testable code
+- Use Hilt for dependency injection
+
+Generate complete, production-ready ViewModel code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                
+                viewModel.Code = response.Content;
+                viewModel.GeneratedAt = DateTimeOffset.UtcNow;
+                viewModel.Success = true;
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating ViewModel for feature: {FeatureName}", feature.Name);
+                viewModel.Success = false;
+                viewModel.ErrorMessage = ex.Message;
+                return viewModel;
+            }
+        }
+
+        private async Task<AndroidRepository> GenerateRepositoryForEntityAsync(
+            Entity entity,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var repository = new AndroidRepository
+            {
+                Name = $"{entity.Name}Repository",
+                EntityName = entity.Name,
+                Description = $"Repository for {entity.Name}"
+            };
+
+            try
+            {
+                // Generate Repository using AI
+                var prompt = $@"
+Generate an Android Repository for the following entity:
+- Entity Name: {entity.Name}
+- Properties: {string.Join(", ", entity.Properties.Select(p => $"{p.Name}: {p.Type}"))}
+
+Requirements:
+- Use repository pattern
+- Include data source abstraction
+- Use coroutines for async operations
+- Include proper error handling
+- Use Flow for reactive data
+- Follow clean architecture
+- Use Hilt for dependency injection
+
+Generate complete, production-ready Repository code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                
+                repository.Code = response.Content;
+                repository.GeneratedAt = DateTimeOffset.UtcNow;
+                repository.Success = true;
+
+                return repository;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Repository for: {EntityName}", entity.Name);
+                repository.Success = false;
+                repository.ErrorMessage = ex.Message;
+                return repository;
+            }
+        }
+
+        private async Task<AndroidService> GenerateServiceAsync(
+            Service service,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var androidService = new AndroidService
+            {
+                Name = service.Name,
+                ServiceName = service.Name,
+                Description = service.Description
+            };
+
+            try
+            {
+                // Generate service using AI
+                var prompt = $@"
+Generate an Android service for the following:
+- Name: {service.Name}
+- Description: {service.Description}
+- Methods: {string.Join(", ", service.Methods.Select(m => $"{m.Name}()"))}
+
+Requirements:
+- Use modern Android service patterns
+- Include proper lifecycle management
+- Use coroutines for async operations
+- Include proper error handling
+- Use Hilt for dependency injection
+- Follow Android service best practices
+
+Generate complete, production-ready service code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                
+                androidService.Code = response.Content;
+                androidService.GeneratedAt = DateTimeOffset.UtcNow;
+                androidService.Success = true;
+
+                return androidService;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating service: {ServiceName}", service.Name);
+                androidService.Success = false;
+                androidService.ErrorMessage = ex.Message;
+                return androidService;
+            }
+        }
+
+        private async Task<List<HiltModule>> GenerateHiltModulesAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var modules = new List<HiltModule>();
+
+            try
+            {
+                // Generate database module
+                var databaseModule = new HiltModule
+                {
+                    Name = "DatabaseModule",
+                    Code = await GenerateDatabaseModuleAsync(applicationLogic, options, cancellationToken)
+                };
+                modules.Add(databaseModule);
+
+                // Generate repository module
+                var repositoryModule = new HiltModule
+                {
+                    Name = "RepositoryModule",
+                    Code = await GenerateRepositoryModuleAsync(applicationLogic, options, cancellationToken)
+                };
+                modules.Add(repositoryModule);
+
+                return modules;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Hilt modules");
+                return modules;
+            }
+        }
+
+        private async Task<string> GenerateDatabaseModuleAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var prompt = $@"
+Generate a Hilt database module for Android with the following entities:
+- Entities: {string.Join(", ", applicationLogic.Entities.Select(e => e.Name))}
+
+Requirements:
+- Use @Module and @InstallIn annotations
+- Provide database instance
+- Provide DAO instances
+- Use proper scoping
+- Follow Hilt best practices
+
+Generate complete, production-ready Hilt module code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                return response.Content;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating database module");
+                return string.Empty;
+            }
+        }
+
+        private async Task<string> GenerateRepositoryModuleAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var prompt = $@"
+Generate a Hilt repository module for Android with the following repositories:
+- Repositories: {string.Join(", ", applicationLogic.Entities.Select(e => $"{e.Name}Repository"))}
+
+Requirements:
+- Use @Module and @InstallIn annotations
+- Provide repository instances
+- Use proper scoping
+- Follow Hilt best practices
+
+Generate complete, production-ready Hilt module code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                return response.Content;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating repository module");
+                return string.Empty;
+            }
+        }
+
+        private async Task<string> GenerateApplicationClassAsync(
+            ApplicationLogic applicationLogic,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var prompt = $@"
+Generate an Android Application class with Hilt for:
+- App Name: {applicationLogic.ApplicationName}
+
+Requirements:
+- Use @HiltAndroidApp annotation
+- Include proper initialization
+- Follow Hilt best practices
+
+Generate complete, production-ready Application class code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                return response.Content;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating Application class");
+                return string.Empty;
+            }
+        }
+
+        private async Task<IEnumerable<AndroidTest>> GenerateTestsForFeatureAsync(
+            Feature feature,
+            AndroidGenerationOptions options,
+            CancellationToken cancellationToken)
+        {
+            var tests = new List<AndroidTest>();
+
+            try
+            {
+                // Generate unit tests using AI
+                var prompt = $@"
+Generate comprehensive unit tests for the following Android feature:
+- Name: {feature.Name}
+- Description: {feature.Description}
+- Requirements: {string.Join(", ", feature.Requirements)}
+
+Requirements:
+- Use JUnit 5 and MockK
+- Include unit tests for all methods
+- Add integration tests
+- Include UI tests with Compose Testing
+- Test error scenarios
+- Use proper mocking
+- Follow Android testing best practices
+
+Generate complete, production-ready test code.
+";
+
+                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                
+                tests.Add(new AndroidTest
+                {
+                    Name = $"{feature.Name}Tests",
+                    FeatureName = feature.Name,
+                    Code = response.Content,
+                    GeneratedAt = DateTimeOffset.UtcNow,
+                    Success = true
+                });
+
+                return tests;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating tests for feature: {FeatureName}", feature.Name);
+                return tests;
+            }
+        }
+
+        private string[] GetRequiredPermissions(ApplicationLogic applicationLogic)
+        {
+            var permissions = new List<string>
+            {
+                "android.permission.INTERNET",
+                "android.permission.ACCESS_NETWORK_STATE"
+            };
+
+            if (applicationLogic.Features.Any(f => f.RequiresCamera))
+                permissions.Add("android.permission.CAMERA");
+            
+            if (applicationLogic.Features.Any(f => f.RequiresLocation))
+            {
+                permissions.Add("android.permission.ACCESS_FINE_LOCATION");
+                permissions.Add("android.permission.ACCESS_COARSE_LOCATION");
+            }
+            
+            if (applicationLogic.Features.Any(f => f.RequiresMicrophone))
+                permissions.Add("android.permission.RECORD_AUDIO");
+            
+            if (applicationLogic.Features.Any(f => f.RequiresBluetooth))
+                permissions.Add("android.permission.BLUETOOTH");
+
+            return permissions.ToArray();
+        }
+
+        private Dictionary<string, object> GenerateManifestSettings(ApplicationLogic applicationLogic)
+        {
+            return new Dictionary<string, object>
+            {
+                ["android:label"] = applicationLogic.ApplicationName,
+                ["android:theme"] = "@style/Theme.AppCompat.Light.NoActionBar",
+                ["android:allowBackup"] = true,
+                ["android:supportsRtl"] = true
+            };
+        }
+
+        private Dictionary<string, string> GenerateBuildGradleSettings(AndroidGenerationOptions options)
+        {
+            return new Dictionary<string, string>
+            {
+                ["compileSdk"] = "34",
+                ["targetSdk"] = "34",
+                ["minSdk"] = "24",
+                ["kotlinVersion"] = "1.9.0",
+                ["composeVersion"] = "1.5.0",
+                ["hiltVersion"] = "2.48",
+                ["roomVersion"] = "2.5.0"
+            };
+        }
+
+        #endregion
+    }
+}
