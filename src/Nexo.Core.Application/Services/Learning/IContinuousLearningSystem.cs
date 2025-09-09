@@ -1,3 +1,6 @@
+using Nexo.Core.Domain.Interfaces.Infrastructure;
+using Nexo.Core.Domain.Entities.Infrastructure;
+
 namespace Nexo.Core.Application.Services.Learning;
 
 /// <summary>
@@ -23,7 +26,7 @@ public interface IContinuousLearningSystem
     /// <summary>
     /// Get current learning insights
     /// </summary>
-    Task<IEnumerable<LearningInsight>> GetCurrentInsightsAsync();
+    Task<IEnumerable<Nexo.Core.Domain.Entities.Infrastructure.LearningInsight>> GetCurrentInsightsAsync();
     
     /// <summary>
     /// Get learning effectiveness metrics

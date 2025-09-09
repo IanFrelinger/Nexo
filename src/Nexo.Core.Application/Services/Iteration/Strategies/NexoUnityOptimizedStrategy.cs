@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
-using Nexo.Feature.Pipeline.Models;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration.Strategies;
 
@@ -16,8 +16,8 @@ public class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
     
     public IterationPerformanceProfile PerformanceProfile => new()
     {
-        CpuEfficiency = PerformanceLevel.Excellent,
-        MemoryEfficiency = PerformanceLevel.Excellent,
+        CpuEfficiency = PerformanceLevel.High,
+        MemoryEfficiency = PerformanceLevel.High,
         Scalability = PerformanceLevel.High,
         OptimalDataSizeMin = 0,
         OptimalDataSizeMax = 10000,
@@ -28,6 +28,18 @@ public class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
     };
     
     public PlatformCompatibility PlatformCompatibility => PlatformCompatibility.Unity;
+    
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return context.PlatformTarget == PlatformTarget.Unity && context.DataSize <= 100000;
+    }
+    
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        if (context.PlatformTarget == PlatformTarget.Unity && context.Priority == (int)IterationPriority.Performance) return 95;
+        if (context.PlatformTarget == PlatformTarget.Unity) return 80;
+        return 0;
+    }
     
     public void Execute(IEnumerable<T> source, Action<T> action)
     {
@@ -98,31 +110,8 @@ public class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
         return GenerateUnityOptimizedCode(context);
     }
     
-    public bool CanHandle(PipelineContext context)
-    {
-        var currentPlatform = context.GetPlatformTarget();
-        return currentPlatform == PlatformTarget.Unity2022 || currentPlatform == PlatformTarget.Unity2023;
-    }
     
-    public int GetPriority(PipelineContext context)
-    {
-        var currentPlatform = context.GetPlatformTarget();
-        var dataSize = EstimateDataSize(context);
-        var requirements = context.GetPerformanceRequirements();
-        
-        // Highest priority for Unity platforms
-        if (currentPlatform == PlatformTarget.Unity2022 || currentPlatform == PlatformTarget.Unity2023)
-        {
-            if (requirements.RequiresRealTime) return 100;
-            if (dataSize < 1000) return 95;
-            if (dataSize < 10000) return 90;
-            return 85;
-        }
-        
-        return 0; // Not applicable for non-Unity platforms
-    }
-    
-    public PerformanceEstimate EstimatePerformance(IterationContext context)
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
     {
         var dataSize = context.DataSize;
         var platform = context.TargetPlatform;
@@ -136,7 +125,7 @@ public class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
         var estimatedTime = dataSize * baseTimePerItem * unityMultiplier;
         var estimatedMemory = dataSize * 0.0005; // Very low memory overhead
         
-        return new PerformanceEstimate
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
         {
             EstimatedExecutionTimeMs = estimatedTime,
             EstimatedMemoryUsageMB = estimatedMemory,
@@ -174,15 +163,6 @@ if ({collectionVar} != null)
 }}";
     }
     
-    private int EstimateDataSize(PipelineContext context)
-    {
-        if (context.TryGetProperty("EstimatedDataSize", out var size) && size is int dataSize)
-        {
-            return dataSize;
-        }
-        
-        return 1000;
-    }
     
     private double CalculatePerformanceScore(double executionTime, double memoryUsage, IterationContext context)
     {

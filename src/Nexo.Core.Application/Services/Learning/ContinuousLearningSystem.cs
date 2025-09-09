@@ -1,3 +1,8 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Application.Services.Adaptation;
+
 namespace Nexo.Core.Application.Services.Learning;
 
 /// <summary>
@@ -6,18 +11,18 @@ namespace Nexo.Core.Application.Services.Learning;
 public class ContinuousLearningSystem : IContinuousLearningSystem
 {
     private readonly IUserFeedbackCollector _feedbackCollector;
-    private readonly IPerformanceDataStore _performanceStore;
+    private readonly Nexo.Core.Application.Services.Adaptation.IPerformanceDataStore _performanceStore;
     private readonly IPatternRecognitionEngine _patternEngine;
     private readonly IAdaptationRecommender _recommender;
-    private readonly IAdaptationDataStore _adaptationStore;
+    private readonly Nexo.Core.Application.Services.Adaptation.IAdaptationDataStore _adaptationStore;
     private readonly ILogger<ContinuousLearningSystem> _logger;
     
     public ContinuousLearningSystem(
         IUserFeedbackCollector feedbackCollector,
-        IPerformanceDataStore performanceStore,
+        Nexo.Core.Application.Services.Adaptation.IPerformanceDataStore performanceStore,
         IPatternRecognitionEngine patternEngine,
         IAdaptationRecommender recommender,
-        IAdaptationDataStore adaptationStore,
+        Nexo.Core.Application.Services.Adaptation.IAdaptationDataStore adaptationStore,
         ILogger<ContinuousLearningSystem> logger)
     {
         _feedbackCollector = feedbackCollector;
@@ -35,14 +40,22 @@ public class ContinuousLearningSystem : IContinuousLearningSystem
         try
         {
             // Collect recent data
-            var recentFeedback = await _feedbackCollector.GetRecentFeedbackAsync(TimeSpan.FromHours(24));
-            var recentPerformance = await _performanceStore.GetRecentPerformanceDataAsync(TimeSpan.FromHours(24));
+            var recentFeedback = await _feedbackCollector.GetRecentFeedbackAsync(100); // Get last 100 feedback items
+            var recentPerformance = await _performanceStore.GetRecentPerformanceDataAsync(100); // Get last 100 performance records
             
             _logger.LogInformation("Collected {FeedbackCount} feedback items and {PerformanceCount} performance records",
                 recentFeedback.Count(), recentPerformance.Count());
             
             // Identify patterns
-            var patterns = await _patternEngine.IdentifyPatternsAsync(recentFeedback, recentPerformance);
+            var learningPerformanceData = recentPerformance.Select(p => new PerformanceData
+            {
+                DataId = p.Id,
+                Metrics = new PerformanceMetrics(), // Create empty metrics
+                Timestamp = p.Timestamp,
+                Context = p.Context,
+                AdditionalMetrics = p.Metadata
+            });
+            var patterns = await _patternEngine.IdentifyPatternsAsync(recentFeedback, learningPerformanceData);
             
             _logger.LogInformation("Identified {PatternCount} patterns", patterns.Count());
             
@@ -111,7 +124,7 @@ public class ContinuousLearningSystem : IContinuousLearningSystem
         return recommendations;
     }
     
-    public async Task RecordAdaptationResultsAsync(IEnumerable<AdaptationNeed> adaptations)
+    public async Task RecordAdaptationResultsAsync(IEnumerable<Nexo.Core.Domain.Entities.Infrastructure.AdaptationNeed> adaptations)
     {
         _logger.LogInformation("Recording results for {AdaptationCount} adaptations", adaptations.Count());
         
@@ -124,7 +137,7 @@ public class ContinuousLearningSystem : IContinuousLearningSystem
                 Trigger = adaptation.Trigger,
                 AppliedAt = DateTime.UtcNow,
                 StrategyId = "Unknown", // Would be populated by the adaptation engine
-                WasSuccessful = true, // Would be determined by actual results
+                Success = true, // Would be determined by actual results
                 EffectivenessScore = adaptation.Priority switch
                 {
                     AdaptationPriority.Critical => 0.9,
@@ -134,19 +147,19 @@ public class ContinuousLearningSystem : IContinuousLearningSystem
                 }
             };
             
-            await _adaptationStore.RecordAdaptationAsync(record);
+            await _adaptationStore.StoreAdaptationAsync(record);
         }
     }
     
-    public async Task<IEnumerable<LearningInsight>> GetCurrentInsightsAsync()
+    public async Task<IEnumerable<Nexo.Core.Domain.Entities.Infrastructure.LearningInsight>> GetCurrentInsightsAsync()
     {
-        return await _adaptationStore.GetRecentInsightsAsync(TimeSpan.FromDays(7));
+        return await _adaptationStore.GetInsightsAsync();
     }
     
     public async Task<LearningEffectiveness> GetLearningEffectivenessAsync()
     {
         var insights = await GetCurrentInsightsAsync();
-        var adaptations = await _adaptationStore.GetRecentAdaptationsAsync(TimeSpan.FromDays(30));
+        var adaptations = await _adaptationStore.GetRecentAdaptationsAsync(30);
         
         var effectiveness = new LearningEffectiveness
         {
@@ -253,7 +266,15 @@ public class ContinuousLearningSystem : IContinuousLearningSystem
         // Store insights for future reference
         foreach (var insight in insights)
         {
-            await _adaptationStore.StoreInsightAsync(insight);
+            await _adaptationStore.StoreInsightAsync(new Nexo.Core.Domain.Entities.Infrastructure.LearningInsight
+            {
+                Id = insight.Id,
+                Type = (Nexo.Core.Domain.Entities.Infrastructure.InsightType)Enum.Parse(typeof(Nexo.Core.Domain.Entities.Infrastructure.InsightType), insight.Type.ToString()),
+                Description = insight.Description,
+                Confidence = insight.Confidence,
+                Timestamp = insight.DiscoveredAt,
+                SupportingData = insight.SupportingData
+            });
         }
         
         return insights;

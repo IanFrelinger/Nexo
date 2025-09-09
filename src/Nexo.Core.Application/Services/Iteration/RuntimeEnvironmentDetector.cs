@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration;
 
@@ -16,7 +17,7 @@ public static class RuntimeEnvironmentDetector
     public static RuntimeEnvironmentProfile DetectCurrent()
     {
         var platformType = DetectPlatformType();
-        var cpuCores = Environment.ProcessorCount;
+        var cpuCores = System.Environment.ProcessorCount;
         var availableMemory = GetAvailableMemoryMB();
         var isConstrained = IsConstrainedEnvironment();
         var isMobile = IsMobileEnvironment();
@@ -108,7 +109,7 @@ public static class RuntimeEnvironmentDetector
         {
             // Check for WebAssembly-specific runtime
             return RuntimeInformation.OSDescription.Contains("Browser") ||
-                   Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER")?.Contains("browser") == true ||
+                   System.Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER")?.Contains("browser") == true ||
                    Type.GetType("System.Runtime.InteropServices.JavaScript.JSImportAttribute") != null;
         }
         catch
@@ -122,7 +123,7 @@ public static class RuntimeEnvironmentDetector
         try
         {
             // Check for mobile-specific environment variables or assemblies
-            var runtimeId = Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER");
+            var runtimeId = System.Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER");
             return runtimeId?.Contains("android") == true ||
                    runtimeId?.Contains("ios") == true ||
                    runtimeId?.Contains("mobile") == true;
@@ -138,8 +139,8 @@ public static class RuntimeEnvironmentDetector
         try
         {
             // Check for web-specific environment
-            return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != null ||
-                   Environment.GetEnvironmentVariable("WEB_ENVIRONMENT") != null ||
+            return System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != null ||
+                   System.Environment.GetEnvironmentVariable("WEB_ENVIRONMENT") != null ||
                    Type.GetType("Microsoft.AspNetCore.Http.HttpContext") != null;
         }
         catch
@@ -154,7 +155,7 @@ public static class RuntimeEnvironmentDetector
         {
             // Check for JavaScript-specific runtime
             return Type.GetType("System.Runtime.InteropServices.JavaScript.JSImportAttribute") != null ||
-                   Environment.GetEnvironmentVariable("JAVASCRIPT_ENVIRONMENT") != null;
+                   System.Environment.GetEnvironmentVariable("JAVASCRIPT_ENVIRONMENT") != null;
         }
         catch
         {
@@ -167,7 +168,7 @@ public static class RuntimeEnvironmentDetector
         try
         {
             // Check for native-specific runtime
-            var runtimeId = Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER");
+            var runtimeId = System.Environment.GetEnvironmentVariable("DOTNET_RUNTIME_IDENTIFIER");
             return runtimeId?.Contains("native") == true ||
                    runtimeId?.Contains("linux") == true ||
                    runtimeId?.Contains("win") == true ||
@@ -213,7 +214,7 @@ public static class RuntimeEnvironmentDetector
         {
             // Check for constrained environments
             var availableMemory = GetAvailableMemoryMB();
-            var cpuCores = Environment.ProcessorCount;
+            var cpuCores = System.Environment.ProcessorCount;
             
             // Consider constrained if low memory or low CPU cores
             return availableMemory < 512 || cpuCores < 2;

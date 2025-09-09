@@ -1,3 +1,7 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
+using Nexo.Core.Domain.Entities.Infrastructure;
+
 namespace Nexo.Core.Application.Services.Learning;
 
 /// <summary>
@@ -108,14 +112,14 @@ public class UserFeedbackCollector : IUserFeedbackCollector
             {
                 Trigger = AdaptationTrigger.HighSeverityFeedback,
                 Priority = AdaptationPriority.Critical,
-                Context = analysis.Context,
+                Context = analysis.Context.ToString(),
                 UserFeedback = feedback,
                 Description = $"High severity feedback: {feedback.Content}"
             });
         }
         
         // Notify listeners
-        OnNegativeFeedback?.Invoke(this, new NegativeFeedbackEventArgs { Feedback = feedback });
+        OnNegativeFeedback?.Invoke(this, new NegativeFeedbackEventArgs(feedback, new AdaptationContext()));
     }
     
     private async Task CheckForAdaptationTriggers(UserFeedback feedback)
@@ -239,6 +243,41 @@ public class UserFeedbackCollector : IUserFeedbackCollector
             .Take(2);
         
         return string.Join(" ", words);
+    }
+    
+    // IUserFeedbackCollector interface methods
+    public async Task CollectFeedbackAsync(UserFeedback feedback)
+    {
+        await RecordFeedbackAsync(feedback);
+    }
+    
+    public async Task<UserFeedback?> GetFeedbackAsync(string id)
+    {
+        return await _feedbackStore.GetFeedbackByIdAsync(id);
+    }
+    
+    public async Task<IEnumerable<UserFeedback>> GetFeedbackAsync(DateTime startTime, DateTime endTime)
+    {
+        return await _feedbackStore.GetFeedbackInTimeRangeAsync(startTime, endTime);
+    }
+    
+    public async Task<IEnumerable<UserFeedback>> GetRecentFeedbackAsync(int count = 10)
+    {
+        var recentFeedback = await _feedbackStore.GetFeedbackInTimeRangeAsync(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
+        return recentFeedback;
+    }
+    
+    public async Task<FeedbackAnalysisResult> AnalyzeFeedbackAsync(DateTime startTime, DateTime endTime)
+    {
+        var feedback = await GetFeedbackAsync(startTime, endTime);
+        var analysis = await _feedbackAnalyzer.AnalyzeFeedbackBatchAsync(feedback);
+        return analysis;
+    }
+    
+    public async Task DeleteOldFeedbackAsync(DateTime cutoffTime)
+    {
+        // TODO: Implement DeleteOldFeedbackAsync in IFeedbackStore
+        // await _feedbackStore.DeleteOldFeedbackAsync(cutoffTime);
     }
 }
 

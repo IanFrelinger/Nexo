@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration.Strategies;
 
@@ -16,7 +17,7 @@ public class WasmOptimizedStrategy<T> : IIterationStrategy<T>
     public IterationPerformanceProfile PerformanceProfile => new()
     {
         CpuEfficiency = PerformanceLevel.Medium,
-        MemoryEfficiency = PerformanceLevel.Excellent,
+        MemoryEfficiency = PerformanceLevel.Critical,
         Scalability = PerformanceLevel.Low,
         OptimalDataSizeMin = 0,
         OptimalDataSizeMax = 10000,
@@ -87,5 +88,35 @@ public class WasmOptimizedStrategy<T> : IIterationStrategy<T>
             {{context.IterationBodyTemplate.Replace("{item}", context.ItemName)}}
         }
         """;
+    }
+
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        var platform = context.GetValue<PlatformTarget>("PlatformTarget", PlatformTarget.DotNet);
+        return platform == PlatformTarget.JavaScript || platform == PlatformTarget.WebAssembly;
+    }
+
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        var platform = context.GetValue<PlatformTarget>("PlatformTarget", PlatformTarget.DotNet);
+        if (platform == PlatformTarget.JavaScript || platform == PlatformTarget.WebAssembly)
+            return 90; // High priority for WASM/JS platforms
+        return 25; // Lower priority for other platforms
+    }
+
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
+    {
+        var baseTime = context.EstimatedDataSize * 0.002; // WASM performance characteristics
+        var memoryUsage = context.EstimatedDataSize * 0.0005; // Lower memory usage for WASM
+        
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
+        {
+            EstimatedExecutionTimeMs = baseTime,
+            EstimatedMemoryUsageMB = memoryUsage,
+            Confidence = 0.8,
+            PerformanceScore = 82,
+            MeetsRequirements = context.EnvironmentProfile.CurrentPlatform == PlatformType.JavaScript || 
+                               context.EnvironmentProfile.CurrentPlatform == PlatformType.WebAssembly
+        };
     }
 }

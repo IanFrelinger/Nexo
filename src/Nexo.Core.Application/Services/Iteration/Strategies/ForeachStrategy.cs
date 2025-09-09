@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration.Strategies;
 
@@ -81,6 +82,41 @@ public class ForeachStrategy<T> : IIterationStrategy<T>
                 $"for {context.ItemName} in {context.CollectionName}:\n    {context.IterationBodyTemplate.Replace("{item}", context.ItemName)}",
             _ => 
                 $"foreach (var {context.ItemName} in {context.CollectionName})\n{{\n    {context.IterationBodyTemplate.Replace("{item}", context.ItemName)}\n}}"
+        };
+    }
+
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return true; // Foreach can handle any IEnumerable
+    }
+
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        var dataSize = context.GetValue<int>("DataSize", 0);
+        var requiresReadability = context.GetValue<bool>("RequiresReadability", false);
+        
+        if (requiresReadability)
+            return 90;
+        
+        if (dataSize < 1000)
+            return 80;
+            
+        return 60;
+    }
+
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
+    {
+        var baseTime = context.EstimatedDataSize * 0.0015; // Slightly slower than for-loop
+        var memoryUsage = context.EstimatedDataSize * 0.001;
+        
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
+        {
+            EstimatedExecutionTimeMs = baseTime,
+            EstimatedMemoryUsageMB = memoryUsage,
+            Confidence = 0.85,
+            PerformanceScore = 85,
+            MeetsRequirements = baseTime <= context.Requirements.MaxExecutionTimeMs &&
+                              memoryUsage <= context.Requirements.MaxMemoryUsageMB
         };
     }
 }

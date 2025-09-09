@@ -1,3 +1,6 @@
+using Nexo.Core.Domain.Interfaces.Infrastructure;
+using Nexo.Core.Domain.Entities.Infrastructure;
+
 namespace Nexo.Core.Application.Services.Environment;
 
 /// <summary>
@@ -41,31 +44,6 @@ public interface IEnvironmentDetector
     event EventHandler<EnvironmentChangeEventArgs>? OnEnvironmentChange;
 }
 
-/// <summary>
-/// Interface for environment adaptation service
-/// </summary>
-public interface IEnvironmentAdaptationService
-{
-    /// <summary>
-    /// Adapt system to current environment
-    /// </summary>
-    Task AdaptToEnvironmentAsync();
-    
-    /// <summary>
-    /// Apply environment-specific configurations
-    /// </summary>
-    Task ApplyEnvironmentConfigurationsAsync(DetectedEnvironment environment);
-    
-    /// <summary>
-    /// Get environment-specific optimizations
-    /// </summary>
-    Task<IEnumerable<EnvironmentOptimization>> GetEnvironmentOptimizationsAsync(DetectedEnvironment environment);
-    
-    /// <summary>
-    /// Validate environment configuration
-    /// </summary>
-    Task<EnvironmentValidationResult> ValidateEnvironmentAsync(DetectedEnvironment environment);
-}
 
 /// <summary>
 /// Detected environment information
@@ -73,7 +51,7 @@ public interface IEnvironmentAdaptationService
 public class DetectedEnvironment
 {
     public string EnvironmentId { get; set; } = Guid.NewGuid().ToString();
-    public EnvironmentContext Context { get; set; }
+    public Nexo.Core.Domain.Entities.Infrastructure.EnvironmentContext Context { get; set; }
     public PlatformType Platform { get; set; }
     public EnvironmentResources Resources { get; set; } = new();
     public NetworkProfile NetworkProfile { get; set; } = new();

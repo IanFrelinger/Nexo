@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
-using Nexo.Feature.Pipeline.Models;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration.Strategies;
 
@@ -16,9 +16,9 @@ public class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
     
     public IterationPerformanceProfile PerformanceProfile => new()
     {
-        CpuEfficiency = PerformanceLevel.Excellent,
+        CpuEfficiency = PerformanceLevel.High,
         MemoryEfficiency = PerformanceLevel.Medium,
-        Scalability = PerformanceLevel.Excellent,
+        Scalability = PerformanceLevel.High,
         OptimalDataSizeMin = 1000,
         OptimalDataSizeMax = int.MaxValue,
         SupportsParallelization = true,
@@ -28,6 +28,19 @@ public class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
     };
     
     public PlatformCompatibility PlatformCompatibility => PlatformCompatibility.DotNet | PlatformCompatibility.Server;
+    
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return context.DataSize > 10000 && context.RequiresParallelization;
+    }
+    
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        if (context.Priority == (int)IterationPriority.Performance && context.RequiresParallelization) return 95;
+        if (context.Priority == (int)IterationPriority.Readability) return 30;
+        if (context.Priority == (int)IterationPriority.Maintainability) return 40;
+        return 60;
+    }
     
     public void Execute(IEnumerable<T> source, Action<T> action)
     {
@@ -57,35 +70,8 @@ public class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
         };
     }
     
-    public bool CanHandle(PipelineContext context)
-    {
-        var currentPlatform = context.GetPlatformTarget();
-        var dataSize = EstimateDataSize(context);
-        var cpuCores = Environment.ProcessorCount;
-        
-        // Only suitable for .NET platforms with multiple cores and sufficient data
-        return PlatformCompatibility.HasFlag(GetPlatformFlag(currentPlatform)) &&
-               cpuCores > 1 &&
-               dataSize >= 1000;
-    }
     
-    public int GetPriority(PipelineContext context)
-    {
-        var dataSize = EstimateDataSize(context);
-        var platform = context.GetPlatformTarget();
-        var requirements = context.GetPerformanceRequirements();
-        var cpuCores = Environment.ProcessorCount;
-        
-        // High priority for CPU-bound operations with large datasets
-        if (requirements.PreferParallel && dataSize > 10000 && cpuCores > 2) return 95;
-        if (context.IsCpuBound() && dataSize > 5000 && cpuCores > 1) return 90;
-        if (dataSize > 50000 && cpuCores > 2) return 85;
-        if (requirements.RequiresRealTime) return 20; // Not suitable for real-time
-        
-        return 50; // Default priority
-    }
-    
-    public PerformanceEstimate EstimatePerformance(IterationContext context)
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
     {
         var dataSize = context.DataSize;
         var platform = context.TargetPlatform;
@@ -104,7 +90,7 @@ public class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
         var estimatedTime = (dataSize * baseTimePerItem) / (parallelSpeedup * cpuBoundMultiplier);
         var estimatedMemory = dataSize * 0.02; // Higher memory overhead due to parallelization
         
-        return new PerformanceEstimate
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
         {
             EstimatedExecutionTimeMs = estimatedTime,
             EstimatedMemoryUsageMB = estimatedMemory,
@@ -167,15 +153,6 @@ if ({collectionVar} != null)
         };
     }
     
-    private int EstimateDataSize(PipelineContext context)
-    {
-        if (context.TryGetProperty("EstimatedDataSize", out var size) && size is int dataSize)
-        {
-            return dataSize;
-        }
-        
-        return 1000;
-    }
     
     private double CalculatePerformanceScore(double executionTime, double memoryUsage, IterationContext context)
     {

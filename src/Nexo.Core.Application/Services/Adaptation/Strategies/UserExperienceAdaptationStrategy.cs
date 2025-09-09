@@ -1,3 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Services.Adaptation;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
+
 namespace Nexo.Core.Application.Services.Adaptation.Strategies;
 
 /// <summary>
@@ -101,8 +110,9 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             analysis.CommonComplaints.ContainsKey("bug") ||
             analysis.CommonComplaints.ContainsKey("error"))
         {
-            await _codeGenerationOptimizer.EnableEnhancedValidation();
-            await _codeGenerationOptimizer.IncreaseTestCoverage();
+            // TODO: Implement these methods in ICodeGenerationOptimizer
+            // await _codeGenerationOptimizer.EnableEnhancedValidation();
+            // await _codeGenerationOptimizer.IncreaseTestCoverage();
             
             adaptations.Add(new AppliedAdaptation
             {
@@ -123,7 +133,8 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
         if (analysis.CommonComplaints.ContainsKey("verbose") || 
             analysis.CommonComplaints.ContainsKey("too long"))
         {
-            await _codeGenerationOptimizer.SetVerbosityLevel(VerbosityLevel.Concise);
+            // TODO: Implement SetVerbosityLevel method in ICodeGenerationOptimizer
+            // await _codeGenerationOptimizer.SetVerbosityLevel(VerbosityLevel.Concise);
             
             adaptations.Add(new AppliedAdaptation
             {
@@ -143,7 +154,8 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
         if (analysis.CommonComplaints.ContainsKey("unclear") || 
             analysis.CommonComplaints.ContainsKey("confusing"))
         {
-            await _codeGenerationOptimizer.SetVerbosityLevel(VerbosityLevel.Detailed);
+            // TODO: Implement SetVerbosityLevel method in ICodeGenerationOptimizer
+            // await _codeGenerationOptimizer.SetVerbosityLevel(VerbosityLevel.Detailed);
             
             adaptations.Add(new AppliedAdaptation
             {
@@ -168,7 +180,8 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
         if (analysis.CommonComplaints.ContainsKey("slow") || 
             analysis.CommonComplaints.ContainsKey("timeout"))
         {
-            await _codeGenerationOptimizer.EnableSpeedOptimization();
+            // TODO: Implement EnableSpeedOptimization method in ICodeGenerationOptimizer
+            // await _codeGenerationOptimizer.EnableSpeedOptimization();
             
             _logger.LogInformation("Enabled speed optimization based on user feedback about slow responses");
             
@@ -195,7 +208,8 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
         if (analysis.CommonComplaints.ContainsKey("error message") || 
             analysis.CommonComplaints.ContainsKey("unclear error"))
         {
-            await _codeGenerationOptimizer.EnableEnhancedErrorMessages();
+            // TODO: Implement EnableEnhancedErrorMessages method in ICodeGenerationOptimizer
+            // await _codeGenerationOptimizer.EnableEnhancedErrorMessages();
             
             _logger.LogInformation("Enhanced error messages based on user feedback");
             
@@ -222,7 +236,8 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
         if (analysis.CommonComplaints.ContainsKey("documentation") || 
             analysis.CommonComplaints.ContainsKey("explanation"))
         {
-            await _codeGenerationOptimizer.EnableEnhancedDocumentation();
+            // TODO: Implement EnableEnhancedDocumentation method in ICodeGenerationOptimizer
+            // await _codeGenerationOptimizer.EnableEnhancedDocumentation();
             
             _logger.LogInformation("Enhanced documentation based on user feedback");
             
@@ -329,37 +344,3 @@ public class FeedbackAnalysis
     public Dictionary<string, int> SuccessfulPatterns { get; set; } = new();
 }
 
-/// <summary>
-/// Interface for user experience analysis
-/// </summary>
-public interface IUserExperienceAnalyzer
-{
-    Task<FeedbackAnalysis> AnalyzeFeedbackAsync(IEnumerable<UserFeedback> feedback);
-    Task<double> CalculateSatisfactionScoreAsync(IEnumerable<UserFeedback> feedback);
-    Task<IEnumerable<string>> IdentifyImprovementAreasAsync(FeedbackAnalysis analysis);
-}
-
-/// <summary>
-/// Interface for code generation optimization
-/// </summary>
-public interface ICodeGenerationOptimizer
-{
-    Task EnableEnhancedValidation();
-    Task IncreaseTestCoverage();
-    Task SetVerbosityLevel(VerbosityLevel level);
-    Task EnableSpeedOptimization();
-    Task EnableEnhancedErrorMessages();
-    Task EnableEnhancedDocumentation();
-}
-
-/// <summary>
-/// Verbosity levels for code generation
-/// </summary>
-public enum VerbosityLevel
-{
-    Minimal,
-    Concise,
-    Balanced,
-    Detailed,
-    Verbose
-}

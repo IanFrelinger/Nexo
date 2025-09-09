@@ -1,3 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Nexo.Core.Application.Services.Adaptation;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
+
 namespace Nexo.Core.Application.Services.Adaptation.Strategies;
 
 /// <summary>
@@ -128,4 +135,5 @@ public class AdaptationStrategyRegistry : IAdaptationStrategyRegistry
             return false;
         }
     }
+    
 }

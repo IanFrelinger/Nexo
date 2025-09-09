@@ -1,7 +1,6 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Application.Services.Iteration.Strategies;
 using Nexo.Core.Domain.Entities.Iteration;
 
@@ -18,8 +17,8 @@ public static class IterationPipelineExtensions
     public static IServiceCollection AddIterationStrategies(this IServiceCollection services)
     {
         // Core services
-        services.AddSingleton<IIterationStrategySelector, IterationStrategySelector>();
-        services.AddSingleton<RuntimeEnvironmentProfile>(provider => 
+        services.AddSingleton<Nexo.Core.Domain.Interfaces.Infrastructure.IIterationStrategySelector, IterationStrategySelector>();
+        services.AddSingleton<Nexo.Core.Domain.Entities.Infrastructure.RuntimeEnvironmentProfile>(provider => 
             RuntimeEnvironmentDetector.DetectCurrent());
         
         // Strategy implementations
@@ -47,7 +46,7 @@ public static class IterationPipelineExtensions
     {
         return builder.Use(async (context, next) =>
         {
-            var selector = context.ServiceProvider.GetRequiredService<IIterationStrategySelector>();
+            var selector = context.ServiceProvider.GetRequiredService<Nexo.Core.Domain.Interfaces.Infrastructure.IIterationStrategySelector>();
             
             if (context.Request is IIterationRequest iterationRequest)
             {

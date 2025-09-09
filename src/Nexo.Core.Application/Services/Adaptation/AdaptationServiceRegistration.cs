@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Nexo.Core.Application.Services.Adaptation.Strategies;
 using Nexo.Core.Application.Services.Environment;
 using Nexo.Core.Application.Services.Learning;
@@ -17,38 +18,38 @@ public static class AdaptationServiceRegistration
     public static IServiceCollection AddAdaptationServices(this IServiceCollection services)
     {
         // Core adaptation services
-        services.AddSingleton<IAdaptationEngine, AdaptationEngine>();
-        services.AddSingleton<IAdaptationStrategyRegistry, AdaptationStrategyRegistry>();
-        services.AddSingleton<IAdaptationDataStore, InMemoryAdaptationDataStore>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IAdaptationEngine, AdaptationEngine>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.Strategies.IAdaptationStrategyRegistry, AdaptationStrategyRegistry>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IAdaptationDataStore, InMemoryAdaptationDataStore>();
         
         // Adaptation strategies
-        services.AddSingleton<IAdaptationStrategy, PerformanceAdaptationStrategy>();
-        services.AddSingleton<IAdaptationStrategy, ResourceAdaptationStrategy>();
-        services.AddSingleton<IAdaptationStrategy, UserExperienceAdaptationStrategy>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.Strategies.IAdaptationStrategy, PerformanceAdaptationStrategy>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.Strategies.IAdaptationStrategy, ResourceAdaptationStrategy>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.Strategies.IAdaptationStrategy, UserExperienceAdaptationStrategy>();
         
         // Learning services
-        services.AddSingleton<IContinuousLearningSystem, ContinuousLearningSystem>();
-        services.AddSingleton<IUserFeedbackCollector, UserFeedbackCollector>();
-        services.AddSingleton<IPatternRecognitionEngine, PatternRecognitionEngine>();
-        services.AddSingleton<IAdaptationRecommender, AdaptationRecommender>();
-        services.AddSingleton<IPerformanceDataStore, InMemoryPerformanceDataStore>();
-        services.AddSingleton<IFeedbackStore, InMemoryFeedbackStore>();
-        services.AddSingleton<IFeedbackAnalyzer, FeedbackAnalyzer>();
+        services.AddSingleton<Nexo.Core.Application.Services.Learning.IContinuousLearningSystem, ContinuousLearningSystem>();
+        services.AddSingleton<Nexo.Core.Application.Services.Learning.IUserFeedbackCollector, UserFeedbackCollector>();
+        services.AddSingleton<Nexo.Core.Application.Services.Learning.IPatternRecognitionEngine, PatternRecognitionEngine>();
+        services.AddSingleton<Nexo.Core.Application.Services.Learning.IAdaptationRecommender, AdaptationRecommender>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IPerformanceDataStore, InMemoryPerformanceDataStore>();
+        services.AddSingleton<Nexo.Core.Application.Services.Learning.IFeedbackStore, InMemoryFeedbackStore>();
+        services.AddSingleton<Nexo.Core.Application.Services.Learning.IFeedbackAnalyzer, FeedbackAnalyzer>();
         
         // Environment services
-        services.AddSingleton<IEnvironmentDetector, EnvironmentDetector>();
-        services.AddSingleton<IEnvironmentAdaptationService, EnvironmentAdaptationService>();
-        services.AddSingleton<IEnvironmentDataStore, InMemoryEnvironmentDataStore>();
-        services.AddSingleton<IConfigurationManager, ConfigurationManager>();
+        services.AddSingleton<Nexo.Core.Application.Services.Environment.IEnvironmentDetector, EnvironmentDetector>();
+        services.AddSingleton<Nexo.Core.Application.Services.Environment.IEnvironmentAdaptationService, EnvironmentAdaptationService>();
+        services.AddSingleton<Nexo.Core.Application.Services.Environment.IEnvironmentDataStore, InMemoryEnvironmentDataStore>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IConfigurationManager, ConfigurationManager>();
         
         // Resource management
-        services.AddSingleton<IResourceManager, ResourceManager>();
-        services.AddSingleton<IUserExperienceAnalyzer, UserExperienceAnalyzer>();
-        services.AddSingleton<ICodeGenerationOptimizer, CodeGenerationOptimizer>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IResourceManager, ResourceManager>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IUserExperienceAnalyzer, UserExperienceAnalyzer>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.ICodeGenerationOptimizer, CodeGenerationOptimizer>();
         
         // Performance monitoring
-        services.AddSingleton<IPerformanceMonitor, PerformanceMonitor>();
-        services.AddSingleton<IMetricsAggregator, MetricsAggregator>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IPerformanceMonitor, PerformanceMonitor>();
+        services.AddSingleton<Nexo.Core.Application.Services.Adaptation.IMetricsAggregator, MetricsAggregator>();
         
         // Register as hosted service
         services.AddHostedService<AdaptationEngine>();

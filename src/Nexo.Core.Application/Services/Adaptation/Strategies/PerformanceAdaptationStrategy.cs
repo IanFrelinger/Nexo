@@ -1,4 +1,11 @@
-using Nexo.Core.Application.Services.Pipeline;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Services.Adaptation;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Adaptation.Strategies;
 
@@ -67,7 +74,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         var currentPerformance = systemState.PerformanceMetrics;
         
         // If CPU is constrained, prefer CPU-efficient strategies
-        if (currentPerformance.CpuUtilization > 0.8)
+        if (currentPerformance.CpuUsage > 0.8)
         {
             var newProfile = new RuntimeEnvironmentProfile
             {

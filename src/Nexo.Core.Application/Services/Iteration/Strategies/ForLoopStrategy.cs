@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration.Strategies;
 
@@ -15,8 +16,8 @@ public class ForLoopStrategy<T> : IIterationStrategy<T>
     
     public IterationPerformanceProfile PerformanceProfile => new()
     {
-        CpuEfficiency = PerformanceLevel.Excellent,
-        MemoryEfficiency = PerformanceLevel.Excellent,
+        CpuEfficiency = PerformanceLevel.High,
+        MemoryEfficiency = PerformanceLevel.High,
         Scalability = PerformanceLevel.High,
         OptimalDataSizeMin = 0,
         OptimalDataSizeMax = int.MaxValue,
@@ -81,44 +82,80 @@ public class ForLoopStrategy<T> : IIterationStrategy<T>
     {
         return context.PlatformTarget switch
         {
-            PlatformTarget.Unity2022 or PlatformTarget.Unity2023 => 
+            PlatformTarget.Unity => 
                 GenerateUnityForLoop(context),
-            PlatformTarget.JavaScript => 
+            PlatformTarget.Browser => 
                 GenerateJavaScriptForLoop(context),
-            PlatformTarget.Swift => 
+            PlatformTarget.Native => 
                 GenerateSwiftForLoop(context),
             _ => GenerateCSharpForLoop(context)
         };
     }
     
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return context.HasValue("RequiresIList") || 
+               context.GetValue<bool>("RequiresIList", false);
+    }
+    
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        var dataSize = context.GetValue<int>("DataSize", 0);
+        var requiresPerformance = context.GetValue<bool>("RequiresPerformance", false);
+        
+        if (requiresPerformance && dataSize > 100)
+            return 100;
+        
+        if (dataSize > 1000)
+            return 90;
+            
+        return 70;
+    }
+    
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
+    {
+        var baseTime = context.DataSize * 0.001; // 1ms per 1000 items
+        var memoryUsage = context.DataSize * 0.001; // 1MB per 1000 items
+        
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
+        {
+            EstimatedExecutionTimeMs = baseTime,
+            EstimatedMemoryUsageMB = memoryUsage,
+            Confidence = 0.9,
+            PerformanceScore = 95,
+            MeetsRequirements = baseTime <= context.Requirements.MaxExecutionTimeMs &&
+                              memoryUsage <= context.Requirements.MaxMemoryUsageMB
+        };
+    }
+    
     private string GenerateCSharpForLoop(CodeGenerationContext context) =>
         $$"""
-        for (int i = 0; i < {{context.CollectionName}}.Count; i++)
+        for (int i = 0; i < {{context.CollectionVariableName}}.Count; i++)
         {
-            {{context.IterationBodyTemplate.Replace("{item}", $"{context.CollectionName}[i]")}}
+            {{context.ActionCode.Replace("{item}", $"{context.CollectionVariableName}[i]")}}
         }
         """;
     
     private string GenerateUnityForLoop(CodeGenerationContext context) =>
         $$"""
-        for (int i = 0; i < {{context.CollectionName}}.Count; i++)
+        for (int i = 0; i < {{context.CollectionVariableName}}.Count; i++)
         {
-            var {{context.ItemName}} = {{context.CollectionName}}[i];
-            {{context.IterationBodyTemplate.Replace("{item}", context.ItemName)}}
+            var {{context.ItemVariableName}} = {{context.CollectionVariableName}}[i];
+            {{context.ActionCode.Replace("{item}", context.ItemVariableName)}}
         }
         """;
     
     private string GenerateJavaScriptForLoop(CodeGenerationContext context) =>
         $$"""
-        for (let i = 0; i < {{context.CollectionName}}.length; i++) {
-            {{context.IterationBodyTemplate.Replace("{item}", $"{context.CollectionName}[i]")}}
+        for (let i = 0; i < {{context.CollectionVariableName}}.length; i++) {
+            {{context.ActionCode.Replace("{item}", $"{context.CollectionVariableName}[i]")}}
         }
         """;
     
     private string GenerateSwiftForLoop(CodeGenerationContext context) =>
         $$"""
-        for i in 0..<{{context.CollectionName}}.count {
-            {{context.IterationBodyTemplate.Replace("{item}", $"{context.CollectionName}[i]")}}
+        for i in 0..<{{context.CollectionVariableName}}.count {
+            {{context.ActionCode.Replace("{item}", $"{context.CollectionVariableName}[i]")}}
         }
         """;
 }

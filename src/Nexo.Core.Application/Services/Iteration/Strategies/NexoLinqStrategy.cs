@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
-using Nexo.Feature.Pipeline.Models;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration.Strategies;
 
@@ -28,6 +28,19 @@ public class NexoLinqStrategy<T> : IIterationStrategy<T>
     };
     
     public PlatformCompatibility PlatformCompatibility => PlatformCompatibility.DotNet | PlatformCompatibility.Unity;
+    
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return context.DataSize <= 50000 && !context.RequiresParallelization;
+    }
+    
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        if (context.Priority == (int)IterationPriority.Readability) return 95;
+        if (context.Priority == (int)IterationPriority.Maintainability) return 90;
+        if (context.Priority == (int)IterationPriority.Performance) return 40;
+        return 70;
+    }
     
     public void Execute(IEnumerable<T> source, Action<T> action)
     {
@@ -60,28 +73,8 @@ public class NexoLinqStrategy<T> : IIterationStrategy<T>
         };
     }
     
-    public bool CanHandle(PipelineContext context)
-    {
-        var currentPlatform = context.GetPlatformTarget();
-        return PlatformCompatibility.HasFlag(GetPlatformFlag(currentPlatform));
-    }
     
-    public int GetPriority(PipelineContext context)
-    {
-        var dataSize = EstimateDataSize(context);
-        var platform = context.GetPlatformTarget();
-        var requirements = context.GetPerformanceRequirements();
-        
-        // LINQ is good for readability and functional programming
-        if (requirements.RequiresRealTime) return 30; // Not suitable for real-time
-        if (dataSize > 50000) return 40; // Not suitable for large datasets
-        if (platform.IsUnity() && dataSize > 1000) return 35; // Unity LINQ is slower
-        if (context.RequiresHighPerformance()) return 45; // Not the fastest option
-        
-        return 65; // Good for readability and moderate performance
-    }
-    
-    public PerformanceEstimate EstimatePerformance(IterationContext context)
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
     {
         var dataSize = context.DataSize;
         var platform = context.TargetPlatform;
@@ -99,7 +92,7 @@ public class NexoLinqStrategy<T> : IIterationStrategy<T>
         var estimatedTime = dataSize * baseTimePerItem * platformMultiplier;
         var estimatedMemory = dataSize * 0.01; // Higher memory overhead due to LINQ overhead
         
-        return new PerformanceEstimate
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
         {
             EstimatedExecutionTimeMs = estimatedTime,
             EstimatedMemoryUsageMB = estimatedMemory,
@@ -158,15 +151,6 @@ if ({collectionVar} != null)
         };
     }
     
-    private int EstimateDataSize(PipelineContext context)
-    {
-        if (context.TryGetProperty("EstimatedDataSize", out var size) && size is int dataSize)
-        {
-            return dataSize;
-        }
-        
-        return 1000;
-    }
     
     private double CalculatePerformanceScore(double executionTime, double memoryUsage, IterationContext context)
     {

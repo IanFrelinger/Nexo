@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
-namespace Nexo.Core.Application.Services.Iteration;
+namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 
 /// <summary>
-/// Service for selecting optimal iteration strategies based on context
+/// Interface for iteration strategy selection
 /// </summary>
 public interface IIterationStrategySelector
 {
@@ -17,6 +18,28 @@ public interface IIterationStrategySelector
     /// <param name="context">Iteration context</param>
     /// <returns>Optimal iteration strategy</returns>
     IIterationStrategy<T> SelectStrategy<T>(IterationContext context);
+    
+    /// <summary>
+    /// Select the optimal iteration strategy for the given source and requirements
+    /// </summary>
+    /// <typeparam name="T">Type of items to iterate over</typeparam>
+    /// <param name="source">Source collection</param>
+    /// <param name="requirements">Performance requirements</param>
+    /// <returns>Optimal iteration strategy</returns>
+    IIterationStrategy<T> SelectStrategy<T>(IEnumerable<T> source, Entities.Iteration.PerformanceRequirements requirements);
+    
+    /// <summary>
+    /// Register a new iteration strategy
+    /// </summary>
+    /// <typeparam name="T">Type of items to iterate over</typeparam>
+    /// <param name="strategy">Strategy to register</param>
+    void RegisterStrategy<T>(IIterationStrategy<T> strategy);
+    
+    /// <summary>
+    /// Set the runtime environment profile
+    /// </summary>
+    /// <param name="profile">Environment profile</param>
+    void SetEnvironmentProfile(RuntimeEnvironmentProfile profile);
     
     /// <summary>
     /// Get all available strategies for the given context
@@ -39,7 +62,7 @@ public interface IIterationStrategySelector
     /// <param name="strategy">Strategy to estimate</param>
     /// <param name="context">Iteration context</param>
     /// <returns>Performance estimate</returns>
-    PerformanceEstimate EstimatePerformance(IIterationStrategy<object> strategy, IterationContext context);
+    Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IIterationStrategy<object> strategy, IterationContext context);
     
     /// <summary>
     /// Compare multiple strategies for the given context
@@ -54,67 +77,5 @@ public interface IIterationStrategySelector
     /// </summary>
     /// <param name="platform">Target platform</param>
     /// <returns>Strategy recommendations</returns>
-    IEnumerable<StrategyRecommendation> GetRecommendations(PlatformType platform);
-}
-
-/// <summary>
-/// Strategy comparison result
-/// </summary>
-public record StrategyComparisonResult
-{
-    /// <summary>
-    /// Strategy being compared
-    /// </summary>
-    public IIterationStrategy<object> Strategy { get; init; } = null!;
-    
-    /// <summary>
-    /// Performance estimate
-    /// </summary>
-    public PerformanceEstimate PerformanceEstimate { get; init; } = new();
-    
-    /// <summary>
-    /// Suitability score (0-100)
-    /// </summary>
-    public double SuitabilityScore { get; init; }
-    
-    /// <summary>
-    /// Reasoning for this score
-    /// </summary>
-    public string Reasoning { get; init; } = string.Empty;
-    
-    /// <summary>
-    /// Whether this strategy is recommended
-    /// </summary>
-    public bool IsRecommended { get; init; }
-}
-
-/// <summary>
-/// Strategy recommendation for a platform
-/// </summary>
-public record StrategyRecommendation
-{
-    /// <summary>
-    /// Scenario description
-    /// </summary>
-    public string Scenario { get; init; } = string.Empty;
-    
-    /// <summary>
-    /// Recommended strategy ID
-    /// </summary>
-    public string RecommendedStrategyId { get; init; } = string.Empty;
-    
-    /// <summary>
-    /// Reasoning for the recommendation
-    /// </summary>
-    public string Reasoning { get; init; } = string.Empty;
-    
-    /// <summary>
-    /// Data size range where this recommendation applies
-    /// </summary>
-    public (int Min, int Max) DataSizeRange { get; init; }
-    
-    /// <summary>
-    /// Performance characteristics
-    /// </summary>
-    public string PerformanceCharacteristics { get; init; } = string.Empty;
+    IEnumerable<StrategyRecommendation> GetRecommendations(Entities.Iteration.PlatformTarget platform);
 }

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Core.Domain.ValueObjects;
-using Nexo.Feature.Pipeline.Models;
 
 namespace Nexo.Core.Domain.Entities.Iteration;
 
@@ -49,17 +49,17 @@ public interface IIterationStrategy<T>
     /// <summary>
     /// Check if this strategy can handle the given pipeline context
     /// </summary>
-    bool CanHandle(PipelineContext context);
+    bool CanHandle(IIterationPipelineContext context);
     
     /// <summary>
     /// Get priority score for this strategy in the given context
     /// </summary>
-    int GetPriority(PipelineContext context);
+    int GetPriority(IIterationPipelineContext context);
     
     /// <summary>
     /// Estimate performance for given context
     /// </summary>
-    PerformanceEstimate EstimatePerformance(IterationContext context);
+    Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context);
 }
 
 /// <summary>
@@ -70,17 +70,17 @@ public record IterationPerformanceProfile
     /// <summary>
     /// CPU efficiency level
     /// </summary>
-    public PerformanceLevel CpuEfficiency { get; init; } = PerformanceLevel.Medium;
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceLevel CpuEfficiency { get; init; } = Nexo.Core.Domain.Entities.Infrastructure.PerformanceLevel.Medium;
     
     /// <summary>
     /// Memory efficiency level
     /// </summary>
-    public PerformanceLevel MemoryEfficiency { get; init; } = PerformanceLevel.Medium;
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceLevel MemoryEfficiency { get; init; } = Nexo.Core.Domain.Entities.Infrastructure.PerformanceLevel.Medium;
     
     /// <summary>
     /// Scalability level
     /// </summary>
-    public PerformanceLevel Scalability { get; init; } = PerformanceLevel.Medium;
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceLevel Scalability { get; init; } = Nexo.Core.Domain.Entities.Infrastructure.PerformanceLevel.Medium;
     
     /// <summary>
     /// Minimum optimal data size
@@ -113,16 +113,6 @@ public record IterationPerformanceProfile
     public bool SuitableForRealTime { get; init; } = false;
 }
 
-/// <summary>
-/// Performance levels for iteration strategies
-/// </summary>
-public enum PerformanceLevel
-{
-    Low,
-    Medium,
-    High,
-    Excellent
-}
 
 /// <summary>
 /// Platform compatibility flags
@@ -157,9 +147,19 @@ public record CodeGenerationContext
     public string CollectionVariableName { get; init; } = "items";
     
     /// <summary>
+    /// Collection name (alias for CollectionVariableName)
+    /// </summary>
+    public string CollectionName => CollectionVariableName;
+    
+    /// <summary>
     /// Variable name for the item
     /// </summary>
     public string ItemVariableName { get; init; } = "item";
+    
+    /// <summary>
+    /// Item name (alias for ItemVariableName)
+    /// </summary>
+    public string ItemName => ItemVariableName;
     
     /// <summary>
     /// Action to perform on each item
@@ -167,9 +167,39 @@ public record CodeGenerationContext
     public string ActionCode { get; init; } = "// Process item";
     
     /// <summary>
+    /// Iteration body template (alias for ActionCode)
+    /// </summary>
+    public string IterationBodyTemplate => ActionCode;
+    
+    /// <summary>
     /// Whether to include null checks
     /// </summary>
     public bool IncludeNullChecks { get; init; } = true;
+    
+    /// <summary>
+    /// Whether the context has a Where clause
+    /// </summary>
+    public bool HasWhere { get; init; } = false;
+    
+    /// <summary>
+    /// Whether the context has a Select clause
+    /// </summary>
+    public bool HasSelect { get; init; } = false;
+    
+    /// <summary>
+    /// Predicate template for Where clauses
+    /// </summary>
+    public string PredicateTemplate { get; init; } = "x => true";
+    
+    /// <summary>
+    /// Transform template for Select clauses
+    /// </summary>
+    public string TransformTemplate { get; init; } = "x => x";
+    
+    /// <summary>
+    /// Action template for ForEach operations
+    /// </summary>
+    public string ActionTemplate { get; init; } = "x => { /* action */ }";
     
     /// <summary>
     /// Whether to include bounds checking
@@ -229,6 +259,11 @@ public record IterationContext
     public int DataSize { get; init; }
     
     /// <summary>
+    /// Estimated data size (alias for DataSize)
+    /// </summary>
+    public int EstimatedDataSize => DataSize;
+    
+    /// <summary>
     /// Performance requirements
     /// </summary>
     public PerformanceRequirements Requirements { get; init; } = new();
@@ -241,7 +276,7 @@ public record IterationContext
     /// <summary>
     /// Pipeline context
     /// </summary>
-    public PipelineContext? PipelineContext { get; init; }
+    public IIterationPipelineContext? PipelineContext { get; init; }
     
     /// <summary>
     /// Target platform
@@ -264,63 +299,7 @@ public record IterationContext
     public bool RequiresAsync { get; init; } = false;
 }
 
-/// <summary>
-/// Runtime environment profile
-/// </summary>
-public record RuntimeEnvironmentProfile
-{
-    /// <summary>
-    /// Platform type
-    /// </summary>
-    public PlatformType PlatformType { get; init; } = PlatformType.DotNet;
-    
-    /// <summary>
-    /// Number of CPU cores
-    /// </summary>
-    public int CpuCores { get; init; } = Environment.ProcessorCount;
-    
-    /// <summary>
-    /// Available memory in MB
-    /// </summary>
-    public long AvailableMemoryMB { get; init; } = GC.GetTotalMemory(false) / 1024 / 1024;
-    
-    /// <summary>
-    /// Whether running in a constrained environment
-    /// </summary>
-    public bool IsConstrained { get; init; } = false;
-    
-    /// <summary>
-    /// Whether running in a mobile environment
-    /// </summary>
-    public bool IsMobile { get; init; } = false;
-    
-    /// <summary>
-    /// Whether running in a web environment
-    /// </summary>
-    public bool IsWeb { get; init; } = false;
-    
-    /// <summary>
-    /// Whether running in Unity
-    /// </summary>
-    public bool IsUnity { get; init; } = false;
-}
 
-/// <summary>
-/// Platform types
-/// </summary>
-public enum PlatformType
-{
-    DotNet,
-    Unity,
-    WebAssembly,
-    JavaScript,
-    Swift,
-    Kotlin,
-    Native,
-    Mobile,
-    Web,
-    Server
-}
 
 /// <summary>
 /// Performance estimate for iteration strategy
@@ -351,4 +330,99 @@ public record PerformanceEstimate
     /// Whether this strategy meets the requirements
     /// </summary>
     public bool MeetsRequirements { get; init; }
+}
+
+/// <summary>
+/// Pipeline context interface for iteration strategies
+/// </summary>
+public interface IIterationPipelineContext
+{
+    /// <summary>
+    /// Unique execution identifier
+    /// </summary>
+    string ExecutionId { get; }
+    
+    /// <summary>
+    /// Execution start time
+    /// </summary>
+    DateTime StartTime { get; }
+    
+    /// <summary>
+    /// Shared data store
+    /// </summary>
+    Dictionary<string, object> SharedData { get; }
+    
+    /// <summary>
+    /// Get a value from shared data
+    /// </summary>
+    T? GetValue<T>(string key, T? defaultValue = default);
+    
+    /// <summary>
+    /// Set a value in shared data
+    /// </summary>
+    void SetValue<T>(string key, T value);
+    
+    /// <summary>
+    /// Check if a key exists in shared data
+    /// </summary>
+    bool HasValue(string key);
+    
+    /// <summary>
+    /// Data size for iteration
+    /// </summary>
+    int DataSize { get; }
+    
+    /// <summary>
+    /// Whether parallelization is required
+    /// </summary>
+    bool RequiresParallelization { get; }
+    
+    /// <summary>
+    /// Platform target
+    /// </summary>
+    PlatformTarget PlatformTarget { get; }
+    
+    /// <summary>
+    /// Priority level
+    /// </summary>
+    int Priority { get; }
+}
+
+/// <summary>
+/// Iteration priority enumeration
+/// </summary>
+public enum IterationPriority
+{
+    Performance,
+    Readability,
+    Maintainability
+}
+
+/// <summary>
+/// Platform target enumeration
+/// </summary>
+public enum PlatformTarget
+{
+    DotNet,
+    Unity,
+    Unity2022,
+    Unity2023,
+    WebAssembly,
+    Mobile,
+    Server,
+    Browser,
+    Native,
+    JavaScript,
+    Swift,
+    Kotlin,
+    Python,
+    Java,
+    Go,
+    Rust,
+    Cpp,
+    Windows,
+    Linux,
+    macOS,
+    iOS,
+    Android
 }

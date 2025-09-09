@@ -26,7 +26,7 @@ public static class IterationServicesExtensions
     public static IServiceCollection AddNexoIterationStrategies(this IServiceCollection services)
     {
         // Core services
-        services.AddSingleton<IIterationStrategySelector, NexoIterationStrategySelector>();
+        services.AddSingleton<IIterationStrategySelector, IterationStrategySelector>();
         services.AddSingleton<RuntimeEnvironmentProfile>(RuntimeEnvironmentDetector.DetectCurrent());
         
         // Strategy implementations
@@ -112,9 +112,9 @@ public class CompositeIterationStrategy : IIterationStrategy<object>
     
     public IterationPerformanceProfile PerformanceProfile => new()
     {
-        CpuEfficiency = PerformanceLevel.Excellent,
-        MemoryEfficiency = PerformanceLevel.Excellent,
-        Scalability = PerformanceLevel.Excellent,
+        CpuEfficiency = PerformanceLevel.High,
+        MemoryEfficiency = PerformanceLevel.High,
+        Scalability = PerformanceLevel.High,
         OptimalDataSizeMin = 0,
         OptimalDataSizeMax = int.MaxValue,
         SupportsParallelization = true,

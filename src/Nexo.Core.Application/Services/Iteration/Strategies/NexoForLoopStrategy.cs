@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
-using Nexo.Feature.Pipeline.Models;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration.Strategies;
 
@@ -17,8 +17,8 @@ public class NexoForLoopStrategy<T> : IIterationStrategy<T>
     
     public IterationPerformanceProfile PerformanceProfile => new()
     {
-        CpuEfficiency = PerformanceLevel.Excellent,
-        MemoryEfficiency = PerformanceLevel.Excellent,
+        CpuEfficiency = PerformanceLevel.High,
+        MemoryEfficiency = PerformanceLevel.High,
         Scalability = PerformanceLevel.High,
         OptimalDataSizeMin = 0,
         OptimalDataSizeMax = int.MaxValue,
@@ -29,6 +29,19 @@ public class NexoForLoopStrategy<T> : IIterationStrategy<T>
     };
     
     public PlatformCompatibility PlatformCompatibility => PlatformCompatibility.All;
+    
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return context.DataSize <= 1000000 && !context.RequiresParallelization;
+    }
+    
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        if (context.Priority == (int)IterationPriority.Performance) return 95;
+        if (context.Priority == (int)IterationPriority.Readability) return 50;
+        if (context.Priority == (int)IterationPriority.Maintainability) return 60;
+        return 80;
+    }
     
     public void Execute(IEnumerable<T> source, Action<T> action)
     {
@@ -108,28 +121,8 @@ public class NexoForLoopStrategy<T> : IIterationStrategy<T>
         };
     }
     
-    public bool CanHandle(PipelineContext context)
-    {
-        var currentPlatform = context.GetPlatformTarget();
-        return PlatformCompatibility.HasFlag(GetPlatformFlag(currentPlatform));
-    }
     
-    public int GetPriority(PipelineContext context)
-    {
-        var dataSize = EstimateDataSize(context);
-        var platform = context.GetPlatformTarget();
-        var requirements = context.GetPerformanceRequirements();
-        
-        // Higher priority for mobile platforms and performance-critical scenarios
-        if (platform.IsMobile() && dataSize < 1000) return 100;
-        if (requirements.RequiresRealTime) return 95;
-        if (context.RequiresHighPerformance()) return 90;
-        if (dataSize < 10000) return 85; // For-loop is excellent for smaller datasets
-        
-        return 70; // Default priority
-    }
-    
-    public PerformanceEstimate EstimatePerformance(IterationContext context)
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
     {
         var dataSize = context.DataSize;
         var isCpuBound = context.IsCpuBound;
@@ -151,7 +144,7 @@ public class NexoForLoopStrategy<T> : IIterationStrategy<T>
         var estimatedTime = dataSize * baseTimePerItem * platformMultiplier;
         var estimatedMemory = dataSize * 0.001; // Very low memory overhead
         
-        return new PerformanceEstimate
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
         {
             EstimatedExecutionTimeMs = estimatedTime,
             EstimatedMemoryUsageMB = estimatedMemory,
@@ -261,17 +254,6 @@ if let {collectionVar} = {collectionVar}
         };
     }
     
-    private int EstimateDataSize(PipelineContext context)
-    {
-        // Try to estimate data size from context
-        if (context.TryGetProperty("EstimatedDataSize", out var size) && size is int dataSize)
-        {
-            return dataSize;
-        }
-        
-        // Default estimation
-        return 1000;
-    }
     
     private double CalculatePerformanceScore(double executionTime, double memoryUsage, IterationContext context)
     {
