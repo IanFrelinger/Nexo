@@ -135,7 +135,8 @@ public enum PerformanceMetric
     NetworkLatency,
     DatabaseQueries,
     CacheHitRate,
-    ErrorRate
+    ErrorRate,
+    BatteryUsage
 }
 
 /// <summary>
@@ -155,13 +156,18 @@ public enum PerformanceLevel
 public record AgentRequest
 {
     public string Input { get; init; } = string.Empty;
-    public string? SystemPrompt { get; init; }
-    public Dictionary<string, object>? Context { get; init; }
-    public AgentSpecialization? RequiredSpecialization { get; init; }
-    public PlatformCompatibility? TargetPlatform { get; init; }
-    public PerformanceProfile? PerformanceRequirements { get; init; }
+    public string Context { get; init; } = string.Empty;
+    public Dictionary<string, object> Parameters { get; init; } = new();
+    public string RequestId { get; init; } = Guid.NewGuid().ToString();
+    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
+    public string TargetPlatform { get; init; } = string.Empty;
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements PerformanceRequirements { get; init; } = new();
+    public AgentSpecialization RequiredSpecialization { get; init; } = AgentSpecialization.None;
     
-    public AgentRequest CreatePlatformSpecificRequest(PlatformCompatibility platform)
+    /// <summary>
+    /// Create a platform-specific request
+    /// </summary>
+    public AgentRequest CreatePlatformSpecificRequest(string platform)
     {
         return this with { TargetPlatform = platform };
     }
@@ -172,22 +178,87 @@ public record AgentRequest
 /// </summary>
 public record AgentResponse
 {
-    public string Result { get; init; } = string.Empty;
+    public string Output { get; init; } = string.Empty;
     public bool Success { get; init; } = true;
-    public string? ErrorMessage { get; init; }
+    public string ErrorMessage { get; init; } = string.Empty;
+    public Dictionary<string, object> Metadata { get; init; } = new();
+    public string RequestId { get; init; } = string.Empty;
+    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
+    public TimeSpan ProcessingTime { get; init; } = TimeSpan.Zero;
+    public string Result { get; init; } = string.Empty;
     public double Confidence { get; init; } = 0.0;
-    public Dictionary<string, object>? Metadata { get; init; }
     public bool ShouldTerminateWorkflow { get; init; } = false;
+    public bool HasResult { get; init; } = false;
     
-    public bool HasResult => !string.IsNullOrEmpty(Result);
-    
-    public T? GetMetadata<T>(string key) where T : class
+    /// <summary>
+    /// Get metadata value
+    /// </summary>
+    public T? GetMetadata<T>(string key)
     {
-        return Metadata?.TryGetValue(key, out var value) == true ? value as T : null;
+        if (Metadata.TryGetValue(key, out var value) && value is T tValue)
+            return tValue;
+        return default;
     }
     
-    public static AgentResponse NoOptimizationNeeded => new() { Success = true, Confidence = 1.0 };
-    public static AgentResponse SecureCodeGenerated => new() { Success = true, Confidence = 0.95 };
+    /// <summary>
+    /// Static response for no action needed
+    /// </summary>
+    public static AgentResponse NoAction => new() { Success = true, Result = "No action needed" };
+    
+    /// <summary>
+    /// Static response for no optimization needed
+    /// </summary>
+    public static AgentResponse NoOptimizationNeeded => new() { Success = true, Result = "No optimization needed" };
+    
+    /// <summary>
+    /// Static response for secure code generated
+    /// </summary>
+    public static AgentResponse SecureCodeGenerated => new() { Success = true, Result = "Secure code generated" };
+}
+
+/// <summary>
+/// Agent capabilities for AI agents
+/// </summary>
+[Flags]
+public enum AgentCapabilities
+{
+    None = 0,
+    CodeGeneration = 1,
+    PerformanceAnalysis = 2,
+    PlatformOptimization = 4,
+    SecurityAnalysis = 8,
+    MobileOptimization = 16,
+    WebOptimization = 32,
+    UnityOptimization = 64,
+    All = CodeGeneration | PerformanceAnalysis | PlatformOptimization | SecurityAnalysis | MobileOptimization | WebOptimization | UnityOptimization
+}
+
+/// <summary>
+/// Agent capabilities record for AI agents
+/// </summary>
+public record AgentCapabilitiesRecord
+{
+    public string Name { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+    public AgentSpecialization Specialization { get; init; } = AgentSpecialization.None;
+    public PlatformCompatibility PlatformSupport { get; init; } = PlatformCompatibility.None;
+    public PerformanceProfile PerformanceProfile { get; init; } = new();
+    public bool SupportsAsync { get; init; } = true;
+    public bool SupportsParallelization { get; init; } = false;
+    public int MaxConcurrentRequests { get; init; } = 1;
+    public TimeSpan DefaultTimeout { get; init; } = TimeSpan.FromMinutes(5);
+}
+
+/// <summary>
+/// Agent coordinator interface for managing multiple agents
+/// </summary>
+public interface IAgentCoordinator
+{
+    Task<AgentResponse> ProcessRequestAsync(AgentRequest request, CancellationToken cancellationToken = default);
+    Task<IEnumerable<AgentResponse>> ProcessBatchAsync(IEnumerable<AgentRequest> requests, CancellationToken cancellationToken = default);
+    Task<AgentResponse> ProcessWithSpecializationAsync(AgentRequest request, AgentSpecialization specialization, CancellationToken cancellationToken = default);
+    Task<bool> IsAgentAvailableAsync(AgentSpecialization specialization, CancellationToken cancellationToken = default);
+    Task<IEnumerable<ISpecializedAgent>> GetAvailableAgentsAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>

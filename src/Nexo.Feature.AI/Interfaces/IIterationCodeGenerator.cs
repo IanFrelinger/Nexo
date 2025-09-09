@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
 
 namespace Nexo.Feature.AI.Interfaces;

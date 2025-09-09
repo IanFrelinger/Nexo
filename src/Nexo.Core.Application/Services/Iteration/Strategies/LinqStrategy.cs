@@ -104,8 +104,8 @@ public class LinqStrategy<T> : IIterationStrategy<T>
             EstimatedMemoryUsageMB = memoryUsage,
             Confidence = 0.8,
             PerformanceScore = 70,
-            MeetsRequirements = baseTime <= context.Requirements.MaxExecutionTimeMs &&
-                              memoryUsage <= context.Requirements.MaxMemoryUsageMB
+            MeetsRequirements = baseTime <= context.Requirements.ToPerformanceRequirements().MaxExecutionTimeMs &&
+                              memoryUsage <= context.Requirements.ToPerformanceRequirements().MaxMemoryUsageMB
         };
     }
 }

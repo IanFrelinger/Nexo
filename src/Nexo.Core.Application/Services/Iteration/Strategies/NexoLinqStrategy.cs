@@ -57,6 +57,11 @@ public class NexoLinqStrategy<T> : IIterationStrategy<T>
         return source.Select(transform);
     }
     
+    public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<T> source, Func<T, bool> predicate, Func<T, TResult> selector)
+    {
+        return source.Where(predicate).Select(selector);
+    }
+    
     public Task ExecuteAsync(IEnumerable<T> source, Func<T, Task> asyncAction)
     {
         // LINQ doesn't support async operations efficiently
@@ -98,8 +103,8 @@ public class NexoLinqStrategy<T> : IIterationStrategy<T>
             EstimatedMemoryUsageMB = estimatedMemory,
             Confidence = 0.8,
             PerformanceScore = CalculatePerformanceScore(estimatedTime, estimatedMemory, context),
-            MeetsRequirements = estimatedTime <= context.Requirements.MaxExecutionTimeMs &&
-                               estimatedMemory <= context.Requirements.MaxMemoryUsageMB
+            MeetsRequirements = estimatedTime <= context.Requirements.ToPerformanceRequirements().MaxExecutionTimeMs &&
+                               estimatedMemory <= context.Requirements.ToPerformanceRequirements().MaxMemoryUsageMB
         };
     }
     

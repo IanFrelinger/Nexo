@@ -21,8 +21,30 @@ public record ComplexAgentRequest
         return new AgentRequest
         {
             Input = Description,
-            Context = Context,
-            PerformanceRequirements = PerformanceRequirements
+            Context = Context?.ToString() ?? string.Empty,
+            PerformanceRequirements = ConvertToPerformanceRequirements(PerformanceRequirements)
+        };
+    }
+    
+    private static Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements ConvertToPerformanceRequirements(PerformanceProfile? profile)
+    {
+        if (profile == null)
+            return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements();
+            
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements
+        {
+            MaxExecutionTimeMs = 5000, // Default 5 seconds
+            MaxMemoryUsageMB = profile.MinimumAcceptableLevel switch
+            {
+                PerformanceLevel.Low => 200,
+                PerformanceLevel.Medium => 100,
+                PerformanceLevel.High => 50,
+                PerformanceLevel.Critical => 25,
+                _ => 100
+            },
+            RequiresRealTime = profile.SupportsRealTimeOptimization,
+            PreferParallel = profile.PrimaryTarget == OptimizationTarget.Performance,
+            MemoryCritical = profile.PrimaryTarget == OptimizationTarget.Memory
         };
     }
 }

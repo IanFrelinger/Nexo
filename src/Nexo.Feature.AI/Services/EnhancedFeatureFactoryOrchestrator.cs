@@ -14,13 +14,13 @@ namespace Nexo.Feature.AI.Services;
 /// </summary>
 public class EnhancedFeatureFactoryOrchestrator : IEnhancedFeatureFactoryOrchestrator
 {
-    private readonly IAgentCoordinator _agentCoordinator;
+    private readonly Nexo.Feature.AI.Agents.Coordination.IAgentCoordinator _agentCoordinator;
     private readonly ISpecializedAgentRegistry _agentRegistry;
     private readonly IModelOrchestrator _modelOrchestrator;
     private readonly ILogger<EnhancedFeatureFactoryOrchestrator> _logger;
     
     public EnhancedFeatureFactoryOrchestrator(
-        IAgentCoordinator agentCoordinator,
+        Nexo.Feature.AI.Agents.Coordination.IAgentCoordinator agentCoordinator,
         ISpecializedAgentRegistry agentRegistry,
         IModelOrchestrator modelOrchestrator,
         ILogger<EnhancedFeatureFactoryOrchestrator> logger)

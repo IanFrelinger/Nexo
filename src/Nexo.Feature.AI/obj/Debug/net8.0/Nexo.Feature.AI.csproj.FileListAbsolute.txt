@@ -3,12 +3,10 @@
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Feature.AI.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Core.Application.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Core.Domain.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Feature.Pipeline.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Shared.dll
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Core.Application.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Core.Domain.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Shared.pdb
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/bin/Debug/net8.0/Nexo.Feature.Pipeline.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/Debug/net8.0/Nexo.Feature.AI.csproj.AssemblyReference.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/Debug/net8.0/Nexo.Feature.AI.GeneratedMSBuildEditorConfig.editorconfig
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/obj/Debug/net8.0/Nexo.Feature.AI.AssemblyInfoInputs.cache

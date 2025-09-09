@@ -4,10 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Application.Services.Iteration.Strategies;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Xunit;
 
 namespace Nexo.Core.Application.Tests;
@@ -412,5 +413,27 @@ public class TestCustomStrategy : IIterationStrategy<object>
     public string GenerateCode(CodeGenerationContext context)
     {
         return $"// Custom strategy code for {context.PlatformTarget}";
+    }
+    
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return true; // Test strategy can handle any context
+    }
+    
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        return 1; // Low priority for test strategy
+    }
+    
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
+    {
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
+        {
+            EstimatedExecutionTimeMs = context.DataSize * 0.1,
+            EstimatedMemoryUsageMB = context.DataSize * 0.001,
+            Confidence = 0.8,
+            PerformanceScore = 0.7,
+            MeetsRequirements = true
+        };
     }
 }

@@ -4,7 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Nexo.Feature.Pipeline.Models;
+using Nexo.Feature.Pipeline.Interfaces;
 
 namespace Nexo.Feature.Pipeline.Behaviors.Iteration;
 
@@ -89,7 +92,7 @@ public abstract class IterationAwareRequest : IIterationAwareRequest
     /// <summary>
     /// Performance requirements
     /// </summary>
-    public PerformanceRequirements PerformanceRequirements { get; set; } = new();
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements PerformanceRequirements { get; set; } = new();
     
     /// <summary>
     /// Target platform

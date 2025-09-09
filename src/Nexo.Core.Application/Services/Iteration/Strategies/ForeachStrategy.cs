@@ -115,8 +115,8 @@ public class ForeachStrategy<T> : IIterationStrategy<T>
             EstimatedMemoryUsageMB = memoryUsage,
             Confidence = 0.85,
             PerformanceScore = 85,
-            MeetsRequirements = baseTime <= context.Requirements.MaxExecutionTimeMs &&
-                              memoryUsage <= context.Requirements.MaxMemoryUsageMB
+            MeetsRequirements = baseTime <= context.Requirements.ToPerformanceRequirements().MaxExecutionTimeMs &&
+                              memoryUsage <= context.Requirements.ToPerformanceRequirements().MaxMemoryUsageMB
         };
     }
 }

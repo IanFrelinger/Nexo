@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Nexo.Feature.Pipeline.Interfaces;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Feature.Pipeline.Models
 {
@@ -88,5 +89,47 @@ namespace Nexo.Feature.Pipeline.Models
                 return _executionHistory.ToList();
             }
         }
+
+        /// <summary>
+        /// Gets a property value from the shared data store (alias for GetValue)
+        /// </summary>
+        public T? GetProperty<T>(string key, T? defaultValue = default(T))
+        {
+            return GetValue(key, defaultValue);
+        }
+
+        /// <summary>
+        /// Sets a property value in the shared data store (alias for SetValue)
+        /// </summary>
+        public void SetProperty<T>(string key, T value)
+        {
+            SetValue(key, value);
+        }
+
+        /// <summary>
+        /// Static property to get the current pipeline context
+        /// </summary>
+        public static IPipelineContext? Current { get; set; }
+    }
+
+    /// <summary>
+    /// Execution context for pipeline processing.
+    /// </summary>
+    public class ExecutionContext
+    {
+        /// <summary>
+        /// Gets or sets the correlation identifier.
+        /// </summary>
+        public string CorrelationId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the execution properties.
+        /// </summary>
+        public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Gets or sets the runtime environment profile.
+        /// </summary>
+        public RuntimeEnvironmentProfile Environment { get; set; } = new RuntimeEnvironmentProfile();
     }
 } 

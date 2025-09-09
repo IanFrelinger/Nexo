@@ -183,7 +183,7 @@ public class WebOptimizationAgent : ISpecializedAgent
     {
         try
         {
-            var isWebRequest = request.TargetPlatform?.HasFlag(PlatformCompatibility.Web) == true ||
+            var isWebRequest = request.TargetPlatform?.Contains("web", StringComparison.OrdinalIgnoreCase) == true ||
                              request.Input.Contains("web", StringComparison.OrdinalIgnoreCase) ||
                              request.Input.Contains("http", StringComparison.OrdinalIgnoreCase) ||
                              request.Input.Contains("api", StringComparison.OrdinalIgnoreCase) ||
@@ -208,7 +208,7 @@ public class WebOptimizationAgent : ISpecializedAgent
                 capabilityScore += 0.1;
             }
             
-            if (request.PerformanceRequirements?.PrimaryTarget == OptimizationTarget.Performance)
+            if (request.PerformanceRequirements?.RequiresRealTime == true)
             {
                 strengths.Add("High-performance web code generation");
                 capabilityScore += 0.1;
@@ -268,7 +268,7 @@ public class WebOptimizationAgent : ISpecializedAgent
         var context = new WebContext();
         
         // Extract web-specific information from the request
-        if (request.Context?.TryGetValue("WebContext", out var webCtx) == true && 
+        if (request.Parameters?.TryGetValue("WebContext", out var webCtx) == true && 
             webCtx is WebContext extractedContext)
         {
             return extractedContext;

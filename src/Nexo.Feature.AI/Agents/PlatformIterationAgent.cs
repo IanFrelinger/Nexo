@@ -4,7 +4,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Nexo.Feature.AI.Models;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Agents.Specialized;
 
 namespace Nexo.Feature.AI.Agents;
 
@@ -42,7 +46,7 @@ public class PlatformIterationAgent : IAIAgent
             if (platformAnalysis.RequiresPlatformOptimization)
             {
                 // Get platform-specific strategy recommendations
-                var recommendations = _strategySelector.GetRecommendations(platformAnalysis.PlatformType);
+                var recommendations = _strategySelector.GetRecommendations(ConvertToPlatformTarget(platformAnalysis.PlatformType));
                 
                 // Select the best strategy for this platform
                 var strategy = _strategySelector.SelectStrategy<object>(platformAnalysis.IterationContext);
@@ -108,7 +112,7 @@ public class PlatformIterationAgent : IAIAgent
         - BestPractices: best practices
         """;
         
-        var response = await _modelOrchestrator.ProcessAsync(analysisPrompt);
+        var response = await _modelOrchestrator.ProcessAsync(new ModelRequest { Input = analysisPrompt });
         return ParsePlatformAnalysis(response.Response);
     }
     
@@ -128,16 +132,18 @@ public class PlatformIterationAgent : IAIAgent
         };
         
         // Create iteration context based on platform analysis
-        analysis.IterationContext = new IterationContext
+        var iterationContext = new IterationContext
         {
             DataSize = EstimateDataSizeFromAnalysis(response),
-            Requirements = CreatePerformanceRequirementsFromAnalysis(response),
+            Requirements = CreatePerformanceRequirementsFromAnalysis(response).ToIterationRequirements(),
             EnvironmentProfile = CreateEnvironmentProfileFromAnalysis(analysis.PlatformType),
             TargetPlatform = GetPlatformTargetFromType(analysis.PlatformType),
             IsCpuBound = IsCpuBoundFromAnalysis(response),
             IsIoBound = IsIoBoundFromAnalysis(response),
             RequiresAsync = RequiresAsyncFromAnalysis(response)
         };
+        
+        analysis = analysis with { IterationContext = iterationContext };
         
         return analysis;
     }
@@ -292,7 +298,7 @@ public class PlatformIterationAgent : IAIAgent
             ActionCode = "// Process item",
             IncludeNullChecks = true,
             IncludeBoundsChecking = true,
-            PerformanceRequirements = analysis.IterationContext.Requirements,
+            PerformanceRequirements = analysis.IterationContext.Requirements.ToPerformanceRequirements(),
             AdditionalContext = new Dictionary<string, object>
             {
                 ["PlatformConstraints"] = analysis.PlatformConstraints,
@@ -306,7 +312,7 @@ public class PlatformIterationAgent : IAIAgent
         
         // Enhance with platform-specific optimizations
         var enhancementPrompt = CreatePlatformEnhancementPrompt(baseCode, analysis);
-        var enhanced = await _modelOrchestrator.ProcessAsync(enhancementPrompt);
+        var enhanced = await _modelOrchestrator.ProcessAsync(new ModelRequest { Input = enhancementPrompt });
         
         return enhanced.Response;
     }
@@ -362,6 +368,28 @@ public class PlatformIterationAgent : IAIAgent
         }
         
         return Math.Min(1.0, confidence);
+    }
+    
+    private static PlatformTarget ConvertToPlatformTarget(Nexo.Core.Domain.Entities.Infrastructure.PlatformType platformType)
+    {
+        return platformType switch
+        {
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.DotNet => PlatformTarget.DotNet,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Unity => PlatformTarget.Unity,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.WebAssembly => PlatformTarget.WebAssembly,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile => PlatformTarget.Mobile,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Server => PlatformTarget.Server,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Browser => PlatformTarget.Browser,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Native => PlatformTarget.Native,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows => PlatformTarget.Windows,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Linux => PlatformTarget.Linux,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS => PlatformTarget.macOS,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web => PlatformTarget.Web,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.JavaScript => PlatformTarget.JavaScript,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Swift => PlatformTarget.Swift,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Kotlin => PlatformTarget.Kotlin,
+            _ => PlatformTarget.DotNet
+        };
     }
 }
 

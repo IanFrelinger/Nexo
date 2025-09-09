@@ -183,7 +183,7 @@ public class MobileOptimizationAgent : ISpecializedAgent
     {
         try
         {
-            var isMobileRequest = request.TargetPlatform?.HasFlag(PlatformCompatibility.Mobile) == true ||
+            var isMobileRequest = request.TargetPlatform?.Contains("mobile", StringComparison.OrdinalIgnoreCase) == true ||
                                 request.Input.Contains("mobile", StringComparison.OrdinalIgnoreCase) ||
                                 request.Input.Contains("android", StringComparison.OrdinalIgnoreCase) ||
                                 request.Input.Contains("ios", StringComparison.OrdinalIgnoreCase) ||
@@ -208,7 +208,7 @@ public class MobileOptimizationAgent : ISpecializedAgent
                 capabilityScore += 0.1;
             }
             
-            if (request.PerformanceRequirements?.PrimaryTarget == OptimizationTarget.Performance)
+            if (request.PerformanceRequirements?.RequiresRealTime == true)
             {
                 strengths.Add("High-performance mobile code generation");
                 capabilityScore += 0.1;
@@ -268,7 +268,7 @@ public class MobileOptimizationAgent : ISpecializedAgent
         var context = new MobileContext();
         
         // Extract mobile-specific information from the request
-        if (request.Context?.TryGetValue("MobileContext", out var mobileCtx) == true && 
+        if (request.Parameters?.TryGetValue("MobileContext", out var mobileCtx) == true && 
             mobileCtx is MobileContext extractedContext)
         {
             return extractedContext;

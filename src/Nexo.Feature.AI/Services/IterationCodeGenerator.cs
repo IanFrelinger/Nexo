@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
 using Nexo.Feature.AI.Interfaces;
 using Nexo.Feature.AI.Models;
@@ -157,7 +156,7 @@ public class IterationCodeGenerator : IIterationCodeGenerator
             Context:
             - Data size: {context.DataSize}
             - Performance level: {(context.Requirements?.PrioritizeCpu == true ? "High" : "Medium")}
-            - Platform compatibility: {context.EnvironmentProfile?.PlatformType ?? PlatformCompatibility.DotNet}
+            - Platform compatibility: {context.EnvironmentProfile?.PlatformType ?? Nexo.Core.Domain.Entities.Infrastructure.PlatformType.DotNet}
             - CPU cores: {context.EnvironmentProfile?.CpuCores ?? 1}
             - Memory: {context.EnvironmentProfile?.AvailableMemoryMB ?? 0}MB
             

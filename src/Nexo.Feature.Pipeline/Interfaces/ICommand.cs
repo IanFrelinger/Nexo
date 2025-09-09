@@ -10,6 +10,42 @@ using Nexo.Feature.Pipeline.Models;
 namespace Nexo.Feature.Pipeline.Interfaces
 {
 /// <summary>
+/// Generic command interface for typed commands
+/// </summary>
+public interface ICommand<in TRequest, TResponse>
+{
+    Task<TResponse> ExecuteAsync(TRequest request, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Command attribute for marking command classes
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class CommandAttribute : Attribute
+{
+    public string Name { get; }
+    
+    public CommandAttribute(string name)
+    {
+        Name = name;
+    }
+}
+
+/// <summary>
+/// Behavior attribute for marking behavior classes
+/// </summary>
+[AttributeUsage(AttributeTargets.Class)]
+public class BehaviorAttribute : Attribute
+{
+    public string Name { get; }
+    
+    public BehaviorAttribute(string name)
+    {
+        Name = name;
+    }
+}
+
+/// <summary>
 /// Represents an atomic operation in the pipeline architecture.
 /// Commands are the fundamental building blocks that can be composed into behaviors.
 /// </summary>

@@ -123,8 +123,8 @@ public class ForLoopStrategy<T> : IIterationStrategy<T>
             EstimatedMemoryUsageMB = memoryUsage,
             Confidence = 0.9,
             PerformanceScore = 95,
-            MeetsRequirements = baseTime <= context.Requirements.MaxExecutionTimeMs &&
-                              memoryUsage <= context.Requirements.MaxMemoryUsageMB
+            MeetsRequirements = baseTime <= context.Requirements.ToPerformanceRequirements().MaxExecutionTimeMs &&
+                              memoryUsage <= context.Requirements.ToPerformanceRequirements().MaxMemoryUsageMB
         };
     }
     

@@ -5,10 +5,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Application.Services.Iteration.Strategies;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 // using Nexo.Feature.AI.Services; // Will be available when AI project is built
 using Xunit;
 
@@ -183,7 +184,7 @@ public class IterationStrategyIntegrationTests
         Assert.True(profile.AvailableMemoryMB > 0);
         Assert.NotEmpty(profile.FrameworkVersion);
         Assert.True(Enum.IsDefined(typeof(OptimizationLevel), profile.OptimizationLevel));
-        Assert.NotEqual(PlatformCompatibility.None, profile.PlatformType);
+        Assert.NotEqual(PlatformType.DotNet, profile.PlatformType);
     }
     
     [Fact]
@@ -298,7 +299,7 @@ public class IterationStrategyIntegrationTests
         var selector = _serviceProvider.GetRequiredService<IIterationStrategySelector>();
         var unityProfile = new RuntimeEnvironmentProfile
         {
-            PlatformType = PlatformCompatibility.Unity,
+            PlatformType = PlatformType.Unity,
             CpuCores = 4,
             AvailableMemoryMB = 1024,
             IsDebugMode = false,
@@ -308,7 +309,7 @@ public class IterationStrategyIntegrationTests
         
         var wasmProfile = new RuntimeEnvironmentProfile
         {
-            PlatformType = PlatformCompatibility.WebAssembly,
+            PlatformType = PlatformType.WebAssembly,
             CpuCores = 1,
             AvailableMemoryMB = 512,
             IsDebugMode = false,

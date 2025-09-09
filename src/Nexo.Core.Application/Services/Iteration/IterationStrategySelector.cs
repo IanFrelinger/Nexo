@@ -45,7 +45,7 @@ public class IterationStrategySelector : IIterationStrategySelector
             .FirstOrDefault() ?? new SimpleForeachStrategy<T>();
     }
 
-    public IIterationStrategy<T> SelectStrategy<T>(IEnumerable<T> source, Nexo.Core.Domain.Entities.Iteration.PerformanceRequirements requirements)
+    public IIterationStrategy<T> SelectStrategy<T>(IEnumerable<T> source, IterationRequirements requirements)
     {
         var context = new IterationContext
         {
@@ -152,7 +152,7 @@ public class IterationStrategySelector : IIterationStrategySelector
         {
             score += 50;
         }
-        if (context.Requirements.PreferParallel && strategy.PerformanceProfile.SupportsParallelization)
+        if (context.Requirements.ToPerformanceRequirements().PreferParallel && strategy.PerformanceProfile.SupportsParallelization)
         {
             score += 30;
         }
@@ -215,6 +215,19 @@ public class SimpleForeachStrategy<T> : IIterationStrategy<T>
         foreach (var item in source)
         {
             results.Add(transform(item));
+        }
+        return results;
+    }
+
+    public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<T> source, Func<T, bool> predicate, Func<T, TResult> selector)
+    {
+        var results = new List<TResult>();
+        foreach (var item in source)
+        {
+            if (predicate(item))
+            {
+                results.Add(selector(item));
+            }
         }
         return results;
     }
@@ -299,6 +312,20 @@ public class SimpleForLoopStrategy<T> : IIterationStrategy<T>
         return results;
     }
 
+    public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<T> source, Func<T, bool> predicate, Func<T, TResult> selector)
+    {
+        var list = source.ToList();
+        var results = new List<TResult>();
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (predicate(list[i]))
+            {
+                results.Add(selector(list[i]));
+            }
+        }
+        return results;
+    }
+
     public async Task ExecuteAsync(IEnumerable<T> source, Func<T, Task> asyncAction)
     {
         var list = source.ToList();
@@ -371,6 +398,11 @@ public class SimpleLinqStrategy<T> : IIterationStrategy<T>
     public IEnumerable<TResult> Execute<TResult>(IEnumerable<T> source, Func<T, TResult> transform)
     {
         return source.Select(transform);
+    }
+
+    public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<T> source, Func<T, bool> predicate, Func<T, TResult> selector)
+    {
+        return source.Where(predicate).Select(selector);
     }
 
     public async Task ExecuteAsync(IEnumerable<T> source, Func<T, Task> asyncAction)

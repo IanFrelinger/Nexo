@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Feature.AI.Agents.Specialized;
@@ -100,7 +101,7 @@ public class SecurityAnalysisAgent : ISpecializedAgent
             // Get platform-specific security insights
             foreach (var platformAgent in platformAgents)
             {
-                var platformRequest = request.CreatePlatformSpecificRequest(platformAgent.PlatformExpertise);
+                var platformRequest = request.CreatePlatformSpecificRequest(platformAgent.PlatformExpertise.ToString());
                 var platformResponse = await platformAgent.ProcessAsync(platformRequest);
                 
                 if (platformResponse.HasResult)
@@ -171,7 +172,7 @@ public class SecurityAnalysisAgent : ISpecializedAgent
                 capabilityScore += 0.3;
             }
             
-            if (request.Context?.ContainsKey("SecurityRequirements") == true)
+            if (request.Parameters?.ContainsKey("SecurityRequirements") == true)
             {
                 strengths.Add("Security requirements analysis");
                 capabilityScore += 0.1;
@@ -247,7 +248,7 @@ public class SecurityAnalysisAgent : ISpecializedAgent
         10. API security issues
         
         Platform: {request.TargetPlatform}
-        Security Requirements: {request.Context?.GetValueOrDefault("SecurityRequirements", "Standard")}
+        Security Requirements: {request.Parameters?.GetValueOrDefault("SecurityRequirements", "Standard")}
         
         Provide detailed security recommendations and secure coding alternatives.
         Rate the security level from 1-10 and identify specific vulnerabilities.

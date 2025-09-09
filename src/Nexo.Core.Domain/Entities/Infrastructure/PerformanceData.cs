@@ -98,4 +98,14 @@ public record PerformanceMetrics
     /// Whether optimization is required
     /// </summary>
     public bool RequiresOptimization { get; init; } = false;
+    
+    /// <summary>
+    /// Overall performance score (0.0 to 1.0)
+    /// </summary>
+    public double OverallScore { get; init; } = 1.0;
+    
+    /// <summary>
+    /// Whether there are iteration bottlenecks
+    /// </summary>
+    public bool HasIterationBottlenecks { get; init; } = false;
 }

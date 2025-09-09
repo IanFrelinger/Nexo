@@ -30,7 +30,33 @@ public enum OptimizationLevel
     Moderate,
     Balanced, // Alias for Moderate
     Aggressive,
-    Maximum
+    Maximum,
+    Debug
+}
+
+/// <summary>
+/// Performance levels
+/// </summary>
+public enum PerformanceLevel
+{
+    Low,
+    Medium,
+    High,
+    Critical,
+    Excellent
+}
+
+/// <summary>
+/// Security levels
+/// </summary>
+public enum SecurityLevel
+{
+    Low,
+    Medium,
+    High,
+    Critical,
+    Standard,
+    Basic
 }
 
 /// <summary>

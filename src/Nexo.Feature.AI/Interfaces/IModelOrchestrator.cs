@@ -33,4 +33,12 @@ public interface IModelOrchestrator
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The best provider for the task</returns>
     Task<IModelProvider?> GetBestModelForTaskAsync(string task, Enums.ModelType modelType, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Process a request using the orchestrator
+    /// </summary>
+    /// <param name="request">The request to process</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The processed response</returns>
+    Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default);
 }

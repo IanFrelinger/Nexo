@@ -69,5 +69,20 @@ namespace Nexo.Feature.Pipeline.Models
         /// Gets or sets validation errors if any occurred.
         /// </summary>
         public List<ValidationError> ValidationErrors { get; set; } = new List<ValidationError>();
+
+        /// <summary>
+        /// Gets or sets the success status of the execution.
+        /// </summary>
+        public bool Success { get; set; }
+
+        /// <summary>
+        /// Gets or sets the execution metrics dictionary.
+        /// </summary>
+        public Dictionary<string, object> MetricsDictionary { get; set; } = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Gets or sets the list of executed behaviors.
+        /// </summary>
+        public List<string> ExecutedBehaviors { get; set; } = new List<string>();
     }
 } 

@@ -4,7 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Feature.AI.Agents.Specialized;
 
@@ -110,7 +113,7 @@ public class PerformanceOptimizationAgent : ISpecializedAgent
             
             foreach (var platformAgent in platformAgents)
             {
-                var platformRequest = request.CreatePlatformSpecificRequest(platformAgent.PlatformExpertise);
+                var platformRequest = request.CreatePlatformSpecificRequest(platformAgent.PlatformExpertise.ToString());
                 var platformResponse = await platformAgent.ProcessAsync(platformRequest);
                 
                 if (platformResponse.HasResult)
@@ -171,19 +174,19 @@ public class PerformanceOptimizationAgent : ISpecializedAgent
                 capabilityScore += 0.8;
             }
             
-            if (request.TargetPlatform?.HasFlag(PlatformCompatibility.Unity) == true)
+            if (request.TargetPlatform?.Contains("unity", StringComparison.OrdinalIgnoreCase) == true)
             {
                 strengths.Add("Unity performance optimization");
                 capabilityScore += 0.1;
             }
             
-            if (request.TargetPlatform?.HasFlag(PlatformCompatibility.Web) == true)
+            if (request.TargetPlatform?.Contains("web", StringComparison.OrdinalIgnoreCase) == true)
             {
                 strengths.Add("Web performance optimization");
                 capabilityScore += 0.1;
             }
             
-            if (request.PerformanceRequirements?.PrimaryTarget == OptimizationTarget.Performance)
+            if (request.PerformanceRequirements?.RequiresRealTime == true)
             {
                 strengths.Add("High-performance code generation");
                 capabilityScore += 0.2;
@@ -253,7 +256,7 @@ public class PerformanceOptimizationAgent : ISpecializedAgent
         
         Request: {request.Input}
         Target Platform: {request.TargetPlatform}
-        Performance Requirements: {request.PerformanceRequirements?.PrimaryTarget}
+        Performance Requirements: RealTime={request.PerformanceRequirements?.RequiresRealTime}, MemoryCritical={request.PerformanceRequirements?.MemoryCritical}
         
         Identify:
         1. Potential performance bottlenecks

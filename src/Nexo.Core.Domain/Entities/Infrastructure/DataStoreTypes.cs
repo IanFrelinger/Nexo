@@ -315,16 +315,6 @@ public record AdaptationStatus
     public string LastError { get; init; } = string.Empty;
 }
 
-/// <summary>
-/// Performance level enumeration
-/// </summary>
-public enum PerformanceLevel
-{
-    Low = 1,
-    Medium = 2,
-    High = 3,
-    Critical = 4
-}
 
 /// <summary>
 /// Metrics aggregation

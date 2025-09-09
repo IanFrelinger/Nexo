@@ -78,7 +78,17 @@ public enum PlatformType
     JavaScript = 2048,
     
     /// <summary>
+    /// Swift platform (iOS/macOS)
+    /// </summary>
+    Swift = 4096,
+    
+    /// <summary>
+    /// Kotlin platform (Android)
+    /// </summary>
+    Kotlin = 8192,
+    
+    /// <summary>
     /// All platforms
     /// </summary>
-    All = DotNet | Unity | WebAssembly | Mobile | Server | Browser | Native | Windows | Linux | macOS | Web | JavaScript
+    All = DotNet | Unity | WebAssembly | Mobile | Server | Browser | Native | Windows | Linux | macOS | Web | JavaScript | Swift | Kotlin
 }

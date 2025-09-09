@@ -99,6 +99,38 @@ public class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
         }
     }
     
+    public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<T> source, Func<T, bool> predicate, Func<T, TResult> selector)
+    {
+        if (source is IList<T> list)
+        {
+            var results = new List<TResult>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (predicate(list[i]))
+                {
+                    results.Add(selector(list[i]));
+                }
+            }
+            return results;
+        }
+        else if (source is T[] array)
+        {
+            var results = new List<TResult>();
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (predicate(array[i]))
+                {
+                    results.Add(selector(array[i]));
+                }
+            }
+            return results;
+        }
+        else
+        {
+            return source.Where(predicate).Select(selector);
+        }
+    }
+    
     public Task ExecuteAsync(IEnumerable<T> source, Func<T, Task> asyncAction)
     {
         // Unity doesn't support async operations efficiently
@@ -131,8 +163,8 @@ public class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
             EstimatedMemoryUsageMB = estimatedMemory,
             Confidence = 0.95,
             PerformanceScore = CalculatePerformanceScore(estimatedTime, estimatedMemory, context),
-            MeetsRequirements = estimatedTime <= context.Requirements.MaxExecutionTimeMs &&
-                               estimatedMemory <= context.Requirements.MaxMemoryUsageMB
+            MeetsRequirements = estimatedTime <= context.Requirements.ToPerformanceRequirements().MaxExecutionTimeMs &&
+                               estimatedMemory <= context.Requirements.ToPerformanceRequirements().MaxMemoryUsageMB
         };
     }
     

@@ -24,9 +24,9 @@ public interface IIterationStrategySelector
     /// </summary>
     /// <typeparam name="T">Type of items to iterate over</typeparam>
     /// <param name="source">Source collection</param>
-    /// <param name="requirements">Performance requirements</param>
+    /// <param name="requirements">Iteration requirements</param>
     /// <returns>Optimal iteration strategy</returns>
-    IIterationStrategy<T> SelectStrategy<T>(IEnumerable<T> source, Entities.Iteration.PerformanceRequirements requirements);
+    IIterationStrategy<T> SelectStrategy<T>(IEnumerable<T> source, IterationRequirements requirements);
     
     /// <summary>
     /// Register a new iteration strategy

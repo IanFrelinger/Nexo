@@ -4,7 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Nexo.Feature.Pipeline.Models;
+using Nexo.Feature.Pipeline.Interfaces;
 
 namespace Nexo.Feature.Pipeline.Commands.Iteration;
 
@@ -40,7 +43,7 @@ public class OptimizeIterationCommand : ICommand<OptimizeIterationRequest, Optim
             var context = new IterationContext
             {
                 DataSize = analysis.EstimatedDataSize,
-                Requirements = request.Requirements,
+                Requirements = ConvertToIterationRequirements(request.Requirements),
                 EnvironmentProfile = request.EnvironmentProfile ?? RuntimeEnvironmentDetector.DetectCurrent(),
                 PipelineContext = request.PipelineContext,
                 TargetPlatform = request.TargetPlatform,
@@ -234,7 +237,7 @@ public class OptimizeIterationCommand : ICommand<OptimizeIterationRequest, Optim
         };
     }
     
-    private PerformanceEstimate EstimateCurrentStrategyPerformance(string currentStrategy, IterationContext context)
+    private Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimateCurrentStrategyPerformance(string currentStrategy, IterationContext context)
     {
         // Estimate performance of the current strategy
         var baseTimePerItem = currentStrategy switch
@@ -249,7 +252,7 @@ public class OptimizeIterationCommand : ICommand<OptimizeIterationRequest, Optim
         var estimatedTime = context.DataSize * baseTimePerItem;
         var estimatedMemory = context.DataSize * 0.001;
         
-        return new PerformanceEstimate
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate
         {
             EstimatedExecutionTimeMs = estimatedTime,
             EstimatedMemoryUsageMB = estimatedMemory,
@@ -263,6 +266,21 @@ public class OptimizeIterationCommand : ICommand<OptimizeIterationRequest, Optim
     {
         // Calculate overall optimization score
         return (performanceImprovement + memoryImprovement) / 2;
+    }
+    
+    /// <summary>
+    /// Converts PerformanceRequirements to IterationRequirements
+    /// </summary>
+    private static IterationRequirements ConvertToIterationRequirements(Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements performanceRequirements)
+    {
+        return new IterationRequirements
+        {
+            PrioritizeCpu = performanceRequirements.RequiresRealTime,
+            PrioritizeMemory = performanceRequirements.MemoryCritical,
+            RequiresParallelization = performanceRequirements.PreferParallel,
+            MaxDegreeOfParallelism = Environment.ProcessorCount,
+            Timeout = TimeSpan.FromMilliseconds(performanceRequirements.MaxExecutionTimeMs)
+        };
     }
 }
 
@@ -284,7 +302,7 @@ public record OptimizeIterationRequest
     /// <summary>
     /// Performance requirements
     /// </summary>
-    public PerformanceRequirements Requirements { get; init; } = new();
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements Requirements { get; init; } = new();
     
     /// <summary>
     /// Runtime environment profile
@@ -417,12 +435,12 @@ public record OptimizationMetrics
     /// <summary>
     /// Current strategy performance
     /// </summary>
-    public PerformanceEstimate CurrentStrategyPerformance { get; init; } = new();
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate CurrentStrategyPerformance { get; init; } = new();
     
     /// <summary>
     /// Optimized strategy performance
     /// </summary>
-    public PerformanceEstimate OptimizedStrategyPerformance { get; init; } = new();
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate OptimizedStrategyPerformance { get; init; } = new();
     
     /// <summary>
     /// Overall optimization score

@@ -87,7 +87,7 @@ public class ParallelLinqStrategy<T> : IIterationStrategy<T>
             EstimatedMemoryUsageMB = memoryUsage,
             Confidence = 0.9,
             PerformanceScore = 95,
-            MeetsRequirements = context.Requirements.PreferParallel
+            MeetsRequirements = context.Requirements.ToPerformanceRequirements().PreferParallel
         };
     }
 }

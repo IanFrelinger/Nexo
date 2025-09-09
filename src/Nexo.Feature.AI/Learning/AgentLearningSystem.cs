@@ -43,7 +43,11 @@ public class AgentLearningSystem : IAgentLearningSystem
             var learningRecord = new AgentLearningRecord
             {
                 AgentId = agentId,
-                RequestContext = request.Context,
+                RequestContext = new Dictionary<string, object>
+                {
+                    ["Context"] = request.Context,
+                    ["Parameters"] = request.Parameters
+                },
                 GeneratedCode = response.Result,
                 ActualPerformance = actualPerformance,
                 ResponseConfidence = response.Confidence,

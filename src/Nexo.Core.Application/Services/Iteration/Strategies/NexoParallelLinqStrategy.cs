@@ -53,6 +53,11 @@ public class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
         return source.AsParallel().Select(transform);
     }
     
+    public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<T> source, Func<T, bool> predicate, Func<T, TResult> selector)
+    {
+        return source.AsParallel().Where(predicate).Select(selector);
+    }
+    
     public async Task ExecuteAsync(IEnumerable<T> source, Func<T, Task> asyncAction)
     {
         // Parallel async execution
@@ -96,8 +101,8 @@ public class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
             EstimatedMemoryUsageMB = estimatedMemory,
             Confidence = 0.85,
             PerformanceScore = CalculatePerformanceScore(estimatedTime, estimatedMemory, context),
-            MeetsRequirements = estimatedTime <= context.Requirements.MaxExecutionTimeMs &&
-                               estimatedMemory <= context.Requirements.MaxMemoryUsageMB
+            MeetsRequirements = estimatedTime <= context.Requirements.ToPerformanceRequirements().MaxExecutionTimeMs &&
+                               estimatedMemory <= context.Requirements.ToPerformanceRequirements().MaxMemoryUsageMB
         };
     }
     

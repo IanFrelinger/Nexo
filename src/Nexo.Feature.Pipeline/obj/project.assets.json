@@ -1984,18 +1984,21 @@
       "Microsoft.Extensions.Logging.Abstractions >= 8.0.0",
       "NETStandard.Library >= 2.0.3",
       "Nexo.Core.Application >= 1.0.0",
+      "Nexo.Core.Domain >= 1.0.0",
       "Nexo.Shared >= 1.0.0",
       "System.Text.Json >= 9.0.7"
     ],
     "net6.0": [
       "Microsoft.Extensions.Logging.Abstractions >= 8.0.0",
       "Nexo.Core.Application >= 1.0.0",
+      "Nexo.Core.Domain >= 1.0.0",
       "Nexo.Shared >= 1.0.0",
       "System.Text.Json >= 9.0.7"
     ],
     "net8.0": [
       "Microsoft.Extensions.Logging.Abstractions >= 8.0.0",
       "Nexo.Core.Application >= 1.0.0",
+      "Nexo.Core.Domain >= 1.0.0",
       "Nexo.Shared >= 1.0.0",
       "System.Text.Json >= 9.0.7"
     ]
@@ -2032,6 +2035,9 @@
             "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj": {
               "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
             },
+            "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
+              "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
+            },
             "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
               "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
             }
@@ -2043,6 +2049,9 @@
             "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj": {
               "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
             },
+            "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
+              "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
+            },
             "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
               "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"
             }
@@ -2053,6 +2062,9 @@
           "projectReferences": {
             "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj": {
               "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
+            },
+            "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj": {
+              "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
             },
             "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj": {
               "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Shared/Nexo.Shared.csproj"

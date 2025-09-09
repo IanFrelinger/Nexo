@@ -88,6 +88,16 @@ namespace Nexo.Feature.Pipeline.Models
         [JsonPropertyName("documentation")]
         public PipelineDocumentationConfiguration Documentation { get; set; } = new PipelineDocumentationConfiguration();
 
+        /// <summary>
+        /// Gets or sets the pipeline identifier.
+        /// </summary>
+        public string Id { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the pipeline parameters.
+        /// </summary>
+        public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
+
         // IPipelineConfiguration implementation
         public int MaxParallelExecutions => Execution?.MaxParallelExecutions ?? 1;
         public int CommandTimeoutMs => Execution?.CommandTimeoutMs ?? 30000;

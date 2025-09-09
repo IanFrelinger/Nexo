@@ -4,7 +4,11 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Nexo.Feature.AI.Models;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Agents.Specialized;
 
 namespace Nexo.Feature.AI.Agents;
 
@@ -63,7 +67,7 @@ public class IterationOptimizationAgent : IAIAgent
                 if (iterationAnalysis.RequiresComplexLogic)
                 {
                     var enhancementPrompt = CreateIterationEnhancementPrompt(optimizedCode, iterationAnalysis);
-                    var enhanced = await _modelOrchestrator.ProcessAsync(enhancementPrompt);
+                    var enhanced = await _modelOrchestrator.ProcessAsync(new ModelRequest { Input = enhancementPrompt });
                     optimizedCode = enhanced.Response;
                 }
                 
@@ -129,7 +133,7 @@ public class IterationOptimizationAgent : IAIAgent
         - RequiresComplexLogic: true/false
         """;
         
-        var response = await _modelOrchestrator.ProcessAsync(analysisPrompt);
+        var response = await _modelOrchestrator.ProcessAsync(new ModelRequest { Input = analysisPrompt });
         return ParseIterationAnalysis(response.Response);
     }
     
@@ -155,16 +159,18 @@ public class IterationOptimizationAgent : IAIAgent
         };
         
         // Create iteration context
-        analysis.IterationContext = new IterationContext
+        var iterationContext = new IterationContext
         {
             DataSize = analysis.EstimatedDataSize,
-            Requirements = analysis.PerformanceRequirements,
+            Requirements = analysis.PerformanceRequirements.ToIterationRequirements(),
             EnvironmentProfile = RuntimeEnvironmentDetector.DetectCurrent(),
             TargetPlatform = analysis.TargetPlatform,
             IsCpuBound = analysis.IsCpuBound,
             IsIoBound = analysis.IsIoBound,
             RequiresAsync = analysis.RequiresAsync
         };
+        
+        analysis = analysis with { IterationContext = iterationContext };
         
         return analysis;
     }

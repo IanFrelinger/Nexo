@@ -288,9 +288,31 @@ public class AgentWorkflowPlanner : IAgentWorkflowPlanner
         return new AgentRequest
         {
             Input = $"{request.Description}\n\nStep: {structureStep.Name}",
-            Context = request.Context,
-            PerformanceRequirements = request.PerformanceRequirements,
+            Context = request.Context?.ToString() ?? string.Empty,
+            PerformanceRequirements = ConvertToPerformanceRequirements(request.PerformanceRequirements),
             RequiredSpecialization = GetSpecializationForStep(structureStep.Name)
+        };
+    }
+    
+    private static Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements ConvertToPerformanceRequirements(PerformanceProfile? profile)
+    {
+        if (profile == null)
+            return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements();
+            
+        return new Nexo.Core.Domain.Entities.Infrastructure.PerformanceRequirements
+        {
+            MaxExecutionTimeMs = 5000, // Default 5 seconds
+            MaxMemoryUsageMB = profile.MinimumAcceptableLevel switch
+            {
+                PerformanceLevel.Low => 200,
+                PerformanceLevel.Medium => 100,
+                PerformanceLevel.High => 50,
+                PerformanceLevel.Critical => 25,
+                _ => 100
+            },
+            RequiresRealTime = profile.SupportsRealTimeOptimization,
+            PreferParallel = profile.PrimaryTarget == OptimizationTarget.Performance,
+            MemoryCritical = profile.PrimaryTarget == OptimizationTarget.Memory
         };
     }
     

@@ -33,7 +33,8 @@ public class AgentCommunicationHub : IAgentCommunicationHub
                     var request = new AgentRequest
                     {
                         Input = $"Communication: {message}",
-                        Context = new Dictionary<string, object>
+                        Context = $"Broadcast message at {DateTime.UtcNow}",
+                        Parameters = new Dictionary<string, object>
                         {
                             ["MessageType"] = "Broadcast",
                             ["Timestamp"] = DateTime.UtcNow
@@ -69,7 +70,8 @@ public class AgentCommunicationHub : IAgentCommunicationHub
             var agentRequest = new AgentRequest
             {
                 Input = request,
-                Context = new Dictionary<string, object>
+                Context = $"Information request at {DateTime.UtcNow}",
+                Parameters = new Dictionary<string, object>
                 {
                     ["RequestType"] = "Information",
                     ["Timestamp"] = DateTime.UtcNow

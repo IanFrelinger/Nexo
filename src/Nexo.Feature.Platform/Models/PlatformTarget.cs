@@ -6,6 +6,11 @@ namespace Nexo.Feature.Platform.Models;
 public enum PlatformTarget 
 {
     /// <summary>
+    /// C# language platform
+    /// </summary>
+    CSharp,
+    
+    /// <summary>
     /// .NET 8.0 platform
     /// </summary>
     DotNet8,

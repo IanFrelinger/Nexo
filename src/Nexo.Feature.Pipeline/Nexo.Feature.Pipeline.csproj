@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="../Nexo.Shared/Nexo.Shared.csproj" />
     <ProjectReference Include="../Nexo.Core.Application/Nexo.Core.Application.csproj" />
+    <ProjectReference Include="../Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
   </ItemGroup>
 
 </Project> 

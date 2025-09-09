@@ -87,8 +87,8 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             // Update global strategy selector profile
             _iterationSelector.SetEnvironmentProfile(newProfile);
             
-            _logger.LogInformation("Switched to CPU-optimized iteration strategies due to high CPU utilization: {CpuUtilization:P}",
-                currentPerformance.CpuUtilization);
+            _logger.LogInformation("Switched to CPU-optimized iteration strategies due to high CPU utilization: {CpuUsage:P}",
+                currentPerformance.CpuUsage);
             
             return new AppliedAdaptation
             {
@@ -98,14 +98,14 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                 AppliedAt = DateTime.UtcNow,
                 Parameters = new Dictionary<string, object>
                 {
-                    ["CpuUtilization"] = currentPerformance.CpuUtilization,
+                    ["CpuUsage"] = currentPerformance.CpuUsage,
                     ["OptimizationLevel"] = "Aggressive"
                 }
             };
         }
         
         // If memory is constrained, prefer memory-efficient strategies
-        if (currentPerformance.MemoryUtilization > 0.85)
+        if (currentPerformance.MemoryUsage > 0.85)
         {
             var memoryOptimizedProfile = new RuntimeEnvironmentProfile
             {
@@ -116,8 +116,8 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             
             _iterationSelector.SetEnvironmentProfile(memoryOptimizedProfile);
             
-            _logger.LogInformation("Switched to memory-optimized iteration strategies due to high memory utilization: {MemoryUtilization:P}",
-                currentPerformance.MemoryUtilization);
+            _logger.LogInformation("Switched to memory-optimized iteration strategies due to high memory utilization: {MemoryUsage:P}",
+                currentPerformance.MemoryUsage);
             
             return new AppliedAdaptation
             {
@@ -127,7 +127,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                 AppliedAt = DateTime.UtcNow,
                 Parameters = new Dictionary<string, object>
                 {
-                    ["MemoryUtilization"] = currentPerformance.MemoryUtilization,
+                    ["MemoryUsage"] = currentPerformance.MemoryUsage,
                     ["AvailableMemoryMB"] = memoryOptimizedProfile.AvailableMemoryMB
                 }
             };
@@ -247,7 +247,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         }
         
         // Disable caching for low latency scenarios to save memory
-        if (currentPerformance.NetworkLatency < 10 && currentPerformance.MemoryUtilization > 0.8)
+        if (currentPerformance.NetworkLatency < 10 && currentPerformance.MemoryUsage > 0.8)
         {
             _logger.LogInformation("Disabling caching to save memory in low latency scenario");
             
@@ -260,7 +260,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                 Parameters = new Dictionary<string, object>
                 {
                     ["NetworkLatency"] = currentPerformance.NetworkLatency,
-                    ["MemoryUtilization"] = currentPerformance.MemoryUtilization,
+                    ["MemoryUsage"] = currentPerformance.MemoryUsage,
                     ["CachingLevel"] = "Disabled"
                 }
             };
@@ -275,7 +275,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         var environment = systemState.EnvironmentProfile;
         
         // Adjust concurrency based on CPU cores and utilization
-        if (currentPerformance.CpuUtilization < 0.5 && environment.CpuCores > 4)
+        if (currentPerformance.CpuUsage < 0.5 && environment.CpuCores > 4)
         {
             // Increase concurrency for underutilized multi-core systems
             var newConcurrencyLevel = Math.Min(environment.CpuCores * 2, 16);
@@ -293,13 +293,13 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                 {
                     ["ConcurrencyLevel"] = newConcurrencyLevel,
                     ["CpuCores"] = environment.CpuCores,
-                    ["CpuUtilization"] = currentPerformance.CpuUtilization
+                    ["CpuUsage"] = currentPerformance.CpuUsage
                 }
             };
         }
         
         // Decrease concurrency for overutilized systems
-        if (currentPerformance.CpuUtilization > 0.9)
+        if (currentPerformance.CpuUsage > 0.9)
         {
             var newConcurrencyLevel = Math.Max(1, environment.CpuCores / 2);
             
@@ -315,7 +315,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                 Parameters = new Dictionary<string, object>
                 {
                     ["ConcurrencyLevel"] = newConcurrencyLevel,
-                    ["CpuUtilization"] = currentPerformance.CpuUtilization
+                    ["CpuUsage"] = currentPerformance.CpuUsage
                 }
             };
         }
@@ -328,9 +328,9 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         // Higher priority for severe performance issues
         return systemState.PerformanceMetrics.Severity switch
         {
-            PerformanceSeverity.Critical => 100,
-            PerformanceSeverity.High => 80,
-            PerformanceSeverity.Medium => 60,
+            AlertSeverity.Critical => 100,
+            AlertSeverity.High => 80,
+            AlertSeverity.Medium => 60,
             _ => 40
         };
     }
@@ -351,9 +351,9 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         var severity = need.Context.PerformanceMetrics.Severity;
         return severity switch
         {
-            PerformanceSeverity.Critical => 2.0,
-            PerformanceSeverity.High => 1.5,
-            PerformanceSeverity.Medium => 1.2,
+            AlertSeverity.Critical => 2.0,
+            AlertSeverity.High => 1.5,
+            AlertSeverity.Medium => 1.2,
             _ => 1.1
         };
     }

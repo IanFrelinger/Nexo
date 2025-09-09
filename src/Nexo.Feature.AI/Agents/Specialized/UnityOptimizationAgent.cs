@@ -186,7 +186,7 @@ public class UnityOptimizationAgent : ISpecializedAgent
     {
         try
         {
-            var isUnityRequest = request.TargetPlatform?.HasFlag(PlatformCompatibility.Unity) == true ||
+            var isUnityRequest = request.TargetPlatform?.Contains("unity", StringComparison.OrdinalIgnoreCase) == true ||
                                request.Input.Contains("Unity", StringComparison.OrdinalIgnoreCase) ||
                                request.Input.Contains("GameObject", StringComparison.OrdinalIgnoreCase) ||
                                request.Input.Contains("MonoBehaviour", StringComparison.OrdinalIgnoreCase);
@@ -209,7 +209,7 @@ public class UnityOptimizationAgent : ISpecializedAgent
                 capabilityScore += 0.1;
             }
             
-            if (request.PerformanceRequirements?.PrimaryTarget == OptimizationTarget.Performance)
+            if (request.PerformanceRequirements?.RequiresRealTime == true)
             {
                 strengths.Add("High-performance Unity code generation");
                 capabilityScore += 0.1;
@@ -269,7 +269,7 @@ public class UnityOptimizationAgent : ISpecializedAgent
         var context = new UnityContext();
         
         // Extract Unity-specific information from the request
-        if (request.Context?.TryGetValue("UnityContext", out var unityCtx) == true && 
+        if (request.Parameters?.TryGetValue("UnityContext", out var unityCtx) == true && 
             unityCtx is UnityContext extractedContext)
         {
             return extractedContext;

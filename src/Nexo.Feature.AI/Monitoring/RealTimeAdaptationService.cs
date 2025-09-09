@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Feature.AI.Agents.Specialized;
 using Nexo.Feature.AI.Learning;
 
@@ -179,7 +180,7 @@ public class RealTimeAdaptationService : IHostedService
             // In a real implementation, this would apply specific training recommendations
             // For now, we'll create learning insights based on the recommendations
             
-            var insights = improvements.RecommendedTraining.Select(training => new LearningInsight
+            var insights = improvements.RecommendedTraining.Select(training => new Nexo.Feature.AI.Learning.LearningInsight
             {
                 Type = LearningInsightType.StrategyImprovement,
                 Description = training,
@@ -203,7 +204,7 @@ public class RealTimeAdaptationService : IHostedService
         try
         {
             // Create specific insights for improvement areas
-            var insights = improvements.AreasForImprovement.Select(area => new LearningInsight
+            var insights = improvements.AreasForImprovement.Select(area => new Nexo.Feature.AI.Learning.LearningInsight
             {
                 Type = LearningInsightType.PerformanceOptimization,
                 Description = $"Focus on improving: {area}",

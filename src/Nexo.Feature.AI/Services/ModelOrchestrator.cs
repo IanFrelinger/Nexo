@@ -116,4 +116,10 @@ public class ModelOrchestrator : IModelOrchestrator
         _logger.LogWarning("No healthy providers available");
         return null;
     }
+
+    public async Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default)
+    {
+        // ProcessAsync is an alias for ExecuteAsync
+        return await ExecuteAsync(request, cancellationToken);
+    }
 }

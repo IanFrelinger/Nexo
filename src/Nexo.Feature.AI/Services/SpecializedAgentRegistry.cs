@@ -168,15 +168,15 @@ public class SpecializedAgentRegistry : ISpecializedAgentRegistry
         var score = 0.0;
         
         // Check specialization match
-        if (request.RequiredSpecialization.HasValue && 
-            agent.Specialization.HasFlag(request.RequiredSpecialization.Value))
+        if (request.RequiredSpecialization != AgentSpecialization.None && 
+            agent.Specialization.HasFlag(request.RequiredSpecialization))
         {
             score += 0.4;
         }
         
         // Check platform match
-        if (request.TargetPlatform.HasValue && 
-            (agent.PlatformExpertise.HasFlag(request.TargetPlatform.Value) || 
+        if (!string.IsNullOrEmpty(request.TargetPlatform) && 
+            (agent.PlatformExpertise.ToString().Contains(request.TargetPlatform, StringComparison.OrdinalIgnoreCase) || 
              agent.PlatformExpertise.HasFlag(PlatformCompatibility.All)))
         {
             score += 0.3;
@@ -184,13 +184,13 @@ public class SpecializedAgentRegistry : ISpecializedAgentRegistry
         
         // Check performance requirements match
         if (request.PerformanceRequirements != null && 
-            agent.OptimizationProfile.PrimaryTarget == request.PerformanceRequirements.PrimaryTarget)
+            agent.OptimizationProfile.PrimaryTarget == OptimizationTarget.Performance)
         {
             score += 0.2;
         }
         
         // Check if agent supports real-time optimization when needed
-        if (request.Context?.ContainsKey("RequiresRealTimeOptimization") == true &&
+        if (request.Parameters?.ContainsKey("RequiresRealTimeOptimization") == true &&
             agent.OptimizationProfile.SupportsRealTimeOptimization)
         {
             score += 0.1;

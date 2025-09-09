@@ -526,4 +526,68 @@ namespace Nexo.Feature.Pipeline.Models
         Manual,
         Selective
     }
+
+    /// <summary>
+    /// Optimization level for pipeline execution.
+    /// </summary>
+    public enum OptimizationLevel
+    {
+        None,
+        Basic,
+        Balanced,
+        Aggressive,
+        Maximum
+    }
+
+    /// <summary>
+    /// Implementation complexity levels.
+    /// </summary>
+    public enum ImplementationComplexity
+    {
+        Low,
+        Medium,
+        High,
+        VeryHigh
+    }
+
+    /// <summary>
+    /// Optimization types for performance improvements.
+    /// </summary>
+    public enum OptimizationType
+    {
+        CpuOptimization,
+        MemoryOptimization,
+        DiskOptimization,
+        NetworkOptimization,
+        AlgorithmOptimization,
+        Parallelization,
+        Caching,
+        ResourceManagement
+    }
+
+    /// <summary>
+    /// Optimization recommendation for pipeline performance.
+    /// </summary>
+    public class OptimizationRecommendation
+    {
+        /// <summary>
+        /// Gets or sets the recommendation identifier.
+        /// </summary>
+        public string RecommendationId { get; set; } = Guid.NewGuid().ToString();
+
+        /// <summary>
+        /// Gets or sets the recommendation description.
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the expected performance gain.
+        /// </summary>
+        public double ExpectedPerformanceGain { get; set; }
+
+        /// <summary>
+        /// Gets or sets the recommendation details.
+        /// </summary>
+        public Dictionary<string, object> Details { get; set; } = new Dictionary<string, object>();
+    }
 } 

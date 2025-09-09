@@ -84,7 +84,7 @@ public static class AIServiceExtensions
         services.AddTransient<ISpecializedAgent, MobileOptimizationAgent>();
         
         // Register agent coordination services
-        services.AddTransient<IAgentCoordinator, AgentCoordinator>();
+        services.AddTransient<Nexo.Feature.AI.Agents.Coordination.IAgentCoordinator, AgentCoordinator>();
         services.AddTransient<IAgentWorkflowPlanner, AgentWorkflowPlanner>();
         services.AddTransient<IAgentCommunicationHub, AgentCommunicationHub>();
         

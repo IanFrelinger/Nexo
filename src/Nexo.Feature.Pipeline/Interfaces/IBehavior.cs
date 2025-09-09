@@ -9,6 +9,27 @@ using Nexo.Feature.Pipeline.Models;
 namespace Nexo.Feature.Pipeline.Interfaces
 {
 /// <summary>
+/// Pipeline behavior interface for MediatR-style pipeline behaviors
+/// </summary>
+public interface IPipelineBehavior<in TRequest, TResponse>
+{
+    Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken);
+}
+
+/// <summary>
+/// Pipeline behavior interface for MediatR-style pipeline behaviors
+/// </summary>
+public interface IPipelineBehavior
+{
+    Task<TResponse> Handle<TRequest, TResponse>(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Request handler delegate
+/// </summary>
+public delegate Task<TResponse> RequestHandlerDelegate<TResponse>();
+
+/// <summary>
 /// Represents a composition of commands that work together to achieve a specific goal.
 /// Behaviors provide higher-level abstractions and can be composed into aggregators.
 /// </summary>
