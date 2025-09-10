@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -910,6 +911,8 @@ Provide detailed feature recommendation information.
             // Parse performance tips from AI response
             return new[] { "Use lazy loading", "Optimize images" };
         }
+
+        #endregion
 
         #endregion
     }

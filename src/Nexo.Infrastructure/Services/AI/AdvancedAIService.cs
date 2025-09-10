@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Models.AI;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI
 {
@@ -56,16 +58,17 @@ Requirements:
 Generate comprehensive NLP implementation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new NLPImplementationResult
                 {
                     Success = true,
                     Message = "Successfully implemented advanced NLP",
                     ImplementationId = nlpConfig.Id,
-                    ImplementedFeatures = ParseImplementedFeatures(response.Content),
-                    NLPMetrics = ParseNLPMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedFeatures = ParseImplementedFeatures(response.Response),
+                    NLPMetrics = ParseNLPMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully implemented advanced NLP: {NLPName}", nlpConfig.Name);
@@ -79,7 +82,7 @@ Generate comprehensive NLP implementation analysis.
                     Success = false,
                     Message = ex.Message,
                     ImplementationId = nlpConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -114,16 +117,17 @@ Requirements:
 Generate comprehensive context processing analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new ContextProcessingResult
                 {
                     Success = true,
                     Message = "Successfully created context-aware processing",
                     ProcessingId = contextConfig.Id,
-                    ProcessedContexts = ParseProcessedContexts(response.Content),
-                    ProcessingMetrics = ParseProcessingMetrics(response.Content),
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    ProcessedContexts = ParseProcessedContexts(response.Response),
+                    ProcessingMetrics = ParseProcessingMetrics(response.Response),
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created context-aware processing: {ContextName}", contextConfig.Name);
@@ -137,7 +141,7 @@ Generate comprehensive context processing analysis.
                     Success = false,
                     Message = ex.Message,
                     ProcessingId = contextConfig.Id,
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -172,16 +176,17 @@ Requirements:
 Generate comprehensive language support analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new LanguageSupportResult
                 {
                     Success = true,
                     Message = "Successfully added multi-language support",
                     SupportId = languageConfig.Id,
-                    SupportedLanguages = ParseSupportedLanguages(response.Content),
-                    LanguageMetrics = ParseLanguageMetrics(response.Content),
-                    SupportedAt = DateTimeOffset.UtcNow
+                    SupportedLanguages = ParseSupportedLanguages(response.Response),
+                    LanguageMetrics = ParseLanguageMetrics(response.Response),
+                    SupportedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully added multi-language support: {LanguageName}", languageConfig.Name);
@@ -195,7 +200,7 @@ Generate comprehensive language support analysis.
                     Success = false,
                     Message = ex.Message,
                     SupportId = languageConfig.Id,
-                    SupportedAt = DateTimeOffset.UtcNow
+                    SupportedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -230,16 +235,17 @@ Requirements:
 Generate comprehensive analysis implementation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new AnalysisImplementationResult
                 {
                     Success = true,
                     Message = "Successfully created advanced requirement analysis",
                     AnalysisId = analysisConfig.Id,
-                    ImplementedAnalyses = ParseImplementedAnalyses(response.Content),
-                    AnalysisMetrics = ParseAnalysisMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAnalyses = ParseImplementedAnalyses(response.Response),
+                    AnalysisMetrics = ParseAnalysisMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created advanced requirement analysis: {AnalysisName}", analysisConfig.Name);
@@ -253,7 +259,7 @@ Generate comprehensive analysis implementation analysis.
                     Success = false,
                     Message = ex.Message,
                     AnalysisId = analysisConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -288,16 +294,17 @@ Requirements:
 Generate comprehensive code generation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new CodeGenerationResult
                 {
                     Success = true,
                     Message = "Successfully implemented intelligent code generation",
                     GenerationId = generationConfig.Id,
-                    GeneratedCode = ParseGeneratedCode(response.Content),
-                    GenerationMetrics = ParseGenerationMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedCode = ParseGeneratedCode(response.Response),
+                    GenerationMetrics = ParseGenerationMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully implemented intelligent code generation: {GenerationName}", generationConfig.Name);
@@ -311,7 +318,7 @@ Generate comprehensive code generation analysis.
                     Success = false,
                     Message = ex.Message,
                     GenerationId = generationConfig.Id,
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -346,16 +353,17 @@ Requirements:
 Generate comprehensive code optimization analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new CodeOptimizationResult
                 {
                     Success = true,
                     Message = "Successfully created intelligent code optimization",
                     OptimizationId = optimizationConfig.Id,
-                    OptimizedCode = ParseOptimizedCode(response.Content),
-                    OptimizationMetrics = ParseOptimizationMetrics(response.Content),
-                    OptimizedAt = DateTimeOffset.UtcNow
+                    OptimizedCode = ParseOptimizedCode(response.Response),
+                    OptimizationMetrics = ParseOptimizationMetrics(response.Response),
+                    OptimizedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created intelligent code optimization: {OptimizationName}", optimizationConfig.Name);
@@ -369,7 +377,7 @@ Generate comprehensive code optimization analysis.
                     Success = false,
                     Message = ex.Message,
                     OptimizationId = optimizationConfig.Id,
-                    OptimizedAt = DateTimeOffset.UtcNow
+                    OptimizedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -404,16 +412,17 @@ Requirements:
 Generate comprehensive quality enhancement analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new QualityEnhancementResult
                 {
                     Success = true,
                     Message = "Successfully added code quality enhancement",
                     EnhancementId = qualityConfig.Id,
-                    EnhancedFeatures = ParseEnhancedFeatures(response.Content),
-                    QualityMetrics = ParseQualityMetrics(response.Content),
-                    EnhancedAt = DateTimeOffset.UtcNow
+                    EnhancedFeatures = ParseEnhancedFeatures(response.Response),
+                    QualityMetrics = ParseQualityMetrics(response.Response),
+                    EnhancedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully added code quality enhancement: {QualityName}", qualityConfig.Name);
@@ -427,7 +436,7 @@ Generate comprehensive quality enhancement analysis.
                     Success = false,
                     Message = ex.Message,
                     EnhancementId = qualityConfig.Id,
-                    EnhancedAt = DateTimeOffset.UtcNow
+                    EnhancedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -462,16 +471,17 @@ Requirements:
 Generate comprehensive testing strategy analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new TestingStrategyResult
                 {
                     Success = true,
                     Message = "Successfully created advanced testing strategies",
                     StrategyId = testingConfig.Id,
-                    CreatedStrategies = ParseCreatedStrategies(response.Content),
-                    TestingMetrics = ParseTestingMetrics(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedStrategies = ParseCreatedStrategies(response.Response),
+                    TestingMetrics = ParseTestingMetrics(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created advanced testing strategies: {TestingName}", testingConfig.Name);
@@ -485,7 +495,7 @@ Generate comprehensive testing strategy analysis.
                     Success = false,
                     Message = ex.Message,
                     StrategyId = testingConfig.Id,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -521,18 +531,19 @@ Requirements:
 Generate comprehensive advanced AI metrics.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var metrics = new AdvancedAIMetrics
                 {
-                    NLPAccuracy = ParseNLPAccuracy(response.Content),
-                    CodeGenerationQuality = ParseCodeGenerationQuality(response.Content),
-                    OptimizationEffectiveness = ParseOptimizationEffectiveness(response.Content),
-                    QualityImprovement = ParseQualityImprovement(response.Content),
-                    TestingCoverage = ParseTestingCoverage(response.Content),
-                    LanguageMetrics = ParseLanguageMetrics(response.Content),
-                    PerformanceMetrics = ParsePerformanceMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    NLPAccuracy = ParseNLPAccuracy(response.Response),
+                    CodeGenerationQuality = ParseCodeGenerationQuality(response.Response),
+                    OptimizationEffectiveness = ParseOptimizationEffectiveness(response.Response),
+                    QualityImprovement = ParseQualityImprovement(response.Response),
+                    TestingCoverage = ParseTestingCoverage(response.Response),
+                    LanguageMetrics = ParseLanguageMetrics(response.Response),
+                    PerformanceMetrics = ParsePerformanceMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated advanced AI metrics");
@@ -543,7 +554,7 @@ Generate comprehensive advanced AI metrics.
                 _logger.LogError(ex, "Error getting advanced AI metrics");
                 return new AdvancedAIMetrics
                 {
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }

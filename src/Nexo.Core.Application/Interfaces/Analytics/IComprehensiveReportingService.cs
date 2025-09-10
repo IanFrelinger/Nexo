@@ -206,4 +206,26 @@ namespace Nexo.Core.Application.Interfaces.Analytics
         Pdf,
         Html
     }
+
+    // Additional analytics models
+    public class AIAnalyticsReport
+    {
+        public int TotalRequests { get; set; }
+        public int SuccessfulRequests { get; set; }
+        public double SuccessRate { get; set; }
+        public TimeSpan AverageResponseTime { get; set; }
+        public Dictionary<string, int> RequestsByModel { get; set; } = new Dictionary<string, int>();
+        public List<string> TopFeatures { get; set; } = new List<string>();
+    }
+
+    public class CachePerformanceReport
+    {
+        public int TotalRequests { get; set; }
+        public int CacheHits { get; set; }
+        public int CacheMisses { get; set; }
+        public double HitRate { get; set; }
+        public TimeSpan AverageResponseTime { get; set; }
+        public Dictionary<string, double> PerformanceByKey { get; set; } = new Dictionary<string, double>();
+    }
+
 }

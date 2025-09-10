@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -390,7 +391,7 @@ namespace Nexo.Infrastructure.Services.Platform
         #region Private Methods
 
         private async Task<DesktopUIComponent> GenerateUIComponentForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             DesktopGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -442,7 +443,7 @@ Generate complete, production-ready UI component code.
         }
 
         private async Task<DesktopViewModel> GenerateViewModelForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             DesktopGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -1029,7 +1030,7 @@ Generate complete, production-ready build script.
         }
 
         private async Task<IEnumerable<DesktopTest>> GenerateTestsForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             DesktopGenerationOptions options,
             CancellationToken cancellationToken)
         {

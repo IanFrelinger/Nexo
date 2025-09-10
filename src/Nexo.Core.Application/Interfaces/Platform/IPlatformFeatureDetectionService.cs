@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Nexo.Core.Application.Models.Platform;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
@@ -57,5 +56,112 @@ namespace Nexo.Core.Application.Interfaces.Platform
             IEnumerable<string> features,
             string targetPlatform,
             CancellationToken cancellationToken = default);
+    }
+
+    // Platform-specific models for Platform Feature Detection
+    public class PlatformCapabilities
+    {
+        public string Platform { get; set; } = string.Empty;
+        public string Version { get; set; } = string.Empty;
+        public List<string> SupportedFeatures { get; set; } = new();
+        public Dictionary<string, object> Metadata { get; set; } = new();
+    }
+
+    public class FeatureAvailabilityMap
+    {
+        public string FeatureName { get; set; } = string.Empty;
+        public Dictionary<string, bool> PlatformSupport { get; set; } = new();
+        public List<string> SupportedPlatforms { get; set; } = new();
+    }
+
+    public class FeatureCompatibilityReport
+    {
+        public bool IsCompatible { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<string> CompatibleFeatures { get; set; } = new();
+        public List<string> IncompatibleFeatures { get; set; } = new();
+        public List<string> Recommendations { get; set; } = new();
+    }
+
+    public class PlatformRecommendations
+    {
+        public string Platform { get; set; } = string.Empty;
+        public List<string> RecommendedFeatures { get; set; } = new();
+        public List<string> AvoidFeatures { get; set; } = new();
+        public string Reasoning { get; set; } = string.Empty;
+    }
+
+    // Additional Platform Feature Detection models
+    public class UICapabilities
+    {
+        public string Platform { get; set; } = string.Empty;
+        public List<string> SupportedUI { get; set; } = new();
+        public List<string> SupportedLayouts { get; set; } = new();
+        public List<string> SupportedThemes { get; set; } = new();
+    }
+
+    public class DataCapabilities
+    {
+        public string Platform { get; set; } = string.Empty;
+        public List<string> SupportedDatabases { get; set; } = new();
+        public List<string> SupportedStorage { get; set; } = new();
+        public List<string> SupportedCaching { get; set; } = new();
+    }
+
+    public class NetworkCapabilities
+    {
+        public string Platform { get; set; } = string.Empty;
+        public List<string> SupportedProtocols { get; set; } = new();
+        public List<string> SupportedAuth { get; set; } = new();
+        public List<string> SupportedAPIs { get; set; } = new();
+    }
+
+    public class HardwareCapabilities
+    {
+        public string Platform { get; set; } = string.Empty;
+        public List<string> SupportedProcessors { get; set; } = new();
+        public List<string> SupportedMemory { get; set; } = new();
+        public List<string> SupportedStorage { get; set; } = new();
+    }
+
+    public class SecurityCapabilities
+    {
+        public string Platform { get; set; } = string.Empty;
+        public List<string> SupportedEncryption { get; set; } = new();
+        public List<string> SupportedAuth { get; set; } = new();
+        public List<string> SupportedSecurity { get; set; } = new();
+    }
+
+    public class PerformanceCapabilities
+    {
+        public string Platform { get; set; } = string.Empty;
+        public List<string> SupportedOptimizations { get; set; } = new();
+        public List<string> SupportedCaching { get; set; } = new();
+        public List<string> SupportedMonitoring { get; set; } = new();
+    }
+
+    public class FeatureAvailability
+    {
+        public string FeatureName { get; set; } = string.Empty;
+        public bool IsAvailable { get; set; }
+        public string Reason { get; set; } = string.Empty;
+        public List<string> Requirements { get; set; } = new();
+    }
+
+    public class FeatureRecommendation
+    {
+        public string FeatureName { get; set; } = string.Empty;
+        public string Recommendation { get; set; } = string.Empty;
+        public string Priority { get; set; } = string.Empty;
+        public List<string> Alternatives { get; set; } = new();
+    }
+
+    public class CompatibilityIssue
+    {
+        public string IssueType { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Severity { get; set; } = string.Empty;
+        public List<string> AffectedFeatures { get; set; } = new();
+        public List<string> Solutions { get; set; } = new();
     }
 }

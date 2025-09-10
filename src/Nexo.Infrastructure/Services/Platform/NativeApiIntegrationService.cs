@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -1030,6 +1031,8 @@ Provide detailed error handling validation.
             // Parse error handling recommendations from AI response
             return new[] { "Add comprehensive error handling", "Include error recovery logic" };
         }
+
+        #endregion
 
         #endregion
     }

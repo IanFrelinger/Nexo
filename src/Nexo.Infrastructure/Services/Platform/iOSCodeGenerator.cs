@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -308,7 +309,7 @@ namespace Nexo.Infrastructure.Services.Platform
         #region Private Methods
 
         private async Task<SwiftUIView> GenerateViewForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             iOSGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -407,7 +408,7 @@ Generate complete, production-ready Core Data model code.
         }
 
         private async Task<SwiftViewModel> GenerateViewModelForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             iOSGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -507,7 +508,7 @@ Generate complete, production-ready service code.
         }
 
         private async Task<MetalShader> GenerateMetalShaderForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             iOSGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -556,7 +557,7 @@ Generate complete, production-ready Metal shader code.
         }
 
         private async Task<IEnumerable<SwiftTest>> GenerateTestsForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             iOSGenerationOptions options,
             CancellationToken cancellationToken)
         {

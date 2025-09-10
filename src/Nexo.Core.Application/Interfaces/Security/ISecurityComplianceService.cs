@@ -130,15 +130,14 @@ namespace Nexo.Core.Application.Interfaces.Security
     }
 
     /// <summary>
-    /// Security recommendation model.
+    /// Security recommendation priority levels.
     /// </summary>
-    public class SecurityRecommendation
+    public enum RecommendationPriority
     {
-        public SecurityRecommendationType Type { get; set; }
-        public RecommendationPriority Priority { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Action { get; set; } = string.Empty;
+        Low,
+        Medium,
+        High,
+        Critical
     }
 
     /// <summary>

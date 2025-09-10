@@ -89,7 +89,6 @@ namespace Nexo.Infrastructure.Services.Performance
 
                 result.EndTime = DateTimeOffset.UtcNow;
                 result.Success = true;
-                result.TotalOptimizationTime = result.EndTime - result.StartTime;
 
                 _logger.LogInformation("Performance optimization completed in {Duration}ms", 
                     result.TotalOptimizationTime.TotalMilliseconds);
@@ -97,10 +96,10 @@ namespace Nexo.Infrastructure.Services.Performance
                 // Log optimization results for audit
                 await _auditLogger.LogAuditEventAsync(new AuditEvent
                 {
-                    EventType = "PerformanceOptimization",
+                    EventType = AuditEventType.SystemConfiguration,
                     Timestamp = DateTimeOffset.UtcNow,
                     UserId = "System",
-                    Details = $"Performance optimization completed with {result.GetTotalImprovements()} improvements"
+                    Description = $"Performance optimization completed with {result.GetTotalImprovements()} improvements"
                 }, cancellationToken);
 
                 return result;
@@ -152,7 +151,6 @@ namespace Nexo.Infrastructure.Services.Performance
                 benchmark.EndToEndMetrics = await BenchmarkEndToEndPerformanceAsync(cancellationToken);
 
                 benchmark.EndTime = DateTimeOffset.UtcNow;
-                benchmark.Duration = benchmark.EndTime - benchmark.StartTime;
                 benchmark.Success = true;
 
                 // Store benchmark results
@@ -176,7 +174,6 @@ namespace Nexo.Infrastructure.Services.Performance
                 benchmark.Success = false;
                 benchmark.ErrorMessage = ex.Message;
                 benchmark.EndTime = DateTimeOffset.UtcNow;
-                benchmark.Duration = benchmark.EndTime - benchmark.StartTime;
 
                 return new PerformanceBenchmarkResult
                 {
@@ -198,15 +195,15 @@ namespace Nexo.Infrastructure.Services.Performance
             try
             {
                 // Analyze cache performance
-                var cacheMetrics = await _cacheMonitor.GetCacheMetricsAsync(cancellationToken);
-                if (cacheMetrics.HitRate < 0.8)
+                var cacheReport = await _cacheMonitor.GenerateReportAsync(cancellationToken);
+                if (cacheReport.HitRate < 0.8)
                 {
                     recommendations.Add(new PerformanceRecommendation
                     {
                         Category = "Caching",
                         Priority = PerformancePriority.High,
                         Title = "Improve Cache Hit Rate",
-                        Description = $"Current cache hit rate is {cacheMetrics.HitRate:P1}. Consider increasing cache size or improving cache keys.",
+                        Description = $"Current cache hit rate is {cacheReport.HitRate:P1}. Consider increasing cache size or improving cache keys.",
                         EstimatedImpact = "20-30% performance improvement",
                         ImplementationEffort = "Medium"
                     });
@@ -287,13 +284,14 @@ namespace Nexo.Infrastructure.Services.Performance
                     {
                         // Calculate trends for different metrics
                         trends.CacheHitRateTrend = CalculateTrend(
-                            relevantBenchmarks.Select(b => b.CacheMetrics?.HitRate ?? 0).ToList());
+                            relevantBenchmarks.Select(b => b.CacheMetrics != null ? 
+                                (double)b.CacheMetrics.HitCount / Math.Max(b.CacheMetrics.HitCount + b.CacheMetrics.MissCount, 1) : 0).ToList());
                         
                         trends.AIResponseTimeTrend = CalculateTrend(
                             relevantBenchmarks.Select(b => b.AIMetrics?.AverageResponseTime.TotalMilliseconds ?? 0).ToList());
                         
                         trends.MemoryUsageTrend = CalculateTrend(
-                            relevantBenchmarks.Select(b => b.SystemMetrics?.MemoryUsageMB ?? 0).ToList());
+                            relevantBenchmarks.Select(b => (double)(b.SystemMetrics?.MemoryUsageMB ?? 0)).ToList());
                         
                         trends.OverallPerformanceTrend = CalculateOverallTrend(trends);
                     }
@@ -317,23 +315,23 @@ namespace Nexo.Infrastructure.Services.Performance
             try
             {
                 // Get current cache metrics
-                var metrics = await _cacheMonitor.GetCacheMetricsAsync(cancellationToken);
+                var cacheReport = await _cacheMonitor.GenerateReportAsync(cancellationToken);
                 
                 // Optimize cache configuration based on metrics
-                if (metrics.HitRate < 0.8)
+                if (cacheReport.HitRate < 0.8)
                 {
                     result.Recommendations.Add("Increase cache size");
                     result.Recommendations.Add("Improve cache key strategy");
                 }
                 
-                if (metrics.EvictionRate > 0.1)
+                if (cacheReport.PerformanceMetrics.ErrorCount > 0)
                 {
                     result.Recommendations.Add("Optimize eviction policy");
                     result.Recommendations.Add("Increase cache TTL");
                 }
                 
                 result.Success = true;
-                result.ImprovementPercentage = CalculateCacheImprovement(metrics);
+                result.ImprovementPercentage = CalculateCacheImprovement(cacheReport.PerformanceMetrics);
             }
             catch (Exception ex)
             {
@@ -487,7 +485,8 @@ namespace Nexo.Infrastructure.Services.Performance
         {
             try
             {
-                return await _cacheMonitor.GetCacheMetricsAsync(cancellationToken);
+                var report = await _cacheMonitor.GenerateReportAsync(cancellationToken);
+                return report.PerformanceMetrics;
             }
             catch (Exception ex)
             {
@@ -591,9 +590,10 @@ namespace Nexo.Infrastructure.Services.Performance
         private double CalculateCacheImprovement(CachePerformanceMetrics metrics)
         {
             // Calculate potential improvement based on current metrics
-            if (metrics.HitRate < 0.7) return 0.3; // 30% improvement
-            if (metrics.HitRate < 0.8) return 0.2; // 20% improvement
-            if (metrics.HitRate < 0.9) return 0.1; // 10% improvement
+            var hitRate = metrics.HitCount / Math.Max(metrics.HitCount + metrics.MissCount, 1);
+            if (hitRate < 0.7) return 0.3; // 30% improvement
+            if (hitRate < 0.8) return 0.2; // 20% improvement
+            if (hitRate < 0.9) return 0.1; // 10% improvement
             return 0.05; // 5% improvement
         }
 

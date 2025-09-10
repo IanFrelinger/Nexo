@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Services.Performance
         /// Optimizes model loading based on usage patterns and resource availability.
         /// </summary>
         public async Task<ModelLoadingOptimization> OptimizeModelLoadingAsync(
-            string modelName, 
+            string modelName,
             ModelLoadingContext context,
             CancellationToken cancellationToken = default)
         {
@@ -24,7 +24,7 @@ namespace Nexo.Infrastructure.Services.Performance
 
             return new ModelLoadingOptimization
             {
-                ModelName = modelName,
+                    ModelName = modelName,
                 OptimizedAt = DateTimeOffset.UtcNow,
                 LoadingStrategy = SelectOptimalStrategy(context),
                 PreloadingRecommendations = GeneratePreloadingRecommendations(modelName, context),
@@ -61,8 +61,8 @@ namespace Nexo.Infrastructure.Services.Performance
                 SuccessfullyPreloaded = totalPreloaded,
                 FailedPreloads = modelNames.Count() - totalPreloaded,
                 Results = results,
-                TotalPreloadingTime = results.Sum(r => r.PreloadingTime),
-                AveragePreloadingTime = results.Any() ? TimeSpan.FromTicks(results.Average(r => r.PreloadingTime.Ticks)) : TimeSpan.Zero
+                TotalPreloadingTime = TimeSpan.FromTicks(results.Sum(r => r.PreloadingTime.Ticks)),
+                AveragePreloadingTime = results.Any() ? TimeSpan.FromTicks((long)results.Average(r => r.PreloadingTime.Ticks)) : TimeSpan.Zero
             };
         }
 
@@ -77,8 +77,8 @@ namespace Nexo.Infrastructure.Services.Performance
             await Task.Delay(monitoringDuration, cancellationToken); // Simulate monitoring
 
             return new ModelPerformanceReport
-            {
-                ModelName = modelName,
+                {
+                    ModelName = modelName,
                 MonitoringStartTime = DateTimeOffset.UtcNow.Add(-monitoringDuration),
                 MonitoringEndTime = DateTimeOffset.UtcNow,
                 TotalRequests = 100,

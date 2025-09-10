@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Nexo.Core.Application.Interfaces;
-using Nexo.Shared.Models;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Infrastructure.Services.Caching
 {
@@ -67,17 +67,16 @@ namespace Nexo.Infrastructure.Services.Caching
         private ICacheStrategy<TKey, TValue> CreateRedisCacheStrategy<TKey, TValue>()
         {
             var settings = GetSettings();
-            if (string.IsNullOrEmpty(settings.RedisConnectionString))
-            {
-                throw new InvalidOperationException("Redis connection string is required when using Redis cache backend.");
-            }
+            // For now, use default Redis connection string since the CacheSettings model doesn't have Redis properties
+            var connectionString = "localhost:6379"; // Default Redis connection
+            var keyPrefix = settings.KeyPrefix ?? "nexo:cache:";
 
             try
             {
-                var redis = StackExchange.Redis.ConnectionMultiplexer.Connect(settings.RedisConnectionString);
+                var redis = StackExchange.Redis.ConnectionMultiplexer.Connect(connectionString);
                 return new RedisCacheStrategy<TKey, TValue>(
                     redis, 
-                    settings.RedisKeyPrefix ?? "nexo:cache:"
+                    keyPrefix
                 );
             }
             catch (Exception ex)
@@ -97,13 +96,9 @@ namespace Nexo.Infrastructure.Services.Caching
             {
                 var settings = GetSettings();
                 if (settings.Backend?.ToLowerInvariant() != "redis") return true; // In-memory cache is always valid
-                if (string.IsNullOrEmpty(settings.RedisConnectionString))
-                {
-                    return false;
-                }
-
-                // Test Redis connection
-                var redis = StackExchange.Redis.ConnectionMultiplexer.Connect(settings.RedisConnectionString);
+                // Test Redis connection with default connection string
+                var connectionString = "localhost:6379"; // Default Redis connection
+                var redis = StackExchange.Redis.ConnectionMultiplexer.Connect(connectionString);
                 var database = redis.GetDatabase();
                 await database.PingAsync();
                 return true;

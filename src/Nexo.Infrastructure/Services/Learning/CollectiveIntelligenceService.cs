@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Learning;
 using Nexo.Core.Application.Models.Learning;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Learning
 {
@@ -60,17 +62,18 @@ Requirements:
 Generate comprehensive knowledge sharing analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new KnowledgeSharingResult
                 {
                     Success = true,
                     Message = "Successfully shared feature knowledge",
                     KnowledgeId = featureKnowledge.Id,
-                    ShareCount = ParseShareCount(response.Content),
-                    Recipients = ParseRecipients(response.Content),
-                    Metrics = ParseSharingMetrics(response.Content),
-                    SharedAt = DateTimeOffset.UtcNow
+                    ShareCount = ParseShareCount(response.Response),
+                    Recipients = ParseRecipients(response.Response),
+                    Metrics = ParseSharingMetrics(response.Response),
+                    SharedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully shared feature knowledge: {KnowledgeType}", featureKnowledge.KnowledgeType);
@@ -84,7 +87,7 @@ Generate comprehensive knowledge sharing analysis.
                     Success = false,
                     Message = ex.Message,
                     KnowledgeId = featureKnowledge.Id,
-                    SharedAt = DateTimeOffset.UtcNow
+                    SharedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -122,17 +125,18 @@ Requirements:
 Generate comprehensive cross-project learning analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new CrossProjectLearningResult
                 {
                     Success = true,
                     Message = "Successfully learned from project",
                     ProjectId = projectData.Id,
-                    LearnedPatterns = ParseLearnedPatterns(response.Content),
-                    Insights = ParseLearningInsights(response.Content),
-                    Metrics = ParseLearningMetrics(response.Content),
-                    LearnedAt = DateTimeOffset.UtcNow
+                    LearnedPatterns = ParseLearnedPatterns(response.Response),
+                    Insights = ParseLearningInsights(response.Response),
+                    Metrics = ParseLearningMetrics(response.Response),
+                    LearnedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully learned from project: {ProjectName}", projectData.Name);
@@ -146,7 +150,7 @@ Generate comprehensive cross-project learning analysis.
                     Success = false,
                     Message = ex.Message,
                     ProjectId = projectData.Id,
-                    LearnedAt = DateTimeOffset.UtcNow
+                    LearnedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -184,18 +188,19 @@ Requirements:
 Generate comprehensive pattern recognition analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new PatternRecognitionResult
                 {
                     Success = true,
                     Message = "Successfully recognized industry pattern",
                     PatternId = industryPattern.Id,
-                    Confidence = ParseRecognitionConfidence(response.Content),
-                    Matches = ParsePatternMatches(response.Content),
-                    Recommendations = ParsePatternRecommendations(response.Content),
-                    Metadata = ParseRecognitionMetadata(response.Content),
-                    RecognizedAt = DateTimeOffset.UtcNow
+                    Confidence = ParseRecognitionConfidence(response.Response),
+                    Matches = ParsePatternMatches(response.Response),
+                    Recommendations = ParsePatternRecommendations(response.Response),
+                    Metadata = ParseRecognitionMetadata(response.Response),
+                    RecognizedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully recognized industry pattern: {PatternName}", industryPattern.Name);
@@ -209,7 +214,7 @@ Generate comprehensive pattern recognition analysis.
                     Success = false,
                     Message = ex.Message,
                     PatternId = industryPattern.Id,
-                    RecognizedAt = DateTimeOffset.UtcNow
+                    RecognizedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -245,16 +250,17 @@ Requirements:
 Generate comprehensive database creation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new DatabaseCreationResult
                 {
                     Success = true,
                     Message = "Successfully created intelligence database",
                     DatabaseId = Guid.NewGuid().ToString(),
-                    RecordCount = ParseRecordCount(response.Content),
-                    Schema = ParseDatabaseSchema(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    RecordCount = ParseRecordCount(response.Response),
+                    Schema = ParseDatabaseSchema(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created intelligence database for data type: {DataType}", intelligenceData.DataType);
@@ -268,7 +274,7 @@ Generate comprehensive database creation analysis.
                     Success = false,
                     Message = ex.Message,
                     DatabaseId = Guid.NewGuid().ToString(),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -304,18 +310,19 @@ Requirements:
 Generate comprehensive intelligence search analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new IntelligenceSearchResult
                 {
                     Success = true,
                     Message = "Successfully searched collective intelligence",
-                    Items = ParseSearchItems(response.Content),
-                    TotalCount = ParseTotalCount(response.Content),
-                    PageCount = ParsePageCount(response.Content),
+                    Items = ParseSearchItems(response.Response),
+                    TotalCount = ParseTotalCount(response.Response),
+                    PageCount = ParsePageCount(response.Response),
                     CurrentPage = 1,
-                    Facets = ParseSearchFacets(response.Content),
-                    SearchedAt = DateTimeOffset.UtcNow
+                    Facets = ParseSearchFacets(response.Response),
+                    SearchedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully searched collective intelligence with query: {Query}", searchQuery.Query);
@@ -328,7 +335,7 @@ Generate comprehensive intelligence search analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    SearchedAt = DateTimeOffset.UtcNow
+                    SearchedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -364,17 +371,18 @@ Requirements:
 Generate comprehensive intelligence statistics.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var statistics = new IntelligenceStatistics
                 {
-                    TotalItems = ParseTotalItems(response.Content),
-                    TotalProjects = ParseTotalProjects(response.Content),
-                    TotalPatterns = ParseTotalPatterns(response.Content),
-                    TotalKnowledge = ParseTotalKnowledge(response.Content),
-                    CategoryCounts = ParseCategoryCounts(response.Content),
-                    QualityMetrics = ParseQualityMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    TotalItems = ParseTotalItems(response.Response),
+                    TotalProjects = ParseTotalProjects(response.Response),
+                    TotalPatterns = ParseTotalPatterns(response.Response),
+                    TotalKnowledge = ParseTotalKnowledge(response.Response),
+                    CategoryCounts = ParseCategoryCounts(response.Response),
+                    QualityMetrics = ParseQualityMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated collective intelligence statistics");
@@ -385,7 +393,7 @@ Generate comprehensive intelligence statistics.
                 _logger.LogError(ex, "Error getting collective intelligence statistics");
                 return new IntelligenceStatistics
                 {
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -421,17 +429,18 @@ Requirements:
 Generate comprehensive intelligence export.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var export = new IntelligenceExport
                 {
                     Id = Guid.NewGuid().ToString(),
                     Format = exportOptions.Format,
-                    Data = ParseExportData(response.Content),
-                    Size = ParseExportSize(response.Content),
-                    ItemCount = ParseItemCount(response.Content),
-                    ExportedAt = DateTimeOffset.UtcNow,
-                    Metadata = ParseExportMetadata(response.Content)
+                    Data = ParseExportData(response.Response),
+                    Size = ParseExportSize(response.Response),
+                    ItemCount = ParseItemCount(response.Response),
+                    ExportedAt = DateTimeOffset.UtcNow.DateTime,
+                    Metadata = ParseExportMetadata(response.Response)
                 };
 
                 _logger.LogInformation("Successfully exported collective intelligence in format: {Format}", exportOptions.Format);
@@ -444,7 +453,7 @@ Generate comprehensive intelligence export.
                 {
                     Id = Guid.NewGuid().ToString(),
                     Format = exportOptions.Format,
-                    ExportedAt = DateTimeOffset.UtcNow
+                    ExportedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -478,18 +487,19 @@ Requirements:
 Generate comprehensive intelligence import analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new IntelligenceImportResult
                 {
                     Success = true,
                     Message = "Successfully imported collective intelligence data",
-                    ImportedCount = ParseImportedCount(response.Content),
-                    SkippedCount = ParseSkippedCount(response.Content),
-                    ErrorCount = ParseErrorCount(response.Content),
-                    Errors = ParseImportErrors(response.Content),
-                    Metrics = ParseImportMetrics(response.Content),
-                    ImportedAt = DateTimeOffset.UtcNow
+                    ImportedCount = ParseImportedCount(response.Response),
+                    SkippedCount = ParseSkippedCount(response.Response),
+                    ErrorCount = ParseErrorCount(response.Response),
+                    Errors = ParseImportErrors(response.Response),
+                    Metrics = ParseImportMetrics(response.Response),
+                    ImportedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully imported collective intelligence data in format: {Format}", importData.Format);
@@ -502,7 +512,7 @@ Generate comprehensive intelligence import analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    ImportedAt = DateTimeOffset.UtcNow
+                    ImportedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }

@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Collaboration;
 using Nexo.Core.Application.Models.Collaboration;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Collaboration
 {
@@ -58,16 +60,17 @@ Requirements:
 Generate comprehensive team development analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new TeamDevelopmentResult
                 {
                     Success = true,
                     Message = "Successfully implemented team-based development",
                     TeamId = teamConfig.Id,
-                    ImplementedFeatures = ParseImplementedFeatures(response.Content),
-                    DevelopmentMetrics = ParseDevelopmentMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedFeatures = ParseImplementedFeatures(response.Response),
+                    DevelopmentMetrics = ParseDevelopmentMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully implemented team-based development for team: {TeamName}", teamConfig.Name);
@@ -81,7 +84,7 @@ Generate comprehensive team development analysis.
                     Success = false,
                     Message = ex.Message,
                     TeamId = teamConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -116,16 +119,17 @@ Requirements:
 Generate comprehensive workflow creation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new WorkflowCreationResult
                 {
                     Success = true,
                     Message = "Successfully created collaboration workflows",
                     WorkflowId = workflowConfig.Id,
-                    CreatedWorkflows = ParseCreatedWorkflows(response.Content),
-                    WorkflowMetrics = ParseWorkflowMetrics(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedWorkflows = ParseCreatedWorkflows(response.Response),
+                    WorkflowMetrics = ParseWorkflowMetrics(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created collaboration workflows: {WorkflowName}", workflowConfig.Name);
@@ -139,7 +143,7 @@ Generate comprehensive workflow creation analysis.
                     Success = false,
                     Message = ex.Message,
                     WorkflowId = workflowConfig.Id,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -174,16 +178,17 @@ Requirements:
 Generate comprehensive analytics implementation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new AnalyticsImplementationResult
                 {
                     Success = true,
                     Message = "Successfully added team analytics",
                     AnalyticsId = analyticsConfig.Id,
-                    ImplementedAnalytics = ParseImplementedAnalytics(response.Content),
-                    AnalyticsMetrics = ParseAnalyticsMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAnalytics = ParseImplementedAnalytics(response.Response),
+                    AnalyticsMetrics = ParseAnalyticsMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully added team analytics: {AnalyticsName}", analyticsConfig.Name);
@@ -197,7 +202,7 @@ Generate comprehensive analytics implementation analysis.
                     Success = false,
                     Message = ex.Message,
                     AnalyticsId = analyticsConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -232,16 +237,17 @@ Requirements:
 Generate comprehensive optimization implementation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new OptimizationImplementationResult
                 {
                     Success = true,
                     Message = "Successfully created team optimization features",
                     OptimizationId = optimizationConfig.Id,
-                    ImplementedOptimizations = ParseImplementedOptimizations(response.Content),
-                    OptimizationMetrics = ParseOptimizationMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedOptimizations = ParseImplementedOptimizations(response.Response),
+                    OptimizationMetrics = ParseOptimizationMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created team optimization features: {OptimizationName}", optimizationConfig.Name);
@@ -255,7 +261,7 @@ Generate comprehensive optimization implementation analysis.
                     Success = false,
                     Message = ex.Message,
                     OptimizationId = optimizationConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -292,19 +298,20 @@ Requirements:
 Generate comprehensive collaboration metrics.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var metrics = new CollaborationMetrics
                 {
-                    TotalTeams = ParseTotalTeams(response.Content),
-                    ActiveTeams = ParseActiveTeams(response.Content),
-                    TotalMembers = ParseTotalMembers(response.Content),
-                    ActiveMembers = ParseActiveMembers(response.Content),
-                    CollaborationScore = ParseCollaborationScore(response.Content),
-                    ProductivityScore = ParseProductivityScore(response.Content),
-                    TeamMetrics = ParseTeamMetrics(response.Content),
-                    PerformanceMetrics = ParsePerformanceMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    TotalTeams = ParseTotalTeams(response.Response),
+                    ActiveTeams = ParseActiveTeams(response.Response),
+                    TotalMembers = ParseTotalMembers(response.Response),
+                    ActiveMembers = ParseActiveMembers(response.Response),
+                    CollaborationScore = ParseCollaborationScore(response.Response),
+                    ProductivityScore = ParseProductivityScore(response.Response),
+                    TeamMetrics = ParseTeamMetrics(response.Response),
+                    PerformanceMetrics = ParsePerformanceMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated team collaboration metrics");
@@ -315,7 +322,7 @@ Generate comprehensive collaboration metrics.
                 _logger.LogError(ex, "Error getting team collaboration metrics");
                 return new CollaborationMetrics
                 {
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -350,16 +357,17 @@ Requirements:
 Generate comprehensive dashboard creation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new DashboardCreationResult
                 {
                     Success = true,
                     Message = "Successfully created team performance dashboard",
                     DashboardId = dashboardConfig.Id,
-                    CreatedDashboards = ParseCreatedDashboards(response.Content),
-                    DashboardMetrics = ParseDashboardMetrics(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedDashboards = ParseCreatedDashboards(response.Response),
+                    DashboardMetrics = ParseDashboardMetrics(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created team performance dashboard: {DashboardName}", dashboardConfig.Name);
@@ -373,7 +381,7 @@ Generate comprehensive dashboard creation analysis.
                     Success = false,
                     Message = ex.Message,
                     DashboardId = dashboardConfig.Id,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -408,16 +416,17 @@ Requirements:
 Generate comprehensive communication implementation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new CommunicationImplementationResult
                 {
                     Success = true,
                     Message = "Successfully implemented team communication",
                     CommunicationId = communicationConfig.Id,
-                    ImplementedChannels = ParseImplementedChannels(response.Content),
-                    CommunicationMetrics = ParseCommunicationMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedChannels = ParseImplementedChannels(response.Response),
+                    CommunicationMetrics = ParseCommunicationMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully implemented team communication: {CommunicationName}", communicationConfig.Name);
@@ -431,7 +440,7 @@ Generate comprehensive communication implementation analysis.
                     Success = false,
                     Message = ex.Message,
                     CommunicationId = communicationConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -466,16 +475,17 @@ Requirements:
 Generate comprehensive knowledge sharing analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new KnowledgeSharingResult
                 {
                     Success = true,
                     Message = "Successfully created team knowledge sharing",
                     KnowledgeId = knowledgeConfig.Id,
-                    CreatedKnowledge = ParseCreatedKnowledge(response.Content),
-                    KnowledgeMetrics = ParseKnowledgeMetrics(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedKnowledge = ParseCreatedKnowledge(response.Response),
+                    KnowledgeMetrics = ParseKnowledgeMetrics(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created team knowledge sharing: {KnowledgeName}", knowledgeConfig.Name);
@@ -489,7 +499,7 @@ Generate comprehensive knowledge sharing analysis.
                     Success = false,
                     Message = ex.Message,
                     KnowledgeId = knowledgeConfig.Id,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }

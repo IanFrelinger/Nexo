@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Predictive;
 using Nexo.Core.Application.Models.Predictive;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Predictive
 {
@@ -57,16 +59,17 @@ Requirements:
 Generate comprehensive predictive analytics analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new PredictiveAnalyticsResult
                 {
                     Success = true,
                     Message = "Successfully implemented predictive analytics",
                     AnalyticsId = analyticsConfig.Id,
-                    ImplementedAnalytics = ParseImplementedAnalytics(response.Content),
-                    AnalyticsMetrics = ParseAnalyticsMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAnalytics = ParseImplementedAnalytics(response.Response),
+                    AnalyticsMetrics = ParseAnalyticsMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully implemented predictive analytics: {AnalyticsName}", analyticsConfig.Name);
@@ -80,7 +83,7 @@ Generate comprehensive predictive analytics analysis.
                     Success = false,
                     Message = ex.Message,
                     AnalyticsId = analyticsConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -115,18 +118,19 @@ Requirements:
 Generate comprehensive complexity prediction analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new ComplexityPredictionResult
                 {
                     Success = true,
                     Message = "Successfully created feature complexity prediction",
                     PredictionId = complexityConfig.Id,
-                    PredictedComplexity = ParsePredictedComplexity(response.Content),
-                    ComplexityLevel = ParseComplexityLevel(response.Content),
-                    ComplexityFactors = ParseComplexityFactors(response.Content),
-                    PredictionMetrics = ParsePredictionMetrics(response.Content),
-                    PredictedAt = DateTimeOffset.UtcNow
+                    PredictedComplexity = ParsePredictedComplexity(response.Response),
+                    ComplexityLevel = ParseComplexityLevel(response.Response),
+                    ComplexityFactors = ParseComplexityFactors(response.Response),
+                    PredictionMetrics = ParsePredictionMetrics(response.Response),
+                    PredictedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created feature complexity prediction: {ComplexityName}", complexityConfig.Name);
@@ -140,7 +144,7 @@ Generate comprehensive complexity prediction analysis.
                     Success = false,
                     Message = ex.Message,
                     PredictionId = complexityConfig.Id,
-                    PredictedAt = DateTimeOffset.UtcNow
+                    PredictedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -175,18 +179,19 @@ Requirements:
 Generate comprehensive time estimation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new TimeEstimationResult
                 {
                     Success = true,
                     Message = "Successfully added development time estimation",
                     EstimationId = estimationConfig.Id,
-                    EstimatedTime = ParseEstimatedTime(response.Content),
-                    ConfidenceInterval = ParseConfidenceInterval(response.Content),
-                    TimeFactors = ParseTimeFactors(response.Content),
-                    EstimationMetrics = ParseEstimationMetrics(response.Content),
-                    EstimatedAt = DateTimeOffset.UtcNow
+                    EstimatedTime = ParseEstimatedTime(response.Response),
+                    ConfidenceInterval = ParseConfidenceInterval(response.Response),
+                    TimeFactors = ParseTimeFactors(response.Response),
+                    EstimationMetrics = ParseEstimationMetrics(response.Response),
+                    EstimatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully added development time estimation: {EstimationName}", estimationConfig.Name);
@@ -200,7 +205,7 @@ Generate comprehensive time estimation analysis.
                     Success = false,
                     Message = ex.Message,
                     EstimationId = estimationConfig.Id,
-                    EstimatedAt = DateTimeOffset.UtcNow
+                    EstimatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -235,19 +240,20 @@ Requirements:
 Generate comprehensive risk assessment analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new RiskAssessmentResult
                 {
                     Success = true,
                     Message = "Successfully created risk assessment capabilities",
                     AssessmentId = riskConfig.Id,
-                    RiskScore = ParseRiskScore(response.Content),
-                    RiskLevel = ParseRiskLevel(response.Content),
-                    IdentifiedRisks = ParseIdentifiedRisks(response.Content),
-                    MitigationStrategies = ParseMitigationStrategies(response.Content),
-                    AssessmentMetrics = ParseAssessmentMetrics(response.Content),
-                    AssessedAt = DateTimeOffset.UtcNow
+                    RiskScore = ParseRiskScore(response.Response),
+                    RiskLevel = ParseRiskLevel(response.Response),
+                    IdentifiedRisks = ParseIdentifiedRisks(response.Response),
+                    MitigationStrategies = ParseMitigationStrategies(response.Response),
+                    AssessmentMetrics = ParseAssessmentMetrics(response.Response),
+                    AssessedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created risk assessment capabilities: {RiskName}", riskConfig.Name);
@@ -261,7 +267,7 @@ Generate comprehensive risk assessment analysis.
                     Success = false,
                     Message = ex.Message,
                     AssessmentId = riskConfig.Id,
-                    AssessedAt = DateTimeOffset.UtcNow
+                    AssessedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -298,19 +304,20 @@ Requirements:
 Generate comprehensive predictive development metrics.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var metrics = new PredictiveDevelopmentMetrics
                 {
-                    PredictionAccuracy = ParsePredictionAccuracy(response.Content),
-                    ComplexityPredictionAccuracy = ParseComplexityPredictionAccuracy(response.Content),
-                    TimeEstimationAccuracy = ParseTimeEstimationAccuracy(response.Content),
-                    RiskAssessmentAccuracy = ParseRiskAssessmentAccuracy(response.Content),
-                    TotalPredictions = ParseTotalPredictions(response.Content),
-                    SuccessfulPredictions = ParseSuccessfulPredictions(response.Content),
-                    CategoryMetrics = ParseCategoryMetrics(response.Content),
-                    PerformanceMetrics = ParsePerformanceMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    PredictionAccuracy = ParsePredictionAccuracy(response.Response),
+                    ComplexityPredictionAccuracy = ParseComplexityPredictionAccuracy(response.Response),
+                    TimeEstimationAccuracy = ParseTimeEstimationAccuracy(response.Response),
+                    RiskAssessmentAccuracy = ParseRiskAssessmentAccuracy(response.Response),
+                    TotalPredictions = ParseTotalPredictions(response.Response),
+                    SuccessfulPredictions = ParseSuccessfulPredictions(response.Response),
+                    CategoryMetrics = ParseCategoryMetrics(response.Response),
+                    PerformanceMetrics = ParsePerformanceMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated predictive development metrics");
@@ -321,7 +328,7 @@ Generate comprehensive predictive development metrics.
                 _logger.LogError(ex, "Error getting predictive development metrics");
                 return new PredictiveDevelopmentMetrics
                 {
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -356,16 +363,17 @@ Requirements:
 Generate comprehensive dashboard creation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new PredictiveDashboardResult
                 {
                     Success = true,
                     Message = "Successfully created predictive development dashboard",
                     DashboardId = dashboardConfig.Id,
-                    CreatedDashboards = ParseCreatedDashboards(response.Content),
-                    DashboardMetrics = ParseDashboardMetrics(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedDashboards = ParseCreatedDashboards(response.Response),
+                    DashboardMetrics = ParseDashboardMetrics(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created predictive development dashboard: {DashboardName}", dashboardConfig.Name);
@@ -379,7 +387,7 @@ Generate comprehensive dashboard creation analysis.
                     Success = false,
                     Message = ex.Message,
                     DashboardId = dashboardConfig.Id,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -414,16 +422,17 @@ Requirements:
 Generate comprehensive recommendation implementation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new RecommendationImplementationResult
                 {
                     Success = true,
                     Message = "Successfully implemented predictive recommendations",
                     ImplementationId = recommendationConfig.Id,
-                    ImplementedRecommendations = ParseImplementedRecommendations(response.Content),
-                    RecommendationMetrics = ParseRecommendationMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedRecommendations = ParseImplementedRecommendations(response.Response),
+                    RecommendationMetrics = ParseRecommendationMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully implemented predictive recommendations: {RecommendationName}", recommendationConfig.Name);
@@ -437,7 +446,7 @@ Generate comprehensive recommendation implementation analysis.
                     Success = false,
                     Message = ex.Message,
                     ImplementationId = recommendationConfig.Id,
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -472,16 +481,17 @@ Requirements:
 Generate comprehensive report creation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new ReportCreationResult
                 {
                     Success = true,
                     Message = "Successfully created predictive development reports",
                     ReportId = reportConfig.Id,
-                    CreatedReports = ParseCreatedReports(response.Content),
-                    ReportMetrics = ParseReportMetrics(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedReports = ParseCreatedReports(response.Response),
+                    ReportMetrics = ParseReportMetrics(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created predictive development reports: {ReportName}", reportConfig.Name);
@@ -495,7 +505,7 @@ Generate comprehensive report creation analysis.
                     Success = false,
                     Message = ex.Message,
                     ReportId = reportConfig.Id,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }

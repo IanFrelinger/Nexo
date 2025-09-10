@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -39,67 +41,73 @@ namespace Nexo.Infrastructure.Services.Platform
 
             var result = new WebGenerationResult
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                StartTime = DateTimeOffset.UtcNow,
-                Options = options
+                Success = false,
+                Message = "Starting web code generation"
             };
 
             try
             {
                 // 1. Generate React/Vue Components
-                if (options.GenerateComponents)
+                if (options.UseReact || options.UseVue || options.UseAngular)
                 {
-                    result.Components = await GenerateComponentsAsync(applicationLogic, options, cancellationToken);
+                    var components = await GenerateComponentsAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(components.Select(c => c.Name));
                 }
 
                 // 2. Generate State Management
-                if (options.GenerateStateManagement)
+                if (options.UseStateManagement)
                 {
-                    result.StateManagement = await GenerateStateManagementAsync(applicationLogic, options, cancellationToken);
+                    var stateManagement = await GenerateStateManagementAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.Add(stateManagement.Name);
                 }
 
                 // 3. Generate API Layer
-                if (options.GenerateApiLayer)
+                if (options.UseApiLayer)
                 {
-                    result.ApiLayer = await GenerateApiLayerAsync(applicationLogic, options, cancellationToken);
+                    var apiLayer = await GenerateApiLayerAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.Add(apiLayer.Name);
                 }
 
                 // 4. Generate WebAssembly Modules
-                if (options.GenerateWebAssembly)
+                if (options.UseWebAssembly)
                 {
-                    result.WebAssemblyModules = await GenerateWebAssemblyModulesAsync(applicationLogic, options, cancellationToken);
+                    var webAssemblyModules = await GenerateWebAssemblyModulesAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(webAssemblyModules.Select(m => m.Name));
                 }
 
                 // 5. Generate PWA Configuration
-                if (options.GeneratePWA)
+                if (options.UsePWA)
                 {
-                    result.PWAConfiguration = await GeneratePWAConfigurationAsync(applicationLogic, options, cancellationToken);
+                    var pwaConfiguration = await GeneratePWAConfigurationAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.Add(pwaConfiguration.Name);
                 }
 
                 // 6. Generate Service Workers
-                if (options.GenerateServiceWorkers)
+                if (options.UseServiceWorker)
                 {
-                    result.ServiceWorkers = await GenerateServiceWorkersAsync(applicationLogic, options, cancellationToken);
+                    var serviceWorkers = await GenerateServiceWorkersAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(serviceWorkers.Select(s => s.Name));
                 }
 
                 // 7. Generate Build Configuration
-                if (options.GenerateBuildConfiguration)
+                if (options.UseBuildConfiguration)
                 {
-                    result.BuildConfiguration = await GenerateBuildConfigurationAsync(applicationLogic, options, cancellationToken);
+                    var buildConfiguration = await GenerateBuildConfigurationAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.Add(buildConfiguration.Name);
                 }
 
                 // 8. Generate Tests
-                if (options.GenerateTests)
+                if (options.UseTest)
                 {
-                    result.Tests = await GenerateTestsAsync(applicationLogic, options, cancellationToken);
+                    var tests = await GenerateTestsAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(tests.Select(t => t.Name));
                 }
 
-                result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 result.Success = true;
+                result.Message = "Web code generation completed successfully";
 
-                _logger.LogInformation("Web code generation completed successfully in {Duration}ms", 
-                    result.Duration.TotalMilliseconds);
+                _logger.LogInformation("Web code generation completed successfully with {FileCount} files generated", 
+                    result.GeneratedFiles.Count);
 
                 return result;
             }
@@ -107,9 +115,8 @@ namespace Nexo.Infrastructure.Services.Platform
             {
                 _logger.LogError(ex, "Error during web code generation");
                 result.Success = false;
-                result.ErrorMessage = ex.Message;
-                result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
+                result.Message = ex.Message;
+                result.Errors.Add(ex.Message);
                 return result;
             }
         }
@@ -151,8 +158,7 @@ namespace Nexo.Infrastructure.Services.Platform
         {
             var stateManagement = new WebStateManagement
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                Framework = options.Framework
+                Name = "StateManagement"
             };
 
             try
@@ -181,19 +187,14 @@ namespace Nexo.Infrastructure.Services.Platform
                     reducers.Add(reducer);
                 }
 
-                stateManagement.Stores = stores;
-                stateManagement.Actions = actions;
-                stateManagement.Reducers = reducers;
-                stateManagement.GeneratedAt = DateTimeOffset.UtcNow;
-                stateManagement.Success = true;
+                stateManagement.Content = $"Generated {stores.Count} stores, {actions.Count} actions, {reducers.Count} reducers";
 
                 return stateManagement;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating state management");
-                stateManagement.Success = false;
-                stateManagement.ErrorMessage = ex.Message;
+                stateManagement.Content = $"Error: {ex.Message}";
                 return stateManagement;
             }
         }
@@ -208,8 +209,7 @@ namespace Nexo.Infrastructure.Services.Platform
         {
             var apiLayer = new WebApiLayer
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                BaseUrl = options.ApiBaseUrl
+                Name = "ApiLayer"
             };
 
             try
@@ -228,19 +228,14 @@ namespace Nexo.Infrastructure.Services.Platform
                 // Generate types
                 var types = await GenerateApiTypesAsync(applicationLogic, options, cancellationToken);
 
-                apiLayer.Services = services;
-                apiLayer.Client = client;
-                apiLayer.Types = types;
-                apiLayer.GeneratedAt = DateTimeOffset.UtcNow;
-                apiLayer.Success = true;
+                apiLayer.Content = $"Generated {services.Count} services, 1 client, {types.Count()} types";
 
                 return apiLayer;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating API layer");
-                apiLayer.Success = false;
-                apiLayer.ErrorMessage = ex.Message;
+                apiLayer.Content = $"Error: {ex.Message}";
                 return apiLayer;
             }
         }
@@ -258,7 +253,7 @@ namespace Nexo.Infrastructure.Services.Platform
             try
             {
                 // Generate performance-critical modules
-                foreach (var service in applicationLogic.Services.Where(s => s.IsPerformanceCritical))
+                foreach (var service in applicationLogic.Services)
                 {
                     var module = await GenerateWebAssemblyModuleForServiceAsync(service, options, cancellationToken);
                     modules.Add(module);
@@ -283,9 +278,7 @@ namespace Nexo.Infrastructure.Services.Platform
         {
             var pwaConfig = new PWAConfiguration
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                ShortName = applicationLogic.ApplicationName,
-                Description = applicationLogic.Description
+                Name = "PWAConfiguration"
             };
 
             try
@@ -299,19 +292,14 @@ namespace Nexo.Infrastructure.Services.Platform
                 // Generate splash screens
                 var splashScreens = await GeneratePWASplashScreensAsync(applicationLogic, options, cancellationToken);
 
-                pwaConfig.Manifest = manifest;
-                pwaConfig.Icons = icons;
-                pwaConfig.SplashScreens = splashScreens;
-                pwaConfig.GeneratedAt = DateTimeOffset.UtcNow;
-                pwaConfig.Success = true;
+                pwaConfig.Content = $"Generated manifest, {icons.Count()} icons, {splashScreens.Count()} splash screens";
 
                 return pwaConfig;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating PWA configuration");
-                pwaConfig.Success = false;
-                pwaConfig.ErrorMessage = ex.Message;
+                pwaConfig.Content = $"Error: {ex.Message}";
                 return pwaConfig;
             }
         }
@@ -355,8 +343,7 @@ namespace Nexo.Infrastructure.Services.Platform
         {
             var buildConfig = new WebBuildConfiguration
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                Framework = options.Framework
+                Name = "BuildConfiguration"
             };
 
             try
@@ -370,19 +357,14 @@ namespace Nexo.Infrastructure.Services.Platform
                 // Generate TypeScript config
                 var tsConfig = await GenerateTypeScriptConfigAsync(applicationLogic, options, cancellationToken);
 
-                buildConfig.PackageJson = packageJson;
-                buildConfig.WebpackConfig = webpackConfig;
-                buildConfig.TypeScriptConfig = tsConfig;
-                buildConfig.GeneratedAt = DateTimeOffset.UtcNow;
-                buildConfig.Success = true;
+                buildConfig.Content = $"Generated package.json, webpack config, TypeScript config";
 
                 return buildConfig;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating build configuration");
-                buildConfig.Success = false;
-                buildConfig.ErrorMessage = ex.Message;
+                buildConfig.Content = $"Error: {ex.Message}";
                 return buildConfig;
             }
         }
@@ -418,29 +400,27 @@ namespace Nexo.Infrastructure.Services.Platform
         #region Private Methods
 
         private async Task<WebComponent> GenerateComponentForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             WebGenerationOptions options,
             CancellationToken cancellationToken)
         {
             var component = new WebComponent
             {
-                Name = $"{feature.Name}Component",
-                FeatureName = feature.Name,
-                Description = feature.Description,
-                Framework = options.Framework
+                Name = $"{feature.Name}Component"
             };
 
             try
             {
                 // Generate component code using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate a {options.Framework} component for the following feature:
+Generate a {framework} component for the following feature:
 - Name: {feature.Name}
 - Description: {feature.Description}
 - Requirements: {string.Join(", ", feature.Requirements)}
 
 Requirements:
-- Use {options.Framework} best practices
+- Use {framework} best practices
 - Include TypeScript types
 - Add proper state management
 - Include accessibility features
@@ -452,19 +432,17 @@ Requirements:
 Generate complete, production-ready component code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new Nexo.Feature.AI.Models.ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                component.Code = response.Content;
-                component.GeneratedAt = DateTimeOffset.UtcNow;
-                component.Success = true;
+                component.Content = response.Response;
 
                 return component;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating component for feature: {FeatureName}", feature.Name);
-                component.Success = false;
-                component.ErrorMessage = ex.Message;
+                component.Content = $"Error: {ex.Message}";
                 return component;
             }
         }
@@ -476,22 +454,20 @@ Generate complete, production-ready component code.
         {
             var store = new WebStore
             {
-                Name = $"{entity.Name}Store",
-                EntityName = entity.Name,
-                Description = $"Store for {entity.Name}",
-                Framework = options.Framework
+                StoreName = $"{entity.Name}Store"
             };
 
             try
             {
                 // Generate store code using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate a {options.Framework} store for the following entity:
+Generate a {framework} store for the following entity:
 - Entity Name: {entity.Name}
 - Properties: {string.Join(", ", entity.Properties.Select(p => $"{p.Name}: {p.Type}"))}
 
 Requirements:
-- Use {options.Framework} state management best practices
+- Use {framework} state management best practices
 - Include proper TypeScript types
 - Add actions and mutations
 - Include getters/computed properties
@@ -501,25 +477,25 @@ Requirements:
 Generate complete, production-ready store code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                store.Code = response.Content;
-                store.GeneratedAt = DateTimeOffset.UtcNow;
-                store.Success = true;
+                store.StoreName = $"{entity.Name}Store";
+                store.StoreType = "Redux";
 
                 return store;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating store for: {EntityName}", entity.Name);
-                store.Success = false;
-                store.ErrorMessage = ex.Message;
+                store.StoreName = $"{entity.Name}Store";
+                store.StoreType = "Error";
                 return store;
             }
         }
 
         private async Task<IEnumerable<WebAction>> GenerateActionsForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             WebGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -528,14 +504,15 @@ Generate complete, production-ready store code.
             try
             {
                 // Generate actions using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate {options.Framework} actions for the following feature:
+Generate {framework} actions for the following feature:
 - Name: {feature.Name}
 - Description: {feature.Description}
 - Requirements: {string.Join(", ", feature.Requirements)}
 
 Requirements:
-- Use {options.Framework} action patterns
+- Use {framework} action patterns
 - Include proper TypeScript types
 - Add async actions
 - Include error handling
@@ -544,15 +521,14 @@ Requirements:
 Generate complete, production-ready action code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 actions.Add(new WebAction
                 {
-                    Name = $"{feature.Name}Actions",
-                    FeatureName = feature.Name,
-                    Code = response.Content,
-                    GeneratedAt = DateTimeOffset.UtcNow,
-                    Success = true
+                    ActionName = $"{feature.Name}Actions",
+                    ActionType = "Async",
+                    Payload = new Dictionary<string, object> { { "content", response.Response } }
                 });
 
                 return actions;
@@ -571,22 +547,21 @@ Generate complete, production-ready action code.
         {
             var reducer = new WebReducer
             {
-                Name = $"{entity.Name}Reducer",
-                EntityName = entity.Name,
-                Description = $"Reducer for {entity.Name}",
-                Framework = options.Framework
+                ReducerName = $"{entity.Name}Reducer",
+                StateType = entity.Name
             };
 
             try
             {
                 // Generate reducer code using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate a {options.Framework} reducer for the following entity:
+Generate a {framework} reducer for the following entity:
 - Entity Name: {entity.Name}
 - Properties: {string.Join(", ", entity.Properties.Select(p => $"{p.Name}: {p.Type}"))}
 
 Requirements:
-- Use {options.Framework} reducer patterns
+- Use {framework} reducer patterns
 - Include proper TypeScript types
 - Handle all actions
 - Include immutable updates
@@ -596,19 +571,17 @@ Requirements:
 Generate complete, production-ready reducer code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                reducer.Code = response.Content;
-                reducer.GeneratedAt = DateTimeOffset.UtcNow;
-                reducer.Success = true;
+                reducer.ReducerFunction = response.Response;
 
                 return reducer;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating reducer for: {EntityName}", entity.Name);
-                reducer.Success = false;
-                reducer.ErrorMessage = ex.Message;
+                reducer.ReducerFunction = $"Error: {ex.Message}";
                 return reducer;
             }
         }
@@ -620,14 +593,14 @@ Generate complete, production-ready reducer code.
         {
             var service = new WebApiService
             {
-                Name = $"{entity.Name}ApiService",
-                EntityName = entity.Name,
-                Description = $"API service for {entity.Name}"
+                ServiceName = $"{entity.Name}ApiService",
+                BaseUrl = "https://api.example.com"
             };
 
             try
             {
                 // Generate API service using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
 Generate an API service for the following entity:
 - Entity Name: {entity.Name}
@@ -644,19 +617,21 @@ Requirements:
 Generate complete, production-ready API service code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                service.Code = response.Content;
-                service.GeneratedAt = DateTimeOffset.UtcNow;
-                service.Success = true;
+                service.Endpoints.Add("GET", "/api/" + entity.Name.ToLower());
+                service.Endpoints.Add("POST", "/api/" + entity.Name.ToLower());
+                service.Endpoints.Add("PUT", "/api/" + entity.Name.ToLower());
+                service.Endpoints.Add("DELETE", "/api/" + entity.Name.ToLower());
 
                 return service;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating API service for: {EntityName}", entity.Name);
-                service.Success = false;
-                service.ErrorMessage = ex.Message;
+                service.ServiceName = $"{entity.Name}ApiService";
+                service.BaseUrl = "Error";
                 return service;
             }
         }
@@ -668,13 +643,14 @@ Generate complete, production-ready API service code.
         {
             var client = new WebApiClient
             {
-                Name = "ApiClient",
-                BaseUrl = options.ApiBaseUrl
+                ClientName = "ApiClient",
+                BaseUrl = "https://api.example.com"
             };
 
             try
             {
                 // Generate API client using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
 Generate an API client for the following application:
 - App Name: {applicationLogic.ApplicationName}
@@ -691,19 +667,21 @@ Requirements:
 Generate complete, production-ready API client code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                client.Code = response.Content;
-                client.GeneratedAt = DateTimeOffset.UtcNow;
-                client.Success = true;
+                client.Methods.Add("GET");
+                client.Methods.Add("POST");
+                client.Methods.Add("PUT");
+                client.Methods.Add("DELETE");
 
                 return client;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating API client");
-                client.Success = false;
-                client.ErrorMessage = ex.Message;
+                client.ClientName = "ApiClient";
+                client.BaseUrl = "Error";
                 return client;
             }
         }
@@ -740,14 +718,14 @@ Generate complete, production-ready API client code.
         {
             var type = new WebApiType
             {
-                Name = entity.Name,
-                EntityName = entity.Name,
-                Description = $"TypeScript type for {entity.Name}"
+                TypeName = entity.Name,
+                TypeDefinition = $"interface {entity.Name}"
             };
 
             try
             {
                 // Generate TypeScript type using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
 Generate TypeScript types for the following entity:
 - Entity Name: {entity.Name}
@@ -764,19 +742,17 @@ Requirements:
 Generate complete, production-ready TypeScript types.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                type.Code = response.Content;
-                type.GeneratedAt = DateTimeOffset.UtcNow;
-                type.Success = true;
+                type.TypeDefinition = response.Response;
 
                 return type;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating API type for: {EntityName}", entity.Name);
-                type.Success = false;
-                type.ErrorMessage = ex.Message;
+                type.TypeDefinition = $"Error: {ex.Message}";
                 return type;
             }
         }
@@ -788,9 +764,7 @@ Generate complete, production-ready TypeScript types.
         {
             var module = new WebAssemblyModule
             {
-                Name = $"{service.Name}Module",
-                ServiceName = service.Name,
-                Description = $"WebAssembly module for {service.Name}"
+                Name = $"{service.Name}Module"
             };
 
             try
@@ -813,19 +787,17 @@ Requirements:
 Generate complete, production-ready WebAssembly module code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                module.Code = response.Content;
-                module.GeneratedAt = DateTimeOffset.UtcNow;
-                module.Success = true;
+                module.Content = response.Response;
 
                 return module;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating WebAssembly module for: {ServiceName}", service.Name);
-                module.Success = false;
-                module.ErrorMessage = ex.Message;
+                module.Content = $"Error: {ex.Message}";
                 return module;
             }
         }
@@ -837,7 +809,7 @@ Generate complete, production-ready WebAssembly module code.
         {
             var manifest = new PWAManifest
             {
-                Name = applicationLogic.ApplicationName,
+                AppName = applicationLogic.ApplicationName,
                 ShortName = applicationLogic.ApplicationName,
                 Description = applicationLogic.Description
             };
@@ -861,19 +833,21 @@ Requirements:
 Generate complete, production-ready PWA manifest.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                manifest.Code = response.Content;
-                manifest.GeneratedAt = DateTimeOffset.UtcNow;
-                manifest.Success = true;
+                manifest.StartUrl = "/";
+                manifest.ThemeColor = "#000000";
+                manifest.BackgroundColor = "#ffffff";
 
                 return manifest;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating PWA manifest");
-                manifest.Success = false;
-                manifest.ErrorMessage = ex.Message;
+                manifest.AppName = "Error";
+                manifest.ShortName = "Error";
+                manifest.Description = ex.Message;
                 return manifest;
             }
         }
@@ -893,9 +867,10 @@ Generate complete, production-ready PWA manifest.
                 {
                     var icon = new PWAIcon
                     {
-                        Size = size,
+                        Src = $"icon-{size}x{size}.png",
+                        Sizes = $"{size}x{size}",
                         Type = "image/png",
-                        Src = $"icon-{size}x{size}.png"
+                        Purpose = "any maskable"
                     };
                     icons.Add(icon);
                 }
@@ -924,8 +899,9 @@ Generate complete, production-ready PWA manifest.
                 {
                     var splashScreen = new PWASplashScreen
                     {
-                        Size = size,
-                        Src = $"splash-{size}.png"
+                        Src = $"splash-{size}.png",
+                        Sizes = size,
+                        Type = "image/png"
                     };
                     splashScreens.Add(splashScreen);
                 }
@@ -946,8 +922,7 @@ Generate complete, production-ready PWA manifest.
         {
             var serviceWorker = new ServiceWorker
             {
-                Name = "sw.js",
-                Description = "Main service worker"
+                Name = "sw.js"
             };
 
             try
@@ -969,19 +944,17 @@ Requirements:
 Generate complete, production-ready service worker code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                serviceWorker.Code = response.Content;
-                serviceWorker.GeneratedAt = DateTimeOffset.UtcNow;
-                serviceWorker.Success = true;
+                serviceWorker.Content = response.Response;
 
                 return serviceWorker;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating main service worker");
-                serviceWorker.Success = false;
-                serviceWorker.ErrorMessage = ex.Message;
+                serviceWorker.Content = $"Error: {ex.Message}";
                 return serviceWorker;
             }
         }
@@ -993,8 +966,7 @@ Generate complete, production-ready service worker code.
         {
             var serviceWorker = new ServiceWorker
             {
-                Name = "background-sync.js",
-                Description = "Background sync service worker"
+                Name = "background-sync.js"
             };
 
             try
@@ -1015,19 +987,17 @@ Requirements:
 Generate complete, production-ready background sync worker code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                serviceWorker.Code = response.Content;
-                serviceWorker.GeneratedAt = DateTimeOffset.UtcNow;
-                serviceWorker.Success = true;
+                serviceWorker.Content = response.Response;
 
                 return serviceWorker;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating background sync worker");
-                serviceWorker.Success = false;
-                serviceWorker.ErrorMessage = ex.Message;
+                serviceWorker.Content = $"Error: {ex.Message}";
                 return serviceWorker;
             }
         }
@@ -1047,10 +1017,11 @@ Generate complete, production-ready background sync worker code.
             try
             {
                 // Generate package.json using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate a package.json for the following {options.Framework} application:
+Generate a package.json for the following {framework} application:
 - App Name: {applicationLogic.ApplicationName}
-- Framework: {options.Framework}
+- Framework: {framework}
 - Description: {applicationLogic.Description}
 
 Requirements:
@@ -1064,10 +1035,11 @@ Requirements:
 Generate complete, production-ready package.json.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                packageJson.Code = response.Content;
-                packageJson.GeneratedAt = DateTimeOffset.UtcNow;
+                packageJson.Code = response.Response;
+                packageJson.GeneratedAt = DateTimeOffset.UtcNow.DateTime;
                 packageJson.Success = true;
 
                 return packageJson;
@@ -1088,17 +1060,18 @@ Generate complete, production-ready package.json.
         {
             var webpackConfig = new WebWebpackConfig
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                Framework = options.Framework
+                ConfigName = "webpack.config.js",
+                Mode = "production"
             };
 
             try
             {
                 // Generate webpack config using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate a webpack configuration for the following {options.Framework} application:
+Generate a webpack configuration for the following {framework} application:
 - App Name: {applicationLogic.ApplicationName}
-- Framework: {options.Framework}
+- Framework: {framework}
 
 Requirements:
 - Include all necessary loaders
@@ -1111,19 +1084,18 @@ Requirements:
 Generate complete, production-ready webpack configuration.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                webpackConfig.Code = response.Content;
-                webpackConfig.GeneratedAt = DateTimeOffset.UtcNow;
-                webpackConfig.Success = true;
+                webpackConfig.EntryPoints.Add("src/index.js");
 
                 return webpackConfig;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating webpack config");
-                webpackConfig.Success = false;
-                webpackConfig.ErrorMessage = ex.Message;
+                webpackConfig.ConfigName = "Error";
+                webpackConfig.Mode = "Error";
                 return webpackConfig;
             }
         }
@@ -1135,17 +1107,19 @@ Generate complete, production-ready webpack configuration.
         {
             var tsConfig = new WebTypeScriptConfig
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                Framework = options.Framework
+                ConfigName = "tsconfig.json",
+                Target = "ES2020",
+                Module = "ESNext"
             };
 
             try
             {
                 // Generate TypeScript config using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate a TypeScript configuration for the following {options.Framework} application:
+Generate a TypeScript configuration for the following {framework} application:
 - App Name: {applicationLogic.ApplicationName}
-- Framework: {options.Framework}
+- Framework: {framework}
 
 Requirements:
 - Include all necessary compiler options
@@ -1158,25 +1132,26 @@ Requirements:
 Generate complete, production-ready TypeScript configuration.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                tsConfig.Code = response.Content;
-                tsConfig.GeneratedAt = DateTimeOffset.UtcNow;
-                tsConfig.Success = true;
+                tsConfig.Include.Add("src/**/*");
+                tsConfig.Exclude.Add("node_modules");
 
                 return tsConfig;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating TypeScript config");
-                tsConfig.Success = false;
-                tsConfig.ErrorMessage = ex.Message;
+                tsConfig.ConfigName = "Error";
+                tsConfig.Target = "Error";
+                tsConfig.Module = "Error";
                 return tsConfig;
             }
         }
 
         private async Task<IEnumerable<WebTest>> GenerateTestsForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             WebGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -1185,8 +1160,9 @@ Generate complete, production-ready TypeScript configuration.
             try
             {
                 // Generate tests using AI
+                var framework = options.UseReact ? "React" : options.UseVue ? "Vue" : options.UseAngular ? "Angular" : "React";
                 var prompt = $@"
-Generate comprehensive tests for the following {options.Framework} feature:
+Generate comprehensive tests for the following {framework} feature:
 - Name: {feature.Name}
 - Description: {feature.Description}
 - Requirements: {string.Join(", ", feature.Requirements)}
@@ -1198,20 +1174,18 @@ Requirements:
 - Include accessibility tests
 - Test error scenarios
 - Use proper mocking
-- Follow {options.Framework} testing best practices
+- Follow {framework} testing best practices
 
 Generate complete, production-ready test code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 tests.Add(new WebTest
                 {
                     Name = $"{feature.Name}Tests",
-                    FeatureName = feature.Name,
-                    Code = response.Content,
-                    GeneratedAt = DateTimeOffset.UtcNow,
-                    Success = true
+                    Content = response.Response
                 });
 
                 return tests;

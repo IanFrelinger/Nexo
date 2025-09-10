@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Nexo.Core.Application.Models.Platform;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
@@ -65,5 +64,95 @@ namespace Nexo.Core.Application.Interfaces.Platform
             string apiName,
             Dictionary<string, object> parameters,
             CancellationToken cancellationToken = default);
+    }
+
+    // Platform-specific models for Native API integration
+    public class NativeApiIntegrationResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string ApiName { get; set; } = string.Empty;
+        public string Platform { get; set; } = string.Empty;
+        public Dictionary<string, object> Metadata { get; set; } = new();
+    }
+
+    public class PermissionHandlingResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<string> GrantedPermissions { get; set; } = new();
+        public List<string> DeniedPermissions { get; set; } = new();
+    }
+
+    public class NativeApiWrapper
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string Platform { get; set; } = string.Empty;
+    }
+
+    public class NativeApiValidationResult
+    {
+        public bool IsValid { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public List<string> ValidationErrors { get; set; } = new();
+        public List<string> Recommendations { get; set; } = new();
+    }
+
+    // Additional Native API Integration models
+    public class ApiAvailability
+    {
+        public string ApiName { get; set; } = string.Empty;
+        public bool IsAvailable { get; set; }
+        public string Version { get; set; } = string.Empty;
+        public List<string> Requirements { get; set; } = new();
+    }
+
+    public class PermissionResult
+    {
+        public string PermissionName { get; set; } = string.Empty;
+        public bool IsGranted { get; set; }
+        public string Reason { get; set; } = string.Empty;
+        public List<string> RequiredActions { get; set; } = new();
+    }
+
+    public class PermissionStatus
+    {
+        public string PermissionName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTimeOffset LastChecked { get; set; }
+        public List<string> Dependencies { get; set; } = new();
+    }
+
+    public class ApiAvailabilityValidation
+    {
+        public string ApiName { get; set; } = string.Empty;
+        public bool IsValid { get; set; }
+        public List<string> ValidationErrors { get; set; } = new();
+        public List<string> Recommendations { get; set; } = new();
+    }
+
+    public class PermissionValidation
+    {
+        public string PermissionName { get; set; } = string.Empty;
+        public bool IsValid { get; set; }
+        public List<string> ValidationErrors { get; set; } = new();
+        public List<string> RequiredPermissions { get; set; } = new();
+    }
+
+    public class ParameterValidation
+    {
+        public string ParameterName { get; set; } = string.Empty;
+        public bool IsValid { get; set; }
+        public string ValidationRule { get; set; } = string.Empty;
+        public List<string> ValidationErrors { get; set; } = new();
+    }
+
+    public class ErrorHandlingValidation
+    {
+        public string ErrorType { get; set; } = string.Empty;
+        public bool IsHandled { get; set; }
+        public string HandlingStrategy { get; set; } = string.Empty;
+        public List<string> Recommendations { get; set; } = new();
     }
 }

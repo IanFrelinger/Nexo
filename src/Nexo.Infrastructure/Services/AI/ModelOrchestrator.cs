@@ -292,6 +292,20 @@ public class ModelOrchestrator : IModelOrchestrator
     }
 
     // Legacy methods for backward compatibility
+    public async Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
+    {
+        _logger.LogInformation("Processing model request with orchestrator");
+
+        // Try to find a suitable provider
+        var provider = await GetBestModelForTaskAsync("text generation", ModelType.TextGeneration, cancellationToken);
+        if (provider == null)
+        {
+            throw new InvalidOperationException("No suitable model provider available");
+        }
+
+        return await provider.ExecuteAsync(request, cancellationToken);
+    }
+
     public async Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default(CancellationToken))
     {
         _logger.LogInformation("Executing model request with orchestrator");

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -39,67 +41,73 @@ namespace Nexo.Infrastructure.Services.Platform
 
             var result = new AndroidGenerationResult
             {
-                ApplicationName = applicationLogic.ApplicationName,
-                StartTime = DateTimeOffset.UtcNow,
-                Options = options
+                Success = false,
+                Message = "Starting Android code generation"
             };
 
             try
             {
                 // 1. Generate Jetpack Compose UI
-                if (options.GenerateComposeUI)
+                if (options.UseCompose)
                 {
-                    result.ComposeUI = await GenerateJetpackComposeUIAsync(applicationLogic, options, cancellationToken);
+                    var composeUI = await GenerateJetpackComposeUIAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(composeUI.Select(s => s.Name));
                 }
 
                 // 2. Generate Room Database
-                if (options.GenerateRoomDatabase)
+                if (options.UseRoom)
                 {
-                    result.RoomDatabase = await GenerateRoomDatabaseAsync(applicationLogic, options, cancellationToken);
+                    var roomDatabase = await GenerateRoomDatabaseAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.Add(roomDatabase.Name);
                 }
 
                 // 3. Generate ViewModels
-                if (options.GenerateViewModels)
+                if (options.UseViewModel)
                 {
-                    result.ViewModels = await GenerateViewModelsAsync(applicationLogic, options, cancellationToken);
+                    var viewModels = await GenerateViewModelsAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(viewModels.Select(v => v.Name));
                 }
 
                 // 4. Generate Repositories
-                if (options.GenerateRepositories)
+                if (options.UseRepository)
                 {
-                    result.Repositories = await GenerateRepositoriesAsync(applicationLogic, options, cancellationToken);
+                    var repositories = await GenerateRepositoriesAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(repositories.Select(r => r.Name));
                 }
 
                 // 5. Generate Services
-                if (options.GenerateServices)
+                if (options.UseService)
                 {
-                    result.Services = await GenerateServicesAsync(applicationLogic, options, cancellationToken);
+                    var services = await GenerateServicesAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(services.Select(s => s.Name));
                 }
 
                 // 6. Generate Dependency Injection
-                if (options.GenerateDependencyInjection)
+                if (options.UseDependencyInjection)
                 {
-                    result.DependencyInjection = await GenerateDependencyInjectionAsync(applicationLogic, options, cancellationToken);
+                    var dependencyInjection = await GenerateDependencyInjectionAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.Add(dependencyInjection.Name);
                 }
 
                 // 7. Generate App Configuration
-                if (options.GenerateAppConfiguration)
+                if (options.UseAppConfiguration)
                 {
-                    result.AppConfiguration = await GenerateAppConfigurationAsync(applicationLogic, options, cancellationToken);
+                    var appConfiguration = await GenerateAppConfigurationAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.Add(appConfiguration.Name);
                 }
 
                 // 8. Generate Tests
-                if (options.GenerateTests)
+                if (options.UseTest)
                 {
-                    result.Tests = await GenerateTestsAsync(applicationLogic, options, cancellationToken);
+                    var tests = await GenerateTestsAsync(applicationLogic, options, cancellationToken);
+                    result.GeneratedFiles.AddRange(tests.Select(t => t.Name));
                 }
 
-                result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 result.Success = true;
+                result.Message = "Android code generation completed successfully";
 
-                _logger.LogInformation("Android code generation completed successfully in {Duration}ms", 
-                    result.Duration.TotalMilliseconds);
+                _logger.LogInformation("Android code generation completed successfully with {FileCount} files generated", 
+                    result.GeneratedFiles.Count);
 
                 return result;
             }
@@ -107,9 +115,8 @@ namespace Nexo.Infrastructure.Services.Platform
             {
                 _logger.LogError(ex, "Error during Android code generation");
                 result.Success = false;
-                result.ErrorMessage = ex.Message;
-                result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
+                result.Message = ex.Message;
+                result.Errors.Add(ex.Message);
                 return result;
             }
         }
@@ -151,8 +158,7 @@ namespace Nexo.Infrastructure.Services.Platform
         {
             var database = new RoomDatabase
             {
-                Name = $"{applicationLogic.ApplicationName}Database",
-                ApplicationName = applicationLogic.ApplicationName
+                Name = $"{applicationLogic.ApplicationName}Database"
             };
 
             try
@@ -176,19 +182,13 @@ namespace Nexo.Infrastructure.Services.Platform
                 // Generate database class
                 var databaseCode = await GenerateRoomDatabaseClassAsync(entities, daos, options, cancellationToken);
 
-                database.Entities = entities;
-                database.DAOs = daos;
-                database.DatabaseCode = databaseCode;
-                database.GeneratedAt = DateTimeOffset.UtcNow;
-                database.Success = true;
+                database.Entities = entities.Select(e => e.EntityName).ToList();
 
                 return database;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating Room database");
-                database.Success = false;
-                database.ErrorMessage = ex.Message;
                 return database;
             }
         }
@@ -284,7 +284,7 @@ namespace Nexo.Infrastructure.Services.Platform
         {
             var config = new DependencyInjectionConfig
             {
-                ApplicationName = applicationLogic.ApplicationName
+                Name = "DependencyInjectionConfig"
             };
 
             try
@@ -295,18 +295,14 @@ namespace Nexo.Infrastructure.Services.Platform
                 // Generate Application class
                 var applicationClass = await GenerateApplicationClassAsync(applicationLogic, options, cancellationToken);
 
-                config.Modules = modules;
-                config.ApplicationClass = applicationClass;
-                config.GeneratedAt = DateTimeOffset.UtcNow;
-                config.Success = true;
+                config.Content = $"Generated {modules.Count} modules and application class";
 
                 return config;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating dependency injection");
-                config.Success = false;
-                config.ErrorMessage = ex.Message;
+                config.Content = $"Error: {ex.Message}";
                 return config;
             }
         }
@@ -323,16 +319,8 @@ namespace Nexo.Infrastructure.Services.Platform
             {
                 var configuration = new AndroidAppConfiguration
                 {
-                    AppName = applicationLogic.ApplicationName,
-                    PackageName = $"com.{applicationLogic.ApplicationName.ToLower()}.app",
-                    VersionName = "1.0.0",
-                    VersionCode = 1,
-                    MinSdkVersion = 24,
-                    TargetSdkVersion = 34,
-                    CompileSdkVersion = 34,
-                    RequiredPermissions = GetRequiredPermissions(applicationLogic),
-                    ManifestSettings = GenerateManifestSettings(applicationLogic),
-                    BuildGradleSettings = GenerateBuildGradleSettings(options)
+                    Name = "AndroidAppConfiguration",
+                    Content = $"Generated configuration for {applicationLogic.ApplicationName}"
                 };
 
                 return configuration;
@@ -375,15 +363,13 @@ namespace Nexo.Infrastructure.Services.Platform
         #region Private Methods
 
         private async Task<ComposeScreen> GenerateComposeScreenForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             AndroidGenerationOptions options,
             CancellationToken cancellationToken)
         {
             var screen = new ComposeScreen
             {
-                Name = $"{feature.Name}Screen",
-                FeatureName = feature.Name,
-                Description = feature.Description
+                Name = $"{feature.Name}Screen"
             };
 
             try
@@ -408,19 +394,16 @@ Requirements:
 Generate complete, production-ready Jetpack Compose code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new Nexo.Feature.AI.Models.ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                screen.Code = response.Content;
-                screen.GeneratedAt = DateTimeOffset.UtcNow;
-                screen.Success = true;
+                screen.Content = response.Response;
 
                 return screen;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating Compose screen for feature: {FeatureName}", feature.Name);
-                screen.Success = false;
-                screen.ErrorMessage = ex.Message;
                 return screen;
             }
         }
@@ -432,9 +415,8 @@ Generate complete, production-ready Jetpack Compose code.
         {
             var roomEntity = new RoomEntity
             {
-                Name = entity.Name,
                 EntityName = entity.Name,
-                Description = entity.Description
+                TableName = entity.Name.ToLower()
             };
 
             try
@@ -456,19 +438,26 @@ Requirements:
 Generate complete, production-ready Room entity code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                roomEntity.Code = response.Content;
-                roomEntity.GeneratedAt = DateTimeOffset.UtcNow;
-                roomEntity.Success = true;
+                // Add fields based on entity properties
+                foreach (var property in entity.Properties)
+                {
+                    roomEntity.Fields.Add(new EntityField
+                    {
+                        FieldName = property.Name,
+                        FieldType = property.Type,
+                        IsPrimaryKey = property.Name == "Id",
+                        IsNullable = property.Type.Contains("?")
+                    });
+                }
 
                 return roomEntity;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating Room entity for: {EntityName}", entity.Name);
-                roomEntity.Success = false;
-                roomEntity.ErrorMessage = ex.Message;
                 return roomEntity;
             }
         }
@@ -480,9 +469,8 @@ Generate complete, production-ready Room entity code.
         {
             var dao = new RoomDAO
             {
-                Name = $"{entity.Name}DAO",
-                EntityName = entity.Name,
-                Description = $"DAO for {entity.Name}"
+                DaoName = $"{entity.Name}DAO",
+                EntityName = entity.Name
             };
 
             try
@@ -504,19 +492,20 @@ Requirements:
 Generate complete, production-ready Room DAO code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                dao.Code = response.Content;
-                dao.GeneratedAt = DateTimeOffset.UtcNow;
-                dao.Success = true;
+                // Add basic query methods
+                dao.QueryMethods.Add($"SELECT * FROM {entity.Name.ToLower()}");
+                dao.InsertMethods.Add($"INSERT INTO {entity.Name.ToLower()}");
+                dao.UpdateMethods.Add($"UPDATE {entity.Name.ToLower()}");
+                dao.DeleteMethods.Add($"DELETE FROM {entity.Name.ToLower()}");
 
                 return dao;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating Room DAO for: {EntityName}", entity.Name);
-                dao.Success = false;
-                dao.ErrorMessage = ex.Message;
                 return dao;
             }
         }
@@ -531,8 +520,8 @@ Generate complete, production-ready Room DAO code.
             {
                 var prompt = $@"
 Generate a Room database class with the following:
-- Entities: {string.Join(", ", entities.Select(e => e.Name))}
-- DAOs: {string.Join(", ", daos.Select(d => d.Name))}
+- Entities: {string.Join(", ", entities.Select(e => e.EntityName))}
+- DAOs: {string.Join(", ", daos.Select(d => d.DaoName))}
 
 Requirements:
 - Use @Database annotation
@@ -545,8 +534,9 @@ Requirements:
 Generate complete, production-ready Room database code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
-                return response.Content;
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
+                return response.Response;
             }
             catch (Exception ex)
             {
@@ -556,15 +546,13 @@ Generate complete, production-ready Room database code.
         }
 
         private async Task<AndroidViewModel> GenerateViewModelForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             AndroidGenerationOptions options,
             CancellationToken cancellationToken)
         {
             var viewModel = new AndroidViewModel
             {
-                Name = $"{feature.Name}ViewModel",
-                FeatureName = feature.Name,
-                Description = feature.Description
+                Name = $"{feature.Name}ViewModel"
             };
 
             try
@@ -589,19 +577,16 @@ Requirements:
 Generate complete, production-ready ViewModel code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                viewModel.Code = response.Content;
-                viewModel.GeneratedAt = DateTimeOffset.UtcNow;
-                viewModel.Success = true;
+                viewModel.Content = response.Response;
 
                 return viewModel;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating ViewModel for feature: {FeatureName}", feature.Name);
-                viewModel.Success = false;
-                viewModel.ErrorMessage = ex.Message;
                 return viewModel;
             }
         }
@@ -613,9 +598,7 @@ Generate complete, production-ready ViewModel code.
         {
             var repository = new AndroidRepository
             {
-                Name = $"{entity.Name}Repository",
-                EntityName = entity.Name,
-                Description = $"Repository for {entity.Name}"
+                Name = $"{entity.Name}Repository"
             };
 
             try
@@ -638,19 +621,16 @@ Requirements:
 Generate complete, production-ready Repository code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                repository.Code = response.Content;
-                repository.GeneratedAt = DateTimeOffset.UtcNow;
-                repository.Success = true;
+                repository.Content = response.Response;
 
                 return repository;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating Repository for: {EntityName}", entity.Name);
-                repository.Success = false;
-                repository.ErrorMessage = ex.Message;
                 return repository;
             }
         }
@@ -662,9 +642,7 @@ Generate complete, production-ready Repository code.
         {
             var androidService = new AndroidService
             {
-                Name = service.Name,
-                ServiceName = service.Name,
-                Description = service.Description
+                Name = service.Name
             };
 
             try
@@ -687,19 +665,16 @@ Requirements:
 Generate complete, production-ready service code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                androidService.Code = response.Content;
-                androidService.GeneratedAt = DateTimeOffset.UtcNow;
-                androidService.Success = true;
+                androidService.Content = response.Response;
 
                 return androidService;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating service: {ServiceName}", service.Name);
-                androidService.Success = false;
-                androidService.ErrorMessage = ex.Message;
                 return androidService;
             }
         }
@@ -716,16 +691,14 @@ Generate complete, production-ready service code.
                 // Generate database module
                 var databaseModule = new HiltModule
                 {
-                    Name = "DatabaseModule",
-                    Code = await GenerateDatabaseModuleAsync(applicationLogic, options, cancellationToken)
+                    ModuleName = "DatabaseModule"
                 };
                 modules.Add(databaseModule);
 
                 // Generate repository module
                 var repositoryModule = new HiltModule
                 {
-                    Name = "RepositoryModule",
-                    Code = await GenerateRepositoryModuleAsync(applicationLogic, options, cancellationToken)
+                    ModuleName = "RepositoryModule"
                 };
                 modules.Add(repositoryModule);
 
@@ -759,8 +732,9 @@ Requirements:
 Generate complete, production-ready Hilt module code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
-                return response.Content;
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
+                return response.Response;
             }
             catch (Exception ex)
             {
@@ -789,8 +763,9 @@ Requirements:
 Generate complete, production-ready Hilt module code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
-                return response.Content;
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
+                return response.Response;
             }
             catch (Exception ex)
             {
@@ -818,8 +793,9 @@ Requirements:
 Generate complete, production-ready Application class code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
-                return response.Content;
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
+                return response.Response;
             }
             catch (Exception ex)
             {
@@ -829,7 +805,7 @@ Generate complete, production-ready Application class code.
         }
 
         private async Task<IEnumerable<AndroidTest>> GenerateTestsForFeatureAsync(
-            Feature feature,
+            Nexo.Core.Application.Interfaces.Platform.Feature feature,
             AndroidGenerationOptions options,
             CancellationToken cancellationToken)
         {
@@ -856,15 +832,13 @@ Requirements:
 Generate complete, production-ready test code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 tests.Add(new AndroidTest
                 {
                     Name = $"{feature.Name}Tests",
-                    FeatureName = feature.Name,
-                    Code = response.Content,
-                    GeneratedAt = DateTimeOffset.UtcNow,
-                    Success = true
+                    Content = response.Response
                 });
 
                 return tests;

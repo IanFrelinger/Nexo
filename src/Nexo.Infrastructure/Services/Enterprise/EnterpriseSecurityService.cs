@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Enterprise;
 using Nexo.Core.Application.Models.Enterprise;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Enterprise
 {
@@ -58,16 +60,17 @@ Requirements:
 Generate comprehensive security integration analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new SecurityIntegrationResult
                 {
                     Success = true,
                     Message = "Successfully created enterprise security integration",
                     IntegrationId = Guid.NewGuid().ToString(),
-                    ImplementedFeatures = ParseImplementedFeatures(response.Content),
-                    SecurityMetrics = ParseSecurityMetrics(response.Content),
-                    IntegratedAt = DateTimeOffset.UtcNow
+                    ImplementedFeatures = ParseImplementedFeatures(response.Response),
+                    SecurityMetrics = ParseSecurityMetrics(response.Response),
+                    IntegratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created enterprise security integration: {SecurityName}", securityConfig.Name);
@@ -81,7 +84,7 @@ Generate comprehensive security integration analysis.
                     Success = false,
                     Message = ex.Message,
                     IntegrationId = Guid.NewGuid().ToString(),
-                    IntegratedAt = DateTimeOffset.UtcNow
+                    IntegratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -116,16 +119,17 @@ Requirements:
 Generate comprehensive compliance automation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new ComplianceAutomationResult
                 {
                     Success = true,
                     Message = "Successfully implemented compliance automation",
                     AutomationId = Guid.NewGuid().ToString(),
-                    AutomatedProcesses = ParseAutomatedProcesses(response.Content),
-                    ComplianceMetrics = ParseComplianceMetrics(response.Content),
-                    AutomatedAt = DateTimeOffset.UtcNow
+                    AutomatedProcesses = ParseAutomatedProcesses(response.Response),
+                    ComplianceMetrics = ParseComplianceMetrics(response.Response),
+                    AutomatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully implemented compliance automation: {ComplianceName}", complianceRequirements.Name);
@@ -139,7 +143,7 @@ Generate comprehensive compliance automation analysis.
                     Success = false,
                     Message = ex.Message,
                     AutomationId = Guid.NewGuid().ToString(),
-                    AutomatedAt = DateTimeOffset.UtcNow
+                    AutomatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -174,16 +178,17 @@ Requirements:
 Generate comprehensive governance implementation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new GovernanceImplementationResult
                 {
                     Success = true,
                     Message = "Successfully added enterprise governance",
                     GovernanceId = Guid.NewGuid().ToString(),
-                    ImplementedPolicies = ParseImplementedPolicies(response.Content),
-                    GovernanceMetrics = ParseGovernanceMetrics(response.Content),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedPolicies = ParseImplementedPolicies(response.Response),
+                    GovernanceMetrics = ParseGovernanceMetrics(response.Response),
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully added enterprise governance: {GovernanceName}", governanceConfig.Name);
@@ -197,7 +202,7 @@ Generate comprehensive governance implementation analysis.
                     Success = false,
                     Message = ex.Message,
                     GovernanceId = Guid.NewGuid().ToString(),
-                    ImplementedAt = DateTimeOffset.UtcNow
+                    ImplementedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -232,16 +237,17 @@ Requirements:
 Generate comprehensive reporting system analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new ReportingSystemResult
                 {
                     Success = true,
                     Message = "Successfully created enterprise reporting system",
                     ReportingId = Guid.NewGuid().ToString(),
-                    CreatedReports = ParseCreatedReports(response.Content),
-                    ReportingMetrics = ParseReportingMetrics(response.Content),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedReports = ParseCreatedReports(response.Response),
+                    ReportingMetrics = ParseReportingMetrics(response.Response),
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully created enterprise reporting system: {ReportingName}", reportingConfig.Name);
@@ -255,7 +261,7 @@ Generate comprehensive reporting system analysis.
                     Success = false,
                     Message = ex.Message,
                     ReportingId = Guid.NewGuid().ToString(),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -289,19 +295,20 @@ Requirements:
 Generate comprehensive security validation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new SecurityValidationResult
                 {
                     Success = true,
                     Message = "Successfully validated enterprise security compliance",
                     ValidationId = Guid.NewGuid().ToString(),
-                    ComplianceScore = ParseComplianceScore(response.Content),
-                    PassedChecks = ParsePassedChecks(response.Content),
-                    FailedChecks = ParseFailedChecks(response.Content),
-                    Recommendations = ParseRecommendations(response.Content),
-                    ValidationMetrics = ParseValidationMetrics(response.Content),
-                    ValidatedAt = DateTimeOffset.UtcNow
+                    ComplianceScore = ParseComplianceScore(response.Response),
+                    PassedChecks = ParsePassedChecks(response.Response),
+                    FailedChecks = ParseFailedChecks(response.Response),
+                    Recommendations = ParseRecommendations(response.Response),
+                    ValidationMetrics = ParseValidationMetrics(response.Response),
+                    ValidatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully validated enterprise security compliance: {ValidationName}", validationConfig.Name);
@@ -315,7 +322,7 @@ Generate comprehensive security validation analysis.
                     Success = false,
                     Message = ex.Message,
                     ValidationId = Guid.NewGuid().ToString(),
-                    ValidatedAt = DateTimeOffset.UtcNow
+                    ValidatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -351,18 +358,19 @@ Requirements:
 Generate comprehensive security metrics.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var metrics = new SecurityMetrics
                 {
-                    TotalSecurityEvents = ParseTotalSecurityEvents(response.Content),
-                    CriticalSecurityEvents = ParseCriticalSecurityEvents(response.Content),
-                    SecurityViolations = ParseSecurityViolations(response.Content),
-                    SecurityScore = ParseSecurityScore(response.Content),
-                    ComplianceScore = ParseComplianceScore(response.Content),
-                    CategoryMetrics = ParseCategoryMetrics(response.Content),
-                    TrendMetrics = ParseTrendMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    TotalSecurityEvents = ParseTotalSecurityEvents(response.Response),
+                    CriticalSecurityEvents = ParseCriticalSecurityEvents(response.Response),
+                    SecurityViolations = ParseSecurityViolations(response.Response),
+                    SecurityScore = ParseSecurityScore(response.Response),
+                    ComplianceScore = ParseComplianceScore(response.Response),
+                    CategoryMetrics = ParseCategoryMetrics(response.Response),
+                    TrendMetrics = ParseTrendMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated enterprise security metrics");
@@ -373,7 +381,7 @@ Generate comprehensive security metrics.
                 _logger.LogError(ex, "Error getting enterprise security metrics");
                 return new SecurityMetrics
                 {
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -408,17 +416,18 @@ Requirements:
 Generate comprehensive security data export.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var export = new SecurityDataExport
                 {
                     Id = Guid.NewGuid().ToString(),
                     Format = exportOptions.Format,
-                    Data = ParseExportData(response.Content),
-                    Size = ParseExportSize(response.Content),
-                    RecordCount = ParseRecordCount(response.Content),
-                    ExportedAt = DateTimeOffset.UtcNow,
-                    Metadata = ParseExportMetadata(response.Content)
+                    Data = ParseExportData(response.Response),
+                    Size = ParseExportSize(response.Response),
+                    RecordCount = ParseRecordCount(response.Response),
+                    ExportedAt = DateTimeOffset.UtcNow.DateTime,
+                    Metadata = ParseExportMetadata(response.Response)
                 };
 
                 _logger.LogInformation("Successfully exported enterprise security data in format: {Format}", exportOptions.Format);
@@ -431,7 +440,7 @@ Generate comprehensive security data export.
                 {
                     Id = Guid.NewGuid().ToString(),
                     Format = exportOptions.Format,
-                    ExportedAt = DateTimeOffset.UtcNow
+                    ExportedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -465,18 +474,19 @@ Requirements:
 Generate comprehensive security data import analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new SecurityDataImportResult
                 {
                     Success = true,
                     Message = "Successfully imported enterprise security data",
-                    ImportedCount = ParseImportedCount(response.Content),
-                    SkippedCount = ParseSkippedCount(response.Content),
-                    ErrorCount = ParseErrorCount(response.Content),
-                    Errors = ParseImportErrors(response.Content),
-                    Metrics = ParseImportMetrics(response.Content),
-                    ImportedAt = DateTimeOffset.UtcNow
+                    ImportedCount = ParseImportedCount(response.Response),
+                    SkippedCount = ParseSkippedCount(response.Response),
+                    ErrorCount = ParseErrorCount(response.Response),
+                    Errors = ParseImportErrors(response.Response),
+                    Metrics = ParseImportMetrics(response.Response),
+                    ImportedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully imported enterprise security data in format: {Format}", importData.Format);
@@ -489,7 +499,7 @@ Generate comprehensive security data import analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    ImportedAt = DateTimeOffset.UtcNow
+                    ImportedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }

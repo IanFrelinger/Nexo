@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Learning;
 using Nexo.Core.Application.Models.Learning;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Learning
 {
@@ -61,17 +63,18 @@ Requirements:
 Generate comprehensive learning analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new LearningResult
                 {
                     Success = true,
                     Message = "Successfully learned from feature pattern",
                     PatternId = featurePattern.Id,
-                    Confidence = ParseConfidence(response.Content),
-                    Insights = ParseInsights(response.Content),
-                    Metadata = ParseMetadata(response.Content),
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    Confidence = ParseConfidence(response.Response),
+                    Insights = ParseInsights(response.Response),
+                    Metadata = ParseMetadata(response.Response),
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully learned from feature pattern: {PatternName}", featurePattern.Name);
@@ -85,7 +88,7 @@ Generate comprehensive learning analysis.
                     Success = false,
                     Message = ex.Message,
                     PatternId = featurePattern.Id,
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -122,17 +125,18 @@ Requirements:
 Generate comprehensive knowledge processing analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new KnowledgeAccumulationResult
                 {
                     Success = true,
                     Message = "Successfully accumulated domain knowledge",
                     KnowledgeId = domainKnowledge.Id,
-                    Confidence = ParseConfidence(response.Content),
-                    RelatedKnowledge = ParseRelatedKnowledge(response.Content),
-                    Metadata = ParseMetadata(response.Content),
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    Confidence = ParseConfidence(response.Response),
+                    RelatedKnowledge = ParseRelatedKnowledge(response.Response),
+                    Metadata = ParseMetadata(response.Response),
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully accumulated domain knowledge: {KnowledgeType}", domainKnowledge.KnowledgeType);
@@ -146,7 +150,7 @@ Generate comprehensive knowledge processing analysis.
                     Success = false,
                     Message = ex.Message,
                     KnowledgeId = domainKnowledge.Id,
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -182,16 +186,17 @@ Requirements:
 Generate comprehensive usage pattern analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new UsagePatternAnalysisResult
                 {
                     Success = true,
                     Message = "Successfully analyzed usage patterns",
-                    Patterns = ParseUsagePatterns(response.Content),
-                    Recommendations = ParseRecommendations(response.Content),
-                    Statistics = ParseStatistics(response.Content),
-                    AnalyzedAt = DateTimeOffset.UtcNow
+                    Patterns = ParseUsagePatterns(response.Response),
+                    Recommendations = ParseRecommendations(response.Response),
+                    Statistics = ParseStatistics(response.Response),
+                    AnalyzedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully analyzed usage patterns for user: {UserId}", usageData.UserId);
@@ -204,7 +209,7 @@ Generate comprehensive usage pattern analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    AnalyzedAt = DateTimeOffset.UtcNow
+                    AnalyzedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -241,16 +246,17 @@ Requirements:
 Generate comprehensive feedback processing analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new FeedbackProcessingResult
                 {
                     Success = true,
                     Message = "Successfully processed learning feedback",
                     FeedbackId = feedback.Id,
-                    Actions = ParseActions(response.Content),
-                    Impact = ParseImpact(response.Content),
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    Actions = ParseActions(response.Response),
+                    Impact = ParseImpact(response.Response),
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully processed learning feedback: {FeedbackType}", feedback.FeedbackType);
@@ -264,7 +270,7 @@ Generate comprehensive feedback processing analysis.
                     Success = false,
                     Message = ex.Message,
                     FeedbackId = feedback.Id,
-                    ProcessedAt = DateTimeOffset.UtcNow
+                    ProcessedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -300,19 +306,20 @@ Requirements:
 Generate comprehensive learning insights.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var insights = new LearningInsights
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Title = ParseInsightTitle(response.Content),
-                    Description = ParseInsightDescription(response.Content),
+                    Title = ParseInsightTitle(response.Response),
+                    Description = ParseInsightDescription(response.Response),
                     InsightType = context.FeatureType,
-                    Confidence = ParseConfidence(response.Content),
-                    Tags = ParseTags(response.Content),
-                    Data = ParseInsightData(response.Content),
-                    Recommendations = ParseRecommendations(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    Confidence = ParseConfidence(response.Response),
+                    Tags = ParseTags(response.Response),
+                    Data = ParseInsightData(response.Response),
+                    Recommendations = ParseRecommendations(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated learning insights for user: {UserId}", context.UserId);
@@ -326,7 +333,7 @@ Generate comprehensive learning insights.
                     Id = Guid.NewGuid().ToString(),
                     Title = "Error",
                     Description = ex.Message,
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -361,16 +368,17 @@ Requirements:
 Generate comprehensive model update analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new ModelUpdateResult
                 {
                     Success = true,
                     Message = "Successfully updated learning model",
                     ModelId = Guid.NewGuid().ToString(),
-                    Version = ParseVersion(response.Content),
-                    Metrics = ParseModelMetrics(response.Content),
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    Version = ParseVersion(response.Response),
+                    Metrics = ParseModelMetrics(response.Response),
+                    UpdatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully updated learning model with data type: {DataType}", learningData.DataType);
@@ -384,7 +392,7 @@ Generate comprehensive model update analysis.
                     Success = false,
                     Message = ex.Message,
                     ModelId = Guid.NewGuid().ToString(),
-                    UpdatedAt = DateTimeOffset.UtcNow
+                    UpdatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -419,18 +427,19 @@ Requirements:
 Generate comprehensive learning validation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new LearningValidationResult
                 {
                     Success = true,
                     Message = "Successfully validated learning effectiveness",
-                    Accuracy = ParseAccuracy(response.Content),
-                    Precision = ParsePrecision(response.Content),
-                    Recall = ParseRecall(response.Content),
-                    F1Score = ParseF1Score(response.Content),
-                    Metrics = ParseValidationMetrics(response.Content),
-                    ValidatedAt = DateTimeOffset.UtcNow
+                    Accuracy = ParseAccuracy(response.Response),
+                    Precision = ParsePrecision(response.Response),
+                    Recall = ParseRecall(response.Response),
+                    F1Score = ParseF1Score(response.Response),
+                    Metrics = ParseValidationMetrics(response.Response),
+                    ValidatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully validated learning effectiveness for validation type: {ValidationType}", 
@@ -445,7 +454,7 @@ Generate comprehensive learning validation analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    ValidatedAt = DateTimeOffset.UtcNow
+                    ValidatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -481,16 +490,17 @@ Requirements:
 Generate comprehensive learning data export.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var export = new LearningDataExport
                 {
                     Id = Guid.NewGuid().ToString(),
                     Format = exportOptions.Format,
-                    Data = ParseExportData(response.Content),
-                    Size = ParseExportSize(response.Content),
-                    ExportedAt = DateTimeOffset.UtcNow,
-                    Metadata = ParseExportMetadata(response.Content)
+                    Data = ParseExportData(response.Response),
+                    Size = ParseExportSize(response.Response),
+                    ExportedAt = DateTimeOffset.UtcNow.DateTime,
+                    Metadata = ParseExportMetadata(response.Response)
                 };
 
                 _logger.LogInformation("Successfully exported learning data in format: {Format}", exportOptions.Format);
@@ -503,7 +513,7 @@ Generate comprehensive learning data export.
                 {
                     Id = Guid.NewGuid().ToString(),
                     Format = exportOptions.Format,
-                    ExportedAt = DateTimeOffset.UtcNow
+                    ExportedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }

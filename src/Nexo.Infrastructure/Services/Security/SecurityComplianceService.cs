@@ -38,7 +38,7 @@ namespace Nexo.Infrastructure.Services.Security
             // Log the access attempt
             var auditEvent = new SecurityEvent
             {
-                EventType = validationResult.IsValid ? SecurityEventType.AuthenticationSuccess : SecurityEventType.AuthenticationFailure,
+                EventType = SecurityEventType.AuthenticationFailure,
                 Description = validationResult.IsValid ? "API key validation successful" : $"API key validation failed: {validationResult.ErrorMessage}",
                 Severity = validationResult.IsValid ? SecurityEventSeverity.Low : SecurityEventSeverity.Medium,
                 UserId = userId ?? "unknown",
@@ -229,11 +229,12 @@ namespace Nexo.Infrastructure.Services.Security
             {
                 recommendations.Add(new SecurityRecommendation
                 {
-                    Type = SecurityRecommendationType.ApiKeyManagement,
-                    Priority = RecommendationPriority.Medium,
+                    Category = "ApiKeyManagement",
+                    Priority = SecurityPriority.Medium,
                     Title = "Clean up expired API keys",
                     Description = $"There are {apiKeyStats.ExpiredKeys} expired API keys that should be removed.",
-                    Action = "Review and remove expired API keys"
+                    EstimatedImpact = "Medium",
+                    ImplementationEffort = "Low"
                 });
             }
 
@@ -241,11 +242,12 @@ namespace Nexo.Infrastructure.Services.Security
             {
                 recommendations.Add(new SecurityRecommendation
                 {
-                    Type = SecurityRecommendationType.ApiKeyManagement,
-                    Priority = RecommendationPriority.High,
+                    Category = "ApiKeyManagement",
+                    Priority = SecurityPriority.High,
                     Title = "High API key revocation rate",
                     Description = "A high number of API keys have been revoked recently. Review security practices.",
-                    Action = "Investigate API key revocation patterns"
+                    EstimatedImpact = "High",
+                    ImplementationEffort = "Medium"
                 });
             }
 
@@ -254,11 +256,12 @@ namespace Nexo.Infrastructure.Services.Security
             {
                 recommendations.Add(new SecurityRecommendation
                 {
-                    Type = SecurityRecommendationType.SecurityMonitoring,
-                    Priority = RecommendationPriority.High,
+                    Category = "SecurityMonitoring",
+                    Priority = SecurityPriority.High,
                     Title = "High security event rate",
                     Description = "A high number of security events detected. Review security posture.",
-                    Action = "Investigate security events and strengthen security measures"
+                    EstimatedImpact = "High",
+                    ImplementationEffort = "High"
                 });
             }
 
@@ -367,11 +370,12 @@ namespace Nexo.Infrastructure.Services.Security
             {
                 recommendations.Add(new SecurityRecommendation
                 {
-                    Type = SecurityRecommendationType.ApiKeyManagement,
-                    Priority = RecommendationPriority.Medium,
+                    Category = "ApiKeyManagement",
+                    Priority = SecurityPriority.Medium,
                     Title = "Clean up expired API keys",
                     Description = $"Remove {apiKeyStats.ExpiredKeys} expired API keys",
-                    Action = "Review and remove expired API keys"
+                    EstimatedImpact = "Medium",
+                    ImplementationEffort = "Low"
                 });
             }
 
@@ -380,11 +384,12 @@ namespace Nexo.Infrastructure.Services.Security
             {
                 recommendations.Add(new SecurityRecommendation
                 {
-                    Type = SecurityRecommendationType.SecurityMonitoring,
-                    Priority = RecommendationPriority.Critical,
+                    Category = "SecurityMonitoring",
+                    Priority = SecurityPriority.Critical,
                     Title = "Address critical security events",
                     Description = $"{criticalEvents} critical security events require immediate attention",
-                    Action = "Investigate and resolve critical security events"
+                    EstimatedImpact = "Critical",
+                    ImplementationEffort = "High"
                 });
             }
 

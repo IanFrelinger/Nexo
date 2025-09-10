@@ -143,8 +143,8 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
             var operationsWithDuration = operations.Where(o => o.Duration.HasValue).ToArray();
             if (!operationsWithDuration.Any()) return TimeSpan.Zero;
 
-            var totalDuration = operationsWithDuration.Sum(o => o.Duration!.Value);
-            return TimeSpan.FromTicks(totalDuration.Ticks / operationsWithDuration.Length);
+            var totalTicks = operationsWithDuration.Sum(o => o.Duration!.Value.Ticks);
+            return TimeSpan.FromTicks(totalTicks / operationsWithDuration.Length);
         }
 
         private double CalculateErrorRate(CacheOperation[] operations)
@@ -186,8 +186,8 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
             var operationsWithDuration = operations.Where(o => o.Duration.HasValue).ToArray();
             if (!operationsWithDuration.Any()) return TimeSpan.Zero;
 
-            var totalDuration = operationsWithDuration.Sum(o => o.Duration!.Value);
-            return TimeSpan.FromTicks(totalDuration.Ticks / operationsWithDuration.Length);
+            var totalTicks = operationsWithDuration.Sum(o => o.Duration!.Value.Ticks);
+            return TimeSpan.FromTicks(totalTicks / operationsWithDuration.Length);
         }
 
         private TimeSpan CalculatePercentile(CacheOperation[] operations, int percentile)
@@ -242,70 +242,4 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
         }
     }
 
-    /// <summary>
-    /// Cache performance report model.
-    /// </summary>
-    public class CachePerformanceReport
-    {
-        public DateTimeOffset GeneratedAt { get; set; }
-        public int TotalOperations { get; set; }
-        public double HitRate { get; set; }
-        public TimeSpan AverageResponseTime { get; set; }
-        public double ErrorRate { get; set; }
-        public Dictionary<CacheOperationType, int> OperationsByType { get; set; } = new Dictionary<CacheOperationType, int>();
-        public CachePerformanceMetrics PerformanceMetrics { get; set; } = new CachePerformanceMetrics();
-        public List<string> Recommendations { get; set; } = new List<string>();
-    }
-
-    /// <summary>
-    /// Cache performance metrics.
-    /// </summary>
-    public class CachePerformanceMetrics
-    {
-        public int GetOperations { get; set; }
-        public int SetOperations { get; set; }
-        public int HitCount { get; set; }
-        public int MissCount { get; set; }
-        public int ErrorCount { get; set; }
-        public TimeSpan AverageGetTime { get; set; }
-        public TimeSpan AverageSetTime { get; set; }
-        public TimeSpan P95ResponseTime { get; set; }
-        public TimeSpan P99ResponseTime { get; set; }
-    }
-
-    /// <summary>
-    /// Cache optimization recommendation.
-    /// </summary>
-    public class CacheOptimizationRecommendation
-    {
-        public OptimizationType Type { get; set; }
-        public RecommendationPriority Priority { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string Impact { get; set; } = string.Empty;
-        public string Effort { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Optimization types.
-    /// </summary>
-    public enum OptimizationType
-    {
-        LowHitRate,
-        SlowResponse,
-        HighErrorRate,
-        MemoryUsage,
-        Configuration
-    }
-
-    /// <summary>
-    /// Recommendation priority levels.
-    /// </summary>
-    public enum RecommendationPriority
-    {
-        Low,
-        Medium,
-        High,
-        Critical
-    }
 }

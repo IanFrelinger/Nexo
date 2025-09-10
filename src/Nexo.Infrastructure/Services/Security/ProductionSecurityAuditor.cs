@@ -102,7 +102,6 @@ namespace Nexo.Infrastructure.Services.Security
                 }
 
                 result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 result.Success = true;
                 result.OverallSecurityScore = CalculateOverallSecurityScore(result);
 
@@ -112,10 +111,10 @@ namespace Nexo.Infrastructure.Services.Security
                 // Log audit completion
                 await _auditLogger.LogAuditEventAsync(new AuditEvent
                 {
-                    EventType = "SecurityAudit",
+                    EventType = AuditEventType.SystemConfiguration,
                     Timestamp = DateTimeOffset.UtcNow,
                     UserId = "System",
-                    Details = $"Security audit completed with score {result.OverallSecurityScore}/100"
+                    Description = $"Security audit completed with score {result.OverallSecurityScore}/100"
                 }, cancellationToken);
 
                 return result;
@@ -126,7 +125,6 @@ namespace Nexo.Infrastructure.Services.Security
                 result.Success = false;
                 result.ErrorMessage = ex.Message;
                 result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 return result;
             }
         }
@@ -186,7 +184,6 @@ namespace Nexo.Infrastructure.Services.Security
                 }
 
                 result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 result.Success = true;
                 result.VulnerabilityCount = CountVulnerabilities(result);
                 result.SecurityRating = CalculateSecurityRating(result);
@@ -202,7 +199,6 @@ namespace Nexo.Infrastructure.Services.Security
                 result.Success = false;
                 result.ErrorMessage = ex.Message;
                 result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 return result;
             }
         }
@@ -316,10 +312,10 @@ namespace Nexo.Infrastructure.Services.Security
             try
             {
                 // Check API key management
-                var apiKeys = await _apiKeyManager.GetAllApiKeysAsync(cancellationToken);
+                var apiKeys = await _apiKeyManager.ListApiKeysAsync(cancellationToken);
                 
-                // Check for weak keys
-                var weakKeys = apiKeys.Where(k => k.Strength < 0.8).Count();
+                // Check for weak keys (keys without proper permissions or recently created)
+                var weakKeys = apiKeys.Where(k => k.Permissions.Count == 0 || k.CreatedAt > DateTimeOffset.UtcNow.AddDays(-1)).Count();
                 audit.WeakKeyCount = weakKeys;
                 
                 // Check for expired keys
@@ -878,6 +874,8 @@ namespace Nexo.Infrastructure.Services.Security
             if (audit.CacheSecurityOptimal) score += 30;
             return score;
         }
+
+        #endregion
 
         #endregion
 

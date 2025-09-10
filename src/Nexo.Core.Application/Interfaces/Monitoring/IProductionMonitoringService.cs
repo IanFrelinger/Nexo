@@ -271,4 +271,30 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
         High,
         Critical
     }
+
+    /// <summary>
+    /// Performance trend model.
+    /// </summary>
+    public class PerformanceTrend
+    {
+        public string MetricName { get; set; } = string.Empty;
+        public List<double> Values { get; set; } = new();
+        public List<DateTimeOffset> Timestamps { get; set; } = new();
+        public double CurrentValue { get; set; }
+        public double AverageValue { get; set; }
+        public double MinValue { get; set; }
+        public double MaxValue { get; set; }
+        public TrendDirection Direction { get; set; }
+        public double ChangePercentage { get; set; }
+    }
+
+    /// <summary>
+    /// Trend direction enum.
+    /// </summary>
+    public enum TrendDirection
+    {
+        Up,
+        Down,
+        Stable
+    }
 }

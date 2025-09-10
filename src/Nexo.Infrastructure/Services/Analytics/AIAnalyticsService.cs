@@ -73,7 +73,7 @@ namespace Nexo.Infrastructure.Services.Analytics
                     UniqueUsers = events.Select(e => e.UserId).Distinct().Count(),
                     TotalTokens = events.Sum(e => e.TokensUsed),
                     TotalCost = events.Sum(e => e.Cost),
-                    AverageResponseTime = events.Where(e => e.ResponseTime.HasValue).Average(e => e.ResponseTime!.Value),
+                    AverageResponseTime = events.Where(e => e.ResponseTime.HasValue).Select(e => e.ResponseTime!.Value).Aggregate(TimeSpan.Zero, (sum, time) => sum + time) / Math.Max(events.Count(e => e.ResponseTime.HasValue), 1),
                     SuccessRate = events.Count(e => e.Success) / (double)Math.Max(events.Count, 1),
                     EventsByType = events.GroupBy(e => e.EventType).ToDictionary(g => g.Key, g => g.Count()),
                     EventsByModel = events.GroupBy(e => e.ModelName).ToDictionary(g => g.Key, g => g.Count()),
@@ -107,7 +107,7 @@ namespace Nexo.Infrastructure.Services.Analytics
                     StartTime = startTime,
                     EndTime = endTime,
                     TotalMetrics = metrics.Count,
-                    AverageLatency = metrics.Where(m => m.Latency.HasValue).Average(m => m.Latency!.Value),
+                    AverageLatency = metrics.Where(m => m.Latency.HasValue).Select(m => m.Latency!.Value).Aggregate(TimeSpan.Zero, (sum, time) => sum + time) / Math.Max(metrics.Count(m => m.Latency.HasValue), 1),
                     AverageThroughput = metrics.Where(m => m.Throughput.HasValue).Average(m => m.Throughput!.Value),
                     AverageAccuracy = metrics.Where(m => m.Accuracy.HasValue).Average(m => m.Accuracy!.Value),
                     ErrorRate = metrics.Count(m => m.IsError) / (double)Math.Max(metrics.Count, 1),
@@ -163,7 +163,7 @@ namespace Nexo.Infrastructure.Services.Analytics
                     EventsLastHour = recentEvents.Count,
                     ActiveUsers = recentEvents.Select(e => e.UserId).Distinct().Count(),
                     CurrentThroughput = recentEvents.Count / 60.0, // Events per minute
-                    AverageLatency = recentMetrics.Where(m => m.Latency.HasValue).Average(m => m.Latency!.Value),
+                    AverageLatency = recentMetrics.Where(m => m.Latency.HasValue).Select(m => m.Latency!.Value).Aggregate(TimeSpan.Zero, (sum, time) => sum + time) / Math.Max(recentMetrics.Count(m => m.Latency.HasValue), 1),
                     ErrorRate = recentMetrics.Count(m => m.IsError) / (double)Math.Max(recentMetrics.Count, 1),
                     SystemHealth = CalculateSystemHealth(recentEvents, recentMetrics)
                 };
@@ -238,7 +238,7 @@ namespace Nexo.Infrastructure.Services.Analytics
                 .Select(g => new
                 {
                     Hour = g.Key,
-                    AvgLatency = g.Where(m => m.Latency.HasValue).Average(m => m.Latency!.Value),
+                    AvgLatency = g.Where(m => m.Latency.HasValue).Select(m => m.Latency!.Value).Aggregate(TimeSpan.Zero, (sum, time) => sum + time) / Math.Max(g.Count(m => m.Latency.HasValue), 1),
                     AvgThroughput = g.Where(m => m.Throughput.HasValue).Average(m => m.Throughput!.Value),
                     ErrorRate = g.Count(m => m.IsError) / (double)Math.Max(g.Count(), 1)
                 })
@@ -266,7 +266,7 @@ namespace Nexo.Infrastructure.Services.Analytics
         {
             var bottlenecks = new List<PerformanceBottleneck>();
 
-            var avgLatency = metrics.Where(m => m.Latency.HasValue).Average(m => m.Latency!.Value);
+            var avgLatency = metrics.Where(m => m.Latency.HasValue).Select(m => m.Latency!.Value).Aggregate(TimeSpan.Zero, (sum, time) => sum + time) / Math.Max(metrics.Count(m => m.Latency.HasValue), 1);
             var highLatencyMetrics = metrics.Where(m => m.Latency.HasValue && m.Latency.Value > avgLatency * 1.5).ToList();
 
             if (highLatencyMetrics.Any())
@@ -413,7 +413,7 @@ namespace Nexo.Infrastructure.Services.Analytics
             score -= (int)(errorRate * 50);
 
             // Deduct points for high latency
-            var avgLatency = metrics.Where(m => m.Latency.HasValue).Average(m => m.Latency!.Value);
+            var avgLatency = metrics.Where(m => m.Latency.HasValue).Select(m => m.Latency!.Value).Aggregate(TimeSpan.Zero, (sum, time) => sum + time) / Math.Max(metrics.Count(m => m.Latency.HasValue), 1);
             if (avgLatency > TimeSpan.FromSeconds(5))
                 score -= 20;
 

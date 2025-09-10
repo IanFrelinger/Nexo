@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Nexo.Core.Application.Interfaces.Caching;
 
 namespace Nexo.Core.Application.Interfaces.Performance
 {
@@ -274,18 +275,6 @@ namespace Nexo.Core.Application.Interfaces.Performance
         public TimeSpan Uptime { get; set; }
     }
 
-    /// <summary>
-    /// Cache performance metrics.
-    /// </summary>
-    public class CachePerformanceMetrics
-    {
-        public double HitRate { get; set; }
-        public double MissRate { get; set; }
-        public double EvictionRate { get; set; }
-        public TimeSpan AverageAccessTime { get; set; }
-        public long TotalRequests { get; set; }
-        public long CacheSize { get; set; }
-    }
 
     /// <summary>
     /// AI performance metrics.

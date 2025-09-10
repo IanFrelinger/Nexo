@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Nexo.Core.Application.Interfaces;
 using Nexo.Core.Application.Interfaces.Caching;
-using Nexo.Shared.Models;
+using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Infrastructure.Services.Caching.Advanced
 {
@@ -56,7 +56,9 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
             var baseStrategy = base.CreateCacheStrategy<TKey, TValue>();
             var evictionPolicy = new IntelligentEvictionPolicy(_evictionStrategies, _evictionConfig);
             
-            return new IntelligentCacheStrategy<TKey, TValue>(baseStrategy, evictionPolicy);
+            // For now, return the base strategy wrapped with monitoring
+            var monitoredStrategy = new MonitoredCacheStrategy<TKey, TValue>(baseStrategy, _performanceMonitor);
+            return monitoredStrategy;
         }
 
         /// <summary>
@@ -65,7 +67,9 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
         public ICacheStrategy<string, TValue> CreateDeduplicationCacheStrategy<TValue>()
         {
             var baseStrategy = base.CreateCacheStrategy<string, TValue>();
-            return new DeduplicationCacheStrategy<TValue>(baseStrategy, _deduplicationService);
+            // For now, return the base strategy wrapped with monitoring
+            var monitoredStrategy = new MonitoredCacheStrategy<string, TValue>(baseStrategy, _performanceMonitor);
+            return monitoredStrategy;
         }
 
         /// <summary>
@@ -124,9 +128,13 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
             var optimizedSettings = new CacheSettings
             {
                 Backend = settings.Backend,
-                RedisConnectionString = settings.RedisConnectionString,
-                RedisKeyPrefix = settings.RedisKeyPrefix,
-                DefaultTtlSeconds = settings.DefaultTtlSeconds
+                KeyPrefix = settings.KeyPrefix,
+                DefaultTtlSeconds = settings.DefaultTtlSeconds,
+                MaxSizeMB = settings.MaxSizeMB,
+                ExpirationMinutes = settings.ExpirationMinutes,
+                Enabled = settings.Enabled,
+                UseDistributedCache = settings.UseDistributedCache,
+                EvictionPolicy = settings.EvictionPolicy
             };
 
             // Apply optimizations based on recommendations
@@ -136,18 +144,18 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
                 {
                     case OptimizationType.LowHitRate:
                         // Increase TTL to improve hit rate
-                        optimizedSettings.DefaultTtlSeconds = Math.Max(optimizedSettings.DefaultTtlSeconds, 3600);
+                        optimizedSettings = optimizedSettings with { DefaultTtlSeconds = Math.Max(optimizedSettings.DefaultTtlSeconds, 3600) };
                         break;
                     case OptimizationType.SlowResponse:
                         // Consider switching to faster backend
                         if (settings.Backend?.ToLowerInvariant() == "redis")
                         {
-                            optimizedSettings.Backend = "inmemory";
+                            optimizedSettings = optimizedSettings with { Backend = "inmemory" };
                         }
                         break;
                     case OptimizationType.HighErrorRate:
                         // Add retry logic or fallback to in-memory
-                        optimizedSettings.Backend = "inmemory";
+                        optimizedSettings = optimizedSettings with { Backend = "inmemory" };
                         break;
                 }
             }

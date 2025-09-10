@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Learning;
 using Nexo.Core.Application.Models.Learning;
+using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Learning
 {
@@ -56,16 +58,17 @@ Requirements:
 Generate comprehensive usage pattern analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new PatternAnalysisResult
                 {
                     Success = true,
                     Message = "Successfully analyzed usage patterns",
-                    Insights = ParsePatternInsights(response.Content),
-                    Recommendations = ParseOptimizationRecommendations(response.Content),
-                    Statistics = ParseAnalysisStatistics(response.Content),
-                    AnalyzedAt = DateTimeOffset.UtcNow
+                    Insights = ParsePatternInsights(response.Response),
+                    Recommendations = ParseOptimizationRecommendations(response.Response),
+                    Statistics = ParseAnalysisStatistics(response.Response),
+                    AnalyzedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully analyzed usage patterns for optimization recommendations");
@@ -78,7 +81,7 @@ Generate comprehensive usage pattern analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    AnalyzedAt = DateTimeOffset.UtcNow
+                    AnalyzedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -116,16 +119,17 @@ Requirements:
 Generate comprehensive optimization suggestions.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var suggestions = new OptimizationSuggestions
                 {
                     Id = Guid.NewGuid().ToString(),
                     ContextId = context.Id,
-                    Recommendations = ParseOptimizationRecommendations(response.Content),
-                    Insights = ParsePatternInsights(response.Content),
-                    Metrics = ParseOptimizationMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    Recommendations = ParseOptimizationRecommendations(response.Response),
+                    Insights = ParsePatternInsights(response.Response),
+                    Metrics = ParseOptimizationMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated optimization suggestions for context: {ContextId}", context.Id);
@@ -138,7 +142,7 @@ Generate comprehensive optimization suggestions.
                 {
                     Id = Guid.NewGuid().ToString(),
                     ContextId = context.Id,
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -174,15 +178,16 @@ Requirements:
 Generate comprehensive performance recommendations.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var recommendations = new PerformanceRecommendations
                 {
                     Id = Guid.NewGuid().ToString(),
                     FeatureId = performanceData.FeatureId,
-                    Recommendations = ParsePerformanceRecommendations(response.Content),
-                    Metrics = ParsePerformanceMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    Recommendations = ParsePerformanceRecommendations(response.Response),
+                    Metrics = ParsePerformanceMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated performance recommendations for feature: {FeatureId}", performanceData.FeatureId);
@@ -195,7 +200,7 @@ Generate comprehensive performance recommendations.
                 {
                     Id = Guid.NewGuid().ToString(),
                     FeatureId = performanceData.FeatureId,
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -234,19 +239,20 @@ Requirements:
 Generate comprehensive optimization report.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var report = new OptimizationReport
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Title = ParseReportTitle(response.Content),
+                    Title = ParseReportTitle(response.Response),
                     ReportType = reportOptions.ReportType,
-                    Summary = ParseReportSummary(response.Content),
-                    Recommendations = ParseOptimizationRecommendations(response.Content),
-                    Insights = ParsePatternInsights(response.Content),
-                    Charts = ParseReportCharts(response.Content),
-                    Data = ParseReportData(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    Summary = ParseReportSummary(response.Response),
+                    Recommendations = ParseOptimizationRecommendations(response.Response),
+                    Insights = ParsePatternInsights(response.Response),
+                    Charts = ParseReportCharts(response.Response),
+                    Data = ParseReportData(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated optimization report of type: {ReportType}", reportOptions.ReportType);
@@ -260,7 +266,7 @@ Generate comprehensive optimization report.
                     Id = Guid.NewGuid().ToString(),
                     Title = "Error Report",
                     ReportType = reportOptions.ReportType,
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -292,16 +298,17 @@ Requirements:
 Generate comprehensive feature optimization recommendations.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var recommendations = new FeatureOptimizationRecommendations
                 {
                     Id = Guid.NewGuid().ToString(),
                     FeatureId = featureId,
-                    Recommendations = ParseOptimizationRecommendations(response.Content),
-                    PerformanceRecommendations = ParsePerformanceRecommendations(response.Content),
-                    Metrics = ParseOptimizationMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    Recommendations = ParseOptimizationRecommendations(response.Response),
+                    PerformanceRecommendations = ParsePerformanceRecommendations(response.Response),
+                    Metrics = ParseOptimizationMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully got optimization recommendations for feature: {FeatureId}", featureId);
@@ -314,7 +321,7 @@ Generate comprehensive feature optimization recommendations.
                 {
                     Id = Guid.NewGuid().ToString(),
                     FeatureId = featureId,
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -348,18 +355,19 @@ Requirements:
 Generate comprehensive validation analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new OptimizationValidationResult
                 {
                     Success = true,
                     Message = "Successfully validated optimization recommendations",
-                    ValidCount = ParseValidCount(response.Content),
-                    InvalidCount = ParseInvalidCount(response.Content),
-                    ValidationErrors = ParseValidationErrors(response.Content),
-                    ValidRecommendations = ParseValidRecommendations(response.Content),
-                    InvalidRecommendations = ParseInvalidRecommendations(response.Content),
-                    ValidatedAt = DateTimeOffset.UtcNow
+                    ValidCount = ParseValidCount(response.Response),
+                    InvalidCount = ParseInvalidCount(response.Response),
+                    ValidationErrors = ParseValidationErrors(response.Response),
+                    ValidRecommendations = ParseValidRecommendations(response.Response),
+                    InvalidRecommendations = ParseInvalidRecommendations(response.Response),
+                    ValidatedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully validated optimization recommendations: {Count} recommendations", recommendations.Count);
@@ -372,7 +380,7 @@ Generate comprehensive validation analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    ValidatedAt = DateTimeOffset.UtcNow
+                    ValidatedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -406,18 +414,19 @@ Requirements:
 Generate comprehensive application analysis.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var result = new OptimizationApplicationResult
                 {
                     Success = true,
                     Message = "Successfully applied optimization recommendations",
-                    AppliedCount = ParseAppliedCount(response.Content),
-                    FailedCount = ParseFailedCount(response.Content),
-                    AppliedRecommendations = ParseAppliedRecommendations(response.Content),
-                    FailedRecommendations = ParseFailedRecommendations(response.Content),
-                    Results = ParseApplicationResults(response.Content),
-                    AppliedAt = DateTimeOffset.UtcNow
+                    AppliedCount = ParseAppliedCount(response.Response),
+                    FailedCount = ParseFailedCount(response.Response),
+                    AppliedRecommendations = ParseAppliedRecommendations(response.Response),
+                    FailedRecommendations = ParseFailedRecommendations(response.Response),
+                    Results = ParseApplicationResults(response.Response),
+                    AppliedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully applied optimization recommendations: {Count} recommendations", recommendations.Count);
@@ -430,7 +439,7 @@ Generate comprehensive application analysis.
                 {
                     Success = false,
                     Message = ex.Message,
-                    AppliedAt = DateTimeOffset.UtcNow
+                    AppliedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }
@@ -467,19 +476,20 @@ Requirements:
 Generate comprehensive optimization metrics.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 var metrics = new OptimizationMetrics
                 {
-                    TotalRecommendations = ParseTotalRecommendations(response.Content),
-                    AppliedRecommendations = ParseAppliedRecommendationsCount(response.Content),
-                    PendingRecommendations = ParsePendingRecommendations(response.Content),
-                    AverageImpact = ParseAverageImpact(response.Content),
-                    AverageEffort = ParseAverageEffort(response.Content),
-                    SuccessRate = ParseSuccessRate(response.Content),
-                    CategoryMetrics = ParseCategoryMetrics(response.Content),
-                    PerformanceMetrics = ParsePerformanceMetrics(response.Content),
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    TotalRecommendations = ParseTotalRecommendations(response.Response),
+                    AppliedRecommendations = ParseAppliedRecommendationsCount(response.Response),
+                    PendingRecommendations = ParsePendingRecommendations(response.Response),
+                    AverageImpact = ParseAverageImpact(response.Response),
+                    AverageEffort = ParseAverageEffort(response.Response),
+                    SuccessRate = ParseSuccessRate(response.Response),
+                    CategoryMetrics = ParseCategoryMetrics(response.Response),
+                    PerformanceMetrics = ParsePerformanceMetrics(response.Response),
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
 
                 _logger.LogInformation("Successfully generated optimization metrics and statistics");
@@ -490,7 +500,7 @@ Generate comprehensive optimization metrics.
                 _logger.LogError(ex, "Error getting optimization metrics and statistics");
                 return new OptimizationMetrics
                 {
-                    GeneratedAt = DateTimeOffset.UtcNow
+                    GeneratedAt = DateTimeOffset.UtcNow.DateTime
                 };
             }
         }

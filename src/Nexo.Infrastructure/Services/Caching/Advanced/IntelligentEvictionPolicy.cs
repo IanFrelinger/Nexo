@@ -72,7 +72,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
             score += (int)item.Priority * _configuration.PriorityWeight;
 
             // Size factor (larger items score higher for eviction)
-            score += item.Size * _configuration.SizeWeight;
+            score += item.SizeBytes * _configuration.SizeWeight;
 
             // Last access time factor (longer since last access scores higher)
             var timeSinceLastAccess = DateTimeOffset.UtcNow - item.LastAccessedAt;
@@ -136,7 +136,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
         public IEnumerable<CacheItem> FilterCandidates(IEnumerable<CacheItem> candidates, int targetCount)
         {
             return candidates
-                .OrderByDescending(item => item.Size)
+                .OrderByDescending(item => item.SizeBytes)
                 .Take(targetCount * 2);
         }
     }

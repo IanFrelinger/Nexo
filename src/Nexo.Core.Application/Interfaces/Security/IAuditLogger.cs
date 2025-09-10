@@ -212,6 +212,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// </summary>
     public enum SecurityEventSeverity
     {
+        Info,
         Low,
         Medium,
         High,
