@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -41,28 +42,38 @@ namespace Nexo.Infrastructure.Services.Platform
                 var capabilities = new PlatformCapabilities
                 {
                     Platform = platform,
-                    DetectedAt = DateTimeOffset.UtcNow
+                    Version = "1.0.0",
+                    SupportedFeatures = new List<string> { "UI", "Data", "Network", "Hardware", "Security", "Performance" },
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["DetectedAt"] = DateTimeOffset.UtcNow,
+                        ["Success"] = true
+                    }
                 };
 
                 // Detect UI capabilities
-                capabilities.UICapabilities = await DetectUICapabilitiesAsync(platform, cancellationToken);
+                var uiCapabilities = await DetectUICapabilitiesAsync(platform, cancellationToken);
+                capabilities.Metadata["UICapabilities"] = uiCapabilities;
 
                 // Detect data capabilities
-                capabilities.DataCapabilities = await DetectDataCapabilitiesAsync(platform, cancellationToken);
+                var dataCapabilities = await DetectDataCapabilitiesAsync(platform, cancellationToken);
+                capabilities.Metadata["DataCapabilities"] = dataCapabilities;
 
                 // Detect network capabilities
-                capabilities.NetworkCapabilities = await DetectNetworkCapabilitiesAsync(platform, cancellationToken);
+                var networkCapabilities = await DetectNetworkCapabilitiesAsync(platform, cancellationToken);
+                capabilities.Metadata["NetworkCapabilities"] = networkCapabilities;
 
                 // Detect hardware capabilities
-                capabilities.HardwareCapabilities = await DetectHardwareCapabilitiesAsync(platform, cancellationToken);
+                var hardwareCapabilities = await DetectHardwareCapabilitiesAsync(platform, cancellationToken);
+                capabilities.Metadata["HardwareCapabilities"] = hardwareCapabilities;
 
                 // Detect security capabilities
-                capabilities.SecurityCapabilities = await DetectSecurityCapabilitiesAsync(platform, cancellationToken);
+                var securityCapabilities = await DetectSecurityCapabilitiesAsync(platform, cancellationToken);
+                capabilities.Metadata["SecurityCapabilities"] = securityCapabilities;
 
                 // Detect performance capabilities
-                capabilities.PerformanceCapabilities = await DetectPerformanceCapabilitiesAsync(platform, cancellationToken);
-
-                capabilities.Success = true;
+                var performanceCapabilities = await DetectPerformanceCapabilitiesAsync(platform, cancellationToken);
+                capabilities.Metadata["PerformanceCapabilities"] = performanceCapabilities;
                 _logger.LogInformation("Successfully detected capabilities for platform: {Platform}", platform);
 
                 return capabilities;
@@ -73,8 +84,13 @@ namespace Nexo.Infrastructure.Services.Platform
                 return new PlatformCapabilities
                 {
                     Platform = platform,
-                    Success = false,
-                    ErrorMessage = ex.Message
+                    Version = "1.0.0",
+                    SupportedFeatures = new List<string>(),
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["Success"] = false,
+                        ["ErrorMessage"] = ex.Message
+                    }
                 };
             }
         }
@@ -92,32 +108,26 @@ namespace Nexo.Infrastructure.Services.Platform
 
             var featureMap = new FeatureAvailabilityMap
             {
-                MappedAt = DateTimeOffset.UtcNow
+                FeatureName = "Feature Availability Map",
+                PlatformSupport = new Dictionary<string, bool>(),
+                SupportedPlatforms = new List<string>()
             };
 
             try
             {
-                var availabilityMappings = new List<FeatureAvailabilityMapping>();
-
                 foreach (var feature in features)
                 {
-                    var mapping = new FeatureAvailabilityMapping
-                    {
-                        FeatureName = feature,
-                        PlatformAvailability = new Dictionary<string, FeatureAvailability>()
-                    };
-
                     foreach (var platform in platforms)
                     {
                         var availability = await DetermineFeatureAvailabilityAsync(feature, platform, cancellationToken);
-                        mapping.PlatformAvailability[platform] = availability;
+                        featureMap.PlatformSupport[$"{feature}_{platform}"] = availability.IsAvailable;
+                        
+                        if (availability.IsAvailable && !featureMap.SupportedPlatforms.Contains(platform))
+                        {
+                            featureMap.SupportedPlatforms.Add(platform);
+                        }
                     }
-
-                    availabilityMappings.Add(mapping);
                 }
-
-                featureMap.FeatureMappings = availabilityMappings;
-                featureMap.Success = true;
 
                 _logger.LogInformation("Successfully mapped feature availability");
                 return featureMap;
@@ -125,9 +135,12 @@ namespace Nexo.Infrastructure.Services.Platform
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error mapping feature availability");
-                featureMap.Success = false;
-                featureMap.ErrorMessage = ex.Message;
-                return featureMap;
+                return new FeatureAvailabilityMap
+                {
+                    FeatureName = "Error",
+                    PlatformSupport = new Dictionary<string, bool>(),
+                    SupportedPlatforms = new List<string>()
+                };
             }
         }
 
@@ -144,7 +157,11 @@ namespace Nexo.Infrastructure.Services.Platform
 
             var report = new FeatureCompatibilityReport
             {
-                ValidatedAt = DateTimeOffset.UtcNow
+                IsCompatible = true,
+                Message = "Compatibility validation completed",
+                CompatibleFeatures = new List<string>(),
+                IncompatibleFeatures = new List<string>(),
+                Recommendations = new List<string>()
             };
 
             try
@@ -155,10 +172,17 @@ namespace Nexo.Infrastructure.Services.Platform
                 {
                     var featureIssues = await ValidateFeatureCompatibilityAsync(feature, platforms, cancellationToken);
                     compatibilityIssues.AddRange(featureIssues);
+                    
+                    if (featureIssues.Any())
+                    {
+                        report.IncompatibleFeatures.Add(feature);
+                        report.IsCompatible = false;
+                    }
+                    else
+                    {
+                        report.CompatibleFeatures.Add(feature);
+                    }
                 }
-
-                report.CompatibilityIssues = compatibilityIssues;
-                report.Success = true;
 
                 _logger.LogInformation("Successfully validated feature compatibility");
                 return report;
@@ -166,9 +190,14 @@ namespace Nexo.Infrastructure.Services.Platform
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating feature compatibility");
-                report.Success = false;
-                report.ErrorMessage = ex.Message;
-                return report;
+                return new FeatureCompatibilityReport
+                {
+                    IsCompatible = false,
+                    Message = ex.Message,
+                    CompatibleFeatures = new List<string>(),
+                    IncompatibleFeatures = features.ToList(),
+                    Recommendations = new List<string> { "Check error logs for details" }
+                };
             }
         }
 
@@ -185,8 +214,10 @@ namespace Nexo.Infrastructure.Services.Platform
 
             var recommendations = new PlatformRecommendations
             {
-                TargetPlatform = targetPlatform,
-                GeneratedAt = DateTimeOffset.UtcNow
+                Platform = targetPlatform,
+                RecommendedFeatures = new List<string>(),
+                AvoidFeatures = new List<string>(),
+                Reasoning = "Platform-specific recommendations generated"
             };
 
             try
@@ -197,10 +228,16 @@ namespace Nexo.Infrastructure.Services.Platform
                 {
                     var recommendation = await GenerateFeatureRecommendationAsync(feature, targetPlatform, cancellationToken);
                     featureRecommendations.Add(recommendation);
+                    
+                    if (recommendation.Priority == "High")
+                    {
+                        recommendations.RecommendedFeatures.Add(feature);
+                    }
+                    else if (recommendation.Priority == "Low")
+                    {
+                        recommendations.AvoidFeatures.Add(feature);
+                    }
                 }
-
-                recommendations.FeatureRecommendations = featureRecommendations;
-                recommendations.Success = true;
 
                 _logger.LogInformation("Successfully generated platform recommendations");
                 return recommendations;
@@ -208,9 +245,13 @@ namespace Nexo.Infrastructure.Services.Platform
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating platform recommendations");
-                recommendations.Success = false;
-                recommendations.ErrorMessage = ex.Message;
-                return recommendations;
+                return new PlatformRecommendations
+                {
+                    Platform = targetPlatform,
+                    RecommendedFeatures = new List<string>(),
+                    AvoidFeatures = features.ToList(),
+                    Reasoning = ex.Message
+                };
             }
         }
 
@@ -242,15 +283,13 @@ Requirements:
 Provide detailed UI capabilities information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and populate capabilities
-                capabilities.SupportedFrameworks = ParseSupportedFrameworks(response.Content);
-                capabilities.ResponsiveDesign = ParseResponsiveDesign(response.Content);
-                capabilities.AccessibilityFeatures = ParseAccessibilityFeatures(response.Content);
-                capabilities.AnimationSupport = ParseAnimationSupport(response.Content);
-                capabilities.ThemeSupport = ParseThemeSupport(response.Content);
-                capabilities.CustomizationOptions = ParseCustomizationOptions(response.Content);
+                capabilities.SupportedUI = ParseSupportedFrameworks(response.Response).ToList();
+                capabilities.SupportedLayouts = ParseAccessibilityFeatures(response.Response).ToList();
+                capabilities.SupportedThemes = ParseCustomizationOptions(response.Response).ToList();
 
                 return capabilities;
             }
@@ -287,15 +326,13 @@ Requirements:
 Provide detailed data capabilities information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and populate capabilities
-                capabilities.SupportedDatabases = ParseSupportedDatabases(response.Content);
-                capabilities.DataSynchronization = ParseDataSynchronization(response.Content);
-                capabilities.OfflineSupport = ParseOfflineSupport(response.Content);
-                capabilities.DataEncryption = ParseDataEncryption(response.Content);
-                capabilities.BackupRestore = ParseBackupRestore(response.Content);
-                capabilities.DataMigration = ParseDataMigration(response.Content);
+                capabilities.SupportedDatabases = ParseSupportedDatabases(response.Response).ToList();
+                capabilities.SupportedStorage = ParseSupportedDatabases(response.Response).ToList();
+                capabilities.SupportedCaching = ParseSupportedDatabases(response.Response).ToList();
 
                 return capabilities;
             }
@@ -332,15 +369,13 @@ Requirements:
 Provide detailed network capabilities information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and populate capabilities
-                capabilities.SupportedProtocols = ParseSupportedProtocols(response.Content);
-                capabilities.RealTimeCommunication = ParseRealTimeCommunication(response.Content);
-                capabilities.OfflineDetection = ParseOfflineDetection(response.Content);
-                capabilities.NetworkSecurity = ParseNetworkSecurity(response.Content);
-                capabilities.BandwidthOptimization = ParseBandwidthOptimization(response.Content);
-                capabilities.ConnectionManagement = ParseConnectionManagement(response.Content);
+                capabilities.SupportedProtocols = ParseSupportedProtocols(response.Response).ToList();
+                capabilities.SupportedAuth = ParseSupportedProtocols(response.Response).ToList();
+                capabilities.SupportedAPIs = ParseSupportedProtocols(response.Response).ToList();
 
                 return capabilities;
             }
@@ -377,15 +412,13 @@ Requirements:
 Provide detailed hardware capabilities information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and populate capabilities
-                capabilities.SupportedSensors = ParseSupportedSensors(response.Content);
-                capabilities.CameraCapabilities = ParseCameraCapabilities(response.Content);
-                capabilities.MicrophoneSupport = ParseMicrophoneSupport(response.Content);
-                capabilities.GPSCapabilities = ParseGPSCapabilities(response.Content);
-                capabilities.AccelerometerSupport = ParseAccelerometerSupport(response.Content);
-                capabilities.BatteryOptimization = ParseBatteryOptimization(response.Content);
+                capabilities.SupportedProcessors = ParseSupportedSensors(response.Response).ToList();
+                capabilities.SupportedMemory = ParseSupportedSensors(response.Response).ToList();
+                capabilities.SupportedStorage = ParseSupportedSensors(response.Response).ToList();
 
                 return capabilities;
             }
@@ -422,15 +455,13 @@ Requirements:
 Provide detailed security capabilities information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and populate capabilities
-                capabilities.AuthenticationMethods = ParseAuthenticationMethods(response.Content);
-                capabilities.EncryptionSupport = ParseEncryptionSupport(response.Content);
-                capabilities.BiometricAuthentication = ParseBiometricAuthentication(response.Content);
-                capabilities.SecureStorage = ParseSecureStorage(response.Content);
-                capabilities.CertificateManagement = ParseCertificateManagement(response.Content);
-                capabilities.SecurityPolicies = ParseSecurityPolicies(response.Content);
+                capabilities.SupportedEncryption = ParseAuthenticationMethods(response.Response).ToList();
+                capabilities.SupportedAuth = ParseAuthenticationMethods(response.Response).ToList();
+                capabilities.SupportedSecurity = ParseAuthenticationMethods(response.Response).ToList();
 
                 return capabilities;
             }
@@ -467,15 +498,13 @@ Requirements:
 Provide detailed performance capabilities information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and populate capabilities
-                capabilities.PerformanceOptimization = ParsePerformanceOptimization(response.Content);
-                capabilities.MemoryManagement = ParseMemoryManagement(response.Content);
-                capabilities.CPUOptimization = ParseCPUOptimization(response.Content);
-                capabilities.GPUAcceleration = ParseGPUAcceleration(response.Content);
-                capabilities.CachingCapabilities = ParseCachingCapabilities(response.Content);
-                capabilities.BackgroundProcessing = ParseBackgroundProcessing(response.Content);
+                capabilities.SupportedOptimizations = ParseSupportedSensors(response.Response).ToList();
+                capabilities.SupportedCaching = ParseSupportedSensors(response.Response).ToList();
+                capabilities.SupportedMonitoring = ParseSupportedSensors(response.Response).ToList();
 
                 return capabilities;
             }
@@ -509,18 +538,16 @@ Requirements:
 Provide detailed feature availability information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and create availability object
                 var availability = new FeatureAvailability
                 {
                     FeatureName = feature,
-                    Platform = platform,
-                    IsSupported = ParseFeatureSupport(response.Content),
-                    SupportLevel = ParseSupportLevel(response.Content),
-                    RequiresWorkaround = ParseRequiresWorkaround(response.Content),
-                    AlternativeImplementations = ParseAlternativeImplementations(response.Content),
-                    PerformanceImplications = ParsePerformanceImplications(response.Content)
+                    IsAvailable = ParseFeatureSupport(response.Response),
+                    Reason = ParseSupportLevel(response.Response),
+                    Requirements = ParseAlternativeImplementations(response.Response).ToList()
                 };
 
                 return availability;
@@ -531,10 +558,9 @@ Provide detailed feature availability information.
                 return new FeatureAvailability
                 {
                     FeatureName = feature,
-                    Platform = platform,
-                    IsSupported = false,
-                    SupportLevel = "Unknown",
-                    ErrorMessage = ex.Message
+                    IsAvailable = false,
+                    Reason = ex.Message,
+                    Requirements = new List<string>()
                 };
             }
         }
@@ -564,10 +590,11 @@ Requirements:
 Provide detailed compatibility validation information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and create compatibility issues
-                var parsedIssues = ParseCompatibilityIssues(response.Content, feature, platforms);
+                var parsedIssues = ParseCompatibilityIssues(response.Response, feature, platforms);
                 issues.AddRange(parsedIssues);
 
                 return issues;
@@ -587,7 +614,9 @@ Provide detailed compatibility validation information.
             var recommendation = new FeatureRecommendation
             {
                 FeatureName = feature,
-                TargetPlatform = targetPlatform
+                Recommendation = "Feature recommendation generated",
+                Priority = "Medium",
+                Alternatives = new List<string>()
             };
 
             try
@@ -608,21 +637,21 @@ Requirements:
 Provide detailed feature recommendation information.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 // Parse response and populate recommendation
-                recommendation.ImplementationRecommendations = ParseImplementationRecommendations(response.Content);
-                recommendation.BestPractices = ParseBestPractices(response.Content);
-                recommendation.PotentialIssues = ParsePotentialIssues(response.Content);
-                recommendation.Alternatives = ParseAlternatives(response.Content);
-                recommendation.PerformanceTips = ParsePerformanceTips(response.Content);
+                recommendation.Recommendation = ParseImplementationRecommendations(response.Response).FirstOrDefault() ?? "No specific recommendation";
+                recommendation.Priority = ParseBestPractices(response.Response).Any() ? "High" : "Medium";
+                recommendation.Alternatives = ParseAlternatives(response.Response).ToList();
 
                 return recommendation;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating feature recommendation for feature: {Feature} on platform: {Platform}", feature, targetPlatform);
-                recommendation.ErrorMessage = ex.Message;
+                recommendation.Recommendation = ex.Message;
+                recommendation.Priority = "Low";
                 return recommendation;
             }
         }

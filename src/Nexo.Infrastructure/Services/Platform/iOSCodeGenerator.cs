@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Platform;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Feature.AI.Interfaces;
+using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
@@ -90,7 +91,6 @@ namespace Nexo.Infrastructure.Services.Platform
                 }
 
                 result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 result.Success = true;
 
                 _logger.LogInformation("iOS code generation completed successfully in {Duration}ms", 
@@ -104,7 +104,6 @@ namespace Nexo.Infrastructure.Services.Platform
                 result.Success = false;
                 result.ErrorMessage = ex.Message;
                 result.EndTime = DateTimeOffset.UtcNow;
-                result.Duration = result.EndTime - result.StartTime;
                 return result;
             }
         }
@@ -341,9 +340,10 @@ Requirements:
 Generate complete, production-ready SwiftUI code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                view.Code = response.Content;
+                view.Code = response.Response;
                 view.GeneratedAt = DateTimeOffset.UtcNow;
                 view.Success = true;
 
@@ -390,9 +390,10 @@ Requirements:
 Generate complete, production-ready Core Data model code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                model.Code = response.Content;
+                model.Code = response.Response;
                 model.GeneratedAt = DateTimeOffset.UtcNow;
                 model.Success = true;
 
@@ -440,9 +441,10 @@ Requirements:
 Generate complete, production-ready ViewModel code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                viewModel.Code = response.Content;
+                viewModel.Code = response.Response;
                 viewModel.GeneratedAt = DateTimeOffset.UtcNow;
                 viewModel.Success = true;
 
@@ -490,9 +492,10 @@ Requirements:
 Generate complete, production-ready service code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                swiftService.Code = response.Content;
+                swiftService.Code = response.Response;
                 swiftService.GeneratedAt = DateTimeOffset.UtcNow;
                 swiftService.Success = true;
 
@@ -539,9 +542,10 @@ Requirements:
 Generate complete, production-ready Metal shader code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                shader.Code = response.Content;
+                shader.Code = response.Response;
                 shader.GeneratedAt = DateTimeOffset.UtcNow;
                 shader.Success = true;
 
@@ -584,13 +588,14 @@ Requirements:
 Generate complete, production-ready test code.
 ";
 
-                var response = await _modelOrchestrator.GenerateResponseAsync(prompt, cancellationToken);
+                var request = new ModelRequest { Input = prompt };
+                var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
                 tests.Add(new SwiftTest
                 {
                     Name = $"{feature.Name}Tests",
                     FeatureName = feature.Name,
-                    Code = response.Content,
+                    Code = response.Response,
                     GeneratedAt = DateTimeOffset.UtcNow,
                     Success = true
                 });

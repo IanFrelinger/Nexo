@@ -351,10 +351,10 @@
       "Nexo.Core.Application/1.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Hosting.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
           "Microsoft.Extensions.Options": "8.0.0",
-          "Nexo.Core.Domain": "1.0.0",
-          "Nexo.Feature.Pipeline": "1.0.0",
-          "Nexo.Shared": "1.0.0"
+          "Nexo.Core.Domain": "1.0.0"
         },
         "runtime": {
           "Nexo.Core.Application.dll": {}
@@ -380,16 +380,6 @@
         },
         "runtime": {
           "Nexo.Feature.AI.dll": {}
-        }
-      },
-      "Nexo.Feature.Pipeline/1.0.0": {
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
-          "Nexo.Shared": "1.0.0",
-          "System.Text.Json": "9.0.7"
-        },
-        "runtime": {
-          "Nexo.Feature.Pipeline.dll": {}
         }
       },
       "Nexo.Shared/1.0.0": {
@@ -686,11 +676,6 @@
       "sha512": ""
     },
     "Nexo.Feature.AI/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "Nexo.Feature.Pipeline/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

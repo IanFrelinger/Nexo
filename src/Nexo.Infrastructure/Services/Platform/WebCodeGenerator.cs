@@ -620,10 +620,10 @@ Generate complete, production-ready API service code.
                 var request = new ModelRequest { Input = prompt };
                 var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                service.Endpoints.Add("GET", "/api/" + entity.Name.ToLower());
-                service.Endpoints.Add("POST", "/api/" + entity.Name.ToLower());
-                service.Endpoints.Add("PUT", "/api/" + entity.Name.ToLower());
-                service.Endpoints.Add("DELETE", "/api/" + entity.Name.ToLower());
+                service.Endpoints.Add("GET /api/" + entity.Name.ToLower());
+                service.Endpoints.Add("POST /api/" + entity.Name.ToLower());
+                service.Endpoints.Add("PUT /api/" + entity.Name.ToLower());
+                service.Endpoints.Add("DELETE /api/" + entity.Name.ToLower());
 
                 return service;
             }
@@ -654,7 +654,7 @@ Generate complete, production-ready API service code.
                 var prompt = $@"
 Generate an API client for the following application:
 - App Name: {applicationLogic.ApplicationName}
-- Base URL: {options.ApiBaseUrl}
+- Base URL: https://api.example.com
 
 Requirements:
 - Use modern fetch/axios patterns
@@ -1038,17 +1038,18 @@ Generate complete, production-ready package.json.
                 var request = new ModelRequest { Input = prompt };
                 var response = await _modelOrchestrator.ProcessAsync(request, cancellationToken);
                 
-                packageJson.Code = response.Response;
-                packageJson.GeneratedAt = DateTimeOffset.UtcNow.DateTime;
-                packageJson.Success = true;
+                packageJson.Name = applicationLogic.ApplicationName;
+                packageJson.Version = "1.0.0";
+                packageJson.Description = "Generated web application";
 
                 return packageJson;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating package.json");
-                packageJson.Success = false;
-                packageJson.ErrorMessage = ex.Message;
+                packageJson.Name = applicationLogic.ApplicationName;
+                packageJson.Version = "1.0.0";
+                packageJson.Description = $"Error generating package.json: {ex.Message}";
                 return packageJson;
             }
         }

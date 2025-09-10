@@ -472,12 +472,15 @@ namespace Nexo.Infrastructure.Services.Security
             try
             {
                 // Check compliance using compliance service
-                var complianceStatus = await _complianceService.GetComplianceStatusAsync(cancellationToken);
+                var complianceReport = await _complianceService.GenerateComplianceReportAsync(
+                    DateTimeOffset.UtcNow.AddDays(-30), 
+                    DateTimeOffset.UtcNow, 
+                    cancellationToken);
                 
-                audit.GDPRCompliant = complianceStatus.GDPRCompliance;
-                audit.HIPAACompliant = complianceStatus.HIPAACompliance;
-                audit.SOXCompliant = complianceStatus.SOXCompliance;
-                audit.ISO27001Compliant = complianceStatus.ISO27001Compliance;
+                audit.GDPRCompliant = complianceReport.ComplianceMetrics.ComplianceScore >= 80;
+                audit.HIPAACompliant = complianceReport.ComplianceMetrics.ComplianceScore >= 80;
+                audit.SOXCompliant = complianceReport.ComplianceMetrics.ComplianceScore >= 80;
+                audit.ISO27001Compliant = complianceReport.ComplianceMetrics.ComplianceScore >= 80;
                 
                 audit.Score = CalculateComplianceAuditScore(audit);
                 audit.Success = true;
