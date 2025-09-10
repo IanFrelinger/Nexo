@@ -122,8 +122,8 @@ namespace Nexo.Feature.Pipeline.Tests
                 return Task.FromResult(new ExecutionValidationResult
                 {
                     IsValid = true,
-                    Errors = new List<ValidationError>(),
-                    Warnings = new List<ValidationWarning>()
+                    Errors = new List<Nexo.Shared.Models.ValidationError>(),
+                    Warnings = new List<Nexo.Shared.Models.ValidationWarning>()
                 });
             }
 
