@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities;
 using Nexo.Core.Domain.Entities.Iteration;
-using Entities = Nexo.Core.Domain.Entities.Iteration;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Entities = Nexo.Core.Domain.Entities.Iteration;
 using Nexo.Core.Domain.Interfaces.Infrastructure;
 
 namespace Nexo.Core.Application.Services.Iteration;
@@ -30,7 +30,7 @@ public class IterationStrategySelector : IIterationStrategySelector
     {
         var compatibleStrategies = _strategies
             .OfType<IIterationStrategy<T>>()
-            .Where(s => s.PlatformCompatibility.HasFlag(context.EnvironmentProfile.CurrentPlatform))
+            .Where(s => IsPlatformCompatible(s.PlatformCompatibility, context.EnvironmentProfile.CurrentPlatform))
             .ToList();
 
         if (!compatibleStrategies.Any())
@@ -175,6 +175,37 @@ public class IterationStrategySelector : IIterationStrategySelector
             ICollection<T> collection => collection.Count,
             _ => source.Take(1000).Count() // Sample for estimation
         };
+    }
+
+    /// <summary>
+    /// Checks if a PlatformCompatibility enum is compatible with a PlatformType enum
+    /// </summary>
+    /// <param name="compatibility">The PlatformCompatibility flags</param>
+    /// <param name="platformType">The PlatformType to check</param>
+    /// <returns>True if compatible, false otherwise</returns>
+    private static bool IsPlatformCompatible(Entities.PlatformCompatibility compatibility, PlatformType platformType)
+    {
+        // Handle special cases
+        if (compatibility == Entities.PlatformCompatibility.All)
+            return true;
+            
+        if (compatibility == Entities.PlatformCompatibility.None)
+            return false;
+
+        // Map PlatformType to PlatformCompatibility
+        Entities.PlatformCompatibility mappedCompatibility = platformType switch
+        {
+            PlatformType.DotNet => Entities.PlatformCompatibility.DotNet,
+            PlatformType.Unity or PlatformType.Unity2022 or PlatformType.Unity2023 => Entities.PlatformCompatibility.Unity,
+            PlatformType.WebAssembly => Entities.PlatformCompatibility.WebAssembly,
+            PlatformType.Mobile => Entities.PlatformCompatibility.Mobile,
+            PlatformType.Server => Entities.PlatformCompatibility.Server,
+            PlatformType.Browser or PlatformType.Web or PlatformType.JavaScript => Entities.PlatformCompatibility.Browser,
+            PlatformType.Native or PlatformType.Windows or PlatformType.Linux or PlatformType.macOS => Entities.PlatformCompatibility.Native,
+            _ => Entities.PlatformCompatibility.None
+        };
+
+        return compatibility.HasFlag(mappedCompatibility);
     }
 }
 
