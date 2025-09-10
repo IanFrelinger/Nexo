@@ -184,7 +184,8 @@ public class IterationStrategyIntegrationTests
         Assert.True(profile.AvailableMemoryMB > 0);
         Assert.NotEmpty(profile.FrameworkVersion);
         Assert.True(Enum.IsDefined(typeof(OptimizationLevel), profile.OptimizationLevel));
-        Assert.NotEqual(PlatformType.DotNet, profile.PlatformType);
+        // In test environment, we expect DotNet platform
+        Assert.Equal(PlatformType.DotNet, profile.PlatformType);
     }
     
     [Fact]

@@ -58,7 +58,9 @@ public class IterationStrategySelector : IIterationStrategySelector
 
     public void RegisterStrategy<T>(IIterationStrategy<T> strategy)
     {
-        _strategies.Add((IIterationStrategy<object>)strategy);
+        // Create a wrapper strategy that can handle object types
+        var wrapper = new StrategyWrapper<T>(strategy);
+        _strategies.Add(wrapper);
     }
 
     public void SetEnvironmentProfile(RuntimeEnvironmentProfile profile)
@@ -147,16 +149,37 @@ public class IterationStrategySelector : IIterationStrategySelector
     private double CalculateSimpleScore<T>(IIterationStrategy<T> strategy, IterationContext context)
     {
         double score = 0;
+        
+        // Data size suitability
         if (strategy.PerformanceProfile.OptimalDataSizeMin <= context.DataSize &&
             strategy.PerformanceProfile.OptimalDataSizeMax >= context.DataSize)
         {
             score += 50;
         }
-        if (context.Requirements.ToPerformanceRequirements().PreferParallel && strategy.PerformanceProfile.SupportsParallelization)
+        
+        // Parallelization requirement
+        if (context.Requirements.RequiresParallelization && strategy.PerformanceProfile.SupportsParallelization)
         {
             score += 30;
         }
-        // Add more simple scoring logic here
+        
+        // Memory priority
+        if (context.Requirements.PrioritizeMemory)
+        {
+            score += (int)strategy.PerformanceProfile.MemoryEfficiency * 10;
+        }
+        
+        // CPU priority
+        if (context.Requirements.PrioritizeCpu)
+        {
+            score += (int)strategy.PerformanceProfile.CpuEfficiency * 10;
+        }
+        
+        // General performance scoring
+        score += (int)strategy.PerformanceProfile.CpuEfficiency * 5;
+        score += (int)strategy.PerformanceProfile.MemoryEfficiency * 5;
+        score += (int)strategy.PerformanceProfile.Scalability * 3;
+        
         return score;
     }
 
@@ -223,7 +246,7 @@ public class SimpleForeachStrategy<T> : IIterationStrategy<T>
         OptimalDataSizeMin = 0,
         OptimalDataSizeMax = 1000,
         CpuEfficiency = PerformanceLevel.Medium,
-        MemoryEfficiency = PerformanceLevel.Medium,
+        MemoryEfficiency = PerformanceLevel.High, // High memory efficiency for memory-prioritized scenarios
         Scalability = PerformanceLevel.Medium,
         SupportsParallelization = false
     };
@@ -462,5 +485,66 @@ public class SimpleLinqStrategy<T> : IIterationStrategy<T>
     {context.ActionCode}
     return {context.ItemVariableName};
 }}).ToList();";
+    }
+}
+
+/// <summary>
+/// Wrapper strategy to convert IIterationStrategy<T> to IIterationStrategy<object>
+/// </summary>
+internal class StrategyWrapper<T> : IIterationStrategy<object>
+{
+    private readonly IIterationStrategy<T> _wrappedStrategy;
+
+    public StrategyWrapper(IIterationStrategy<T> wrappedStrategy)
+    {
+        _wrappedStrategy = wrappedStrategy;
+    }
+
+    public string StrategyId => _wrappedStrategy.StrategyId;
+    public PlatformCompatibility PlatformCompatibility => _wrappedStrategy.PlatformCompatibility;
+    public IterationPerformanceProfile PerformanceProfile => _wrappedStrategy.PerformanceProfile;
+
+    public void Execute(IEnumerable<object> source, Action<object> action)
+    {
+        var typedSource = source.OfType<T>();
+        _wrappedStrategy.Execute(typedSource, item => action(item));
+    }
+
+    public IEnumerable<TResult> Execute<TResult>(IEnumerable<object> source, Func<object, TResult> transform)
+    {
+        var typedSource = source.OfType<T>();
+        return _wrappedStrategy.Execute(typedSource, item => transform(item));
+    }
+
+    public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<object> source, Func<object, bool> predicate, Func<object, TResult> selector)
+    {
+        var typedSource = source.OfType<T>();
+        return _wrappedStrategy.ExecuteWhere(typedSource, item => predicate(item), item => selector(item));
+    }
+
+    public async Task ExecuteAsync(IEnumerable<object> source, Func<object, Task> asyncAction)
+    {
+        var typedSource = source.OfType<T>();
+        await _wrappedStrategy.ExecuteAsync(typedSource, async item => await asyncAction(item));
+    }
+
+    public string GenerateCode(CodeGenerationContext context)
+    {
+        return _wrappedStrategy.GenerateCode(context);
+    }
+
+    public bool CanHandle(IIterationPipelineContext context)
+    {
+        return _wrappedStrategy.CanHandle(context);
+    }
+
+    public int GetPriority(IIterationPipelineContext context)
+    {
+        return _wrappedStrategy.GetPriority(context);
+    }
+
+    public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
+    {
+        return _wrappedStrategy.EstimatePerformance(context);
     }
 }

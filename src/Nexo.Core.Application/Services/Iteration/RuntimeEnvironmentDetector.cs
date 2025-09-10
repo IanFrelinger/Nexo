@@ -23,6 +23,9 @@ public static class RuntimeEnvironmentDetector
         var isMobile = IsMobileEnvironment();
         var isWeb = IsWebEnvironment();
         var isUnity = IsUnityEnvironment();
+        var frameworkVersion = GetFrameworkVersion();
+        var optimizationLevel = GetOptimizationLevel();
+        var isDebugMode = IsDebugMode();
         
         return new RuntimeEnvironmentProfile
         {
@@ -32,7 +35,10 @@ public static class RuntimeEnvironmentDetector
             IsConstrained = isConstrained,
             IsMobile = isMobile,
             IsWeb = isWeb,
-            IsUnity = isUnity
+            IsUnity = isUnity,
+            FrameworkVersion = frameworkVersion,
+            OptimizationLevel = optimizationLevel,
+            IsDebugMode = isDebugMode
         };
     }
     
@@ -218,6 +224,59 @@ public static class RuntimeEnvironmentDetector
             
             // Consider constrained if low memory or low CPU cores
             return availableMemory < 512 || cpuCores < 2;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    private static string GetFrameworkVersion()
+    {
+        try
+        {
+            // Get .NET version
+            var version = System.Environment.Version;
+            return $".NET {version.Major}.{version.Minor}.{version.Build}";
+        }
+        catch
+        {
+            return ".NET 8.0";
+        }
+    }
+    
+    private static OptimizationLevel GetOptimizationLevel()
+    {
+        try
+        {
+            #if DEBUG
+            return OptimizationLevel.Debug;
+            #else
+            // In release mode, determine based on CPU cores
+            var cpuCores = System.Environment.ProcessorCount;
+            if (cpuCores >= 8)
+                return OptimizationLevel.Aggressive;
+            else if (cpuCores >= 4)
+                return OptimizationLevel.Balanced;
+            else
+                return OptimizationLevel.Conservative;
+            #endif
+        }
+        catch
+        {
+            return OptimizationLevel.Balanced;
+        }
+    }
+    
+    private static bool IsDebugMode()
+    {
+        try
+        {
+            #if DEBUG
+            return true;
+            #else
+            return false;
+            #endif
         }
         catch
         {

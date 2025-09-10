@@ -16,7 +16,7 @@ public class ParallelLinqStrategy<T> : IIterationStrategy<T>
     
     public IterationPerformanceProfile PerformanceProfile => new()
     {
-        CpuEfficiency = PerformanceLevel.High,
+        CpuEfficiency = PerformanceLevel.Excellent,
         MemoryEfficiency = PerformanceLevel.Medium,
         Scalability = PerformanceLevel.High,
         OptimalDataSizeMin = 1000,

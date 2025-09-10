@@ -16,7 +16,7 @@ public class ForLoopStrategy<T> : IIterationStrategy<T>
     
     public IterationPerformanceProfile PerformanceProfile => new()
     {
-        CpuEfficiency = PerformanceLevel.High,
+        CpuEfficiency = PerformanceLevel.Excellent,
         MemoryEfficiency = PerformanceLevel.High,
         Scalability = PerformanceLevel.High,
         OptimalDataSizeMin = 0,
@@ -128,34 +128,54 @@ public class ForLoopStrategy<T> : IIterationStrategy<T>
         };
     }
     
-    private string GenerateCSharpForLoop(CodeGenerationContext context) =>
-        $$"""
-        for (int i = 0; i < {{context.CollectionVariableName}}.Count; i++)
+    private string GenerateCSharpForLoop(CodeGenerationContext context)
+    {
+        var collectionName = !string.IsNullOrEmpty(context.CollectionName) ? context.CollectionName : context.CollectionVariableName;
+        var actionCode = !string.IsNullOrEmpty(context.IterationBodyTemplate) ? context.IterationBodyTemplate : context.ActionCode;
+        
+        return $$"""
+        for (int i = 0; i < {{collectionName}}.Count; i++)
         {
-            {{context.ActionCode.Replace("{item}", $"{context.CollectionVariableName}[i]")}}
+            {{actionCode.Replace("{item}", $"{collectionName}[i]")}}
         }
         """;
+    }
     
-    private string GenerateUnityForLoop(CodeGenerationContext context) =>
-        $$"""
-        for (int i = 0; i < {{context.CollectionVariableName}}.Count; i++)
+    private string GenerateUnityForLoop(CodeGenerationContext context)
+    {
+        var collectionName = !string.IsNullOrEmpty(context.CollectionName) ? context.CollectionName : context.CollectionVariableName;
+        var actionCode = !string.IsNullOrEmpty(context.IterationBodyTemplate) ? context.IterationBodyTemplate : context.ActionCode;
+        
+        return $$"""
+        for (int i = 0; i < {{collectionName}}.Count; i++)
         {
-            var {{context.ItemVariableName}} = {{context.CollectionVariableName}}[i];
-            {{context.ActionCode.Replace("{item}", context.ItemVariableName)}}
+            var {{context.ItemVariableName}} = {{collectionName}}[i];
+            {{actionCode.Replace("{item}", context.ItemVariableName)}}
         }
         """;
+    }
     
-    private string GenerateJavaScriptForLoop(CodeGenerationContext context) =>
-        $$"""
-        for (let i = 0; i < {{context.CollectionVariableName}}.length; i++) {
-            {{context.ActionCode.Replace("{item}", $"{context.CollectionVariableName}[i]")}}
+    private string GenerateJavaScriptForLoop(CodeGenerationContext context)
+    {
+        var collectionName = !string.IsNullOrEmpty(context.CollectionName) ? context.CollectionName : context.CollectionVariableName;
+        var actionCode = !string.IsNullOrEmpty(context.IterationBodyTemplate) ? context.IterationBodyTemplate : context.ActionCode;
+        
+        return $$"""
+        for (let i = 0; i < {{collectionName}}.length; i++) {
+            {{actionCode.Replace("{item}", $"{collectionName}[i]")}}
         }
         """;
+    }
     
-    private string GenerateSwiftForLoop(CodeGenerationContext context) =>
-        $$"""
-        for i in 0..<{{context.CollectionVariableName}}.count {
-            {{context.ActionCode.Replace("{item}", $"{context.CollectionVariableName}[i]")}}
+    private string GenerateSwiftForLoop(CodeGenerationContext context)
+    {
+        var collectionName = !string.IsNullOrEmpty(context.CollectionName) ? context.CollectionName : context.CollectionVariableName;
+        var actionCode = !string.IsNullOrEmpty(context.IterationBodyTemplate) ? context.IterationBodyTemplate : context.ActionCode;
+        
+        return $$"""
+        for i in 0..<{{collectionName}}.count {
+            {{actionCode.Replace("{item}", $"{collectionName}[i]")}}
         }
         """;
+    }
 }

@@ -396,7 +396,7 @@ public record IterationRequirements
     /// <summary>
     /// Whether ordering must be preserved
     /// </summary>
-    public bool RequiresOrdering { get; init; } = false;
+    public bool RequiresOrdering { get; init; } = true;
     
     /// <summary>
     /// Whether side effects are allowed
