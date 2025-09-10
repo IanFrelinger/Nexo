@@ -177,7 +177,7 @@ namespace Nexo.Infrastructure.Services.Monitoring
         /// <summary>
         /// Gets monitoring alerts.
         /// </summary>
-        public async Task<IEnumerable<MonitoringAlert>> GetAlertsAsync(
+        public Task<IEnumerable<MonitoringAlert>> GetAlertsAsync(
             AlertFilter filter,
             CancellationToken cancellationToken = default)
         {
@@ -207,20 +207,20 @@ namespace Nexo.Infrastructure.Services.Monitoring
                         alerts = alerts.Where(a => a.Timestamp <= filter.EndTime.Value);
                     }
 
-                    return alerts.OrderByDescending(a => a.Timestamp).ToList();
+                    return Task.FromResult<IEnumerable<MonitoringAlert>>(alerts.OrderByDescending(a => a.Timestamp).ToList());
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting monitoring alerts");
-                return new List<MonitoringAlert>();
+                return Task.FromResult<IEnumerable<MonitoringAlert>>(new List<MonitoringAlert>());
             }
         }
 
         /// <summary>
         /// Acknowledges an alert.
         /// </summary>
-        public async Task<bool> AcknowledgeAlertAsync(
+        public Task<bool> AcknowledgeAlertAsync(
             string alertId,
             string acknowledgedBy,
             CancellationToken cancellationToken = default)
@@ -236,23 +236,23 @@ namespace Nexo.Infrastructure.Services.Monitoring
                         alert.AcknowledgedAt = DateTimeOffset.UtcNow;
                         
                         _logger.LogInformation("Alert {AlertId} acknowledged by {User}", alertId, acknowledgedBy);
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
 
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error acknowledging alert {AlertId}", alertId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Resolves an alert.
         /// </summary>
-        public async Task<bool> ResolveAlertAsync(
+        public Task<bool> ResolveAlertAsync(
             string alertId,
             string resolvedBy,
             string resolution,
@@ -271,16 +271,16 @@ namespace Nexo.Infrastructure.Services.Monitoring
                         
                         _logger.LogInformation("Alert {AlertId} resolved by {User}: {Resolution}", 
                             alertId, resolvedBy, resolution);
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
 
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error resolving alert {AlertId}", alertId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
@@ -591,7 +591,7 @@ namespace Nexo.Infrastructure.Services.Monitoring
             }
         }
 
-        private async Task<SystemHealth> GetSystemHealthAsync(CancellationToken cancellationToken)
+        private Task<SystemHealth> GetSystemHealthAsync(CancellationToken cancellationToken)
         {
             var health = new SystemHealth
             {
@@ -632,10 +632,10 @@ namespace Nexo.Infrastructure.Services.Monitoring
                 health.ErrorMessage = ex.Message;
             }
 
-            return health;
+            return Task.FromResult(health);
         }
 
-        private async Task<SystemMetrics> GetSystemMetricsAsync(CancellationToken cancellationToken)
+        private Task<SystemMetrics> GetSystemMetricsAsync(CancellationToken cancellationToken)
         {
             var metrics = new SystemMetrics();
 
@@ -653,10 +653,10 @@ namespace Nexo.Infrastructure.Services.Monitoring
                 _logger.LogError(ex, "Error getting system metrics");
             }
 
-            return metrics;
+            return Task.FromResult(metrics);
         }
 
-        private async Task CreateAlertAsync(MonitoringAlert alert)
+        private Task CreateAlertAsync(MonitoringAlert alert)
         {
             lock (_lock)
             {
@@ -665,6 +665,8 @@ namespace Nexo.Infrastructure.Services.Monitoring
 
             _logger.LogWarning("Alert created: {AlertId} - {Title} ({Severity})", 
                 alert.Id, alert.Title, alert.Severity);
+            
+            return Task.CompletedTask;
         }
 
         #endregion

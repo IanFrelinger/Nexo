@@ -14,10 +14,10 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     public abstract class CrossRuntimeTestBase : IDisposable
     {
         protected readonly ILogger Logger;
-        protected readonly ITestOutputHelper TestOutput;
+        protected readonly ITestOutputHelper? TestOutput;
         protected readonly RuntimeDetection.RuntimeType CurrentRuntime;
 
-        protected CrossRuntimeTestBase(ITestOutputHelper testOutput = null)
+        protected CrossRuntimeTestBase(ITestOutputHelper? testOutput = null)
         {
             TestOutput = testOutput;
             CurrentRuntime = RuntimeDetection.CurrentRuntime;

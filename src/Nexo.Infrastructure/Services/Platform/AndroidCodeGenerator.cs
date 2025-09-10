@@ -310,7 +310,7 @@ namespace Nexo.Infrastructure.Services.Platform
         /// <summary>
         /// Generates app configuration files.
         /// </summary>
-        public async Task<AndroidAppConfiguration> GenerateAppConfigurationAsync(
+        public Task<AndroidAppConfiguration> GenerateAppConfigurationAsync(
             ApplicationLogic applicationLogic,
             AndroidGenerationOptions options,
             CancellationToken cancellationToken = default)
@@ -323,12 +323,12 @@ namespace Nexo.Infrastructure.Services.Platform
                     Content = $"Generated configuration for {applicationLogic.ApplicationName}"
                 };
 
-                return configuration;
+                return Task.FromResult(configuration);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating app configuration");
-                return new AndroidAppConfiguration();
+                return Task.FromResult(new AndroidAppConfiguration());
             }
         }
 
@@ -679,7 +679,7 @@ Generate complete, production-ready service code.
             }
         }
 
-        private async Task<List<HiltModule>> GenerateHiltModulesAsync(
+        private Task<List<HiltModule>> GenerateHiltModulesAsync(
             ApplicationLogic applicationLogic,
             AndroidGenerationOptions options,
             CancellationToken cancellationToken)
@@ -702,12 +702,12 @@ Generate complete, production-ready service code.
                 };
                 modules.Add(repositoryModule);
 
-                return modules;
+                return Task.FromResult(modules);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating Hilt modules");
-                return modules;
+                return Task.FromResult(modules);
             }
         }
 

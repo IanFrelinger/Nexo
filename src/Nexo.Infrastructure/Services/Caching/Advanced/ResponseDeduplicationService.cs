@@ -113,24 +113,24 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
         /// Computes similarity score between two pieces of content.
         /// </summary>
         public async Task<double> ComputeSimilarityAsync(string content1, string content2, CancellationToken cancellationToken = default)
-        {
-            return await _similarityCalculator.ComputeSimilarityAsync(content1, content2, cancellationToken);
-        }
+    {
+        return await _similarityCalculator.ComputeSimilarityAsync(content1, content2, cancellationToken);
+    }
 
         /// <summary>
         /// Gets deduplication statistics.
         /// </summary>
-        public async Task<DeduplicationStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
+        public Task<DeduplicationStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
         {
             // This would typically query cache statistics
-            return new DeduplicationStatistics
+            return Task.FromResult(new DeduplicationStatistics
             {
                 TotalCachedResponses = 0, // Would be populated from cache stats
                 DuplicateResponses = 0,
                 SimilarityMatches = 0,
                 CacheHitRate = 0.0,
                 LastUpdated = DateTimeOffset.UtcNow
-            };
+            });
         }
     }
 

@@ -106,9 +106,9 @@ public class AdaptationDashboard : IAdaptationDashboard
         _logger.LogInformation("Stopped adaptation event streaming");
     }
     
-    public async Task<AdaptationEffectiveness> GetAdaptationEffectivenessAsync()
+    public Task<AdaptationEffectiveness> GetAdaptationEffectivenessAsync()
     {
-        return await CalculateAdaptationEffectivenessAsync();
+        return Task.FromResult(await CalculateAdaptationEffectivenessAsync());
     }
     
     public async Task<IEnumerable<PerformanceTrend>> GetPerformanceTrendsAsync(TimeSpan timeWindow)

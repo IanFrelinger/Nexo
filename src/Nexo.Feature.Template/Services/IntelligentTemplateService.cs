@@ -104,9 +104,9 @@ namespace Nexo.Feature.Template.Services
 
         // ITemplateService implementation
         public async Task<string> GetTemplateAsync(string templateName, CancellationToken cancellationToken = default)
-        {
-            return await _baseTemplateService.GetTemplateAsync(templateName, cancellationToken);
-        }
+    {
+        return await _baseTemplateService.GetTemplateAsync(templateName, cancellationToken);
+    }
 
         public async Task SaveTemplateAsync(string templateName, string content, CancellationToken cancellationToken = default)
         {
@@ -124,9 +124,9 @@ namespace Nexo.Feature.Template.Services
         }
 
         public async Task<bool> ValidateTemplateAsync(string templateName, CancellationToken cancellationToken = default)
-        {
-            return await _baseTemplateService.ValidateTemplateAsync(templateName, cancellationToken);
-        }
+    {
+        return await _baseTemplateService.ValidateTemplateAsync(templateName, cancellationToken);
+    }
 
         public async Task<IList<string>> SuggestTemplateImprovementsAsync(string template, IDictionary<string, object>? context = null, CancellationToken cancellationToken = default)
         {

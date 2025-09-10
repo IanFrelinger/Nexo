@@ -76,9 +76,9 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
         /// Gets cache performance statistics.
         /// </summary>
         public async Task<CachePerformanceReport> GetPerformanceReportAsync(CancellationToken cancellationToken = default)
-        {
-            return await _performanceMonitor.GenerateReportAsync(cancellationToken);
-        }
+    {
+        return await _performanceMonitor.GenerateReportAsync(cancellationToken);
+    }
 
         /// <summary>
         /// Gets optimization recommendations.
@@ -93,9 +93,9 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
         /// Gets deduplication statistics.
         /// </summary>
         public async Task<DeduplicationStatistics> GetDeduplicationStatisticsAsync(CancellationToken cancellationToken = default)
-        {
-            return await _deduplicationService.GetStatisticsAsync(cancellationToken);
-        }
+    {
+        return await _deduplicationService.GetStatisticsAsync(cancellationToken);
+    }
 
         /// <summary>
         /// Optimizes cache configuration based on performance data.

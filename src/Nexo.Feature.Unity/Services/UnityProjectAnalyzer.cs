@@ -75,20 +75,20 @@ namespace Nexo.Feature.Unity.Services
             return analysis;
         }
         
-        public async Task<UnityScriptAnalysis> AnalyzeScriptsAsync(string projectPath)
-        {
-            return await _scriptAnalyzer.AnalyzeScriptsAsync(projectPath);
-        }
+        public Task<UnityScriptAnalysis> AnalyzeScriptsAsync(string projectPath)
+    {
+        return Task.FromResult(await _scriptAnalyzer.AnalyzeScriptsAsync(projectPath));
+    }
         
-        public async Task<UnityAssetAnalysis> AnalyzeAssetsAsync(string projectPath)
-        {
-            return await _assetAnalyzer.AnalyzeAssetsAsync(projectPath);
-        }
+        public Task<UnityAssetAnalysis> AnalyzeAssetsAsync(string projectPath)
+    {
+        return Task.FromResult(await _assetAnalyzer.AnalyzeAssetsAsync(projectPath));
+    }
         
-        public async Task<UnitySceneAnalysis> AnalyzeScenesAsync(string projectPath)
-        {
-            return await _sceneAnalyzer.AnalyzeScenesAsync(projectPath);
-        }
+        public Task<UnitySceneAnalysis> AnalyzeScenesAsync(string projectPath)
+    {
+        return Task.FromResult(await _sceneAnalyzer.AnalyzeScenesAsync(projectPath));
+    }
         
         public async Task<IEnumerable<IterationOptimizationOpportunity>> IdentifyIterationOptimizationsAsync(UnityScriptAnalysis scriptAnalysis)
         {
@@ -335,20 +335,20 @@ namespace Nexo.Feature.Unity.Services
     /// </summary>
     public class FileSystemService : IFileSystemService
     {
-        public async Task<bool> FileExistsAsync(string path)
-        {
-            return await Task.FromResult(File.Exists(path));
-        }
+        public Task<bool> FileExistsAsync(string path)
+    {
+        return Task.FromResult(await Task.FromResult(File.Exists(path)));
+    }
         
-        public async Task<bool> DirectoryExistsAsync(string path)
-        {
-            return await Task.FromResult(Directory.Exists(path));
-        }
+        public Task<bool> DirectoryExistsAsync(string path)
+    {
+        return Task.FromResult(await Task.FromResult(Directory.Exists(path)));
+    }
         
-        public async Task<string> ReadAllTextAsync(string path)
-        {
-            return await File.ReadAllTextAsync(path);
-        }
+        public Task<string> ReadAllTextAsync(string path)
+    {
+        return Task.FromResult(await File.ReadAllTextAsync(path));
+    }
         
         public async Task<IEnumerable<string>> GetFilesAsync(string directory, string pattern, SearchOption searchOption)
         {

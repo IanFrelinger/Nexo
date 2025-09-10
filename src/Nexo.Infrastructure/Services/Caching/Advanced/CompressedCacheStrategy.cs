@@ -139,16 +139,16 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
         /// <summary>
         /// Inner strategy that handles the actual caching of compressed data.
         /// </summary>
-        private class CompressedInnerStrategy<TKey, TValue> : ICacheStrategy<TKey, byte[]> where TKey : notnull
+        private class CompressedInnerStrategy<TInnerKey, TInnerValue> : ICacheStrategy<TInnerKey, byte[]> where TInnerKey : notnull
         {
-            private readonly ICacheStrategy<TKey, TValue> _innerStrategy;
+            private readonly ICacheStrategy<TInnerKey, TInnerValue> _innerStrategy;
 
-            public CompressedInnerStrategy(ICacheStrategy<TKey, TValue> innerStrategy)
+            public CompressedInnerStrategy(ICacheStrategy<TInnerKey, TInnerValue> innerStrategy)
             {
                 _innerStrategy = innerStrategy;
             }
 
-            public async Task<byte[]> GetAsync(TKey key, CancellationToken cancellationToken = default)
+            public async Task<byte[]> GetAsync(TInnerKey key, CancellationToken cancellationToken = default)
             {
                 var value = await _innerStrategy.GetAsync(key, cancellationToken);
                 if (value == null)
@@ -160,20 +160,20 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
                 return Encoding.UTF8.GetBytes(json);
             }
 
-            public async Task SetAsync(TKey key, byte[] value, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
+            public async Task SetAsync(TInnerKey key, byte[] value, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
             {
                 if (value == null || value.Length == 0)
                 {
-                    await _innerStrategy.SetAsync(key, default(TValue)!, ttl, cancellationToken);
+                    await _innerStrategy.SetAsync(key, default(TInnerValue)!, ttl, cancellationToken);
                     return;
                 }
 
                 var json = Encoding.UTF8.GetString(value);
-                var deserializedValue = JsonSerializer.Deserialize<TValue>(json) ?? default(TValue)!;
+                var deserializedValue = JsonSerializer.Deserialize<TInnerValue>(json) ?? default(TInnerValue)!;
                 await _innerStrategy.SetAsync(key, deserializedValue, ttl, cancellationToken);
             }
 
-            public async Task RemoveAsync(TKey key, CancellationToken cancellationToken = default)
+            public async Task RemoveAsync(TInnerKey key, CancellationToken cancellationToken = default)
             {
                 await _innerStrategy.RemoveAsync(key, cancellationToken);
             }
@@ -183,7 +183,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
                 await _innerStrategy.ClearAsync(cancellationToken);
             }
 
-            public async Task InvalidateAsync(TKey key, CancellationToken cancellationToken = default)
+            public async Task InvalidateAsync(TInnerKey key, CancellationToken cancellationToken = default)
             {
                 await _innerStrategy.InvalidateAsync(key, cancellationToken);
             }

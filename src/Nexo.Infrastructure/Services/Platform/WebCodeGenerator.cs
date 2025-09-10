@@ -852,7 +852,7 @@ Generate complete, production-ready PWA manifest.
             }
         }
 
-        private async Task<IEnumerable<PWAIcon>> GeneratePWAIconsAsync(
+        private Task<IEnumerable<PWAIcon>> GeneratePWAIconsAsync(
             ApplicationLogic applicationLogic,
             WebGenerationOptions options,
             CancellationToken cancellationToken)
@@ -875,16 +875,16 @@ Generate complete, production-ready PWA manifest.
                     icons.Add(icon);
                 }
 
-                return icons;
+                return Task.FromResult<IEnumerable<PWAIcon>>(icons);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating PWA icons");
-                return icons;
+                return Task.FromResult<IEnumerable<PWAIcon>>(icons);
             }
         }
 
-        private async Task<IEnumerable<PWASplashScreen>> GeneratePWASplashScreensAsync(
+        private Task<IEnumerable<PWASplashScreen>> GeneratePWASplashScreensAsync(
             ApplicationLogic applicationLogic,
             WebGenerationOptions options,
             CancellationToken cancellationToken)
@@ -906,12 +906,12 @@ Generate complete, production-ready PWA manifest.
                     splashScreens.Add(splashScreen);
                 }
 
-                return splashScreens;
+                return Task.FromResult<IEnumerable<PWASplashScreen>>(splashScreens);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating PWA splash screens");
-                return splashScreens;
+                return Task.FromResult<IEnumerable<PWASplashScreen>>(splashScreens);
             }
         }
 

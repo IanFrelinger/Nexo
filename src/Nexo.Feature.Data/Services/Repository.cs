@@ -263,10 +263,10 @@ namespace Nexo.Feature.Data.Services
             }
         }
 
-        public async Task<long> CountAsync(CancellationToken cancellationToken = default)
-        {
-            return await GetCountAsync(cancellationToken);
-        }
+        public Task<long> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(await GetCountAsync(cancellationToken));
+    }
 
         public async Task<long> CountAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
         {

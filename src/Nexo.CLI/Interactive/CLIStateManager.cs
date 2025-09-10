@@ -30,9 +30,9 @@ namespace Nexo.CLI.Interactive
             _currentState = LoadState();
         }
         
-        public async Task<CLIContext> GetCurrentContextAsync()
-        {
-            return new CLIContext
+        public Task<CLIContext> GetCurrentContextAsync()
+    {
+        return Task.FromResult(new CLIContext
             {
                 CurrentProject = _currentState.CurrentProject,
                 CurrentPlatform = _currentState.CurrentPlatform,
@@ -43,8 +43,8 @@ namespace Nexo.CLI.Interactive
                 HasPerformanceIssues = await CheckPerformanceIssues(),
                 WorkingDirectory = Directory.GetCurrentDirectory(),
                 LastActivity = _currentState.LastUsed
-            };
-        }
+            });
+    }
         
         public async Task SetCurrentProjectAsync(ProjectInfo project)
         {

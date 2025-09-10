@@ -203,9 +203,9 @@ public class BasicResourceManager : IResourceManager
         return usage;
     }
 
-    public async Task<ResourceLimits> GetLimitsAsync(CancellationToken cancellationToken = default)
+    public Task<ResourceLimits> GetLimitsAsync(CancellationToken cancellationToken = default)
     {
-        return await Task.FromResult(_limits);
+        return Task.FromResult(_limits);
     }
 
     public async Task<ResourceMonitoringInfo> MonitorAsync(CancellationToken cancellationToken = default)

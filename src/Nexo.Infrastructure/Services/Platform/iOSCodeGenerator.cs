@@ -247,7 +247,7 @@ namespace Nexo.Infrastructure.Services.Platform
         /// <summary>
         /// Generates app configuration files.
         /// </summary>
-        public async Task<iOSAppConfiguration> GenerateAppConfigurationAsync(
+        public Task<iOSAppConfiguration> GenerateAppConfigurationAsync(
             ApplicationLogic applicationLogic,
             iOSGenerationOptions options,
             CancellationToken cancellationToken = default)
@@ -268,12 +268,12 @@ namespace Nexo.Infrastructure.Services.Platform
                     BuildSettings = GenerateBuildSettings(options)
                 };
 
-                return configuration;
+                return Task.FromResult(configuration);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating app configuration");
-                return new iOSAppConfiguration();
+                return Task.FromResult(new iOSAppConfiguration());
             }
         }
 

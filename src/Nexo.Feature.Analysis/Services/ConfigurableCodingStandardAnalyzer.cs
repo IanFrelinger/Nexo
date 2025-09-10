@@ -263,10 +263,10 @@ namespace Nexo.Feature.Analysis.Services
             return _configuration != null && _configuration.IsEnabled && _configuration.Standards.Any();
         }
 
-        public async Task<CodingStandardAnalyzerStatistics> GetStatisticsAsync()
-        {
-            return await Task.FromResult(_statistics);
-        }
+        public Task<CodingStandardAnalyzerStatistics> GetStatisticsAsync()
+    {
+        return Task.FromResult(_statistics);
+    }
 
         private async Task<List<CodingStandard>> GetApplicableStandardsAsync(string? filePath, string? agentId)
         {

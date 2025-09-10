@@ -143,12 +143,12 @@ public record RuntimeEnvironmentProfile : EnvironmentProfile
     /// <summary>
     /// Whether environment is constrained
     /// </summary>
-    public bool IsConstrained { get; init; } = false;
+    public new bool IsConstrained { get; init; } = false;
     
     /// <summary>
     /// Whether environment is mobile
     /// </summary>
-    public bool IsMobile { get; init; } = false;
+    public new bool IsMobile { get; init; } = false;
     
     /// <summary>
     /// Whether environment is web-based

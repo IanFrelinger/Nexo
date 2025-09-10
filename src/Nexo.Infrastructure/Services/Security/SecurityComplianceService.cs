@@ -217,7 +217,7 @@ namespace Nexo.Infrastructure.Services.Security
         /// <summary>
         /// Generates security recommendations based on audit data.
         /// </summary>
-        private async Task<List<SecurityRecommendation>> GenerateSecurityRecommendationsAsync(
+        private Task<List<SecurityRecommendation>> GenerateSecurityRecommendationsAsync(
             AuditReport auditReport, 
             ApiKeyUsageStatistics apiKeyStats, 
             CancellationToken cancellationToken)
@@ -265,13 +265,13 @@ namespace Nexo.Infrastructure.Services.Security
                 });
             }
 
-            return recommendations;
+            return Task.FromResult(recommendations);
         }
 
         /// <summary>
         /// Identifies compliance violations from audit data.
         /// </summary>
-        private async Task<List<ComplianceViolation>> IdentifyComplianceViolationsAsync(
+        private Task<List<ComplianceViolation>> IdentifyComplianceViolationsAsync(
             AuditReport auditReport, 
             IEnumerable<ApiKeyInfo> apiKeys, 
             CancellationToken cancellationToken)
@@ -295,7 +295,7 @@ namespace Nexo.Infrastructure.Services.Security
                 });
             }
 
-            return violations;
+            return Task.FromResult(violations);
         }
 
         /// <summary>
@@ -359,7 +359,7 @@ namespace Nexo.Infrastructure.Services.Security
         /// <summary>
         /// Generates health check recommendations.
         /// </summary>
-        private async Task<List<SecurityRecommendation>> GenerateHealthCheckRecommendationsAsync(
+        private Task<List<SecurityRecommendation>> GenerateHealthCheckRecommendationsAsync(
             ApiKeyUsageStatistics apiKeyStats, 
             IEnumerable<SecurityEvent> recentEvents, 
             CancellationToken cancellationToken)
@@ -393,7 +393,7 @@ namespace Nexo.Infrastructure.Services.Security
                 });
             }
 
-            return recommendations;
+            return Task.FromResult(recommendations);
         }
 
         /// <summary>

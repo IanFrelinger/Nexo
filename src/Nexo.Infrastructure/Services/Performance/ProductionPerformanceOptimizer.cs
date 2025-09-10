@@ -261,7 +261,7 @@ namespace Nexo.Infrastructure.Services.Performance
         /// <summary>
         /// Gets performance trends over time.
         /// </summary>
-        public async Task<PerformanceTrends> GetPerformanceTrendsAsync(
+        public Task<PerformanceTrends> GetPerformanceTrendsAsync(
             TimeSpan timeWindow,
             CancellationToken cancellationToken = default)
         {
@@ -297,12 +297,12 @@ namespace Nexo.Infrastructure.Services.Performance
                     }
                 }
 
-                return trends;
+                return Task.FromResult(trends);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating performance trends");
-                return trends;
+                return Task.FromResult(trends);
             }
         }
 
@@ -343,7 +343,7 @@ namespace Nexo.Infrastructure.Services.Performance
             return result;
         }
 
-        private async Task<MemoryOptimizationResult> OptimizeMemoryUsageAsync(CancellationToken cancellationToken)
+        private Task<MemoryOptimizationResult> OptimizeMemoryUsageAsync(CancellationToken cancellationToken)
         {
             var result = new MemoryOptimizationResult();
             
@@ -370,10 +370,10 @@ namespace Nexo.Infrastructure.Services.Performance
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<AIOptimizationResult> OptimizeAIPerformanceAsync(CancellationToken cancellationToken)
+        private Task<AIOptimizationResult> OptimizeAIPerformanceAsync(CancellationToken cancellationToken)
         {
             var result = new AIOptimizationResult();
             
@@ -392,10 +392,10 @@ namespace Nexo.Infrastructure.Services.Performance
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<SecurityOptimizationResult> OptimizeSecurityPerformanceAsync(CancellationToken cancellationToken)
+        private Task<SecurityOptimizationResult> OptimizeSecurityPerformanceAsync(CancellationToken cancellationToken)
         {
             var result = new SecurityOptimizationResult();
             
@@ -414,10 +414,10 @@ namespace Nexo.Infrastructure.Services.Performance
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<DatabaseOptimizationResult> OptimizeDatabasePerformanceAsync(CancellationToken cancellationToken)
+        private Task<DatabaseOptimizationResult> OptimizeDatabasePerformanceAsync(CancellationToken cancellationToken)
         {
             var result = new DatabaseOptimizationResult();
             
@@ -436,10 +436,10 @@ namespace Nexo.Infrastructure.Services.Performance
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<NetworkOptimizationResult> OptimizeNetworkPerformanceAsync(CancellationToken cancellationToken)
+        private Task<NetworkOptimizationResult> OptimizeNetworkPerformanceAsync(CancellationToken cancellationToken)
         {
             var result = new NetworkOptimizationResult();
             
@@ -458,10 +458,10 @@ namespace Nexo.Infrastructure.Services.Performance
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<SystemResourceMetrics> BenchmarkSystemResourcesAsync(CancellationToken cancellationToken)
+        private Task<SystemResourceMetrics> BenchmarkSystemResourcesAsync(CancellationToken cancellationToken)
         {
             var metrics = new SystemResourceMetrics();
             
@@ -478,7 +478,7 @@ namespace Nexo.Infrastructure.Services.Performance
                 _logger.LogError(ex, "Error benchmarking system resources");
             }
             
-            return metrics;
+            return Task.FromResult(metrics);
         }
 
         private async Task<CachePerformanceMetrics> BenchmarkCachePerformanceAsync(CancellationToken cancellationToken)

@@ -339,7 +339,7 @@ namespace Nexo.Infrastructure.Services.Security
             return audit;
         }
 
-        private async Task<AuthenticationSecurityAudit> AuditAuthenticationSecurityAsync(CancellationToken cancellationToken)
+        private Task<AuthenticationSecurityAudit> AuditAuthenticationSecurityAsync(CancellationToken cancellationToken)
         {
             var audit = new AuthenticationSecurityAudit();
             
@@ -362,10 +362,10 @@ namespace Nexo.Infrastructure.Services.Security
                 audit.ErrorMessage = ex.Message;
             }
             
-            return audit;
+            return Task.FromResult(audit);
         }
 
-        private async Task<AuthorizationSecurityAudit> AuditAuthorizationSecurityAsync(CancellationToken cancellationToken)
+        private Task<AuthorizationSecurityAudit> AuditAuthorizationSecurityAsync(CancellationToken cancellationToken)
         {
             var audit = new AuthorizationSecurityAudit();
             
@@ -387,10 +387,10 @@ namespace Nexo.Infrastructure.Services.Security
                 audit.ErrorMessage = ex.Message;
             }
             
-            return audit;
+            return Task.FromResult(audit);
         }
 
-        private async Task<DataEncryptionAudit> AuditDataEncryptionAsync(CancellationToken cancellationToken)
+        private Task<DataEncryptionAudit> AuditDataEncryptionAsync(CancellationToken cancellationToken)
         {
             var audit = new DataEncryptionAudit();
             
@@ -412,10 +412,10 @@ namespace Nexo.Infrastructure.Services.Security
                 audit.ErrorMessage = ex.Message;
             }
             
-            return audit;
+            return Task.FromResult(audit);
         }
 
-        private async Task<AuditLoggingSecurityAudit> AuditAuditLoggingSecurityAsync(CancellationToken cancellationToken)
+        private Task<AuditLoggingSecurityAudit> AuditAuditLoggingSecurityAsync(CancellationToken cancellationToken)
         {
             var audit = new AuditLoggingSecurityAudit();
             
@@ -437,10 +437,10 @@ namespace Nexo.Infrastructure.Services.Security
                 audit.ErrorMessage = ex.Message;
             }
             
-            return audit;
+            return Task.FromResult(audit);
         }
 
-        private async Task<NetworkSecurityAudit> AuditNetworkSecurityAsync(CancellationToken cancellationToken)
+        private Task<NetworkSecurityAudit> AuditNetworkSecurityAsync(CancellationToken cancellationToken)
         {
             var audit = new NetworkSecurityAudit();
             
@@ -462,7 +462,7 @@ namespace Nexo.Infrastructure.Services.Security
                 audit.ErrorMessage = ex.Message;
             }
             
-            return audit;
+            return Task.FromResult(audit);
         }
 
         private async Task<ComplianceAudit> AuditComplianceAsync(CancellationToken cancellationToken)
@@ -525,7 +525,7 @@ namespace Nexo.Infrastructure.Services.Security
 
         #region Penetration Testing Methods
 
-        private async Task<AuthenticationBypassTestResult> TestAuthenticationBypassAsync(CancellationToken cancellationToken)
+        private Task<AuthenticationBypassTestResult> TestAuthenticationBypassAsync(CancellationToken cancellationToken)
         {
             var result = new AuthenticationBypassTestResult();
             
@@ -547,10 +547,10 @@ namespace Nexo.Infrastructure.Services.Security
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<AuthorizationEscalationTestResult> TestAuthorizationEscalationAsync(CancellationToken cancellationToken)
+        private Task<AuthorizationEscalationTestResult> TestAuthorizationEscalationAsync(CancellationToken cancellationToken)
         {
             var result = new AuthorizationEscalationTestResult();
             
@@ -571,10 +571,10 @@ namespace Nexo.Infrastructure.Services.Security
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<ApiKeySecurityTestResult> TestApiKeySecurityAsync(CancellationToken cancellationToken)
+        private Task<ApiKeySecurityTestResult> TestApiKeySecurityAsync(CancellationToken cancellationToken)
         {
             var result = new ApiKeySecurityTestResult();
             
@@ -595,10 +595,10 @@ namespace Nexo.Infrastructure.Services.Security
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<DataInjectionTestResult> TestDataInjectionAsync(CancellationToken cancellationToken)
+        private Task<DataInjectionTestResult> TestDataInjectionAsync(CancellationToken cancellationToken)
         {
             var result = new DataInjectionTestResult();
             
@@ -620,10 +620,10 @@ namespace Nexo.Infrastructure.Services.Security
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<SessionManagementTestResult> TestSessionManagementAsync(CancellationToken cancellationToken)
+        private Task<SessionManagementTestResult> TestSessionManagementAsync(CancellationToken cancellationToken)
         {
             var result = new SessionManagementTestResult();
             
@@ -644,10 +644,10 @@ namespace Nexo.Infrastructure.Services.Security
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
-        private async Task<InputValidationTestResult> TestInputValidationAsync(CancellationToken cancellationToken)
+        private Task<InputValidationTestResult> TestInputValidationAsync(CancellationToken cancellationToken)
         {
             var result = new InputValidationTestResult();
             
@@ -668,76 +668,76 @@ namespace Nexo.Infrastructure.Services.Security
                 result.ErrorMessage = ex.Message;
             }
             
-            return result;
+            return Task.FromResult(result);
         }
 
         #endregion
 
         #region Compliance Check Methods
 
-        private async Task<ComplianceCheckResult> CheckGDPRComplianceAsync(CancellationToken cancellationToken)
+        private Task<ComplianceCheckResult> CheckGDPRComplianceAsync(CancellationToken cancellationToken)
         {
-            return new ComplianceCheckResult
+            return Task.FromResult(new ComplianceCheckResult
             {
                 Standard = "GDPR",
                 IsCompliant = true,
                 Score = 95,
                 LastChecked = DateTimeOffset.UtcNow
-            };
+            });
         }
 
-        private async Task<ComplianceCheckResult> CheckHIPAAComplianceAsync(CancellationToken cancellationToken)
+        private Task<ComplianceCheckResult> CheckHIPAAComplianceAsync(CancellationToken cancellationToken)
         {
-            return new ComplianceCheckResult
+            return Task.FromResult(new ComplianceCheckResult
             {
                 Standard = "HIPAA",
                 IsCompliant = true,
                 Score = 92,
                 LastChecked = DateTimeOffset.UtcNow
-            };
+            });
         }
 
-        private async Task<ComplianceCheckResult> CheckSOXComplianceAsync(CancellationToken cancellationToken)
+        private Task<ComplianceCheckResult> CheckSOXComplianceAsync(CancellationToken cancellationToken)
         {
-            return new ComplianceCheckResult
+            return Task.FromResult(new ComplianceCheckResult
             {
                 Standard = "SOX",
                 IsCompliant = true,
                 Score = 88,
                 LastChecked = DateTimeOffset.UtcNow
-            };
+            });
         }
 
-        private async Task<ComplianceCheckResult> CheckISO27001ComplianceAsync(CancellationToken cancellationToken)
+        private Task<ComplianceCheckResult> CheckISO27001ComplianceAsync(CancellationToken cancellationToken)
         {
-            return new ComplianceCheckResult
+            return Task.FromResult(new ComplianceCheckResult
             {
                 Standard = "ISO 27001",
                 IsCompliant = true,
                 Score = 90,
                 LastChecked = DateTimeOffset.UtcNow
-            };
+            });
         }
 
-        private async Task<ComplianceCheckResult> CheckPCIComplianceAsync(CancellationToken cancellationToken)
+        private Task<ComplianceCheckResult> CheckPCIComplianceAsync(CancellationToken cancellationToken)
         {
-            return new ComplianceCheckResult
+            return Task.FromResult(new ComplianceCheckResult
             {
                 Standard = "PCI DSS",
                 IsCompliant = true,
                 Score = 93,
                 LastChecked = DateTimeOffset.UtcNow
-            };
+            });
         }
 
         #endregion
 
         #region Helper Methods
 
-        private async Task<List<SecurityAuditResult>> GetRecentAuditResultsAsync(CancellationToken cancellationToken)
+        private Task<List<SecurityAuditResult>> GetRecentAuditResultsAsync(CancellationToken cancellationToken)
         {
             // In a real implementation, this would retrieve recent audit results from storage
-            return new List<SecurityAuditResult>();
+            return Task.FromResult(new List<SecurityAuditResult>());
         }
 
         private double CalculateOverallSecurityScore(SecurityAuditResult result)
