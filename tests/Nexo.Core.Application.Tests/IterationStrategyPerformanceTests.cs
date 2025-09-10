@@ -189,7 +189,8 @@ public class IterationStrategyPerformanceTests
         // Assert
         Assert.NotNull(strategy);
         // Should prefer CPU-efficient strategies
-        Assert.True(strategy.PerformanceProfile.CpuEfficiency >= PerformanceLevel.High);
+        Assert.True(strategy.PerformanceProfile.CpuEfficiency >= PerformanceLevel.High, 
+            $"Expected CPU efficiency >= High, but got {strategy.PerformanceProfile.CpuEfficiency} for strategy {strategy.StrategyId}");
     }
     
     [Fact]

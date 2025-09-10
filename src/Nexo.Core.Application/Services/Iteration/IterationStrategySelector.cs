@@ -8,6 +8,7 @@ using Nexo.Core.Domain.Entities.Iteration;
 using Nexo.Core.Domain.Entities.Infrastructure;
 using Entities = Nexo.Core.Domain.Entities.Iteration;
 using Nexo.Core.Domain.Interfaces.Infrastructure;
+using Nexo.Core.Application.Services.Iteration.Strategies;
 
 namespace Nexo.Core.Application.Services.Iteration;
 
@@ -29,20 +30,34 @@ public class IterationStrategySelector : IIterationStrategySelector
     public IIterationStrategy<T> SelectStrategy<T>(IterationContext context)
     {
         var compatibleStrategies = _strategies
-            .OfType<IIterationStrategy<T>>()
+            .Where(s => s is IIterationStrategy<T> || (s is StrategyWrapper<T> wrapper && wrapper.CanHandleType<T>()))
             .Where(s => IsPlatformCompatible(s.PlatformCompatibility, context.EnvironmentProfile.CurrentPlatform))
+            .Select(s => s is IIterationStrategy<T> direct ? direct : ((StrategyWrapper<T>)s).Unwrap())
             .ToList();
 
+        _logger.LogDebug("Found {Count} compatible strategies for type {Type}", compatibleStrategies.Count, typeof(T).Name);
+        
         if (!compatibleStrategies.Any())
         {
+            _logger.LogWarning("No compatible strategies found, using fallback");
             // Fallback to a basic strategy if no specific one is found
             return new SimpleForeachStrategy<T>();
         }
 
+        // Calculate scores and log them
+        var scoredStrategies = compatibleStrategies
+            .Select(s => new { Strategy = s, Score = CalculateSimpleScore(s, context) })
+            .OrderByDescending(x => x.Score)
+            .ToList();
+            
+        _logger.LogDebug("Strategy scores:");
+        foreach (var scored in scoredStrategies)
+        {
+            _logger.LogDebug("  {StrategyId}: {Score}", scored.Strategy.StrategyId, scored.Score);
+        }
+
         // Simple scoring: prioritize performance for larger data, readability for smaller
-        return compatibleStrategies
-            .OrderByDescending(s => CalculateSimpleScore(s, context))
-            .FirstOrDefault() ?? new SimpleForeachStrategy<T>();
+        return scoredStrategies.FirstOrDefault()?.Strategy ?? new SimpleForeachStrategy<T>();
     }
 
     public IIterationStrategy<T> SelectStrategy<T>(IEnumerable<T> source, IterationRequirements requirements)
@@ -169,10 +184,10 @@ public class IterationStrategySelector : IIterationStrategySelector
             score += (int)strategy.PerformanceProfile.MemoryEfficiency * 10;
         }
         
-        // CPU priority
+        // CPU priority - give much higher weight to CPU efficiency when CPU is prioritized
         if (context.Requirements.PrioritizeCpu)
         {
-            score += (int)strategy.PerformanceProfile.CpuEfficiency * 10;
+            score += (int)strategy.PerformanceProfile.CpuEfficiency * 50; // Increased from 10 to 50
         }
         
         // General performance scoring
@@ -180,14 +195,46 @@ public class IterationStrategySelector : IIterationStrategySelector
         score += (int)strategy.PerformanceProfile.MemoryEfficiency * 5;
         score += (int)strategy.PerformanceProfile.Scalability * 3;
         
+        // Debug logging
+        _logger.LogDebug("Strategy {StrategyId}: CPU={CpuEfficiency}, Memory={MemoryEfficiency}, Score={Score}", 
+            strategy.StrategyId, strategy.PerformanceProfile.CpuEfficiency, 
+            strategy.PerformanceProfile.MemoryEfficiency, score);
+        
         return score;
     }
 
     private void RegisterDefaultStrategies()
     {
-        _strategies.Add(new SimpleForLoopStrategy<object>());
-        _strategies.Add(new SimpleForeachStrategy<object>());
-        _strategies.Add(new SimpleLinqStrategy<object>());
+        // Register high-performance strategies for int type using wrapper
+        RegisterStrategy(new ForLoopStrategy<int>());
+        RegisterStrategy(new ForeachStrategy<int>());
+        RegisterStrategy(new LinqStrategy<int>());
+        RegisterStrategy(new ParallelLinqStrategy<int>());
+        RegisterStrategy(new UnityOptimizedStrategy<int>());
+        RegisterStrategy(new WasmOptimizedStrategy<int>());
+        
+        // Register for object type as well
+        RegisterStrategy(new ForLoopStrategy<object>());
+        RegisterStrategy(new ForeachStrategy<object>());
+        RegisterStrategy(new LinqStrategy<object>());
+        RegisterStrategy(new ParallelLinqStrategy<object>());
+        RegisterStrategy(new UnityOptimizedStrategy<object>());
+        RegisterStrategy(new WasmOptimizedStrategy<object>());
+        
+        // Keep simple strategies as fallbacks
+        RegisterStrategy(new SimpleForLoopStrategy<int>());
+        RegisterStrategy(new SimpleForeachStrategy<int>());
+        RegisterStrategy(new SimpleLinqStrategy<int>());
+        RegisterStrategy(new SimpleForLoopStrategy<object>());
+        RegisterStrategy(new SimpleForeachStrategy<object>());
+        RegisterStrategy(new SimpleLinqStrategy<object>());
+        
+        _logger.LogInformation("Registered {Count} iteration strategies", _strategies.Count);
+        foreach (var strategy in _strategies)
+        {
+            _logger.LogDebug("Registered strategy: {StrategyId} (CPU: {CpuEfficiency}, Memory: {MemoryEfficiency})", 
+                strategy.StrategyId, strategy.PerformanceProfile.CpuEfficiency, strategy.PerformanceProfile.MemoryEfficiency);
+        }
     }
 
 
@@ -546,5 +593,15 @@ internal class StrategyWrapper<T> : IIterationStrategy<object>
     public Nexo.Core.Domain.Entities.Infrastructure.PerformanceEstimate EstimatePerformance(IterationContext context)
     {
         return _wrappedStrategy.EstimatePerformance(context);
+    }
+
+    public bool CanHandleType<TTarget>()
+    {
+        return typeof(T) == typeof(TTarget);
+    }
+
+    public IIterationStrategy<T> Unwrap()
+    {
+        return _wrappedStrategy;
     }
 }
