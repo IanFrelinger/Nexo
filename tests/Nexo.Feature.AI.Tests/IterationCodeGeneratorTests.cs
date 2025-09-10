@@ -6,9 +6,9 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Application.Services.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Feature.AI.Interfaces;
 using Nexo.Feature.AI.Models;
 using Xunit;
@@ -50,7 +50,7 @@ public class IterationCodeGeneratorTests : IDisposable
             },
             EnvironmentProfile = new RuntimeEnvironmentProfile
             {
-                PlatformType = PlatformCompatibility.DotNet,
+                PlatformType = Nexo.Core.Domain.Entities.Infrastructure.PlatformType.DotNet,
                 CpuCores = 4,
                 AvailableMemoryMB = 8192
             }

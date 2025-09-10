@@ -12,5 +12,6 @@
     <ProjectReference Include="../Nexo.Core.Application/Nexo.Core.Application.csproj" />
     <ProjectReference Include="../Nexo.Feature.AI/Nexo.Feature.AI.csproj" />
     <ProjectReference Include="../Nexo.Feature.Factory/Nexo.Feature.Factory.csproj" />
+    <ProjectReference Include="../Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj" />
   </ItemGroup>
 </Project> 

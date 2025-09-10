@@ -312,7 +312,7 @@ public record OptimizeIterationRequest
     /// <summary>
     /// Pipeline context
     /// </summary>
-    public PipelineContext PipelineContext { get; init; } = new();
+    public PipelineContext? PipelineContext { get; init; }
     
     /// <summary>
     /// Whether to include null checks

@@ -124,9 +124,9 @@ public abstract class IterationAwareRequest : IIterationAwareRequest
         return new IterationContext
         {
             DataSize = EstimatedDataSize,
-            Requirements = PerformanceRequirements,
+            Requirements = PerformanceRequirements.ToIterationRequirements(),
             EnvironmentProfile = EnvironmentProfile ?? RuntimeEnvironmentDetector.DetectCurrent(),
-            PipelineContext = PipelineContext.Current,
+            PipelineContext = PipelineContext.Current as IIterationPipelineContext,
             TargetPlatform = TargetPlatform,
             IsCpuBound = IsCpuBound,
             IsIoBound = IsIoBound,

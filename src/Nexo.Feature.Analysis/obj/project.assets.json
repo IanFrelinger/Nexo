@@ -693,6 +693,23 @@
           "bin/placeholder/Nexo.Feature.Factory.dll": {}
         }
       },
+      "Nexo.Feature.Pipeline/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Nexo.Core.Application": "1.0.0",
+          "Nexo.Core.Domain": "1.0.0",
+          "Nexo.Shared": "1.0.0",
+          "System.Text.Json": "9.0.7"
+        },
+        "compile": {
+          "bin/placeholder/Nexo.Feature.Pipeline.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Nexo.Feature.Pipeline.dll": {}
+        }
+      },
       "Nexo.Shared/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -2599,6 +2616,11 @@
       "path": "../Nexo.Feature.Factory/Nexo.Feature.Factory.csproj",
       "msbuildProject": "../Nexo.Feature.Factory/Nexo.Feature.Factory.csproj"
     },
+    "Nexo.Feature.Pipeline/1.0.0": {
+      "type": "project",
+      "path": "../Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj",
+      "msbuildProject": "../Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj"
+    },
     "Nexo.Shared/1.0.0": {
       "type": "project",
       "path": "../Nexo.Shared/Nexo.Shared.csproj",
@@ -2610,7 +2632,8 @@
       "Microsoft.Extensions.Logging.Abstractions >= 8.0.0",
       "Nexo.Core.Application >= 1.0.0",
       "Nexo.Feature.AI >= 1.0.0",
-      "Nexo.Feature.Factory >= 1.0.0"
+      "Nexo.Feature.Factory >= 1.0.0",
+      "Nexo.Feature.Pipeline >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -2647,6 +2670,9 @@
             },
             "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj": {
               "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Factory/Nexo.Feature.Factory.csproj"
+            },
+            "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj": {
+              "projectPath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj"
             }
           }
         }

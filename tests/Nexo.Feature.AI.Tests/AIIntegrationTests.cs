@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Models.Iteration;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Feature.AI.Interfaces;
 using Nexo.Feature.AI.Models;
 using Nexo.Feature.AI.Services;
@@ -53,7 +53,7 @@ public class AIIntegrationTests : IDisposable
             },
             EnvironmentProfile = new RuntimeEnvironmentProfile
             {
-                PlatformType = PlatformCompatibility.DotNet,
+                PlatformType = Nexo.Core.Domain.Entities.Infrastructure.PlatformType.DotNet,
                 CpuCores = 4,
                 AvailableMemoryMB = 8192
             }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Nexo.Feature.Pipeline")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d271c2b3679b2da51b9d44b66bf3918108350654")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+66e0c8091b535f9ab377e2cfbbeca798ad7f6f40")]
 [assembly: System.Reflection.AssemblyProductAttribute("Nexo.Feature.Pipeline")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Nexo.Feature.Pipeline")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

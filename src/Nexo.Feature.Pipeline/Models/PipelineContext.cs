@@ -7,13 +7,14 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Nexo.Feature.Pipeline.Interfaces;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.Iteration;
 
 namespace Nexo.Feature.Pipeline.Models
 {
     /// <summary>
     /// Default implementation of IPipelineContext for universal state management.
     /// </summary>
-    public class PipelineContext : IPipelineContext
+    public class PipelineContext : IPipelineContext, IIterationPipelineContext
     {
         public string ExecutionId { get; }
         public DateTime StartTime { get; }
@@ -22,6 +23,16 @@ namespace Nexo.Feature.Pipeline.Models
         public IPipelineConfiguration Configuration { get; }
         public ILogger Logger { get; }
         public CancellationToken CancellationToken { get; }
+        
+        // IIterationPipelineContext properties
+        public int DataSize { get; set; } = 1000;
+        public bool RequiresParallelization { get; set; } = false;
+        public PlatformTarget PlatformTarget { get; set; } = PlatformTarget.DotNet;
+        public int Priority { get; set; } = 0;
+        
+        // IIterationPipelineContext SharedData (wraps the ConcurrentDictionary)
+        Dictionary<string, object> IIterationPipelineContext.SharedData => 
+            new Dictionary<string, object>(SharedData);
 
         private readonly List<PipelineExecutionStep> _executionHistory = new List<PipelineExecutionStep>();
         private readonly object _historyLock = new object();

@@ -82,6 +82,23 @@ namespace Nexo.Feature.Pipeline.Interfaces
         bool HasValue(string key);
         
         /// <summary>
+        /// Gets a property value from the shared data store (alias for GetValue)
+        /// </summary>
+        /// <typeparam name="T">The expected type of the value.</typeparam>
+        /// <param name="key">The key to retrieve.</param>
+        /// <param name="defaultValue">Default value if key doesn't exist.</param>
+        /// <returns>The value if found and of correct type, otherwise the default value.</returns>
+        T? GetProperty<T>(string key, T? defaultValue = default(T));
+        
+        /// <summary>
+        /// Sets a property value in the shared data store (alias for SetValue)
+        /// </summary>
+        /// <typeparam name="T">The type of the value.</typeparam>
+        /// <param name="key">The key to store.</param>
+        /// <param name="value">The value to store.</param>
+        void SetProperty<T>(string key, T value);
+        
+        /// <summary>
         /// Gets execution metrics for the current pipeline run.
         /// </summary>
         /// <returns>Pipeline execution metrics.</returns>

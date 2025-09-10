@@ -115,7 +115,7 @@ public record SelectIterationStrategyRequest
     /// <summary>
     /// Pipeline context
     /// </summary>
-    public PipelineContext PipelineContext { get; init; } = new();
+    public PipelineContext? PipelineContext { get; init; }
     
     /// <summary>
     /// Target platform
