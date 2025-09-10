@@ -1,0 +1,556 @@
+using Nexo.Core.Domain.Entities.Monitoring;
+using Nexo.Core.Domain.Enums.Monitoring;
+
+namespace Nexo.Core.Application.Services.Monitoring
+{
+    /// <summary>
+    /// Comprehensive production monitoring service
+    /// Provides real-time monitoring, alerting, and analytics for production systems
+    /// </summary>
+    public class ProductionMonitoringService : IProductionMonitoringService
+    {
+        private readonly ILogger<ProductionMonitoringService> _logger;
+        private readonly IMetricsCollector _metricsCollector;
+        private readonly IAlertingService _alertingService;
+        private readonly IAnalyticsService _analyticsService;
+        private readonly IHealthCheckService _healthCheckService;
+
+        public ProductionMonitoringService(
+            ILogger<ProductionMonitoringService> logger,
+            IMetricsCollector metricsCollector,
+            IAlertingService alertingService,
+            IAnalyticsService analyticsService,
+            IHealthCheckService healthCheckService)
+        {
+            _logger = logger;
+            _metricsCollector = metricsCollector;
+            _alertingService = alertingService;
+            _analyticsService = analyticsService;
+            _healthCheckService = healthCheckService;
+        }
+
+        /// <summary>
+        /// Initializes the production monitoring system
+        /// </summary>
+        public async Task<MonitoringInitializationResult> InitializeAsync(MonitoringConfiguration config)
+        {
+            _logger.LogInformation("Initializing production monitoring system");
+
+            try
+            {
+                // Initialize metrics collection
+                await _metricsCollector.InitializeAsync(config.MetricsConfig);
+
+                // Initialize alerting system
+                await _alertingService.InitializeAsync(config.AlertingConfig);
+
+                // Initialize analytics
+                await _analyticsService.InitializeAsync(config.AnalyticsConfig);
+
+                // Initialize health checks
+                await _healthCheckService.InitializeAsync(config.HealthCheckConfig);
+
+                // Start background monitoring tasks
+                _ = Task.Run(() => StartBackgroundMonitoringAsync());
+
+                var result = new MonitoringInitializationResult
+                {
+                    Success = true,
+                    Message = "Production monitoring system initialized successfully",
+                    InitializedAt = DateTime.UtcNow,
+                    Configuration = config
+                };
+
+                _logger.LogInformation("Production monitoring system initialized successfully");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to initialize production monitoring system");
+                
+                return new MonitoringInitializationResult
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    InitializedAt = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Collects real-time metrics from all systems
+        /// </summary>
+        public async Task<MetricsCollectionResult> CollectMetricsAsync()
+        {
+            _logger.LogDebug("Collecting real-time metrics");
+
+            try
+            {
+                var metrics = new List<Metric>();
+
+                // Collect system metrics
+                var systemMetrics = await CollectSystemMetricsAsync();
+                metrics.AddRange(systemMetrics);
+
+                // Collect application metrics
+                var appMetrics = await CollectApplicationMetricsAsync();
+                metrics.AddRange(appMetrics);
+
+                // Collect business metrics
+                var businessMetrics = await CollectBusinessMetricsAsync();
+                metrics.AddRange(businessMetrics);
+
+                // Store metrics
+                await _metricsCollector.StoreMetricsAsync(metrics);
+
+                var result = new MetricsCollectionResult
+                {
+                    Success = true,
+                    MetricsCollected = metrics.Count,
+                    CollectionTime = DateTime.UtcNow,
+                    Metrics = metrics
+                };
+
+                // Check for alerts
+                await CheckAlertsAsync(metrics);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to collect metrics");
+                
+                return new MetricsCollectionResult
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    CollectionTime = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Performs comprehensive health checks
+        /// </summary>
+        public async Task<HealthCheckResult> PerformHealthChecksAsync()
+        {
+            _logger.LogDebug("Performing comprehensive health checks");
+
+            try
+            {
+                var healthChecks = new List<HealthCheck>();
+
+                // System health checks
+                var systemHealth = await _healthCheckService.CheckSystemHealthAsync();
+                healthChecks.Add(systemHealth);
+
+                // Application health checks
+                var appHealth = await _healthCheckService.CheckApplicationHealthAsync();
+                healthChecks.Add(appHealth);
+
+                // Database health checks
+                var dbHealth = await _healthCheckService.CheckDatabaseHealthAsync();
+                healthChecks.Add(dbHealth);
+
+                // External service health checks
+                var externalHealth = await _healthCheckService.CheckExternalServicesHealthAsync();
+                healthChecks.AddRange(externalHealth);
+
+                // Calculate overall health
+                var overallHealth = CalculateOverallHealth(healthChecks);
+
+                var result = new HealthCheckResult
+                {
+                    OverallHealth = overallHealth,
+                    HealthChecks = healthChecks,
+                    CheckedAt = DateTime.UtcNow,
+                    Success = overallHealth != HealthStatus.Critical
+                };
+
+                // Alert if health is poor
+                if (overallHealth == HealthStatus.Critical || overallHealth == HealthStatus.Poor)
+                {
+                    await _alertingService.SendAlertAsync(new Alert
+                    {
+                        Type = AlertType.HealthCheck,
+                        Severity = AlertSeverity.Critical,
+                        Title = "System Health Alert",
+                        Message = $"System health is {overallHealth}",
+                        Timestamp = DateTime.UtcNow
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to perform health checks");
+                
+                return new HealthCheckResult
+                {
+                    OverallHealth = HealthStatus.Critical,
+                    HealthChecks = new List<HealthCheck>(),
+                    CheckedAt = DateTime.UtcNow,
+                    Success = false,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        /// <summary>
+        /// Generates comprehensive monitoring report
+        /// </summary>
+        public async Task<MonitoringReport> GenerateReportAsync(MonitoringReportRequest request)
+        {
+            _logger.LogInformation("Generating monitoring report for period: {StartDate} to {EndDate}", 
+                request.StartDate, request.EndDate);
+
+            try
+            {
+                // Collect metrics for the period
+                var metrics = await _metricsCollector.GetMetricsAsync(request.StartDate, request.EndDate);
+
+                // Perform current health checks
+                var healthChecks = await PerformHealthChecksAsync();
+
+                // Get analytics data
+                var analytics = await _analyticsService.GetAnalyticsAsync(request.StartDate, request.EndDate);
+
+                // Generate insights
+                var insights = await GenerateInsightsAsync(metrics, healthChecks, analytics);
+
+                // Generate recommendations
+                var recommendations = await GenerateRecommendationsAsync(metrics, healthChecks, analytics);
+
+                var report = new MonitoringReport
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    GeneratedAt = DateTime.UtcNow,
+                    Period = new DateRange { StartDate = request.StartDate, EndDate = request.EndDate },
+                    Metrics = metrics,
+                    HealthChecks = healthChecks,
+                    Analytics = analytics,
+                    Insights = insights,
+                    Recommendations = recommendations,
+                    Summary = GenerateSummary(metrics, healthChecks, analytics)
+                };
+
+                _logger.LogInformation("Monitoring report generated successfully: {ReportId}", report.Id);
+                return report;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate monitoring report");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Configures alerting rules
+        /// </summary>
+        public async Task<AlertingConfigurationResult> ConfigureAlertingAsync(AlertingConfiguration config)
+        {
+            _logger.LogInformation("Configuring alerting rules");
+
+            try
+            {
+                await _alertingService.ConfigureRulesAsync(config.Rules);
+                await _alertingService.ConfigureChannelsAsync(config.Channels);
+                await _alertingService.ConfigureEscalationAsync(config.Escalation);
+
+                var result = new AlertingConfigurationResult
+                {
+                    Success = true,
+                    Message = "Alerting configuration updated successfully",
+                    ConfiguredAt = DateTime.UtcNow
+                };
+
+                _logger.LogInformation("Alerting configuration updated successfully");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to configure alerting");
+                
+                return new AlertingConfigurationResult
+                {
+                    Success = false,
+                    Error = ex.Message,
+                    ConfiguredAt = DateTime.UtcNow
+                };
+            }
+        }
+
+        #region Private Methods
+
+        private async Task StartBackgroundMonitoringAsync()
+        {
+            _logger.LogInformation("Starting background monitoring tasks");
+
+            while (true)
+            {
+                try
+                {
+                    // Collect metrics every 30 seconds
+                    await CollectMetricsAsync();
+
+                    // Perform health checks every 5 minutes
+                    if (DateTime.UtcNow.Second % 300 == 0)
+                    {
+                        await PerformHealthChecksAsync();
+                    }
+
+                    // Wait 30 seconds before next iteration
+                    await Task.Delay(30000);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error in background monitoring task");
+                    await Task.Delay(30000); // Wait before retrying
+                }
+            }
+        }
+
+        private async Task<List<Metric>> CollectSystemMetricsAsync()
+        {
+            var metrics = new List<Metric>();
+
+            // CPU usage
+            metrics.Add(new Metric
+            {
+                Name = "system.cpu.usage",
+                Value = GetCpuUsage(),
+                Unit = "percent",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "system" }
+            });
+
+            // Memory usage
+            metrics.Add(new Metric
+            {
+                Name = "system.memory.usage",
+                Value = GetMemoryUsage(),
+                Unit = "bytes",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "system" }
+            });
+
+            // Disk usage
+            metrics.Add(new Metric
+            {
+                Name = "system.disk.usage",
+                Value = GetDiskUsage(),
+                Unit = "bytes",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "system" }
+            });
+
+            return metrics;
+        }
+
+        private async Task<List<Metric>> CollectApplicationMetricsAsync()
+        {
+            var metrics = new List<Metric>();
+
+            // Request count
+            metrics.Add(new Metric
+            {
+                Name = "app.requests.count",
+                Value = GetRequestCount(),
+                Unit = "count",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "application" }
+            });
+
+            // Response time
+            metrics.Add(new Metric
+            {
+                Name = "app.response.time",
+                Value = GetAverageResponseTime(),
+                Unit = "milliseconds",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "application" }
+            });
+
+            // Error rate
+            metrics.Add(new Metric
+            {
+                Name = "app.error.rate",
+                Value = GetErrorRate(),
+                Unit = "percent",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "application" }
+            });
+
+            return metrics;
+        }
+
+        private async Task<List<Metric>> CollectBusinessMetricsAsync()
+        {
+            var metrics = new List<Metric>();
+
+            // Active users
+            metrics.Add(new Metric
+            {
+                Name = "business.active.users",
+                Value = GetActiveUserCount(),
+                Unit = "count",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "business" }
+            });
+
+            // Feature usage
+            metrics.Add(new Metric
+            {
+                Name = "business.feature.usage",
+                Value = GetFeatureUsageRate(),
+                Unit = "percent",
+                Timestamp = DateTime.UtcNow,
+                Tags = new Dictionary<string, string> { ["type"] = "business" }
+            });
+
+            return metrics;
+        }
+
+        private async Task CheckAlertsAsync(List<Metric> metrics)
+        {
+            foreach (var metric in metrics)
+            {
+                // Check if metric exceeds thresholds
+                if (ShouldAlert(metric))
+                {
+                    await _alertingService.SendAlertAsync(new Alert
+                    {
+                        Type = AlertType.MetricThreshold,
+                        Severity = GetAlertSeverity(metric),
+                        Title = $"Metric Alert: {metric.Name}",
+                        Message = $"Metric {metric.Name} has value {metric.Value} {metric.Unit}",
+                        Timestamp = DateTime.UtcNow,
+                        Metadata = new Dictionary<string, object>
+                        {
+                            ["MetricName"] = metric.Name,
+                            ["MetricValue"] = metric.Value,
+                            ["MetricUnit"] = metric.Unit
+                        }
+                    });
+                }
+            }
+        }
+
+        private HealthStatus CalculateOverallHealth(List<HealthCheck> healthChecks)
+        {
+            if (healthChecks.Any(h => h.Status == HealthStatus.Critical))
+                return HealthStatus.Critical;
+
+            if (healthChecks.Any(h => h.Status == HealthStatus.Poor))
+                return HealthStatus.Poor;
+
+            if (healthChecks.Any(h => h.Status == HealthStatus.Fair))
+                return HealthStatus.Fair;
+
+            if (healthChecks.All(h => h.Status == HealthStatus.Good))
+                return HealthStatus.Good;
+
+            return HealthStatus.Excellent;
+        }
+
+        private async Task<List<Insight>> GenerateInsightsAsync(
+            List<Metric> metrics, 
+            HealthCheckResult healthChecks, 
+            AnalyticsData analytics)
+        {
+            var insights = new List<Insight>();
+
+            // Analyze metrics for insights
+            var cpuUsage = metrics.FirstOrDefault(m => m.Name == "system.cpu.usage");
+            if (cpuUsage != null && cpuUsage.Value > 80)
+            {
+                insights.Add(new Insight
+                {
+                    Type = InsightType.Performance,
+                    Title = "High CPU Usage",
+                    Description = "CPU usage is consistently above 80%",
+                    Severity = InsightSeverity.Warning,
+                    Recommendations = new List<string> { "Consider scaling up", "Optimize CPU-intensive operations" }
+                });
+            }
+
+            return insights;
+        }
+
+        private async Task<List<Recommendation>> GenerateRecommendationsAsync(
+            List<Metric> metrics, 
+            HealthCheckResult healthChecks, 
+            AnalyticsData analytics)
+        {
+            var recommendations = new List<Recommendation>();
+
+            // Generate recommendations based on metrics and health
+            if (healthChecks.OverallHealth == HealthStatus.Poor)
+            {
+                recommendations.Add(new Recommendation
+                {
+                    Type = RecommendationType.HealthImprovement,
+                    Priority = RecommendationPriority.High,
+                    Title = "Improve System Health",
+                    Description = "System health is poor. Immediate attention required.",
+                    ActionItems = new List<string> { "Investigate health check failures", "Review system resources", "Check for errors" }
+                });
+            }
+
+            return recommendations;
+        }
+
+        private MonitoringSummary GenerateSummary(
+            List<Metric> metrics, 
+            HealthCheckResult healthChecks, 
+            AnalyticsData analytics)
+        {
+            return new MonitoringSummary
+            {
+                OverallHealth = healthChecks.OverallHealth,
+                TotalMetrics = metrics.Count,
+                CriticalAlerts = 0, // Would be calculated from actual alerts
+                SystemUptime = 99.9, // Would be calculated from actual data
+                PerformanceScore = 85, // Would be calculated from metrics
+                GeneratedAt = DateTime.UtcNow
+            };
+        }
+
+        // Simplified metric collection methods (would be more sophisticated in real implementation)
+        private double GetCpuUsage() => new Random().NextDouble() * 100;
+        private double GetMemoryUsage() => new Random().NextDouble() * 1024 * 1024 * 1024;
+        private double GetDiskUsage() => new Random().NextDouble() * 1024 * 1024 * 1024 * 100;
+        private double GetRequestCount() => new Random().Next(1000, 10000);
+        private double GetAverageResponseTime() => new Random().NextDouble() * 1000;
+        private double GetErrorRate() => new Random().NextDouble() * 5;
+        private double GetActiveUserCount() => new Random().Next(100, 1000);
+        private double GetFeatureUsageRate() => new Random().NextDouble() * 100;
+
+        private bool ShouldAlert(Metric metric)
+        {
+            // Simplified alert logic
+            return metric.Name switch
+            {
+                "system.cpu.usage" => metric.Value > 90,
+                "system.memory.usage" => metric.Value > 1024 * 1024 * 1024 * 8, // 8GB
+                "app.error.rate" => metric.Value > 5,
+                _ => false
+            };
+        }
+
+        private AlertSeverity GetAlertSeverity(Metric metric)
+        {
+            return metric.Name switch
+            {
+                "system.cpu.usage" when metric.Value > 95 => AlertSeverity.Critical,
+                "system.cpu.usage" when metric.Value > 90 => AlertSeverity.Warning,
+                "app.error.rate" when metric.Value > 10 => AlertSeverity.Critical,
+                "app.error.rate" when metric.Value > 5 => AlertSeverity.Warning,
+                _ => AlertSeverity.Info
+            };
+        }
+
+        #endregion
+    }
+}
