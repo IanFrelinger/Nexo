@@ -1,4 +1,10 @@
 using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Models
 {

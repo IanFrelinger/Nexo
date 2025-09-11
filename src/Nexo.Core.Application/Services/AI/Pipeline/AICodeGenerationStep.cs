@@ -1,12 +1,19 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Entities.Pipeline;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Pipeline
 {
     /// <summary>
     /// Pipeline step for AI-powered code generation
     /// </summary>
-    public class AICodeGenerationStep : IPipelineStep<CodeGenerationRequest>
+    public class AICodeGenerationStep : IPipelineStep<Nexo.Core.Domain.Results.CodeGenerationRequest>
     {
         private readonly IAIRuntimeSelector _runtimeSelector;
         private readonly ILogger<AICodeGenerationStep> _logger;
@@ -19,9 +26,12 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _logger = logger;
         }
 
-        public async Task<CodeGenerationRequest> ExecuteAsync(
-            CodeGenerationRequest input, 
-            PipelineContext context)
+        public string Name => "AI Code Generation";
+        public int Order => 1;
+
+        public async Task<Nexo.Core.Domain.Results.CodeGenerationRequest> ExecuteAsync(
+            Nexo.Core.Domain.Results.CodeGenerationRequest input, 
+            Nexo.Core.Domain.Entities.Pipeline.PipelineContext context)
         {
             _logger.LogDebug("Executing AI code generation for prompt: {Prompt}", input.Prompt);
 
@@ -77,12 +87,47 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 throw;
             }
         }
+
+        public async Task<bool> CanExecuteAsync(Nexo.Core.Domain.Results.CodeGenerationRequest input, PipelineContext context)
+        {
+            try
+            {
+                // Check if input is valid
+                if (string.IsNullOrWhiteSpace(input.Prompt))
+                {
+                    _logger.LogDebug("Cannot execute code generation step: empty prompt provided");
+                    return false;
+                }
+
+                // Check if AI runtime is available
+                var providers = await _runtimeSelector.GetAvailableProvidersAsync();
+                if (!providers.Any())
+                {
+                    _logger.LogDebug("Cannot execute code generation step: no AI providers available");
+                    return false;
+                }
+
+                // Check if context is valid
+                if (context == null)
+                {
+                    _logger.LogDebug("Cannot execute code generation step: null context provided");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking if code generation step can execute");
+                return false;
+            }
+        }
     }
 
     /// <summary>
     /// Extended code generation request with AI-specific properties
     /// </summary>
-    public class AICodeGenerationRequest : CodeGenerationRequest
+    public class AICodeGenerationRequest : Nexo.Core.Domain.Results.CodeGenerationRequest
     {
         public string? GeneratedCode { get; set; }
         public string? Explanation { get; set; }

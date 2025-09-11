@@ -81,17 +81,6 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     }
 
     /// <summary>
-    /// Represents a method attribute
-    /// </summary>
-    public class MethodAttribute
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public Dictionary<string, object> Parameters { get; set; } = new();
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
-
-    /// <summary>
     /// Types of application models
     /// </summary>
     public enum ModelType
@@ -104,16 +93,5 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
         DomainModel,
         ConfigurationModel,
         SettingsModel
-    }
-
-    /// <summary>
-    /// Method visibility levels
-    /// </summary>
-    public enum MethodVisibility
-    {
-        Public,
-        Private,
-        Protected,
-        Internal
     }
 }

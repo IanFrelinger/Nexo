@@ -1,7 +1,12 @@
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Results;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace Nexo.Core.Application.Services.AI.Runtime
+namespace Nexo.Core.Application.Interfaces.AI
 {
     /// <summary>
     /// Interface for AI providers that can create AI engines
@@ -76,6 +81,6 @@ namespace Nexo.Core.Application.Services.AI.Runtime
         /// <summary>
         /// Gets the estimated performance for an operation
         /// </summary>
-        Task<PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context);
+        Task<Nexo.Core.Domain.Results.PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context);
     }
 }

@@ -1,5 +1,13 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Results;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Providers
 {
@@ -158,12 +166,12 @@ namespace Nexo.Core.Application.Services.AI.Providers
             return true;
         }
 
-        public async Task<PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context)
+        public async Task<Nexo.Core.Domain.Results.PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context)
         {
             // Simulate performance estimation
             await Task.Delay(50);
             
-            return new PerformanceEstimate
+            return new Nexo.Core.Domain.Results.PerformanceEstimate
             {
                 EstimatedDuration = TimeSpan.FromSeconds(2),
                 EstimatedMemoryUsage = 100 * 1024 * 1024, // 100MB

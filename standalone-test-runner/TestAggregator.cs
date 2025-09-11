@@ -157,11 +157,46 @@ namespace StandaloneTestRunner
             var loggingTests = loggingTestSuite.DiscoverLoggingTests();
             defaultTests.AddRange(loggingTests);
 
+            // Add Epic 5.4 tests
+            var epic5_4TestSuite = new Epic5_4TestSuite(_verbose);
+            var epic5_4Tests = epic5_4TestSuite.DiscoverEpic5_4Tests();
+            defaultTests.AddRange(epic5_4Tests);
+
+            // Add Enhanced Epic 5.4 tests
+            var epic5_4EnhancedTestSuite = new Epic5_4EnhancedTestSuite(_verbose);
+            var epic5_4EnhancedTests = epic5_4EnhancedTestSuite.DiscoverEnhancedEpic5_4Tests();
+            defaultTests.AddRange(epic5_4EnhancedTests);
+
+            // Add Feature Factory Domain Logic tests
+            var featureFactoryDomainTests = new FeatureFactoryDomainTests(_verbose);
+            var featureFactoryDomainTestList = featureFactoryDomainTests.DiscoverFeatureFactoryDomainTests();
+            defaultTests.AddRange(featureFactoryDomainTestList);
+
+            // Add Feature Factory Application Logic tests
+            var featureFactoryApplicationTests = new FeatureFactoryApplicationTests(_verbose);
+            var featureFactoryApplicationTestList = featureFactoryApplicationTests.DiscoverFeatureFactoryApplicationTests();
+            defaultTests.AddRange(featureFactoryApplicationTestList);
+
+            // Add Core Domain Entities tests
+            var coreDomainEntitiesTests = new CoreDomainEntitiesTests(_verbose);
+            var coreDomainEntitiesTestList = coreDomainEntitiesTests.DiscoverCoreDomainEntitiesTests();
+            defaultTests.AddRange(coreDomainEntitiesTestList);
+
+            // Add Feature Factory Deployment tests
+            var featureFactoryDeploymentTests = new FeatureFactoryDeploymentTests(_verbose);
+            var featureFactoryDeploymentTestList = featureFactoryDeploymentTests.DiscoverFeatureFactoryDeploymentTests();
+            defaultTests.AddRange(featureFactoryDeploymentTestList);
+
+            // Add AI Services tests
+            var aiServicesTests = new AIServicesTests(_verbose);
+            var aiServicesTestList = aiServicesTests.DiscoverAIServicesTests();
+            defaultTests.AddRange(aiServicesTestList);
+
             AddTests(defaultTests);
             
             if (_verbose)
             {
-                Console.WriteLine($"Discovered and added {defaultTests.Count} default tests ({loggingTests.Count} logging tests)");
+                Console.WriteLine($"Discovered and added {defaultTests.Count} default tests ({loggingTests.Count} logging tests, {epic5_4Tests.Count} Epic 5.4 tests, {epic5_4EnhancedTests.Count} Enhanced Epic 5.4 tests, {featureFactoryDomainTestList.Count} Feature Factory Domain tests, {featureFactoryApplicationTestList.Count} Feature Factory Application tests, {coreDomainEntitiesTestList.Count} Core Domain Entities tests, {featureFactoryDeploymentTestList.Count} Feature Factory Deployment tests, {aiServicesTestList.Count} AI Services tests)");
             }
         }
 
@@ -448,6 +483,17 @@ namespace StandaloneTestRunner
                 "aggregator-integration-test" => RunIntegrationTest(),
                 "aggregator-security-test" => RunSecurityTest(),
                 _ when testId.StartsWith("logging-") => RunLoggingTest(testId), // Handle logging tests
+                _ when testId.StartsWith("epic5_4-phase") => RunEpic5_4EnhancedTest(testId), // Handle Enhanced Epic 5.4 tests
+                _ when testId.StartsWith("epic5_4-") => RunEpic5_4Test(testId), // Handle Epic 5.4 tests
+                _ when testId.StartsWith("feature-factory-domain-logic-") => RunFeatureFactoryDomainTest(testId), // Handle Feature Factory Domain Logic tests
+                _ when testId.StartsWith("feature-factory-application-logic-") => RunFeatureFactoryApplicationTest(testId), // Handle Feature Factory Application Logic tests
+                _ when testId.StartsWith("feature-factory-framework-adapter-") => RunFeatureFactoryApplicationTest(testId), // Handle Feature Factory Framework Adapter tests
+                _ when testId.StartsWith("feature-factory-deployment-") => RunFeatureFactoryDeploymentTest(testId), // Handle Feature Factory Deployment tests
+                _ when testId.StartsWith("feature-factory-system-integrator-") => RunFeatureFactoryDeploymentTest(testId), // Handle Feature Factory System Integrator tests
+                _ when testId.StartsWith("feature-factory-application-monitor-") => RunFeatureFactoryDeploymentTest(testId), // Handle Feature Factory Application Monitor tests
+                _ when testId.StartsWith("feature-factory-deployment-orchestrator-") => RunFeatureFactoryDeploymentTest(testId), // Handle Feature Factory Deployment Orchestrator tests
+                _ when testId.StartsWith("ai-") => RunAIServicesTest(testId), // Handle AI Services tests
+                _ when testId.StartsWith("core-domain-") => RunCoreDomainEntitiesTest(testId), // Handle Core Domain Entities tests
                 _ when testId.StartsWith("large-test-") => RunGenericTest(), // Handle large test collection
                 _ when testId.StartsWith("smoke-") => RunGenericTest(), // Handle smoke tests
                 _ => RunGenericTest() // Default fallback for any unknown test
@@ -509,6 +555,125 @@ namespace StandaloneTestRunner
                 if (_verbose)
                 {
                     Console.WriteLine($"Logging test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        private bool RunEpic5_4Test(string testId)
+        {
+            try
+            {
+                var epic5_4TestSuite = new Epic5_4TestSuite(_verbose);
+                return epic5_4TestSuite.ExecuteEpic5_4Test(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"Epic 5.4 test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        private bool RunEpic5_4EnhancedTest(string testId)
+        {
+            try
+            {
+                var epic5_4EnhancedTestSuite = new Epic5_4EnhancedTestSuite(_verbose);
+                return epic5_4EnhancedTestSuite.ExecuteEnhancedEpic5_4Test(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"Enhanced Epic 5.4 test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        private bool RunFeatureFactoryDomainTest(string testId)
+        {
+            try
+            {
+                var featureFactoryDomainTests = new FeatureFactoryDomainTests(_verbose);
+                return featureFactoryDomainTests.ExecuteFeatureFactoryDomainTest(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"Feature Factory Domain test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        private bool RunFeatureFactoryApplicationTest(string testId)
+        {
+            try
+            {
+                var featureFactoryApplicationTests = new FeatureFactoryApplicationTests(_verbose);
+                return featureFactoryApplicationTests.ExecuteFeatureFactoryApplicationTest(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"Feature Factory Application test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        private bool RunCoreDomainEntitiesTest(string testId)
+        {
+            try
+            {
+                var coreDomainEntitiesTests = new CoreDomainEntitiesTests(_verbose);
+                return coreDomainEntitiesTests.ExecuteCoreDomainEntitiesTest(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"Core Domain Entities test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        private bool RunFeatureFactoryDeploymentTest(string testId)
+        {
+            try
+            {
+                var featureFactoryDeploymentTests = new FeatureFactoryDeploymentTests(_verbose);
+                return featureFactoryDeploymentTests.ExecuteFeatureFactoryDeploymentTest(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"Feature Factory Deployment test {testId} failed: {ex.Message}");
+                }
+                return false;
+            }
+        }
+
+        private bool RunAIServicesTest(string testId)
+        {
+            try
+            {
+                var aiServicesTests = new AIServicesTests(_verbose);
+                return aiServicesTests.ExecuteAIServicesTest(testId);
+            }
+            catch (Exception ex)
+            {
+                if (_verbose)
+                {
+                    Console.WriteLine($"AI Services test {testId} failed: {ex.Message}");
                 }
                 return false;
             }

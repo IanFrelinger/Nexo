@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums.Code;
+using Nexo.Core.Domain.Entities.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +25,9 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _runtimeSelector = runtimeSelector ?? throw new ArgumentNullException(nameof(runtimeSelector));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
+        public string Name => "AI Test Generation";
+        public int Order => 5;
 
         public async Task<TestingRequest> ExecuteAsync(TestingRequest input, PipelineContext context)
         {
@@ -251,27 +257,27 @@ Generate complete, runnable test code:";
             return filteredTestCode;
         }
 
-        private async Task<string> GenerateTestFrameworkSetupAsync(CodeLanguage language, PipelineContext context)
+        private async Task<string> GenerateTestFrameworkSetupAsync(Nexo.Core.Domain.Enums.Code.CodeLanguage language, Nexo.Core.Domain.Entities.Pipeline.PipelineContext context)
         {
             // In a real implementation, this would generate appropriate test framework setup
             await Task.Delay(50);
 
             return language switch
             {
-                CodeLanguage.CSharp => @"using Microsoft.VisualStudio.TestTools.UnitTesting;
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp => @"using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;",
-                CodeLanguage.JavaScript => @"// Jest test framework setup
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.JavaScript => @"// Jest test framework setup
 const { describe, it, expect, beforeEach, afterEach } = require('jest');",
-                CodeLanguage.Python => @"import unittest
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.Python => @"import unittest
 import pytest
 from unittest.mock import Mock, patch",
                 _ => "// Test framework setup"
             };
         }
 
-        private async Task<string> GenerateAdditionalTestCasesAsync(string code, CodeLanguage language, TestType testType)
+        private async Task<string> GenerateAdditionalTestCasesAsync(string code, Nexo.Core.Domain.Enums.Code.CodeLanguage language, TestType testType)
         {
             // In a real implementation, this would generate additional test cases
             await Task.Delay(100);
@@ -303,11 +309,11 @@ from unittest.mock import Mock, patch",
             return string.Join("\n\n", additionalTests);
         }
 
-        private string GenerateEdgeCaseTests(CodeLanguage language, string type)
+        private string GenerateEdgeCaseTests(Nexo.Core.Domain.Enums.Code.CodeLanguage language, string type)
         {
             return language switch
             {
-                CodeLanguage.CSharp => $@"// Edge case tests for {type}
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp => $@"// Edge case tests for {type}
 [TestMethod]
 public void TestEdgeCases_{type}()
 {{
@@ -316,7 +322,7 @@ public void TestEdgeCases_{type}()
     // Test with zero
     // Test with negative values
 }}",
-                CodeLanguage.JavaScript => $@"// Edge case tests for {type}
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.JavaScript => $@"// Edge case tests for {type}
 describe('Edge Cases - {type}', () => {{
     it('should handle minimum values', () => {{
         // Test implementation
@@ -330,11 +336,11 @@ describe('Edge Cases - {type}', () => {{
             };
         }
 
-        private string GenerateNullHandlingTests(CodeLanguage language)
+        private string GenerateNullHandlingTests(Nexo.Core.Domain.Enums.Code.CodeLanguage language)
         {
             return language switch
             {
-                CodeLanguage.CSharp => @"// Null handling tests
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp => @"// Null handling tests
 [TestMethod]
 [ExpectedException(typeof(ArgumentNullException))]
 public void TestNullHandling()
@@ -342,7 +348,7 @@ public void TestNullHandling()
     // Test with null input
     // Should throw ArgumentNullException
 }",
-                CodeLanguage.JavaScript => @"// Null handling tests
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.JavaScript => @"// Null handling tests
 describe('Null Handling', () => {
     it('should handle null input gracefully', () => {
         expect(() => {
@@ -354,11 +360,11 @@ describe('Null Handling', () => {
             };
         }
 
-        private string GeneratePerformanceTests(CodeLanguage language)
+        private string GeneratePerformanceTests(Nexo.Core.Domain.Enums.Code.CodeLanguage language)
         {
             return language switch
             {
-                CodeLanguage.CSharp => @"// Performance tests
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp => @"// Performance tests
 [TestMethod]
 public void TestPerformance()
 {
@@ -369,7 +375,7 @@ public void TestPerformance()
     stopwatch.Stop();
     Assert.IsTrue(stopwatch.ElapsedMilliseconds < 1000, ""Operation should complete within 1 second"");
 }",
-                CodeLanguage.JavaScript => @"// Performance tests
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.JavaScript => @"// Performance tests
 describe('Performance', () => {
     it('should complete within acceptable time', () => {
         const start = performance.now();
@@ -384,14 +390,14 @@ describe('Performance', () => {
             };
         }
 
-        private async Task<string> GenerateTestUtilitiesAsync(CodeLanguage language, PipelineContext context)
+        private async Task<string> GenerateTestUtilitiesAsync(Nexo.Core.Domain.Enums.Code.CodeLanguage language, PipelineContext context)
         {
             // In a real implementation, this would generate test utilities
             await Task.Delay(50);
 
             return language switch
             {
-                CodeLanguage.CSharp => @"// Test utilities
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp => @"// Test utilities
 public static class TestUtilities
 {
     public static T CreateTestObject<T>() where T : new()
@@ -404,7 +410,7 @@ public static class TestUtilities
         Assert.ThrowsException<T>(action);
     }
 }",
-                CodeLanguage.JavaScript => @"// Test utilities
+                Nexo.Core.Domain.Enums.Code.CodeLanguage.JavaScript => @"// Test utilities
 const TestUtilities = {
     createTestObject: (constructor) => new constructor(),
     assertThrows: (fn, expectedError) => {
@@ -447,7 +453,7 @@ const TestUtilities = {
             return string.Join("\n", contextTests);
         }
 
-        private async Task<List<string>> ValidateTestCodeSafetyAsync(string testCode, CodeLanguage language)
+        private async Task<List<string>> ValidateTestCodeSafetyAsync(string testCode, Nexo.Core.Domain.Enums.Code.CodeLanguage language)
         {
             // In a real implementation, this would validate test code for safety
             await Task.Delay(50);
@@ -535,6 +541,41 @@ const TestUtilities = {
             
             return coverage;
         }
+
+        public async Task<bool> CanExecuteAsync(TestingRequest input, PipelineContext context)
+        {
+            try
+            {
+                // Check if input is valid
+                if (string.IsNullOrWhiteSpace(input.Code))
+                {
+                    _logger.LogDebug("Cannot execute test generation step: empty code provided");
+                    return false;
+                }
+
+                // Check if AI runtime is available
+                var providers = await _runtimeSelector.GetAvailableProvidersAsync();
+                if (!providers.Any())
+                {
+                    _logger.LogDebug("Cannot execute test generation step: no AI providers available");
+                    return false;
+                }
+
+                // Check if context is valid
+                if (context == null)
+                {
+                    _logger.LogDebug("Cannot execute test generation step: null context provided");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking if test generation step can execute");
+                return false;
+            }
+        }
     }
 
     /// <summary>
@@ -543,7 +584,7 @@ const TestUtilities = {
     public class TestingRequest
     {
         public string Code { get; set; } = string.Empty;
-        public CodeLanguage Language { get; set; }
+        public Nexo.Core.Domain.Enums.Code.CodeLanguage Language { get; set; }
         public TestType TestType { get; set; } = TestType.Unit;
         public string Context { get; set; } = string.Empty;
         public TestingResult? Result { get; set; }

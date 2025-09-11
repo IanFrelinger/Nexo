@@ -1,0 +1,43 @@
+# Ollama Docker configuration for Nexo offline LLama AI integration
+FROM ollama/ollama:latest
+
+# Set environment variables
+ENV OLLAMA_HOST=0.0.0.0
+ENV OLLAMA_ORIGINS=*
+ENV OLLAMA_KEEP_ALIVE=24h
+
+# Create directory for models
+RUN mkdir -p /root/.ollama/models
+
+# Pre-download popular models for offline use
+# Note: These are large downloads and will take significant time
+RUN ollama pull codellama:7b-instruct
+RUN ollama pull codellama:7b-code
+RUN ollama pull llama2:7b-chat
+RUN ollama pull mistral:7b-instruct
+
+# Create a health check script
+RUN echo '#!/bin/bash\ncurl -f http://localhost:11434/api/tags || exit 1' > /usr/local/bin/healthcheck.sh
+RUN chmod +x /usr/local/bin/healthcheck.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /usr/local/bin/healthcheck.sh
+
+# Expose Ollama API port
+EXPOSE 11434
+
+# Set working directory
+WORKDIR /root
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+echo "Starting Ollama server..."\n\
+echo "Available models:"\n\
+ollama list\n\
+echo "Starting Ollama serve..."\n\
+ollama serve' > /usr/local/bin/start-ollama.sh
+RUN chmod +x /usr/local/bin/start-ollama.sh
+
+# Start Ollama server
+CMD ["/usr/local/bin/start-ollama.sh"]

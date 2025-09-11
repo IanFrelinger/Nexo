@@ -1,0 +1,32 @@
+namespace Nexo.Core.Domain.Enums.Code
+{
+    public enum CodeLanguage
+    {
+        CSharp,
+        JavaScript,
+        TypeScript,
+        Python,
+        Java,
+        Cpp,
+        C,
+        Go,
+        Rust,
+        Swift,
+        Kotlin,
+        PHP,
+        Ruby,
+        Scala,
+        FSharp,
+        VB,
+        SQL,
+        HTML,
+        CSS,
+        XML,
+        JSON,
+        YAML,
+        Markdown,
+        PowerShell,
+        Bash,
+        Other
+    }
+}

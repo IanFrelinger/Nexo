@@ -1,7 +1,11 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using CodeOptimizationResult = Nexo.Core.Domain.Entities.AI.CodeOptimizationResult;
+using Nexo.Core.Domain.Enums.Code;
+using Nexo.Core.Domain.Entities.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +26,9 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _runtimeSelector = runtimeSelector ?? throw new ArgumentNullException(nameof(runtimeSelector));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
+        public string Name => "AI Code Optimization";
+        public int Order => 4;
 
         public async Task<CodeOptimizationRequest> ExecuteAsync(CodeOptimizationRequest input, PipelineContext context)
         {
@@ -372,6 +379,41 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             }
 
             return filteredImprovements;
+        }
+
+        public async Task<bool> CanExecuteAsync(CodeOptimizationRequest input, PipelineContext context)
+        {
+            try
+            {
+                // Check if input is valid
+                if (string.IsNullOrWhiteSpace(input.Code))
+                {
+                    _logger.LogDebug("Cannot execute code optimization step: empty code provided");
+                    return false;
+                }
+
+                // Check if AI runtime is available
+                var providers = await _runtimeSelector.GetAvailableProvidersAsync();
+                if (!providers.Any())
+                {
+                    _logger.LogDebug("Cannot execute code optimization step: no AI providers available");
+                    return false;
+                }
+
+                // Check if context is valid
+                if (context == null)
+                {
+                    _logger.LogDebug("Cannot execute code optimization step: null context provided");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking if code optimization step can execute");
+                return false;
+            }
         }
     }
 

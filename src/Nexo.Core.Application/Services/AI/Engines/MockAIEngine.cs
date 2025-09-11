@@ -1,5 +1,8 @@
+using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Application.Interfaces.AI;
 
 namespace Nexo.Core.Application.Services.AI.Engines
 {
@@ -368,6 +371,8 @@ public class MockController : ControllerBase
         {
             return $@"// Mock Console application code generated for: {prompt}
 using System;
+using Nexo.Core.Application.Services.AI.Runtime;
+using Microsoft.Extensions.Logging;
 
 class Program
 {{

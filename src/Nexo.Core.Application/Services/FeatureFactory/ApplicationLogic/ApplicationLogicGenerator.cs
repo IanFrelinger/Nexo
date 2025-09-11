@@ -1,7 +1,11 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
 using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
+using Nexo.Core.Domain.Entities.FeatureFactory;
+using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Application.Interfaces.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -444,12 +448,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
 
         // Private helper methods for generating specific components
 
-        private async Task<ApplicationController> GenerateControllerForEntityAsync(DomainEntity entity, AIProviderSelection selection, CancellationToken cancellationToken)
+        private async Task<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController> GenerateControllerForEntityAsync(DomainEntity entity, AIProviderSelection selection, CancellationToken cancellationToken)
         {
             // Simulate controller generation based on entity
             await Task.Delay(100, cancellationToken);
 
-            var controller = new ApplicationController
+            var controller = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController
             {
                 Name = $"{entity.Name}Controller",
                 Description = $"Web API controller for {entity.Name}",
@@ -463,7 +467,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Get",
                         Description = $"Get all {entity.Name} entities",
                         ReturnType = $"ActionResult<List<{entity.Name}Dto>>",
-                        HttpMethod = HttpMethod.Get,
+                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
                         Route = $"api/{entity.Name.ToLower()}",
                         IsAsync = true
                     },
@@ -472,7 +476,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "GetById",
                         Description = $"Get {entity.Name} by ID",
                         ReturnType = $"ActionResult<{entity.Name}Dto>",
-                        HttpMethod = HttpMethod.Get,
+                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
                         Route = $"api/{entity.Name.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
@@ -492,7 +496,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Create",
                         Description = $"Create new {entity.Name}",
                         ReturnType = $"ActionResult<{entity.Name}Dto>",
-                        HttpMethod = HttpMethod.Post,
+                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Post,
                         Route = $"api/{entity.Name.ToLower()}",
                         Parameters = new List<ActionParameter>
                         {
@@ -512,7 +516,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Update",
                         Description = $"Update {entity.Name}",
                         ReturnType = $"ActionResult<{entity.Name}Dto>",
-                        HttpMethod = HttpMethod.Put,
+                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Put,
                         Route = $"api/{entity.Name.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
@@ -540,7 +544,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Delete",
                         Description = $"Delete {entity.Name}",
                         ReturnType = "ActionResult",
-                        HttpMethod = HttpMethod.Delete,
+                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Delete,
                         Route = $"api/{entity.Name.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
@@ -569,29 +573,29 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             return controller;
         }
 
-        private async Task<ApplicationService> GenerateServiceForDomainServiceAsync(DomainService domainService, CancellationToken cancellationToken)
+        private async Task<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService> GenerateServiceForDomainServiceAsync(DomainService domainService, CancellationToken cancellationToken)
         {
             // Simulate service generation
             await Task.Delay(100, cancellationToken);
 
-            var service = new ApplicationService
+            var service = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService
             {
-                Name = $"{domainService.Name}ApplicationService",
+                Name = $"{domainService.Name}Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService",
                 Description = $"Application service for {domainService.Name}",
                 Namespace = "Application.Services",
-                InterfaceName = $"I{domainService.Name}ApplicationService",
+                InterfaceName = $"I{domainService.Name}Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService",
                 Type = ServiceType.Application,
-                Methods = new List<ServiceMethod>
+                Methods = new List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.ServiceMethod>
                 {
-                    new ServiceMethod
+                    new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.ServiceMethod
                     {
                         Name = "ProcessAsync",
                         ReturnType = "Task<bool>",
                         Description = $"Process {domainService.Name} operation",
                         IsAsync = true,
-                        Parameters = new List<MethodParameter>
+                        Parameters = new List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.MethodParameter>
                         {
-                            new MethodParameter
+                            new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.MethodParameter
                             {
                                 Name = "request",
                                 Type = "object",
@@ -606,15 +610,15 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             return service;
         }
 
-        private async Task<List<ApplicationModel>> GenerateModelsForEntityAsync(DomainEntity entity, CancellationToken cancellationToken)
+        private async Task<List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel>> GenerateModelsForEntityAsync(DomainEntity entity, CancellationToken cancellationToken)
         {
             // Simulate model generation
             await Task.Delay(100, cancellationToken);
 
-            var models = new List<ApplicationModel>();
+            var models = new List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel>();
 
             // Generate DTO
-            var dto = new ApplicationModel
+            var dto = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel
             {
                 Name = $"{entity.Name}Dto",
                 Description = $"Data transfer object for {entity.Name}",
@@ -632,7 +636,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             models.Add(dto);
 
             // Generate Create DTO
-            var createDto = new ApplicationModel
+            var createDto = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel
             {
                 Name = $"Create{entity.Name}Dto",
                 Description = $"Create data transfer object for {entity.Name}",
@@ -650,7 +654,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             models.Add(createDto);
 
             // Generate Update DTO
-            var updateDto = new ApplicationModel
+            var updateDto = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel
             {
                 Name = $"Update{entity.Name}Dto",
                 Description = $"Update data transfer object for {entity.Name}",
@@ -830,7 +834,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
 
         // Code generation helper methods
 
-        private async Task<string> GenerateControllerCodeAsync(List<ApplicationController> controllers, CancellationToken cancellationToken)
+        private async Task<string> GenerateControllerCodeAsync(List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController> controllers, CancellationToken cancellationToken)
         {
             // Simulate controller code generation
             await Task.Delay(100, cancellationToken);
@@ -847,7 +851,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             return string.Join("\n\n", code);
         }
 
-        private async Task<string> GenerateServiceCodeAsync(List<ApplicationService> services, CancellationToken cancellationToken)
+        private async Task<string> GenerateServiceCodeAsync(List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService> services, CancellationToken cancellationToken)
         {
             // Simulate service code generation
             await Task.Delay(100, cancellationToken);
@@ -864,7 +868,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             return string.Join("\n\n", code);
         }
 
-        private async Task<string> GenerateModelCodeAsync(List<ApplicationModel> models, CancellationToken cancellationToken)
+        private async Task<string> GenerateModelCodeAsync(List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel> models, CancellationToken cancellationToken)
         {
             // Simulate model code generation
             await Task.Delay(100, cancellationToken);

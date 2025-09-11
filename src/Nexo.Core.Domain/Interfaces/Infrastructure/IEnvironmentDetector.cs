@@ -171,7 +171,7 @@ public record DetectedEnvironment
     /// <summary>
     /// Environment type (alias for Profile.EnvironmentType)
     /// </summary>
-    public PlatformType EnvironmentType => Profile.EnvironmentType;
+    public string EnvironmentType => Profile.EnvironmentType;
     
     /// <summary>
     /// Properties (alias for Profile.Properties)

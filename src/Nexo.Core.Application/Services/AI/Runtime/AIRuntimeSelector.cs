@@ -1,5 +1,14 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Core.Application.Interfaces.Services;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Results;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Runtime
 {
@@ -192,9 +201,9 @@ namespace Nexo.Core.Application.Services.AI.Runtime
         /// <summary>
         /// Gets performance estimates for all available providers
         /// </summary>
-        public async Task<Dictionary<AIProviderType, PerformanceEstimate>> GetPerformanceEstimatesAsync(AIOperationContext context)
+        public async Task<Dictionary<AIProviderType, Nexo.Core.Domain.Results.PerformanceEstimate>> GetPerformanceEstimatesAsync(AIOperationContext context)
         {
-            var estimates = new Dictionary<AIProviderType, PerformanceEstimate>();
+            var estimates = new Dictionary<AIProviderType, Nexo.Core.Domain.Results.PerformanceEstimate>();
             var availableProviders = await GetAvailableProvidersAsync();
 
             foreach (var provider in availableProviders)
@@ -258,6 +267,126 @@ namespace Nexo.Core.Application.Services.AI.Runtime
                 score += 5;
 
             return score;
+        }
+
+        #endregion
+
+        #region Additional Interface Methods
+
+        /// <summary>
+        /// Selects the optimal AI provider for the given engine type and context
+        /// </summary>
+        public async Task<IAIProvider> SelectOptimalProviderAsync(AIEngineType engineType, Dictionary<string, object> context)
+        {
+            _logger.LogDebug("Selecting optimal AI provider for engine type: {EngineType}", engineType);
+
+            var availableProviders = await GetAvailableProvidersAsync();
+            var suitableProviders = availableProviders.Where(p => p.SupportsEngineType(engineType)).ToList();
+
+            if (!suitableProviders.Any())
+            {
+                throw new NoAIProviderAvailableException($"No AI provider available for engine type {engineType}");
+            }
+
+            // Select the first suitable provider (can be enhanced with more sophisticated selection logic)
+            var selectedProvider = suitableProviders.First();
+            _logger.LogInformation("Selected AI provider: {ProviderType} for engine type: {EngineType}", 
+                selectedProvider.ProviderType, engineType);
+
+            return selectedProvider;
+        }
+
+        /// <summary>
+        /// Selects the optimal AI engine for the given engine type and context
+        /// </summary>
+        public async Task<IAIEngine> SelectOptimalEngineAsync(AIEngineType engineType, Dictionary<string, object> context)
+        {
+            _logger.LogDebug("Selecting optimal AI engine for engine type: {EngineType}", engineType);
+
+            var provider = await SelectOptimalProviderAsync(engineType, context);
+            var contextObj = new AIOperationContext
+            {
+                OperationType = context.ContainsKey("OperationType") ? context["OperationType"].ToString() : "Unknown",
+                Platform = context.ContainsKey("Platform") ? context["Platform"].ToString() : "Unknown",
+                MaxTokens = context.ContainsKey("MaxTokens") ? Convert.ToInt32(context["MaxTokens"]) : 1000,
+                Temperature = context.ContainsKey("Temperature") ? Convert.ToDouble(context["Temperature"]) : 0.7,
+                Priority = context.ContainsKey("Priority") ? (CommandPriority)context["Priority"] : CommandPriority.Normal
+            };
+
+            return await provider.CreateEngineAsync(contextObj);
+        }
+
+        /// <summary>
+        /// Gets all available AI engines
+        /// </summary>
+        public async Task<List<AIEngineInfo>> GetAvailableEnginesAsync()
+        {
+            var engines = new List<AIEngineInfo>();
+            var providers = await GetAvailableProvidersAsync();
+
+            foreach (var provider in providers)
+            {
+                try
+                {
+                    var providerEngines = await provider.GetAvailableModelsAsync();
+                    engines.AddRange(providerEngines);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to get engines from provider: {ProviderType}", provider.ProviderType);
+                }
+            }
+
+            return engines;
+        }
+
+        /// <summary>
+        /// Gets information about a specific engine type
+        /// </summary>
+        public async Task<AIEngineInfo> GetEngineInfoAsync(AIEngineType engineType)
+        {
+            var engines = await GetAvailableEnginesAsync();
+            return engines.FirstOrDefault(e => e.EngineType == engineType) ?? 
+                   new AIEngineInfo { EngineType = engineType, Name = "Unknown", IsAvailable = false };
+        }
+
+        /// <summary>
+        /// Checks if an engine type is available
+        /// </summary>
+        public async Task<bool> IsEngineAvailableAsync(AIEngineType engineType)
+        {
+            try
+            {
+                var engineInfo = await GetEngineInfoAsync(engineType);
+                return engineInfo.IsAvailable;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Selects the optimal AI provider for the given operation context
+        /// </summary>
+        public async Task<IAIProvider> SelectOptimalProviderAsync(AIOperationContext context)
+        {
+            _logger.LogDebug("Selecting optimal AI provider for operation: {OperationType}", context.OperationType);
+
+            var availableProviders = await GetAvailableProvidersAsync();
+            var suitableProviders = availableProviders.Where(p => p.SupportsPlatform(context.Platform)).ToList();
+
+            if (!suitableProviders.Any())
+            {
+                throw new NoAIProviderAvailableException($"No AI provider available for operation {context.OperationType} on platform {context.Platform}");
+            }
+
+            // Select the first suitable provider (can be enhanced with more sophisticated selection logic)
+            var selectedProvider = suitableProviders.First();
+            _logger.LogInformation("Selected AI provider: {ProviderType} for operation: {OperationType}", 
+                selectedProvider.ProviderType, context.OperationType);
+
+            return selectedProvider;
         }
 
         #endregion

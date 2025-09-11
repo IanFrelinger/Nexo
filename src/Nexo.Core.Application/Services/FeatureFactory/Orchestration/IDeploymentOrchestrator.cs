@@ -1,5 +1,6 @@
 using Nexo.Core.Domain.Entities.FeatureFactory.NaturalLanguage;
 using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
+using Nexo.Core.Domain.Entities.FeatureFactory;
 using Nexo.Core.Domain.Entities.FeatureFactory.Deployment;
 using System;
 using System.Collections.Generic;
@@ -21,12 +22,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         /// <summary>
         /// Deploys application to multiple environments
         /// </summary>
-        Task<DeploymentOrchestrationResult> DeployToMultipleEnvironmentsAsync(ApplicationLogicResult applicationLogic, List<DeploymentTarget> targets, CancellationToken cancellationToken = default);
+        Task<DeploymentOrchestrationResult> DeployToMultipleEnvironmentsAsync(ApplicationLogicResult applicationLogic, List<Nexo.Core.Domain.Entities.FeatureFactory.DeploymentTarget> targets, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Validates deployment before going live
         /// </summary>
-        Task<DeploymentOrchestrationResult> ValidateDeploymentAsync(ApplicationLogicResult applicationLogic, DeploymentTarget target, CancellationToken cancellationToken = default);
+        Task<DeploymentOrchestrationResult> ValidateDeploymentAsync(ApplicationLogicResult applicationLogic, Nexo.Core.Domain.Entities.FeatureFactory.DeploymentTarget target, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Completes the entire Feature Factory pipeline
@@ -164,8 +165,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
         public string DeploymentId { get; set; } = string.Empty;
-        public DeploymentTarget Target { get; set; } = new();
-        public DeploymentPackage Package { get; set; } = new();
+        public Nexo.Core.Domain.Entities.FeatureFactory.DeploymentTarget Target { get; set; } = new();
+        public Nexo.Core.Domain.Entities.FeatureFactory.DeploymentPackage Package { get; set; } = new();
         public DateTime StartedAt { get; set; } = DateTime.UtcNow;
         public DateTime? CompletedAt { get; set; }
         public Dictionary<string, object> Metadata { get; set; } = new();

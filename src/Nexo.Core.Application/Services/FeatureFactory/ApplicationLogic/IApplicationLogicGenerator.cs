@@ -1,5 +1,6 @@
 using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
 using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
+using Nexo.Core.Domain.Entities.FeatureFactory;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -65,9 +66,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
-        public List<ApplicationController> Controllers { get; set; } = new();
-        public List<ApplicationService> Services { get; set; } = new();
-        public List<ApplicationModel> Models { get; set; } = new();
+        public List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController> Controllers { get; set; } = new();
+        public List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService> Services { get; set; } = new();
+        public List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel> Models { get; set; } = new();
         public List<ApplicationView> Views { get; set; } = new();
         public List<ApplicationConfiguration> Configurations { get; set; } = new();
         public List<ApplicationMiddleware> Middleware { get; set; } = new();
@@ -85,7 +86,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
-        public List<ApplicationController> Controllers { get; set; } = new();
+        public List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController> Controllers { get; set; } = new();
         public string GeneratedCode { get; set; } = string.Empty;
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
         public Dictionary<string, object> Metadata { get; set; } = new();
@@ -98,7 +99,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
-        public List<ApplicationService> Services { get; set; } = new();
+        public List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService> Services { get; set; } = new();
         public string GeneratedCode { get; set; } = string.Empty;
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
         public Dictionary<string, object> Metadata { get; set; } = new();
@@ -111,7 +112,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
-        public List<ApplicationModel> Models { get; set; } = new();
+        public List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel> Models { get; set; } = new();
         public string GeneratedCode { get; set; } = string.Empty;
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
         public Dictionary<string, object> Metadata { get; set; } = new();
@@ -280,7 +281,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public List<MethodParameter> Parameters { get; set; } = new();
+        public List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.MethodParameter> Parameters { get; set; } = new();
         public string Implementation { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }

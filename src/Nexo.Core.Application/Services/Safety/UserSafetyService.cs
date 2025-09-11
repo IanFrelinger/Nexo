@@ -1,4 +1,9 @@
+using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.Safety;
+using Nexo.Core.Domain.Results;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Nexo.Core.Domain.Enums.Safety;
 
 namespace Nexo.Core.Application.Services.Safety
@@ -9,6 +14,11 @@ namespace Nexo.Core.Application.Services.Safety
     /// </summary>
     public class UserSafetyService : IUserSafetyService
     {
+        public Task<bool> ValidateUserActionAsync(string userId, string action) => Task.FromResult(true);
+        public Task<bool> ReportSafetyIssueAsync(string userId, string issue) => Task.FromResult(true);
+        public Task<List<string>> GetSafetyRecommendationsAsync(string userId) => Task.FromResult(new List<string>());
+        public Task<bool> EnableSafetyModeAsync(string userId) => Task.FromResult(true);
+        public Task<bool> DisableSafetyModeAsync(string userId) => Task.FromResult(true);
         private readonly ILogger<UserSafetyService> _logger;
         private readonly IBackupService _backupService;
         private readonly IAuditService _auditService;

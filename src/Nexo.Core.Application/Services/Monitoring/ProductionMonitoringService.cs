@@ -1,5 +1,12 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Domain.Entities.FeatureFactory;
+using Nexo.Core.Domain.Enums.FeatureFactory;
 using Nexo.Core.Domain.Entities.Monitoring;
 using Nexo.Core.Domain.Enums.Monitoring;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Monitoring
 {
@@ -9,6 +16,11 @@ namespace Nexo.Core.Application.Services.Monitoring
     /// </summary>
     public class ProductionMonitoringService : IProductionMonitoringService
     {
+        public Task<bool> StartMonitoringAsync() => Task.FromResult(true);
+        public Task<bool> StopMonitoringAsync() => Task.FromResult(true);
+        public Task<Dictionary<string, object>> GetHealthStatusAsync() => Task.FromResult(new Dictionary<string, object>());
+        public Task<List<string>> GetAlertsAsync() => Task.FromResult(new List<string>());
+        public Task<bool> SendAlertAsync(string message, AlertLevel level) => Task.FromResult(true);
         private readonly ILogger<ProductionMonitoringService> _logger;
         private readonly IMetricsCollector _metricsCollector;
         private readonly IAlertingService _alertingService;

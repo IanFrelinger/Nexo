@@ -1,7 +1,7 @@
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 
-namespace Nexo.Core.Application.Services.AI.Runtime
+namespace Nexo.Core.Application.Interfaces.AI
 {
     /// <summary>
     /// Interface for AI engines that perform actual AI operations

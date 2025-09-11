@@ -1,4 +1,5 @@
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Domain.Entities.AI
@@ -10,11 +11,16 @@ namespace Nexo.Core.Domain.Entities.AI
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
-        public AIEngineType Type { get; set; }
+        public AIEngineType EngineType { get; set; }
         public string Version { get; set; } = "";
         public AIProviderType ProviderType { get; set; }
         public bool IsOfflineCapable { get; set; }
         public bool IsInitialized { get; set; }
+        public string ModelPath { get; set; } = "";
+        public int MaxTokens { get; set; } = 1000;
+        public double Temperature { get; set; } = 0.7;
+        public List<PlatformType> SupportedPlatforms { get; set; } = new();
+        public Dictionary<string, object> Configuration { get; set; } = new();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public Dictionary<string, object> Capabilities { get; set; } = new();
         public Dictionary<string, object> Metadata { get; set; } = new();
@@ -66,6 +72,10 @@ namespace Nexo.Core.Domain.Entities.AI
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public AIOperationType OperationType { get; set; }
         public PlatformType Platform { get; set; }
+        public PlatformType TargetPlatform { get; set; }
+        public int MaxTokens { get; set; } = 1000;
+        public double Temperature { get; set; } = 0.7;
+        public CommandPriority Priority { get; set; } = CommandPriority.Normal;
         public AIRequirements Requirements { get; set; } = new();
         public AIResources Resources { get; set; } = new();
         public Dictionary<string, object> Parameters { get; set; } = new();
@@ -164,6 +174,9 @@ namespace Nexo.Core.Domain.Entities.AI
         public List<CodeIssue> Issues { get; set; } = new();
         public List<CodeSuggestion> Suggestions { get; set; } = new();
         public double QualityScore { get; set; }
+        public TimeSpan ReviewTime { get; set; }
+        public AIEngineType EngineType { get; set; }
+        public string ReviewedCode { get; set; } = "";
         public AIConfidenceLevel Confidence { get; set; }
         public Dictionary<string, object> Metrics { get; set; } = new();
         public DateTime ReviewedAt { get; set; } = DateTime.UtcNow;
@@ -178,8 +191,11 @@ namespace Nexo.Core.Domain.Entities.AI
         public string Type { get; set; } = "";
         public string Message { get; set; } = "";
         public string Severity { get; set; } = "";
+        public int Line { get; set; }
         public int LineNumber { get; set; }
+        public int Column { get; set; }
         public int ColumnNumber { get; set; }
+        public string FilePath { get; set; } = "";
         public string? Fix { get; set; }
         public Dictionary<string, object> Context { get; set; } = new();
     }
@@ -206,13 +222,36 @@ namespace Nexo.Core.Domain.Entities.AI
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ModelId { get; set; } = "";
         public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public long Size { get; set; }
+        public long SizeBytes { get; set; }
         public PlatformType Platform { get; set; }
         public ModelPrecision Precision { get; set; }
-        public long SizeBytes { get; set; }
+        public ModelStatus Status { get; set; }
+        public ModelQuantization Quantization { get; set; }
         public string FileName { get; set; } = "";
         public string DownloadUrl { get; set; } = "";
         public string Checksum { get; set; } = "";
         public Dictionary<string, object> Parameters { get; set; } = new();
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// AI code optimization result
+    /// </summary>
+    public class CodeOptimizationResult
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string OptimizedCode { get; set; } = "";
+        public double OptimizationScore { get; set; }
+        public List<string> Improvements { get; set; } = new();
+        public double PerformanceGain { get; set; }
+        public TimeSpan OptimizationTime { get; set; }
+        public AIEngineType EngineType { get; set; }
+        public string OriginalCode { get; set; } = "";
+        public Dictionary<string, object> Metrics { get; set; } = new();
+        public DateTime OptimizedAt { get; set; } = DateTime.UtcNow;
     }
 
     /// <summary>

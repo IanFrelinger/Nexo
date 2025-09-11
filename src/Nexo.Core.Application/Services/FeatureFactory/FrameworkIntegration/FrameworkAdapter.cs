@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Domain.Entities.FeatureFactory;
 using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
+using Nexo.Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -630,7 +632,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
 
         // Private helper methods for generating specific components
 
-        private async Task<WebApiController> GenerateWebApiControllerAsync(ApplicationController controller, CancellationToken cancellationToken)
+        private async Task<WebApiController> GenerateWebApiControllerAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController controller, CancellationToken cancellationToken)
         {
             // Simulate Web API controller generation
             await Task.Delay(50, cancellationToken);
@@ -642,7 +644,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
             };
         }
 
-        private async Task<WebApiModel> GenerateWebApiModelAsync(ApplicationModel model, CancellationToken cancellationToken)
+        private async Task<WebApiModel> GenerateWebApiModelAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel model, CancellationToken cancellationToken)
         {
             // Simulate Web API model generation
             await Task.Delay(50, cancellationToken);
@@ -654,7 +656,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
             };
         }
 
-        private async Task<WebApiService> GenerateWebApiServiceAsync(ApplicationService service, CancellationToken cancellationToken)
+        private async Task<WebApiService> GenerateWebApiServiceAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService service, CancellationToken cancellationToken)
         {
             // Simulate Web API service generation
             await Task.Delay(50, cancellationToken);
@@ -666,7 +668,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
             };
         }
 
-        private async Task<BlazorComponent> GenerateBlazorComponentsAsync(ApplicationController controller, CancellationToken cancellationToken)
+        private async Task<BlazorComponent> GenerateBlazorComponentsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController controller, CancellationToken cancellationToken)
         {
             // Simulate Blazor component generation
             await Task.Delay(50, cancellationToken);
@@ -678,7 +680,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
             };
         }
 
-        private async Task<BlazorPage> GenerateBlazorPagesAsync(ApplicationModel model, CancellationToken cancellationToken)
+        private async Task<BlazorPage> GenerateBlazorPagesAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel model, CancellationToken cancellationToken)
         {
             // Simulate Blazor page generation
             await Task.Delay(50, cancellationToken);
@@ -690,7 +692,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
             };
         }
 
-        private async Task<BlazorService> GenerateBlazorServiceAsync(ApplicationService service, CancellationToken cancellationToken)
+        private async Task<BlazorService> GenerateBlazorServiceAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService service, CancellationToken cancellationToken)
         {
             // Simulate Blazor service generation
             await Task.Delay(50, cancellationToken);
@@ -704,85 +706,85 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
 
         // Additional helper methods for other frameworks would follow similar patterns...
 
-        private async Task<MauiPage> GenerateMauiPagesAsync(ApplicationController controller, CancellationToken cancellationToken)
+        private async Task<MauiPage> GenerateMauiPagesAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController controller, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new MauiPage { Name = $"{controller.Name}Page", Content = $"<!-- Generated MAUI page for {controller.Name} -->" };
         }
 
-        private async Task<MauiView> GenerateMauiViewsAsync(ApplicationModel model, CancellationToken cancellationToken)
+        private async Task<MauiView> GenerateMauiViewsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel model, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new MauiView { Name = $"{model.Name}View", Content = $"<!-- Generated MAUI view for {model.Name} -->" };
         }
 
-        private async Task<MauiService> GenerateMauiServiceAsync(ApplicationService service, CancellationToken cancellationToken)
+        private async Task<MauiService> GenerateMauiServiceAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService service, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new MauiService { Name = service.Name, Content = $"// Generated MAUI service for {service.Name}" };
         }
 
-        private async Task<ConsoleCommand> GenerateConsoleCommandsAsync(ApplicationController controller, CancellationToken cancellationToken)
+        private async Task<ConsoleCommand> GenerateConsoleCommandsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController controller, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new ConsoleCommand { Name = $"{controller.Name}Command", Content = $"// Generated Console command for {controller.Name}" };
         }
 
-        private async Task<ConsoleService> GenerateConsoleServiceAsync(ApplicationService service, CancellationToken cancellationToken)
+        private async Task<ConsoleService> GenerateConsoleServiceAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService service, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new ConsoleService { Name = service.Name, Content = $"// Generated Console service for {service.Name}" };
         }
 
-        private async Task<WpfWindow> GenerateWpfWindowsAsync(ApplicationController controller, CancellationToken cancellationToken)
+        private async Task<WpfWindow> GenerateWpfWindowsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController controller, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new WpfWindow { Name = $"{controller.Name}Window", Content = $"<!-- Generated WPF window for {controller.Name} -->" };
         }
 
-        private async Task<WpfUserControl> GenerateWpfUserControlsAsync(ApplicationModel model, CancellationToken cancellationToken)
+        private async Task<WpfUserControl> GenerateWpfUserControlsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel model, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new WpfUserControl { Name = $"{model.Name}UserControl", Content = $"<!-- Generated WPF user control for {model.Name} -->" };
         }
 
-        private async Task<WpfViewModel> GenerateWpfViewModelsAsync(ApplicationService service, CancellationToken cancellationToken)
+        private async Task<WpfViewModel> GenerateWpfViewModelsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService service, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new WpfViewModel { Name = $"{service.Name}ViewModel", Content = $"// Generated WPF view model for {service.Name}" };
         }
 
-        private async Task<WinFormsForm> GenerateWinFormsFormsAsync(ApplicationController controller, CancellationToken cancellationToken)
+        private async Task<WinFormsForm> GenerateWinFormsFormsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController controller, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new WinFormsForm { Name = $"{controller.Name}Form", Content = $"// Generated WinForms form for {controller.Name}" };
         }
 
-        private async Task<WinFormsControl> GenerateWinFormsControlsAsync(ApplicationModel model, CancellationToken cancellationToken)
+        private async Task<WinFormsControl> GenerateWinFormsControlsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel model, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new WinFormsControl { Name = $"{model.Name}Control", Content = $"// Generated WinForms control for {model.Name}" };
         }
 
-        private async Task<WinFormsService> GenerateWinFormsServiceAsync(ApplicationService service, CancellationToken cancellationToken)
+        private async Task<WinFormsService> GenerateWinFormsServiceAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService service, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new WinFormsService { Name = service.Name, Content = $"// Generated WinForms service for {service.Name}" };
         }
 
-        private async Task<XamarinPage> GenerateXamarinPagesAsync(ApplicationController controller, CancellationToken cancellationToken)
+        private async Task<XamarinPage> GenerateXamarinPagesAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController controller, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new XamarinPage { Name = $"{controller.Name}Page", Content = $"<!-- Generated Xamarin page for {controller.Name} -->" };
         }
 
-        private async Task<XamarinView> GenerateXamarinViewsAsync(ApplicationModel model, CancellationToken cancellationToken)
+        private async Task<XamarinView> GenerateXamarinViewsAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel model, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new XamarinView { Name = $"{model.Name}View", Content = $"<!-- Generated Xamarin view for {model.Name} -->" };
         }
 
-        private async Task<XamarinService> GenerateXamarinServiceAsync(ApplicationService service, CancellationToken cancellationToken)
+        private async Task<XamarinService> GenerateXamarinServiceAsync(Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService service, CancellationToken cancellationToken)
         {
             await Task.Delay(50, cancellationToken);
             return new XamarinService { Name = service.Name, Content = $"// Generated Xamarin service for {service.Name}" };

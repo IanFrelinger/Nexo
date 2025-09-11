@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums.Code;
+using Nexo.Core.Domain.Entities.Pipeline;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,6 +25,9 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        public string Name => "AI Code Review";
+        public int Order => 2;
+
         public async Task<CodeReviewRequest> ExecuteAsync(CodeReviewRequest input, PipelineContext context)
         {
             try
@@ -32,7 +38,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 if (string.IsNullOrWhiteSpace(input.Code))
                 {
                     _logger.LogWarning("Empty code provided for review");
-                    input.Result = new CodeReviewResult
+                    input.Result = new Nexo.Core.Domain.Results.CodeReviewResult
                     {
                         QualityScore = 0,
                         Issues = new List<CodeIssue>
@@ -121,7 +127,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 _logger.LogError(ex, "Error during AI code review");
                 
                 // Create fallback result
-                input.Result = new CodeReviewResult
+                input.Result = new Nexo.Core.Domain.Results.CodeReviewResult
                 {
                     QualityScore = 0,
                     Issues = new List<CodeIssue>
@@ -154,7 +160,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             };
         }
 
-        private async Task<CodeReviewResult> EnhanceReviewResultAsync(CodeReviewResult result, CodeReviewRequest request, PipelineContext context)
+        private async Task<Nexo.Core.Domain.Results.CodeReviewResult> EnhanceReviewResultAsync(Nexo.Core.Domain.Results.CodeReviewResult result, Nexo.Core.Domain.Entities.AI.CodeReviewRequest request, Nexo.Core.Domain.Entities.Pipeline.PipelineContext context)
         {
             _logger.LogDebug("Enhancing code review result with additional analysis");
 
@@ -180,7 +186,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return result;
         }
 
-        private async Task<CodeReviewResult> ApplySafetyValidationAsync(CodeReviewResult result, CodeReviewRequest request, PipelineContext context)
+        private async Task<Nexo.Core.Domain.Results.CodeReviewResult> ApplySafetyValidationAsync(Nexo.Core.Domain.Results.CodeReviewResult result, Nexo.Core.Domain.Entities.AI.CodeReviewRequest request, Nexo.Core.Domain.Entities.Pipeline.PipelineContext context)
         {
             _logger.LogDebug("Applying safety validation to code review result");
 
@@ -295,7 +301,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return issues;
         }
 
-        private int CalculateEnhancedQualityScore(CodeReviewResult result)
+        private int CalculateEnhancedQualityScore(Nexo.Core.Domain.Results.CodeReviewResult result)
         {
             var baseScore = result.QualityScore;
             var issuePenalty = result.Issues.Sum(issue => issue.Severity switch
@@ -370,7 +376,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return validatedIssues;
         }
 
-        private async Task<CodeReviewResult> ApplyContentFilteringAsync(CodeReviewResult result, CodeReviewRequest request, PipelineContext context)
+        private async Task<Nexo.Core.Domain.Results.CodeReviewResult> ApplyContentFilteringAsync(Nexo.Core.Domain.Results.CodeReviewResult result, Nexo.Core.Domain.Entities.AI.CodeReviewRequest request, Nexo.Core.Domain.Entities.Pipeline.PipelineContext context)
         {
             // In a real implementation, this would apply content filtering
             await Task.Delay(50);
@@ -380,6 +386,41 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             result.Issues = result.Issues.Where(i => !i.Message.Contains("inappropriate")).ToList();
 
             return result;
+        }
+
+        public async Task<bool> CanExecuteAsync(CodeReviewRequest input, PipelineContext context)
+        {
+            try
+            {
+                // Check if input is valid
+                if (string.IsNullOrWhiteSpace(input.Code))
+                {
+                    _logger.LogDebug("Cannot execute code review step: empty code provided");
+                    return false;
+                }
+
+                // Check if AI runtime is available
+                var providers = await _runtimeSelector.GetAvailableProvidersAsync();
+                if (!providers.Any())
+                {
+                    _logger.LogDebug("Cannot execute code review step: no AI providers available");
+                    return false;
+                }
+
+                // Check if context is valid
+                if (context == null)
+                {
+                    _logger.LogDebug("Cannot execute code review step: null context provided");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking if code review step can execute");
+                return false;
+            }
         }
     }
 
@@ -391,7 +432,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         public string Code { get; set; } = string.Empty;
         public CodeLanguage Language { get; set; }
         public string Context { get; set; } = string.Empty;
-        public CodeReviewResult? Result { get; set; }
+        public Nexo.Core.Domain.Results.CodeReviewResult? Result { get; set; }
         public bool ReviewCompleted { get; set; }
         public DateTime? ReviewTime { get; set; }
         public Dictionary<string, object> Metadata { get; set; } = new();

@@ -12,6 +12,12 @@ using Nexo.Core.Application.Services.AI.Providers;
 using Nexo.Core.Application.Services.AI.Rollback;
 using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Application.Services.AI.Safety;
+using Nexo.Core.Application.Interfaces.AI;
+// Infrastructure service registrations belong in Nexo.Infrastructure. Keep Application free of Infra deps.
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums.Code;
+using Nexo.Core.Domain.Enums.Safety;
+using Nexo.Core.Domain.Results;
 
 namespace Nexo.Core.Application.Extensions
 {
@@ -34,6 +40,10 @@ namespace Nexo.Core.Application.Extensions
             services.AddSingleton<IAIProvider, MockAIProvider>();
             services.AddSingleton<IAIProvider, LlamaWebAssemblyProvider>();
             services.AddSingleton<IAIProvider, LlamaNativeProvider>();
+            
+            // Register LLama providers for offline AI
+            services.AddSingleton<ILlamaProvider, OllamaProvider>();
+            services.AddSingleton<ILlamaProvider, LlamaNativeProvider>();
 
             // Register AI engines
             services.AddTransient<IAIEngine, MockAIEngine>();
@@ -92,6 +102,17 @@ namespace Nexo.Core.Application.Extensions
             if (options.EnableRemoteProvider)
             {
                 services.AddSingleton<IAIProvider, MockAIProvider>(); // Fallback to mock for now
+            }
+
+            // Register LLama providers for offline AI
+            if (options.EnableDockerProvider)
+            {
+                services.AddSingleton<ILlamaProvider, OllamaProvider>();
+            }
+            
+            if (options.EnableNativeProvider)
+            {
+                services.AddSingleton<ILlamaProvider, LlamaNativeProvider>();
             }
 
             // Register AI engines

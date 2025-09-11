@@ -1,7 +1,11 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums.Code;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.Pipeline;
+using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Application.Interfaces.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +26,9 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _runtimeSelector = runtimeSelector ?? throw new ArgumentNullException(nameof(runtimeSelector));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
+        public string Name => "AI Documentation Generation";
+        public int Order => 3;
 
         public async Task<DocumentationRequest> ExecuteAsync(DocumentationRequest input, PipelineContext context)
         {
@@ -392,6 +399,41 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             var coverage = Math.Min(100, (docLines * 100) / Math.Max(1, codeLines));
             
             return coverage;
+        }
+
+        public async Task<bool> CanExecuteAsync(DocumentationRequest input, PipelineContext context)
+        {
+            try
+            {
+                // Check if input is valid
+                if (string.IsNullOrWhiteSpace(input.Code))
+                {
+                    _logger.LogDebug("Cannot execute documentation step: empty code provided");
+                    return false;
+                }
+
+                // Check if AI runtime is available
+                var providers = await _runtimeSelector.GetAvailableProvidersAsync();
+                if (!providers.Any())
+                {
+                    _logger.LogDebug("Cannot execute documentation step: no AI providers available");
+                    return false;
+                }
+
+                // Check if context is valid
+                if (context == null)
+                {
+                    _logger.LogDebug("Cannot execute documentation step: null context provided");
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error checking if documentation step can execute");
+                return false;
+            }
         }
     }
 

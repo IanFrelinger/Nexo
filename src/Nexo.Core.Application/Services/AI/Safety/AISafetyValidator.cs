@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums.Safety;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;

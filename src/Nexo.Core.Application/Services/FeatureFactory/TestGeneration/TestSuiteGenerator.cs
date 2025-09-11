@@ -1,6 +1,10 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
+using Nexo.Core.Domain.Entities.FeatureFactory;
+using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Application.Interfaces.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

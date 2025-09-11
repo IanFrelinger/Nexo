@@ -7,7 +7,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Nexo.Shared\Nexo.Shared.csproj" />
-      <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+      <!-- Avoid circular reference: Infrastructure should not reference Application -->
       <ProjectReference Include="..\Nexo.Feature.AI\Nexo.Feature.AI.csproj" />
       <!-- <ProjectReference Include="..\Nexo.Feature.Pipeline\Nexo.Feature.Pipeline.csproj" /> -->
       <ProjectReference Include="..\Nexo.Feature.Logging\Nexo.Feature.Logging.csproj" />
@@ -20,6 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="LlamaSharp" Version="0.25.0" />
       <PackageReference Include="System.Reactive" Version="6.0.1" />
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
       <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />

@@ -20,6 +20,7 @@ using Nexo.Shared.Models;
 using Nexo.Shared;
 using Nexo.CLI.Commands;
 using Nexo.CLI.Commands.Unity;
+using Nexo.Infrastructure.Commands;
 
 namespace Nexo.CLI
 {
@@ -494,6 +495,15 @@ namespace Nexo.CLI
             iterationCommand.AddCommand(iterationCommands.CreateIterationOptimizeCommand());
             iterationCommand.AddCommand(iterationCommands.CreateIterationRecommendationsCommand());
             rootCommand.AddCommand(iterationCommand);
+
+            // LLama AI Chat and Model Management commands
+            var chatCommand = new ChatCommand(scope.ServiceProvider, logger, scope.ServiceProvider.GetRequiredService<IModelOrchestrator>());
+            var chatCommandRoot = chatCommand.CreateChatCommand();
+            rootCommand.AddCommand(chatCommandRoot);
+
+            var modelCommand = new ModelCommand(scope.ServiceProvider, logger, scope.ServiceProvider.GetRequiredService<IModelOrchestrator>());
+            var modelCommandRoot = modelCommand.CreateModelCommand();
+            rootCommand.AddCommand(modelCommandRoot);
 
             // Remove duplicate testing commands - using simple testing commands above
 

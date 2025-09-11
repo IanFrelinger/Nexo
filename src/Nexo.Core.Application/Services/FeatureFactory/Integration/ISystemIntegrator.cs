@@ -1,4 +1,5 @@
 using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
+using Nexo.Core.Domain.Entities.FeatureFactory;
 using Nexo.Core.Domain.Entities.FeatureFactory.Integration;
 using System;
 using System.Collections.Generic;
