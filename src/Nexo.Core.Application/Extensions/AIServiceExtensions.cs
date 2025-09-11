@@ -53,9 +53,9 @@ namespace Nexo.Core.Application.Extensions
             services.AddTransient<IAIEngine, LlamaNativeEngine>();
 
             // Register AI pipeline steps
-            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>, AICodeGenerationStep>();
-            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeReviewRequest>, AICodeReviewStep>();
-            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.DocumentationRequest>, AIDocumentationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.TestingRequest>, AITestingStep>();
 
@@ -118,9 +118,9 @@ namespace Nexo.Core.Application.Extensions
             services.AddTransient<IAIEngine, MockAIEngine>();
 
             // Register AI pipeline steps
-            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>, AICodeGenerationStep>();
-            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeReviewRequest>, AICodeReviewStep>();
-            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.DocumentationRequest>, AIDocumentationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.TestingRequest>, AITestingStep>();
 

@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     /// <summary>
     /// AI-powered code review pipeline step for comprehensive code analysis
     /// </summary>
-    public class AICodeReviewStep : IPipelineStep<CodeReviewRequest>
+    public class AICodeReviewStep : IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeReviewRequest>
     {
         private readonly IAIRuntimeSelector _runtimeSelector;
         private readonly ILogger<AICodeReviewStep> _logger;
@@ -28,7 +28,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         public string Name => "AI Code Review";
         public int Order => 2;
 
-        public async Task<CodeReviewRequest> ExecuteAsync(CodeReviewRequest input, PipelineContext context)
+        public async Task<Nexo.Core.Domain.Entities.AI.CodeReviewRequest> ExecuteAsync(Nexo.Core.Domain.Entities.AI.CodeReviewRequest input, PipelineContext context)
         {
             try
             {
@@ -315,7 +315,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return Math.Max(0, baseScore - issuePenalty);
         }
 
-        private async Task<List<string>> GenerateContextSuggestionsAsync(CodeReviewRequest request, PipelineContext context)
+        private async Task<List<string>> GenerateContextSuggestionsAsync(Nexo.Core.Domain.Entities.AI.CodeReviewRequest request, PipelineContext context)
         {
             // In a real implementation, this would generate context-specific suggestions
             await Task.Delay(50);
@@ -336,7 +336,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return suggestions;
         }
 
-        private async Task<List<string>> FilterSuggestionsAsync(List<string> suggestions, CodeReviewRequest request, PipelineContext context)
+        private async Task<List<string>> FilterSuggestionsAsync(List<string> suggestions, Nexo.Core.Domain.Entities.AI.CodeReviewRequest request, PipelineContext context)
         {
             // In a real implementation, this would filter out potentially harmful suggestions
             await Task.Delay(50);
@@ -357,7 +357,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return filteredSuggestions;
         }
 
-        private async Task<List<CodeIssue>> ValidateIssuesAsync(List<CodeIssue> issues, CodeReviewRequest request, PipelineContext context)
+        private async Task<List<CodeIssue>> ValidateIssuesAsync(List<CodeIssue> issues, Nexo.Core.Domain.Entities.AI.CodeReviewRequest request, PipelineContext context)
         {
             // In a real implementation, this would validate issues for safety and accuracy
             await Task.Delay(50);
@@ -388,7 +388,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return result;
         }
 
-        public async Task<bool> CanExecuteAsync(CodeReviewRequest input, PipelineContext context)
+        public async Task<bool> CanExecuteAsync(Nexo.Core.Domain.Entities.AI.CodeReviewRequest input, PipelineContext context)
         {
             try
             {
@@ -424,19 +424,6 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         }
     }
 
-    /// <summary>
-    /// Code review request for AI pipeline processing
-    /// </summary>
-    public class CodeReviewRequest
-    {
-        public string Code { get; set; } = string.Empty;
-        public CodeLanguage Language { get; set; }
-        public string Context { get; set; } = string.Empty;
-        public Nexo.Core.Domain.Results.CodeReviewResult? Result { get; set; }
-        public bool ReviewCompleted { get; set; }
-        public DateTime? ReviewTime { get; set; }
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
 
     /// <summary>
     /// AI requirements for code review operations

@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     /// <summary>
     /// AI-powered code optimization pipeline step for performance and quality improvements
     /// </summary>
-    public class AIOptimizationStep : IPipelineStep<CodeOptimizationRequest>
+    public class AIOptimizationStep : IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest>
     {
         private readonly IAIRuntimeSelector _runtimeSelector;
         private readonly ILogger<AIOptimizationStep> _logger;
@@ -30,7 +30,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         public string Name => "AI Code Optimization";
         public int Order => 4;
 
-        public async Task<CodeOptimizationRequest> ExecuteAsync(CodeOptimizationRequest input, PipelineContext context)
+        public async Task<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest> ExecuteAsync(Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest input, PipelineContext context)
         {
             try
             {
@@ -147,7 +147,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             };
         }
 
-        private async Task<CodeOptimizationResult> EnhanceOptimizationResultAsync(CodeOptimizationResult result, CodeOptimizationRequest request, PipelineContext context)
+        private async Task<CodeOptimizationResult> EnhanceOptimizationResultAsync(CodeOptimizationResult result, Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest request, PipelineContext context)
         {
             _logger.LogDebug("Enhancing code optimization result with additional analysis");
 
@@ -176,7 +176,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return result;
         }
 
-        private async Task<CodeOptimizationResult> ApplySafetyValidationAsync(CodeOptimizationResult result, CodeOptimizationRequest request, PipelineContext context)
+        private async Task<CodeOptimizationResult> ApplySafetyValidationAsync(CodeOptimizationResult result, Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest request, PipelineContext context)
         {
             _logger.LogDebug("Applying safety validation to code optimization result");
 
@@ -303,7 +303,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return Math.Min(100, improvements);
         }
 
-        private async Task<List<string>> GenerateContextOptimizationsAsync(CodeOptimizationRequest request, PipelineContext context)
+        private async Task<List<string>> GenerateContextOptimizationsAsync(Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest request, PipelineContext context)
         {
             // In a real implementation, this would generate context-specific optimizations
             await Task.Delay(50);
@@ -360,7 +360,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return issues;
         }
 
-        private async Task<List<string>> FilterImprovementsForSafetyAsync(List<string> improvements, CodeOptimizationRequest request, PipelineContext context)
+        private async Task<List<string>> FilterImprovementsForSafetyAsync(List<string> improvements, Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest request, PipelineContext context)
         {
             // In a real implementation, this would filter improvements for safety
             await Task.Delay(50);
@@ -381,7 +381,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             return filteredImprovements;
         }
 
-        public async Task<bool> CanExecuteAsync(CodeOptimizationRequest input, PipelineContext context)
+        public async Task<bool> CanExecuteAsync(Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest input, PipelineContext context)
         {
             try
             {
@@ -417,20 +417,6 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         }
     }
 
-    /// <summary>
-    /// Code optimization request for AI pipeline processing
-    /// </summary>
-    public class CodeOptimizationRequest
-    {
-        public string Code { get; set; } = string.Empty;
-        public CodeLanguage Language { get; set; }
-        public OptimizationType OptimizationType { get; set; } = OptimizationType.Balanced;
-        public string Context { get; set; } = string.Empty;
-        public CodeOptimizationResult? Result { get; set; }
-        public bool OptimizationCompleted { get; set; }
-        public DateTime? OptimizationTime { get; set; }
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
 
     /// <summary>
     /// Types of code optimization
