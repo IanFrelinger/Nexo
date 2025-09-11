@@ -51,7 +51,7 @@ public interface IEnvironmentDetector
 public class DetectedEnvironment
 {
     public string EnvironmentId { get; set; } = Guid.NewGuid().ToString();
-    public Nexo.Core.Domain.Entities.Infrastructure.EnvironmentContext Context { get; set; }
+    public Nexo.Core.Domain.Entities.Infrastructure.EnvironmentContext Context { get; set; } = new();
     public PlatformType Platform { get; set; }
     public EnvironmentResources Resources { get; set; } = new();
     public NetworkProfile NetworkProfile { get; set; } = new();

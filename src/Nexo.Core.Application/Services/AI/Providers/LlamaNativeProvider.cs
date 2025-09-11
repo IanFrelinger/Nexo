@@ -30,7 +30,7 @@ namespace Nexo.Core.Application.Services.AI.Providers
         public Task<IAIEngine> CreateEngineAsync(AIOperationContext context) => Task.FromResult<IAIEngine>(new Engines.LlamaNativeEngine());
         public Task<List<ModelInfo>> GetAvailableModelsAsync() => Task.FromResult(new List<ModelInfo>());
         // IModelProvider implementation
-        Task<bool> IModelProvider.DownloadModelAsync(string modelId, string variantId) => Task.FromResult(true);
+        Task<bool> IModelProvider.DownloadModelAsync(string modelId, string? variantId) => Task.FromResult(true);
         
         // IAIProvider implementation  
         public Task<ModelInfo> DownloadModelAsync(string modelId, string variantId) => Task.FromResult(new ModelInfo { Id = modelId, Name = modelId });

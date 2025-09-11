@@ -222,7 +222,7 @@ namespace Nexo.Core.Application.Services.Onboarding
 
         #region Private Methods
 
-        private async Task<List<OnboardingStep>> CreateOnboardingStepsAsync(OnboardingPreferences preferences)
+        private Task<List<OnboardingStep>> CreateOnboardingStepsAsync(OnboardingPreferences preferences)
         {
             var steps = new List<OnboardingStep>();
 
@@ -289,7 +289,7 @@ namespace Nexo.Core.Application.Services.Onboarding
                 Status = OnboardingStepStatus.Pending
             });
 
-            return steps;
+            return Task.FromResult(steps);
         }
 
         private async Task<OnboardingStep?> GetStepAsync(string sessionId, string stepId)

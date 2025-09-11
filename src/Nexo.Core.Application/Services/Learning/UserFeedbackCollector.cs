@@ -274,10 +274,11 @@ public class UserFeedbackCollector : IUserFeedbackCollector
         return analysis;
     }
     
-    public async Task DeleteOldFeedbackAsync(DateTime cutoffTime)
+    public Task DeleteOldFeedbackAsync(DateTime cutoffTime)
     {
         // TODO: Implement DeleteOldFeedbackAsync in IFeedbackStore
         // await _feedbackStore.DeleteOldFeedbackAsync(cutoffTime);
+        return Task.CompletedTask;
     }
 }
 

@@ -32,7 +32,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             Directory.CreateDirectory(_modelsDirectory);
         }
 
-        public async Task<ModelInfo> GetModelInfoAsync(string modelId)
+        public async Task<ModelInfo?> GetModelInfoAsync(string modelId)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<bool> DownloadModelAsync(string modelId, string version = null)
+        public async Task<bool> DownloadModelAsync(string modelId, string? version = null)
         {
             try
             {
@@ -96,7 +96,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<bool> IsModelAvailableAsync(string modelId, string version = null)
+        public async Task<bool> IsModelAvailableAsync(string modelId, string? version = null)
         {
             try
             {
@@ -136,7 +136,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<bool> DeleteModelAsync(string modelId, string version = null)
+        public async Task<bool> DeleteModelAsync(string modelId, string? version = null)
         {
             try
             {

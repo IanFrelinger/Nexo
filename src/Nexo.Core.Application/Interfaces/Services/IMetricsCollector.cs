@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Services.Monitoring
     /// </summary>
     public interface IMetricsCollector
     {
-        Task RecordMetricAsync(string name, double value, Dictionary<string, string> tags = null);
+        Task RecordMetricAsync(string name, double value, Dictionary<string, string>? tags = null);
         Task<Dictionary<string, double>> GetMetricsAsync(string name);
         Task<List<string>> GetAvailableMetricsAsync();
         Task<bool> ClearMetricsAsync();

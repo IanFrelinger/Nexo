@@ -39,7 +39,7 @@ namespace Nexo.Core.Application.Interfaces.AI
         /// <summary>
         /// Downloads a model
         /// </summary>
-        Task<bool> DownloadModelAsync(string modelId, string variant = null);
+        Task<bool> DownloadModelAsync(string modelId, string? variant = null);
 
         /// <summary>
         /// Checks if a model is compatible

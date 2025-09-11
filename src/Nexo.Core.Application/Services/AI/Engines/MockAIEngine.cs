@@ -13,8 +13,8 @@ namespace Nexo.Core.Application.Services.AI.Engines
     public class MockAIEngine : IAIEngine
     {
         private readonly ILogger<MockAIEngine> _logger;
-        private ModelInfo _model;
-        private AIOperationContext _context;
+        private ModelInfo? _model;
+        private AIOperationContext? _context;
         private AIOperationStatus _status = AIOperationStatus.Pending;
         private bool _isInitialized = false;
         private readonly Random _random = new();
@@ -86,7 +86,7 @@ namespace Nexo.Core.Application.Services.AI.Engines
                 {
                     ["MockMode"] = true,
                     ["ProcessingTime"] = "1-3 seconds",
-                    ["ModelUsed"] = _model.Name
+                    ["ModelUsed"] = _model?.Name ?? "Unknown"
                 }
             };
         }
