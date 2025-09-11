@@ -196,7 +196,13 @@ namespace Nexo.Core.Application.Services.Safety
             };
 
             // Log audit trail
-            await _auditService.LogSafeguardExecutionAsync(executionResult);
+            await _auditService.LogActionAsync(operation.UserId, "SafeguardExecution", new Dictionary<string, object>
+            {
+                ["OperationId"] = executionResult.OperationId,
+                ["AllSafeguardsSuccessful"] = executionResult.AllSafeguardsSuccessful,
+                ["ExecutionTimestamp"] = executionResult.ExecutionTimestamp,
+                ["ExecutionNotes"] = executionResult.ExecutionNotes
+            });
 
             return executionResult;
         }

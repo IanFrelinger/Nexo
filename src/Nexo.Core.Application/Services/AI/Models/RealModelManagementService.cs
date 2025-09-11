@@ -24,7 +24,7 @@ namespace Nexo.Core.Application.Services.AI.Models
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _modelsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Nexo", "Models");
+            _modelsDirectory = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "Nexo", "Models");
             _cachedModels = new Dictionary<string, ModelInfo>();
             
             // Ensure models directory exists
@@ -226,7 +226,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 Status = ModelStatus.Available,
                 DownloadUrl = $"https://huggingface.co/microsoft/{modelId}/resolve/main/model.gguf",
                 Checksum = "mock-checksum",
-                SupportedPlatforms = new[] { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
+                SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
                 LastUpdated = DateTime.UtcNow
             };
         }
@@ -340,7 +340,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     Quantization = ModelQuantization.Q4_0,
                     Status = ModelStatus.Available,
                     DownloadUrl = "https://huggingface.co/microsoft/Llama-2-7b-chat-gguf/resolve/main/llama-2-7b-chat.q4_0.gguf",
-                    SupportedPlatforms = new[] { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
+                    SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
                     LastUpdated = DateTime.UtcNow
                 },
                 new ModelInfo
@@ -353,7 +353,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     Quantization = ModelQuantization.Q4_0,
                     Status = ModelStatus.Available,
                     DownloadUrl = "https://huggingface.co/microsoft/CodeLlama-7b-Instruct-gguf/resolve/main/codellama-7b-instruct.q4_0.gguf",
-                    SupportedPlatforms = new[] { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
+                    SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
                     LastUpdated = DateTime.UtcNow
                 }
             };

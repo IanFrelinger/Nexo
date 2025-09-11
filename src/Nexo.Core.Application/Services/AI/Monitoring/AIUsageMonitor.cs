@@ -175,14 +175,14 @@ namespace Nexo.Core.Application.Services.AI.Monitoring
                     Details = new Dictionary<string, object>
                     {
                         ["Success"] = success,
-                        ["Duration"] = session.Duration.TotalMilliseconds,
+                        ["Duration"] = session.Duration?.TotalMilliseconds ?? 0,
                         ["ErrorMessage"] = errorMessage ?? "",
                         ["Results"] = results ?? new Dictionary<string, object>()
                     }
                 });
 
                 _logger.LogInformation("AI operation {OperationId} completed with success {Success} in {Duration}ms", 
-                    operationId, success, session.Duration.TotalMilliseconds);
+                    operationId, success, session.Duration?.TotalMilliseconds ?? 0);
             }
             catch (Exception ex)
             {

@@ -72,15 +72,15 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         // Add strategies based on environment type
         switch (environment.EnvironmentType)
         {
-            case PlatformType.DotNet:
+            case EnvironmentType.DotNet:
                 strategies.Add("DotNetOptimization");
                 strategies.Add("MemoryManagement");
                 break;
-            case PlatformType.Unity:
+            case EnvironmentType.Unity:
                 strategies.Add("UnityOptimization");
                 strategies.Add("GameLoopOptimization");
                 break;
-            case PlatformType.WebAssembly:
+            case EnvironmentType.WebAssembly:
                 strategies.Add("WasmOptimization");
                 strategies.Add("MemoryEfficientIteration");
                 break;

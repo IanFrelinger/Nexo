@@ -11,6 +11,7 @@ namespace Nexo.Core.Application.Interfaces.Services
     public interface IAnalyticsService
     {
         Task TrackEventAsync(string eventName, Dictionary<string, object> properties);
+        Task InitializeAsync();
         Task TrackUserActionAsync(string userId, string action, Dictionary<string, object> context);
         Task TrackModelUsageAsync(string modelId, string operation, TimeSpan duration, bool success);
         Task TrackPerformanceAsync(string operation, TimeSpan duration, Dictionary<string, object> metrics);
@@ -20,6 +21,10 @@ namespace Nexo.Core.Application.Interfaces.Services
         Task ReportErrorAsync(string error, Dictionary<string, object> context);
         Task TrackFeatureUsageAsync(string featureName, string userId, Dictionary<string, object> properties);
         Task<Dictionary<string, object>> GetUserInsightsAsync(string userId);
+        Task<Dictionary<string, object>> GetUserMetricsAsync(string userId);
+        Task<Dictionary<string, object>> GetEngagementMetricsAsync(string userId);
+        Task<Dictionary<string, object>> GetFeedbackMetricsAsync(string userId);
+        Task<Dictionary<string, object>> GetPerformanceMetricsAsync(string userId);
     }
 
     /// <summary>

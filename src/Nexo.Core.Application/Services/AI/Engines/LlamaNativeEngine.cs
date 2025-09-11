@@ -16,6 +16,7 @@ namespace Nexo.Core.Application.Services.AI.Engines
 
         public AIEngineInfo EngineInfo => new AIEngineInfo { Name = "LlamaNative", EngineType = AIEngineType.LlamaNative, IsInitialized = _initialized };
         public AIOperationStatus Status => _status;
+        public bool IsInitialized => _initialized;
 
         public Task InitializeAsync(ModelInfo model, AIOperationContext context)
         {

@@ -53,12 +53,12 @@ namespace Nexo.Core.Application.Services.Onboarding
             };
 
             // Track onboarding start
-            await _progressTracking.TrackEventAsync(new OnboardingEvent
+            await _progressTracking.TrackEventAsync("OnboardingSessionStarted", new Dictionary<string, object>
             {
-                UserId = userId,
-                EventType = OnboardingEventType.SessionStarted,
-                SessionId = session.Id,
-                Timestamp = DateTime.UtcNow
+                ["UserId"] = userId,
+                ["EventType"] = OnboardingEventType.SessionStarted.ToString(),
+                ["SessionId"] = session.Id,
+                ["Timestamp"] = DateTime.UtcNow
             });
 
             _logger.LogInformation("Onboarding session created: {SessionId}", session.Id);
@@ -89,17 +89,14 @@ namespace Nexo.Core.Application.Services.Onboarding
                 step.Result = result;
 
                 // Track step completion
-                await _progressTracking.TrackEventAsync(new OnboardingEvent
+                await _progressTracking.TrackEventAsync("OnboardingStepCompleted", new Dictionary<string, object>
                 {
-                    UserId = step.SessionId,
-                    EventType = result.Success ? OnboardingEventType.StepCompleted : OnboardingEventType.StepFailed,
-                    SessionId = sessionId,
-                    StepId = stepId,
-                    Timestamp = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["StepResult"] = result
-                    }
+                    ["UserId"] = step.SessionId,
+                    ["EventType"] = result.Success ? OnboardingEventType.StepCompleted.ToString() : OnboardingEventType.StepFailed.ToString(),
+                    ["SessionId"] = sessionId,
+                    ["StepId"] = stepId,
+                    ["Timestamp"] = DateTime.UtcNow,
+                    ["StepResult"] = result
                 });
 
                 _logger.LogInformation("Onboarding step {StepId} completed: {Success}", stepId, result.Success);
@@ -117,17 +114,14 @@ namespace Nexo.Core.Application.Services.Onboarding
                     Timestamp = DateTime.UtcNow
                 };
 
-                await _progressTracking.TrackEventAsync(new OnboardingEvent
+                await _progressTracking.TrackEventAsync("OnboardingStepFailed", new Dictionary<string, object>
                 {
-                    UserId = sessionId,
-                    EventType = OnboardingEventType.StepFailed,
-                    SessionId = sessionId,
-                    StepId = stepId,
-                    Timestamp = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["Error"] = ex.Message
-                    }
+                    ["UserId"] = sessionId,
+                    ["EventType"] = OnboardingEventType.StepFailed.ToString(),
+                    ["SessionId"] = sessionId,
+                    ["StepId"] = stepId,
+                    ["Timestamp"] = DateTime.UtcNow,
+                    ["Error"] = ex.Message
                 });
 
                 return errorResult;
@@ -159,16 +153,13 @@ namespace Nexo.Core.Application.Services.Onboarding
                     Timestamp = DateTime.UtcNow
                 };
 
-                await _progressTracking.TrackEventAsync(new OnboardingEvent
+                await _progressTracking.TrackEventAsync("OnboardingFailed", new Dictionary<string, object>
                 {
-                    UserId = session.UserId,
-                    EventType = OnboardingEventType.OnboardingFailed,
-                    SessionId = sessionId,
-                    Timestamp = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["IncompleteSteps"] = incompleteSteps.Select(s => s.Id).ToList()
-                    }
+                    ["UserId"] = session.UserId,
+                    ["EventType"] = OnboardingEventType.OnboardingFailed.ToString(),
+                    ["SessionId"] = sessionId,
+                    ["Timestamp"] = DateTime.UtcNow,
+                    ["IncompleteSteps"] = incompleteSteps.Select(s => s.Id).ToList()
                 });
 
                 return result;
@@ -188,16 +179,13 @@ namespace Nexo.Core.Application.Services.Onboarding
             };
 
             // Track completion
-            await _progressTracking.TrackEventAsync(new OnboardingEvent
+            await _progressTracking.TrackEventAsync("OnboardingCompleted", new Dictionary<string, object>
             {
-                UserId = session.UserId,
-                EventType = OnboardingEventType.OnboardingCompleted,
-                SessionId = sessionId,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["CompletionResult"] = completionResult
-                }
+                ["UserId"] = session.UserId,
+                ["EventType"] = OnboardingEventType.OnboardingCompleted.ToString(),
+                ["SessionId"] = sessionId,
+                ["Timestamp"] = DateTime.UtcNow,
+                ["CompletionResult"] = completionResult
             });
 
             _logger.LogInformation("Onboarding completed successfully for session: {SessionId}", sessionId);

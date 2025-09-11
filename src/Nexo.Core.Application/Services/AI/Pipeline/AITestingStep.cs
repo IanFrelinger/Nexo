@@ -5,6 +5,7 @@ using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Pipeline;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Core.Domain.Results;
 using System;
 using System.Collections.Generic;
@@ -43,11 +44,11 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     input.Result = new TestingResult
                     {
                         GeneratedTests = "No code provided for test generation.",
-                        TestType = input.TestType,
+                        TestType = Enum.TryParse<Nexo.Core.Domain.Enums.Code.TestType>(input.TestType, out var testType) ? testType : Nexo.Core.Domain.Enums.Code.TestType.Unit,
                         QualityScore = 0,
                         Coverage = 0,
-                        GenerationTime = DateTime.UtcNow,
-                        EngineType = AIEngineType.Mock
+                        CompletedAt = DateTime.UtcNow,
+                        EngineType = AIEngineType.Mock.ToString()
                     };
                     return input;
                 }
@@ -59,18 +60,20 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     TargetPlatform = context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown,
                     MaxTokens = 4096,
                     Temperature = 0.3, // Lower temperature for more consistent test generation
-                    Priority = AIPriority.Quality,
-                    Requirements = new AIRequirements
+                    Priority = AIPriority.Quality.ToString(),
+                    Requirements = new Nexo.Core.Domain.Entities.AI.AIRequirements
                     {
-                        QualityThreshold = 90,
-                        SafetyLevel = SafetyLevel.High,
-                        PerformanceTarget = PerformanceTarget.Balanced
+                        Priority = AIPriority.Quality,
+                        SafetyLevel = Nexo.Core.Domain.Enums.Safety.SafetyLevel.High,
+                        RequiresHighQuality = true,
+                        MaxTokens = 4096,
+                        Temperature = 0.3
                     }
                 };
 
                 // Select optimal AI engine
-                var selection = await _runtimeSelector.SelectOptimalProviderAsync(aiContext);
-                if (selection == null)
+                var provider = await _runtimeSelector.SelectOptimalProviderAsync(aiContext);
+                if (provider == null)
                 {
                     _logger.LogError("No suitable AI provider found for test generation");
                     throw new InvalidOperationException("No AI provider available for test generation");
@@ -79,13 +82,13 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 // Create AI engine
                 var engineInfo = new AIEngineInfo
                 {
-                    EngineType = selection.EngineType,
-                    ModelPath = GetModelPathForTesting(selection.EngineType),
+                    EngineType = provider.EngineType,
+                    ModelPath = GetModelPathForTesting(provider.EngineType),
                     MaxTokens = aiContext.MaxTokens,
                     Temperature = aiContext.Temperature
                 };
 
-                var engine = await selection.Provider.CreateEngineAsync(engineInfo);
+                var engine = await provider.CreateEngineAsync(engineInfo);
                 if (engine is not IAIEngine aiEngine)
                 {
                     _logger.LogError("Failed to create AI engine for test generation");
@@ -111,17 +114,17 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 var result = new TestingResult
                 {
                     GeneratedTests = validatedTests,
-                    TestType = input.TestType,
-                    QualityScore = CalculateTestQuality(validatedTests, input),
+                    TestType = Enum.TryParse<Nexo.Core.Domain.Enums.Code.TestType>(input.TestType, out var testType) ? testType : Nexo.Core.Domain.Enums.Code.TestType.Unit,
+                    QualityScore = (int)CalculateTestQuality(validatedTests, input),
                     Coverage = CalculateTestCoverage(validatedTests, input.Code),
-                    GenerationTime = DateTime.UtcNow,
+                    CompletedAt = DateTime.UtcNow,
                     EngineType = selection.EngineType
                 };
 
                 // Update input with results
                 input.Result = result;
                 input.TestGenerationCompleted = true;
-                input.GenerationTime = DateTime.UtcNow;
+                input.CompletedAt = DateTime.UtcNow;
 
                 _logger.LogInformation("AI test generation completed with quality score {Score} and {Coverage}% coverage", 
                     result.QualityScore, result.Coverage);
@@ -136,11 +139,11 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 input.Result = new TestingResult
                 {
                     GeneratedTests = $"Test generation failed: {ex.Message}",
-                    TestType = input.TestType,
+                    TestType = Enum.TryParse<Nexo.Core.Domain.Enums.Code.TestType>(input.TestType, out var testType) ? testType : Nexo.Core.Domain.Enums.Code.TestType.Unit,
                     QualityScore = 0,
                     Coverage = 0,
-                    GenerationTime = DateTime.UtcNow,
-                    EngineType = AIEngineType.Mock
+                    CompletedAt = DateTime.UtcNow,
+                    EngineType = AIEngineType.Mock.ToString()
                 };
                 input.TestGenerationCompleted = false;
                 
@@ -163,7 +166,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             // Create a code generation request for test code
             var testPrompt = CreateTestPrompt(request, context);
             
-            var codeGenRequest = new CodeGenerationRequest
+            var codeGenRequest = new Nexo.Core.Domain.Entities.AI.CodeGenerationRequest
             {
                 Prompt = testPrompt,
                 Language = request.Language,
@@ -209,21 +212,27 @@ Generate complete, runnable test code:";
             var enhancedTests = testCode;
 
             // Add test framework setup
-            var frameworkSetup = await GenerateTestFrameworkSetupAsync(request.Language, context);
+            var frameworkSetup = await GenerateTestFrameworkSetupAsync(
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang) ? lang : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp, 
+                context);
             if (!string.IsNullOrEmpty(frameworkSetup))
             {
                 enhancedTests = frameworkSetup + "\n\n" + enhancedTests;
             }
 
             // Add additional test cases
-            var additionalTests = await GenerateAdditionalTestCasesAsync(request.Code, request.Language, request.TestType);
+            var additionalTests = await GenerateAdditionalTestCasesAsync(request.Code, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang2) ? lang2 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp, 
+                Enum.TryParse<TestType>(request.TestType, out var testType2) ? testType2 : TestType.Unit);
             if (!string.IsNullOrEmpty(additionalTests))
             {
                 enhancedTests += "\n\n" + additionalTests;
             }
 
             // Add test utilities
-            var testUtilities = await GenerateTestUtilitiesAsync(request.Language, context);
+            var testUtilities = await GenerateTestUtilitiesAsync(
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang3) ? lang3 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp, 
+                context);
             if (!string.IsNullOrEmpty(testUtilities))
             {
                 enhancedTests += "\n\n" + testUtilities;
@@ -441,12 +450,12 @@ const TestUtilities = {
             }
 
             // Add test type specific tests
-            if (request.TestType == TestType.Integration)
+            if (request.TestType == "Integration")
             {
                 contextTests.Add("// Integration test setup and teardown");
             }
 
-            if (request.TestType == TestType.Unit)
+            if (request.TestType == "Unit")
             {
                 contextTests.Add("// Unit test isolation and mocking");
             }

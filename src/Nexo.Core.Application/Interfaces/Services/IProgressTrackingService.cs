@@ -13,6 +13,7 @@ namespace Nexo.Core.Application.Services.Onboarding
         Task<ProgressInfo> GetProgressAsync(string userId, string activityId);
         Task<List<ProgressInfo>> GetAllProgressAsync(string userId);
         Task<bool> ResetProgressAsync(string userId, string activityId);
+        Task TrackEventAsync(string eventName, Dictionary<string, object> properties);
     }
 
     public class ProgressInfo

@@ -13,6 +13,11 @@ namespace Nexo.Core.Application.Services.Monitoring
         Task<Dictionary<string, HealthStatus>> CheckDependenciesAsync();
         Task<bool> RegisterHealthCheckAsync(string name, Func<Task<bool>> checkFunction);
         Task<List<HealthCheckResult>> GetHealthHistoryAsync();
+        Task InitializeAsync();
+        Task<HealthCheckResult> CheckSystemHealthAsync();
+        Task<HealthCheckResult> CheckApplicationHealthAsync();
+        Task<HealthCheckResult> CheckDatabaseHealthAsync();
+        Task<HealthCheckResult> CheckExternalServicesHealthAsync();
     }
 
     public enum HealthStatus
@@ -20,6 +25,7 @@ namespace Nexo.Core.Application.Services.Monitoring
         Healthy,
         Unhealthy,
         Degraded,
+        Critical,
         Unknown
     }
 
@@ -30,5 +36,9 @@ namespace Nexo.Core.Application.Services.Monitoring
         public string Message { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
         public TimeSpan Duration { get; set; }
+        public HealthStatus OverallHealth { get; set; }
+        public List<HealthCheckResult> HealthChecks { get; set; } = new();
+        public DateTime CheckedAt { get; set; }
+        public bool Success { get; set; }
     }
 }

@@ -608,7 +608,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             var warnings = new List<ConsistencyWarning>();
 
             // Check for consistent naming patterns
-            var entityNames = domainLogic.Entities.Select(e => e.Name).ToList();
+            var entityNames = domainLogic.Entities.ToList();
             var inconsistentNames = entityNames.Where(name => !char.IsUpper(name[0])).ToList();
 
             if (inconsistentNames.Any())
@@ -823,10 +823,10 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                 suggestions.Add(new OptimizationSuggestion
                 {
                     Type = "ExtractInterface",
-                    Message = $"Consider extracting interface for service {service.Name}",
+                    Message = $"Consider extracting interface for service {service}",
                     Component = "DomainService",
-                    Location = service.Id,
-                    Implementation = "Create I{service.Name} interface"
+                    Location = service,
+                    Implementation = $"Create I{service} interface"
                 });
             }
 
@@ -843,17 +843,14 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             // Suggest adding XML documentation
             foreach (var entity in domainLogic.Entities)
             {
-                if (string.IsNullOrWhiteSpace(entity.Description))
+                suggestions.Add(new OptimizationSuggestion
                 {
-                    suggestions.Add(new OptimizationSuggestion
-                    {
-                        Type = "AddDocumentation",
-                        Message = $"Add XML documentation for entity {entity.Name}",
-                        Component = "DomainEntity",
-                        Location = entity.Id,
-                        Implementation = "Add /// <summary> tags for all public members"
-                    });
-                }
+                    Type = "AddDocumentation",
+                    Message = $"Add XML documentation for entity {entity}",
+                    Component = "DomainEntity",
+                    Location = entity,
+                    Implementation = "Add /// <summary> tags for all public members"
+                });
             }
 
             return suggestions;

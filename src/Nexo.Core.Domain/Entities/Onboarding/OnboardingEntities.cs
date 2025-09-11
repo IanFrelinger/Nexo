@@ -38,6 +38,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
+        public string SessionId { get; set; } = "";
         public OnboardingStepType Type { get; set; }
         public int Order { get; set; }
         public OnboardingStepStatus Status { get; set; } = OnboardingStepStatus.Pending;

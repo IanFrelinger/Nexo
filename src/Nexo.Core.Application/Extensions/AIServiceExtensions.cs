@@ -14,8 +14,6 @@ using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Application.Services.AI.Safety;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Services;
-// Infrastructure service registrations belong in Nexo.Infrastructure. Keep Application free of Infra deps.
-using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Entities.Pipeline;
 using Nexo.Core.Domain.Enums.Code;
@@ -30,32 +28,25 @@ namespace Nexo.Core.Application.Extensions
     public static class AIServiceExtensions
     {
         /// <summary>
-        /// Adds AI services to the dependency injection container
+        /// Adds AI Application services to the dependency injection container
+        /// Note: Infrastructure services should be registered in the Infrastructure layer
         /// </summary>
         public static IServiceCollection AddAIServices(this IServiceCollection services)
         {
-            // Register core AI services
+            // Register Application layer AI services only
             services.AddSingleton<IAIRuntimeSelector, AIRuntimeSelector>();
             services.AddSingleton<IModelManagementService, RealModelManagementService>();
             services.AddSingleton<AIPerformanceMonitor>();
 
-            // Register AI providers
-            services.AddSingleton<IAIProvider, MockAIProvider>();
-            services.AddSingleton<IAIProvider, LlamaWebAssemblyProvider>();
-            services.AddSingleton<IAIProvider, LlamaNativeProvider>();
-            
-            // Register LLama providers for offline AI
-            services.AddSingleton<ILlamaProvider, LlamaNativeProvider>();
-
-            // Register AI engines
+            // Register AI engines (Application layer implementations)
             services.AddTransient<IAIEngine, MockAIEngine>();
             services.AddTransient<IAIEngine, LlamaWebAssemblyEngine>();
             services.AddTransient<IAIEngine, LlamaNativeEngine>();
 
             // Register AI pipeline steps
-            services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
-            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
-            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest>, AIOptimizationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.DocumentationRequest>, AIDocumentationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.TestingRequest>, AITestingStep>();
 
@@ -74,53 +65,27 @@ namespace Nexo.Core.Application.Extensions
         }
 
         /// <summary>
-        /// Adds AI services with custom configuration
+        /// Adds AI Application services with custom configuration
+        /// Note: Infrastructure services should be registered in the Infrastructure layer
         /// </summary>
         public static IServiceCollection AddAIServices(this IServiceCollection services, Action<AIServiceOptions> configure)
         {
             var options = new AIServiceOptions();
             configure(options);
 
-            // Register core AI services
+            // Register Application layer AI services
             services.AddSingleton<IAIRuntimeSelector, AIRuntimeSelector>();
-            services.AddSingleton<IModelManagementService, ModelManagementService>();
+            services.AddSingleton<IModelManagementService, RealModelManagementService>();
 
-            // Register AI providers based on configuration
-            if (options.EnableMockProvider)
-            {
-                services.AddSingleton<IAIProvider, MockAIProvider>();
-            }
-
-            if (options.EnableWasmProvider)
-            {
-                services.AddSingleton<IAIProvider, LlamaWebAssemblyProvider>();
-            }
-
-            if (options.EnableNativeProvider)
-            {
-                services.AddSingleton<IAIProvider, LlamaNativeProvider>();
-            }
-
-            if (options.EnableRemoteProvider)
-            {
-                services.AddSingleton<IAIProvider, MockAIProvider>(); // Fallback to mock for now
-            }
-
-            // Register LLama providers for offline AI
-            // Note: OllamaProvider should be registered in Infrastructure layer
-            
-            if (options.EnableNativeProvider)
-            {
-                services.AddSingleton<ILlamaProvider, LlamaNativeProvider>();
-            }
-
-            // Register AI engines
+            // Register AI engines (Application layer implementations)
             services.AddTransient<IAIEngine, MockAIEngine>();
+            services.AddTransient<IAIEngine, LlamaWebAssemblyEngine>();
+            services.AddTransient<IAIEngine, LlamaNativeEngine>();
 
             // Register AI pipeline steps
-            services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
-            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
-            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest>, AIOptimizationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.DocumentationRequest>, AIDocumentationStep>();
             services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.TestingRequest>, AITestingStep>();
 

@@ -44,11 +44,11 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     input.Result = new DocumentationResult
                     {
                         GeneratedDocumentation = "No code provided for documentation generation.",
-                        DocumentationType = input.DocumentationType,
+                        DocumentationType = Enum.TryParse<DocumentationType>(input.DocumentationType, out var docType) ? docType : DocumentationType.API,
                         QualityScore = 0,
                         Coverage = 0,
-                        GenerationTime = DateTime.UtcNow,
-                        EngineType = AIEngineType.Mock
+                        CompletedAt = DateTime.UtcNow,
+                        EngineType = AIEngineType.Mock.ToString().ToString()
                     };
                     return input;
                 }
@@ -60,12 +60,14 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     TargetPlatform = context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown,
                     MaxTokens = 3072,
                     Temperature = 0.4, // Moderate temperature for balanced creativity and consistency
-                    Priority = AIPriority.Quality,
-                    Requirements = new AIRequirements
+                    Priority = AIPriority.Quality.ToString(),
+                    Requirements = new Nexo.Core.Domain.Entities.AI.AIRequirements
                     {
-                        QualityThreshold = 85,
-                        SafetyLevel = SafetyLevel.Medium,
-                        PerformanceTarget = PerformanceTarget.Balanced
+                        Priority = AIPriority.Quality,
+                        SafetyLevel = Nexo.Core.Domain.Enums.Safety.SafetyLevel.Medium,
+                        RequiresHighQuality = true,
+                        MaxTokens = 3072,
+                        Temperature = 0.4
                     }
                 };
 
@@ -113,16 +115,16 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 {
                     GeneratedDocumentation = validatedDocumentation,
                     DocumentationType = input.DocumentationType,
-                    QualityScore = CalculateDocumentationQuality(validatedDocumentation, input),
+                    QualityScore = (int)CalculateDocumentationQuality(validatedDocumentation, input),
                     Coverage = CalculateDocumentationCoverage(validatedDocumentation, input.Code),
-                    GenerationTime = DateTime.UtcNow,
+                    CompletedAt = DateTime.UtcNow,
                     EngineType = selection.EngineType
                 };
 
                 // Update input with results
                 input.Result = result;
                 input.DocumentationCompleted = true;
-                input.GenerationTime = DateTime.UtcNow;
+                input.CompletedAt = DateTime.UtcNow;
 
                 _logger.LogInformation("AI documentation generation completed with quality score {Score} and {Coverage}% coverage", 
                     result.QualityScore, result.Coverage);
@@ -140,8 +142,8 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     DocumentationType = input.DocumentationType,
                     QualityScore = 0,
                     Coverage = 0,
-                    GenerationTime = DateTime.UtcNow,
-                    EngineType = AIEngineType.Mock
+                    CompletedAt = DateTime.UtcNow,
+                    EngineType = AIEngineType.Mock.ToString()
                 };
                 input.DocumentationCompleted = false;
                 
@@ -166,21 +168,24 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             var enhancedDocumentation = documentation;
 
             // Add code analysis insights
-            var analysisInsights = await GenerateCodeAnalysisInsightsAsync(request.Code, request.Language);
+            var analysisInsights = await GenerateCodeAnalysisInsightsAsync(request.Code, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang) ? lang : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             if (analysisInsights.Any())
             {
                 enhancedDocumentation += "\n\n## Code Analysis Insights\n" + string.Join("\n", analysisInsights);
             }
 
             // Add performance considerations
-            var performanceNotes = await GeneratePerformanceNotesAsync(request.Code, request.Language);
+            var performanceNotes = await GeneratePerformanceNotesAsync(request.Code, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang2) ? lang2 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             if (performanceNotes.Any())
             {
                 enhancedDocumentation += "\n\n## Performance Considerations\n" + string.Join("\n", performanceNotes);
             }
 
             // Add usage examples
-            var usageExamples = await GenerateUsageExamplesAsync(request.Code, request.Language);
+            var usageExamples = await GenerateUsageExamplesAsync(request.Code, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang3) ? lang3 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             if (usageExamples.Any())
             {
                 enhancedDocumentation += "\n\n## Usage Examples\n" + string.Join("\n", usageExamples);
@@ -318,13 +323,13 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             }
 
             // Add documentation type specific information
-            if (request.DocumentationType == DocumentationType.API)
+            if (request.DocumentationType == "API")
             {
                 contextInfo.Add("- This is API documentation for external consumers");
                 contextInfo.Add("- Include parameter descriptions and return value information");
             }
 
-            if (request.DocumentationType == DocumentationType.Internal)
+            if (request.DocumentationType == "Internal")
             {
                 contextInfo.Add("- This is internal documentation for development team");
                 contextInfo.Add("- Include implementation details and design decisions");

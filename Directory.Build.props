@@ -55,22 +55,28 @@
   
   <!-- Global package references for all projects (only if not already defined) -->
   <ItemGroup Condition="'$(DefineGlobalPackages)' == 'true'">
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
   </ItemGroup>
   
   <!-- Conditional package references for different frameworks (only if not already defined) -->
   <ItemGroup Condition="'$(DefineGlobalPackages)' == 'true' AND '$(TargetFramework)' == 'net8.0'">
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.7" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(DefineGlobalPackages)' == 'true' AND '$(TargetFramework)' == 'net6.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
     <PackageReference Include="System.Text.Json" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(DefineGlobalPackages)' == 'true' AND '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="3.1.0" />
     <PackageReference Include="System.Text.Json" Version="4.7.2" />
   </ItemGroup>
 </Project>

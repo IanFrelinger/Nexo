@@ -266,7 +266,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                 session.Metrics.TotalDuration = session.EndTime.Value - session.StartTime;
 
                 _logger.LogInformation("Fine-tuning session {SessionId} completed successfully in {Duration}ms", 
-                    session.SessionId, session.Metrics.TotalDuration.TotalMilliseconds);
+                    session.SessionId, session.Metrics.TotalDuration?.TotalMilliseconds ?? 0);
             }
             catch (Exception ex)
             {

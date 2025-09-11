@@ -13,6 +13,16 @@ namespace Nexo.Core.Domain.Entities.AI
         public int CachedModels { get; set; }
         public int AvailableModels { get; set; }
         public long AvailableSpaceBytes { get; set; }
+        
+        /// <summary>
+        /// Total size in bytes (alias for TotalSizeBytes)
+        /// </summary>
+        public long TotalSize => TotalSizeBytes;
+        
+        /// <summary>
+        /// Available space in bytes (alias for AvailableSpaceBytes)
+        /// </summary>
+        public long AvailableSpace => AvailableSpaceBytes;
         public Dictionary<PlatformType, PlatformStorageStats> PlatformStats { get; set; } = new();
         public Dictionary<ModelPrecision, PrecisionStorageStats> PrecisionStats { get; set; } = new();
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;

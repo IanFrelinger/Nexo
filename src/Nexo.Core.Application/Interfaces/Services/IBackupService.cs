@@ -14,6 +14,8 @@ namespace Nexo.Core.Application.Services.Safety
         Task<List<BackupInfo>> GetBackupsAsync(string userId);
         Task<bool> DeleteBackupAsync(string userId, string backupId);
         Task<bool> ScheduleBackupAsync(string userId, BackupSchedule schedule);
+        Task<BackupInfo> GetBackupByOperationIdAsync(string operationId);
+        Task<bool> RestoreFromBackupAsync(string operationId, string backupId);
     }
 
     public enum BackupType

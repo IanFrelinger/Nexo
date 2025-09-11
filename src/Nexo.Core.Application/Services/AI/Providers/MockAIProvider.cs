@@ -27,6 +27,8 @@ namespace Nexo.Core.Application.Services.AI.Providers
         public AIProviderType ProviderType => AIProviderType.Mock;
         public int Priority => 10; // Low priority for mock provider
         public AIProviderStatus Status => _status;
+        public AIEngineType EngineType => AIEngineType.CodeLlama;
+        public AIProviderType Provider => AIProviderType.Mock;
 
         public AIProviderCapabilities Capabilities => new AIProviderCapabilities
         {
@@ -82,6 +84,12 @@ namespace Nexo.Core.Application.Services.AI.Providers
         public bool HasRequiredResources(AIResources resources)
         {
             // Mock provider has minimal resource requirements
+            return true;
+        }
+
+        public bool SupportsEngineType(AIEngineType engineType)
+        {
+            // Mock provider supports all engine types for testing
             return true;
         }
 

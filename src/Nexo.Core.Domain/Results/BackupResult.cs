@@ -9,6 +9,11 @@ namespace Nexo.Core.Domain.Results
     public class BackupResult
     {
         /// <summary>
+        /// Unique identifier for the backup result
+        /// </summary>
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        /// <summary>
         /// Whether the backup was successful
         /// </summary>
         public bool IsSuccess { get; set; }

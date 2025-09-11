@@ -6,6 +6,7 @@ using Nexo.Core.Domain.Enums.AI;
 using CodeOptimizationResult = Nexo.Core.Domain.Entities.AI.CodeOptimizationResult;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Pipeline;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +48,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                         Improvements = new List<string> { "No code provided for optimization" },
                         PerformanceGain = 0,
                         OptimizationTime = DateTime.UtcNow,
-                        EngineType = AIEngineType.Mock
+                        EngineType = AIEngineType.Mock.ToString().ToString()
                     };
                     return input;
                 }
@@ -59,18 +60,20 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     TargetPlatform = context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown,
                     MaxTokens = 4096,
                     Temperature = 0.2, // Lower temperature for more consistent optimizations
-                    Priority = AIPriority.Performance,
-                    Requirements = new AIRequirements
+                    Priority = AIPriority.Performance.ToString(),
+                    Requirements = new Nexo.Core.Domain.Entities.AI.AIRequirements
                     {
-                        QualityThreshold = 90,
-                        SafetyLevel = SafetyLevel.High,
-                        PerformanceTarget = PerformanceTarget.Maximum
+                        Priority = AIPriority.Performance,
+                        SafetyLevel = Nexo.Core.Domain.Enums.Safety.SafetyLevel.High,
+                        RequiresHighQuality = true,
+                        MaxTokens = 4096,
+                        Temperature = 0.2
                     }
                 };
 
                 // Select optimal AI engine
-                var selection = await _runtimeSelector.SelectOptimalProviderAsync(aiContext);
-                if (selection == null)
+                var provider = await _runtimeSelector.SelectOptimalProviderAsync(aiContext);
+                if (provider == null)
                 {
                     _logger.LogError("No suitable AI provider found for code optimization");
                     throw new InvalidOperationException("No AI provider available for code optimization");
@@ -79,13 +82,13 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 // Create AI engine
                 var engineInfo = new AIEngineInfo
                 {
-                    EngineType = selection.EngineType,
-                    ModelPath = GetModelPathForOptimization(selection.EngineType),
+                    EngineType = provider.EngineType,
+                    ModelPath = GetModelPathForOptimization(provider.EngineType),
                     MaxTokens = aiContext.MaxTokens,
                     Temperature = aiContext.Temperature
                 };
 
-                var engine = await selection.Provider.CreateEngineAsync(engineInfo);
+                var engine = await provider.CreateEngineAsync(engineInfo);
                 if (engine is not IAIEngine aiEngine)
                 {
                     _logger.LogError("Failed to create AI engine for code optimization");
@@ -129,7 +132,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     Improvements = new List<string> { $"Optimization failed: {ex.Message}" },
                     PerformanceGain = 0,
                     OptimizationTime = DateTime.UtcNow,
-                    EngineType = AIEngineType.Mock
+                    EngineType = AIEngineType.Mock.ToString()
                 };
                 input.OptimizationCompleted = false;
                 
@@ -152,22 +155,26 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _logger.LogDebug("Enhancing code optimization result with additional analysis");
 
             // Add performance analysis
-            var performanceImprovements = await AnalyzePerformanceImprovementsAsync(request.Code, result.OptimizedCode, request.Language);
+            var performanceImprovements = await AnalyzePerformanceImprovementsAsync(request.Code, result.OptimizedCode, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang) ? lang : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             result.Improvements.AddRange(performanceImprovements);
 
             // Add memory optimization analysis
-            var memoryImprovements = await AnalyzeMemoryOptimizationsAsync(request.Code, result.OptimizedCode, request.Language);
+            var memoryImprovements = await AnalyzeMemoryOptimizationsAsync(request.Code, result.OptimizedCode, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang2) ? lang2 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             result.Improvements.AddRange(memoryImprovements);
 
             // Add readability improvements
-            var readabilityImprovements = await AnalyzeReadabilityImprovementsAsync(request.Code, result.OptimizedCode, request.Language);
+            var readabilityImprovements = await AnalyzeReadabilityImprovementsAsync(request.Code, result.OptimizedCode, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang3) ? lang3 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             result.Improvements.AddRange(readabilityImprovements);
 
             // Recalculate optimization score
             result.OptimizationScore = CalculateEnhancedOptimizationScore(result);
 
             // Calculate actual performance gain
-            result.PerformanceGain = await CalculateActualPerformanceGainAsync(request.Code, result.OptimizedCode, request.Language);
+            result.PerformanceGain = await CalculateActualPerformanceGainAsync(request.Code, result.OptimizedCode, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang4) ? lang4 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
 
             // Add context-specific optimizations
             var contextOptimizations = await GenerateContextOptimizationsAsync(request, context);
@@ -181,7 +188,8 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _logger.LogDebug("Applying safety validation to code optimization result");
 
             // Validate optimized code for safety
-            var safetyIssues = await ValidateOptimizedCodeSafetyAsync(result.OptimizedCode, request.Language);
+            var safetyIssues = await ValidateOptimizedCodeSafetyAsync(result.OptimizedCode, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang5) ? lang5 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             if (safetyIssues.Any())
             {
                 _logger.LogWarning("Safety issues detected in optimized code, reverting to original");
@@ -321,12 +329,12 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 optimizations.Add("Applied Windows-specific optimizations for better native performance");
             }
 
-            if (request.OptimizationType == OptimizationType.Performance)
+            if (request.OptimizationType == "Performance")
             {
                 optimizations.Add("Applied performance-focused optimizations");
             }
 
-            if (request.OptimizationType == OptimizationType.Memory)
+            if (request.OptimizationType == "Memory")
             {
                 optimizations.Add("Applied memory-focused optimizations");
             }

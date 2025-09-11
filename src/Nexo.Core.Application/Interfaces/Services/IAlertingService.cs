@@ -13,6 +13,7 @@ namespace Nexo.Core.Application.Services.Monitoring
         Task<List<Alert>> GetActiveAlertsAsync();
         Task<bool> AcknowledgeAlertAsync(string alertId);
         Task<bool> ResolveAlertAsync(string alertId);
+        Task InitializeAsync();
     }
 
     public class Alert

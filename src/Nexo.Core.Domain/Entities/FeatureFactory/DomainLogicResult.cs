@@ -13,6 +13,9 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory
         public List<string> Repositories { get; set; } = new();
         public List<string> Factories { get; set; } = new();
         public List<string> Specifications { get; set; } = new();
+        public List<string> Entities { get; set; } = new();
+        public List<string> DomainServices { get; set; } = new();
+        public List<string> BusinessRules { get; set; } = new();
         public Dictionary<string, object> Metadata { get; set; } = new();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

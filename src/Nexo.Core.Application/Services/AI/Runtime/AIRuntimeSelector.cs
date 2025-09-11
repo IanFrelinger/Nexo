@@ -310,7 +310,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
                 Platform = context.ContainsKey("Platform") ? context["Platform"].ToString() : "Unknown",
                 MaxTokens = context.ContainsKey("MaxTokens") ? Convert.ToInt32(context["MaxTokens"]) : 1000,
                 Temperature = context.ContainsKey("Temperature") ? Convert.ToDouble(context["Temperature"]) : 0.7,
-                Priority = context.ContainsKey("Priority") ? (CommandPriority)context["Priority"] : CommandPriority.Normal
+                Priority = context.ContainsKey("Priority") ? (AIPriority)context["Priority"] : AIPriority.Balanced
             };
 
             return await provider.CreateEngineAsync(contextObj);

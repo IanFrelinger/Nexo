@@ -23,6 +23,7 @@ namespace Nexo.Core.Domain.Entities.Infrastructure
         Native,
         Desktop,
         Console,
-        Other
+        Other,
+        Unknown
     }
 }

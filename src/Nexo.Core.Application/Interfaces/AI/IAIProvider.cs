@@ -82,5 +82,20 @@ namespace Nexo.Core.Application.Interfaces.AI
         /// Gets the estimated performance for an operation
         /// </summary>
         Task<Nexo.Core.Domain.Results.PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context);
+        
+        /// <summary>
+        /// Gets the engine type supported by this provider
+        /// </summary>
+        AIEngineType EngineType { get; }
+        
+        /// <summary>
+        /// Gets the provider type
+        /// </summary>
+        AIProviderType Provider { get; }
+        
+        /// <summary>
+        /// Checks if the provider supports the specified engine type
+        /// </summary>
+        bool SupportsEngineType(AIEngineType engineType);
     }
 }

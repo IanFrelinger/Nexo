@@ -1,5 +1,6 @@
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
+using Nexo.Core.Domain.Enums.Safety;
 using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Domain.Entities.AI
@@ -12,10 +13,12 @@ namespace Nexo.Core.Domain.Entities.AI
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
         public AIEngineType EngineType { get; set; }
+        public AIEngineType Type { get; set; }
         public string Version { get; set; } = "";
         public AIProviderType ProviderType { get; set; }
         public bool IsOfflineCapable { get; set; }
         public bool IsInitialized { get; set; }
+        public bool IsAvailable { get; set; } = true;
         public string ModelPath { get; set; } = "";
         public int MaxTokens { get; set; } = 1000;
         public double Temperature { get; set; } = 0.7;
@@ -32,14 +35,24 @@ namespace Nexo.Core.Domain.Entities.AI
     public class ModelInfo
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string ModelId { get; set; } = "";
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
+        public string Version { get; set; } = "";
         public AIEngineType EngineType { get; set; }
         public ModelPrecision Precision { get; set; }
+        public long Size { get; set; }
         public long SizeBytes { get; set; }
+        public string Format { get; set; } = "";
+        public ModelQuantization Quantization { get; set; }
+        public ModelStatus Status { get; set; }
+        public string LocalPath { get; set; } = "";
+        public string DownloadUrl { get; set; } = "";
         public string FilePath { get; set; } = "";
         public string Checksum { get; set; } = "";
+        public List<PlatformType> Platform { get; set; } = new();
         public List<PlatformType> SupportedPlatforms { get; set; } = new();
+        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
         public Dictionary<string, object> Parameters { get; set; } = new();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime LastUsed { get; set; }
@@ -75,7 +88,7 @@ namespace Nexo.Core.Domain.Entities.AI
         public PlatformType TargetPlatform { get; set; }
         public int MaxTokens { get; set; } = 1000;
         public double Temperature { get; set; } = 0.7;
-        public CommandPriority Priority { get; set; } = CommandPriority.Normal;
+        public string Priority { get; set; } = "Normal";
         public AIRequirements Requirements { get; set; } = new();
         public AIResources Resources { get; set; } = new();
         public Dictionary<string, object> Parameters { get; set; } = new();
@@ -88,6 +101,7 @@ namespace Nexo.Core.Domain.Entities.AI
     public class AIRequirements
     {
         public AIPriority Priority { get; set; } = AIPriority.Balanced;
+        public SafetyLevel SafetyLevel { get; set; } = SafetyLevel.Standard;
         public bool RequiresOffline { get; set; }
         public bool RequiresHighQuality { get; set; }
         public bool RequiresFastResponse { get; set; }
@@ -142,9 +156,22 @@ namespace Nexo.Core.Domain.Entities.AI
         public string Context { get; set; } = "";
         public string Language { get; set; } = "csharp";
         public string Framework { get; set; } = "";
+        public string Code { get; set; } = "";
         public AIRequirements Requirements { get; set; } = new();
         public Dictionary<string, object> Options { get; set; } = new();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        // Properties accessed by application layer
+        public string GeneratedCode { get; set; } = "";
+        public string Explanation { get; set; } = "";
+        public AIConfidenceLevel Confidence { get; set; }
+        public double ConfidenceScore { get; set; }
+        public List<string> Suggestions { get; set; } = new();
+        public List<string> Warnings { get; set; } = new();
+        public Dictionary<string, object> Metadata { get; set; } = new();
+        public string? Error { get; set; }
+        public int MaxTokens { get; set; } = 1000;
+        public double Temperature { get; set; } = 0.7;
     }
 
     /// <summary>

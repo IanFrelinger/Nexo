@@ -39,6 +39,21 @@ namespace Nexo.Core.Domain.Results
         public double ConfidenceLevel { get; set; }
         
         /// <summary>
+        /// CPU utilization percentage
+        /// </summary>
+        public double CpuUtilization { get; set; }
+        
+        /// <summary>
+        /// Confidence level (alias for ConfidenceLevel)
+        /// </summary>
+        public double Confidence { get; set; }
+        
+        /// <summary>
+        /// Performance metrics
+        /// </summary>
+        public Dictionary<string, object> Metrics { get; set; } = new();
+        
+        /// <summary>
         /// Performance factors considered
         /// </summary>
         public List<string> Factors { get; set; } = new();

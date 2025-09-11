@@ -1,13 +1,6 @@
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/bin/Debug/net8.0/Nexo.Core.Domain.deps.json
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/bin/Debug/net8.0/Nexo.Core.Domain.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/bin/Debug/net8.0/Nexo.Core.Domain.pdb
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.csproj.AssemblyReference.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.GeneratedMSBuildEditorConfig.editorconfig
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.AssemblyInfoInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.AssemblyInfo.cs
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.csproj.CoreCompileInputs.cache
 /Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.sourcelink.json
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/refint/Nexo.Core.Domain.dll
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/Nexo.Core.Domain.pdb
-/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Domain/obj/Debug/net8.0/ref/Nexo.Core.Domain.dll

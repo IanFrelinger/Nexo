@@ -39,6 +39,7 @@ namespace Nexo.Core.Application.Services.AI.Engines
         };
 
         public AIOperationStatus Status => _status;
+        public bool IsInitialized => _isInitialized;
 
         public async Task InitializeAsync(ModelInfo model, AIOperationContext context)
         {

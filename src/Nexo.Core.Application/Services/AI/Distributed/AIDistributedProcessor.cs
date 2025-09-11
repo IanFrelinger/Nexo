@@ -306,7 +306,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                 task.Duration = task.CompletedAt.Value - task.StartedAt.Value;
 
                 _logger.LogInformation("Distributed task {TaskId} completed with status {Status} in {Duration}ms", 
-                    task.TaskId, task.Status, task.Duration.TotalMilliseconds);
+                    task.TaskId, task.Status, task.Duration?.TotalMilliseconds ?? 0);
             }
             catch (Exception ex)
             {

@@ -13,5 +13,6 @@ namespace Nexo.Core.Application.Services.BetaTesting
         Task<bool> ValidateUserAsync(string userId);
         Task<List<string>> GetRecruitedUsersAsync(string programId);
         Task<bool> SendInvitationAsync(string userId, string programId);
+        Task<List<string>> RecruitUsersForSegmentAsync(string segmentId, string programId);
     }
 }

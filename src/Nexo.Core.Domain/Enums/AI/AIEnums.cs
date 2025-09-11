@@ -97,7 +97,8 @@ namespace Nexo.Core.Domain.Enums.AI
         Completed,
         Failed,
         Cancelled,
-        Timeout
+        Timeout,
+        Error
     }
 
     /// <summary>
@@ -133,4 +134,31 @@ namespace Nexo.Core.Domain.Enums.AI
         High,
         Maximum
     }
+
+    /// <summary>
+    /// Model status
+    /// </summary>
+    public enum ModelStatus
+    {
+        Available,
+        Unavailable,
+        Downloading,
+        Installing,
+        Error,
+        Maintenance
+    }
+
+    /// <summary>
+    /// Model quantization types
+    /// </summary>
+    public enum ModelQuantization
+    {
+        None,
+        Q8_0,
+        Q4_K_M,
+        Q4_0,
+        Q3_K_M,
+        Q2_K
+    }
+
 }

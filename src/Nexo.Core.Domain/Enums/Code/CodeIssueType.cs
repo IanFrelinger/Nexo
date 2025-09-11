@@ -11,6 +11,9 @@ namespace Nexo.Core.Domain.Enums.Code
         TestCoverage,
         Refactoring,
         Optimization,
+        Error,
+        Warning,
+        Info,
         Other
     }
 }

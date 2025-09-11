@@ -17,6 +17,11 @@ namespace Nexo.Core.Application.Interfaces.AI
         /// Gets the current engine status
         /// </summary>
         AIOperationStatus Status { get; }
+        
+        /// <summary>
+        /// Gets whether the engine is initialized
+        /// </summary>
+        bool IsInitialized { get; }
 
         /// <summary>
         /// Initializes the engine with the specified model

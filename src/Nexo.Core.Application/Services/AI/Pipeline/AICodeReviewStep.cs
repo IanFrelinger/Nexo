@@ -5,6 +5,7 @@ using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Pipeline;
+using Nexo.Core.Domain.Entities.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -45,7 +46,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                         {
                             new CodeIssue
                             {
-                                Type = CodeIssueType.Error,
+                                Type = CodeIssueType.Error.ToString(),
                                 Message = "No code provided for review",
                                 Line = 0,
                                 Severity = "High"
@@ -53,7 +54,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                         },
                         Suggestions = new List<string> { "Provide valid code for review" },
                         ReviewTime = DateTime.UtcNow,
-                        EngineType = AIEngineType.Mock
+                        EngineType = AIEngineType.Mock.ToString().ToString()
                     };
                     return input;
                 }
@@ -65,18 +66,20 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     TargetPlatform = context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown,
                     MaxTokens = 2048,
                     Temperature = 0.3, // Lower temperature for more consistent reviews
-                    Priority = AIPriority.Quality,
-                    Requirements = new AIRequirements
+                    Priority = AIPriority.Quality.ToString(),
+                    Requirements = new Nexo.Core.Domain.Entities.AI.AIRequirements
                     {
-                        QualityThreshold = 80,
-                        SafetyLevel = SafetyLevel.High,
-                        PerformanceTarget = PerformanceTarget.Balanced
+                        Priority = AIPriority.Quality,
+                        SafetyLevel = Nexo.Core.Domain.Enums.Safety.SafetyLevel.High,
+                        RequiresHighQuality = true,
+                        MaxTokens = 2048,
+                        Temperature = 0.3
                     }
                 };
 
                 // Select optimal AI engine
-                var selection = await _runtimeSelector.SelectOptimalProviderAsync(aiContext);
-                if (selection == null)
+                var provider = await _runtimeSelector.SelectOptimalProviderAsync(aiContext);
+                if (provider == null)
                 {
                     _logger.LogError("No suitable AI provider found for code review");
                     throw new InvalidOperationException("No AI provider available for code review");
@@ -85,13 +88,13 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 // Create AI engine
                 var engineInfo = new AIEngineInfo
                 {
-                    EngineType = selection.EngineType,
-                    ModelPath = GetModelPathForReview(selection.EngineType),
+                    EngineType = provider.EngineType,
+                    ModelPath = GetModelPathForReview(provider.EngineType),
                     MaxTokens = aiContext.MaxTokens,
                     Temperature = aiContext.Temperature
                 };
 
-                var engine = await selection.Provider.CreateEngineAsync(engineInfo);
+                var engine = await provider.CreateEngineAsync(engineInfo);
                 if (engine is not IAIEngine aiEngine)
                 {
                     _logger.LogError("Failed to create AI engine for code review");
@@ -134,7 +137,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     {
                         new CodeIssue
                         {
-                            Type = CodeIssueType.Error,
+                            Type = CodeIssueType.Error.ToString(),
                             Message = $"Code review failed: {ex.Message}",
                             Line = 0,
                             Severity = "High"
@@ -142,7 +145,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     },
                     Suggestions = new List<string> { "Review failed due to technical error. Please try again." },
                     ReviewTime = DateTime.UtcNow,
-                    EngineType = AIEngineType.Mock
+                    EngineType = AIEngineType.Mock.ToString()
                 };
                 input.ReviewCompleted = false;
                 
@@ -165,19 +168,22 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             _logger.LogDebug("Enhancing code review result with additional analysis");
 
             // Add performance analysis
-            var performanceIssues = await AnalyzePerformanceAsync(request.Code, request.Language);
+            var performanceIssues = await AnalyzePerformanceAsync(request.Code, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang) ? lang : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             result.Issues.AddRange(performanceIssues);
 
             // Add security analysis
-            var securityIssues = await AnalyzeSecurityAsync(request.Code, request.Language);
+            var securityIssues = await AnalyzeSecurityAsync(request.Code, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang2) ? lang2 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             result.Issues.AddRange(securityIssues);
 
             // Add maintainability analysis
-            var maintainabilityIssues = await AnalyzeMaintainabilityAsync(request.Code, request.Language);
+            var maintainabilityIssues = await AnalyzeMaintainabilityAsync(request.Code, 
+                Enum.TryParse<Nexo.Core.Domain.Enums.Code.CodeLanguage>(request.Language, out var lang3) ? lang3 : Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp);
             result.Issues.AddRange(maintainabilityIssues);
 
             // Recalculate quality score
-            result.QualityScore = CalculateEnhancedQualityScore(result);
+            result.QualityScore = (int)CalculateEnhancedQualityScore(result);
 
             // Add context-specific suggestions
             var contextSuggestions = await GenerateContextSuggestionsAsync(request, context);
@@ -214,7 +220,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             {
                 issues.Add(new CodeIssue
                 {
-                    Type = CodeIssueType.Warning,
+                    Type = CodeIssueType.Warning.ToString(),
                     Message = "Consider using foreach loop for better performance",
                     Line = 1,
                     Severity = "Medium"
@@ -225,7 +231,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             {
                 issues.Add(new CodeIssue
                 {
-                    Type = CodeIssueType.Warning,
+                    Type = CodeIssueType.Warning.ToString(),
                     Message = "Consider using StringBuilder for multiple string concatenations",
                     Line = 1,
                     Severity = "Low"
@@ -247,7 +253,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             {
                 issues.Add(new CodeIssue
                 {
-                    Type = CodeIssueType.Error,
+                    Type = CodeIssueType.Error.ToString(),
                     Message = "Never store passwords in plain text",
                     Line = 1,
                     Severity = "High"
@@ -258,7 +264,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             {
                 issues.Add(new CodeIssue
                 {
-                    Type = CodeIssueType.Error,
+                    Type = CodeIssueType.Error.ToString(),
                     Message = "Use parameterized queries to prevent SQL injection",
                     Line = 1,
                     Severity = "High"
@@ -280,7 +286,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             {
                 issues.Add(new CodeIssue
                 {
-                    Type = CodeIssueType.Info,
+                    Type = CodeIssueType.Info.ToString(),
                     Message = "Consider breaking down large methods into smaller ones",
                     Line = 1,
                     Severity = "Low"
@@ -291,7 +297,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             {
                 issues.Add(new CodeIssue
                 {
-                    Type = CodeIssueType.Warning,
+                    Type = CodeIssueType.Warning.ToString(),
                     Message = "Replace magic numbers with named constants",
                     Line = 1,
                     Severity = "Medium"
@@ -431,7 +437,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     public class AIRequirements
     {
         public int QualityThreshold { get; set; } = 80;
-        public SafetyLevel SafetyLevel { get; set; } = SafetyLevel.Medium;
+        public Nexo.Core.Domain.Enums.Safety.SafetyLevel SafetyLevel { get; set; } = Nexo.Core.Domain.Enums.Safety.SafetyLevel.Medium;
         public PerformanceTarget PerformanceTarget { get; set; } = PerformanceTarget.Balanced;
         public bool RequireOffline { get; set; } = false;
         public Dictionary<string, object> CustomRequirements { get; set; } = new();

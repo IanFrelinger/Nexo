@@ -10,6 +10,7 @@ namespace Nexo.Core.Domain.Entities.Infrastructure
         public string Name { get; set; } = string.Empty;
         public string EnvironmentType { get; set; } = string.Empty;
         public PlatformType Platform { get; set; }
+        public PlatformType CurrentPlatform { get; set; }
         public string Version { get; set; } = string.Empty;
         public Dictionary<string, object> Properties { get; set; } = new();
         public Dictionary<string, object> Configuration { get; set; } = new();
@@ -24,5 +25,19 @@ namespace Nexo.Core.Domain.Entities.Infrastructure
         public string EnvironmentName { get; set; } = string.Empty;
         public string FrameworkVersion { get; set; } = string.Empty;
         public bool HasChanged { get; set; }
+        
+        // Additional properties needed by application layer
+        public long AvailableMemory { get; set; }
+        public Dictionary<string, object> Resources { get; set; } = new();
+        
+        /// <summary>
+        /// Whether the environment is constrained (limited resources)
+        /// </summary>
+        public bool IsConstrained { get; set; }
+        
+        /// <summary>
+        /// Whether the environment is mobile
+        /// </summary>
+        public bool IsMobile { get; set; }
     }
 }

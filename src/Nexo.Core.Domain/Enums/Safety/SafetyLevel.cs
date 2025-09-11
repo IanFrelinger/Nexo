@@ -16,9 +16,19 @@ namespace Nexo.Core.Domain.Enums.Safety
         Basic = 1,
         
         /// <summary>
+        /// Low safety level
+        /// </summary>
+        Low = 1,
+        
+        /// <summary>
         /// Standard safety level
         /// </summary>
         Standard = 2,
+        
+        /// <summary>
+        /// Medium safety level
+        /// </summary>
+        Medium = 2,
         
         /// <summary>
         /// High safety level with additional checks

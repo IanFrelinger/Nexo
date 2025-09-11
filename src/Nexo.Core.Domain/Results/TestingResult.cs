@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Nexo.Core.Domain.Enums.AI;
 
 namespace Nexo.Core.Domain.Results
 {
@@ -57,6 +58,14 @@ namespace Nexo.Core.Domain.Results
         /// Timestamp when testing completed
         /// </summary>
         public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
+        
+        // Properties accessed by application layer
+        public string GeneratedTests { get; set; } = "";
+        public int QualityScore { get; set; }
+        public int Coverage { get; set; }
+        public AIEngineType EngineType { get; set; }
+        public List<string> Tags { get; set; } = new();
+        public Dictionary<string, object> Metadata { get; set; } = new();
         
         /// <summary>
         /// Creates a successful result

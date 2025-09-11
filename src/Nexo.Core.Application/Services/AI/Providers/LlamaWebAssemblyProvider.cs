@@ -15,10 +15,13 @@ namespace Nexo.Core.Application.Services.AI.Providers
         public int Priority => 0;
         public AIProviderCapabilities Capabilities => new AIProviderCapabilities();
         public AIProviderStatus Status => AIProviderStatus.Available;
+        public AIEngineType EngineType => AIEngineType.LlamaWebAssembly;
+        public AIProviderType Provider => AIProviderType.LlamaWebAssembly;
         public bool IsAvailable() => true;
         public bool SupportsPlatform(PlatformType platform) => true;
         public bool MeetsRequirements(AIRequirements requirements) => true;
         public bool HasRequiredResources(AIResources resources) => true;
+        public bool SupportsEngineType(AIEngineType engineType) => engineType == AIEngineType.LlamaWebAssembly;
         public Task InitializeAsync() => Task.CompletedTask;
         public Task<IAIEngine> CreateEngineAsync(AIOperationContext context) => Task.FromResult<IAIEngine>(new Engines.LlamaWebAssemblyEngine());
         public Task<List<ModelInfo>> GetAvailableModelsAsync() => Task.FromResult(new List<ModelInfo>());

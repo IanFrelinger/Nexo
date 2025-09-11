@@ -19,6 +19,11 @@ namespace Nexo.Core.Domain.Results
         public string Code { get; set; } = string.Empty;
         
         /// <summary>
+        /// Test prompt
+        /// </summary>
+        public string Prompt { get; set; } = string.Empty;
+        
+        /// <summary>
         /// Programming language
         /// </summary>
         public string Language { get; set; } = string.Empty;
@@ -29,14 +34,19 @@ namespace Nexo.Core.Domain.Results
         public string TestType { get; set; } = string.Empty;
         
         /// <summary>
+        /// Test context
+        /// </summary>
+        public string Context { get; set; } = string.Empty;
+        
+        /// <summary>
         /// Test criteria
         /// </summary>
         public List<string> TestCriteria { get; set; } = new();
         
         /// <summary>
-        /// Additional context
+        /// Additional context data
         /// </summary>
-        public Dictionary<string, object> Context { get; set; } = new();
+        public Dictionary<string, object> AdditionalContext { get; set; } = new();
         
         /// <summary>
         /// Additional data
@@ -47,5 +57,11 @@ namespace Nexo.Core.Domain.Results
         /// Timestamp when request was created
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        // Properties accessed by application layer
+        public TestingResult? Result { get; set; }
+        public bool TestGenerationCompleted { get; set; } = false;
+        public DateTime GenerationTime { get; set; }
+        public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
     }
 }

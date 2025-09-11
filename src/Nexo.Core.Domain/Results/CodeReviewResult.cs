@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Nexo.Core.Domain.Entities.AI;
 
 namespace Nexo.Core.Domain.Results
 {
@@ -27,6 +28,16 @@ namespace Nexo.Core.Domain.Results
         /// Review score (0-100)
         /// </summary>
         public int Score { get; set; }
+        
+        /// <summary>
+        /// Quality score (0.0-1.0)
+        /// </summary>
+        public double QualityScore { get; set; }
+        
+        /// <summary>
+        /// Code issues found during review
+        /// </summary>
+        public List<CodeIssue> Issues { get; set; } = new();
         
         /// <summary>
         /// Review comments
@@ -57,6 +68,16 @@ namespace Nexo.Core.Domain.Results
         /// Timestamp when review completed
         /// </summary>
         public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
+        
+        /// <summary>
+        /// Review time
+        /// </summary>
+        public DateTime ReviewTime { get; set; } = DateTime.UtcNow;
+        
+        /// <summary>
+        /// Engine type used for review
+        /// </summary>
+        public string EngineType { get; set; } = string.Empty;
         
         /// <summary>
         /// Creates a successful result

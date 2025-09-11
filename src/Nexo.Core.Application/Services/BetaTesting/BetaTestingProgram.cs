@@ -74,15 +74,12 @@ namespace Nexo.Core.Application.Services.BetaTesting
             }
 
             // Track program initialization
-            await _analytics.TrackEventAsync(new BetaAnalyticsEvent
+            await _analytics.TrackEventAsync("BetaProgramInitialized", new Dictionary<string, object>
             {
-                EventType = BetaAnalyticsEventType.ProgramInitialized,
-                ProgramId = program.Id,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["Configuration"] = config
-                }
+                ["EventType"] = BetaAnalyticsEventType.ProgramInitialized.ToString(),
+                ["ProgramId"] = program.Id,
+                ["Timestamp"] = DateTime.UtcNow,
+                ["Configuration"] = config
             });
 
             _logger.LogInformation("Beta testing program initialized: {ProgramId}", program.Id);

@@ -16,6 +16,7 @@ namespace Nexo.Core.Application.Services.AI.Engines
 
         public AIEngineInfo EngineInfo => new AIEngineInfo { Name = "LlamaWebAssembly", EngineType = AIEngineType.LlamaWebAssembly, IsInitialized = _initialized };
         public AIOperationStatus Status => _status;
+        public bool IsInitialized => _initialized;
 
         public Task InitializeAsync(ModelInfo model, AIOperationContext context)
         {

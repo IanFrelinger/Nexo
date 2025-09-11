@@ -458,7 +458,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Name = $"{entity.Name}Controller",
                 Description = $"Web API controller for {entity.Name}",
                 Namespace = "Application.Controllers",
-                BaseController = "ControllerBase",
+                BaseClass = "ControllerBase",
                 Type = ControllerType.WebApi,
                 Actions = new List<ControllerAction>
                 {
@@ -821,8 +821,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             {
                 var validator = new ApplicationValidator
                 {
-                    Name = $"{entity.Name}Validator",
-                    Description = $"Validator for {entity.Name}",
+                    Name = $"{entity}Validator",
+                    Description = $"Validator for {entity}",
                     Namespace = "Application.Validators",
                     Type = ValidatorType.Model
                 };
@@ -842,7 +842,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             var code = new List<string>();
             foreach (var controller in controllers)
             {
-                code.Add($"public class {controller.Name} : {controller.BaseController}");
+                code.Add($"public class {controller.Name} : {controller.BaseClass}");
                 code.Add("{");
                 code.Add("    // Generated controller code");
                 code.Add("}");
@@ -994,7 +994,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 code.Add("    // Controllers");
                 foreach (var controller in result.Controllers.Take(3))
                 {
-                    code.Add($"    public class {controller.Name} : {controller.BaseController}");
+                    code.Add($"    public class {controller.Name} : {controller.BaseClass}");
                     code.Add("    {");
                     code.Add("        // Generated controller implementation");
                     code.Add("    }");

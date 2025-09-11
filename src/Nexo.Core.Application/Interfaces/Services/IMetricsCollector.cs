@@ -13,5 +13,7 @@ namespace Nexo.Core.Application.Services.Monitoring
         Task<Dictionary<string, double>> GetMetricsAsync(string name);
         Task<List<string>> GetAvailableMetricsAsync();
         Task<bool> ClearMetricsAsync();
+        Task InitializeAsync();
+        Task StoreMetricsAsync(Dictionary<string, object> metrics);
     }
 }

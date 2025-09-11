@@ -21,7 +21,7 @@ namespace Nexo.Core.Application.Services.AI.Models
         public ModelManagementService(ILogger<ModelManagementService> logger)
         {
             _logger = logger;
-            _modelCachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Nexo", "Models");
+            _modelCachePath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData), "Nexo", "Models");
             _cachedModels = new Dictionary<string, ModelInfo>();
             
             // Ensure model cache directory exists
