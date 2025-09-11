@@ -1,10 +1,15 @@
 using Microsoft.Extensions.DependencyInjection;
+using Nexo.Core.Application.Services.AI.Analytics;
+using Nexo.Core.Application.Services.AI.Caching;
+using Nexo.Core.Application.Services.AI.Distributed;
 using Nexo.Core.Application.Services.AI.Engines;
+using Nexo.Core.Application.Services.AI.ModelFineTuning;
 using Nexo.Core.Application.Services.AI.Models;
 using Nexo.Core.Application.Services.AI.Monitoring;
 using Nexo.Core.Application.Services.AI.Performance;
 using Nexo.Core.Application.Services.AI.Pipeline;
 using Nexo.Core.Application.Services.AI.Providers;
+using Nexo.Core.Application.Services.AI.Rollback;
 using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Application.Services.AI.Safety;
 
@@ -45,6 +50,13 @@ namespace Nexo.Core.Application.Extensions
             // Register Phase 3 services
             services.AddSingleton<AISafetyValidator>();
             services.AddSingleton<AIUsageMonitor>();
+
+            // Register Phase 4 services
+            services.AddSingleton<AIModelFineTuner>();
+            services.AddSingleton<AIAdvancedAnalytics>();
+            services.AddSingleton<AIDistributedProcessor>();
+            services.AddSingleton<AIAdvancedCache>();
+            services.AddSingleton<AIOperationRollback>();
 
             return services;
         }
@@ -95,6 +107,13 @@ namespace Nexo.Core.Application.Extensions
             // Register Phase 3 services
             services.AddSingleton<AISafetyValidator>();
             services.AddSingleton<AIUsageMonitor>();
+
+            // Register Phase 4 services
+            services.AddSingleton<AIModelFineTuner>();
+            services.AddSingleton<AIAdvancedAnalytics>();
+            services.AddSingleton<AIDistributedProcessor>();
+            services.AddSingleton<AIAdvancedCache>();
+            services.AddSingleton<AIOperationRollback>();
 
             // Register configuration
             services.AddSingleton(options);
