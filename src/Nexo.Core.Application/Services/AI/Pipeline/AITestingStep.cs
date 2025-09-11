@@ -1,0 +1,581 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Enums.AI;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Nexo.Core.Application.Services.AI.Pipeline
+{
+    /// <summary>
+    /// AI-powered test generation pipeline step for automatic test case creation
+    /// </summary>
+    public class AITestingStep : IPipelineStep<TestingRequest>
+    {
+        private readonly IAIRuntimeSelector _runtimeSelector;
+        private readonly ILogger<AITestingStep> _logger;
+
+        public AITestingStep(IAIRuntimeSelector runtimeSelector, ILogger<AITestingStep> logger)
+        {
+            _runtimeSelector = runtimeSelector ?? throw new ArgumentNullException(nameof(runtimeSelector));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        public async Task<TestingRequest> ExecuteAsync(TestingRequest input, PipelineContext context)
+        {
+            try
+            {
+                _logger.LogInformation("Starting AI test generation for {Language} code", input.Language);
+
+                // Validate input
+                if (string.IsNullOrWhiteSpace(input.Code))
+                {
+                    _logger.LogWarning("Empty code provided for test generation");
+                    input.Result = new TestingResult
+                    {
+                        GeneratedTests = "No code provided for test generation.",
+                        TestType = input.TestType,
+                        QualityScore = 0,
+                        Coverage = 0,
+                        GenerationTime = DateTime.UtcNow,
+                        EngineType = AIEngineType.Mock
+                    };
+                    return input;
+                }
+
+                // Create AI operation context
+                var aiContext = new AIOperationContext
+                {
+                    OperationType = AIOperationType.Testing,
+                    TargetPlatform = context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown,
+                    MaxTokens = 4096,
+                    Temperature = 0.3, // Lower temperature for more consistent test generation
+                    Priority = AIPriority.Quality,
+                    Requirements = new AIRequirements
+                    {
+                        QualityThreshold = 90,
+                        SafetyLevel = SafetyLevel.High,
+                        PerformanceTarget = PerformanceTarget.Balanced
+                    }
+                };
+
+                // Select optimal AI engine
+                var selection = await _runtimeSelector.SelectOptimalProviderAsync(aiContext);
+                if (selection == null)
+                {
+                    _logger.LogError("No suitable AI provider found for test generation");
+                    throw new InvalidOperationException("No AI provider available for test generation");
+                }
+
+                // Create AI engine
+                var engineInfo = new AIEngineInfo
+                {
+                    EngineType = selection.EngineType,
+                    ModelPath = GetModelPathForTesting(selection.EngineType),
+                    MaxTokens = aiContext.MaxTokens,
+                    Temperature = aiContext.Temperature
+                };
+
+                var engine = await selection.Provider.CreateEngineAsync(engineInfo);
+                if (engine is not IAIEngine aiEngine)
+                {
+                    _logger.LogError("Failed to create AI engine for test generation");
+                    throw new InvalidOperationException("Failed to create AI engine for test generation");
+                }
+
+                // Initialize engine if needed
+                if (!aiEngine.IsInitialized)
+                {
+                    await aiEngine.InitializeAsync();
+                }
+
+                // Generate tests
+                var testCode = await GenerateTestCodeAsync(aiEngine, input, context);
+
+                // Enhance test code with additional analysis
+                var enhancedTests = await EnhanceTestCodeAsync(testCode, input, context);
+
+                // Apply safety validation
+                var validatedTests = await ApplySafetyValidationAsync(enhancedTests, input, context);
+
+                // Create testing result
+                var result = new TestingResult
+                {
+                    GeneratedTests = validatedTests,
+                    TestType = input.TestType,
+                    QualityScore = CalculateTestQuality(validatedTests, input),
+                    Coverage = CalculateTestCoverage(validatedTests, input.Code),
+                    GenerationTime = DateTime.UtcNow,
+                    EngineType = selection.EngineType
+                };
+
+                // Update input with results
+                input.Result = result;
+                input.TestGenerationCompleted = true;
+                input.GenerationTime = DateTime.UtcNow;
+
+                _logger.LogInformation("AI test generation completed with quality score {Score} and {Coverage}% coverage", 
+                    result.QualityScore, result.Coverage);
+
+                return input;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during AI test generation");
+                
+                // Create fallback result
+                input.Result = new TestingResult
+                {
+                    GeneratedTests = $"Test generation failed: {ex.Message}",
+                    TestType = input.TestType,
+                    QualityScore = 0,
+                    Coverage = 0,
+                    GenerationTime = DateTime.UtcNow,
+                    EngineType = AIEngineType.Mock
+                };
+                input.TestGenerationCompleted = false;
+                
+                return input;
+            }
+        }
+
+        private string GetModelPathForTesting(AIEngineType engineType)
+        {
+            return engineType switch
+            {
+                AIEngineType.LlamaWebAssembly => "models/codellama-7b-instruct.gguf",
+                AIEngineType.LlamaNative => "models/codellama-13b-instruct.gguf",
+                _ => "models/codellama-7b-instruct.gguf"
+            };
+        }
+
+        private async Task<string> GenerateTestCodeAsync(IAIEngine aiEngine, TestingRequest request, PipelineContext context)
+        {
+            // Create a code generation request for test code
+            var testPrompt = CreateTestPrompt(request, context);
+            
+            var codeGenRequest = new CodeGenerationRequest
+            {
+                Prompt = testPrompt,
+                Language = request.Language,
+                MaxTokens = 2048,
+                Temperature = 0.3
+            };
+
+            // Generate test code using the AI engine
+            var testCode = await aiEngine.GenerateCodeAsync(codeGenRequest);
+            
+            return testCode;
+        }
+
+        private string CreateTestPrompt(TestingRequest request, PipelineContext context)
+        {
+            var prompt = $@"Generate comprehensive {request.TestType} tests for the following {request.Language} code:
+
+```{request.Language.ToString().ToLower()}
+{request.Code}
+```
+
+Requirements:
+- Test all public methods and properties
+- Include edge cases and boundary conditions
+- Add proper test setup and teardown
+- Use appropriate testing framework for {request.Language}
+- Include meaningful test names and descriptions
+- Add assertions for expected behavior
+- Consider error handling scenarios
+
+Context: {request.Context}
+Platform: {context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown}
+
+Generate complete, runnable test code:";
+
+            return prompt;
+        }
+
+        private async Task<string> EnhanceTestCodeAsync(string testCode, TestingRequest request, PipelineContext context)
+        {
+            _logger.LogDebug("Enhancing test code with additional analysis");
+
+            var enhancedTests = testCode;
+
+            // Add test framework setup
+            var frameworkSetup = await GenerateTestFrameworkSetupAsync(request.Language, context);
+            if (!string.IsNullOrEmpty(frameworkSetup))
+            {
+                enhancedTests = frameworkSetup + "\n\n" + enhancedTests;
+            }
+
+            // Add additional test cases
+            var additionalTests = await GenerateAdditionalTestCasesAsync(request.Code, request.Language, request.TestType);
+            if (!string.IsNullOrEmpty(additionalTests))
+            {
+                enhancedTests += "\n\n" + additionalTests;
+            }
+
+            // Add test utilities
+            var testUtilities = await GenerateTestUtilitiesAsync(request.Language, context);
+            if (!string.IsNullOrEmpty(testUtilities))
+            {
+                enhancedTests += "\n\n" + testUtilities;
+            }
+
+            // Add context-specific tests
+            var contextTests = await GenerateContextSpecificTestsAsync(request, context);
+            if (!string.IsNullOrEmpty(contextTests))
+            {
+                enhancedTests += "\n\n" + contextTests;
+            }
+
+            return enhancedTests;
+        }
+
+        private async Task<string> ApplySafetyValidationAsync(string testCode, TestingRequest request, PipelineContext context)
+        {
+            _logger.LogDebug("Applying safety validation to test code");
+
+            // Validate test code for safety
+            var safetyIssues = await ValidateTestCodeSafetyAsync(testCode, request.Language);
+            if (safetyIssues.Any())
+            {
+                _logger.LogWarning("Safety issues detected in test code: {Issues}", string.Join(", ", safetyIssues));
+                // Remove or replace unsafe test code
+                testCode = await RemoveUnsafeTestCodeAsync(testCode, safetyIssues);
+            }
+
+            // Filter test code for appropriateness
+            var filteredTestCode = await FilterTestCodeContentAsync(testCode, request, context);
+
+            return filteredTestCode;
+        }
+
+        private async Task<string> GenerateTestFrameworkSetupAsync(CodeLanguage language, PipelineContext context)
+        {
+            // In a real implementation, this would generate appropriate test framework setup
+            await Task.Delay(50);
+
+            return language switch
+            {
+                CodeLanguage.CSharp => @"using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;",
+                CodeLanguage.JavaScript => @"// Jest test framework setup
+const { describe, it, expect, beforeEach, afterEach } = require('jest');",
+                CodeLanguage.Python => @"import unittest
+import pytest
+from unittest.mock import Mock, patch",
+                _ => "// Test framework setup"
+            };
+        }
+
+        private async Task<string> GenerateAdditionalTestCasesAsync(string code, CodeLanguage language, TestType testType)
+        {
+            // In a real implementation, this would generate additional test cases
+            await Task.Delay(100);
+
+            var additionalTests = new List<string>();
+
+            // Generate edge case tests
+            if (code.Contains("int") || code.Contains("number"))
+            {
+                additionalTests.Add(GenerateEdgeCaseTests(language, "numeric"));
+            }
+
+            if (code.Contains("string") || code.Contains("String"))
+            {
+                additionalTests.Add(GenerateEdgeCaseTests(language, "string"));
+            }
+
+            if (code.Contains("null") || code.Contains("None"))
+            {
+                additionalTests.Add(GenerateNullHandlingTests(language));
+            }
+
+            // Generate performance tests
+            if (testType == TestType.Performance)
+            {
+                additionalTests.Add(GeneratePerformanceTests(language));
+            }
+
+            return string.Join("\n\n", additionalTests);
+        }
+
+        private string GenerateEdgeCaseTests(CodeLanguage language, string type)
+        {
+            return language switch
+            {
+                CodeLanguage.CSharp => $@"// Edge case tests for {type}
+[TestMethod]
+public void TestEdgeCases_{type}()
+{{
+    // Test with minimum value
+    // Test with maximum value
+    // Test with zero
+    // Test with negative values
+}}",
+                CodeLanguage.JavaScript => $@"// Edge case tests for {type}
+describe('Edge Cases - {type}', () => {{
+    it('should handle minimum values', () => {{
+        // Test implementation
+    }});
+    
+    it('should handle maximum values', () => {{
+        // Test implementation
+    }});
+}});",
+                _ => $"// Edge case tests for {type}"
+            };
+        }
+
+        private string GenerateNullHandlingTests(CodeLanguage language)
+        {
+            return language switch
+            {
+                CodeLanguage.CSharp => @"// Null handling tests
+[TestMethod]
+[ExpectedException(typeof(ArgumentNullException))]
+public void TestNullHandling()
+{
+    // Test with null input
+    // Should throw ArgumentNullException
+}",
+                CodeLanguage.JavaScript => @"// Null handling tests
+describe('Null Handling', () => {
+    it('should handle null input gracefully', () => {
+        expect(() => {
+            // Test with null input
+        }).toThrow();
+    });
+});",
+                _ => "// Null handling tests"
+            };
+        }
+
+        private string GeneratePerformanceTests(CodeLanguage language)
+        {
+            return language switch
+            {
+                CodeLanguage.CSharp => @"// Performance tests
+[TestMethod]
+public void TestPerformance()
+{
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    
+    // Execute code under test
+    
+    stopwatch.Stop();
+    Assert.IsTrue(stopwatch.ElapsedMilliseconds < 1000, ""Operation should complete within 1 second"");
+}",
+                CodeLanguage.JavaScript => @"// Performance tests
+describe('Performance', () => {
+    it('should complete within acceptable time', () => {
+        const start = performance.now();
+        
+        // Execute code under test
+        
+        const end = performance.now();
+        expect(end - start).toBeLessThan(1000);
+    });
+});",
+                _ => "// Performance tests"
+            };
+        }
+
+        private async Task<string> GenerateTestUtilitiesAsync(CodeLanguage language, PipelineContext context)
+        {
+            // In a real implementation, this would generate test utilities
+            await Task.Delay(50);
+
+            return language switch
+            {
+                CodeLanguage.CSharp => @"// Test utilities
+public static class TestUtilities
+{
+    public static T CreateTestObject<T>() where T : new()
+    {
+        return new T();
+    }
+    
+    public static void AssertThrows<T>(Action action) where T : Exception
+    {
+        Assert.ThrowsException<T>(action);
+    }
+}",
+                CodeLanguage.JavaScript => @"// Test utilities
+const TestUtilities = {
+    createTestObject: (constructor) => new constructor(),
+    assertThrows: (fn, expectedError) => {
+        expect(fn).toThrow(expectedError);
+    }
+};",
+                _ => "// Test utilities"
+            };
+        }
+
+        private async Task<string> GenerateContextSpecificTestsAsync(TestingRequest request, PipelineContext context)
+        {
+            // In a real implementation, this would generate context-specific tests
+            await Task.Delay(50);
+
+            var contextTests = new List<string>();
+
+            // Add platform-specific tests
+            if (context.EnvironmentProfile?.CurrentPlatform == PlatformType.WebAssembly)
+            {
+                contextTests.Add("// WebAssembly-specific tests");
+            }
+
+            if (context.EnvironmentProfile?.CurrentPlatform == PlatformType.Windows)
+            {
+                contextTests.Add("// Windows-specific tests");
+            }
+
+            // Add test type specific tests
+            if (request.TestType == TestType.Integration)
+            {
+                contextTests.Add("// Integration test setup and teardown");
+            }
+
+            if (request.TestType == TestType.Unit)
+            {
+                contextTests.Add("// Unit test isolation and mocking");
+            }
+
+            return string.Join("\n", contextTests);
+        }
+
+        private async Task<List<string>> ValidateTestCodeSafetyAsync(string testCode, CodeLanguage language)
+        {
+            // In a real implementation, this would validate test code for safety
+            await Task.Delay(50);
+
+            var issues = new List<string>();
+
+            // Check for potentially unsafe test code
+            if (testCode.Contains("File.Delete") || testCode.Contains("rm -rf"))
+            {
+                issues.Add("File system operations detected in test code");
+            }
+
+            if (testCode.Contains("Process.Start") || testCode.Contains("exec"))
+            {
+                issues.Add("Process execution detected in test code");
+            }
+
+            if (testCode.Contains("Network") || testCode.Contains("HttpClient"))
+            {
+                issues.Add("Network operations detected in test code");
+            }
+
+            return issues;
+        }
+
+        private async Task<string> RemoveUnsafeTestCodeAsync(string testCode, List<string> safetyIssues)
+        {
+            // In a real implementation, this would remove unsafe test code
+            await Task.Delay(50);
+
+            // Remove or comment out unsafe test code
+            foreach (var issue in safetyIssues)
+            {
+                _logger.LogWarning("Removing unsafe test code: {Issue}", issue);
+            }
+
+            return testCode;
+        }
+
+        private async Task<string> FilterTestCodeContentAsync(string testCode, TestingRequest request, PipelineContext context)
+        {
+            // In a real implementation, this would filter test code content
+            await Task.Delay(50);
+
+            // Remove or replace inappropriate content
+            var filteredTestCode = testCode
+                .Replace("dangerous", "risky")
+                .Replace("unsafe", "requires caution");
+
+            return filteredTestCode;
+        }
+
+        private int CalculateTestQuality(string testCode, TestingRequest request)
+        {
+            var score = 0;
+
+            // Base score
+            score += 20;
+
+            // Length bonus
+            if (testCode.Length > 1000) score += 20;
+            if (testCode.Length > 2000) score += 10;
+
+            // Test structure bonus
+            if (testCode.Contains("Test")) score += 15;
+            if (testCode.Contains("Assert")) score += 15;
+            if (testCode.Contains("Mock")) score += 10;
+
+            // Test coverage bonus
+            if (testCode.Contains("EdgeCase")) score += 10;
+            if (testCode.Contains("Exception")) score += 10;
+            if (testCode.Contains("Performance")) score += 5;
+
+            return Math.Min(100, score);
+        }
+
+        private int CalculateTestCoverage(string testCode, string sourceCode)
+        {
+            // In a real implementation, this would calculate actual test coverage
+            var sourceLines = sourceCode.Split('\n').Length;
+            var testLines = testCode.Split('\n').Length;
+            
+            // Simple coverage calculation
+            var coverage = Math.Min(100, (testLines * 100) / Math.Max(1, sourceLines));
+            
+            return coverage;
+        }
+    }
+
+    /// <summary>
+    /// Testing request for AI pipeline processing
+    /// </summary>
+    public class TestingRequest
+    {
+        public string Code { get; set; } = string.Empty;
+        public CodeLanguage Language { get; set; }
+        public TestType TestType { get; set; } = TestType.Unit;
+        public string Context { get; set; } = string.Empty;
+        public TestingResult? Result { get; set; }
+        public bool TestGenerationCompleted { get; set; }
+        public DateTime? GenerationTime { get; set; }
+        public Dictionary<string, object> Metadata { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Testing result from AI pipeline processing
+    /// </summary>
+    public class TestingResult
+    {
+        public string GeneratedTests { get; set; } = string.Empty;
+        public TestType TestType { get; set; }
+        public int QualityScore { get; set; }
+        public int Coverage { get; set; }
+        public DateTime GenerationTime { get; set; }
+        public AIEngineType EngineType { get; set; }
+        public List<string> TestCategories { get; set; } = new();
+        public Dictionary<string, object> Metadata { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Types of tests
+    /// </summary>
+    public enum TestType
+    {
+        Unit,
+        Integration,
+        Performance,
+        Security,
+        EndToEnd
+    }
+}

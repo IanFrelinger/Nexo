@@ -1,10 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Services.AI.Engines;
 using Nexo.Core.Application.Services.AI.Models;
+using Nexo.Core.Application.Services.AI.Monitoring;
 using Nexo.Core.Application.Services.AI.Performance;
 using Nexo.Core.Application.Services.AI.Pipeline;
 using Nexo.Core.Application.Services.AI.Providers;
 using Nexo.Core.Application.Services.AI.Runtime;
+using Nexo.Core.Application.Services.AI.Safety;
 
 namespace Nexo.Core.Application.Extensions
 {
@@ -35,6 +37,14 @@ namespace Nexo.Core.Application.Extensions
 
             // Register AI pipeline steps
             services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<DocumentationRequest>, AIDocumentationStep>();
+            services.AddTransient<IPipelineStep<TestingRequest>, AITestingStep>();
+
+            // Register Phase 3 services
+            services.AddSingleton<AISafetyValidator>();
+            services.AddSingleton<AIUsageMonitor>();
 
             return services;
         }
@@ -77,6 +87,14 @@ namespace Nexo.Core.Application.Extensions
 
             // Register AI pipeline steps
             services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<DocumentationRequest>, AIDocumentationStep>();
+            services.AddTransient<IPipelineStep<TestingRequest>, AITestingStep>();
+
+            // Register Phase 3 services
+            services.AddSingleton<AISafetyValidator>();
+            services.AddSingleton<AIUsageMonitor>();
 
             // Register configuration
             services.AddSingleton(options);
