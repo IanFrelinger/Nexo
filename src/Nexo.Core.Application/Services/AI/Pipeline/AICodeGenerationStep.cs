@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     /// <summary>
     /// Pipeline step for AI-powered code generation
     /// </summary>
-    public class AICodeGenerationStep : IPipelineStep<Nexo.Core.Domain.Results.CodeGenerationRequest>
+    public class AICodeGenerationStep : IPipelineStep<CodeGenerationRequest>
     {
         private readonly IAIRuntimeSelector _runtimeSelector;
         private readonly ILogger<AICodeGenerationStep> _logger;
@@ -29,8 +29,8 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         public string Name => "AI Code Generation";
         public int Order => 1;
 
-        public async Task<Nexo.Core.Domain.Results.CodeGenerationRequest> ExecuteAsync(
-            Nexo.Core.Domain.Results.CodeGenerationRequest input, 
+        public async Task<CodeGenerationRequest> ExecuteAsync(
+            CodeGenerationRequest input, 
             Nexo.Core.Domain.Entities.Pipeline.PipelineContext context)
         {
             _logger.LogDebug("Executing AI code generation for prompt: {Prompt}", input.Prompt);
@@ -88,7 +88,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             }
         }
 
-        public async Task<bool> CanExecuteAsync(Nexo.Core.Domain.Results.CodeGenerationRequest input, PipelineContext context)
+        public async Task<bool> CanExecuteAsync(CodeGenerationRequest input, PipelineContext context)
         {
             try
             {
@@ -127,7 +127,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     /// <summary>
     /// Extended code generation request with AI-specific properties
     /// </summary>
-    public class AICodeGenerationRequest : Nexo.Core.Domain.Results.CodeGenerationRequest
+    public class AICodeGenerationRequest : CodeGenerationRequest
     {
         public string? GeneratedCode { get; set; }
         public string? Explanation { get; set; }

@@ -13,8 +13,11 @@ using Nexo.Core.Application.Services.AI.Rollback;
 using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Application.Services.AI.Safety;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Core.Application.Interfaces.Services;
 // Infrastructure service registrations belong in Nexo.Infrastructure. Keep Application free of Infra deps.
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Entities.Pipeline;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Enums.Safety;
 using Nexo.Core.Domain.Results;
@@ -42,7 +45,6 @@ namespace Nexo.Core.Application.Extensions
             services.AddSingleton<IAIProvider, LlamaNativeProvider>();
             
             // Register LLama providers for offline AI
-            services.AddSingleton<ILlamaProvider, OllamaProvider>();
             services.AddSingleton<ILlamaProvider, LlamaNativeProvider>();
 
             // Register AI engines
@@ -51,11 +53,11 @@ namespace Nexo.Core.Application.Extensions
             services.AddTransient<IAIEngine, LlamaNativeEngine>();
 
             // Register AI pipeline steps
-            services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
-            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
-            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
-            services.AddTransient<IPipelineStep<DocumentationRequest>, AIDocumentationStep>();
-            services.AddTransient<IPipelineStep<TestingRequest>, AITestingStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.DocumentationRequest>, AIDocumentationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.TestingRequest>, AITestingStep>();
 
             // Register Phase 3 services
             services.AddSingleton<AISafetyValidator>();
@@ -105,10 +107,7 @@ namespace Nexo.Core.Application.Extensions
             }
 
             // Register LLama providers for offline AI
-            if (options.EnableDockerProvider)
-            {
-                services.AddSingleton<ILlamaProvider, OllamaProvider>();
-            }
+            // Note: OllamaProvider should be registered in Infrastructure layer
             
             if (options.EnableNativeProvider)
             {
@@ -119,11 +118,11 @@ namespace Nexo.Core.Application.Extensions
             services.AddTransient<IAIEngine, MockAIEngine>();
 
             // Register AI pipeline steps
-            services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
-            services.AddTransient<IPipelineStep<CodeReviewRequest>, AICodeReviewStep>();
-            services.AddTransient<IPipelineStep<CodeOptimizationRequest>, AIOptimizationStep>();
-            services.AddTransient<IPipelineStep<DocumentationRequest>, AIDocumentationStep>();
-            services.AddTransient<IPipelineStep<TestingRequest>, AITestingStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>, AICodeGenerationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeReviewRequest>, AICodeReviewStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeOptimizationRequest>, AIOptimizationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.DocumentationRequest>, AIDocumentationStep>();
+            services.AddTransient<IPipelineStep<Nexo.Core.Domain.Results.TestingRequest>, AITestingStep>();
 
             // Register Phase 3 services
             services.AddSingleton<AISafetyValidator>();

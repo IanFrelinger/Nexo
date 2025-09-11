@@ -5,6 +5,7 @@ using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Pipeline;
+using Nexo.Core.Domain.Results;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -578,20 +579,6 @@ const TestUtilities = {
         }
     }
 
-    /// <summary>
-    /// Testing request for AI pipeline processing
-    /// </summary>
-    public class TestingRequest
-    {
-        public string Code { get; set; } = string.Empty;
-        public Nexo.Core.Domain.Enums.Code.CodeLanguage Language { get; set; }
-        public TestType TestType { get; set; } = TestType.Unit;
-        public string Context { get; set; } = string.Empty;
-        public TestingResult? Result { get; set; }
-        public bool TestGenerationCompleted { get; set; }
-        public DateTime? GenerationTime { get; set; }
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
 
     /// <summary>
     /// Testing result from AI pipeline processing

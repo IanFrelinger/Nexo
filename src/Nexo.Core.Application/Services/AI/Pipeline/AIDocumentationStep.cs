@@ -4,6 +4,7 @@ using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Core.Domain.Entities.Pipeline;
+using Nexo.Core.Domain.Results;
 using Nexo.Core.Application.Interfaces.Services;
 using Nexo.Core.Application.Interfaces.AI;
 using System;
@@ -437,20 +438,6 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         }
     }
 
-    /// <summary>
-    /// Documentation request for AI pipeline processing
-    /// </summary>
-    public class DocumentationRequest
-    {
-        public string Code { get; set; } = string.Empty;
-        public CodeLanguage Language { get; set; }
-        public DocumentationType DocumentationType { get; set; } = DocumentationType.API;
-        public string Context { get; set; } = string.Empty;
-        public DocumentationResult? Result { get; set; }
-        public bool DocumentationCompleted { get; set; }
-        public DateTime? GenerationTime { get; set; }
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
 
     /// <summary>
     /// Documentation result from AI pipeline processing
