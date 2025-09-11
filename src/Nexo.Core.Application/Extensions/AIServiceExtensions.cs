@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Services.AI.Engines;
 using Nexo.Core.Application.Services.AI.Models;
+using Nexo.Core.Application.Services.AI.Performance;
 using Nexo.Core.Application.Services.AI.Pipeline;
 using Nexo.Core.Application.Services.AI.Providers;
 using Nexo.Core.Application.Services.AI.Runtime;
@@ -19,13 +20,18 @@ namespace Nexo.Core.Application.Extensions
         {
             // Register core AI services
             services.AddSingleton<IAIRuntimeSelector, AIRuntimeSelector>();
-            services.AddSingleton<IModelManagementService, ModelManagementService>();
+            services.AddSingleton<IModelManagementService, RealModelManagementService>();
+            services.AddSingleton<AIPerformanceMonitor>();
 
             // Register AI providers
             services.AddSingleton<IAIProvider, MockAIProvider>();
+            services.AddSingleton<IAIProvider, LlamaWebAssemblyProvider>();
+            services.AddSingleton<IAIProvider, LlamaNativeProvider>();
 
             // Register AI engines
             services.AddTransient<IAIEngine, MockAIEngine>();
+            services.AddTransient<IAIEngine, LlamaWebAssemblyEngine>();
+            services.AddTransient<IAIEngine, LlamaNativeEngine>();
 
             // Register AI pipeline steps
             services.AddTransient<IPipelineStep<CodeGenerationRequest>, AICodeGenerationStep>();
@@ -53,17 +59,17 @@ namespace Nexo.Core.Application.Extensions
 
             if (options.EnableWasmProvider)
             {
-                services.AddSingleton<IAIProvider, WasmAIProvider>();
+                services.AddSingleton<IAIProvider, LlamaWebAssemblyProvider>();
             }
 
             if (options.EnableNativeProvider)
             {
-                services.AddSingleton<IAIProvider, NativeAIProvider>();
+                services.AddSingleton<IAIProvider, LlamaNativeProvider>();
             }
 
             if (options.EnableRemoteProvider)
             {
-                services.AddSingleton<IAIProvider, RemoteAIProvider>();
+                services.AddSingleton<IAIProvider, MockAIProvider>(); // Fallback to mock for now
             }
 
             // Register AI engines

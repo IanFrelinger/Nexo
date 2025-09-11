@@ -5,12 +5,14 @@ namespace Nexo.Core.Domain.Enums.AI
     /// </summary>
     public enum AIProviderType
     {
-        Wasm,
-        Native,
-        Mobile,
-        Remote,
-        Docker,
-        Mock
+        Mock,
+        LlamaWebAssembly,
+        LlamaNative,
+        OpenAI,
+        Anthropic,
+        AzureOpenAI,
+        GoogleAI,
+        HuggingFace
     }
 
     /// <summary>
@@ -18,7 +20,14 @@ namespace Nexo.Core.Domain.Enums.AI
     /// </summary>
     public enum AIEngineType
     {
-        Llama,
+        Mock,
+        LlamaWebAssembly,
+        LlamaNative,
+        OpenAI,
+        Anthropic,
+        AzureOpenAI,
+        GoogleAI,
+        HuggingFace,
         CodeLlama,
         CodeT5,
         StarCoder,
