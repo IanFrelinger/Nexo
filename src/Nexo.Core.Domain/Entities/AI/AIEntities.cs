@@ -191,23 +191,6 @@ namespace Nexo.Core.Domain.Entities.AI
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
     }
 
-    /// <summary>
-    /// AI code review result
-    /// </summary>
-    public class CodeReviewResult
-    {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string Code { get; set; } = "";
-        public List<CodeIssue> Issues { get; set; } = new();
-        public List<CodeSuggestion> Suggestions { get; set; } = new();
-        public double QualityScore { get; set; }
-        public TimeSpan ReviewTime { get; set; }
-        public AIEngineType EngineType { get; set; }
-        public string ReviewedCode { get; set; } = "";
-        public AIConfidenceLevel Confidence { get; set; }
-        public Dictionary<string, object> Metrics { get; set; } = new();
-        public DateTime ReviewedAt { get; set; } = DateTime.UtcNow;
-    }
 
     /// <summary>
     /// Code issue found during review

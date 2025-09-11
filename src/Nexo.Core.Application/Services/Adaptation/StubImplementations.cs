@@ -127,7 +127,7 @@ public class EnvironmentDetector : Nexo.Core.Application.Services.Environment.IE
         {
             Context = "Development",
             Platform = PlatformType.Windows,
-            Resources = "Development"
+            Resources = new Dictionary<string, object> { { "Environment", "Development" } }
         });
     }
     

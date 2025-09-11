@@ -571,7 +571,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             return issues;
         }
 
-        private async Task<List<ConsistencyIssue>> CheckValueObjectConsistencyAsync(List<ValueObject> valueObjects, CancellationToken cancellationToken)
+        private async Task<List<ConsistencyIssue>> CheckValueObjectConsistencyAsync(List<string> valueObjects, CancellationToken cancellationToken)
         {
             // Simulate value object consistency checking
             await Task.Delay(100, cancellationToken);
@@ -579,7 +579,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             var issues = new List<ConsistencyIssue>();
 
             // Check for duplicate value object names
-            var duplicateNames = valueObjects.GroupBy(v => v.Name).Where(g => g.Count() > 1);
+            var duplicateNames = valueObjects.GroupBy(v => v).Where(g => g.Count() > 1);
             foreach (var group in duplicateNames)
             {
                 issues.Add(new ConsistencyIssue

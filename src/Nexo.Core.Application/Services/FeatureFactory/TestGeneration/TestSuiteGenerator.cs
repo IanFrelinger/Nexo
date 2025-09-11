@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
+using Nexo.Core.Domain.Results;
 using Nexo.Core.Domain.Entities.FeatureFactory;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Entities.Infrastructure;
@@ -109,11 +110,11 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
         /// <summary>
         /// Generates unit tests for domain entities
         /// </summary>
-        public async Task<UnitTestResult> GenerateUnitTestsAsync(DomainEntity entity, CancellationToken cancellationToken = default)
+        public async Task<UnitTestResult> GenerateUnitTestsAsync(string entity, CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogDebug("Generating unit tests for entity: {EntityName}", entity.Name);
+                _logger.LogDebug("Generating unit tests for entity: {EntityName}", entity);
 
                 var result = new UnitTestResult
                 {
@@ -128,7 +129,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                     TargetPlatform = PlatformType.Windows,
                     MaxTokens = 2048,
                     Temperature = 0.7,
-                    Priority = AIPriority.Quality
+                    Priority = AIPriority.Quality.ToString()
                 };
 
                 // Select AI engine
@@ -141,18 +142,24 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 }
 
                 // Generate unit tests based on entity
-                var unitTests = await GenerateUnitTestsForEntityAsync(entity, selection, cancellationToken);
+                var providerSelection = new AIProviderSelection
+                {
+                    ProviderName = selection.EngineType.ToString(),
+                    ConfidenceScore = 0.9,
+                    Reason = "Auto-selected for test generation"
+                };
+                var unitTests = await GenerateUnitTestsForEntityAsync(entity, providerSelection, cancellationToken);
                 result.UnitTests.AddRange(unitTests);
 
                 // Generate code for unit tests
                 result.GeneratedCode = await GenerateUnitTestCodeAsync(unitTests, cancellationToken);
 
-                _logger.LogDebug("Generated {UnitTestCount} unit tests for entity {EntityName}", unitTests.Count, entity.Name);
+                _logger.LogDebug("Generated {UnitTestCount} unit tests for entity {EntityName}", unitTests.Count, entity);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate unit tests for entity: {EntityName}", entity.Name);
+                _logger.LogError(ex, "Failed to generate unit tests for entity: {EntityName}", entity);
                 return new UnitTestResult
                 {
                     Success = false,
@@ -202,11 +209,11 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
         /// <summary>
         /// Generates domain tests for business rules
         /// </summary>
-        public async Task<DomainTestResult> GenerateDomainTestsAsync(BusinessRule rule, CancellationToken cancellationToken = default)
+        public async Task<DomainTestResult> GenerateDomainTestsAsync(string rule, CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogDebug("Generating domain tests for rule: {RuleName}", rule.Name);
+                _logger.LogDebug("Generating domain tests for rule: {RuleName}", rule);
 
                 var result = new DomainTestResult
                 {
@@ -221,12 +228,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 // Generate code for domain tests
                 result.GeneratedCode = await GenerateDomainTestCodeAsync(domainTests, cancellationToken);
 
-                _logger.LogDebug("Generated {DomainTestCount} domain tests for rule {RuleName}", domainTests.Count, rule.Name);
+                _logger.LogDebug("Generated {DomainTestCount} domain tests for rule {RuleName}", domainTests.Count, rule);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate domain tests for rule: {RuleName}", rule.Name);
+                _logger.LogError(ex, "Failed to generate domain tests for rule: {RuleName}", rule);
                 return new DomainTestResult
                 {
                     Success = false,
@@ -243,7 +250,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
         {
             try
             {
-                _logger.LogDebug("Generating test data for entity: {EntityName}", entity.Name);
+                _logger.LogDebug("Generating test data for entity: {EntityName}", entity);
 
                 var result = new TestDataResult
                 {
@@ -258,12 +265,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 // Generate code for test data
                 result.GeneratedCode = await GenerateTestDataCodeAsync(testData, cancellationToken);
 
-                _logger.LogDebug("Generated {TestDataCount} test data items for entity {EntityName}", testData.Count, entity.Name);
+                _logger.LogDebug("Generated {TestDataCount} test data items for entity {EntityName}", testData.Count, entity);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate test data for entity: {EntityName}", entity.Name);
+                _logger.LogError(ex, "Failed to generate test data for entity: {EntityName}", entity);
                 return new TestDataResult
                 {
                     Success = false,
@@ -356,9 +363,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             // Generate constructor test
             var constructorTest = new UnitTest
             {
-                Name = $"{entity.Name}_Constructor_ShouldCreateInstance",
-                Description = $"Tests that {entity.Name} constructor creates a valid instance",
-                TargetType = entity.Name,
+                Name = $"{entity}_Constructor_ShouldCreateInstance",
+                Description = $"Tests that {entity} constructor creates a valid instance",
+                TargetType = entity,
                 TargetMethod = "Constructor",
                 Category = TestCategory.Unit,
                 Priority = TestPriority.High,
@@ -375,7 +382,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                     {
                         Name = "Act",
                         Description = "Create entity instance",
-                        Action = $"new {entity.Name}(parameters)",
+                        Action = $"new {entity}(parameters)",
                         Order = 2
                     },
                     new TestStep
@@ -405,9 +412,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             {
                 var propertyTest = new UnitTest
                 {
-                    Name = $"{entity.Name}_{property.Name}_ShouldSetAndGetValue",
+                    Name = $"{entity}_{property.Name}_ShouldSetAndGetValue",
                     Description = $"Tests that {property.Name} property can be set and retrieved",
-                    TargetType = entity.Name,
+                    TargetType = entity,
                     TargetMethod = property.Name,
                     Category = TestCategory.Unit,
                     Priority = TestPriority.Medium,
@@ -455,9 +462,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             {
                 var methodTest = new UnitTest
                 {
-                    Name = $"{entity.Name}_{method.Name}_ShouldExecuteSuccessfully",
+                    Name = $"{entity}_{method.Name}_ShouldExecuteSuccessfully",
                     Description = $"Tests that {method.Name} method executes successfully",
-                    TargetType = entity.Name,
+                    TargetType = entity,
                     TargetMethod = method.Name,
                     Category = TestCategory.Unit,
                     Priority = TestPriority.Medium,
@@ -572,9 +579,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             // Generate rule validation test
             var ruleTest = new DomainTest
             {
-                Name = $"{rule.Name}_ShouldValidateCorrectly",
-                Description = $"Domain test for business rule {rule.Name}",
-                TargetRule = rule.Name,
+                Name = $"{rule}_ShouldValidateCorrectly",
+                Description = $"Domain test for business rule {rule}",
+                TargetRule = rule,
                 Category = TestCategory.Domain,
                 Priority = TestPriority.High,
                 Steps = new List<TestStep>
@@ -628,9 +635,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             // Generate valid test data
             var validData = new TestData
             {
-                Name = $"{entity.Name}_ValidData",
-                Description = $"Valid test data for {entity.Name}",
-                TargetType = entity.Name,
+                Name = $"{entity}_ValidData",
+                Description = $"Valid test data for {entity}",
+                TargetType = entity,
                 Type = TestDataType.Valid,
                 Data = new Dictionary<string, object>
                 {
@@ -644,9 +651,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             // Generate invalid test data
             var invalidData = new TestData
             {
-                Name = $"{entity.Name}_InvalidData",
-                Description = $"Invalid test data for {entity.Name}",
-                TargetType = entity.Name,
+                Name = $"{entity}_InvalidData",
+                Description = $"Invalid test data for {entity}",
+                TargetType = entity,
                 Type = TestDataType.Invalid,
                 Data = new Dictionary<string, object>
                 {

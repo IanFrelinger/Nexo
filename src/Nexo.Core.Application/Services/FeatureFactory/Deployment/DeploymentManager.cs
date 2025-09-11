@@ -27,7 +27,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
         public Task<DeploymentResult> DeployToWebAsync(ApplicationLogicResult application, WebPlatform platform, CancellationToken cancellationToken) => Task.FromResult(new DeploymentResult { Success = true });
         public Task<DeploymentPackage> CreateDeploymentPackageAsync(ApplicationLogicResult application, Nexo.Core.Domain.Enums.FeatureFactory.PackageType packageType, CancellationToken cancellationToken) => Task.FromResult(new DeploymentPackage { PackageType = packageType });
         public Task<ValidationResult> ValidateDeploymentTargetAsync(DeploymentTarget target, CancellationToken cancellationToken) => Task.FromResult(new ValidationResult { IsValid = true });
-        public Task<DeploymentStatus> GetDeploymentStatusAsync(string deploymentId, CancellationToken cancellationToken) => Task.FromResult(new DeploymentStatus { State = "Completed" });
+        public Task<DeploymentStatus> GetDeploymentStatusAsync(string deploymentId, CancellationToken cancellationToken) => Task.FromResult(new DeploymentStatus { State = DeploymentState.Completed });
         public Task<RollbackResult> RollbackDeploymentAsync(string deploymentId, CancellationToken cancellationToken) => Task.FromResult(new RollbackResult { Success = true });
     }
 }

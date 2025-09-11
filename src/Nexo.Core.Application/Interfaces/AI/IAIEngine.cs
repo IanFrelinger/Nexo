@@ -1,4 +1,5 @@
 using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Results;
 using Nexo.Core.Domain.Enums.AI;
 
 namespace Nexo.Core.Application.Interfaces.AI

@@ -1,5 +1,6 @@
 using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
 using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
+using Nexo.Core.Domain.Results;
 using Nexo.Core.Domain.Entities.FeatureFactory;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         /// <summary>
         /// Generates views from domain entities
         /// </summary>
-        Task<ViewResult> GenerateViewsAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default);
+        Task<ViewResult> GenerateViewsAsync(List<string> entities, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates configuration from domain logic

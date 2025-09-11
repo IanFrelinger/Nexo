@@ -306,7 +306,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
             var provider = await SelectOptimalProviderAsync(engineType, context);
             var contextObj = new AIOperationContext
             {
-                OperationType = context.ContainsKey("OperationType") ? context["OperationType"].ToString() : "Unknown",
+                OperationType = context.ContainsKey("OperationType") ? Enum.TryParse<AIOperationType>(context["OperationType"].ToString(), out var opType) ? opType : AIOperationType.CodeGeneration : AIOperationType.CodeGeneration,
                 Platform = context.ContainsKey("Platform") ? context["Platform"].ToString() : "Unknown",
                 MaxTokens = context.ContainsKey("MaxTokens") ? Convert.ToInt32(context["MaxTokens"]) : 1000,
                 Temperature = context.ContainsKey("Temperature") ? Convert.ToDouble(context["Temperature"]) : 0.7,

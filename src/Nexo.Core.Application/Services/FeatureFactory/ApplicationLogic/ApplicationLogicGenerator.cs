@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
 using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
+using Nexo.Core.Domain.Results;
 using Nexo.Core.Domain.Entities.FeatureFactory;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Entities.Infrastructure;
@@ -156,7 +157,13 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 // Generate controllers for each entity
                 foreach (var entity in entities)
                 {
-                    var controller = await GenerateControllerForEntityAsync(entity, selection, cancellationToken);
+                    var providerSelection = new AIProviderSelection
+                    {
+                        SelectedProvider = selection.EngineType.ToString(),
+                        Confidence = 0.9,
+                        SelectionReason = "Auto-selected for code generation"
+                    };
+                    var controller = await GenerateControllerForEntityAsync(entity, providerSelection, cancellationToken);
                     result.Controllers.Add(controller);
                 }
 
@@ -261,7 +268,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         /// <summary>
         /// Generates views from domain entities
         /// </summary>
-        public async Task<ViewResult> GenerateViewsAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default)
+        public async Task<ViewResult> GenerateViewsAsync(List<string> entities, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -645,7 +652,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             return models;
         }
 
-        private async Task<List<ApplicationView>> GenerateViewsForEntityAsync(DomainEntity entity, CancellationToken cancellationToken)
+        private async Task<List<ApplicationView>> GenerateViewsForEntityAsync(string entity, CancellationToken cancellationToken)
         {
             // Simulate view generation
             await Task.Delay(100, cancellationToken);

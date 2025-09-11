@@ -277,7 +277,19 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
                     };
                 }
 
-                var validationResult = await _domainLogicValidator.GenerateValidationReportAsync(report.Result.DomainLogic, cancellationToken);
+                var domainLogicResult = new Nexo.Core.Domain.Results.DomainLogicResult
+                {
+                    Entities = report.Result.DomainLogic.Entities,
+                    ValueObjects = report.Result.DomainLogic.ValueObjects,
+                    BusinessRules = report.Result.DomainLogic.BusinessRules,
+                    DomainServices = report.Result.DomainLogic.DomainServices,
+                    AggregateRoots = report.Result.DomainLogic.AggregateRoots,
+                    DomainEvents = report.Result.DomainLogic.DomainEvents,
+                    Repositories = report.Result.DomainLogic.Repositories,
+                    Factories = report.Result.DomainLogic.Factories,
+                    Specifications = report.Result.DomainLogic.Specifications
+                };
+                var validationResult = await _domainLogicValidator.GenerateValidationReportAsync(domainLogicResult, cancellationToken);
                 
                 return new DomainLogicValidationResult
                 {

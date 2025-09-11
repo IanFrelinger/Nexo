@@ -245,14 +245,14 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 foreach (var controller in applicationLogic.Controllers)
                 {
                     var components = await GenerateBlazorComponentsAsync(controller, cancellationToken);
-                    result.Components.AddRange(components);
+                    result.Components.Add(components);
                 }
 
                 // Generate pages
                 foreach (var model in applicationLogic.Models)
                 {
                     var pages = await GenerateBlazorPagesAsync(model, cancellationToken);
-                    result.Pages.AddRange(pages);
+                    result.Pages.Add(pages);
                 }
 
                 // Generate services
@@ -304,14 +304,14 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 foreach (var controller in applicationLogic.Controllers)
                 {
                     var components = await GenerateBlazorComponentsAsync(controller, cancellationToken);
-                    result.Components.AddRange(components);
+                    result.Components.Add(components);
                 }
 
                 // Generate pages
                 foreach (var model in applicationLogic.Models)
                 {
                     var pages = await GenerateBlazorPagesAsync(model, cancellationToken);
-                    result.Pages.AddRange(pages);
+                    result.Pages.Add(pages);
                 }
 
                 // Generate services
@@ -363,7 +363,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 foreach (var controller in applicationLogic.Controllers)
                 {
                     var pages = await GenerateMauiPagesAsync(controller, cancellationToken);
-                    result.Pages.AddRange(pages);
+                    result.Pages.Add(pages);
                 }
 
                 // Generate views
@@ -592,7 +592,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 foreach (var controller in applicationLogic.Controllers)
                 {
                     var pages = await GenerateXamarinPagesAsync(controller, cancellationToken);
-                    result.Pages.AddRange(pages);
+                    result.Pages.Add(pages);
                 }
 
                 // Generate views
@@ -920,6 +920,16 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 new FrameworkDependency { Name = "Microsoft.AspNetCore.Mvc", Version = "2.2.0", Type = DependencyType.NuGet },
                 new FrameworkDependency { Name = "Swashbuckle.AspNetCore", Version = "6.0.0", Type = DependencyType.NuGet }
             };
+        }
+
+        private List<FrameworkFile> ConvertBlazorToFrameworkFiles(BlazorWebAssemblyResult result)
+        {
+            var files = new List<FrameworkFile>();
+            foreach (var component in result.Components)
+            {
+                files.Add(new FrameworkFile { Name = $"{component.Name}.razor", Path = $"Components/{component.Name}.razor", Content = component.Content, Type = FileType.Code });
+            }
+            return files;
         }
 
         private List<FrameworkDependency> GetBlazorServerDependencies()

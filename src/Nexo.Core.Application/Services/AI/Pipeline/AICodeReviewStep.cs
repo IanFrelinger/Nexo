@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.Services;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Results;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Pipeline;
@@ -94,7 +95,22 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     Temperature = aiContext.Temperature
                 };
 
-                var engine = await provider.CreateEngineAsync(engineInfo);
+                var model = new ModelInfo
+                {
+                    Id = "review-model",
+                    Name = "Code Review Model",
+                    EngineType = provider.EngineType
+                };
+
+                var reviewContext = new AIOperationContext
+                {
+                    OperationType = AIOperationType.CodeReview,
+                    Platform = PlatformType.Unknown,
+                    MaxTokens = 1000,
+                    Temperature = 0.7,
+                    Priority = AIPriority.Balanced.ToString()
+                };
+                var engine = await provider.CreateEngineAsync(reviewContext);
                 if (engine is not IAIEngine aiEngine)
                 {
                     _logger.LogError("Failed to create AI engine for code review");
@@ -104,11 +120,11 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 // Initialize engine if needed
                 if (!aiEngine.IsInitialized)
                 {
-                    await aiEngine.InitializeAsync();
+                    await aiEngine.InitializeAsync(model, reviewContext);
                 }
 
                 // Perform code review
-                var reviewResult = await aiEngine.ReviewCodeAsync(input);
+                var reviewResult = await aiEngine.ReviewCodeAsync(input.Code, reviewContext);
 
                 // Enhance review result with additional analysis
                 var enhancedResult = await EnhanceReviewResultAsync(reviewResult, input, context);
@@ -318,7 +334,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 _ => 0
             });
 
-            return Math.Max(0, baseScore - issuePenalty);
+            return (int)Math.Max(0, baseScore - issuePenalty);
         }
 
         private async Task<List<string>> GenerateContextSuggestionsAsync(Nexo.Core.Domain.Entities.AI.CodeReviewRequest request, PipelineContext context)

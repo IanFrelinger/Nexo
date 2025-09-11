@@ -546,7 +546,7 @@ namespace Nexo.Core.Application.Services.Monitoring
         {
             return new MonitoringSummary
             {
-                OverallHealth = healthChecks.OverallHealth,
+                OverallHealth = (Nexo.Core.Domain.Enums.Monitoring.HealthStatus)healthChecks.OverallHealth,
                 TotalMetrics = metrics.Count,
                 CriticalAlerts = 0, // Would be calculated from actual alerts
                 SystemUptime = 99.9, // Would be calculated from actual data

@@ -1,4 +1,5 @@
 using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
+using Nexo.Core.Domain.Results;
 using Nexo.Core.Domain.Entities.FeatureFactory;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
         /// <summary>
         /// Generates unit tests for domain entities
         /// </summary>
-        Task<UnitTestResult> GenerateUnitTestsAsync(DomainEntity entity, CancellationToken cancellationToken = default);
+        Task<UnitTestResult> GenerateUnitTestsAsync(string entity, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates integration tests for domain services
@@ -30,7 +31,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
         /// <summary>
         /// Generates domain tests for business rules
         /// </summary>
-        Task<DomainTestResult> GenerateDomainTestsAsync(BusinessRule rule, CancellationToken cancellationToken = default);
+        Task<DomainTestResult> GenerateDomainTestsAsync(string rule, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates test data for domain entities
