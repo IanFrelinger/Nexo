@@ -41,14 +41,12 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 if (string.IsNullOrWhiteSpace(input.Code))
                 {
                     _logger.LogWarning("Empty code provided for test generation");
-                    input.Result = new TestingResult
+                    input.Result = new Nexo.Core.Domain.Results.TestingResult
                     {
-                        GeneratedTests = "No code provided for test generation.",
-                        TestType = Enum.TryParse<Nexo.Core.Domain.Enums.Code.TestType>(input.TestType, out var testType) ? testType : Nexo.Core.Domain.Enums.Code.TestType.Unit,
-                        QualityScore = 0,
-                        Coverage = 0,
-                        CompletedAt = DateTime.UtcNow,
-                        EngineType = AIEngineType.Mock.ToString()
+                        IsSuccess = false,
+                        ErrorMessage = "No code provided for test generation.",
+                        Score = 0,
+                        CompletedAt = DateTime.UtcNow
                     };
                     return input;
                 }
@@ -88,7 +86,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                     Temperature = aiContext.Temperature
                 };
 
-                var engine = await provider.CreateEngineAsync(engineInfo);
+                var engine = await provider.CreateEngineAsync(aiContext);
                 if (engine is not IAIEngine aiEngine)
                 {
                     _logger.LogError("Failed to create AI engine for test generation");
@@ -98,7 +96,15 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 // Initialize engine if needed
                 if (!aiEngine.IsInitialized)
                 {
-                    await aiEngine.InitializeAsync();
+                    var modelInfo = new ModelInfo
+                    {
+                        Id = "test-model",
+                        Name = "Test Model",
+                        Version = "1.0",
+                        Size = 1000000,
+                        Format = "GGUF"
+                    };
+                    await aiEngine.InitializeAsync(modelInfo, aiContext);
                 }
 
                 // Generate tests
@@ -111,14 +117,12 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 var validatedTests = await ApplySafetyValidationAsync(enhancedTests, input, context);
 
                 // Create testing result
-                var result = new TestingResult
+                var result = new Nexo.Core.Domain.Results.TestingResult
                 {
-                    GeneratedTests = validatedTests,
-                    TestType = Enum.TryParse<Nexo.Core.Domain.Enums.Code.TestType>(input.TestType, out var testType) ? testType : Nexo.Core.Domain.Enums.Code.TestType.Unit,
-                    QualityScore = (int)CalculateTestQuality(validatedTests, input),
-                    Coverage = CalculateTestCoverage(validatedTests, input.Code),
-                    CompletedAt = DateTime.UtcNow,
-                    EngineType = selection.EngineType
+                    IsSuccess = true,
+                    Score = (int)CalculateTestQuality(validatedTests, input),
+                    SuccessMessage = $"Generated tests with {CalculateTestCoverage(validatedTests, input.Code)}% coverage",
+                    CompletedAt = DateTime.UtcNow
                 };
 
                 // Update input with results
@@ -136,14 +140,13 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 _logger.LogError(ex, "Error during AI test generation");
                 
                 // Create fallback result
-                input.Result = new TestingResult
+                input.Result = new Nexo.Core.Domain.Results.TestingResult
                 {
-                    GeneratedTests = $"Test generation failed: {ex.Message}",
-                    TestType = Enum.TryParse<Nexo.Core.Domain.Enums.Code.TestType>(input.TestType, out var testType) ? testType : Nexo.Core.Domain.Enums.Code.TestType.Unit,
-                    QualityScore = 0,
-                    Coverage = 0,
-                    CompletedAt = DateTime.UtcNow,
-                    EngineType = AIEngineType.Mock.ToString()
+                    IsSuccess = false,
+                    ErrorMessage = $"Test generation failed: {ex.Message}",
+                    Exception = ex,
+                    Score = 0,
+                    CompletedAt = DateTime.UtcNow
                 };
                 input.TestGenerationCompleted = false;
                 
@@ -599,6 +602,7 @@ const TestUtilities = {
         public int QualityScore { get; set; }
         public int Coverage { get; set; }
         public DateTime GenerationTime { get; set; }
+        public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
         public AIEngineType EngineType { get; set; }
         public List<string> TestCategories { get; set; } = new();
         public Dictionary<string, object> Metadata { get; set; } = new();

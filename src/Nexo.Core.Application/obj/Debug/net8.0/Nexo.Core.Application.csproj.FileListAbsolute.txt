@@ -1,0 +1,6 @@
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.csproj.AssemblyReference.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.AssemblyInfoInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.AssemblyInfo.cs
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.csproj.CoreCompileInputs.cache
+/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Core.Application/obj/Debug/net8.0/Nexo.Core.Application.sourcelink.json

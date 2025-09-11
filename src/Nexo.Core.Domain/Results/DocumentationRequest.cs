@@ -58,6 +58,11 @@ namespace Nexo.Core.Domain.Results
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
+        /// <summary>
+        /// Timestamp when documentation completed
+        /// </summary>
+        public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
+        
         // Properties accessed by application layer
         public DocumentationResult? Result { get; set; }
         public bool DocumentationCompleted { get; set; } = false;

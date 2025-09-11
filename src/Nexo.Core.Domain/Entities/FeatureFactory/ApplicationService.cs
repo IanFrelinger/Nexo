@@ -12,5 +12,16 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory
         public string Interface { get; set; } = string.Empty;
         public string InterfaceName { get; set; } = string.Empty;
         public Dictionary<string, object> Attributes { get; set; } = new();
+        public string Description { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public List<ServiceMethod> ServiceMethods { get; set; } = new();
+    }
+
+    public class ServiceMethod
+    {
+        public string Name { get; set; } = string.Empty;
+        public string ReturnType { get; set; } = string.Empty;
+        public List<string> Parameters { get; set; } = new();
+        public string Description { get; set; } = string.Empty;
     }
 }

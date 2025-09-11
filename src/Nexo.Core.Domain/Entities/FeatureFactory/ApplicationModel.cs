@@ -11,5 +11,17 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory
         public List<string> Methods { get; set; } = new();
         public string BaseClass { get; set; } = string.Empty;
         public Dictionary<string, object> Attributes { get; set; } = new();
+        public string Description { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public List<ModelProperty> ModelProperties { get; set; } = new();
+    }
+
+    public class ModelProperty
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsRequired { get; set; }
+        public object? DefaultValue { get; set; }
     }
 }

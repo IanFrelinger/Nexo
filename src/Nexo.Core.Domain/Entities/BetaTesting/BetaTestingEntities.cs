@@ -272,6 +272,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
         public double ErrorRate { get; set; }
         public double Uptime { get; set; }
         public int TotalRequests { get; set; }
+        public double Throughput { get; set; }
         public Dictionary<string, object> PerformanceData { get; set; } = new();
     }
 

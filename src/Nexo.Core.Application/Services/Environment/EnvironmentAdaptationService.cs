@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Interfaces.Infrastructure;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums.Environment;
 
 namespace Nexo.Core.Application.Services.Environment;
 
@@ -72,15 +73,15 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         // Add strategies based on environment type
         switch (environment.EnvironmentType)
         {
-            case EnvironmentType.DotNet:
+            case "DotNet":
                 strategies.Add("DotNetOptimization");
                 strategies.Add("MemoryManagement");
                 break;
-            case EnvironmentType.Unity:
+            case "Unity":
                 strategies.Add("UnityOptimization");
                 strategies.Add("GameLoopOptimization");
                 break;
-            case EnvironmentType.WebAssembly:
+            case "WebAssembly":
                 strategies.Add("WasmOptimization");
                 strategies.Add("MemoryEfficientIteration");
                 break;
@@ -100,7 +101,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
             case "parallelization":
                 return environment.CpuCores > 1;
             case "async":
-                return environment.EnvironmentType != PlatformType.WebAssembly;
+                return environment.EnvironmentType != "WebAssembly";
             case "memoryintensive":
                 return environment.AvailableMemoryMB > 1024; // 1GB
             default:
@@ -126,13 +127,13 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         var suggestions = new List<string>();
         
         // Apply environment-specific optimizations
-        if (environment.EnvironmentType == PlatformType.WebAssembly)
+        if (environment.EnvironmentType == "WebAssembly")
         {
             // WebAssembly specific optimizations
             optimizedCode = ApplyWasmOptimizations(code);
             suggestions.Add("Applied WebAssembly-specific optimizations");
         }
-        else if (environment.EnvironmentType == PlatformType.Unity)
+        else if (environment.EnvironmentType == "Unity")
         {
             // Unity specific optimizations
             optimizedCode = ApplyUnityOptimizations(code);
@@ -368,9 +369,9 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
     
     private IEnumerable<EnvironmentAdaptation> GetPlatformAdaptations(PlatformType platform)
     {
-        return platform switch
+        return platform.ToString() switch
         {
-            PlatformType.Windows => new[]
+            "Windows" => new[]
             {
                 new EnvironmentAdaptation
                 {
@@ -387,7 +388,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
                     Priority = 2
                 }
             },
-            PlatformType.Linux => new[]
+            "Linux" => new[]
             {
                 new EnvironmentAdaptation
                 {
@@ -404,7 +405,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
                     Priority = 2
                 }
             },
-            PlatformType.macOS => new[]
+            "macOS" => new[]
             {
                 new EnvironmentAdaptation
                 {
@@ -692,15 +693,15 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         _logger.LogInformation("Applying environment-specific configurations for {EnvironmentId}", environment.EnvironmentId);
         
         // Apply configurations based on environment type
-        switch (environment.PlatformType)
+        switch (environment.PlatformType.ToString())
         {
-            case PlatformType.DotNet:
+            case "DotNet":
                 // Apply .NET specific configurations
                 break;
-            case PlatformType.Unity:
+            case "Unity":
                 // Apply Unity specific configurations
                 break;
-            case PlatformType.WebAssembly:
+            case "WebAssembly":
                 // Apply WebAssembly specific configurations
                 break;
             default:

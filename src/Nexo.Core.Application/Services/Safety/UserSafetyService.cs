@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.Safety;
 using Nexo.Core.Domain.Results;
+using Nexo.Core.Domain.Requests;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Enums.Safety;
+using Nexo.Core.Application.Services.Safety;
 
 namespace Nexo.Core.Application.Services.Safety
 {
@@ -216,17 +218,10 @@ namespace Nexo.Core.Application.Services.Safety
 
             try
             {
-                var backup = await _backupService.CreateBackupAsync(new BackupRequest
-                {
-                    OperationId = operation.Id,
-                    TargetPath = operation.TargetPath,
-                    IncludeMetadata = true,
-                    CompressionEnabled = true,
-                    RetentionDays = 30
-                });
+                var backup = await _backupService.CreateBackupAsync(operation.UserId, BackupType.Full);
 
-                _logger.LogInformation("Backup created successfully: {BackupId}", backup.Id);
-                return backup;
+                _logger.LogInformation("Backup created successfully: {BackupId}", backup);
+                return new BackupResult { Id = backup };
             }
             catch (Exception ex)
             {
@@ -301,14 +296,14 @@ namespace Nexo.Core.Application.Services.Safety
                 }
 
                 // Restore from backup
-                var restoreResult = await _backupService.RestoreFromBackupAsync(backup.Id);
+                var restoreResult = await _backupService.RestoreFromBackupAsync(operationId, backup.Id);
 
                 var result = new RollbackResult
                 {
                     OperationId = operationId,
                     BackupId = backup.Id,
-                    Success = restoreResult.Success,
-                    RestoredFiles = restoreResult.RestoredFiles,
+                    Success = restoreResult,
+                    RestoredFiles = 0, // TODO: Get actual restored files count
                     Timestamp = DateTime.UtcNow
                 };
 
@@ -374,7 +369,7 @@ namespace Nexo.Core.Application.Services.Safety
                     return new SafeguardResult
                     {
                         SafeguardType = safeguard.Type,
-                        Success = backup.Success,
+                        Success = backup.IsSuccess,
                         Details = $"Backup created: {backup.Id}",
                         Timestamp = DateTime.UtcNow
                     };

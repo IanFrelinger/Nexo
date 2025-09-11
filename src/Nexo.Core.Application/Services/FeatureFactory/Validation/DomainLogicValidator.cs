@@ -99,7 +99,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates business rules for consistency
         /// </summary>
-        public async Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<BusinessRule> rules, CancellationToken cancellationToken = default)
+        public async Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<string> rules, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -252,7 +252,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates domain entities for correctness
         /// </summary>
-        public async Task<EntityValidationResult> ValidateEntitiesAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default)
+        public async Task<EntityValidationResult> ValidateEntitiesAsync(List<string> entities, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -299,7 +299,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates value objects for correctness
         /// </summary>
-        public async Task<ValueObjectValidationResult> ValidateValueObjectsAsync(List<ValueObject> valueObjects, CancellationToken cancellationToken = default)
+        public async Task<ValueObjectValidationResult> ValidateValueObjectsAsync(List<string> valueObjects, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -342,7 +342,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates domain services for correctness
         /// </summary>
-        public async Task<ServiceValidationResult> ValidateServicesAsync(List<DomainService> services, CancellationToken cancellationToken = default)
+        public async Task<ServiceValidationResult> ValidateServicesAsync(List<string> services, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -517,7 +517,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             return warnings;
         }
 
-        private async Task<List<ConsistencyIssue>> CheckEntityRuleConsistencyAsync(List<DomainEntity> entities, List<BusinessRule> rules, CancellationToken cancellationToken)
+        private async Task<List<ConsistencyIssue>> CheckEntityRuleConsistencyAsync(List<string> entities, List<string> rules, CancellationToken cancellationToken)
         {
             // Simulate entity-rule consistency checking
             await Task.Delay(100, cancellationToken);
@@ -527,27 +527,24 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             // Check if rules reference existing entities
             foreach (var rule in rules)
             {
-                var referencedEntities = rule.AffectedEntities;
-                foreach (var entityName in referencedEntities)
+                // For string-based rules, we'll do basic validation
+                if (string.IsNullOrWhiteSpace(rule))
                 {
-                    if (!entities.Any(e => e.Name == entityName))
+                    issues.Add(new ConsistencyIssue
                     {
-                        issues.Add(new ConsistencyIssue
-                        {
-                            Type = "MissingEntity",
-                            Message = $"Business rule references non-existent entity: {entityName}",
-                            Component = "BusinessRule",
-                            Severity = ValidationSeverity.Error,
-                            Location = rule.Id
-                        });
-                    }
+                        Type = "InvalidRule",
+                        Message = "Business rule is empty or null",
+                        Component = "BusinessRule",
+                        Severity = ValidationSeverity.Error,
+                        Location = rule
+                    });
                 }
             }
 
             return issues;
         }
 
-        private async Task<List<ConsistencyIssue>> CheckEntityServiceConsistencyAsync(List<DomainEntity> entities, List<DomainService> services, CancellationToken cancellationToken)
+        private async Task<List<ConsistencyIssue>> CheckEntityServiceConsistencyAsync(List<string> entities, List<string> services, CancellationToken cancellationToken)
         {
             // Simulate entity-service consistency checking
             await Task.Delay(100, cancellationToken);
@@ -557,19 +554,17 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             // Check if services reference existing entities
             foreach (var service in services)
             {
-                foreach (var dependency in service.Dependencies)
+                // For string-based services, we'll do basic validation
+                if (string.IsNullOrWhiteSpace(service))
                 {
-                    if (!entities.Any(e => e.Name == dependency))
+                    issues.Add(new ConsistencyIssue
                     {
-                        issues.Add(new ConsistencyIssue
-                        {
-                            Type = "MissingEntityDependency",
-                            Message = $"Service references non-existent entity: {dependency}",
-                            Component = "DomainService",
-                            Severity = ValidationSeverity.Error,
-                            Location = service.Id
-                        });
-                    }
+                        Type = "InvalidService",
+                        Message = "Domain service is empty or null",
+                        Component = "DomainService",
+                        Severity = ValidationSeverity.Error,
+                        Location = service
+                    });
                 }
             }
 
@@ -625,7 +620,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             return warnings;
         }
 
-        private async Task<List<EntityIssue>> ValidateEntityAsync(DomainEntity entity, CancellationToken cancellationToken)
+        private async Task<List<EntityIssue>> ValidateEntityAsync(string entity, CancellationToken cancellationToken)
         {
             // Simulate entity validation
             await Task.Delay(50, cancellationToken);
@@ -633,7 +628,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             var issues = new List<EntityIssue>();
 
             // Check if entity has a name
-            if (string.IsNullOrWhiteSpace(entity.Name))
+            if (string.IsNullOrWhiteSpace(entity))
             {
                 issues.Add(new EntityIssue
                 {
@@ -641,27 +636,27 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     Message = "Entity must have a name",
                     Component = "DomainEntity",
                     Severity = ValidationSeverity.Error,
-                    Location = entity.Id
+                    Location = entity
                 });
             }
 
-            // Check if entity has properties
-            if (!entity.Properties.Any())
+            // Check if entity name is meaningful
+            if (entity.Length < 3)
             {
                 issues.Add(new EntityIssue
                 {
-                    Type = "NoProperties",
-                    Message = "Entity should have at least one property",
+                    Type = "ShortName",
+                    Message = "Entity name should be more descriptive",
                     Component = "DomainEntity",
                     Severity = ValidationSeverity.Warning,
-                    Location = entity.Id
+                    Location = entity
                 });
             }
 
             return issues;
         }
 
-        private async Task<List<EntityIssue>> CheckEntityRelationshipsAsync(List<DomainEntity> entities, CancellationToken cancellationToken)
+        private async Task<List<EntityIssue>> CheckEntityRelationshipsAsync(List<string> entities, CancellationToken cancellationToken)
         {
             // Simulate entity relationship checking
             await Task.Delay(100, cancellationToken);

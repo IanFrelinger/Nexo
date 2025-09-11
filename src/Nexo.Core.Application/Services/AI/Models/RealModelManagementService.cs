@@ -5,6 +5,7 @@ using Nexo.Core.Domain.Entities.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -174,8 +175,8 @@ namespace Nexo.Core.Application.Services.AI.Models
                 var statistics = new ModelStorageStatistics
                 {
                     TotalModels = 0,
-                    TotalSize = 0,
-                    AvailableSpace = 0,
+                    TotalSizeBytes = 0,
+                    AvailableSpaceBytes = 0,
                     PlatformType = GetCurrentPlatformType(),
                     LastUpdated = DateTime.UtcNow
                 };
@@ -189,13 +190,13 @@ namespace Nexo.Core.Application.Services.AI.Models
                     foreach (var file in modelFiles)
                     {
                         var fileInfo = new FileInfo(file);
-                        statistics.TotalSize += fileInfo.Length;
+                        statistics.TotalSizeBytes += fileInfo.Length;
                     }
                 }
 
                 // Get available space
                 var driveInfo = new DriveInfo(Path.GetPathRoot(_modelsDirectory));
-                statistics.AvailableSpace = driveInfo.AvailableFreeSpace;
+                statistics.AvailableSpaceBytes = driveInfo.AvailableFreeSpace;
 
                 _logger.LogInformation("Storage statistics: {TotalModels} models, {TotalSize} bytes, {AvailableSpace} bytes available", 
                     statistics.TotalModels, statistics.TotalSize, statistics.AvailableSpace);
@@ -220,7 +221,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 ModelId = modelId,
                 Name = $"Model {modelId}",
                 Version = "1.0.0",
-                Size = 4 * 1024 * 1024 * 1024, // 4GB
+                Size = 4L * 1024 * 1024 * 1024, // 4GB
                 Format = "GGUF",
                 Quantization = ModelQuantization.Q4_0,
                 Status = ModelStatus.Available,
@@ -312,7 +313,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                         Quantization = ModelQuantization.Q4_0,
                         Status = ModelStatus.Available,
                         LocalPath = file,
-                        SupportedPlatforms = new[] { GetCurrentPlatformType() },
+                        SupportedPlatforms = new List<PlatformType> { GetCurrentPlatformType() },
                         LastUpdated = fileInfo.LastWriteTime
                     });
                 }
@@ -335,7 +336,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     ModelId = "llama-2-7b-chat",
                     Name = "Llama 2 7B Chat",
                     Version = "1.0.0",
-                    Size = 4 * 1024 * 1024 * 1024, // 4GB
+                    Size = 4L * 1024 * 1024 * 1024, // 4GB
                     Format = "GGUF",
                     Quantization = ModelQuantization.Q4_0,
                     Status = ModelStatus.Available,
@@ -348,7 +349,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     ModelId = "codellama-7b-instruct",
                     Name = "CodeLlama 7B Instruct",
                     Version = "1.0.0",
-                    Size = 4 * 1024 * 1024 * 1024, // 4GB
+                    Size = 4L * 1024 * 1024 * 1024, // 4GB
                     Format = "GGUF",
                     Quantization = ModelQuantization.Q4_0,
                     Status = ModelStatus.Available,
@@ -368,11 +369,11 @@ namespace Nexo.Core.Application.Services.AI.Models
 
         private PlatformType GetCurrentPlatformType()
         {
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT)
                 return PlatformType.Windows;
-            else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
+            else if (System.Environment.OSVersion.Platform == PlatformID.MacOSX)
                 return PlatformType.macOS;
-            else if (Environment.OSVersion.Platform == PlatformID.Unix)
+            else if (System.Environment.OSVersion.Platform == PlatformID.Unix)
                 return PlatformType.Linux;
             else
                 return PlatformType.Unknown;
@@ -459,7 +460,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                         var modelId = Path.GetFileName(directory);
                         var modelInfo = await GetModelInfoAsync(modelId);
                         
-                        if (modelInfo != null && modelInfo.Platform == platform)
+                        if (modelInfo != null && modelInfo.Platform.Contains(platform))
                         {
                             models.Add(modelInfo);
                         }
@@ -495,7 +496,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                         Name = "Default",
                         Description = "Default variant",
                         ModelId = modelId,
-                        Platform = modelInfo.Platform,
+                        Platform = modelInfo.Platform.FirstOrDefault(),
                         Size = modelInfo.Size,
                         Precision = ModelPrecision.F16
                     });

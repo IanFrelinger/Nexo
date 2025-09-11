@@ -145,7 +145,7 @@ namespace Nexo.Core.Application.Services.Monitoring
         /// <summary>
         /// Performs comprehensive health checks
         /// </summary>
-        public async Task<HealthCheckResult> PerformHealthChecksAsync()
+        public async Task<Nexo.Core.Domain.Entities.Monitoring.HealthCheckResult> PerformHealthChecksAsync()
         {
             _logger.LogDebug("Performing comprehensive health checks");
 
@@ -172,10 +172,10 @@ namespace Nexo.Core.Application.Services.Monitoring
                 // Calculate overall health
                 var overallHealth = CalculateOverallHealth(healthChecks);
 
-                var result = new HealthCheckResult
+                var result = new Nexo.Core.Domain.Entities.Monitoring.HealthCheckResult
                 {
-                    OverallHealth = (Nexo.Core.Application.Services.Monitoring.HealthStatus)overallHealth,
-                    HealthChecks = healthChecks,
+                    OverallHealth = overallHealth,
+                    HealthChecks = new List<Nexo.Core.Domain.Entities.Monitoring.HealthCheck>(),
                     CheckedAt = DateTime.UtcNow,
                     Success = overallHealth != Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Critical
                 };
@@ -199,13 +199,13 @@ namespace Nexo.Core.Application.Services.Monitoring
             {
                 _logger.LogError(ex, "Failed to perform health checks");
                 
-                return new HealthCheckResult
+                return new Nexo.Core.Domain.Entities.Monitoring.HealthCheckResult
                 {
-                    OverallHealth = HealthStatus.Critical,
-                    HealthChecks = new List<HealthCheckResult>(),
+                    OverallHealth = Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Critical,
+                    HealthChecks = new List<Nexo.Core.Domain.Entities.Monitoring.HealthCheck>(),
                     CheckedAt = DateTime.UtcNow,
                     Success = false,
-                    Message = ex.Message
+                    Error = ex.Message
                 };
             }
         }
@@ -238,11 +238,29 @@ namespace Nexo.Core.Application.Services.Monitoring
                     Timestamp = DateTime.UtcNow
                 }).ToList();
 
+                // Convert analytics dictionary to AnalyticsData
+                var analyticsData = new Nexo.Core.Domain.Entities.Monitoring.AnalyticsData
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    GeneratedAt = DateTime.UtcNow,
+                    Data = analytics
+                };
+
+                // Convert Domain HealthCheckResult to Application HealthCheckResult
+                var appHealthChecks = new Nexo.Core.Application.Services.Monitoring.HealthCheckResult
+                {
+                    OverallHealth = (Nexo.Core.Application.Services.Monitoring.HealthStatus)healthChecks.OverallHealth,
+                    HealthChecks = new List<Nexo.Core.Application.Services.Monitoring.HealthCheck>(),
+                    CheckedAt = healthChecks.CheckedAt,
+                    Success = healthChecks.Success,
+                    Error = healthChecks.Error
+                };
+
                 // Generate insights
-                var insights = await GenerateInsightsAsync(metricList, healthChecks, analytics);
+                var insights = await GenerateInsightsAsync(metricList, appHealthChecks, analyticsData);
 
                 // Generate recommendations
-                var recommendations = await GenerateRecommendationsAsync(metricList, healthChecks, analytics);
+                var recommendations = await GenerateRecommendationsAsync(metricList, appHealthChecks, analyticsData);
 
                 var report = new MonitoringReport
                 {
@@ -250,14 +268,11 @@ namespace Nexo.Core.Application.Services.Monitoring
                     GeneratedAt = DateTime.UtcNow,
                     Period = new DateRange { StartDate = request.StartDate, EndDate = request.EndDate },
                     Metrics = metricList,
-                    HealthChecks = healthChecks.Count > 0 ? healthChecks[0] : new HealthCheckResult(),
-                    Analytics = new Nexo.Core.Domain.Entities.Monitoring.AnalyticsData
-                    {
-                        CustomMetrics = analytics
-                    },
+                    HealthChecks = healthChecks,
+                    Analytics = analyticsData,
                     Insights = insights,
                     Recommendations = recommendations,
-                    Summary = GenerateSummary(metricList, healthChecks, analytics)
+                    Summary = GenerateSummary(metricList, appHealthChecks, analytics)
                 };
 
                 _logger.LogInformation("Monitoring report generated successfully: {ReportId}", report.Id);
@@ -447,7 +462,7 @@ namespace Nexo.Core.Application.Services.Monitoring
                 {
                     await _alertingService.SendAlertAsync(
                         $"Metric {metric.Name} has value {metric.Value} {metric.Unit}",
-                        GetAlertSeverity(metric),
+                        ConvertSeverityToLevel(GetAlertSeverity(metric)),
                         new Dictionary<string, string>
                         {
                             ["Type"] = "MetricThreshold",
@@ -462,16 +477,16 @@ namespace Nexo.Core.Application.Services.Monitoring
 
         private Nexo.Core.Domain.Enums.Monitoring.HealthStatus CalculateOverallHealth(List<HealthCheckResult> healthChecks)
         {
-            if (healthChecks.Any(h => h.Status == Interfaces.Services.HealthStatus.Critical))
+            if (healthChecks.Any(h => h.Status == HealthStatus.Critical))
                 return Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Critical;
 
-            if (healthChecks.Any(h => h.Status == Interfaces.Services.HealthStatus.Unhealthy))
+            if (healthChecks.Any(h => h.Status == HealthStatus.Unhealthy))
                 return Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Poor;
 
-            if (healthChecks.Any(h => h.Status == Interfaces.Services.HealthStatus.Degraded))
+            if (healthChecks.Any(h => h.Status == HealthStatus.Degraded))
                 return Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Fair;
 
-            if (healthChecks.All(h => h.Status == Interfaces.Services.HealthStatus.Healthy))
+            if (healthChecks.All(h => h.Status == HealthStatus.Healthy))
                 return Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Good;
 
             return Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Excellent;
@@ -509,7 +524,7 @@ namespace Nexo.Core.Application.Services.Monitoring
             var recommendations = new List<Recommendation>();
 
             // Generate recommendations based on metrics and health
-            if (healthChecks.OverallHealth == HealthStatus.Poor)
+            if ((Nexo.Core.Domain.Enums.Monitoring.HealthStatus)healthChecks.OverallHealth == Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Poor)
             {
                 recommendations.Add(new Recommendation
                 {
@@ -556,7 +571,7 @@ namespace Nexo.Core.Application.Services.Monitoring
             return metric.Name switch
             {
                 "system.cpu.usage" => metric.Value > 90,
-                "system.memory.usage" => metric.Value > 1024 * 1024 * 1024 * 8, // 8GB
+                "system.memory.usage" => metric.Value > 1024L * 1024 * 1024 * 8, // 8GB
                 "app.error.rate" => metric.Value > 5,
                 _ => false
             };
@@ -571,6 +586,17 @@ namespace Nexo.Core.Application.Services.Monitoring
                 "app.error.rate" when metric.Value > 10 => AlertSeverity.Critical,
                 "app.error.rate" when metric.Value > 5 => AlertSeverity.Warning,
                 _ => AlertSeverity.Info
+            };
+        }
+
+        private AlertLevel ConvertSeverityToLevel(AlertSeverity severity)
+        {
+            return severity switch
+            {
+                AlertSeverity.Critical => AlertLevel.Critical,
+                AlertSeverity.Warning => AlertLevel.Warning,
+                AlertSeverity.Info => AlertLevel.Info,
+                _ => AlertLevel.Info
             };
         }
 

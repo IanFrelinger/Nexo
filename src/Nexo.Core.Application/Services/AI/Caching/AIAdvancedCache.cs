@@ -91,7 +91,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
                 _logger.LogDebug("Setting cached value for key {Key}", key);
 
                 var policy = GetPolicy(policyName);
-                var expiresAt = policy.ExpirationTime.HasValue ? DateTime.UtcNow.Add(policy.ExpirationTime.Value) : null;
+                var expiresAt = policy.ExpirationTime.HasValue ? (DateTime?)DateTime.UtcNow.Add(policy.ExpirationTime.Value) : null;
 
                 var entry = new CacheEntry
                 {

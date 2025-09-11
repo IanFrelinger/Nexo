@@ -112,14 +112,22 @@ namespace Nexo.Core.Application.Services.BetaTesting
                         continue;
                     }
 
-                    var users = await _userRecruitment.RecruitUsersForSegmentAsync(segment, request.RecruitmentCriteria);
+                    var userIds = await _userRecruitment.RecruitUsersForSegmentAsync(segmentId, programId);
+                    var users = userIds.Select(userId => new BetaUser 
+                    { 
+                        Id = userId, 
+                        ProgramId = programId, 
+                        SegmentId = segmentId,
+                        Status = BetaUserStatus.Active,
+                        JoinedAt = DateTime.UtcNow
+                    }).ToList();
                     recruitedUsers.AddRange(users);
 
                     // Update segment status
-                    segment.CurrentSize = users.Count;
-                    segment.Status = users.Count >= segment.TargetSize ? BetaSegmentStatus.Full : BetaSegmentStatus.Recruiting;
+                    segment.CurrentSize = users.Count();
+                    segment.Status = users.Count() >= segment.TargetSize ? BetaSegmentStatus.Full : BetaSegmentStatus.Recruiting;
 
-                    _logger.LogInformation("Recruited {UserCount} users for segment {SegmentId}", users.Count, segmentId);
+                    _logger.LogInformation("Recruited {UserCount} users for segment {SegmentId}", users.Count(), segmentId);
                 }
                 catch (Exception ex)
                 {
@@ -139,16 +147,11 @@ namespace Nexo.Core.Application.Services.BetaTesting
             };
 
             // Track recruitment
-            await _analytics.TrackEventAsync(new BetaAnalyticsEvent
+            await _analytics.TrackEventAsync("UsersRecruited", new Dictionary<string, object>
             {
-                EventType = BetaAnalyticsEventType.UsersRecruited,
-                ProgramId = programId,
-                Timestamp = DateTime.UtcNow,
-                Metadata = new Dictionary<string, object>
-                {
-                    ["RecruitedCount"] = recruitedUsers.Count,
-                    ["Errors"] = recruitmentErrors
-                }
+                ["ProgramId"] = programId,
+                ["RecruitedCount"] = recruitedUsers.Count(),
+                ["Errors"] = recruitmentErrors
             });
 
             return result;
@@ -169,22 +172,22 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 // Collect in-app feedback
                 if (request.IncludeInAppFeedback)
                 {
-                    var inAppFeedback = await _feedbackCollection.CollectInAppFeedbackAsync(programId);
-                    collectedFeedback.AddRange(inAppFeedback);
+                    var inAppFeedbackId = await _feedbackCollection.CollectInAppFeedbackAsync("system", programId, "in-app feedback");
+                    collectedFeedback.Add(new BetaFeedback { Id = inAppFeedbackId, Type = BetaFeedbackType.GeneralFeedback, Content = "in-app feedback" });
                 }
 
                 // Collect survey feedback
                 if (request.IncludeSurveyFeedback)
                 {
-                    var surveyFeedback = await _feedbackCollection.CollectSurveyFeedbackAsync(programId, request.SurveyId);
-                    collectedFeedback.AddRange(surveyFeedback);
+                    var surveyFeedbackId = await _feedbackCollection.CollectSurveyFeedbackAsync("system", programId, request.SurveyId ?? "survey data");
+                    collectedFeedback.Add(new BetaFeedback { Id = surveyFeedbackId, Type = BetaFeedbackType.SurveyResponse, Content = request.SurveyId ?? "survey data" });
                 }
 
                 // Collect interview feedback
                 if (request.IncludeInterviewFeedback)
                 {
-                    var interviewFeedback = await _feedbackCollection.CollectInterviewFeedbackAsync(programId);
-                    collectedFeedback.AddRange(interviewFeedback);
+                    var interviewFeedbackId = await _feedbackCollection.CollectInterviewFeedbackAsync("system", programId, "interview data");
+                    collectedFeedback.Add(new BetaFeedback { Id = interviewFeedbackId, Type = BetaFeedbackType.InterviewResponse, Content = "interview data" });
                 }
 
                 // Process and analyze feedback
@@ -202,16 +205,11 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 };
 
                 // Track feedback collection
-                await _analytics.TrackEventAsync(new BetaAnalyticsEvent
+                await _analytics.TrackEventAsync("FeedbackCollected", new Dictionary<string, object>
                 {
-                    EventType = BetaAnalyticsEventType.FeedbackCollected,
-                    ProgramId = programId,
-                    Timestamp = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["FeedbackCount"] = collectedFeedback.Count,
-                        ["Analysis"] = analysis
-                    }
+                    ["ProgramId"] = programId,
+                    ["FeedbackCount"] = collectedFeedback.Count,
+                    ["Analysis"] = analysis
                 });
 
                 return result;
@@ -248,10 +246,42 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 }
 
                 // Collect analytics data
-                var userMetrics = await _analytics.GetUserMetricsAsync(programId, request.DateRange);
-                var engagementMetrics = await _analytics.GetEngagementMetricsAsync(programId, request.DateRange);
-                var feedbackMetrics = await _analytics.GetFeedbackMetricsAsync(programId, request.DateRange);
-                var performanceMetrics = await _analytics.GetPerformanceMetricsAsync(programId, request.DateRange);
+                var userMetricsData = await _analytics.GetUserMetricsAsync(programId);
+                var engagementMetricsData = await _analytics.GetEngagementMetricsAsync(programId);
+                var feedbackMetricsData = await _analytics.GetFeedbackMetricsAsync(programId);
+                var performanceMetricsData = await _analytics.GetPerformanceMetricsAsync(programId);
+                
+                // Convert to proper metric objects
+                var userMetrics = new UserMetrics
+                {
+                    TotalUsers = userMetricsData.ContainsKey("TotalUsers") ? Convert.ToInt32(userMetricsData["TotalUsers"]) : 0,
+                    ActiveUsers = userMetricsData.ContainsKey("ActiveUsers") ? Convert.ToInt32(userMetricsData["ActiveUsers"]) : 0,
+                    RetentionRate = userMetricsData.ContainsKey("RetentionRate") ? Convert.ToDouble(userMetricsData["RetentionRate"]) : 0.0,
+                    ChurnRate = userMetricsData.ContainsKey("ChurnRate") ? Convert.ToDouble(userMetricsData["ChurnRate"]) : 0.0,
+                    Demographics = userMetricsData
+                };
+                
+                var engagementMetrics = new EngagementMetrics
+                {
+                    TotalSessions = engagementMetricsData.ContainsKey("TotalSessions") ? Convert.ToInt32(engagementMetricsData["TotalSessions"]) : 0,
+                    FeatureUsageRate = engagementMetricsData.ContainsKey("FeatureUsageRate") ? Convert.ToDouble(engagementMetricsData["FeatureUsageRate"]) : 0.0,
+                    PageViews = engagementMetricsData.ContainsKey("PageViews") ? Convert.ToInt32(engagementMetricsData["PageViews"]) : 0,
+                    BounceRate = engagementMetricsData.ContainsKey("BounceRate") ? Convert.ToDouble(engagementMetricsData["BounceRate"]) : 0.0
+                };
+                
+                var feedbackMetrics = new FeedbackMetrics
+                {
+                    TotalFeedback = feedbackMetricsData.ContainsKey("TotalFeedback") ? Convert.ToInt32(feedbackMetricsData["TotalFeedback"]) : 0,
+                    AverageRating = feedbackMetricsData.ContainsKey("AverageRating") ? Convert.ToDouble(feedbackMetricsData["AverageRating"]) : 0.0,
+                    ResponseRate = feedbackMetricsData.ContainsKey("ResponseRate") ? Convert.ToDouble(feedbackMetricsData["ResponseRate"]) : 0.0
+                };
+                
+                var performanceMetrics = new PerformanceMetrics
+                {
+                    AverageResponseTime = performanceMetricsData.ContainsKey("AverageResponseTime") ? Convert.ToDouble(performanceMetricsData["AverageResponseTime"]) : 0.0,
+                    ErrorRate = performanceMetricsData.ContainsKey("ErrorRate") ? Convert.ToDouble(performanceMetricsData["ErrorRate"]) : 0.0,
+                    Throughput = performanceMetricsData.ContainsKey("Throughput") ? Convert.ToDouble(performanceMetricsData["Throughput"]) : 0.0
+                };
 
                 var report = new BetaAnalyticsReport
                 {

@@ -126,7 +126,7 @@ namespace Nexo.Core.Application.Services.AI.Providers
                     Description = "Mock CodeLlama 7B model for development",
                     EngineType = AIEngineType.CodeLlama,
                     Precision = ModelPrecision.Q4_0,
-                    SizeBytes = 4 * 1024 * 1024 * 1024, // 4GB
+                    SizeBytes = 4L * 1024 * 1024 * 1024, // 4GB
                     SupportedPlatforms = Capabilities.SupportedPlatforms,
                     IsCached = true,
                     CreatedAt = DateTime.UtcNow
@@ -160,7 +160,7 @@ namespace Nexo.Core.Application.Services.AI.Providers
                 Description = $"Mock model {modelId} for development",
                 EngineType = AIEngineType.CodeLlama,
                 Precision = ModelPrecision.Q4_0,
-                SizeBytes = 2 * 1024 * 1024 * 1024, // 2GB
+                SizeBytes = 2L * 1024 * 1024 * 1024, // 2GB
                 IsCached = true,
                 CreatedAt = DateTime.UtcNow
             };

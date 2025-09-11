@@ -454,6 +454,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
         public int QualityScore { get; set; }
         public int Coverage { get; set; }
         public DateTime GenerationTime { get; set; }
+        public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
         public AIEngineType EngineType { get; set; }
         public List<string> Tags { get; set; } = new();
         public Dictionary<string, object> Metadata { get; set; } = new();

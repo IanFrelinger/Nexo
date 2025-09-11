@@ -141,7 +141,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                     TargetPlatform = PlatformType.Windows,
                     MaxTokens = 2048,
                     Temperature = 0.7,
-                    Priority = AIPriority.Quality
+                    Priority = AIPriority.Quality.ToString()
                 };
 
                 // Select AI engine
@@ -459,7 +459,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Description = $"Web API controller for {entity.Name}",
                 Namespace = "Application.Controllers",
                 BaseClass = "ControllerBase",
-                Type = ControllerType.WebApi,
+                Type = ControllerType.WebApi.ToString(),
                 Actions = new List<ControllerAction>
                 {
                     new ControllerAction
@@ -467,7 +467,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Get",
                         Description = $"Get all {entity.Name} entities",
                         ReturnType = $"ActionResult<List<{entity.Name}Dto>>",
-                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
+                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
                         Route = $"api/{entity.Name.ToLower()}",
                         IsAsync = true
                     },
@@ -476,7 +476,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "GetById",
                         Description = $"Get {entity.Name} by ID",
                         ReturnType = $"ActionResult<{entity.Name}Dto>",
-                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
+                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
                         Route = $"api/{entity.Name.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
@@ -496,7 +496,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Create",
                         Description = $"Create new {entity.Name}",
                         ReturnType = $"ActionResult<{entity.Name}Dto>",
-                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Post,
+                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Post,
                         Route = $"api/{entity.Name.ToLower()}",
                         Parameters = new List<ActionParameter>
                         {
@@ -516,7 +516,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Update",
                         Description = $"Update {entity.Name}",
                         ReturnType = $"ActionResult<{entity.Name}Dto>",
-                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Put,
+                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Put,
                         Route = $"api/{entity.Name.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
@@ -544,7 +544,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         Name = "Delete",
                         Description = $"Delete {entity.Name}",
                         ReturnType = "ActionResult",
-                        Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Delete,
+                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Delete,
                         Route = $"api/{entity.Name.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
@@ -584,25 +584,10 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Description = $"Application service for {domainService.Name}",
                 Namespace = "Application.Services",
                 InterfaceName = $"I{domainService.Name}Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService",
-                Type = ServiceType.Application,
-                Methods = new List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.ServiceMethod>
+                Type = ServiceType.Application.ToString(),
+                Methods = new List<string>
                 {
-                    new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.ServiceMethod
-                    {
-                        Name = "ProcessAsync",
-                        ReturnType = "Task<bool>",
-                        Description = $"Process {domainService.Name} operation",
-                        IsAsync = true,
-                        Parameters = new List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.MethodParameter>
-                        {
-                            new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.MethodParameter
-                            {
-                                Name = "request",
-                                Type = "object",
-                                Description = "Request data"
-                            }
-                        }
-                    }
+                    "ProcessAsync"
                 },
                 Dependencies = new List<string> { domainService.Name }
             };
@@ -623,15 +608,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Name = $"{entity.Name}Dto",
                 Description = $"Data transfer object for {entity.Name}",
                 Namespace = "Application.Models",
-                Type = ModelType.DTO,
-                Properties = entity.Properties.Select(p => new ModelProperty
-                {
-                    Name = p.Name,
-                    Type = p.Type,
-                    Description = p.Description,
-                    IsRequired = p.IsRequired,
-                    IsNullable = p.IsNullable
-                }).ToList()
+                Type = ModelType.DTO.ToString(),
+                Properties = entity.Properties.Select(p => p.Name).ToList()
             };
             models.Add(dto);
 
@@ -641,7 +619,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Name = $"Create{entity.Name}Dto",
                 Description = $"Create data transfer object for {entity.Name}",
                 Namespace = "Application.Models",
-                Type = ModelType.RequestModel,
+                Type = ModelType.RequestModel.ToString(),
                 Properties = entity.Properties.Where(p => p.Name != "Id").Select(p => new ModelProperty
                 {
                     Name = p.Name,
@@ -659,15 +637,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Name = $"Update{entity.Name}Dto",
                 Description = $"Update data transfer object for {entity.Name}",
                 Namespace = "Application.Models",
-                Type = ModelType.RequestModel,
-                Properties = entity.Properties.Select(p => new ModelProperty
-                {
-                    Name = p.Name,
-                    Type = p.Type,
-                    Description = p.Description,
-                    IsRequired = p.IsRequired,
-                    IsNullable = p.IsNullable
-                }).ToList()
+                Type = ModelType.RequestModel.ToString(),
+                Properties = entity.Properties.Select(p => p.Name).ToList()
             };
             models.Add(updateDto);
 

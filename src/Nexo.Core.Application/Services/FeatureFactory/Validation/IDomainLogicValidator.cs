@@ -20,7 +20,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates business rules for consistency
         /// </summary>
-        Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<BusinessRule> rules, CancellationToken cancellationToken = default);
+        Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<string> rules, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks consistency across domain logic components
@@ -35,17 +35,17 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates domain entities for correctness
         /// </summary>
-        Task<EntityValidationResult> ValidateEntitiesAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default);
+        Task<EntityValidationResult> ValidateEntitiesAsync(List<string> entities, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Validates value objects for correctness
         /// </summary>
-        Task<ValueObjectValidationResult> ValidateValueObjectsAsync(List<ValueObject> valueObjects, CancellationToken cancellationToken = default);
+        Task<ValueObjectValidationResult> ValidateValueObjectsAsync(List<string> valueObjects, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Validates domain services for correctness
         /// </summary>
-        Task<ServiceValidationResult> ValidateServicesAsync(List<DomainService> services, CancellationToken cancellationToken = default);
+        Task<ServiceValidationResult> ValidateServicesAsync(List<string> services, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates validation report for domain logic

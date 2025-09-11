@@ -238,6 +238,9 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// </summary>
     public class AnalyticsData
     {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+        public Dictionary<string, object> Data { get; set; } = new();
         public int TotalEvents { get; set; }
         public int UniqueUsers { get; set; }
         public double AverageSessionDuration { get; set; }

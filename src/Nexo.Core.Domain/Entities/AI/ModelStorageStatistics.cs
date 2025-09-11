@@ -13,6 +13,8 @@ namespace Nexo.Core.Domain.Entities.AI
         public int CachedModels { get; set; }
         public int AvailableModels { get; set; }
         public long AvailableSpaceBytes { get; set; }
+        public PlatformType PlatformType { get; set; }
+        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
         
         /// <summary>
         /// Total size in bytes (alias for TotalSizeBytes)

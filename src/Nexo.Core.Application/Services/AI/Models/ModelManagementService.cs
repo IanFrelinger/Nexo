@@ -280,11 +280,11 @@ namespace Nexo.Core.Application.Services.AI.Models
         {
             return platform switch
             {
-                PlatformType.Web => 650 * 1024 * 1024, // 650MB
-                PlatformType.Desktop => 4 * 1024 * 1024 * 1024, // 4GB
-                PlatformType.Mobile => 1.5 * 1024 * 1024 * 1024, // 1.5GB
-                PlatformType.Console => 2 * 1024 * 1024 * 1024, // 2GB
-                _ => 1 * 1024 * 1024 * 1024 // 1GB default
+                PlatformType.Web => 650L * 1024 * 1024, // 650MB
+                PlatformType.Desktop => 4L * 1024 * 1024 * 1024, // 4GB
+                PlatformType.Mobile => (long)(1.5 * 1024 * 1024 * 1024), // 1.5GB
+                PlatformType.Console => 2L * 1024 * 1024 * 1024, // 2GB
+                _ => 1L * 1024 * 1024 * 1024 // 1GB default
             };
         }
 
