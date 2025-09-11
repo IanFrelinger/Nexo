@@ -21,17 +21,17 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         /// <summary>
         /// Generates controllers from domain entities
         /// </summary>
-        Task<ControllerResult> GenerateControllersAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default);
+        Task<ControllerResult> GenerateControllersAsync(List<string> entities, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates application services from domain services
         /// </summary>
-        Task<ServiceResult> GenerateServicesAsync(List<DomainService> domainServices, CancellationToken cancellationToken = default);
+        Task<ServiceResult> GenerateServicesAsync(List<string> domainServices, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates application models from domain entities
         /// </summary>
-        Task<ModelResult> GenerateModelsAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default);
+        Task<ModelResult> GenerateModelsAsync(List<string> entities, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates views from domain entities

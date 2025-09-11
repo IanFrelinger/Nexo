@@ -25,7 +25,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
         /// <summary>
         /// Generates integration tests for domain services
         /// </summary>
-        Task<IntegrationTestResult> GenerateIntegrationTestsAsync(DomainService service, CancellationToken cancellationToken = default);
+        Task<IntegrationTestResult> GenerateIntegrationTestsAsync(string service, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Generates domain tests for business rules

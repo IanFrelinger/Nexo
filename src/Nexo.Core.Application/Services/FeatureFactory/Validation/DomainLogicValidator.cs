@@ -422,7 +422,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
 
         // Private helper methods for validation
 
-        private async Task<List<BusinessRuleIssue>> ValidateBusinessRuleAsync(BusinessRule rule, CancellationToken cancellationToken)
+        private async Task<List<BusinessRuleIssue>> ValidateBusinessRuleAsync(string rule, CancellationToken cancellationToken)
         {
             // Simulate business rule validation
             await Task.Delay(50, cancellationToken);
@@ -430,7 +430,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             var issues = new List<BusinessRuleIssue>();
 
             // Check if rule has a name
-            if (string.IsNullOrWhiteSpace(rule.Name))
+            if (string.IsNullOrWhiteSpace(rule))
             {
                 issues.Add(new BusinessRuleIssue
                 {
@@ -438,12 +438,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     Message = "Business rule must have a name",
                     Component = "BusinessRule",
                     Severity = ValidationSeverity.Error,
-                    Location = rule.Id
+                    Location = rule
                 });
             }
 
             // Check if rule has an expression
-            if (string.IsNullOrWhiteSpace(rule.Expression))
+            if (string.IsNullOrWhiteSpace(rule))
             {
                 issues.Add(new BusinessRuleIssue
                 {
@@ -451,12 +451,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     Message = "Business rule must have an expression",
                     Component = "BusinessRule",
                     Severity = ValidationSeverity.Error,
-                    Location = rule.Id
+                    Location = rule
                 });
             }
 
             // Check if rule has an error message
-            if (string.IsNullOrWhiteSpace(rule.ErrorMessage))
+            if (string.IsNullOrWhiteSpace(rule))
             {
                 issues.Add(new BusinessRuleIssue
                 {
@@ -464,14 +464,14 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     Message = "Business rule should have an error message",
                     Component = "BusinessRule",
                     Severity = ValidationSeverity.Warning,
-                    Location = rule.Id
+                    Location = rule
                 });
             }
 
             return issues;
         }
 
-        private async Task<List<BusinessRuleIssue>> CheckBusinessRuleConflictsAsync(List<BusinessRule> rules, CancellationToken cancellationToken)
+        private async Task<List<BusinessRuleIssue>> CheckBusinessRuleConflictsAsync(List<string> rules, CancellationToken cancellationToken)
         {
             // Simulate conflict checking
             await Task.Delay(100, cancellationToken);
@@ -479,7 +479,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             var issues = new List<BusinessRuleIssue>();
 
             // Check for duplicate rule names
-            var duplicateNames = rules.GroupBy(r => r.Name).Where(g => g.Count() > 1);
+            var duplicateNames = rules.GroupBy(r => r).Where(g => g.Count() > 1);
             foreach (var group in duplicateNames)
             {
                 issues.Add(new BusinessRuleIssue
@@ -488,7 +488,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     Message = $"Duplicate business rule name: {group.Key}",
                     Component = "BusinessRule",
                     Severity = ValidationSeverity.Error,
-                    Location = string.Join(", ", group.Select(r => r.Id))
+                    Location = string.Join(", ", group.Select(r => r))
                 });
             }
 
@@ -674,10 +674,10 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     issues.Add(new EntityIssue
                     {
                         Type = "CircularDependency",
-                        Message = $"Entity {entity.Name} has circular dependencies",
+                        Message = $"Entity {entity} has circular dependencies",
                         Component = "DomainEntity",
                         Severity = ValidationSeverity.Error,
-                        Location = entity.Id
+                        Location = entity
                     });
                 }
             }
@@ -685,25 +685,26 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             return issues;
         }
 
-        private bool HasCircularDependency(DomainEntity entity, List<DomainEntity> allEntities, HashSet<string> visited, HashSet<string> recursionStack)
+        private bool HasCircularDependency(string entity, List<string> allEntities, HashSet<string> visited, HashSet<string> recursionStack)
         {
-            if (recursionStack.Contains(entity.Id))
+            if (recursionStack.Contains(entity))
                 return true;
 
-            if (visited.Contains(entity.Id))
+            if (visited.Contains(entity))
                 return false;
 
-            visited.Add(entity.Id);
-            recursionStack.Add(entity.Id);
+            visited.Add(entity);
+            recursionStack.Add(entity);
 
-            foreach (var dependency in entity.Dependencies)
+            // For string-based entities, we'll do basic circular dependency checking
+            // This is a simplified version since we don't have dependency information
+            foreach (var otherEntity in allEntities)
             {
-                var dependentEntity = allEntities.FirstOrDefault(e => e.Name == dependency);
-                if (dependentEntity != null && HasCircularDependency(dependentEntity, allEntities, visited, recursionStack))
+                if (otherEntity != entity && HasCircularDependency(otherEntity, allEntities, visited, recursionStack))
                     return true;
             }
 
-            recursionStack.Remove(entity.Id);
+            recursionStack.Remove(entity);
             return false;
         }
 
@@ -743,7 +744,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             return issues;
         }
 
-        private async Task<List<ServiceIssue>> ValidateServiceAsync(DomainService service, CancellationToken cancellationToken)
+        private async Task<List<ServiceIssue>> ValidateServiceAsync(string service, CancellationToken cancellationToken)
         {
             // Simulate service validation
             await Task.Delay(50, cancellationToken);
@@ -751,7 +752,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
             var issues = new List<ServiceIssue>();
 
             // Check if service has a name
-            if (string.IsNullOrWhiteSpace(service.Name))
+            if (string.IsNullOrWhiteSpace(service))
             {
                 issues.Add(new ServiceIssue
                 {
@@ -759,7 +760,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     Message = "Service must have a name",
                     Component = "DomainService",
                     Severity = ValidationSeverity.Error,
-                    Location = service.Id
+                    Location = service
                 });
             }
 
@@ -772,7 +773,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
                     Message = "Service should have at least one method",
                     Component = "DomainService",
                     Severity = ValidationSeverity.Warning,
-                    Location = service.Id
+                    Location = service
                 });
             }
 

@@ -250,10 +250,10 @@ namespace Nexo.Core.Application.Services.Monitoring
                 var appHealthChecks = new Nexo.Core.Application.Services.Monitoring.HealthCheckResult
                 {
                     OverallHealth = (Nexo.Core.Application.Services.Monitoring.HealthStatus)healthChecks.OverallHealth,
-                    HealthChecks = new List<Nexo.Core.Application.Services.Monitoring.HealthCheck>(),
+                    HealthChecks = new List<Nexo.Core.Application.Services.Monitoring.HealthCheckResult>(),
                     CheckedAt = healthChecks.CheckedAt,
                     Success = healthChecks.Success,
-                    Error = healthChecks.Error
+                    Message = healthChecks.Error ?? string.Empty
                 };
 
                 // Generate insights
@@ -272,7 +272,7 @@ namespace Nexo.Core.Application.Services.Monitoring
                     Analytics = analyticsData,
                     Insights = insights,
                     Recommendations = recommendations,
-                    Summary = GenerateSummary(metricList, appHealthChecks, analytics)
+                    Summary = GenerateSummary(metricList, appHealthChecks, analyticsData)
                 };
 
                 _logger.LogInformation("Monitoring report generated successfully: {ReportId}", report.Id);

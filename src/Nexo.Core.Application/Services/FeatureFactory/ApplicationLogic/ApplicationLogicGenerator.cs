@@ -122,7 +122,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         /// <summary>
         /// Generates controllers from domain entities
         /// </summary>
-        public async Task<ControllerResult> GenerateControllersAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default)
+        public async Task<ControllerResult> GenerateControllersAsync(List<string> entities, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -181,7 +181,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         /// <summary>
         /// Generates application services from domain services
         /// </summary>
-        public async Task<ServiceResult> GenerateServicesAsync(List<DomainService> domainServices, CancellationToken cancellationToken = default)
+        public async Task<ServiceResult> GenerateServicesAsync(List<string> domainServices, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -221,7 +221,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         /// <summary>
         /// Generates application models from domain entities
         /// </summary>
-        public async Task<ModelResult> GenerateModelsAsync(List<DomainEntity> entities, CancellationToken cancellationToken = default)
+        public async Task<ModelResult> GenerateModelsAsync(List<string> entities, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -448,15 +448,15 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
 
         // Private helper methods for generating specific components
 
-        private async Task<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController> GenerateControllerForEntityAsync(DomainEntity entity, AIProviderSelection selection, CancellationToken cancellationToken)
+        private async Task<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController> GenerateControllerForEntityAsync(string entity, AIProviderSelection selection, CancellationToken cancellationToken)
         {
             // Simulate controller generation based on entity
             await Task.Delay(100, cancellationToken);
 
             var controller = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationController
             {
-                Name = $"{entity.Name}Controller",
-                Description = $"Web API controller for {entity.Name}",
+                Name = $"{entity}Controller",
+                Description = $"Web API controller for {entity}",
                 Namespace = "Application.Controllers",
                 BaseClass = "ControllerBase",
                 Type = ControllerType.WebApi.ToString(),
@@ -465,19 +465,19 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                     new ControllerAction
                     {
                         Name = "Get",
-                        Description = $"Get all {entity.Name} entities",
-                        ReturnType = $"ActionResult<List<{entity.Name}Dto>>",
+                        Description = $"Get all {entity} entities",
+                        ReturnType = $"ActionResult<List<{entity}Dto>>",
                         HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
-                        Route = $"api/{entity.Name.ToLower()}",
+                        Route = $"api/{entity.ToLower()}",
                         IsAsync = true
                     },
                     new ControllerAction
                     {
                         Name = "GetById",
-                        Description = $"Get {entity.Name} by ID",
-                        ReturnType = $"ActionResult<{entity.Name}Dto>",
+                        Description = $"Get {entity} by ID",
+                        ReturnType = $"ActionResult<{entity}Dto>",
                         HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
-                        Route = $"api/{entity.Name.ToLower()}/{{id}}",
+                        Route = $"api/{entity.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
                             new ActionParameter
@@ -494,16 +494,16 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                     new ControllerAction
                     {
                         Name = "Create",
-                        Description = $"Create new {entity.Name}",
-                        ReturnType = $"ActionResult<{entity.Name}Dto>",
+                        Description = $"Create new {entity}",
+                        ReturnType = $"ActionResult<{entity}Dto>",
                         HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Post,
-                        Route = $"api/{entity.Name.ToLower()}",
+                        Route = $"api/{entity.ToLower()}",
                         Parameters = new List<ActionParameter>
                         {
                             new ActionParameter
                             {
                                 Name = "dto",
-                                Type = $"Create{entity.Name}Dto",
+                                Type = $"Create{entity}Dto",
                                 Description = "Entity data",
                                 Source = ParameterSource.Body,
                                 IsRequired = true
@@ -514,10 +514,10 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                     new ControllerAction
                     {
                         Name = "Update",
-                        Description = $"Update {entity.Name}",
-                        ReturnType = $"ActionResult<{entity.Name}Dto>",
+                        Description = $"Update {entity}",
+                        ReturnType = $"ActionResult<{entity}Dto>",
                         HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Put,
-                        Route = $"api/{entity.Name.ToLower()}/{{id}}",
+                        Route = $"api/{entity.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
                             new ActionParameter
@@ -531,7 +531,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                             new ActionParameter
                             {
                                 Name = "dto",
-                                Type = $"Update{entity.Name}Dto",
+                                Type = $"Update{entity}Dto",
                                 Description = "Entity data",
                                 Source = ParameterSource.Body,
                                 IsRequired = true
@@ -542,10 +542,10 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                     new ControllerAction
                     {
                         Name = "Delete",
-                        Description = $"Delete {entity.Name}",
+                        Description = $"Delete {entity}",
                         ReturnType = "ActionResult",
                         HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Delete,
-                        Route = $"api/{entity.Name.ToLower()}/{{id}}",
+                        Route = $"api/{entity.ToLower()}/{{id}}",
                         Parameters = new List<ActionParameter>
                         {
                             new ActionParameter
@@ -560,7 +560,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                         IsAsync = true
                     }
                 },
-                Dependencies = new List<string> { $"I{entity.Name}Service" },
+                Dependencies = new List<string> { $"I{entity}Service" },
                 UsingStatements = new List<string>
                 {
                     "Microsoft.AspNetCore.Mvc",
@@ -573,29 +573,29 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             return controller;
         }
 
-        private async Task<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService> GenerateServiceForDomainServiceAsync(DomainService domainService, CancellationToken cancellationToken)
+        private async Task<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService> GenerateServiceForDomainServiceAsync(string domainService, CancellationToken cancellationToken)
         {
             // Simulate service generation
             await Task.Delay(100, cancellationToken);
 
             var service = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService
             {
-                Name = $"{domainService.Name}Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService",
-                Description = $"Application service for {domainService.Name}",
+                Name = $"{domainService}Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService",
+                Description = $"Application service for {domainService}",
                 Namespace = "Application.Services",
-                InterfaceName = $"I{domainService.Name}Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService",
+                InterfaceName = $"I{domainService}Nexo.Core.Domain.Entities.FeatureFactory.ApplicationService",
                 Type = ServiceType.Application.ToString(),
                 Methods = new List<string>
                 {
                     "ProcessAsync"
                 },
-                Dependencies = new List<string> { domainService.Name }
+                Dependencies = new List<string> { domainService }
             };
 
             return service;
         }
 
-        private async Task<List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel>> GenerateModelsForEntityAsync(DomainEntity entity, CancellationToken cancellationToken)
+        private async Task<List<Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel>> GenerateModelsForEntityAsync(string entity, CancellationToken cancellationToken)
         {
             // Simulate model generation
             await Task.Delay(100, cancellationToken);
@@ -605,19 +605,19 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             // Generate DTO
             var dto = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel
             {
-                Name = $"{entity.Name}Dto",
-                Description = $"Data transfer object for {entity.Name}",
+                Name = $"{entity}Dto",
+                Description = $"Data transfer object for {entity}",
                 Namespace = "Application.Models",
                 Type = ModelType.DTO.ToString(),
-                Properties = entity.Properties.Select(p => p.Name).ToList()
+                Properties = new List<string> { "Id", "Name", "CreatedAt", "UpdatedAt" }
             };
             models.Add(dto);
 
             // Generate Create DTO
             var createDto = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel
             {
-                Name = $"Create{entity.Name}Dto",
-                Description = $"Create data transfer object for {entity.Name}",
+                Name = $"Create{entity}Dto",
+                Description = $"Create data transfer object for {entity}",
                 Namespace = "Application.Models",
                 Type = ModelType.RequestModel.ToString(),
                 Properties = entity.Properties.Where(p => p.Name != "Id").Select(p => new ModelProperty
@@ -634,11 +634,11 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             // Generate Update DTO
             var updateDto = new Nexo.Core.Domain.Entities.FeatureFactory.ApplicationModel
             {
-                Name = $"Update{entity.Name}Dto",
-                Description = $"Update data transfer object for {entity.Name}",
+                Name = $"Update{entity}Dto",
+                Description = $"Update data transfer object for {entity}",
                 Namespace = "Application.Models",
                 Type = ModelType.RequestModel.ToString(),
-                Properties = entity.Properties.Select(p => p.Name).ToList()
+                Properties = new List<string> { "Id", "Name", "UpdatedAt" }
             };
             models.Add(updateDto);
 
@@ -655,8 +655,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             // Generate list view
             var listView = new ApplicationView
             {
-                Name = $"{entity.Name}ListView",
-                Description = $"List view for {entity.Name}",
+                Name = $"{entity}ListView",
+                Description = $"List view for {entity}",
                 Namespace = "Application.Views",
                 Type = ViewType.Razor,
                 Properties = new List<ViewProperty>
@@ -664,7 +664,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                     new ViewProperty
                     {
                         Name = "Items",
-                        Type = $"List<{entity.Name}Dto>",
+                        Type = $"List<{entity}Dto>",
                         Description = "List of entities"
                     }
                 }
@@ -674,8 +674,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
             // Generate detail view
             var detailView = new ApplicationView
             {
-                Name = $"{entity.Name}DetailView",
-                Description = $"Detail view for {entity.Name}",
+                Name = $"{entity}DetailView",
+                Description = $"Detail view for {entity}",
                 Namespace = "Application.Views",
                 Type = ViewType.Razor,
                 Properties = new List<ViewProperty>
@@ -683,7 +683,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                     new ViewProperty
                     {
                         Name = "Item",
-                        Type = $"{entity.Name}Dto",
+                        Type = $"{entity}Dto",
                         Description = "Entity details"
                     }
                 }

@@ -165,11 +165,11 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
         /// <summary>
         /// Generates integration tests for domain services
         /// </summary>
-        public async Task<IntegrationTestResult> GenerateIntegrationTestsAsync(DomainService service, CancellationToken cancellationToken = default)
+        public async Task<IntegrationTestResult> GenerateIntegrationTestsAsync(string service, CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogDebug("Generating integration tests for service: {ServiceName}", service.Name);
+                _logger.LogDebug("Generating integration tests for service: {ServiceName}", service);
 
                 var result = new IntegrationTestResult
                 {
@@ -184,12 +184,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 // Generate code for integration tests
                 result.GeneratedCode = await GenerateIntegrationTestCodeAsync(integrationTests, cancellationToken);
 
-                _logger.LogDebug("Generated {IntegrationTestCount} integration tests for service {ServiceName}", integrationTests.Count, service.Name);
+                _logger.LogDebug("Generated {IntegrationTestCount} integration tests for service {ServiceName}", integrationTests.Count, service);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate integration tests for service: {ServiceName}", service.Name);
+                _logger.LogError(ex, "Failed to generate integration tests for service: {ServiceName}", service);
                 return new IntegrationTestResult
                 {
                     Success = false,
@@ -515,9 +515,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             {
                 var integrationTest = new IntegrationTest
                 {
-                    Name = $"{service.Name}_{method.Name}_IntegrationTest",
-                    Description = $"Integration test for {service.Name}.{method.Name}",
-                    TargetService = service.Name,
+                    Name = $"{service}_{method.Name}_IntegrationTest",
+                    Description = $"Integration test for {service}.{method.Name}",
+                    TargetService = service,
                     Category = TestCategory.Integration,
                     Priority = TestPriority.Medium,
                     Steps = new List<TestStep>

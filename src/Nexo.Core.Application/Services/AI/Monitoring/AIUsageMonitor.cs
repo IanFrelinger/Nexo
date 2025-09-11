@@ -377,13 +377,13 @@ namespace Nexo.Core.Application.Services.AI.Monitoring
             return TimeSpan.FromMilliseconds(totalDuration / completedEvents.Count);
         }
 
-        private string GetMostUsedOperationType(AIUsageStatistics statistics)
+        private string GetMostUsedOperationType(List<AIUsageEvent> events)
         {
             // In a real implementation, this would analyze the actual data
             return "CodeGeneration";
         }
 
-        private string GetMostUsedPlatform(AIUsageStatistics statistics)
+        private string GetMostUsedPlatform(List<AIUsageEvent> events)
         {
             // In a real implementation, this would analyze the actual data
             return "WebAssembly";
