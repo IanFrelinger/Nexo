@@ -39,7 +39,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
         /// <summary>
         /// Initializes the beta testing program
         /// </summary>
-        public async Task<BetaProgramResult> InitializeProgramAsync(BetaProgramConfiguration config)
+        public Task<BetaProgramResult> InitializeProgramAsync(BetaProgramConfiguration config)
         {
             _logger.LogInformation("Initializing beta testing program: {ProgramName}", config.Name);
 
@@ -83,18 +83,18 @@ namespace Nexo.Core.Application.Services.BetaTesting
             });
 
             _logger.LogInformation("Beta testing program initialized: {ProgramId}", program.Id);
-            return new BetaProgramResult
+            return Task.FromResult(new BetaProgramResult
             {
                 ProgramId = program.Id,
                 Success = true,
                 Message = "Beta testing program initialized successfully"
-            };
+            });
         }
 
         /// <summary>
         /// Recruits users for the beta testing program
         /// </summary>
-        public async Task<RecruitmentResult> RecruitUsersAsync(string programId, RecruitmentRequest request)
+        public Task<RecruitmentResult> RecruitUsersAsync(string programId, RecruitmentRequest request)
         {
             _logger.LogInformation("Recruiting users for program: {ProgramId}", programId);
 
@@ -154,13 +154,13 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 ["Errors"] = recruitmentErrors
             });
 
-            return result;
+            return Task.FromResult(result);
         }
 
         /// <summary>
         /// Collects feedback from beta users
         /// </summary>
-        public async Task<FeedbackCollectionResult> CollectFeedbackAsync(string programId, FeedbackCollectionRequest request)
+        public Task<FeedbackCollectionResult> CollectFeedbackAsync(string programId, FeedbackCollectionRequest request)
         {
             _logger.LogInformation("Collecting feedback for program: {ProgramId}", programId);
 
@@ -212,13 +212,13 @@ namespace Nexo.Core.Application.Services.BetaTesting
                     ["Analysis"] = analysis
                 });
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to collect feedback for program {ProgramId}", programId);
                 
-                return new FeedbackCollectionResult
+                return Task.FromResult(new FeedbackCollectionResult
                 {
                     ProgramId = programId,
                     CollectedFeedback = new List<BetaFeedback>(),
@@ -226,14 +226,14 @@ namespace Nexo.Core.Application.Services.BetaTesting
                     Errors = new List<string> { ex.Message },
                     Success = false,
                     Timestamp = DateTime.UtcNow
-                };
+                });
             }
         }
 
         /// <summary>
         /// Generates analytics report for the beta program
         /// </summary>
-        public async Task<BetaAnalyticsReport> GenerateAnalyticsReportAsync(string programId, AnalyticsReportRequest request)
+        public Task<BetaAnalyticsReport> GenerateAnalyticsReportAsync(string programId, AnalyticsReportRequest request)
         {
             _logger.LogInformation("Generating analytics report for program: {ProgramId}", programId);
 
@@ -296,7 +296,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 };
 
                 _logger.LogInformation("Analytics report generated for program: {ProgramId}", programId);
-                return report;
+                return Task.FromResult(report);
             }
             catch (Exception ex)
             {
@@ -308,7 +308,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
         /// <summary>
         /// Monitors program health and success criteria
         /// </summary>
-        public async Task<ProgramHealthReport> MonitorProgramHealthAsync(string programId)
+        public Task<ProgramHealthReport> MonitorProgramHealthAsync(string programId)
         {
             _logger.LogDebug("Monitoring program health for: {ProgramId}", programId);
 
@@ -345,7 +345,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 Recommendations = await GenerateHealthRecommendationsAsync(healthChecks)
             };
 
-            return report;
+            return Task.FromResult(report);
         }
 
         #region Private Methods

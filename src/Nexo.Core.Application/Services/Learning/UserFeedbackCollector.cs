@@ -28,7 +28,7 @@ public class UserFeedbackCollector : IUserFeedbackCollector
         _logger = logger;
     }
     
-    public async Task RecordFeedbackAsync(UserFeedback feedback)
+    public Task RecordFeedbackAsync(UserFeedback feedback)
     {
         _logger.LogInformation("Recording user feedback: {Type} - {Severity}", feedback.Type, feedback.Severity);
         
@@ -43,15 +43,17 @@ public class UserFeedbackCollector : IUserFeedbackCollector
         
         // Trigger adaptation if pattern detected
         await CheckForAdaptationTriggers(feedback);
+        
+        return Task.CompletedTask;
     }
     
-    public async Task<IEnumerable<UserFeedback>> GetRecentFeedbackAsync(TimeSpan timeWindow)
+    public Task<IEnumerable<UserFeedback>> GetRecentFeedbackAsync(TimeSpan timeWindow)
     {
         var cutoffTime = DateTime.UtcNow - timeWindow;
-        return await _feedbackStore.GetFeedbackSinceAsync(cutoffTime);
+        return _feedbackStore.GetFeedbackSinceAsync(cutoffTime);
     }
     
-    public async Task<FeedbackInsights> AnalyzeFeedbackTrendsAsync(TimeSpan timeWindow)
+    public Task<FeedbackInsights> AnalyzeFeedbackTrendsAsync(TimeSpan timeWindow)
     {
         var recentFeedback = await _feedbackStore.GetFeedbackInTimeRangeAsync(
             DateTime.UtcNow - timeWindow, DateTime.UtcNow);
@@ -78,25 +80,25 @@ public class UserFeedbackCollector : IUserFeedbackCollector
         insights.TypeDistribution = recentFeedback.GroupBy(f => f.Type)
             .ToDictionary(g => g.Key, g => g.Count());
         
-        return insights;
+        return Task.FromResult(insights);
     }
     
-    public async Task<double> CalculateOverallSatisfactionAsync(TimeSpan timeWindow)
+    public Task<double> CalculateOverallSatisfactionAsync(TimeSpan timeWindow)
     {
         var recentFeedback = await GetRecentFeedbackAsync(timeWindow);
-        return CalculateSatisfactionScore(recentFeedback);
+        return Task.FromResult(CalculateSatisfactionScore(recentFeedback));
     }
     
-    public async Task<IEnumerable<UserFeedback>> GetFeedbackByTypeAsync(FeedbackType type, TimeSpan timeWindow)
+    public Task<IEnumerable<UserFeedback>> GetFeedbackByTypeAsync(FeedbackType type, TimeSpan timeWindow)
     {
         var recentFeedback = await GetRecentFeedbackAsync(timeWindow);
-        return recentFeedback.Where(f => f.Type == type);
+        return Task.FromResult(recentFeedback.Where(f => f.Type == type));
     }
     
-    public async Task<IEnumerable<UserFeedback>> GetHighSeverityFeedbackAsync(TimeSpan timeWindow)
+    public Task<IEnumerable<UserFeedback>> GetHighSeverityFeedbackAsync(TimeSpan timeWindow)
     {
         var recentFeedback = await GetRecentFeedbackAsync(timeWindow);
-        return recentFeedback.Where(f => f.Severity >= FeedbackSeverity.High);
+        return Task.FromResult(recentFeedback.Where(f => f.Severity >= FeedbackSeverity.High));
     }
     
     private async Task ProcessHighSeverityFeedback(UserFeedback feedback)
@@ -246,32 +248,32 @@ public class UserFeedbackCollector : IUserFeedbackCollector
     }
     
     // IUserFeedbackCollector interface methods
-    public async Task CollectFeedbackAsync(UserFeedback feedback)
+    public Task CollectFeedbackAsync(UserFeedback feedback)
     {
-        await RecordFeedbackAsync(feedback);
+        return RecordFeedbackAsync(feedback);
     }
     
-    public async Task<UserFeedback?> GetFeedbackAsync(string id)
+    public Task<UserFeedback?> GetFeedbackAsync(string id)
     {
-        return await _feedbackStore.GetFeedbackByIdAsync(id);
+        return _feedbackStore.GetFeedbackByIdAsync(id);
     }
     
-    public async Task<IEnumerable<UserFeedback>> GetFeedbackAsync(DateTime startTime, DateTime endTime)
+    public Task<IEnumerable<UserFeedback>> GetFeedbackAsync(DateTime startTime, DateTime endTime)
     {
-        return await _feedbackStore.GetFeedbackInTimeRangeAsync(startTime, endTime);
+        return _feedbackStore.GetFeedbackInTimeRangeAsync(startTime, endTime);
     }
     
-    public async Task<IEnumerable<UserFeedback>> GetRecentFeedbackAsync(int count = 10)
+    public Task<IEnumerable<UserFeedback>> GetRecentFeedbackAsync(int count = 10)
     {
         var recentFeedback = await _feedbackStore.GetFeedbackInTimeRangeAsync(DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
-        return recentFeedback;
+        return Task.FromResult(recentFeedback);
     }
     
-    public async Task<FeedbackAnalysisResult> AnalyzeFeedbackAsync(DateTime startTime, DateTime endTime)
+    public Task<FeedbackAnalysisResult> AnalyzeFeedbackAsync(DateTime startTime, DateTime endTime)
     {
         var feedback = await GetFeedbackAsync(startTime, endTime);
         var analysis = await _feedbackAnalyzer.AnalyzeFeedbackBatchAsync(feedback);
-        return analysis;
+        return Task.FromResult(analysis);
     }
     
     public Task DeleteOldFeedbackAsync(DateTime cutoffTime)

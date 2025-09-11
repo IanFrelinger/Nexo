@@ -30,7 +30,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
         /// <summary>
         /// Gets a cached value
         /// </summary>
-        public async Task<CacheResult<T>> GetAsync<T>(string key, string? policyName = null)
+        public Task<CacheResult<T>> GetAsync<T>(string key, string? policyName = null)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
                             _cache.Remove(key);
                             _statistics.ExpiredHits++;
                             _logger.LogDebug("Cache entry {Key} expired and removed", key);
-                            return new CacheResult<T> { Found = false };
+                            return Task.FromResult(new CacheResult<T> { Found = false });
                         }
 
                         // Update access statistics
@@ -61,30 +61,30 @@ namespace Nexo.Core.Application.Services.AI.Caching
                         }
 
                         _logger.LogDebug("Cache hit for key {Key}", key);
-                        return new CacheResult<T>
+                        return Task.FromResult(new CacheResult<T>
                         {
                             Found = true,
                             Value = (T)entry.Value,
                             Metadata = entry.Metadata
-                        };
+                        });
                     }
                 }
 
                 _statistics.Misses++;
                 _logger.LogDebug("Cache miss for key {Key}", key);
-                return new CacheResult<T> { Found = false };
+                return Task.FromResult(new CacheResult<T> { Found = false });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get cached value for key {Key}", key);
-                return new CacheResult<T> { Found = false };
+                return Task.FromResult(new CacheResult<T> { Found = false });
             }
         }
 
         /// <summary>
         /// Sets a cached value
         /// </summary>
-        public async Task<bool> SetAsync<T>(string key, T value, string? policyName = null, Dictionary<string, object>? metadata = null)
+        public Task<bool> SetAsync<T>(string key, T value, string? policyName = null, Dictionary<string, object>? metadata = null)
         {
             try
             {
@@ -115,19 +115,19 @@ namespace Nexo.Core.Application.Services.AI.Caching
                 await ApplyEvictionPolicyAsync();
 
                 _logger.LogDebug("Cached value set for key {Key}", key);
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to set cached value for key {Key}", key);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Removes a cached value
         /// </summary>
-        public async Task<bool> RemoveAsync(string key)
+        public Task<bool> RemoveAsync(string key)
         {
             try
             {
@@ -139,23 +139,23 @@ namespace Nexo.Core.Application.Services.AI.Caching
                     {
                         _statistics.Removals++;
                         _logger.LogDebug("Cached value removed for key {Key}", key);
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
 
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to remove cached value for key {Key}", key);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Clears all cached values
         /// </summary>
-        public async Task ClearAsync()
+        public Task ClearAsync()
         {
             try
             {
@@ -173,12 +173,14 @@ namespace Nexo.Core.Application.Services.AI.Caching
             {
                 _logger.LogError(ex, "Failed to clear cached values");
             }
+            
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Gets cache statistics
         /// </summary>
-        public async Task<CacheStatistics> GetStatisticsAsync()
+        public Task<CacheStatistics> GetStatisticsAsync()
         {
             try
             {
@@ -191,7 +193,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
                     _statistics.LastUpdated = DateTime.UtcNow;
                 }
 
-                return _statistics;
+                return Task.FromResult(_statistics);
             }
             catch (Exception ex)
             {
@@ -203,7 +205,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
         /// <summary>
         /// Creates a cache policy
         /// </summary>
-        public async Task<bool> CreatePolicyAsync(string policyName, CachePolicy policy)
+        public Task<bool> CreatePolicyAsync(string policyName, CachePolicy policy)
         {
             try
             {
@@ -215,39 +217,39 @@ namespace Nexo.Core.Application.Services.AI.Caching
                 }
 
                 _logger.LogInformation("Cache policy {PolicyName} created successfully", policyName);
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create cache policy {PolicyName}", policyName);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Gets cache policy
         /// </summary>
-        public async Task<CachePolicy?> GetPolicyAsync(string policyName)
+        public Task<CachePolicy?> GetPolicyAsync(string policyName)
         {
             try
             {
                 lock (_lockObject)
                 {
                     _policies.TryGetValue(policyName, out var policy);
-                    return policy;
+                    return Task.FromResult(policy);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get cache policy {PolicyName}", policyName);
-                return null;
+                return Task.FromResult<CachePolicy?>(null);
             }
         }
 
         /// <summary>
         /// Preloads cache with frequently accessed data
         /// </summary>
-        public async Task PreloadCacheAsync(List<PreloadItem> items)
+        public Task PreloadCacheAsync(List<PreloadItem> items)
         {
             try
             {
@@ -264,12 +266,14 @@ namespace Nexo.Core.Application.Services.AI.Caching
             {
                 _logger.LogError(ex, "Failed to preload cache");
             }
+            
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Warms up cache with predictive loading
         /// </summary>
-        public async Task WarmupCacheAsync(List<string> keys, Func<string, Task<object>> valueFactory)
+        public Task WarmupCacheAsync(List<string> keys, Func<string, Task<object>> valueFactory)
         {
             try
             {
@@ -296,12 +300,14 @@ namespace Nexo.Core.Application.Services.AI.Caching
             {
                 _logger.LogError(ex, "Failed to warm up cache");
             }
+            
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Gets cache health information
         /// </summary>
-        public async Task<CacheHealth> GetHealthAsync()
+        public Task<CacheHealth> GetHealthAsync()
         {
             try
             {
@@ -330,16 +336,16 @@ namespace Nexo.Core.Application.Services.AI.Caching
                     health.Issues.Add("High memory usage detected");
                 }
 
-                return health;
+                return Task.FromResult(health);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get cache health");
-                return new CacheHealth
+                return Task.FromResult(new CacheHealth
                 {
                     IsHealthy = false,
                     Issues = new List<string> { $"Health check failed: {ex.Message}" }
-                };
+                });
             }
         }
 
@@ -351,7 +357,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
             lock (_lockObject)
             {
                 if (_policies.TryGetValue(policyName, out var policy))
-                    return policy;
+                    return Task.FromResult(policy);
             }
 
             // Return default policy
@@ -370,11 +376,11 @@ namespace Nexo.Core.Application.Services.AI.Caching
             
             // Refresh if entry is close to expiration
             if (entry.ExpiresAt.HasValue && DateTime.UtcNow.AddMinutes(5) > entry.ExpiresAt.Value)
-                return true;
+                return Task.FromResult(true);
 
             // Refresh if access count is high (frequently accessed)
             if (entry.AccessCount > 100)
-                return true;
+                return Task.FromResult(true);
 
             return false;
         }
@@ -413,7 +419,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
                 var maxSize = GetPolicy("default").MaxSize;
                 
                 if (_cache.Count <= maxSize)
-                    return;
+                    return Task.CompletedTask;
 
                 _logger.LogDebug("Applying eviction policy, current size: {CurrentSize}, max size: {MaxSize}", 
                     _cache.Count, maxSize);

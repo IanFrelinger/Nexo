@@ -141,58 +141,58 @@ namespace Nexo.Core.Application.Services.AI.Analytics
         /// <summary>
         /// Gets analytics model by ID
         /// </summary>
-        public async Task<AnalyticsModel?> GetAnalyticsModelAsync(string modelId)
+        public Task<AnalyticsModel?> GetAnalyticsModelAsync(string modelId)
         {
             try
             {
                 lock (_lockObject)
                 {
                     _analyticsModels.TryGetValue(modelId, out var model);
-                    return model;
+                    return Task.FromResult(model);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get analytics model {ModelId}", modelId);
-                return null;
+                return Task.FromResult<AnalyticsModel?>(null);
             }
         }
 
         /// <summary>
         /// Gets all analytics models
         /// </summary>
-        public async Task<List<AnalyticsModel>> GetAllAnalyticsModelsAsync()
+        public Task<List<AnalyticsModel>> GetAllAnalyticsModelsAsync()
         {
             try
             {
                 lock (_lockObject)
                 {
-                    return _analyticsModels.Values.ToList();
+                    return Task.FromResult(_analyticsModels.Values.ToList());
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get all analytics models");
-                return new List<AnalyticsModel>();
+                return Task.FromResult(new List<AnalyticsModel>());
             }
         }
 
         /// <summary>
         /// Deletes an analytics model
         /// </summary>
-        public async Task<bool> DeleteAnalyticsModelAsync(string modelId)
+        public Task<bool> DeleteAnalyticsModelAsync(string modelId)
         {
             try
             {
                 lock (_lockObject)
                 {
-                    return _analyticsModels.Remove(modelId);
+                    return Task.FromResult(_analyticsModels.Remove(modelId));
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to delete analytics model {ModelId}", modelId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 

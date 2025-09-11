@@ -322,7 +322,7 @@ namespace Nexo.Core.Application.Services.Safety
                     Success = false,
                     Error = ex.Message,
                     Timestamp = DateTime.UtcNow
-                };
+                });
             }
         }
 

@@ -498,26 +498,15 @@ function mockFunction() {{
             return issues;
         }
 
-        private List<CodeSuggestion> GenerateMockSuggestions()
+        private List<string> GenerateMockSuggestions()
         {
-            return new List<CodeSuggestion>
+            return new List<string>
             {
-                new CodeSuggestion
-                {
-                    Type = "Performance",
-                    Description = "Consider using async/await for better performance",
-                    Code = "async Task Method() { }",
-                    Reason = "Improves responsiveness",
-                    Confidence = AIConfidenceLevel.High
-                },
-                new CodeSuggestion
-                {
-                    Type = "Error Handling",
-                    Description = "Add try-catch blocks for error handling",
-                    Code = "try { } catch (Exception ex) { }",
-                    Reason = "Prevents unhandled exceptions",
-                    Confidence = AIConfidenceLevel.Medium
-                }
+                "Consider using async/await for better performance",
+                "Add try-catch blocks for error handling",
+                "Use meaningful variable names",
+                "Consider using dependency injection",
+                "Add input validation for better security"
             };
         }
 

@@ -27,7 +27,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
         /// <summary>
         /// Starts a fine-tuning session for an AI model
         /// </summary>
-        public async Task<FineTuningSession> StartFineTuningAsync(FineTuningRequest request)
+        public Task<FineTuningSession> StartFineTuningAsync(FineTuningRequest request)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                 _ = Task.Run(() => ExecuteFineTuningAsync(session));
 
                 _logger.LogInformation("Fine-tuning session {SessionId} started successfully", session.SessionId);
-                return session;
+                return Task.FromResult(session);
             }
             catch (Exception ex)
             {
@@ -67,14 +67,14 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
         /// <summary>
         /// Gets the status of a fine-tuning session
         /// </summary>
-        public async Task<FineTuningSession?> GetSessionStatusAsync(string sessionId)
+        public Task<FineTuningSession?> GetSessionStatusAsync(string sessionId)
         {
             try
             {
                 lock (_lockObject)
                 {
                     _activeSessions.TryGetValue(sessionId, out var session);
-                    return session;
+                    return Task.FromResult(session);
                 }
             }
             catch (Exception ex)
@@ -87,7 +87,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
         /// <summary>
         /// Cancels a fine-tuning session
         /// </summary>
-        public async Task<bool> CancelFineTuningAsync(string sessionId)
+        public Task<bool> CancelFineTuningAsync(string sessionId)
         {
             try
             {
@@ -98,22 +98,22 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                         session.Status = FineTuningStatus.Cancelled;
                         session.EndTime = DateTime.UtcNow;
                         _logger.LogInformation("Fine-tuning session {SessionId} cancelled", sessionId);
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to cancel fine-tuning session {SessionId}", sessionId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Gets all active fine-tuning sessions
         /// </summary>
-        public async Task<List<FineTuningSession>> GetActiveSessionsAsync()
+        public Task<List<FineTuningSession>> GetActiveSessionsAsync()
         {
             try
             {
@@ -127,14 +127,14 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get active fine-tuning sessions");
-                return new List<FineTuningSession>();
+                return Task.FromResult(new List<FineTuningSession>());
             }
         }
 
         /// <summary>
         /// Validates fine-tuning data for quality and compatibility
         /// </summary>
-        public async Task<FineTuningValidationResult> ValidateFineTuningDataAsync(FineTuningData data)
+        public Task<FineTuningValidationResult> ValidateFineTuningDataAsync(FineTuningData data)
         {
             try
             {
@@ -169,12 +169,12 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                 _logger.LogInformation("Fine-tuning data validation completed. Valid: {IsValid}, Issues: {IssueCount}", 
                     result.IsValid, result.Issues.Count);
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to validate fine-tuning data");
-                return new FineTuningValidationResult
+                return Task.FromResult(new FineTuningValidationResult
                 {
                     IsValid = false,
                     ValidationTime = DateTime.UtcNow,
@@ -189,7 +189,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                         }
                     },
                     Recommendations = new List<string> { "Review data manually for quality and format" }
-                };
+                });
             }
         }
 

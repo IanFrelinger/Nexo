@@ -134,10 +134,10 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// </summary>
     public class PerformanceStatus
     {
-        public PerformanceTrend OverallTrend { get; set; }
-        public PerformanceTrend CacheHitRateTrend { get; set; }
-        public PerformanceTrend AIResponseTimeTrend { get; set; }
-        public PerformanceTrend MemoryUsageTrend { get; set; }
+        public PerformanceTrend OverallTrend { get; set; } = new();
+        public PerformanceTrend CacheHitRateTrend { get; set; } = new();
+        public PerformanceTrend AIResponseTimeTrend { get; set; } = new();
+        public PerformanceTrend MemoryUsageTrend { get; set; } = new();
     }
 
     /// <summary>
@@ -219,10 +219,10 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// </summary>
     public class PerformanceMetrics
     {
-        public PerformanceTrend OverallTrend { get; set; }
-        public PerformanceTrend CacheHitRateTrend { get; set; }
-        public PerformanceTrend AIResponseTimeTrend { get; set; }
-        public PerformanceTrend MemoryUsageTrend { get; set; }
+        public PerformanceTrend OverallTrend { get; set; } = new();
+        public PerformanceTrend CacheHitRateTrend { get; set; } = new();
+        public PerformanceTrend AIResponseTimeTrend { get; set; } = new();
+        public PerformanceTrend MemoryUsageTrend { get; set; } = new();
     }
 
     /// <summary>

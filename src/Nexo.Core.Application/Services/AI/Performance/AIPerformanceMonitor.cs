@@ -60,7 +60,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
             }
         }
 
-        public async Task<PerformanceMetrics> EndOperationAsync(string operationId, bool success, string errorMessage = null)
+        public async Task<PerformanceMetrics> EndOperationAsync(string operationId, bool success, string? errorMessage = null)
         {
             try
             {

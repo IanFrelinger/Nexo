@@ -28,7 +28,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed
         /// <summary>
         /// Registers a processing node
         /// </summary>
-        public async Task<bool> RegisterNodeAsync(NodeRegistrationRequest request)
+        public Task<bool> RegisterNodeAsync(NodeRegistrationRequest request)
         {
             try
             {
@@ -52,19 +52,19 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                 }
 
                 _logger.LogInformation("Processing node {NodeId} registered successfully", request.NodeId);
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to register processing node {NodeId}", request.NodeId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Unregisters a processing node
         /// </summary>
-        public async Task<bool> UnregisterNodeAsync(string nodeId)
+        public Task<bool> UnregisterNodeAsync(string nodeId)
         {
             try
             {
@@ -74,22 +74,22 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                     {
                         _nodes.Remove(nodeId);
                         _logger.LogInformation("Processing node {NodeId} unregistered", nodeId);
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to unregister processing node {NodeId}", nodeId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Updates node heartbeat
         /// </summary>
-        public async Task<bool> UpdateNodeHeartbeatAsync(string nodeId, NodeResourceInfo resourceInfo)
+        public Task<bool> UpdateNodeHeartbeatAsync(string nodeId, NodeResourceInfo resourceInfo)
         {
             try
             {
@@ -99,22 +99,22 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                     {
                         node.LastHeartbeat = DateTime.UtcNow;
                         node.ResourceInfo = resourceInfo;
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to update heartbeat for node {NodeId}", nodeId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Submits a distributed task
         /// </summary>
-        public async Task<DistributedTask> SubmitTaskAsync(DistributedTaskRequest request)
+        public Task<DistributedTask> SubmitTaskAsync(DistributedTaskRequest request)
         {
             try
             {
@@ -154,7 +154,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                 _ = Task.Run(() => ProcessDistributedTaskAsync(task));
 
                 _logger.LogInformation("Distributed task {TaskId} submitted successfully", task.TaskId);
-                return task;
+                return Task.FromResult(task);
             }
             catch (Exception ex)
             {
@@ -166,27 +166,27 @@ namespace Nexo.Core.Application.Services.AI.Distributed
         /// <summary>
         /// Gets task status
         /// </summary>
-        public async Task<DistributedTask?> GetTaskStatusAsync(string taskId)
+        public Task<DistributedTask?> GetTaskStatusAsync(string taskId)
         {
             try
             {
                 lock (_lockObject)
                 {
                     _tasks.TryGetValue(taskId, out var task);
-                    return task;
+                    return Task.FromResult(task);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get task status for {TaskId}", taskId);
-                return null;
+                return Task.FromResult<DistributedTask?>(null);
             }
         }
 
         /// <summary>
         /// Cancels a distributed task
         /// </summary>
-        public async Task<bool> CancelTaskAsync(string taskId)
+        public Task<bool> CancelTaskAsync(string taskId)
         {
             try
             {
@@ -205,44 +205,44 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                         }
                         
                         _logger.LogInformation("Distributed task {TaskId} cancelled", taskId);
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to cancel task {TaskId}", taskId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Gets all available nodes
         /// </summary>
-        public async Task<List<ProcessingNode>> GetAvailableNodesAsync()
+        public Task<List<ProcessingNode>> GetAvailableNodesAsync()
         {
             try
             {
                 lock (_lockObject)
                 {
-                    return _nodes.Values
+                    return Task.FromResult(_nodes.Values
                         .Where(n => n.Status == NodeStatus.Available && 
                                    DateTime.UtcNow - n.LastHeartbeat < TimeSpan.FromMinutes(5))
-                        .ToList();
+                        .ToList());
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get available nodes");
-                return new List<ProcessingNode>();
+                return Task.FromResult(new List<ProcessingNode>());
             }
         }
 
         /// <summary>
         /// Gets task distribution statistics
         /// </summary>
-        public async Task<DistributionStatistics> GetDistributionStatisticsAsync()
+        public Task<DistributionStatistics> GetDistributionStatisticsAsync()
         {
             try
             {
@@ -262,7 +262,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                         GeneratedAt = DateTime.UtcNow
                     };
 
-                    return statistics;
+                    return Task.FromResult(statistics);
                 }
             }
             catch (Exception ex)
@@ -373,7 +373,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                 n.ResourceInfo.MemoryUsage < 80).ToList();
 
             if (!suitableNodes.Any())
-                return null;
+                return Task.FromResult<DistributedTask?>(null);
 
             // Select node with lowest resource usage
             return suitableNodes.OrderBy(n => n.ResourceInfo.CpuUsage + n.ResourceInfo.MemoryUsage).First();

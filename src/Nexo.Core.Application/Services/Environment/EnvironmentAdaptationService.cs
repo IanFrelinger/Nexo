@@ -93,33 +93,33 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         return await Task.FromResult(strategies);
     }
     
-    public async Task<bool> SupportsFeatureAsync(EnvironmentProfile environment, string feature)
+    public Task<bool> SupportsFeatureAsync(EnvironmentProfile environment, string feature)
     {
         // Check if environment supports specific feature
         switch (feature.ToLower())
         {
             case "parallelization":
-                return environment.CpuCores > 1;
+                return Task.FromResult(environment.CpuCores > 1);
             case "async":
-                return environment.EnvironmentType != "WebAssembly";
+                return Task.FromResult(environment.EnvironmentType != "WebAssembly");
             case "memoryintensive":
-                return environment.AvailableMemoryMB > 1024; // 1GB
+                return Task.FromResult(environment.AvailableMemoryMB > 1024); // 1GB
             default:
-                return true;
+                return Task.FromResult(true);
         }
     }
     
-    public async Task<Nexo.Core.Domain.Entities.Infrastructure.ResourceConstraints> GetEnvironmentConstraintsAsync(EnvironmentProfile environment)
+    public Task<Nexo.Core.Domain.Entities.Infrastructure.ResourceConstraints> GetEnvironmentConstraintsAsync(EnvironmentProfile environment)
     {
-        return new Nexo.Core.Domain.Entities.Infrastructure.ResourceConstraints
+        return Task.FromResult(new Nexo.Core.Domain.Entities.Infrastructure.ResourceConstraints
         {
             MaxCpuUsage = environment.CpuCores * 100.0,
             MaxMemoryUsage = environment.AvailableMemoryMB,
             MaxStorageUsage = 100.0 // Default 100GB
-        };
+        });
     }
     
-    public async Task<OptimizationResult> OptimizeForEnvironmentAsync(EnvironmentProfile environment, string code)
+    public Task<OptimizationResult> OptimizeForEnvironmentAsync(EnvironmentProfile environment, string code)
     {
         _logger.LogInformation("Optimizing code for environment {EnvironmentId}", environment.EnvironmentId);
         
@@ -140,7 +140,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
             suggestions.Add("Applied Unity-specific optimizations");
         }
         
-        return new OptimizationResult
+        return Task.FromResult(new OptimizationResult
         {
             IsSuccessful = true,
             OptimizedCode = optimizedCode,
@@ -148,10 +148,10 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
             MemoryImprovement = 0.05, // 5% improvement
             Suggestions = suggestions,
             OptimizedAt = DateTime.UtcNow
-        };
+        });
     }
     
-    public async Task<IEnumerable<string>> GetEnvironmentRecommendationsAsync(EnvironmentProfile environment)
+    public Task<IEnumerable<string>> GetEnvironmentRecommendationsAsync(EnvironmentProfile environment)
     {
         var recommendations = new List<string>();
         
@@ -173,10 +173,10 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
             recommendations.Add("Use efficient data structures");
         }
         
-        return await Task.FromResult(recommendations);
+        return Task.FromResult(recommendations.AsEnumerable());
     }
     
-    public async Task ApplyEnvironmentConfigurationsAsync(DetectedEnvironment environment)
+    public Task ApplyEnvironmentConfigurationsAsync(DetectedEnvironment environment)
     {
         _logger.LogInformation("Applying environment configurations for {Context} on {Platform}",
             environment.Context, environment.Platform);
@@ -195,6 +195,8 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
                 _logger.LogError(ex, "Failed to apply configuration: {ConfigType}", config.Type);
             }
         }
+        
+        return Task.CompletedTask;
     }
     
     public async Task<IEnumerable<EnvironmentOptimization>> GetEnvironmentOptimizationsAsync(DetectedEnvironment environment)
