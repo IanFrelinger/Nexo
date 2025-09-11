@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Nexo.Core.Application.Services.AI.Runtime
+namespace Nexo.Core.Application.Interfaces.AI
 {
     /// <summary>
     /// Interface for AI model providers
