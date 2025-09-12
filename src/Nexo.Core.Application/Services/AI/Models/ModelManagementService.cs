@@ -70,31 +70,31 @@ namespace Nexo.Core.Application.Services.AI.Models
             return downloadedModel.FilePath;
         }
 
-        public async Task<bool> IsModelAvailableAsync(string modelId, PlatformType platform)
+        public Task<bool> IsModelAvailableAsync(string modelId, PlatformType platform)
         {
             if (_cachedModels.TryGetValue(modelId, out var model))
             {
-                return model.SupportedPlatforms.Contains(platform) && File.Exists(model.FilePath);
+                return Task.FromResult(model.SupportedPlatforms.Contains(platform) && File.Exists(model.FilePath));
             }
 
-            return false;
+            return Task.FromResult(false);
         }
 
-        public async Task<ModelInfo?> GetModelInfoAsync(string modelId)
+        public Task<ModelInfo?> GetModelInfoAsync(string modelId)
         {
             if (_cachedModels.TryGetValue(modelId, out var model))
             {
-                return model;
+                return Task.FromResult<ModelInfo?>(model);
             }
 
-            return null;
+            return Task.FromResult<ModelInfo?>(null);
         }
 
-        public async Task<List<ModelInfo>> ListModelsAsync(PlatformType platform)
+        public Task<List<ModelInfo>> ListModelsAsync(PlatformType platform)
         {
-            return _cachedModels.Values
+            return Task.FromResult(_cachedModels.Values
                 .Where(m => m.SupportedPlatforms.Contains(platform))
-                .ToList();
+                .ToList());
         }
 
         public async Task<List<ModelVariant>> ListModelVariantsAsync(string modelId)

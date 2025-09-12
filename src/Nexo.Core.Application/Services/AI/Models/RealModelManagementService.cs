@@ -69,7 +69,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 var modelInfo = await GetModelInfoAsync(modelId);
                 
                 // Check if model is already downloaded
-                var modelPath = GetModelPath(modelId, version);
+                var modelPath = GetModelPath(modelId, version ?? "latest");
                 if (File.Exists(modelPath))
                 {
                     _logger.LogInformation("Model {ModelId} already exists at {ModelPath}", modelId, modelPath);
@@ -77,10 +77,13 @@ namespace Nexo.Core.Application.Services.AI.Models
                 }
 
                 // Download model
-                await DownloadModelFileAsync(modelInfo, modelPath);
+                if (modelInfo != null)
+                {
+                    await DownloadModelFileAsync(modelInfo, modelPath);
+                }
 
                 // Verify download
-                if (!await VerifyModelDownloadAsync(modelPath, modelInfo))
+                if (modelInfo != null && !await VerifyModelDownloadAsync(modelPath, modelInfo))
                 {
                     _logger.LogError("Model download verification failed for {ModelId}", modelId);
                     return false;
@@ -96,17 +99,17 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<bool> IsModelAvailableAsync(string modelId, string? version = null)
+        public Task<bool> IsModelAvailableAsync(string modelId, string? version = null)
         {
             try
             {
-                var modelPath = GetModelPath(modelId, version);
-                return File.Exists(modelPath);
+                var modelPath = GetModelPath(modelId, version ?? "latest");
+                return Task.FromResult(File.Exists(modelPath));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to check model availability for {ModelId}", modelId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
@@ -136,18 +139,18 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<bool> DeleteModelAsync(string modelId, string? version = null)
+        public Task<bool> DeleteModelAsync(string modelId, string? version = null)
         {
             try
             {
                 _logger.LogInformation("Deleting model {ModelId} version {Version}", modelId, version ?? "latest");
 
-                var modelPath = GetModelPath(modelId, version);
+                var modelPath = GetModelPath(modelId, version ?? "latest");
                 
                 if (!File.Exists(modelPath))
                 {
                     _logger.LogWarning("Model {ModelId} not found at {ModelPath}", modelId, modelPath);
-                    return false;
+                    return Task.FromResult(false);
                 }
 
                 // Delete model file
@@ -157,16 +160,16 @@ namespace Nexo.Core.Application.Services.AI.Models
                 _cachedModels.Remove(modelId);
 
                 _logger.LogInformation("Model {ModelId} deleted successfully", modelId);
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to delete model {ModelId}", modelId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
-        public async Task<ModelStorageStatistics> GetStorageStatisticsAsync()
+        public Task<ModelStorageStatistics> GetStorageStatisticsAsync()
         {
             try
             {
@@ -195,13 +198,13 @@ namespace Nexo.Core.Application.Services.AI.Models
                 }
 
                 // Get available space
-                var driveInfo = new DriveInfo(Path.GetPathRoot(_modelsDirectory));
+                var driveInfo = new DriveInfo(Path.GetPathRoot(_modelsDirectory) ?? "C:\\");
                 statistics.AvailableSpaceBytes = driveInfo.AvailableFreeSpace;
 
                 _logger.LogInformation("Storage statistics: {TotalModels} models, {TotalSize} bytes, {AvailableSpace} bytes available", 
                     statistics.TotalModels, statistics.TotalSize, statistics.AvailableSpace);
 
-                return statistics;
+                return Task.FromResult(statistics);
             }
             catch (Exception ex)
             {

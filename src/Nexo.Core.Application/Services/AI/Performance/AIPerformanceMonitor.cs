@@ -25,7 +25,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
             _historicalMetrics = new List<PerformanceMetrics>();
         }
 
-        public async Task<PerformanceMetrics> StartOperationAsync(string operationId, AIOperationType operationType, AIProviderType providerType, AIEngineType engineType)
+        public Task<PerformanceMetrics> StartOperationAsync(string operationId, AIOperationType operationType, AIProviderType providerType, AIEngineType engineType)
         {
             try
             {
@@ -51,7 +51,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
                 }
 
                 _logger.LogDebug("Performance monitoring started for operation {OperationId}", operationId);
-                return metrics;
+                return Task.FromResult(metrics);
             }
             catch (Exception ex)
             {
@@ -60,7 +60,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
             }
         }
 
-        public async Task<PerformanceMetrics> EndOperationAsync(string operationId, bool success, string? errorMessage = null)
+        public Task<PerformanceMetrics> EndOperationAsync(string operationId, bool success, string? errorMessage = null)
         {
             try
             {
@@ -72,7 +72,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
                     if (!_activeOperations.TryGetValue(operationId, out metrics))
                     {
                         _logger.LogWarning("Operation {OperationId} not found in active operations", operationId);
-                        return null;
+                        return Task.FromResult(new PerformanceMetrics { OperationId = operationId });
                     }
                     
                     _activeOperations.Remove(operationId);
@@ -82,7 +82,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
                 metrics.EndTime = DateTime.UtcNow;
                 metrics.Duration = metrics.EndTime - metrics.StartTime;
                 metrics.Status = success ? AIOperationStatus.Completed : AIOperationStatus.Failed;
-                metrics.ErrorMessage = errorMessage;
+                metrics.ErrorMessage = errorMessage ?? string.Empty;
 
                 // Capture final memory usage
                 metrics.FinalMemoryUsage = GC.GetTotalMemory(false);
@@ -108,7 +108,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
                 _logger.LogInformation("Operation {OperationId} completed in {Duration}ms with performance score {Score}", 
                     operationId, metrics.Duration.TotalMilliseconds, metrics.PerformanceScore);
 
-                return metrics;
+                return Task.FromResult(metrics);
             }
             catch (Exception ex)
             {
@@ -396,7 +396,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
     /// </summary>
     public class PerformanceMetrics
     {
-        public string OperationId { get; set; }
+        public string OperationId { get; set; } = string.Empty;
         public AIOperationType OperationType { get; set; }
         public AIProviderType ProviderType { get; set; }
         public AIEngineType EngineType { get; set; }
@@ -404,7 +404,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
         public DateTime EndTime { get; set; }
         public TimeSpan Duration { get; set; }
         public AIOperationStatus Status { get; set; }
-        public string ErrorMessage { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
         public long InitialMemoryUsage { get; set; }
         public long FinalMemoryUsage { get; set; }
         public long MemoryDelta { get; set; }

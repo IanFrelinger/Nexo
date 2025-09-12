@@ -356,7 +356,7 @@ public class ResourceManager : Nexo.Core.Application.Services.Adaptation.IResour
     
     public Task<Nexo.Core.Domain.Entities.Infrastructure.ResourceAllocation> GetAllocationAsync()
     {
-        return Task.FromResult<Nexo.Core.Domain.Entities.Infrastructure.ResourceAllocation>(null);
+        return Task.FromResult(new Nexo.Core.Domain.Entities.Infrastructure.ResourceAllocation());
     }
     
     public Task SetAllocationAsync(Nexo.Core.Domain.Entities.Infrastructure.ResourceAllocation allocation)

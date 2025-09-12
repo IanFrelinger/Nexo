@@ -50,7 +50,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
         /// <summary>
         /// Gets all available AI providers
         /// </summary>
-        public async Task<List<IAIProvider>> GetAvailableProvidersAsync()
+        public Task<List<IAIProvider>> GetAvailableProvidersAsync()
         {
             var availableProviders = new List<IAIProvider>();
 
@@ -69,7 +69,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
                 }
             }
 
-            return availableProviders.OrderByDescending(p => p.Priority).ToList();
+            return Task.FromResult(availableProviders.OrderByDescending(p => p.Priority).ToList());
         }
 
         /// <summary>

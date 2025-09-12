@@ -20,7 +20,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates business rules for consistency
         /// </summary>
-        Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<string> rules, CancellationToken cancellationToken = default);
+        Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<BusinessRule> rules, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks consistency across domain logic components

@@ -99,7 +99,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         /// <summary>
         /// Validates business rules for consistency
         /// </summary>
-        public async Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<string> rules, CancellationToken cancellationToken = default)
+        public async Task<BusinessRuleValidationResult> ValidateBusinessRulesAsync(List<BusinessRule> rules, CancellationToken cancellationToken = default)
         {
             try
             {

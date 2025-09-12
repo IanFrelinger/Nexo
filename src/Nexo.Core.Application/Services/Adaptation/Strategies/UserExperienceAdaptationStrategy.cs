@@ -65,7 +65,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
         };
     }
     
-    private async Task<FeedbackAnalysis> AnalyzeFeedbackPatterns(IEnumerable<UserFeedback> recentFeedback)
+    private Task<FeedbackAnalysis> AnalyzeFeedbackPatterns(IEnumerable<UserFeedback> recentFeedback)
     {
         var analysis = new FeedbackAnalysis();
         
@@ -98,10 +98,10 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             .Take(3)
             .ToDictionary(g => g.Key, g => g.Count());
         
-        return analysis;
+        return Task.FromResult(analysis);
     }
     
-    private async Task<AppliedAdaptation?> AdaptCodeGeneration(FeedbackAnalysis analysis)
+    private Task<AppliedAdaptation?> AdaptCodeGeneration(FeedbackAnalysis analysis)
     {
         var adaptations = new List<AppliedAdaptation>();
         
@@ -171,10 +171,10 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             });
         }
         
-        return adaptations.FirstOrDefault();
+        return Task.FromResult(adaptations.FirstOrDefault());
     }
     
-    private async Task<AppliedAdaptation?> AdaptResponseTimes(FeedbackAnalysis analysis)
+    private Task<AppliedAdaptation?> AdaptResponseTimes(FeedbackAnalysis analysis)
     {
         // If users complain about slow responses, optimize for speed
         if (analysis.CommonComplaints.ContainsKey("slow") || 
@@ -185,7 +185,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             
             _logger.LogInformation("Enabled speed optimization based on user feedback about slow responses");
             
-            return new AppliedAdaptation
+            return Task.FromResult(new AppliedAdaptation
             {
                 Type = "ResponseTime.SpeedOptimization",
                 Description = "Enabled speed optimization based on user feedback",
@@ -196,13 +196,13 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
                     ["SpeedOptimization"] = true,
                     ["TriggeredBy"] = "UserFeedback"
                 }
-            };
+            });
         }
         
-        return null;
+        return Task.FromResult<AppliedAdaptation?>(null);
     }
     
-    private async Task<AppliedAdaptation?> AdaptErrorHandling(FeedbackAnalysis analysis)
+    private Task<AppliedAdaptation?> AdaptErrorHandling(FeedbackAnalysis analysis)
     {
         // If users complain about unclear errors, improve error messages
         if (analysis.CommonComplaints.ContainsKey("error message") || 
@@ -213,7 +213,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             
             _logger.LogInformation("Enhanced error messages based on user feedback");
             
-            return new AppliedAdaptation
+            return Task.FromResult(new AppliedAdaptation
             {
                 Type = "ErrorHandling.EnhancedMessages",
                 Description = "Enhanced error messages based on user feedback",
@@ -224,13 +224,13 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
                     ["EnhancedErrorMessages"] = true,
                     ["TriggeredBy"] = "UserFeedback"
                 }
-            };
+            });
         }
         
-        return null;
+        return Task.FromResult<AppliedAdaptation?>(null);
     }
     
-    private async Task<AppliedAdaptation?> AdaptDocumentation(FeedbackAnalysis analysis)
+    private Task<AppliedAdaptation?> AdaptDocumentation(FeedbackAnalysis analysis)
     {
         // If users want better documentation, enhance it
         if (analysis.CommonComplaints.ContainsKey("documentation") || 
@@ -241,7 +241,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             
             _logger.LogInformation("Enhanced documentation based on user feedback");
             
-            return new AppliedAdaptation
+            return Task.FromResult(new AppliedAdaptation
             {
                 Type = "Documentation.Enhancement",
                 Description = "Enhanced documentation and explanations based on user feedback",
@@ -252,10 +252,10 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
                     ["EnhancedDocumentation"] = true,
                     ["TriggeredBy"] = "UserFeedback"
                 }
-            };
+            });
         }
         
-        return null;
+        return Task.FromResult<AppliedAdaptation?>(null);
     }
     
     private double CalculateSatisfactionTrend(IEnumerable<UserFeedback> feedback)
@@ -308,10 +308,10 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
         };
     }
     
-    public async Task<bool> CanHandleAsync(AdaptationNeed need)
+    public Task<bool> CanHandleAsync(AdaptationNeed need)
     {
-        return need.Type == AdaptationType.UserExperienceOptimization &&
-               need.Context.RecentFeedback.Any();
+        return Task.FromResult(need.Type == AdaptationType.UserExperienceOptimization &&
+               need.Context.RecentFeedback.Any());
     }
     
     public string GetDescription()

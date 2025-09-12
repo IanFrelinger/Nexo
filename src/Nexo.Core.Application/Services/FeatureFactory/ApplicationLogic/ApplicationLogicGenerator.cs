@@ -159,9 +159,9 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 {
                     var providerSelection = new AIProviderSelection
                     {
-                        SelectedProvider = selection.EngineType.ToString(),
-                        Confidence = 0.9,
-                        SelectionReason = "Auto-selected for code generation"
+                        ProviderName = selection.EngineType.ToString(),
+                        ConfidenceScore = 0.9,
+                        Reason = "Auto-selected for code generation"
                     };
                     var controller = await GenerateControllerForEntityAsync(entity, providerSelection, cancellationToken);
                     result.Controllers.Add(controller);
