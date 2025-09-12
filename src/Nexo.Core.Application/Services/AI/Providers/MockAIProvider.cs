@@ -18,11 +18,13 @@ namespace Nexo.Core.Application.Services.AI.Providers
     public class MockAIProvider : IAIProvider
     {
         private readonly ILogger<MockAIProvider> _logger;
+        private readonly ILoggerFactory _loggerFactory;
         private AIProviderStatus _status = AIProviderStatus.Available;
 
-        public MockAIProvider(ILogger<MockAIProvider> logger)
+        public MockAIProvider(ILogger<MockAIProvider> logger, ILoggerFactory loggerFactory)
         {
             _logger = logger;
+            _loggerFactory = loggerFactory;
         }
 
         public AIProviderType ProviderType => AIProviderType.Mock;
@@ -109,7 +111,7 @@ namespace Nexo.Core.Application.Services.AI.Providers
         {
             _logger.LogDebug("Creating Mock AI Engine for operation: {OperationType}", context.OperationType);
             
-            var engineLogger = _logger as ILogger<MockAIEngine> ?? new Logger<MockAIEngine>((_logger as ILoggerFactory) ?? throw new InvalidOperationException("Logger factory not available"));
+            var engineLogger = _loggerFactory.CreateLogger<MockAIEngine>();
             var engine = new MockAIEngine(engineLogger);
             await engine.InitializeAsync(GetMockModel(), context);
             

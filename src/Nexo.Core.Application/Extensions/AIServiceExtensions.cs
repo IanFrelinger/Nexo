@@ -38,6 +38,11 @@ namespace Nexo.Core.Application.Extensions
             services.AddSingleton<IModelManagementService, RealModelManagementService>();
             services.AddSingleton<AIPerformanceMonitor>();
 
+            // Register AI providers (Application layer implementations)
+            services.AddSingleton<IAIProvider, MockAIProvider>();
+            services.AddSingleton<IAIProvider, LlamaNativeProvider>();
+            services.AddSingleton<IAIProvider, LlamaWebAssemblyProvider>();
+
             // Register AI engines (Application layer implementations)
             services.AddTransient<IAIEngine, MockAIEngine>();
             services.AddTransient<IAIEngine, LlamaWebAssemblyEngine>();
@@ -76,6 +81,11 @@ namespace Nexo.Core.Application.Extensions
             // Register Application layer AI services
             services.AddSingleton<IAIRuntimeSelector, AIRuntimeSelector>();
             services.AddSingleton<IModelManagementService, RealModelManagementService>();
+
+            // Register AI providers (Application layer implementations)
+            services.AddSingleton<IAIProvider, MockAIProvider>();
+            services.AddSingleton<IAIProvider, LlamaNativeProvider>();
+            services.AddSingleton<IAIProvider, LlamaWebAssemblyProvider>();
 
             // Register AI engines (Application layer implementations)
             services.AddTransient<IAIEngine, MockAIEngine>();

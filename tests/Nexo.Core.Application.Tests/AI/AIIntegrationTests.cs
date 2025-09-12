@@ -147,7 +147,7 @@ public class Calculator
             Assert.NotNull(result);
             Assert.NotEmpty(result.GeneratedCode);
             Assert.True(result.ConfidenceScore > 0);
-            Assert.Contains("Optimized", result.Explanation);
+            Assert.Contains("Mock optimization", result.Explanation);
         }
 
         [Fact]
@@ -313,7 +313,7 @@ public class Calculator
             Assert.True(cpuUsage >= 0);
         }
 
-        public void Dispose()
+        private void Dispose()
         {
             _serviceProvider?.Dispose();
         }

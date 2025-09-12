@@ -21,11 +21,11 @@ namespace Nexo.Core.Application.Services.AI.Runtime
         private readonly List<IAIProvider> _providers;
         private readonly Dictionary<AIProviderType, IAIProvider> _providerMap;
 
-        public AIRuntimeSelector(ILogger<AIRuntimeSelector> logger)
+        public AIRuntimeSelector(ILogger<AIRuntimeSelector> logger, IEnumerable<IAIProvider> providers)
         {
             _logger = logger;
-            _providers = new List<IAIProvider>();
-            _providerMap = new Dictionary<AIProviderType, IAIProvider>();
+            _providers = providers.ToList();
+            _providerMap = _providers.ToDictionary(p => p.ProviderType, p => p);
         }
 
         /// <summary>
