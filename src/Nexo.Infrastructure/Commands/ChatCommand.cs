@@ -547,6 +547,7 @@ namespace Nexo.Infrastructure.Commands
         /// </summary>
         private async Task<ModelInfo> GetModelStatsAsync(IModel model)
         {
+            await Task.CompletedTask;
             return new ModelInfo
             {
                 Name = model.Name,

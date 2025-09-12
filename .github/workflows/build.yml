@@ -69,9 +69,9 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
     - name: Setup PowerShell
-      uses: actions/setup-powershell@v1
+      uses: milliewalky/setup-pwsh@v1
       with:
-        version: '7.4'
+        tag: "v7.4.0"
     
     - name: Build Feature Factory
       run: dotnet build solutions/Nexo.FeatureFactory.sln --configuration Release

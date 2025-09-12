@@ -22,7 +22,6 @@ namespace Nexo.Infrastructure.Services.AI
         private readonly ILogger<OllamaProvider> _logger;
         private readonly string _baseUrl;
         private readonly HashSet<string> _loadedModels = new();
-        private readonly object? _cacheService = null; // Placeholder for cache service
 
         public OllamaProvider(
             HttpClient httpClient,
@@ -119,6 +118,7 @@ namespace Nexo.Infrastructure.Services.AI
                 _loadedModels.Remove(modelName);
                 
                 _logger.LogInformation("Successfully unloaded model {ModelName}", modelName);
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -569,6 +569,7 @@ namespace Nexo.Infrastructure.Services.AI
 
         public async Task<Nexo.Core.Domain.Results.PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context)
         {
+            await Task.CompletedTask;
             return new Nexo.Core.Domain.Results.PerformanceEstimate
             {
                 EstimatedDuration = TimeSpan.FromSeconds(3),

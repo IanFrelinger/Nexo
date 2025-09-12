@@ -122,6 +122,7 @@ namespace Nexo.Infrastructure.Services.AI
                 GC.Collect();
                 
                 _logger.LogInformation("Successfully unloaded model {ModelName}", modelName);
+                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -143,6 +144,7 @@ namespace Nexo.Infrastructure.Services.AI
                 if (File.Exists(modelPath))
                 {
                     var fileInfo = new FileInfo(modelPath);
+                    await Task.CompletedTask;
                     return fileInfo.Length;
                 }
             }
@@ -151,6 +153,7 @@ namespace Nexo.Infrastructure.Services.AI
                 _logger.LogError(ex, "Error getting memory usage for model {ModelName}", modelName);
             }
 
+            await Task.CompletedTask;
             return 0;
         }
 
@@ -249,6 +252,7 @@ namespace Nexo.Infrastructure.Services.AI
                 "mistral-7b-instruct.gguf"
             };
 
+            await Task.CompletedTask;
             return availableModels.Select(name => new ModelInfo
             {
                 Name = name,
@@ -286,7 +290,7 @@ namespace Nexo.Infrastructure.Services.AI
                 }
 
                 // Return models
-                
+                await Task.CompletedTask;
                 return models;
             }
             catch (Exception ex)
@@ -367,6 +371,7 @@ namespace Nexo.Infrastructure.Services.AI
                 
                 var responseTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
 
+                await Task.CompletedTask;
                 return new ModelHealthStatus
                 {
                     IsHealthy = canAccess,
@@ -380,6 +385,7 @@ namespace Nexo.Infrastructure.Services.AI
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking native LLama health status");
+                await Task.CompletedTask;
                 return new ModelHealthStatus
                 {
                     IsHealthy = false,
@@ -398,7 +404,7 @@ namespace Nexo.Infrastructure.Services.AI
             return Path.Combine(_modelsDirectory, modelName);
         }
 
-        private static string GetModelDownloadUrl(string modelName)
+        private static string? GetModelDownloadUrl(string modelName)
         {
             // In a real implementation, you would have a registry of model URLs
             // For now, return null to indicate no download available
@@ -599,6 +605,7 @@ namespace Nexo.Infrastructure.Services.AI
 
         public async Task<Nexo.Core.Domain.Results.PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context)
         {
+            await Task.CompletedTask;
             return new Nexo.Core.Domain.Results.PerformanceEstimate
             {
                 EstimatedDuration = TimeSpan.FromSeconds(5),
@@ -651,6 +658,7 @@ namespace Nexo.Infrastructure.Services.AI
         public Task<AIResponse> GenerateResponseAsync(string prompt, AIOperationContext context) => Task.FromResult(new AIResponse());
         public async IAsyncEnumerable<string> StreamResponseAsync(string prompt, AIOperationContext context)
         {
+            await Task.CompletedTask;
             yield break;
         }
         public Task CancelAsync() => Task.CompletedTask;
@@ -748,6 +756,7 @@ namespace Nexo.Infrastructure.Services.AI
                 // For native provider, we assume models are manually placed
                 // This is a stub implementation
                 _logger.LogInformation("Download model {ModelName} requested, but native provider requires manual model placement", modelName);
+                await Task.CompletedTask;
                 return new ModelInfo
                 {
                     Name = modelName,
@@ -759,6 +768,7 @@ namespace Nexo.Infrastructure.Services.AI
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to download model {ModelName}", modelName);
+                await Task.CompletedTask;
                 return new ModelInfo
                 {
                     Name = modelName,
@@ -776,11 +786,13 @@ namespace Nexo.Infrastructure.Services.AI
             {
                 // For native provider, we assume models are manually placed
                 _logger.LogInformation("Download model {ModelId} requested, but native provider requires manual model placement", modelId);
+                await Task.CompletedTask;
                 return false;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to download model {ModelId}", modelId);
+                await Task.CompletedTask;
                 return false;
             }
         }
@@ -788,6 +800,7 @@ namespace Nexo.Infrastructure.Services.AI
         public async Task<IEnumerable<ModelInfo>> GetAvailableModelsForDownloadAsync(CancellationToken cancellationToken = default)
         {
             // For native provider, return empty list as models are manually placed
+            await Task.CompletedTask;
             return new List<ModelInfo>();
         }
 

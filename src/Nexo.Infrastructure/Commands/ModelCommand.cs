@@ -559,6 +559,7 @@ namespace Nexo.Infrastructure.Commands
             }
 
             AnsiConsole.Write(table);
+            await Task.CompletedTask;
         }
 
         /// <summary>
