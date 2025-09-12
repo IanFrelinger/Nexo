@@ -259,7 +259,7 @@ public static class RuntimeEnvironmentDetector
             else if (cpuCores >= 4)
                 return OptimizationLevel.Balanced;
             else
-                return OptimizationLevel.Conservative;
+                return OptimizationLevel.Basic;
             #endif
         }
         catch

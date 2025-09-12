@@ -88,8 +88,8 @@ public class IterationStrategyComprehensiveTests
         Assert.Equal(Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Debug.ToString(), profile.OptimizationLevel);
         #else
         // In release mode, should be Balanced or Aggressive based on CPU cores
-        Assert.True(profile.OptimizationLevel == Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Balanced || 
-                   profile.OptimizationLevel == Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Aggressive);
+        Assert.True(profile.OptimizationLevel == Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Balanced.ToString() || 
+                   profile.OptimizationLevel == Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Aggressive.ToString());
         #endif
     }
     
