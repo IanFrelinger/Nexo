@@ -453,7 +453,7 @@ namespace Nexo.Core.Application.Services.Monitoring
             return Task.FromResult(metrics);
         }
 
-        private Task CheckAlertsAsync(List<Metric> metrics)
+        private async Task CheckAlertsAsync(List<Metric> metrics)
         {
             foreach (var metric in metrics)
             {
@@ -473,8 +473,6 @@ namespace Nexo.Core.Application.Services.Monitoring
                         });
                 }
             }
-            
-            return Task.CompletedTask;
         }
 
         private Nexo.Core.Domain.Enums.Monitoring.HealthStatus CalculateOverallHealth(List<HealthCheckResult> healthChecks)

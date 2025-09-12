@@ -382,7 +382,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
             };
         }
 
-        private async Task<List<Recommendation>> GenerateRecommendationsAsync(
+        private Task<List<Recommendation>> GenerateRecommendationsAsync(
             BetaProgram program, 
             UserMetrics userMetrics, 
             EngagementMetrics engagementMetrics, 
@@ -415,7 +415,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 });
             }
 
-            return recommendations;
+            return Task.FromResult(recommendations);
         }
 
         private async Task<HealthCheckResult> CheckRecruitmentHealthAsync(BetaProgram program)
@@ -512,7 +512,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
             };
         }
 
-        private async Task<List<Recommendation>> GenerateHealthRecommendationsAsync(List<HealthCheckResult> healthChecks)
+        private Task<List<Recommendation>> GenerateHealthRecommendationsAsync(List<HealthCheckResult> healthChecks)
         {
             var recommendations = new List<Recommendation>();
 
@@ -528,7 +528,7 @@ namespace Nexo.Core.Application.Services.BetaTesting
                 });
             }
 
-            return recommendations;
+            return Task.FromResult(recommendations);
         }
 
         #endregion

@@ -429,7 +429,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
         public double AveragePerformanceScore { get; set; }
         public double AverageMemoryUsage { get; set; }
         public double AverageCpuUsage { get; set; }
-        public string PerformanceTrend { get; set; }
+        public string PerformanceTrend { get; set; } = string.Empty;
         public DateTime LastUpdated { get; set; }
     }
 
@@ -438,10 +438,10 @@ namespace Nexo.Core.Application.Services.AI.Performance
     /// </summary>
     public class PerformanceRecommendation
     {
-        public string Type { get; set; }
-        public string Priority { get; set; }
-        public string Message { get; set; }
-        public string Recommendation { get; set; }
-        public string Impact { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public string Priority { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string Recommendation { get; set; } = string.Empty;
+        public string Impact { get; set; } = string.Empty;
     }
 }

@@ -27,7 +27,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
         /// <summary>
         /// Starts a fine-tuning session for an AI model
         /// </summary>
-        public Task<FineTuningSession> StartFineTuningAsync(FineTuningRequest request)
+        public async Task<FineTuningSession> StartFineTuningAsync(FineTuningRequest request)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                 _ = Task.Run(() => ExecuteFineTuningAsync(session));
 
                 _logger.LogInformation("Fine-tuning session {SessionId} started successfully", session.SessionId);
-                return Task.FromResult(session);
+                return session;
             }
             catch (Exception ex)
             {

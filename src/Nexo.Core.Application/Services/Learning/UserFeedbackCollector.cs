@@ -112,7 +112,7 @@ public class UserFeedbackCollector : IUserFeedbackCollector
             {
                 Trigger = AdaptationTrigger.HighSeverityFeedback,
                 Priority = AdaptationPriority.Critical,
-                Context = analysis.Context.ToString(),
+                Context = analysis.Context?.ToString() ?? string.Empty,
                 UserFeedback = feedback,
                 Description = $"High severity feedback: {feedback.Content}"
             });

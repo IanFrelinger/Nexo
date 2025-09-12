@@ -203,7 +203,7 @@ namespace Nexo.Core.Application.Services.Safety
                 ["OperationId"] = executionResult.OperationId,
                 ["AllSafeguardsSuccessful"] = executionResult.AllSafeguardsSuccessful,
                 ["ExecutionTimestamp"] = executionResult.ExecutionTimestamp,
-                ["ExecutionNotes"] = executionResult.ExecutionNotes
+                ["ExecutionNotes"] = executionResult.ExecutionNotes ?? string.Empty
             });
 
             return executionResult;

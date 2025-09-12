@@ -84,7 +84,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
         /// <summary>
         /// Sets a cached value
         /// </summary>
-        public Task<bool> SetAsync<T>(string key, T value, string? policyName = null, Dictionary<string, object>? metadata = null)
+        public async Task<bool> SetAsync<T>(string key, T value, string? policyName = null, Dictionary<string, object>? metadata = null)
         {
             try
             {
@@ -115,12 +115,12 @@ namespace Nexo.Core.Application.Services.AI.Caching
                 await ApplyEvictionPolicyAsync();
 
                 _logger.LogDebug("Cached value set for key {Key}", key);
-                return Task.FromResult(true);
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to set cached value for key {Key}", key);
-                return Task.FromResult(false);
+                return false;
             }
         }
 
