@@ -341,7 +341,7 @@ public class SimpleForeachStrategy<T> : IIterationStrategy<T>
         }
     }
 
-    public Task<TResult> ExecuteAsync<TResult>(IEnumerable<T> source, Func<T, TResult> selector)
+    public Task<TResult?> ExecuteAsync<TResult>(IEnumerable<T> source, Func<T, TResult> selector)
     {
         var results = new List<TResult>();
         foreach (var item in source)
@@ -436,7 +436,7 @@ public class SimpleForLoopStrategy<T> : IIterationStrategy<T>
         }
     }
 
-    public Task<TResult> ExecuteAsync<TResult>(IEnumerable<T> source, Func<T, TResult> selector)
+    public Task<TResult?> ExecuteAsync<TResult>(IEnumerable<T> source, Func<T, TResult> selector)
     {
         var list = source.ToList();
         var results = new List<TResult>();
@@ -512,7 +512,7 @@ public class SimpleLinqStrategy<T> : IIterationStrategy<T>
         await Task.WhenAll(tasks);
     }
 
-    public Task<TResult> ExecuteAsync<TResult>(IEnumerable<T> source, Func<T, TResult> selector)
+    public Task<TResult?> ExecuteAsync<TResult>(IEnumerable<T> source, Func<T, TResult> selector)
     {
         var result = source.Select(selector).FirstOrDefault();
         return Task.FromResult(result);
@@ -554,25 +554,30 @@ internal class StrategyWrapper<T> : IIterationStrategy<object>
     public void Execute(IEnumerable<object> source, Action<object> action)
     {
         var typedSource = source.OfType<T>();
-        _wrappedStrategy.Execute(typedSource, item => action(item));
+        if (action == null) throw new ArgumentNullException(nameof(action));
+        _wrappedStrategy.Execute(typedSource, item => action(item!));
     }
 
     public IEnumerable<TResult> Execute<TResult>(IEnumerable<object> source, Func<object, TResult> transform)
     {
         var typedSource = source.OfType<T>();
-        return _wrappedStrategy.Execute(typedSource, item => transform(item));
+        if (transform == null) throw new ArgumentNullException(nameof(transform));
+        return _wrappedStrategy.Execute(typedSource, item => transform(item!));
     }
 
     public IEnumerable<TResult> ExecuteWhere<TResult>(IEnumerable<object> source, Func<object, bool> predicate, Func<object, TResult> selector)
     {
         var typedSource = source.OfType<T>();
-        return _wrappedStrategy.ExecuteWhere(typedSource, item => predicate(item), item => selector(item));
+        if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+        if (selector == null) throw new ArgumentNullException(nameof(selector));
+        return _wrappedStrategy.ExecuteWhere(typedSource, item => predicate(item!), item => selector(item!));
     }
 
     public async Task ExecuteAsync(IEnumerable<object> source, Func<object, Task> asyncAction)
     {
         var typedSource = source.OfType<T>();
-        await _wrappedStrategy.ExecuteAsync(typedSource, async item => await asyncAction(item));
+        if (asyncAction == null) throw new ArgumentNullException(nameof(asyncAction));
+        await _wrappedStrategy.ExecuteAsync(typedSource, async item => await asyncAction(item!));
     }
 
     public string GenerateCode(CodeGenerationContext context)

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -180,7 +181,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     TotalModels = 0,
                     TotalSizeBytes = 0,
                     AvailableSpaceBytes = 0,
-                    PlatformType = GetCurrentPlatformType(),
+                    PlatformType = ConvertToInfrastructurePlatformType(GetCurrentPlatformType()),
                     LastUpdated = DateTime.UtcNow
                 };
 
@@ -230,7 +231,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 Status = ModelStatus.Available,
                 DownloadUrl = $"https://huggingface.co/microsoft/{modelId}/resolve/main/model.gguf",
                 Checksum = "mock-checksum",
-                SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
+                SupportedPlatforms = new List<Nexo.Core.Domain.Enums.PlatformType> { Nexo.Core.Domain.Enums.PlatformType.Windows, Nexo.Core.Domain.Enums.PlatformType.macOS, Nexo.Core.Domain.Enums.PlatformType.Linux },
                 LastUpdated = DateTime.UtcNow
             };
         }
@@ -243,7 +244,10 @@ namespace Nexo.Core.Application.Services.AI.Models
             {
                 // Create directory if it doesn't exist
                 var directory = Path.GetDirectoryName(modelPath);
-                Directory.CreateDirectory(directory);
+                if (directory != null)
+                {
+                    Directory.CreateDirectory(directory);
+                }
 
                 // Download file
                 using (var response = await _httpClient.GetAsync(modelInfo.DownloadUrl))
@@ -316,7 +320,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                         Quantization = ModelQuantization.Q4_0,
                         Status = ModelStatus.Available,
                         LocalPath = file,
-                        SupportedPlatforms = new List<PlatformType> { GetCurrentPlatformType() },
+                        SupportedPlatforms = new List<Nexo.Core.Domain.Enums.PlatformType> { GetCurrentPlatformType() },
                         LastUpdated = fileInfo.LastWriteTime
                     });
                 }
@@ -344,7 +348,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     Quantization = ModelQuantization.Q4_0,
                     Status = ModelStatus.Available,
                     DownloadUrl = "https://huggingface.co/microsoft/Llama-2-7b-chat-gguf/resolve/main/llama-2-7b-chat.q4_0.gguf",
-                    SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
+                    SupportedPlatforms = new List<Nexo.Core.Domain.Enums.PlatformType> { Nexo.Core.Domain.Enums.PlatformType.Windows, Nexo.Core.Domain.Enums.PlatformType.macOS, Nexo.Core.Domain.Enums.PlatformType.Linux },
                     LastUpdated = DateTime.UtcNow
                 },
                 new ModelInfo
@@ -357,7 +361,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     Quantization = ModelQuantization.Q4_0,
                     Status = ModelStatus.Available,
                     DownloadUrl = "https://huggingface.co/microsoft/CodeLlama-7b-Instruct-gguf/resolve/main/codellama-7b-instruct.q4_0.gguf",
-                    SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux },
+                    SupportedPlatforms = new List<Nexo.Core.Domain.Enums.PlatformType> { Nexo.Core.Domain.Enums.PlatformType.Windows, Nexo.Core.Domain.Enums.PlatformType.macOS, Nexo.Core.Domain.Enums.PlatformType.Linux },
                     LastUpdated = DateTime.UtcNow
                 }
             };
@@ -370,19 +374,19 @@ namespace Nexo.Core.Application.Services.AI.Models
             return Path.Combine(_modelsDirectory, versionFolder, fileName);
         }
 
-        private PlatformType GetCurrentPlatformType()
+        private Nexo.Core.Domain.Enums.PlatformType GetCurrentPlatformType()
         {
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT)
-                return PlatformType.Windows;
+                return Nexo.Core.Domain.Enums.PlatformType.Windows;
             else if (System.Environment.OSVersion.Platform == PlatformID.MacOSX)
-                return PlatformType.macOS;
+                return Nexo.Core.Domain.Enums.PlatformType.macOS;
             else if (System.Environment.OSVersion.Platform == PlatformID.Unix)
-                return PlatformType.Linux;
+                return Nexo.Core.Domain.Enums.PlatformType.Linux;
             else
-                return PlatformType.Unknown;
+                return Nexo.Core.Domain.Enums.PlatformType.Unknown;
         }
 
-        public async Task<ModelInfo> DownloadModelAsync(string modelId, PlatformType platform, string? variantId = null)
+        public async Task<ModelInfo> DownloadModelAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform, string? variantId = null)
         {
             try
             {
@@ -408,7 +412,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<string> GetModelPathAsync(string modelId, PlatformType platform)
+        public Task<string> GetModelPathAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             try
             {
@@ -421,7 +425,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     throw new FileNotFoundException($"Model file not found: {modelPath}");
                 }
 
-                return modelPath;
+                return Task.FromResult(modelPath);
             }
             catch (Exception ex)
             {
@@ -430,23 +434,23 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<bool> IsModelAvailableAsync(string modelId, PlatformType platform)
+        public Task<bool> IsModelAvailableAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             try
             {
                 _logger.LogInformation("Checking if model {ModelId} is available for platform {Platform}", modelId, platform);
 
                 var modelPath = Path.Combine(_modelsDirectory, modelId, $"{modelId}_{platform}.model");
-                return File.Exists(modelPath);
+                return Task.FromResult(File.Exists(modelPath));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking model availability for {ModelId}", modelId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
-        public async Task<List<ModelInfo>> ListModelsAsync(PlatformType platform)
+        public async Task<List<ModelInfo>> ListModelsAsync(Nexo.Core.Domain.Enums.PlatformType platform)
         {
             try
             {
@@ -515,7 +519,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task CacheModelAsync(string modelId, Stream modelData, PlatformType platform)
+        public async Task CacheModelAsync(string modelId, Stream modelData, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             try
             {
@@ -540,7 +544,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task RemoveModelAsync(string modelId, PlatformType platform)
+        public Task RemoveModelAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             try
             {
@@ -561,6 +565,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 }
 
                 _logger.LogInformation("Successfully removed model {ModelId}", modelId);
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -569,7 +574,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<bool> ValidateModelAsync(string modelPath)
+        public Task<bool> ValidateModelAsync(string modelPath)
         {
             try
             {
@@ -577,14 +582,14 @@ namespace Nexo.Core.Application.Services.AI.Models
 
                 if (!File.Exists(modelPath))
                 {
-                    return false;
+                    return Task.FromResult(false);
                 }
 
                 // Basic validation - check file size and extension
                 var fileInfo = new FileInfo(modelPath);
                 if (fileInfo.Length == 0)
                 {
-                    return false;
+                    return Task.FromResult(false);
                 }
 
                 var validExtensions = new[] { ".model", ".gguf", ".bin", ".safetensors" };
@@ -592,20 +597,20 @@ namespace Nexo.Core.Application.Services.AI.Models
                 
                 if (!validExtensions.Contains(extension))
                 {
-                    return false;
+                    return Task.FromResult(false);
                 }
 
                 _logger.LogInformation("Model validation successful for {ModelPath}", modelPath);
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating model at {ModelPath}", modelPath);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
-        public async Task<ModelVariant> GetBestModelVariantAsync(PlatformType platform, AIRequirements requirements)
+        public Task<ModelVariant> GetBestModelVariantAsync(Nexo.Core.Domain.Enums.PlatformType platform, AIRequirements requirements)
         {
             try
             {
@@ -624,7 +629,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 };
 
                 _logger.LogInformation("Selected best model variant for platform {Platform}", platform);
-                return variant;
+                return Task.FromResult(variant);
             }
             catch (Exception ex)
             {
@@ -633,7 +638,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task PreloadModelsAsync(PlatformType platform, List<string> modelIds)
+        public async Task PreloadModelsAsync(Nexo.Core.Domain.Enums.PlatformType platform, List<string> modelIds)
         {
             try
             {
@@ -653,7 +658,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task CleanupModelsAsync(TimeSpan maxAge)
+        public Task CleanupModelsAsync(TimeSpan maxAge)
         {
             try
             {
@@ -676,6 +681,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 }
 
                 _logger.LogInformation("Model cleanup completed");
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {
@@ -684,5 +690,23 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
+        private Nexo.Core.Domain.Entities.Infrastructure.PlatformType ConvertToInfrastructurePlatformType(Nexo.Core.Domain.Enums.PlatformType platformType)
+        {
+            return platformType switch
+            {
+                Nexo.Core.Domain.Enums.PlatformType.Web => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web,
+                Nexo.Core.Domain.Enums.PlatformType.Desktop => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop,
+                Nexo.Core.Domain.Enums.PlatformType.Mobile => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile,
+                Nexo.Core.Domain.Enums.PlatformType.Windows => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows,
+                Nexo.Core.Domain.Enums.PlatformType.Linux => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Linux,
+                Nexo.Core.Domain.Enums.PlatformType.macOS => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS,
+                Nexo.Core.Domain.Enums.PlatformType.iOS => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.iOS,
+                Nexo.Core.Domain.Enums.PlatformType.Android => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Android,
+                Nexo.Core.Domain.Enums.PlatformType.Cloud => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Cloud,
+                Nexo.Core.Domain.Enums.PlatformType.Container => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Docker,
+                Nexo.Core.Domain.Enums.PlatformType.CrossPlatform => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Other,
+                _ => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Unknown
+            };
+        }
     }
 }

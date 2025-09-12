@@ -16,6 +16,11 @@ public enum ModelType
     CodeGeneration,
     
     /// <summary>
+    /// Chat models for conversational AI
+    /// </summary>
+    Chat,
+    
+    /// <summary>
     /// Analysis and reasoning models
     /// </summary>
     Analysis,
@@ -28,5 +33,10 @@ public enum ModelType
     /// <summary>
     /// Text embedding models
     /// </summary>
-    TextEmbedding
+    TextEmbedding,
+    
+    /// <summary>
+    /// Llama models
+    /// </summary>
+    Llama
 }

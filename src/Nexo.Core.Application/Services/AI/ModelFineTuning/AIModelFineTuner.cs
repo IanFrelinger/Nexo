@@ -80,7 +80,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get session status for {SessionId}", sessionId);
-                return null;
+                return Task.FromResult<FineTuningSession?>(null);
             }
         }
 

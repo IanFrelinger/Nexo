@@ -41,6 +41,16 @@ public record ModelResponse
     public long ProcessingTimeMs { get; init; }
     
     /// <summary>
+    /// Provider ID for this response
+    /// </summary>
+    public string ProviderId { get; init; } = string.Empty;
+    
+    /// <summary>
+    /// Model name that generated this response
+    /// </summary>
+    public string ModelName { get; init; } = string.Empty;
+    
+    /// <summary>
     /// Additional metadata from the model
     /// </summary>
     public Dictionary<string, object>? Metadata { get; init; }

@@ -1,34 +1,37 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums;
+using Nexo.Core.Domain.Results;
+using ModelInfo = Nexo.Core.Domain.Entities.AI.ModelInfo;
 using Nexo.Feature.AI.Enums;
 using Nexo.Feature.AI.Models;
 using Nexo.Feature.AI.Interfaces;
-using Nexo.Infrastructure.Services.Caching;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace Nexo.Infrastructure.Services.AI
 {
     /// <summary>
     /// Native LLama provider implementation using LlamaSharp for offline AI operations
     /// </summary>
-    public class LlamaNativeProvider : ILlamaProvider
+    public class LlamaNativeProvider : ILlamaProvider, Nexo.Core.Application.Interfaces.AI.IModelProvider, Nexo.Core.Application.Interfaces.AI.IAIProvider
     {
         private readonly ILogger<LlamaNativeProvider> _logger;
-        private readonly ICacheService _cacheService;
-        private readonly string _modelsPath;
+        private readonly string _modelsDirectory;
         private readonly Dictionary<string, object> _loadedModels = new();
         private readonly object _modelsLock = new();
+        private bool _isInitialized = false;
 
         public LlamaNativeProvider(
-            ILogger<LlamaNativeProvider> logger,
-            ICacheService cacheService)
+            ILogger<LlamaNativeProvider> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _modelsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "models", "native");
+            _modelsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "models", "native");
             
             // Ensure models directory exists
-            Directory.CreateDirectory(_modelsPath);
+            Directory.CreateDirectory(_modelsDirectory);
         }
 
         // ILlamaProvider implementation
@@ -36,18 +39,20 @@ namespace Nexo.Infrastructure.Services.AI
         public string DisplayName => "LLama Native";
         public string Name => "LLama Native";
         public string Description => "Native LLama implementation using LlamaSharp for offline AI operations";
+        public string Version => "1.0.0";
+        public AIProviderType ProviderType => AIProviderType.LlamaNative;
         public int Priority => 90; // Lower priority than Ollama but higher than remote providers
         public bool IsOfflineCapable => true;
         public bool SupportsGpuAcceleration => DetectGpuSupport();
         public bool SupportsStreaming => true;
         public int MaxContextLength => 4096; // Conservative default
-        public string ModelsPath => _modelsPath;
+        public string ModelsPath => _modelsDirectory;
 
-        public IEnumerable<ModelType> SupportedModelTypes => new[]
+        public IEnumerable<string> SupportedModelTypes => new[]
         {
-            ModelType.TextGeneration,
-            ModelType.CodeGeneration,
-            ModelType.Chat
+            "TextGeneration",
+            "CodeGeneration",
+            "Chat"
         };
 
         public bool IsModelLoaded(string modelName)
@@ -58,7 +63,7 @@ namespace Nexo.Infrastructure.Services.AI
             }
         }
 
-        public async Task LoadModelAsync(string modelName, CancellationToken cancellationToken = default)
+        public async Task LoadModelInternalAsync(string modelName, CancellationToken cancellationToken = default)
         {
             if (IsModelLoaded(modelName))
             {
@@ -177,21 +182,19 @@ namespace Nexo.Infrastructure.Services.AI
                 var modelInfo = new ModelInfo
                 {
                     Name = modelName,
-                    DisplayName = modelName,
-                    ModelType = GetModelType(modelName),
-                    IsAvailable = true,
+                    Description = modelName,
+                    EngineType = AIEngineType.LlamaNative,
+                    Status = ModelStatus.Available,
                     SizeBytes = new FileInfo(modelPath).Length,
-                    MaxContextLength = MaxContextLength,
-                    Capabilities = new ModelCapabilities
+                    Parameters = new Dictionary<string, object>
                     {
-                        SupportsTextGeneration = true,
-                        SupportsCodeGeneration = modelName.Contains("code"),
-                        SupportsAnalysis = true,
-                        SupportsOptimization = false,
-                        SupportsStreaming = SupportsStreaming,
-                        SupportsChat = true
+                        ["SupportsTextGeneration"] = true,
+                        ["SupportsCodeGeneration"] = modelName.Contains("code"),
+                        ["SupportsAnalysis"] = true,
+                        ["SupportsOptimization"] = false,
+                        ["SupportsStreaming"] = SupportsStreaming,
+                        ["SupportsChat"] = true
                     },
-                    ProviderId = ProviderId,
                     LastUpdated = DateTime.UtcNow
                 };
 
@@ -249,21 +252,10 @@ namespace Nexo.Infrastructure.Services.AI
             return availableModels.Select(name => new ModelInfo
             {
                 Name = name,
-                DisplayName = name,
-                ModelType = GetModelType(name),
-                IsAvailable = false, // Not downloaded yet
                 SizeBytes = 0,
-                MaxContextLength = MaxContextLength,
-                Capabilities = new ModelCapabilities
-                {
-                    SupportsTextGeneration = true,
-                    SupportsCodeGeneration = name.Contains("code"),
-                    SupportsAnalysis = true,
-                    SupportsOptimization = false,
-                    SupportsStreaming = SupportsStreaming,
-                    SupportsChat = true
-                },
-                ProviderId = ProviderId
+                Description = $"Available model: {name}",
+                EngineType = AIEngineType.LlamaNative,
+                Status = ModelStatus.Available
             });
         }
 
@@ -272,20 +264,12 @@ namespace Nexo.Infrastructure.Services.AI
         {
             try
             {
-                var cacheKey = "llama-native:models";
-                var cachedModels = await _cacheService.GetAsync<List<ModelInfo>>(cacheKey, cancellationToken);
-                
-                if (cachedModels != null)
-                {
-                    _logger.LogDebug("Returning cached native LLama models");
-                    return cachedModels;
-                }
 
                 var models = new List<ModelInfo>();
                 
-                if (Directory.Exists(_modelsPath))
+                if (Directory.Exists(_modelsDirectory))
                 {
-                    var modelFiles = Directory.GetFiles(_modelsPath, "*.gguf");
+                    var modelFiles = Directory.GetFiles(_modelsDirectory, "*.gguf");
                     
                     foreach (var modelFile in modelFiles)
                     {
@@ -295,28 +279,13 @@ namespace Nexo.Infrastructure.Services.AI
                         models.Add(new ModelInfo
                         {
                             Name = fileName,
-                            DisplayName = fileName,
-                            ModelType = GetModelType(fileName),
-                            IsAvailable = true,
                             SizeBytes = fileInfo.Length,
-                            MaxContextLength = MaxContextLength,
-                            Capabilities = new ModelCapabilities
-                            {
-                                SupportsTextGeneration = true,
-                                SupportsCodeGeneration = fileName.Contains("code"),
-                                SupportsAnalysis = true,
-                                SupportsOptimization = false,
-                                SupportsStreaming = SupportsStreaming,
-                                SupportsChat = true
-                            },
-                            ProviderId = ProviderId,
                             LastUpdated = fileInfo.LastWriteTimeUtc
                         });
                     }
                 }
 
-                // Cache for 10 minutes
-                await _cacheService.SetAsync(cacheKey, models, TimeSpan.FromMinutes(10), cancellationToken);
+                // Return models
                 
                 return models;
             }
@@ -327,23 +296,22 @@ namespace Nexo.Infrastructure.Services.AI
             }
         }
 
-        public async Task<IModel> LoadModelAsync(string modelName, CancellationToken cancellationToken = default)
+        // ILlamaProvider version
+        public async Task LoadModelAsync(string modelName, CancellationToken cancellationToken = default)
         {
-            await LoadModelAsync(modelName, cancellationToken);
+            await LoadModelInternalAsync(modelName, cancellationToken);
+        }
+
+        // IModelProvider version
+        public async Task<IModel> LoadModelForProviderAsync(string modelName, CancellationToken cancellationToken = default)
+        {
+            await LoadModelInternalAsync(modelName, cancellationToken);
             return new LlamaNativeModel(modelName, _logger, this);
         }
 
         public async Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default)
         {
-            var cacheKey = $"llama-native:response:{ComputeRequestHash(request)}";
-            
-            // Try to get from cache first
-            var cachedResponse = await _cacheService.GetAsync<ModelResponse>(cacheKey, cancellationToken);
-            if (cachedResponse != null)
-            {
-                _logger.LogDebug("Returning cached response for native LLama request");
-                return cachedResponse;
-            }
+            // Process request
 
             try
             {
@@ -355,7 +323,7 @@ namespace Nexo.Infrastructure.Services.AI
                 // Ensure model is loaded
                 if (!IsModelLoaded(model))
                 {
-                    await LoadModelAsync(model, cancellationToken);
+                    await LoadModelInternalAsync(model, cancellationToken);
                 }
 
                 // In a real implementation, you would use LlamaSharp to generate the response
@@ -370,8 +338,6 @@ namespace Nexo.Infrastructure.Services.AI
                     InputTokens = EstimateTokenCount(request.Input),
                     OutputTokens = EstimateTokenCount(response),
                     ProcessingTimeMs = executionTime,
-                    ProviderId = ProviderId,
-                    ModelName = model,
                     Metadata = new Dictionary<string, object>
                     {
                         ["cached"] = false,
@@ -379,8 +345,7 @@ namespace Nexo.Infrastructure.Services.AI
                     }
                 };
 
-                // Cache the response for 2 hours (longer than Ollama since it's more expensive)
-                await _cacheService.SetAsync(cacheKey, modelResponse, TimeSpan.FromHours(2), cancellationToken);
+                // Return response
                 
                 return modelResponse;
             }
@@ -398,7 +363,7 @@ namespace Nexo.Infrastructure.Services.AI
                 var startTime = DateTime.UtcNow;
                 
                 // Check if we can access the models directory
-                var canAccess = Directory.Exists(_modelsPath) && Directory.GetFiles(_modelsPath).Length > 0;
+                var canAccess = Directory.Exists(_modelsDirectory) && Directory.GetFiles(_modelsDirectory).Length > 0;
                 
                 var responseTime = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
 
@@ -430,7 +395,7 @@ namespace Nexo.Infrastructure.Services.AI
         // Helper methods
         private string GetModelPath(string modelName)
         {
-            return Path.Combine(_modelsPath, modelName);
+            return Path.Combine(_modelsDirectory, modelName);
         }
 
         private static string GetModelDownloadUrl(string modelName)
@@ -537,6 +502,162 @@ namespace Nexo.Infrastructure.Services.AI
                 return $"{baseResponse}\n\nI'm here to help with your development needs. Feel free to ask more specific questions.";
             }
         }
+
+        // IModelProvider implementation
+        public bool IsAvailable()
+        {
+            return _isInitialized;
+        }
+
+        public async Task<List<ModelInfo>> GetAvailableModelsAsync()
+        {
+            var models = await GetAvailableModelsForDownloadAsync();
+            return models.ToList();
+        }
+
+        public async Task<bool> DownloadModelAsync(string modelId, string? variant = null)
+        {
+            await LoadModelAsync(modelId);
+            return true;
+        }
+
+        public bool IsModelCompatible(ModelInfo model)
+        {
+            return true; // All models are compatible
+        }
+
+        public async Task<ModelInfo> GetModelInfoAsync(string modelId)
+        {
+            var models = await GetAvailableModelsForDownloadAsync();
+            return models.FirstOrDefault(m => m.Name == modelId) ?? new ModelInfo
+            {
+                Name = modelId,
+                Description = modelId,
+                EngineType = AIEngineType.LlamaNative,
+                Status = ModelStatus.Unavailable
+            };
+        }
+
+        // IAIProvider implementation
+        public AIProviderCapabilities Capabilities => new AIProviderCapabilities
+        {
+            ProviderType = AIProviderType.Llama,
+            SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.Linux, PlatformType.macOS },
+            SupportedOperations = new List<AIOperationType> { AIOperationType.CodeGeneration, AIOperationType.CodeReview, AIOperationType.CodeOptimization },
+            SupportsOfflineMode = true,
+            SupportsStreaming = true,
+            SupportsBatchProcessing = false,
+            MaxConcurrentOperations = 1
+        };
+
+        public AIProviderStatus Status => _isInitialized ? AIProviderStatus.Available : AIProviderStatus.Initializing;
+
+        public bool SupportsPlatform(Nexo.Core.Domain.Enums.PlatformType platform)
+        {
+            return platform == Nexo.Core.Domain.Enums.PlatformType.Windows || platform == Nexo.Core.Domain.Enums.PlatformType.Linux || platform == Nexo.Core.Domain.Enums.PlatformType.macOS;
+        }
+
+        public bool MeetsRequirements(AIRequirements requirements)
+        {
+            return requirements.RequiresOfflineMode && IsOfflineCapable;
+        }
+
+        public bool HasRequiredResources(AIResources resources)
+        {
+            return true; // Native provider manages its own resources
+        }
+
+        public async Task InitializeAsync()
+        {
+            if (!_isInitialized)
+            {
+                _isInitialized = true;
+                _logger.LogInformation("LlamaNativeProvider initialized");
+            }
+            await Task.CompletedTask;
+        }
+
+        public async Task<IAIEngine> CreateEngineAsync(AIOperationContext context)
+        {
+            var modelName = context.ModelName ?? "llama-2-7b-chat";
+            await LoadModelAsync(modelName);
+            // Return a mock engine for now since LlamaNativeModel doesn't implement IAIEngine
+            return new MockAIEngine();
+        }
+
+        public async Task<ModelInfo> DownloadModelForAIProviderAsync(string modelId, string variantId)
+        {
+            await DownloadModelAsync(modelId, CancellationToken.None);
+            return new ModelInfo
+            {
+                Name = modelId,
+                Description = modelId,
+                EngineType = AIEngineType.LlamaNative,
+                Status = ModelStatus.Available
+            };
+        }
+
+        public async Task<Nexo.Core.Domain.Results.PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context)
+        {
+            return new Nexo.Core.Domain.Results.PerformanceEstimate
+            {
+                EstimatedDuration = TimeSpan.FromSeconds(5),
+                EstimatedMemoryUsage = 1024 * 1024 * 1024, // 1GB
+                EstimatedCpuUsage = 0.8,
+                Confidence = 0.7
+            };
+        }
+
+        public bool SupportsEngineType(AIEngineType engineType)
+        {
+            return engineType == AIEngineType.LlamaNative;
+        }
+
+        public AIEngineType EngineType => AIEngineType.LlamaNative;
+        public AIProviderType Provider => AIProviderType.Llama;
+
+        // IAIProvider.DownloadModelAsync implementation
+        async Task<ModelInfo> IAIProvider.DownloadModelAsync(string modelId, string variantId)
+        {
+            return await DownloadModelForAIProviderAsync(modelId, variantId);
+        }
+    }
+
+    /// <summary>
+    /// Mock AI Engine for testing
+    /// </summary>
+    public class MockAIEngine : IAIEngine
+    {
+        public AIEngineInfo EngineInfo => new AIEngineInfo
+        {
+            Name = "Mock Engine",
+            Version = "1.0.0",
+            EngineType = AIEngineType.Mock,
+            IsAvailable = true
+        };
+
+        public AIOperationStatus Status => AIOperationStatus.Completed;
+        public bool IsInitialized => true;
+
+        public Task InitializeAsync(ModelInfo model, AIOperationContext context) => Task.CompletedTask;
+        public Task<CodeGenerationResult> GenerateCodeAsync(CodeGenerationRequest request) => Task.FromResult(new CodeGenerationResult());
+        public Task<CodeReviewResult> ReviewCodeAsync(string code, AIOperationContext context) => Task.FromResult(new CodeReviewResult());
+        public Task<CodeGenerationResult> OptimizeCodeAsync(string code, AIOperationContext context) => Task.FromResult(new CodeGenerationResult());
+        public Task<string> GenerateDocumentationAsync(string code, AIOperationContext context) => Task.FromResult("Mock documentation");
+        public Task<CodeGenerationResult> GenerateTestsAsync(string code, AIOperationContext context) => Task.FromResult(new CodeGenerationResult());
+        public Task<CodeGenerationResult> RefactorCodeAsync(string code, AIOperationContext context) => Task.FromResult(new CodeGenerationResult());
+        public Task<AIResponse> AnalyzeCodeAsync(string code, AIOperationContext context) => Task.FromResult(new AIResponse());
+        public Task<CodeGenerationResult> TranslateCodeAsync(string code, string targetLanguage, AIOperationContext context) => Task.FromResult(new CodeGenerationResult());
+        public Task<AIResponse> GenerateResponseAsync(string prompt, AIOperationContext context) => Task.FromResult(new AIResponse());
+        public async IAsyncEnumerable<string> StreamResponseAsync(string prompt, AIOperationContext context)
+        {
+            yield break;
+        }
+        public Task CancelAsync() => Task.CompletedTask;
+        public Task DisposeAsync() => Task.CompletedTask;
+        public long GetMemoryUsage() => 0;
+        public double GetCpuUsage() => 0.0;
+        public bool IsHealthy() => true;
     }
 
     /// <summary>
@@ -559,28 +680,26 @@ namespace Nexo.Infrastructure.Services.AI
         public ModelInfo Info => _info ??= new ModelInfo
         {
             Name = _modelName,
-            DisplayName = _modelName,
-            ModelType = _provider.SupportedModelTypes.First(),
-            IsAvailable = true,
+            Description = _modelName,
+            EngineType = AIEngineType.LlamaNative,
+            Status = ModelStatus.Available,
             SizeBytes = 0, // Will be populated when needed
-            MaxContextLength = _provider.MaxContextLength,
-            Capabilities = new ModelCapabilities
+            Parameters = new Dictionary<string, object>
             {
-                SupportsTextGeneration = true,
-                SupportsCodeGeneration = _modelName.Contains("code"),
-                SupportsAnalysis = true,
-                SupportsOptimization = false,
-                SupportsStreaming = _provider.SupportsStreaming,
-                SupportsChat = true
+                ["SupportsTextGeneration"] = true,
+                ["SupportsCodeGeneration"] = _modelName.Contains("code"),
+                ["SupportsAnalysis"] = true,
+                ["SupportsOptimization"] = false,
+                ["SupportsStreaming"] = _provider.SupportsStreaming,
+                ["SupportsChat"] = true
             },
-            ProviderId = _provider.ProviderId,
             LastUpdated = DateTime.UtcNow
         };
 
         public bool IsLoaded => _provider.IsModelLoaded(_modelName);
         public string ModelId => _modelName;
         public string Name => _modelName;
-        public ModelType ModelType => Info.ModelType;
+        public Nexo.Feature.AI.Enums.ModelType ModelType => Nexo.Feature.AI.Enums.ModelType.TextGeneration;
 
         public async Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default)
         {
@@ -594,7 +713,14 @@ namespace Nexo.Infrastructure.Services.AI
 
         public ModelCapabilities GetCapabilities()
         {
-            return Info.Capabilities;
+            return new ModelCapabilities
+            {
+                SupportsTextGeneration = true,
+                SupportsCodeGeneration = _modelName.Contains("code"),
+                SupportsAnalysis = true,
+                SupportsOptimization = false,
+                SupportsStreaming = _provider.SupportsStreaming
+            };
         }
 
         public Task LoadAsync(CancellationToken cancellationToken = default)
@@ -605,6 +731,81 @@ namespace Nexo.Infrastructure.Services.AI
         public Task UnloadAsync(CancellationToken cancellationToken = default)
         {
             return _provider.UnloadModelAsync(_modelName, cancellationToken);
+        }
+
+        // IModelProvider implementation
+        public bool IsAvailable()
+        {
+            return true; // Native provider is always available
+        }
+
+
+        // ILlamaProvider version
+        public async Task<ModelInfo> DownloadModelAsync(string modelName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // For native provider, we assume models are manually placed
+                // This is a stub implementation
+                _logger.LogInformation("Download model {ModelName} requested, but native provider requires manual model placement", modelName);
+                return new ModelInfo
+                {
+                    Name = modelName,
+                    Description = modelName,
+                    EngineType = AIEngineType.LlamaNative,
+                    Status = ModelStatus.Unavailable
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to download model {ModelName}", modelName);
+                return new ModelInfo
+                {
+                    Name = modelName,
+                    Description = modelName,
+                    EngineType = AIEngineType.LlamaNative,
+                    Status = ModelStatus.Unavailable
+                };
+            }
+        }
+
+        // IModelProvider version
+        public async Task<bool> DownloadModelAsync(string modelId, string? variant = null)
+        {
+            try
+            {
+                // For native provider, we assume models are manually placed
+                _logger.LogInformation("Download model {ModelId} requested, but native provider requires manual model placement", modelId);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to download model {ModelId}", modelId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<ModelInfo>> GetAvailableModelsForDownloadAsync(CancellationToken cancellationToken = default)
+        {
+            // For native provider, return empty list as models are manually placed
+            return new List<ModelInfo>();
+        }
+
+        public bool IsModelCompatible(ModelInfo model)
+        {
+            return true; // All models are compatible
+        }
+
+        public async Task<ModelInfo> GetModelInfoAsync(string modelId)
+        {
+            var models = await GetAvailableModelsForDownloadAsync();
+            return models.FirstOrDefault(m => m.Name == modelId) ?? new ModelInfo
+            {
+                Name = modelId,
+                Description = modelId,
+                EngineType = AIEngineType.LlamaNative,
+                Status = ModelStatus.Unavailable
+            };
         }
     }
 }

@@ -6,11 +6,15 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Feature.AI.Enums;
 using Nexo.Feature.AI.Models;
 using Nexo.Feature.AI.Interfaces;
+using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Core.Domain.Entities.AI;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using IModelProvider = Nexo.Feature.AI.Interfaces.IModelProvider;
+using ModelInfo = Nexo.Feature.AI.Models.ModelInfo;
 
 namespace Nexo.Infrastructure.Services.AI
 {

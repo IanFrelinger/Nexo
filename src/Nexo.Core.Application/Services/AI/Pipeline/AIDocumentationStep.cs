@@ -7,6 +7,7 @@ using Nexo.Core.Domain.Entities.Pipeline;
 using Nexo.Core.Domain.Results;
 using Nexo.Core.Application.Interfaces.Services;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,14 +42,9 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 if (string.IsNullOrWhiteSpace(input.Code))
                 {
                     _logger.LogWarning("Empty code provided for documentation generation");
-                    input.Result = new DocumentationResult
+                    input.Result = new Nexo.Core.Domain.Results.DocumentationResult
                     {
-                        GeneratedDocumentation = "No code provided for documentation generation.",
-                        DocumentationType = Enum.TryParse<DocumentationType>(input.DocumentationType, out var docType) ? docType : DocumentationType.API,
-                        QualityScore = 0,
-                        Coverage = 0,
-                        CompletedAt = DateTime.UtcNow,
-                        EngineType = AIEngineType.Mock.ToString().ToString()
+                        IsSuccess = true
                     };
                     return input;
                 }
@@ -57,7 +53,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 var aiContext = new AIOperationContext
                 {
                     OperationType = AIOperationType.Documentation,
-                    TargetPlatform = context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown,
+                    TargetPlatform = ConvertToEnumsPlatformType(context.EnvironmentProfile?.CurrentPlatform ?? Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Unknown),
                     MaxTokens = 3072,
                     Temperature = 0.4, // Moderate temperature for balanced creativity and consistency
                     Priority = AIPriority.Quality.ToString(),
@@ -80,15 +76,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 }
 
                 // Create AI engine
-                var engineInfo = new AIEngineInfo
-                {
-                    EngineType = selection.EngineType,
-                    ModelPath = GetModelPathForDocumentation(selection.EngineType),
-                    MaxTokens = aiContext.MaxTokens,
-                    Temperature = aiContext.Temperature
-                };
-
-                var engine = await selection.Provider.CreateEngineAsync(engineInfo);
+                var engine = await selection.CreateEngineAsync(aiContext);
                 if (engine is not IAIEngine aiEngine)
                 {
                     _logger.LogError("Failed to create AI engine for documentation generation");
@@ -98,11 +86,12 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 // Initialize engine if needed
                 if (!aiEngine.IsInitialized)
                 {
-                    await aiEngine.InitializeAsync();
+                    var model = new ModelInfo { Id = "mock-model", Name = "Mock Model" };
+                    await aiEngine.InitializeAsync(model, aiContext);
                 }
 
                 // Generate documentation
-                var documentation = await aiEngine.GenerateDocumentationAsync(input.Code, input.Language.ToString());
+                var documentation = await aiEngine.GenerateDocumentationAsync(input.Code, aiContext);
 
                 // Enhance documentation with additional analysis
                 var enhancedDocumentation = await EnhanceDocumentationAsync(documentation, input, context);
@@ -111,14 +100,9 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 var validatedDocumentation = await ApplySafetyValidationAsync(enhancedDocumentation, input, context);
 
                 // Create documentation result
-                var result = new DocumentationResult
+                var result = new Nexo.Core.Domain.Results.DocumentationResult
                 {
-                    GeneratedDocumentation = validatedDocumentation,
-                    DocumentationType = input.DocumentationType,
-                    QualityScore = (int)CalculateDocumentationQuality(validatedDocumentation, input),
-                    Coverage = CalculateDocumentationCoverage(validatedDocumentation, input.Code),
-                    CompletedAt = DateTime.UtcNow,
-                    EngineType = selection.EngineType
+                    IsSuccess = true
                 };
 
                 // Update input with results
@@ -126,8 +110,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 input.DocumentationCompleted = true;
                 input.CompletedAt = DateTime.UtcNow;
 
-                _logger.LogInformation("AI documentation generation completed with quality score {Score} and {Coverage}% coverage", 
-                    result.QualityScore, result.Coverage);
+                _logger.LogInformation("AI documentation generation completed successfully");
 
                 return input;
             }
@@ -136,14 +119,11 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 _logger.LogError(ex, "Error during AI documentation generation");
                 
                 // Create fallback result
-                input.Result = new DocumentationResult
+                input.Result = new Nexo.Core.Domain.Results.DocumentationResult
                 {
-                    GeneratedDocumentation = $"Documentation generation failed: {ex.Message}",
-                    DocumentationType = input.DocumentationType,
-                    QualityScore = 0,
-                    Coverage = 0,
-                    CompletedAt = DateTime.UtcNow,
-                    EngineType = AIEngineType.Mock.ToString()
+                    IsSuccess = false,
+                    ErrorMessage = ex.Message,
+                    Exception = ex
                 };
                 input.DocumentationCompleted = false;
                 
@@ -310,13 +290,13 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             var contextInfo = new List<string>();
 
             // Add platform-specific information
-            if (context.EnvironmentProfile?.CurrentPlatform == PlatformType.WebAssembly)
+            if (context.EnvironmentProfile?.CurrentPlatform == Nexo.Core.Domain.Entities.Infrastructure.PlatformType.WebAssembly)
             {
                 contextInfo.Add("- This code is optimized for WebAssembly execution");
                 contextInfo.Add("- Consider browser compatibility when using this code");
             }
 
-            if (context.EnvironmentProfile?.CurrentPlatform == PlatformType.Windows)
+            if (context.EnvironmentProfile?.CurrentPlatform == Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows)
             {
                 contextInfo.Add("- This code is optimized for Windows platform");
                 contextInfo.Add("- Consider Windows-specific APIs for enhanced functionality");
@@ -440,6 +420,27 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 _logger.LogWarning(ex, "Error checking if documentation step can execute");
                 return false;
             }
+        }
+
+        private Nexo.Core.Domain.Enums.PlatformType ConvertToEnumsPlatformType(Nexo.Core.Domain.Entities.Infrastructure.PlatformType platformType)
+        {
+            return platformType switch
+            {
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web => Nexo.Core.Domain.Enums.PlatformType.Web,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop => Nexo.Core.Domain.Enums.PlatformType.Desktop,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile => Nexo.Core.Domain.Enums.PlatformType.Mobile,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Console => Nexo.Core.Domain.Enums.PlatformType.Desktop, // Map Console to Desktop
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows => Nexo.Core.Domain.Enums.PlatformType.Windows,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Linux => Nexo.Core.Domain.Enums.PlatformType.Linux,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS => Nexo.Core.Domain.Enums.PlatformType.macOS,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.WebAssembly => Nexo.Core.Domain.Enums.PlatformType.Web, // Map WebAssembly to Web
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.iOS => Nexo.Core.Domain.Enums.PlatformType.iOS,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Android => Nexo.Core.Domain.Enums.PlatformType.Android,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Cloud => Nexo.Core.Domain.Enums.PlatformType.Cloud,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Docker => Nexo.Core.Domain.Enums.PlatformType.Container,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Other => Nexo.Core.Domain.Enums.PlatformType.CrossPlatform,
+                _ => Nexo.Core.Domain.Enums.PlatformType.Unknown
+            };
         }
     }
 

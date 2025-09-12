@@ -79,7 +79,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
         {
             var availableProviders = await GetAvailableProvidersAsync();
             return availableProviders
-                .Where(p => p.SupportsPlatform(platform))
+                .Where(p => p.SupportsPlatform(ConvertToEnumsPlatformType(platform)))
                 .OrderByDescending(p => p.Priority)
                 .ToList();
         }
@@ -137,7 +137,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
             
             if (!availableProviders.Any())
             {
-                return null;
+                throw new NoAIProviderAvailableException("No AI providers available");
             }
 
             // Filter by platform support
@@ -148,7 +148,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
             if (!platformProviders.Any())
             {
                 _logger.LogWarning("No providers support platform: {Platform}", context.Platform);
-                return null;
+                throw new NoAIProviderAvailableException($"No AI providers available for platform {context.Platform}");
             }
 
             // Filter by requirements
@@ -159,7 +159,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
             if (!requirementProviders.Any())
             {
                 _logger.LogWarning("No providers meet requirements for operation: {OperationType}", context.OperationType);
-                return null;
+                throw new NoAIProviderAvailableException($"No AI providers meet requirements for operation {context.OperationType}");
             }
 
             // Filter by resource availability
@@ -170,13 +170,18 @@ namespace Nexo.Core.Application.Services.AI.Runtime
             if (!resourceProviders.Any())
             {
                 _logger.LogWarning("No providers have required resources for operation: {OperationType}", context.OperationType);
-                return null;
+                throw new NoAIProviderAvailableException($"No AI providers have required resources for operation {context.OperationType}");
             }
 
             // Select best provider based on score
             var bestProvider = resourceProviders
                 .OrderByDescending(p => CalculateProviderScore(p, context))
                 .FirstOrDefault();
+
+            if (bestProvider == null)
+            {
+                throw new NoAIProviderAvailableException("No suitable AI provider found");
+            }
 
             return bestProvider;
         }
@@ -307,10 +312,10 @@ namespace Nexo.Core.Application.Services.AI.Runtime
             var contextObj = new AIOperationContext
             {
                 OperationType = context.ContainsKey("OperationType") ? Enum.TryParse<AIOperationType>(context["OperationType"].ToString(), out var opType) ? opType : AIOperationType.CodeGeneration : AIOperationType.CodeGeneration,
-                Platform = context.ContainsKey("Platform") ? context["Platform"].ToString() : "Unknown",
+                Platform = context.ContainsKey("Platform") ? Enum.TryParse<Nexo.Core.Domain.Enums.PlatformType>(context["Platform"].ToString(), out var platformType) ? platformType : Nexo.Core.Domain.Enums.PlatformType.Unknown : Nexo.Core.Domain.Enums.PlatformType.Unknown,
                 MaxTokens = context.ContainsKey("MaxTokens") ? Convert.ToInt32(context["MaxTokens"]) : 1000,
                 Temperature = context.ContainsKey("Temperature") ? Convert.ToDouble(context["Temperature"]) : 0.7,
-                Priority = context.ContainsKey("Priority") ? (AIPriority)context["Priority"] : AIPriority.Balanced
+                Priority = context.ContainsKey("Priority") ? context["Priority"]?.ToString() ?? AIPriority.Balanced.ToString() : AIPriority.Balanced.ToString()
             };
 
             return await provider.CreateEngineAsync(contextObj);
@@ -328,7 +333,16 @@ namespace Nexo.Core.Application.Services.AI.Runtime
             {
                 try
                 {
-                    var providerEngines = await provider.GetAvailableModelsAsync();
+                    var providerModels = await provider.GetAvailableModelsAsync();
+                    var providerEngines = providerModels.Select(model => new AIEngineInfo
+                    {
+                        Id = model.Id,
+                        Name = model.Name,
+                        ProviderType = AIProviderType.Mock,
+                        EngineType = AIEngineType.Mock,
+                        IsAvailable = true,
+                        Configuration = new Dictionary<string, object>()
+                    }).ToList();
                     engines.AddRange(providerEngines);
                 }
                 catch (Exception ex)
@@ -387,6 +401,27 @@ namespace Nexo.Core.Application.Services.AI.Runtime
                 selectedProvider.ProviderType, context.OperationType);
 
             return selectedProvider;
+        }
+
+        private Nexo.Core.Domain.Enums.PlatformType ConvertToEnumsPlatformType(Nexo.Core.Domain.Entities.Infrastructure.PlatformType platformType)
+        {
+            return platformType switch
+            {
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web => Nexo.Core.Domain.Enums.PlatformType.Web,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop => Nexo.Core.Domain.Enums.PlatformType.Desktop,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile => Nexo.Core.Domain.Enums.PlatformType.Mobile,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Console => Nexo.Core.Domain.Enums.PlatformType.Desktop, // Map Console to Desktop
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows => Nexo.Core.Domain.Enums.PlatformType.Windows,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Linux => Nexo.Core.Domain.Enums.PlatformType.Linux,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS => Nexo.Core.Domain.Enums.PlatformType.macOS,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.WebAssembly => Nexo.Core.Domain.Enums.PlatformType.Web, // Map WebAssembly to Web
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.iOS => Nexo.Core.Domain.Enums.PlatformType.iOS,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Android => Nexo.Core.Domain.Enums.PlatformType.Android,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Cloud => Nexo.Core.Domain.Enums.PlatformType.Cloud,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Docker => Nexo.Core.Domain.Enums.PlatformType.Container,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Other => Nexo.Core.Domain.Enums.PlatformType.CrossPlatform,
+                _ => Nexo.Core.Domain.Enums.PlatformType.Unknown
+            };
         }
 
         #endregion

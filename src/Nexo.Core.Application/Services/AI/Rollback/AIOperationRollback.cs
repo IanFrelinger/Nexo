@@ -70,7 +70,7 @@ namespace Nexo.Core.Application.Services.AI.Rollback
         /// <summary>
         /// Initiates a rollback operation
         /// </summary>
-        public async Task<RollbackSession> StartRollbackAsync(RollbackRequest request)
+        public Task<RollbackSession> StartRollbackAsync(RollbackRequest request)
         {
             try
             {
@@ -96,7 +96,7 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                 _ = Task.Run(() => ExecuteRollbackAsync(session));
 
                 _logger.LogInformation("Rollback session {SessionId} started", session.SessionId);
-                return session;
+                return Task.FromResult(session);
             }
             catch (Exception ex)
             {
@@ -108,27 +108,27 @@ namespace Nexo.Core.Application.Services.AI.Rollback
         /// <summary>
         /// Gets rollback session status
         /// </summary>
-        public async Task<RollbackSession?> GetRollbackStatusAsync(string sessionId)
+        public Task<RollbackSession?> GetRollbackStatusAsync(string sessionId)
         {
             try
             {
                 lock (_lockObject)
                 {
                     _rollbackSessions.TryGetValue(sessionId, out var session);
-                    return session;
+                    return Task.FromResult(session);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get rollback status for session {SessionId}", sessionId);
-                return null;
+                return Task.FromResult<RollbackSession?>(null);
             }
         }
 
         /// <summary>
         /// Cancels a rollback operation
         /// </summary>
-        public async Task<bool> CancelRollbackAsync(string sessionId)
+        public Task<bool> CancelRollbackAsync(string sessionId)
         {
             try
             {
@@ -139,44 +139,44 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                         session.Status = RollbackStatus.Cancelled;
                         session.CompletedAt = DateTime.UtcNow;
                         _logger.LogInformation("Rollback session {SessionId} cancelled", sessionId);
-                        return true;
+                        return Task.FromResult(true);
                     }
                 }
-                return false;
+                return Task.FromResult(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to cancel rollback session {SessionId}", sessionId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
         /// <summary>
         /// Gets all snapshots for an operation
         /// </summary>
-        public async Task<List<OperationSnapshot>> GetSnapshotsAsync(string operationId)
+        public Task<List<OperationSnapshot>> GetSnapshotsAsync(string operationId)
         {
             try
             {
                 lock (_lockObject)
                 {
-                    return _snapshots.Values
+                    return Task.FromResult(_snapshots.Values
                         .Where(s => s.OperationId == operationId)
                         .OrderByDescending(s => s.CreatedAt)
-                        .ToList();
+                        .ToList());
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get snapshots for operation {OperationId}", operationId);
-                return new List<OperationSnapshot>();
+                return Task.FromResult(new List<OperationSnapshot>());
             }
         }
 
         /// <summary>
         /// Gets rollback history
         /// </summary>
-        public async Task<List<RollbackSession>> GetRollbackHistoryAsync(string? operationId = null)
+        public Task<List<RollbackSession>> GetRollbackHistoryAsync(string? operationId = null)
         {
             try
             {
@@ -189,22 +189,22 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                         sessions = sessions.Where(s => s.OperationId == operationId);
                     }
 
-                    return sessions
+                    return Task.FromResult(sessions
                         .OrderByDescending(s => s.StartedAt)
-                        .ToList();
+                        .ToList());
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get rollback history");
-                return new List<RollbackSession>();
+                return Task.FromResult(new List<RollbackSession>());
             }
         }
 
         /// <summary>
         /// Validates if a rollback is possible
         /// </summary>
-        public async Task<RollbackValidationResult> ValidateRollbackAsync(string snapshotId)
+        public Task<RollbackValidationResult> ValidateRollbackAsync(string snapshotId)
         {
             try
             {
@@ -230,7 +230,7 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                             Message = "Snapshot not found",
                             Line = 0
                         });
-                        return result;
+                        return Task.FromResult(result);
                     }
 
                     // Validate snapshot age
@@ -271,12 +271,12 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                 _logger.LogInformation("Rollback validation completed. Valid: {IsValid}, Issues: {IssueCount}", 
                     result.IsValid, result.Issues.Count);
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to validate rollback for snapshot {SnapshotId}", snapshotId);
-                return new RollbackValidationResult
+                return Task.FromResult(new RollbackValidationResult
                 {
                     IsValid = false,
                     ValidationTime = DateTime.UtcNow,
@@ -291,14 +291,14 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                         }
                     },
                     Recommendations = new List<string> { "Review snapshot manually" }
-                };
+                });
             }
         }
 
         /// <summary>
         /// Cleans up old snapshots and rollback sessions
         /// </summary>
-        public async Task<CleanupResult> CleanupAsync(TimeSpan? maxAge = null)
+        public Task<CleanupResult> CleanupAsync(TimeSpan? maxAge = null)
         {
             try
             {
@@ -343,7 +343,7 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                 _logger.LogInformation("Cleanup completed. Removed {SnapshotCount} snapshots and {SessionCount} sessions", 
                     cleanedSnapshots, cleanedSessions);
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {

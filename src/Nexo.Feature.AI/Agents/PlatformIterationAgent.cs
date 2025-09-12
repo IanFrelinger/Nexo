@@ -155,9 +155,9 @@ public class PlatformIterationAgent : IAIAgent
         if (response.Contains("JavaScript") || response.Contains("Web"))
             return PlatformType.JavaScript;
         if (response.Contains("Swift") || response.Contains("iOS"))
-            return PlatformType.Swift;
+            return PlatformType.iOS;
         if (response.Contains("Kotlin") || response.Contains("Android"))
-            return PlatformType.Kotlin;
+            return PlatformType.Android;
         if (response.Contains("WebAssembly"))
             return PlatformType.WebAssembly;
         if (response.Contains("Mobile"))
@@ -265,8 +265,8 @@ public class PlatformIterationAgent : IAIAgent
         {
             PlatformType.Unity => PlatformTarget.Unity2023,
             PlatformType.JavaScript => PlatformTarget.JavaScript,
-            PlatformType.Swift => PlatformTarget.Swift,
-            PlatformType.Kotlin => PlatformTarget.Kotlin,
+            PlatformType.iOS => PlatformTarget.Swift,
+            PlatformType.Android => PlatformTarget.Kotlin,
             PlatformType.WebAssembly => PlatformTarget.WebAssembly,
             PlatformType.Server => PlatformTarget.Server,
             _ => PlatformTarget.DotNet
@@ -386,8 +386,8 @@ public class PlatformIterationAgent : IAIAgent
             Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS => PlatformTarget.macOS,
             Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web => PlatformTarget.Web,
             Nexo.Core.Domain.Entities.Infrastructure.PlatformType.JavaScript => PlatformTarget.JavaScript,
-            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Swift => PlatformTarget.Swift,
-            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Kotlin => PlatformTarget.Kotlin,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.iOS => PlatformTarget.Swift,
+            Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Android => PlatformTarget.Kotlin,
             _ => PlatformTarget.DotNet
         };
     }

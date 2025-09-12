@@ -22,7 +22,7 @@ namespace Nexo.Core.Application.Services.AI.Providers
         public AIEngineType EngineType => AIEngineType.LlamaNative;
         public AIProviderType Provider => AIProviderType.LlamaNative;
         public bool IsAvailable() => true;
-        public bool SupportsPlatform(PlatformType platform) => true;
+        public bool SupportsPlatform(Nexo.Core.Domain.Enums.PlatformType platform) => true;
         public bool MeetsRequirements(AIRequirements requirements) => true;
         public bool HasRequiredResources(AIResources resources) => true;
         public bool SupportsEngineType(AIEngineType engineType) => engineType == AIEngineType.LlamaNative;

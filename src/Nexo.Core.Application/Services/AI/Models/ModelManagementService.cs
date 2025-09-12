@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,7 +29,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             Directory.CreateDirectory(_modelCachePath);
         }
 
-        public async Task<ModelInfo> DownloadModelAsync(string modelId, PlatformType platform, string? variantId = null)
+        public async Task<ModelInfo> DownloadModelAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform, string? variantId = null)
         {
             _logger.LogInformation("Downloading model {ModelId} for platform {Platform}", modelId, platform);
 
@@ -44,7 +45,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 SizeBytes = GetMockModelSize(platform),
                 FilePath = Path.Combine(_modelCachePath, $"{modelId}-{platform}.gguf"),
                 Checksum = Guid.NewGuid().ToString(),
-                SupportedPlatforms = new List<PlatformType> { platform },
+                SupportedPlatforms = new List<Nexo.Core.Domain.Enums.PlatformType> { platform },
                 IsCached = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -58,7 +59,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             return model;
         }
 
-        public async Task<string> GetModelPathAsync(string modelId, PlatformType platform)
+        public async Task<string> GetModelPathAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             if (_cachedModels.TryGetValue(modelId, out var model))
             {
@@ -70,7 +71,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             return downloadedModel.FilePath;
         }
 
-        public Task<bool> IsModelAvailableAsync(string modelId, PlatformType platform)
+        public Task<bool> IsModelAvailableAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             if (_cachedModels.TryGetValue(modelId, out var model))
             {
@@ -90,7 +91,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             return Task.FromResult<ModelInfo?>(null);
         }
 
-        public Task<List<ModelInfo>> ListModelsAsync(PlatformType platform)
+        public Task<List<ModelInfo>> ListModelsAsync(Nexo.Core.Domain.Enums.PlatformType platform)
         {
             return Task.FromResult(_cachedModels.Values
                 .Where(m => m.SupportedPlatforms.Contains(platform))
@@ -102,7 +103,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             // Return mock variants for different platforms
             var variants = new List<ModelVariant>();
             
-            foreach (PlatformType platform in Enum.GetValues<PlatformType>())
+            foreach (Nexo.Core.Domain.Enums.PlatformType platform in Enum.GetValues<Nexo.Core.Domain.Enums.PlatformType>())
             {
                 variants.Add(new ModelVariant
                 {
@@ -120,7 +121,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             return Task.FromResult(variants);
         }
 
-        public async Task CacheModelAsync(string modelId, Stream modelData, PlatformType platform)
+        public async Task CacheModelAsync(string modelId, Stream modelData, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             _logger.LogInformation("Caching model {ModelId} for platform {Platform}", modelId, platform);
 
@@ -141,7 +142,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 SizeBytes = new FileInfo(filePath).Length,
                 FilePath = filePath,
                 Checksum = CalculateChecksum(filePath),
-                SupportedPlatforms = new List<PlatformType> { platform },
+                SupportedPlatforms = new List<Nexo.Core.Domain.Enums.PlatformType> { platform },
                 IsCached = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -151,7 +152,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             _logger.LogInformation("Model {ModelId} cached successfully", modelId);
         }
 
-        public Task RemoveModelAsync(string modelId, PlatformType platform)
+        public Task RemoveModelAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform)
         {
             _logger.LogInformation("Removing model {ModelId} for platform {Platform}", modelId, platform);
 
@@ -180,7 +181,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             return Task.FromResult(fileInfo.Length > 0 && Path.GetExtension(fileInfo.Name).Equals(".gguf", StringComparison.OrdinalIgnoreCase));
         }
 
-        public async Task<ModelVariant> GetBestModelVariantAsync(PlatformType platform, AIRequirements requirements)
+        public async Task<ModelVariant> GetBestModelVariantAsync(Nexo.Core.Domain.Enums.PlatformType platform, AIRequirements requirements)
         {
             var variants = await ListModelVariantsAsync("default");
             var platformVariants = variants.Where(v => v.Platform == platform).ToList();
@@ -207,7 +208,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             return bestVariant;
         }
 
-        public async Task PreloadModelsAsync(PlatformType platform, List<string> modelIds)
+        public async Task PreloadModelsAsync(Nexo.Core.Domain.Enums.PlatformType platform, List<string> modelIds)
         {
             _logger.LogInformation("Preloading {Count} models for platform {Platform}", modelIds.Count, platform);
 
@@ -230,7 +231,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             }
         }
 
-        public async Task<ModelStorageStatistics> GetStorageStatisticsAsync()
+        public Task<ModelStorageStatistics> GetStorageStatisticsAsync()
         {
             var totalSize = _cachedModels.Values.Sum(m => m.SizeBytes);
             var totalModels = _cachedModels.Count;
@@ -243,7 +244,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                     g => g.Key,
                     g => new PlatformStorageStats
                     {
-                        Platform = g.Key,
+                        Platform = ConvertToInfrastructurePlatformType(g.Key),
                         SizeBytes = g.Sum(m => m.SizeBytes),
                         ModelCount = g.Count(),
                         AvailableSpaceBytes = availableSpace,
@@ -264,28 +265,27 @@ namespace Nexo.Core.Application.Services.AI.Models
                     }
                 );
 
-            return new ModelStorageStatistics
+            return Task.FromResult(new ModelStorageStatistics
             {
                 TotalSizeBytes = totalSize,
                 TotalModels = totalModels,
                 CachedModels = cachedModels,
                 AvailableModels = totalModels,
                 AvailableSpaceBytes = availableSpace,
-                PlatformStats = platformStats,
+                PlatformStats = platformStats.ToDictionary(kvp => ConvertToInfrastructurePlatformType(kvp.Key), kvp => kvp.Value),
                 PrecisionStats = precisionStats
-            };
+            });
         }
 
         #region Private Methods
 
-        private long GetMockModelSize(PlatformType platform)
+        private long GetMockModelSize(Nexo.Core.Domain.Enums.PlatformType platform)
         {
             return platform switch
             {
-                PlatformType.Web => 650L * 1024 * 1024, // 650MB
-                PlatformType.Desktop => 4L * 1024 * 1024 * 1024, // 4GB
-                PlatformType.Mobile => (long)(1.5 * 1024 * 1024 * 1024), // 1.5GB
-                PlatformType.Console => 2L * 1024 * 1024 * 1024, // 2GB
+                Nexo.Core.Domain.Enums.PlatformType.Web => 650L * 1024 * 1024, // 650MB
+                Nexo.Core.Domain.Enums.PlatformType.Desktop => 4L * 1024 * 1024 * 1024, // 4GB
+                Nexo.Core.Domain.Enums.PlatformType.Mobile => (long)(1.5 * 1024 * 1024 * 1024), // 1.5GB
                 _ => 1L * 1024 * 1024 * 1024 // 1GB default
             };
         }
@@ -312,5 +312,24 @@ namespace Nexo.Core.Application.Services.AI.Models
         }
 
         #endregion
+
+        private Nexo.Core.Domain.Entities.Infrastructure.PlatformType ConvertToInfrastructurePlatformType(Nexo.Core.Domain.Enums.PlatformType platformType)
+        {
+            return platformType switch
+            {
+                Nexo.Core.Domain.Enums.PlatformType.Web => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web,
+                Nexo.Core.Domain.Enums.PlatformType.Desktop => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop,
+                Nexo.Core.Domain.Enums.PlatformType.Mobile => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile,
+                Nexo.Core.Domain.Enums.PlatformType.Windows => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows,
+                Nexo.Core.Domain.Enums.PlatformType.Linux => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Linux,
+                Nexo.Core.Domain.Enums.PlatformType.macOS => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS,
+                Nexo.Core.Domain.Enums.PlatformType.iOS => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.iOS,
+                Nexo.Core.Domain.Enums.PlatformType.Android => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Android,
+                Nexo.Core.Domain.Enums.PlatformType.Cloud => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Cloud,
+                Nexo.Core.Domain.Enums.PlatformType.Container => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Docker,
+                Nexo.Core.Domain.Enums.PlatformType.CrossPlatform => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Other,
+                _ => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Unknown
+            };
+        }
     }
 }

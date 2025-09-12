@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Interfaces.Services;
+using Nexo.Core.Application.Interfaces.Platform;
+using Nexo.Feature.AI.Interfaces;
 using Nexo.Infrastructure.Services.AI;
 using Nexo.Infrastructure.Services.Caching;
 using Nexo.Infrastructure.Services.Monitoring;
@@ -42,21 +44,21 @@ namespace Nexo.Infrastructure.Extensions
             services.AddSingleton<NativeApiIntegrationService>();
 
             // Register Caching Infrastructure services
-            services.AddSingleton<ICacheConfigurationService, CacheConfigurationService>();
-            services.AddSingleton<AdvancedCacheConfigurationService>();
-            services.AddSingleton<CachePerformanceMonitor>();
+            // services.AddSingleton<ICacheConfigurationService, CacheConfigurationService>();
+            // services.AddSingleton<AdvancedCacheConfigurationService>();
+            // services.AddSingleton<CachePerformanceMonitor>();
 
             // Register Monitoring Infrastructure services
-            services.AddSingleton<IProductionMonitoringService, ProductionMonitoringService>();
-            services.AddSingleton<ProductionSecurityAuditor>();
+            // services.AddSingleton<IProductionMonitoringService, ProductionMonitoringService>();
+            // services.AddSingleton<ProductionSecurityAuditor>();
 
             // Register Performance Infrastructure services
-            services.AddSingleton<IProductionPerformanceOptimizer, ProductionPerformanceOptimizer>();
-            services.AddSingleton<ModelLoadingOptimizationService>();
-            services.AddSingleton<PredictiveDevelopmentService>();
+            // services.AddSingleton<IProductionPerformanceOptimizer, ProductionPerformanceOptimizer>();
+            // services.AddSingleton<ModelLoadingOptimizationService>();
+            // services.AddSingleton<PredictiveDevelopmentService>();
 
             // Register Analytics Infrastructure services
-            services.AddSingleton<IComprehensiveReportingService, ComprehensiveReportingService>();
+            // services.AddSingleton<IComprehensiveReportingService, ComprehensiveReportingService>();
 
             // Register Learning Infrastructure services
             services.AddSingleton<OptimizationRecommendationService>();

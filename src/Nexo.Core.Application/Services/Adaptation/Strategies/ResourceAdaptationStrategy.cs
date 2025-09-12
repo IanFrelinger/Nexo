@@ -208,10 +208,10 @@ public class ResourceAdaptationStrategy : IAdaptationStrategy
         };
     }
     
-    public async Task<bool> CanHandleAsync(AdaptationNeed need)
+    public Task<bool> CanHandleAsync(AdaptationNeed need)
     {
-        return need.Type == AdaptationType.ResourceOptimization &&
-               need.Context.ResourceUtilization.IsConstrained;
+        return Task.FromResult(need.Type == AdaptationType.ResourceOptimization &&
+               need.Context.ResourceUtilization.IsConstrained);
     }
     
     public string GetDescription()

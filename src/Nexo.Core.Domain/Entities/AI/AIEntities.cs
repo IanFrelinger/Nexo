@@ -1,6 +1,7 @@
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Enums.Safety;
+using Nexo.Core.Domain.Enums;
 using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Domain.Entities.AI
@@ -22,7 +23,7 @@ namespace Nexo.Core.Domain.Entities.AI
         public string ModelPath { get; set; } = "";
         public int MaxTokens { get; set; } = 1000;
         public double Temperature { get; set; } = 0.7;
-        public List<PlatformType> SupportedPlatforms { get; set; } = new();
+        public List<Nexo.Core.Domain.Enums.PlatformType> SupportedPlatforms { get; set; } = new();
         public Dictionary<string, object> Configuration { get; set; } = new();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public Dictionary<string, object> Capabilities { get; set; } = new();
@@ -50,13 +51,20 @@ namespace Nexo.Core.Domain.Entities.AI
         public string DownloadUrl { get; set; } = "";
         public string FilePath { get; set; } = "";
         public string Checksum { get; set; } = "";
-        public List<PlatformType> Platform { get; set; } = new();
-        public List<PlatformType> SupportedPlatforms { get; set; } = new();
+        public List<Nexo.Core.Domain.Enums.PlatformType> Platform { get; set; } = new();
+        public List<Nexo.Core.Domain.Enums.PlatformType> SupportedPlatforms { get; set; } = new();
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
         public Dictionary<string, object> Parameters { get; set; } = new();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime LastUsed { get; set; }
         public bool IsCached { get; set; }
+        
+        // Additional properties needed by the code
+        public Dictionary<string, object> Capabilities { get; set; } = new();
+        public string ModelType { get; set; } = "TextGeneration"; // String representation of model type
+        public bool IsAvailable { get; set; } = true;
+        public string DisplayName { get; set; } = "";
+        public int MaxContextLength { get; set; } = 4096;
     }
 
     /// <summary>
@@ -65,7 +73,7 @@ namespace Nexo.Core.Domain.Entities.AI
     public class AIProviderCapabilities
     {
         public AIProviderType ProviderType { get; set; }
-        public List<PlatformType> SupportedPlatforms { get; set; } = new();
+        public List<Nexo.Core.Domain.Enums.PlatformType> SupportedPlatforms { get; set; } = new();
         public List<AIOperationType> SupportedOperations { get; set; } = new();
         public AIResourceRequirement MinResourceRequirement { get; set; }
         public AIResourceRequirement MaxResourceRequirement { get; set; }
@@ -84,11 +92,12 @@ namespace Nexo.Core.Domain.Entities.AI
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public AIOperationType OperationType { get; set; }
-        public PlatformType Platform { get; set; }
-        public PlatformType TargetPlatform { get; set; }
+        public Nexo.Core.Domain.Enums.PlatformType Platform { get; set; }
+        public Nexo.Core.Domain.Enums.PlatformType TargetPlatform { get; set; }
         public int MaxTokens { get; set; } = 1000;
         public double Temperature { get; set; } = 0.7;
         public string Priority { get; set; } = "Normal";
+        public string ModelName { get; set; } = "";
         public AIRequirements Requirements { get; set; } = new();
         public AIResources Resources { get; set; } = new();
         public Dictionary<string, object> Parameters { get; set; } = new();
@@ -103,6 +112,7 @@ namespace Nexo.Core.Domain.Entities.AI
         public AIPriority Priority { get; set; } = AIPriority.Balanced;
         public SafetyLevel SafetyLevel { get; set; } = SafetyLevel.Standard;
         public bool RequiresOffline { get; set; }
+        public bool RequiresOfflineMode { get; set; }
         public bool RequiresHighQuality { get; set; }
         public bool RequiresFastResponse { get; set; }
         public int MaxTokens { get; set; } = 1000;
@@ -235,7 +245,7 @@ namespace Nexo.Core.Domain.Entities.AI
         public string Description { get; set; } = "";
         public long Size { get; set; }
         public long SizeBytes { get; set; }
-        public PlatformType Platform { get; set; }
+        public Nexo.Core.Domain.Enums.PlatformType Platform { get; set; }
         public ModelPrecision Precision { get; set; }
         public ModelStatus Status { get; set; }
         public ModelQuantization Quantization { get; set; }

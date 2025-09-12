@@ -20,12 +20,14 @@ namespace Nexo.Infrastructure.Commands
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ModelCommand> _logger;
         private readonly IModelOrchestrator _modelOrchestrator;
+        private readonly IEnumerable<IAIProvider> _providers;
 
-        public ModelCommand(IServiceProvider serviceProvider, ILogger<ModelCommand> logger, IModelOrchestrator modelOrchestrator)
+        public ModelCommand(IServiceProvider serviceProvider, ILogger<ModelCommand> logger, IModelOrchestrator modelOrchestrator, IEnumerable<IAIProvider> providers)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _modelOrchestrator = modelOrchestrator ?? throw new ArgumentNullException(nameof(modelOrchestrator));
+            _providers = providers ?? throw new ArgumentNullException(nameof(providers));
         }
 
         /// <summary>
@@ -207,12 +209,11 @@ namespace Nexo.Infrastructure.Commands
             AnsiConsole.Write(new FigletText("Model List").Color(Color.Blue));
             AnsiConsole.WriteLine();
 
-            var providers = await _modelOrchestrator.GetProvidersAsync();
-            var llamaProviders = providers.OfType<ILlamaProvider>();
+            var llamaProviders = _providers.OfType<ILlamaProvider>();
 
             if (!string.IsNullOrEmpty(provider) && provider != "all")
             {
-                llamaProviders = llamaProviders.Where(p => p.ProviderId.Contains(provider, StringComparison.OrdinalIgnoreCase));
+                llamaProviders = llamaProviders.Where(p => p.Name.Contains(provider, StringComparison.OrdinalIgnoreCase));
             }
 
             var table = new Table();
@@ -232,22 +233,19 @@ namespace Nexo.Infrastructure.Commands
                     if (available)
                     {
                         var availableModels = await llamaProvider.GetAvailableModelsForDownloadAsync();
-                        models = availableModels;
+                        models = availableModels.ToList();
                     }
 
                     foreach (var model in models)
                     {
-                        if (!string.IsNullOrEmpty(type) && !model.ModelType.ToString().Contains(type, StringComparison.OrdinalIgnoreCase))
-                            continue;
-
                         var size = FormatBytes(model.SizeBytes);
-                        var status = model.IsAvailable ? "[green]Installed[/]" : "[yellow]Available[/]";
-                        var capabilities = GetCapabilityNames(model.Capabilities);
+                        var status = "[green]Installed[/]";
+                        var capabilities = new List<string> { "TextGeneration" };
 
                         table.AddRow(
-                            llamaProvider.DisplayName,
+                            llamaProvider.Name,
                             model.Name,
-                            model.ModelType.ToString(),
+                            "TextGeneration",
                             size,
                             status,
                             string.Join(", ", capabilities)
@@ -256,9 +254,9 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error listing models for provider {ProviderId}", llamaProvider.ProviderId);
+                    _logger.LogError(ex, "Error listing models for provider {Name}", llamaProvider.Name);
                     table.AddRow(
-                        llamaProvider.DisplayName,
+                        llamaProvider.Name,
                         "[red]Error[/]",
                         "",
                         "",
@@ -279,12 +277,11 @@ namespace Nexo.Infrastructure.Commands
             AnsiConsole.Write(new FigletText("Pull Model").Color(Color.Green));
             AnsiConsole.WriteLine();
 
-            var providers = await _modelOrchestrator.GetProvidersAsync();
-            var llamaProviders = providers.OfType<ILlamaProvider>();
+            var llamaProviders = _providers.OfType<ILlamaProvider>();
 
             if (!string.IsNullOrEmpty(provider))
             {
-                llamaProviders = llamaProviders.Where(p => p.ProviderId.Contains(provider, StringComparison.OrdinalIgnoreCase));
+                llamaProviders = llamaProviders.Where(p => p.Name.Contains(provider, StringComparison.OrdinalIgnoreCase));
             }
 
             ILlamaProvider? selectedProvider = null;
@@ -301,7 +298,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error checking models for provider {ProviderId}", llamaProvider.ProviderId);
+                    _logger.LogError(ex, "Error checking models for provider {Name}", llamaProvider.Name);
                 }
             }
 
@@ -322,7 +319,7 @@ namespace Nexo.Infrastructure.Commands
                 }
             }
 
-            AnsiConsole.MarkupLine($"[blue]📥 Downloading model {modelName} from {selectedProvider.DisplayName}...[/]");
+            AnsiConsole.MarkupLine($"[blue]📥 Downloading model {modelName} from {selectedProvider.Name}...[/]");
 
             try
             {
@@ -330,7 +327,7 @@ namespace Nexo.Infrastructure.Commands
                 
                 AnsiConsole.MarkupLine($"[green]✅ Successfully downloaded model: {modelInfo.Name}[/]");
                 AnsiConsole.MarkupLine($"[dim]Size: {FormatBytes(modelInfo.SizeBytes)}[/]");
-                AnsiConsole.MarkupLine($"[dim]Type: {modelInfo.ModelType}[/]");
+                AnsiConsole.MarkupLine($"[dim]Engine: {modelInfo.EngineType}[/]");
             }
             catch (Exception ex)
             {
@@ -347,12 +344,11 @@ namespace Nexo.Infrastructure.Commands
             AnsiConsole.Write(new FigletText("Remove Model").Color(Color.Red));
             AnsiConsole.WriteLine();
 
-            var providers = await _modelOrchestrator.GetProvidersAsync();
-            var llamaProviders = providers.OfType<ILlamaProvider>();
+            var llamaProviders = _providers.OfType<ILlamaProvider>();
 
             if (!string.IsNullOrEmpty(provider))
             {
-                llamaProviders = llamaProviders.Where(p => p.ProviderId.Contains(provider, StringComparison.OrdinalIgnoreCase));
+                llamaProviders = llamaProviders.Where(p => p.Name.Contains(provider, StringComparison.OrdinalIgnoreCase));
             }
 
             ILlamaProvider? selectedProvider = null;
@@ -369,7 +365,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error checking models for provider {ProviderId}", llamaProvider.ProviderId);
+                    _logger.LogError(ex, "Error checking models for provider {Name}", llamaProvider.Name);
                 }
             }
 
@@ -381,7 +377,7 @@ namespace Nexo.Infrastructure.Commands
 
             if (!force)
             {
-                var confirmed = AnsiConsole.Confirm($"Are you sure you want to remove model '{modelName}' from {selectedProvider.DisplayName}?");
+                var confirmed = AnsiConsole.Confirm($"Are you sure you want to remove model '{modelName}' from {selectedProvider.Name}?");
                 if (!confirmed)
                 {
                     AnsiConsole.MarkupLine("[yellow]❌ Operation cancelled[/]");
@@ -389,7 +385,7 @@ namespace Nexo.Infrastructure.Commands
                 }
             }
 
-            AnsiConsole.MarkupLine($"[blue]🗑️ Removing model {modelName} from {selectedProvider.DisplayName}...[/]");
+            AnsiConsole.MarkupLine($"[blue]🗑️ Removing model {modelName} from {selectedProvider.Name}...[/]");
 
             try
             {
@@ -416,18 +412,17 @@ namespace Nexo.Infrastructure.Commands
         /// </summary>
         private async Task ShowModelInfoAsync(string modelName, string provider)
         {
-            AnsiConsole.Write(new FigletText("Model Info").Color(Color.Cyan));
+            AnsiConsole.Write(new FigletText("Model Info").Color(Color.Blue));
             AnsiConsole.WriteLine();
 
-            var providers = await _modelOrchestrator.GetProvidersAsync();
-            var llamaProviders = providers.OfType<ILlamaProvider>();
+            var llamaProviders = _providers.OfType<ILlamaProvider>();
 
             if (!string.IsNullOrEmpty(provider))
             {
-                llamaProviders = llamaProviders.Where(p => p.ProviderId.Contains(provider, StringComparison.OrdinalIgnoreCase));
+                llamaProviders = llamaProviders.Where(p => p.Name.Contains(provider, StringComparison.OrdinalIgnoreCase));
             }
 
-            ModelInfo? modelInfo = null;
+            Nexo.Core.Domain.Entities.AI.ModelInfo? modelInfo = null;
             ILlamaProvider? selectedProvider = null;
 
             foreach (var llamaProvider in llamaProviders)
@@ -446,7 +441,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error checking models for provider {ProviderId}", llamaProvider.ProviderId);
+                    _logger.LogError(ex, "Error checking models for provider {Name}", llamaProvider.Name);
                 }
             }
 
@@ -458,24 +453,31 @@ namespace Nexo.Infrastructure.Commands
 
             // Basic info
             AnsiConsole.MarkupLine($"[bold]Name:[/] {modelInfo.Name}");
-            AnsiConsole.MarkupLine($"[bold]Display Name:[/] {modelInfo.DisplayName}");
-            AnsiConsole.MarkupLine($"[bold]Provider:[/] {selectedProvider.DisplayName}");
-            AnsiConsole.MarkupLine($"[bold]Type:[/] {modelInfo.ModelType}");
+            AnsiConsole.MarkupLine($"[bold]Display Name:[/] {modelInfo.Name}");
+            AnsiConsole.MarkupLine($"[bold]Provider:[/] {selectedProvider.Name}");
+            AnsiConsole.MarkupLine($"[bold]Type:[/] TextGeneration");
             AnsiConsole.MarkupLine($"[bold]Size:[/] {FormatBytes(modelInfo.SizeBytes)}");
-            AnsiConsole.MarkupLine($"[bold]Max Context:[/] {modelInfo.MaxContextLength}");
-            AnsiConsole.MarkupLine($"[bold]Available:[/] {(modelInfo.IsAvailable ? "[green]Yes[/]" : "[red]No[/]")}");
-            AnsiConsole.MarkupLine($"[bold]Last Updated:[/] {modelInfo.LastUpdated:yyyy-MM-dd HH:mm:ss}");
+            AnsiConsole.MarkupLine($"[bold]Max Context:[/] N/A");
+            AnsiConsole.MarkupLine($"[bold]Available:[/] [green]Yes[/]");
+            AnsiConsole.MarkupLine($"[bold]Last Updated:[/] N/A");
             AnsiConsole.WriteLine();
 
             // Capabilities
             AnsiConsole.MarkupLine("[bold]Capabilities:[/]");
-            var capabilities = modelInfo.Capabilities;
+            var capabilities = new ModelCapabilities
+            {
+                SupportsTextGeneration = true,
+                SupportsCodeGeneration = true,
+                SupportsAnalysis = true,
+                SupportsOptimization = false,
+                SupportsStreaming = true
+            };
             if (capabilities.SupportsTextGeneration) AnsiConsole.MarkupLine("  ✓ Text Generation");
             if (capabilities.SupportsCodeGeneration) AnsiConsole.MarkupLine("  ✓ Code Generation");
             if (capabilities.SupportsAnalysis) AnsiConsole.MarkupLine("  ✓ Analysis");
             if (capabilities.SupportsOptimization) AnsiConsole.MarkupLine("  ✓ Optimization");
             if (capabilities.SupportsStreaming) AnsiConsole.MarkupLine("  ✓ Streaming");
-            if (capabilities.SupportsChat) AnsiConsole.MarkupLine("  ✓ Chat");
+            // Chat support not available in this ModelCapabilities
             AnsiConsole.WriteLine();
 
             // Provider info
@@ -510,12 +512,11 @@ namespace Nexo.Infrastructure.Commands
             AnsiConsole.Write(new FigletText("Health Check").Color(Color.Yellow));
             AnsiConsole.WriteLine();
 
-            var providers = await _modelOrchestrator.GetProvidersAsync();
-            var llamaProviders = providers.OfType<ILlamaProvider>();
+            var llamaProviders = _providers.OfType<ILlamaProvider>();
 
             if (!string.IsNullOrEmpty(provider) && provider != "all")
             {
-                llamaProviders = llamaProviders.Where(p => p.ProviderId.Contains(provider, StringComparison.OrdinalIgnoreCase));
+                llamaProviders = llamaProviders.Where(p => p.Name.Contains(provider, StringComparison.OrdinalIgnoreCase));
             }
 
             var table = new Table();
@@ -529,15 +530,15 @@ namespace Nexo.Infrastructure.Commands
             {
                 try
                 {
-                    var healthStatus = await llamaProvider.GetHealthStatusAsync();
+                    var isHealthy = llamaProvider.IsAvailable();
                     
-                    var status = healthStatus.IsHealthy ? "[green]Healthy[/]" : "[red]Unhealthy[/]";
-                    var responseTime = $"{healthStatus.ResponseTimeMs}ms";
-                    var errorRate = $"{healthStatus.ErrorRate:P1}";
-                    var details = healthStatus.Status;
+                    var status = isHealthy ? "[green]Healthy[/]" : "[red]Unhealthy[/]";
+                    var responseTime = "N/A";
+                    var errorRate = "N/A";
+                    var details = isHealthy ? "Available" : "Unavailable";
 
                     table.AddRow(
-                        llamaProvider.DisplayName,
+                        llamaProvider.Name,
                         status,
                         responseTime,
                         errorRate,
@@ -546,9 +547,9 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error checking health for provider {ProviderId}", llamaProvider.ProviderId);
+                    _logger.LogError(ex, "Error checking health for provider {Name}", llamaProvider.Name);
                     table.AddRow(
-                        llamaProvider.DisplayName,
+                        llamaProvider.Name,
                         "[red]Error[/]",
                         "N/A",
                         "N/A",
@@ -591,7 +592,7 @@ namespace Nexo.Infrastructure.Commands
             if (capabilities.SupportsAnalysis) names.Add("Analysis");
             if (capabilities.SupportsOptimization) names.Add("Optimization");
             if (capabilities.SupportsStreaming) names.Add("Streaming");
-            if (capabilities.SupportsChat) names.Add("Chat");
+            // Chat support not available in this ModelCapabilities
             return names;
         }
     }

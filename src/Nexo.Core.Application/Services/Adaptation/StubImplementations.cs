@@ -118,6 +118,7 @@ public class EnvironmentDetector : Nexo.Core.Application.Services.Environment.IE
     
     public void HandleEnvironmentChange(object sender, Nexo.Core.Domain.Interfaces.Infrastructure.EnvironmentChangeEventArgs e)
     {
+        OnEnvironmentChange?.Invoke(sender, e);
         // Stub implementation - do nothing
     }
     
@@ -559,6 +560,11 @@ public class CodeGenerationOptimizer : Nexo.Core.Application.Services.Adaptation
 public class PerformanceMonitor : Nexo.Core.Application.Services.Adaptation.IPerformanceMonitor
 {
     public event EventHandler<PerformanceDegradationEventArgs>? OnPerformanceDegradation;
+    
+    public void NotifyPerformanceDegradation(PerformanceDegradationEventArgs e)
+    {
+        OnPerformanceDegradation?.Invoke(this, e);
+    }
     
     public Task<Nexo.Core.Domain.Entities.Infrastructure.PerformanceMetrics> GetCurrentMetricsAsync()
     {

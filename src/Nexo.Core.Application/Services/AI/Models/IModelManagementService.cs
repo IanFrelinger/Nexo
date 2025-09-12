@@ -1,6 +1,7 @@
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,17 +17,17 @@ namespace Nexo.Core.Application.Services.AI.Models
         /// <summary>
         /// Downloads a model for the specified platform
         /// </summary>
-        Task<ModelInfo> DownloadModelAsync(string modelId, PlatformType platform, string? variantId = null);
+        Task<ModelInfo> DownloadModelAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform, string? variantId = null);
 
         /// <summary>
         /// Gets the path to a model file
         /// </summary>
-        Task<string> GetModelPathAsync(string modelId, PlatformType platform);
+        Task<string> GetModelPathAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform);
 
         /// <summary>
         /// Checks if a model is available locally
         /// </summary>
-        Task<bool> IsModelAvailableAsync(string modelId, PlatformType platform);
+        Task<bool> IsModelAvailableAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform);
 
         /// <summary>
         /// Gets information about a model
@@ -36,7 +37,7 @@ namespace Nexo.Core.Application.Services.AI.Models
         /// <summary>
         /// Lists all available models for a platform
         /// </summary>
-        Task<List<ModelInfo>> ListModelsAsync(PlatformType platform);
+        Task<List<ModelInfo>> ListModelsAsync(Nexo.Core.Domain.Enums.PlatformType platform);
 
         /// <summary>
         /// Lists all model variants for a model
@@ -46,12 +47,12 @@ namespace Nexo.Core.Application.Services.AI.Models
         /// <summary>
         /// Caches a model for offline use
         /// </summary>
-        Task CacheModelAsync(string modelId, Stream modelData, PlatformType platform);
+        Task CacheModelAsync(string modelId, Stream modelData, Nexo.Core.Domain.Enums.PlatformType platform);
 
         /// <summary>
         /// Removes a cached model
         /// </summary>
-        Task RemoveModelAsync(string modelId, PlatformType platform);
+        Task RemoveModelAsync(string modelId, Nexo.Core.Domain.Enums.PlatformType platform);
 
         /// <summary>
         /// Validates a model file
@@ -61,12 +62,12 @@ namespace Nexo.Core.Application.Services.AI.Models
         /// <summary>
         /// Gets the best model variant for a platform and requirements
         /// </summary>
-        Task<ModelVariant> GetBestModelVariantAsync(PlatformType platform, AIRequirements requirements);
+        Task<ModelVariant> GetBestModelVariantAsync(Nexo.Core.Domain.Enums.PlatformType platform, AIRequirements requirements);
 
         /// <summary>
         /// Preloads models for better performance
         /// </summary>
-        Task PreloadModelsAsync(PlatformType platform, List<string> modelIds);
+        Task PreloadModelsAsync(Nexo.Core.Domain.Enums.PlatformType platform, List<string> modelIds);
 
         /// <summary>
         /// Cleans up old or unused models

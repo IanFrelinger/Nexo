@@ -157,7 +157,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
             }
         }
 
-        public async Task<List<PerformanceMetrics>> GetHistoricalMetricsAsync(TimeSpan? timeRange = null, AIOperationType? operationType = null, AIProviderType? providerType = null)
+        public Task<List<PerformanceMetrics>> GetHistoricalMetricsAsync(TimeSpan? timeRange = null, AIOperationType? operationType = null, AIProviderType? providerType = null)
         {
             try
             {
@@ -181,7 +181,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
                         filteredMetrics.Add(metrics);
                     }
                     
-                    return filteredMetrics;
+                    return Task.FromResult(filteredMetrics);
                 }
             }
             catch (Exception ex)

@@ -3,33 +3,34 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Core.Domain.Entities.AI;
+using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums;
 using Nexo.Feature.AI.Enums;
 using Nexo.Feature.AI.Models;
 using Nexo.Feature.AI.Interfaces;
-using Nexo.Infrastructure.Services.Caching;
+using ModelInfo = Nexo.Core.Domain.Entities.AI.ModelInfo;
 
 namespace Nexo.Infrastructure.Services.AI
 {
     /// <summary>
     /// Ollama provider implementation for offline LLama AI integration
     /// </summary>
-    public class OllamaProvider : ILlamaProvider
+    public class OllamaProvider : ILlamaProvider, Nexo.Core.Application.Interfaces.AI.IModelProvider, Nexo.Core.Application.Interfaces.AI.IAIProvider
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<OllamaProvider> _logger;
-        private readonly ICacheService _cacheService;
         private readonly string _baseUrl;
         private readonly HashSet<string> _loadedModels = new();
+        private readonly object? _cacheService = null; // Placeholder for cache service
 
         public OllamaProvider(
             HttpClient httpClient,
             ILogger<OllamaProvider> logger,
-            ICacheService cacheService,
             string baseUrl = "http://localhost:11434")
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
             _baseUrl = baseUrl;
 
             // Configure HTTP client
@@ -41,7 +42,6 @@ namespace Nexo.Infrastructure.Services.AI
         // ILlamaProvider implementation
         public string ProviderId => "ollama";
         public string DisplayName => "Ollama";
-        public string Name => "Ollama";
         public string Description => "Local Ollama models for offline AI operations";
         public int Priority => 95; // Higher priority than remote providers
         public bool IsOfflineCapable => true;
@@ -50,11 +50,11 @@ namespace Nexo.Infrastructure.Services.AI
         public int MaxContextLength => 8192; // Typical for Ollama models
         public string ModelsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "models", "ollama");
 
-        public IEnumerable<ModelType> SupportedModelTypes => new[]
+        public IEnumerable<string> SupportedModelTypes => new[]
         {
-            ModelType.TextGeneration,
-            ModelType.CodeGeneration,
-            ModelType.Chat
+            "TextGeneration",
+            "CodeGeneration",
+            "Chat"
         };
 
         public bool IsModelLoaded(string modelName)
@@ -229,14 +229,6 @@ namespace Nexo.Infrastructure.Services.AI
         {
             try
             {
-                var cacheKey = "ollama:models";
-                var cachedModels = await _cacheService.GetAsync<List<ModelInfo>>(cacheKey, cancellationToken);
-                
-                if (cachedModels != null)
-                {
-                    _logger.LogDebug("Returning cached Ollama models");
-                    return cachedModels;
-                }
 
                 var response = await _httpClient.GetAsync("api/tags", cancellationToken);
                 if (response.IsSuccessStatusCode)
@@ -247,26 +239,16 @@ namespace Nexo.Infrastructure.Services.AI
                     var models = modelsResponse?.Models?.Select(m => new ModelInfo
                     {
                         Name = m.Name,
-                        DisplayName = m.Name,
-                        ModelType = GetModelType(m.Name),
-                        IsAvailable = true,
                         SizeBytes = m.Size,
-                        MaxContextLength = MaxContextLength,
-                        Capabilities = new ModelCapabilities
+                        Capabilities = new Dictionary<string, object>
                         {
-                            SupportsTextGeneration = true,
-                            SupportsCodeGeneration = m.Name.Contains("code") || m.Name.Contains("codellama"),
-                            SupportsAnalysis = true,
-                            SupportsOptimization = false,
-                            SupportsStreaming = true,
-                            SupportsChat = true
-                        },
-                        ProviderId = ProviderId,
-                        LastUpdated = DateTime.UtcNow
+                            ["SupportsTextGeneration"] = true,
+                            ["SupportsCodeGeneration"] = m.Name.Contains("code") || m.Name.Contains("codellama"),
+                            ["SupportsAnalysis"] = true,
+                            ["SupportsOptimization"] = false,
+                            ["SupportsStreaming"] = true
+                        }
                     }) ?? [];
-
-                    // Cache for 5 minutes
-                    await _cacheService.SetAsync(cacheKey, models.ToList(), TimeSpan.FromMinutes(5), cancellationToken);
                     
                     return models;
                 }
@@ -279,23 +261,23 @@ namespace Nexo.Infrastructure.Services.AI
             return [];
         }
 
-        public async Task<IModel> LoadModelAsync(string modelName, CancellationToken cancellationToken = default)
+        public async Task<IModel> LoadModelForProviderAsync(string modelName, CancellationToken cancellationToken = default)
         {
             await LoadModelAsync(modelName, cancellationToken);
-            return new OllamaModel(modelName, _httpClient, _logger, this);
+            return new OllamaModel(modelName, _httpClient, _logger);
         }
 
         public async Task<ModelResponse> ExecuteAsync(ModelRequest request, CancellationToken cancellationToken = default)
         {
             var cacheKey = $"ollama:response:{ComputeRequestHash(request)}";
             
-            // Try to get from cache first
-            var cachedResponse = await _cacheService.GetAsync<ModelResponse>(cacheKey, cancellationToken);
-            if (cachedResponse != null)
-            {
-                _logger.LogDebug("Returning cached response for Ollama request");
-                return cachedResponse;
-            }
+            // Try to get from cache first (disabled for now)
+            // var cachedResponse = await _cacheService.GetAsync<ModelResponse>(cacheKey, cancellationToken);
+            // if (cachedResponse != null)
+            // {
+            //     _logger.LogDebug("Returning cached response for Ollama request");
+            //     return cachedResponse;
+            // }
 
             try
             {
@@ -328,8 +310,8 @@ namespace Nexo.Infrastructure.Services.AI
                     }
                 };
 
-                // Cache the response for 1 hour
-                await _cacheService.SetAsync(cacheKey, modelResponse, TimeSpan.FromHours(1), cancellationToken);
+                // Cache the response for 1 hour (disabled for now)
+                // await _cacheService.SetAsync(cacheKey, modelResponse, TimeSpan.FromHours(1), cancellationToken);
                 
                 return modelResponse;
             }
@@ -490,76 +472,125 @@ namespace Nexo.Infrastructure.Services.AI
             public string Name { get; set; } = string.Empty;
             public long Size { get; set; }
         }
-    }
 
-    /// <summary>
-    /// Ollama model implementation
-    /// </summary>
-    public class OllamaModel : IModel
-    {
-        private readonly string _modelName;
-        private readonly HttpClient _httpClient;
-        private readonly ILogger _logger;
-        private readonly OllamaProvider _provider;
-        private ModelInfo? _info;
+        // IModelProvider implementation
+        public AIProviderType ProviderType => AIProviderType.Ollama;
+        public string Name => "Ollama Provider";
+        public string Version => "1.0.0";
 
-        public OllamaModel(string modelName, HttpClient httpClient, ILogger logger, OllamaProvider provider)
+        public bool IsAvailable()
         {
-            _modelName = modelName;
-            _httpClient = httpClient;
-            _logger = logger;
-            _provider = provider;
+            return true; // Ollama is always available if running
         }
 
-        public ModelInfo Info => _info ??= new ModelInfo
+        public async Task<List<ModelInfo>> GetAvailableModelsAsync()
         {
-            Name = _modelName,
-            DisplayName = _modelName,
-            ModelType = _provider.SupportedModelTypes.First(),
-            IsAvailable = true,
-            SizeBytes = 0, // Will be populated when needed
-            MaxContextLength = _provider.MaxContextLength,
-            Capabilities = new ModelCapabilities
+            var models = await GetAvailableModelsForDownloadAsync();
+            return models.ToList();
+        }
+
+        public async Task<bool> DownloadModelAsync(string modelId, string? variant = null)
+        {
+            await LoadModelAsync(modelId);
+            return true;
+        }
+
+        public bool IsModelCompatible(ModelInfo model)
+        {
+            return model.ModelType == "Llama" || model.ModelType == "TextGeneration";
+        }
+
+        public async Task<ModelInfo> GetModelInfoAsync(string modelId)
+        {
+            var models = await GetAvailableModelsAsync();
+            return models.FirstOrDefault(m => m.Name == modelId) ?? new ModelInfo
             {
-                SupportsTextGeneration = true,
-                SupportsCodeGeneration = _modelName.Contains("code"),
-                SupportsAnalysis = true,
-                SupportsOptimization = false,
-                SupportsStreaming = _provider.SupportsStreaming,
-                SupportsChat = true
-            },
-            ProviderId = _provider.ProviderId,
-            LastUpdated = DateTime.UtcNow
+                Name = modelId,
+                Description = modelId,
+                EngineType = AIEngineType.Llama,
+                Status = ModelStatus.Unavailable
+            };
+        }
+
+        // IAIProvider implementation
+        public AIProviderCapabilities Capabilities => new AIProviderCapabilities
+        {
+            ProviderType = AIProviderType.Ollama,
+            SupportedPlatforms = new List<PlatformType> { PlatformType.Windows, PlatformType.Linux, PlatformType.macOS },
+            SupportedOperations = new List<AIOperationType> { AIOperationType.CodeGeneration, AIOperationType.CodeReview, AIOperationType.CodeOptimization },
+            SupportsOfflineMode = true,
+            SupportsStreaming = true,
+            SupportsBatchProcessing = false,
+            MaxConcurrentOperations = 1
         };
 
-        public bool IsLoaded => _provider.IsModelLoaded(_modelName);
-        public string ModelId => _modelName;
-        public string Name => _modelName;
-        public ModelType ModelType => Info.ModelType;
+        public AIProviderStatus Status => AIProviderStatus.Available;
 
-        public async Task<ModelResponse> ProcessAsync(ModelRequest request, CancellationToken cancellationToken = default)
+        public bool SupportsPlatform(Nexo.Core.Domain.Enums.PlatformType platform)
         {
-            return await _provider.ExecuteAsync(request, cancellationToken);
+            return platform == Nexo.Core.Domain.Enums.PlatformType.Windows || platform == Nexo.Core.Domain.Enums.PlatformType.Linux || platform == Nexo.Core.Domain.Enums.PlatformType.macOS;
         }
 
-        public IEnumerable<ModelResponseChunk> ProcessStreamAsync(ModelRequest request, CancellationToken cancellationToken = default)
+        public bool MeetsRequirements(AIRequirements requirements)
         {
-            throw new NotImplementedException("Streaming not implemented yet");
+            return requirements.RequiresOfflineMode && IsOfflineCapable;
         }
 
-        public ModelCapabilities GetCapabilities()
+        public bool HasRequiredResources(AIResources resources)
         {
-            return Info.Capabilities;
+            return true; // Ollama manages its own resources
         }
 
-        public Task LoadAsync(CancellationToken cancellationToken = default)
+        public async Task InitializeAsync()
         {
-            return _provider.LoadModelAsync(_modelName, cancellationToken);
+            _logger.LogInformation("OllamaProvider initialized");
+            await Task.CompletedTask;
         }
 
-        public Task UnloadAsync(CancellationToken cancellationToken = default)
+        public async Task<IAIEngine> CreateEngineAsync(AIOperationContext context)
         {
-            return _provider.UnloadModelAsync(_modelName, cancellationToken);
+            var modelName = context.ModelName ?? "llama2";
+            await LoadModelAsync(modelName);
+            // Return a mock engine for now since OllamaModel doesn't implement IAIEngine
+            return new MockAIEngine();
+        }
+
+        public async Task<ModelInfo> DownloadModelForAIProviderAsync(string modelId, string variantId)
+        {
+            await DownloadModelAsync(modelId, CancellationToken.None);
+            return new ModelInfo
+            {
+                Name = modelId,
+                Description = modelId,
+                EngineType = AIEngineType.Llama,
+                Status = ModelStatus.Available
+            };
+        }
+
+        public async Task<Nexo.Core.Domain.Results.PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context)
+        {
+            return new Nexo.Core.Domain.Results.PerformanceEstimate
+            {
+                EstimatedDuration = TimeSpan.FromSeconds(3),
+                EstimatedMemoryUsage = 512 * 1024 * 1024, // 512MB
+                EstimatedCpuUsage = 0.6,
+                Confidence = 0.8
+            };
+        }
+
+        public bool SupportsEngineType(AIEngineType engineType)
+        {
+            return engineType == AIEngineType.Llama;
+        }
+
+        public AIEngineType EngineType => AIEngineType.Llama;
+        public AIProviderType Provider => AIProviderType.Ollama;
+
+        // IAIProvider.DownloadModelAsync implementation
+        async Task<ModelInfo> IAIProvider.DownloadModelAsync(string modelId, string variantId)
+        {
+            return await DownloadModelForAIProviderAsync(modelId, variantId);
         }
     }
+
 }

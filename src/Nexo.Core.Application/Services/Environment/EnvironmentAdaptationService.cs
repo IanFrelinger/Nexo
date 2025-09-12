@@ -246,7 +246,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         await ValidateNetworkRequirements(environment, result);
         
         // Validate platform compatibility
-        ValidatePlatformCompatibility(environment, result);
+        await ValidatePlatformCompatibility(environment, result);
         
         result.IsValid = !result.ValidationErrors.Any();
         
@@ -682,10 +682,10 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         await Task.CompletedTask;
     }
     
-    private async Task<IEnumerable<EnvironmentConfiguration>> GetEnvironmentConfigurations(DetectedEnvironment environment)
+    private Task<IEnumerable<EnvironmentConfiguration>> GetEnvironmentConfigurations(DetectedEnvironment environment)
     {
         // This would return actual configuration objects
-        return Enumerable.Empty<EnvironmentConfiguration>();
+        return Task.FromResult(Enumerable.Empty<EnvironmentConfiguration>());
     }
     
     private async Task ApplyEnvironmentSpecificConfigurations(EnvironmentProfile environment)

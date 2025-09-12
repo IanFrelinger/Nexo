@@ -47,10 +47,10 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 var aiContext = new AIOperationContext
                 {
                     OperationType = AIOperationType.CodeGeneration,
-                    TargetPlatform = GetPlatformForFramework(framework),
+                    TargetPlatform = ConvertToEnumsPlatformType(GetPlatformForFramework(framework)),
                     MaxTokens = 2048,
                     Temperature = 0.7,
-                    Priority = AIPriority.Quality
+                    Priority = AIPriority.Quality.ToString()
                 };
 
                 // Select AI engine
@@ -325,7 +325,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 result.Configuration = await GenerateBlazorConfigurationAsync(applicationLogic, cancellationToken);
 
                 // Generate code
-                result.GeneratedCode = await GenerateBlazorCodeAsync(result, cancellationToken);
+                result.GeneratedCode = await GenerateBlazorWebAssemblyCodeAsync(result, cancellationToken);
 
                 _logger.LogDebug("Generated Blazor WebAssembly code with {ComponentCount} components, {PageCount} pages, {ServiceCount} services", 
                     result.Components.Count, result.Pages.Count, result.Services.Count);
@@ -369,8 +369,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 // Generate views
                 foreach (var model in applicationLogic.Models)
                 {
-                    var views = await GenerateMauiViewsAsync(model, cancellationToken);
-                    result.Views.AddRange(views);
+                    var view = await GenerateMauiViewsAsync(model, cancellationToken);
+                    result.Views.Add(view);
                 }
 
                 // Generate services
@@ -421,8 +421,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 // Generate commands
                 foreach (var controller in applicationLogic.Controllers)
                 {
-                    var commands = await GenerateConsoleCommandsAsync(controller, cancellationToken);
-                    result.Commands.AddRange(commands);
+                    var command = await GenerateConsoleCommandsAsync(controller, cancellationToken);
+                    result.Commands.Add(command);
                 }
 
                 // Generate services
@@ -473,22 +473,22 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 // Generate windows
                 foreach (var controller in applicationLogic.Controllers)
                 {
-                    var windows = await GenerateWpfWindowsAsync(controller, cancellationToken);
-                    result.Windows.AddRange(windows);
+                    var window = await GenerateWpfWindowsAsync(controller, cancellationToken);
+                    result.Windows.Add(window);
                 }
 
                 // Generate user controls
                 foreach (var model in applicationLogic.Models)
                 {
-                    var userControls = await GenerateWpfUserControlsAsync(model, cancellationToken);
-                    result.UserControls.AddRange(userControls);
+                    var userControl = await GenerateWpfUserControlsAsync(model, cancellationToken);
+                    result.UserControls.Add(userControl);
                 }
 
                 // Generate view models
                 foreach (var service in applicationLogic.Services)
                 {
-                    var viewModels = await GenerateWpfViewModelsAsync(service, cancellationToken);
-                    result.ViewModels.AddRange(viewModels);
+                    var viewModel = await GenerateWpfViewModelsAsync(service, cancellationToken);
+                    result.ViewModels.Add(viewModel);
                 }
 
                 // Generate configuration
@@ -532,15 +532,15 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 // Generate forms
                 foreach (var controller in applicationLogic.Controllers)
                 {
-                    var forms = await GenerateWinFormsFormsAsync(controller, cancellationToken);
-                    result.Forms.AddRange(forms);
+                    var form = await GenerateWinFormsFormsAsync(controller, cancellationToken);
+                    result.Forms.Add(form);
                 }
 
                 // Generate controls
                 foreach (var model in applicationLogic.Models)
                 {
-                    var controls = await GenerateWinFormsControlsAsync(model, cancellationToken);
-                    result.Controls.AddRange(controls);
+                    var control = await GenerateWinFormsControlsAsync(model, cancellationToken);
+                    result.Controls.Add(control);
                 }
 
                 // Generate services
@@ -598,8 +598,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
                 // Generate views
                 foreach (var model in applicationLogic.Models)
                 {
-                    var views = await GenerateXamarinViewsAsync(model, cancellationToken);
-                    result.Views.AddRange(views);
+                    var view = await GenerateXamarinViewsAsync(model, cancellationToken);
+                    result.Views.Add(view);
                 }
 
                 // Generate services
@@ -1001,6 +1001,12 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
             return "// Generated Blazor code";
         }
 
+        private async Task<string> GenerateBlazorWebAssemblyCodeAsync(BlazorWebAssemblyResult result, CancellationToken cancellationToken)
+        {
+            await Task.Delay(100, cancellationToken);
+            return "// Generated Blazor WebAssembly code";
+        }
+
         private async Task<string> GenerateMauiCodeAsync(MauiResult result, CancellationToken cancellationToken)
         {
             await Task.Delay(100, cancellationToken);
@@ -1037,19 +1043,34 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
             return $"// Generated {result.Framework} code\n// Generated by Nexo Feature Factory\n// Generated at: {result.GeneratedAt:yyyy-MM-dd HH:mm:ss}";
         }
 
-        private PlatformType GetPlatformForFramework(FrameworkType framework)
+        private Nexo.Core.Domain.Entities.Infrastructure.PlatformType GetPlatformForFramework(FrameworkType framework)
         {
             return framework switch
             {
-                FrameworkType.WebApi => PlatformType.Web,
-                FrameworkType.BlazorServer => PlatformType.Web,
-                FrameworkType.BlazorWebAssembly => PlatformType.Web,
-                FrameworkType.Maui => PlatformType.Mobile,
-                FrameworkType.Console => PlatformType.Desktop,
-                FrameworkType.Wpf => PlatformType.Desktop,
-                FrameworkType.WinForms => PlatformType.Desktop,
-                FrameworkType.Xamarin => PlatformType.Mobile,
-                _ => PlatformType.Desktop
+                FrameworkType.WebApi => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web,
+                FrameworkType.BlazorServer => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web,
+                FrameworkType.BlazorWebAssembly => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.WebAssembly,
+                FrameworkType.Maui => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile,
+                FrameworkType.Console => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Console,
+                FrameworkType.Wpf => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop,
+                FrameworkType.WinForms => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop,
+                FrameworkType.Xamarin => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile,
+                _ => Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop
+            };
+        }
+
+        private Nexo.Core.Domain.Enums.PlatformType ConvertToEnumsPlatformType(Nexo.Core.Domain.Entities.Infrastructure.PlatformType platformType)
+        {
+            return platformType switch
+            {
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web => Nexo.Core.Domain.Enums.PlatformType.Web,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop => Nexo.Core.Domain.Enums.PlatformType.Desktop,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile => Nexo.Core.Domain.Enums.PlatformType.Mobile,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Console => Nexo.Core.Domain.Enums.PlatformType.Desktop, // Map Console to Desktop
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows => Nexo.Core.Domain.Enums.PlatformType.Windows,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Linux => Nexo.Core.Domain.Enums.PlatformType.Linux,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS => Nexo.Core.Domain.Enums.PlatformType.macOS,
+                _ => Nexo.Core.Domain.Enums.PlatformType.Desktop
             };
         }
     }

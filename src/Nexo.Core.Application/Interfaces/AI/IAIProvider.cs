@@ -1,5 +1,6 @@
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Enums;
 using Nexo.Core.Domain.Entities.Infrastructure;
 using Nexo.Core.Domain.Results;
 using System;
@@ -41,7 +42,7 @@ namespace Nexo.Core.Application.Interfaces.AI
         /// <summary>
         /// Checks if the provider supports the specified platform
         /// </summary>
-        bool SupportsPlatform(PlatformType platform);
+        bool SupportsPlatform(Nexo.Core.Domain.Enums.PlatformType platform);
 
         /// <summary>
         /// Checks if the provider meets the specified requirements

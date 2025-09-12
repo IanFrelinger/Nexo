@@ -126,7 +126,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 var aiContext = new AIOperationContext
                 {
                     OperationType = AIOperationType.CodeGeneration,
-                    TargetPlatform = PlatformType.Windows,
+                    TargetPlatform = Nexo.Core.Domain.Enums.PlatformType.Windows,
                     MaxTokens = 2048,
                     Temperature = 0.7,
                     Priority = AIPriority.Quality.ToString()
@@ -148,7 +148,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                     ConfidenceScore = 0.9,
                     Reason = "Auto-selected for test generation"
                 };
-                var unitTests = await GenerateUnitTestsForEntityAsync(entity, providerSelection, cancellationToken);
+                var domainEntity = new DomainEntity { Name = entity, Description = $"Entity for {entity}" };
+                var unitTests = await GenerateUnitTestsForEntityAsync(domainEntity, providerSelection, cancellationToken);
                 result.UnitTests.AddRange(unitTests);
 
                 // Generate code for unit tests
@@ -185,7 +186,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 };
 
                 // Generate integration tests based on service
-                var integrationTests = await GenerateIntegrationTestsForServiceAsync(service, cancellationToken);
+                var domainService = new DomainService { Name = service, Description = $"Service for {service}" };
+                var integrationTests = await GenerateIntegrationTestsForServiceAsync(domainService, cancellationToken);
                 result.IntegrationTests.AddRange(integrationTests);
 
                 // Generate code for integration tests
@@ -222,7 +224,8 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 };
 
                 // Generate domain tests based on rule
-                var domainTests = await GenerateDomainTestsForRuleAsync(rule, cancellationToken);
+                var businessRule = new BusinessRule { Name = rule, Description = $"Rule for {rule}" };
+                var domainTests = await GenerateDomainTestsForRuleAsync(businessRule, cancellationToken);
                 result.DomainTests.AddRange(domainTests);
 
                 // Generate code for domain tests
@@ -365,7 +368,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             {
                 Name = $"{entity}_Constructor_ShouldCreateInstance",
                 Description = $"Tests that {entity} constructor creates a valid instance",
-                TargetType = entity,
+                TargetType = entity.Name,
                 TargetMethod = "Constructor",
                 Category = TestCategory.Unit,
                 Priority = TestPriority.High,
@@ -414,7 +417,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 {
                     Name = $"{entity}_{property.Name}_ShouldSetAndGetValue",
                     Description = $"Tests that {property.Name} property can be set and retrieved",
-                    TargetType = entity,
+                    TargetType = entity.Name,
                     TargetMethod = property.Name,
                     Category = TestCategory.Unit,
                     Priority = TestPriority.Medium,
@@ -464,7 +467,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 {
                     Name = $"{entity}_{method.Name}_ShouldExecuteSuccessfully",
                     Description = $"Tests that {method.Name} method executes successfully",
-                    TargetType = entity,
+                    TargetType = entity.Name,
                     TargetMethod = method.Name,
                     Category = TestCategory.Unit,
                     Priority = TestPriority.Medium,
@@ -524,7 +527,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
                 {
                     Name = $"{service}_{method.Name}_IntegrationTest",
                     Description = $"Integration test for {service}.{method.Name}",
-                    TargetService = service,
+                    TargetService = service.Name,
                     Category = TestCategory.Integration,
                     Priority = TestPriority.Medium,
                     Steps = new List<TestStep>
@@ -581,7 +584,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             {
                 Name = $"{rule}_ShouldValidateCorrectly",
                 Description = $"Domain test for business rule {rule}",
-                TargetRule = rule,
+                TargetRule = rule.Name,
                 Category = TestCategory.Domain,
                 Priority = TestPriority.High,
                 Steps = new List<TestStep>
@@ -637,7 +640,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             {
                 Name = $"{entity}_ValidData",
                 Description = $"Valid test data for {entity}",
-                TargetType = entity,
+                TargetType = entity.Name,
                 Type = TestDataType.Valid,
                 Data = new Dictionary<string, object>
                 {
@@ -653,7 +656,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
             {
                 Name = $"{entity}_InvalidData",
                 Description = $"Invalid test data for {entity}",
-                TargetType = entity,
+                TargetType = entity.Name,
                 Type = TestDataType.Invalid,
                 Data = new Dictionary<string, object>
                 {

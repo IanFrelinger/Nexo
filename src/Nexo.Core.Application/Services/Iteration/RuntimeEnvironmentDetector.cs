@@ -37,7 +37,7 @@ public static class RuntimeEnvironmentDetector
             IsWeb = isWeb,
             IsUnity = isUnity,
             FrameworkVersion = frameworkVersion,
-            OptimizationLevel = optimizationLevel,
+            OptimizationLevel = optimizationLevel.ToString(),
             IsDebugMode = isDebugMode
         };
     }

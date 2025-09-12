@@ -4,9 +4,11 @@ using System.CommandLine.Invocation;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Feature.AI.Models;
 using Nexo.Feature.AI.Interfaces;
+using Nexo.Infrastructure.Services.AI;
 using Spectre.Console;
 using System.Text.RegularExpressions;
 
@@ -431,7 +433,7 @@ namespace Nexo.Infrastructure.Commands
                     var stats = await GetModelStatsAsync(model);
                     AnsiConsole.MarkupLine($"[blue]Model Statistics:[/]");
                     AnsiConsole.MarkupLine($"  Name: {stats.Name}");
-                    AnsiConsole.MarkupLine($"  Provider: {stats.ProviderId}");
+                    AnsiConsole.MarkupLine($"  Provider: {stats.Name}");
                     AnsiConsole.MarkupLine($"  Type: {stats.ModelType}");
                     AnsiConsole.MarkupLine($"  Max Context: {stats.MaxContextLength}");
                     AnsiConsole.MarkupLine($"  Capabilities: {string.Join(", ", GetCapabilityNames(stats.Capabilities))}");
@@ -451,7 +453,7 @@ namespace Nexo.Infrastructure.Commands
         {
             try
             {
-                var providers = await _modelOrchestrator.GetProvidersAsync();
+                var providers = _serviceProvider.GetServices<ILlamaProvider>();
                 var llamaProviders = providers.OfType<ILlamaProvider>().OrderByDescending(p => p.Priority);
 
                 if (modelPreference == "auto")
@@ -462,13 +464,12 @@ namespace Nexo.Infrastructure.Commands
                         if (provider.IsOfflineCapable)
                         {
                             var models = await provider.GetAvailableModelsAsync();
-                            var selectedModel = preferCodeModels 
-                                ? models.FirstOrDefault(m => m.ModelType == ModelType.CodeGeneration)
-                                : models.FirstOrDefault();
+                            var selectedModel = models.FirstOrDefault();
 
                             if (selectedModel != null)
                             {
-                                return await provider.LoadModelAsync(selectedModel.Name);
+                                await provider.LoadModelAsync(selectedModel.Name);
+                                return new LlamaNativeModel(selectedModel.Name, _logger, (LlamaNativeProvider)provider);
                             }
                         }
                     }
@@ -483,7 +484,8 @@ namespace Nexo.Infrastructure.Commands
                         
                         if (model != null)
                         {
-                            return await provider.LoadModelAsync(model.Name);
+                            await provider.LoadModelAsync(model.Name);
+                            return new LlamaNativeModel(model.Name, _logger, (LlamaNativeProvider)provider);
                         }
                     }
                 }
@@ -545,7 +547,11 @@ namespace Nexo.Infrastructure.Commands
         /// </summary>
         private async Task<ModelInfo> GetModelStatsAsync(IModel model)
         {
-            return model.Info;
+            return new ModelInfo
+            {
+                Name = model.Name,
+                ModelType = Nexo.Feature.AI.Enums.ModelType.TextGeneration
+            };
         }
 
         /// <summary>
@@ -559,7 +565,7 @@ namespace Nexo.Infrastructure.Commands
             if (capabilities.SupportsAnalysis) names.Add("Analysis");
             if (capabilities.SupportsOptimization) names.Add("Optimization");
             if (capabilities.SupportsStreaming) names.Add("Streaming");
-            if (capabilities.SupportsChat) names.Add("Chat");
+            // Chat support not available in this ModelCapabilities
             return names;
         }
 

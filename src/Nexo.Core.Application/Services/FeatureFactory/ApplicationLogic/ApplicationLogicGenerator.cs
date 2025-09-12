@@ -139,7 +139,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 var aiContext = new AIOperationContext
                 {
                     OperationType = AIOperationType.CodeGeneration,
-                    TargetPlatform = PlatformType.Windows,
+                    TargetPlatform = Nexo.Core.Domain.Enums.PlatformType.Windows,
                     MaxTokens = 2048,
                     Temperature = 0.7,
                     Priority = AIPriority.Quality.ToString()
@@ -467,105 +467,13 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Namespace = "Application.Controllers",
                 BaseClass = "ControllerBase",
                 Type = ControllerType.WebApi.ToString(),
-                Actions = new List<ControllerAction>
+                Actions = new List<string>
                 {
-                    new ControllerAction
-                    {
-                        Name = "Get",
-                        Description = $"Get all {entity} entities",
-                        ReturnType = $"ActionResult<List<{entity}Dto>>",
-                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
-                        Route = $"api/{entity.ToLower()}",
-                        IsAsync = true
-                    },
-                    new ControllerAction
-                    {
-                        Name = "GetById",
-                        Description = $"Get {entity} by ID",
-                        ReturnType = $"ActionResult<{entity}Dto>",
-                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Get,
-                        Route = $"api/{entity.ToLower()}/{{id}}",
-                        Parameters = new List<ActionParameter>
-                        {
-                            new ActionParameter
-                            {
-                                Name = "id",
-                                Type = "Guid",
-                                Description = "Entity ID",
-                                Source = ParameterSource.Route,
-                                IsRequired = true
-                            }
-                        },
-                        IsAsync = true
-                    },
-                    new ControllerAction
-                    {
-                        Name = "Create",
-                        Description = $"Create new {entity}",
-                        ReturnType = $"ActionResult<{entity}Dto>",
-                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Post,
-                        Route = $"api/{entity.ToLower()}",
-                        Parameters = new List<ActionParameter>
-                        {
-                            new ActionParameter
-                            {
-                                Name = "dto",
-                                Type = $"Create{entity}Dto",
-                                Description = "Entity data",
-                                Source = ParameterSource.Body,
-                                IsRequired = true
-                            }
-                        },
-                        IsAsync = true
-                    },
-                    new ControllerAction
-                    {
-                        Name = "Update",
-                        Description = $"Update {entity}",
-                        ReturnType = $"ActionResult<{entity}Dto>",
-                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Put,
-                        Route = $"api/{entity.ToLower()}/{{id}}",
-                        Parameters = new List<ActionParameter>
-                        {
-                            new ActionParameter
-                            {
-                                Name = "id",
-                                Type = "Guid",
-                                Description = "Entity ID",
-                                Source = ParameterSource.Route,
-                                IsRequired = true
-                            },
-                            new ActionParameter
-                            {
-                                Name = "dto",
-                                Type = $"Update{entity}Dto",
-                                Description = "Entity data",
-                                Source = ParameterSource.Body,
-                                IsRequired = true
-                            }
-                        },
-                        IsAsync = true
-                    },
-                    new ControllerAction
-                    {
-                        Name = "Delete",
-                        Description = $"Delete {entity}",
-                        ReturnType = "ActionResult",
-                        HttpMethod = Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic.HttpMethod.Delete,
-                        Route = $"api/{entity.ToLower()}/{{id}}",
-                        Parameters = new List<ActionParameter>
-                        {
-                            new ActionParameter
-                            {
-                                Name = "id",
-                                Type = "Guid",
-                                Description = "Entity ID",
-                                Source = ParameterSource.Route,
-                                IsRequired = true
-                            }
-                        },
-                        IsAsync = true
-                    }
+                    $"Get - Get all {entity} entities",
+                    $"GetById - Get {entity} by ID",
+                    $"Create - Create new {entity}",
+                    $"Update - Update {entity}",
+                    $"Delete - Delete {entity}"
                 },
                 Dependencies = new List<string> { $"I{entity}Service" },
                 UsingStatements = new List<string>
@@ -627,14 +535,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
                 Description = $"Create data transfer object for {entity}",
                 Namespace = "Application.Models",
                 Type = ModelType.RequestModel.ToString(),
-                Properties = entity.Properties.Where(p => p.Name != "Id").Select(p => new ModelProperty
-                {
-                    Name = p.Name,
-                    Type = p.Type,
-                    Description = p.Description,
-                    IsRequired = p.IsRequired,
-                    IsNullable = p.IsNullable
-                }).ToList()
+                Properties = new List<string> { "Name", "Description", "CreatedAt" }
             };
             models.Add(createDto);
 

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.AI.Runtime;
 using Nexo.Core.Application.Interfaces.AI;
+using Nexo.Core.Application.Services.AI.Engines;
 using Nexo.Core.Domain.Entities.AI;
 using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Entities.Infrastructure;
@@ -33,12 +34,11 @@ namespace Nexo.Core.Application.Services.AI.Providers
         public AIProviderCapabilities Capabilities => new AIProviderCapabilities
         {
             ProviderType = AIProviderType.Mock,
-            SupportedPlatforms = new List<PlatformType> 
-            { 
-                PlatformType.Web, 
-                PlatformType.Desktop, 
-                PlatformType.Mobile, 
-                PlatformType.Console 
+            SupportedPlatforms = new List<Nexo.Core.Domain.Enums.PlatformType>
+            {
+                Nexo.Core.Domain.Enums.PlatformType.Web,
+                Nexo.Core.Domain.Enums.PlatformType.Desktop, 
+                Nexo.Core.Domain.Enums.PlatformType.Mobile
             },
             SupportedOperations = new List<AIOperationType>
             {
@@ -70,7 +70,7 @@ namespace Nexo.Core.Application.Services.AI.Providers
             return _status == AIProviderStatus.Available;
         }
 
-        public bool SupportsPlatform(PlatformType platform)
+        public bool SupportsPlatform(Nexo.Core.Domain.Enums.PlatformType platform)
         {
             return Capabilities.SupportedPlatforms.Contains(platform);
         }
@@ -109,15 +109,16 @@ namespace Nexo.Core.Application.Services.AI.Providers
         {
             _logger.LogDebug("Creating Mock AI Engine for operation: {OperationType}", context.OperationType);
             
-            var engine = new MockAIEngine(_logger);
+            var engineLogger = _logger as ILogger<MockAIEngine> ?? new Logger<MockAIEngine>((_logger as ILoggerFactory) ?? throw new InvalidOperationException("Logger factory not available"));
+            var engine = new MockAIEngine(engineLogger);
             await engine.InitializeAsync(GetMockModel(), context);
             
             return engine;
         }
 
-        public async Task<List<ModelInfo>> GetAvailableModelsAsync()
+        public Task<List<ModelInfo>> GetAvailableModelsAsync()
         {
-            return new List<ModelInfo>
+            return Task.FromResult(new List<ModelInfo>
             {
                 new ModelInfo
                 {
@@ -138,12 +139,12 @@ namespace Nexo.Core.Application.Services.AI.Providers
                     Description = "Mock CodeLlama 2B model for development",
                     EngineType = AIEngineType.CodeLlama,
                     Precision = ModelPrecision.Q4_0,
-                    SizeBytes = 1.5 * 1024 * 1024 * 1024, // 1.5GB
+                    SizeBytes = (long)(1.5 * 1024 * 1024 * 1024), // 1.5GB
                     SupportedPlatforms = Capabilities.SupportedPlatforms,
                     IsCached = true,
                     CreatedAt = DateTime.UtcNow
                 }
-            };
+            });
         }
 
         public async Task<ModelInfo> DownloadModelAsync(string modelId, string variantId)

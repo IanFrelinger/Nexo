@@ -31,6 +31,11 @@ public record ModelHealthStatus
     public double ErrorRate { get; init; }
     
     /// <summary>
+    /// Provider ID for this model
+    /// </summary>
+    public string ProviderId { get; init; } = string.Empty;
+    
+    /// <summary>
     /// Additional health metrics
     /// </summary>
     public Dictionary<string, object>? Metrics { get; init; }

@@ -314,7 +314,7 @@ public class IterationStrategyIntegrationTests
             AvailableMemoryMB = 1024,
             IsDebugMode = false,
             FrameworkVersion = "Unity 2023.1",
-            OptimizationLevel = OptimizationLevel.Balanced
+            OptimizationLevel = OptimizationLevel.Balanced.ToString()
         };
         
         var wasmProfile = new RuntimeEnvironmentProfile
@@ -324,7 +324,7 @@ public class IterationStrategyIntegrationTests
             AvailableMemoryMB = 512,
             IsDebugMode = false,
             FrameworkVersion = "WebAssembly",
-            OptimizationLevel = OptimizationLevel.Balanced
+            OptimizationLevel = OptimizationLevel.Balanced.ToString()
         };
         
         // Act

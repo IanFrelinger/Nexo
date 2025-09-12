@@ -69,7 +69,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         };
     }
     
-    private async Task<AppliedAdaptation?> AdaptIterationStrategies(SystemState systemState)
+    private Task<AppliedAdaptation?> AdaptIterationStrategies(SystemState systemState)
     {
         var currentPerformance = systemState.PerformanceMetrics;
         
@@ -79,7 +79,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             var newProfile = new RuntimeEnvironmentProfile
             {
                 PlatformType = systemState.EnvironmentProfile.PlatformType,
-                OptimizationLevel = OptimizationLevel.Aggressive,
+                OptimizationLevel = OptimizationLevel.Aggressive.ToString(),
                 CpuCores = systemState.EnvironmentProfile.CpuCores,
                 AvailableMemoryMB = systemState.EnvironmentProfile.AvailableMemoryMB
             };
@@ -90,7 +90,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             _logger.LogInformation("Switched to CPU-optimized iteration strategies due to high CPU utilization: {CpuUsage:P}",
                 currentPerformance.CpuUsage);
             
-            return new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "IterationStrategy.CpuOptimization",
                 Description = "Switched to CPU-optimized iteration strategies",
@@ -101,7 +101,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                     ["CpuUsage"] = currentPerformance.CpuUsage,
                     ["OptimizationLevel"] = "Aggressive"
                 }
-            };
+            });
         }
         
         // If memory is constrained, prefer memory-efficient strategies
@@ -110,7 +110,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             var memoryOptimizedProfile = new RuntimeEnvironmentProfile
             {
                 PlatformType = systemState.EnvironmentProfile.PlatformType,
-                OptimizationLevel = OptimizationLevel.Aggressive,
+                OptimizationLevel = OptimizationLevel.Aggressive.ToString(),
                 AvailableMemoryMB = systemState.EnvironmentProfile.AvailableMemoryMB / 2 // Assume constrained
             };
             
@@ -119,7 +119,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             _logger.LogInformation("Switched to memory-optimized iteration strategies due to high memory utilization: {MemoryUsage:P}",
                 currentPerformance.MemoryUsage);
             
-            return new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "IterationStrategy.MemoryOptimization",
                 Description = "Switched to memory-optimized iteration strategies",
@@ -130,7 +130,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                     ["MemoryUsage"] = currentPerformance.MemoryUsage,
                     ["AvailableMemoryMB"] = memoryOptimizedProfile.AvailableMemoryMB
                 }
-            };
+            });
         }
         
         // If response time is high, prefer faster iteration strategies
@@ -139,7 +139,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             var speedOptimizedProfile = new RuntimeEnvironmentProfile
             {
                 PlatformType = systemState.EnvironmentProfile.PlatformType,
-                OptimizationLevel = OptimizationLevel.Aggressive,
+                OptimizationLevel = OptimizationLevel.Aggressive.ToString(),
                 CpuCores = systemState.EnvironmentProfile.CpuCores,
                 AvailableMemoryMB = systemState.EnvironmentProfile.AvailableMemoryMB
             };
@@ -149,7 +149,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             _logger.LogInformation("Switched to speed-optimized iteration strategies due to high response time: {ResponseTime}ms",
                 currentPerformance.ResponseTime);
             
-            return new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "IterationStrategy.SpeedOptimization",
                 Description = "Switched to speed-optimized iteration strategies",
@@ -160,10 +160,10 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                     ["ResponseTime"] = currentPerformance.ResponseTime,
                     ["OptimizationLevel"] = "Aggressive"
                 }
-            };
+            });
         }
         
-        return null;
+        return Task.FromResult<AppliedAdaptation?>(null);
     }
     
     private async Task<AppliedAdaptation?> AdaptOptimizationLevels(SystemState systemState)
@@ -222,7 +222,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         return null;
     }
     
-    private async Task<AppliedAdaptation?> AdaptCachingStrategies(SystemState systemState)
+    private Task<AppliedAdaptation?> AdaptCachingStrategies(SystemState systemState)
     {
         var currentPerformance = systemState.PerformanceMetrics;
         
@@ -232,7 +232,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             _logger.LogInformation("Enabling aggressive caching due to high network latency: {Latency}ms",
                 currentPerformance.NetworkLatency);
             
-            return new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "CachingStrategy.Aggressive",
                 Description = "Enabled aggressive caching for high latency scenarios",
@@ -243,7 +243,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                     ["NetworkLatency"] = currentPerformance.NetworkLatency,
                     ["CachingLevel"] = "Aggressive"
                 }
-            };
+            });
         }
         
         // Disable caching for low latency scenarios to save memory
@@ -251,7 +251,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         {
             _logger.LogInformation("Disabling caching to save memory in low latency scenario");
             
-            return new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "CachingStrategy.Disabled",
                 Description = "Disabled caching to save memory in low latency scenario",
@@ -263,13 +263,13 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                     ["MemoryUsage"] = currentPerformance.MemoryUsage,
                     ["CachingLevel"] = "Disabled"
                 }
-            };
+            });
         }
         
-        return null;
+        return Task.FromResult<AppliedAdaptation?>(null);
     }
     
-    private async Task<AppliedAdaptation?> AdaptConcurrencyLevels(SystemState systemState)
+    private Task<AppliedAdaptation?> AdaptConcurrencyLevels(SystemState systemState)
     {
         var currentPerformance = systemState.PerformanceMetrics;
         var environment = systemState.EnvironmentProfile;
@@ -283,7 +283,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             _logger.LogInformation("Increasing concurrency to {ConcurrencyLevel} for underutilized multi-core system",
                 newConcurrencyLevel);
             
-            return new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "ConcurrencyLevel.Increase",
                 Description = $"Increased concurrency to {newConcurrencyLevel} for better CPU utilization",
@@ -295,7 +295,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                     ["CpuCores"] = environment.CpuCores,
                     ["CpuUsage"] = currentPerformance.CpuUsage
                 }
-            };
+            });
         }
         
         // Decrease concurrency for overutilized systems
@@ -306,7 +306,7 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
             _logger.LogInformation("Decreasing concurrency to {ConcurrencyLevel} for overutilized system",
                 newConcurrencyLevel);
             
-            return new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "ConcurrencyLevel.Decrease",
                 Description = $"Decreased concurrency to {newConcurrencyLevel} to reduce CPU pressure",
@@ -317,10 +317,10 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
                     ["ConcurrencyLevel"] = newConcurrencyLevel,
                     ["CpuUsage"] = currentPerformance.CpuUsage
                 }
-            };
+            });
         }
         
-        return null;
+        return Task.FromResult<AppliedAdaptation?>(null);
     }
     
     public int GetPriority(SystemState systemState)
@@ -335,10 +335,10 @@ public class PerformanceAdaptationStrategy : IAdaptationStrategy
         };
     }
     
-    public async Task<bool> CanHandleAsync(AdaptationNeed need)
+    public Task<bool> CanHandleAsync(AdaptationNeed need)
     {
-        return need.Type == AdaptationType.PerformanceOptimization &&
-               need.Context.PerformanceMetrics.HasIterationBottlenecks;
+        return Task.FromResult(need.Type == AdaptationType.PerformanceOptimization &&
+               need.Context.PerformanceMetrics.HasIterationBottlenecks);
     }
     
     public string GetDescription()

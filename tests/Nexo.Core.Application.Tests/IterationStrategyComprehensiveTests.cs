@@ -42,7 +42,7 @@ public class IterationStrategyComprehensiveTests
         Assert.NotEmpty(profile.FrameworkVersion);
         // In test environment, we expect DotNet platform
         Assert.Equal(PlatformType.DotNet, profile.PlatformType);
-        Assert.True(Enum.IsDefined(typeof(OptimizationLevel), profile.OptimizationLevel));
+        Assert.True(Enum.IsDefined(typeof(Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel), profile.OptimizationLevel));
     }
     
     [Fact]
@@ -81,15 +81,15 @@ public class IterationStrategyComprehensiveTests
         var profile = RuntimeEnvironmentDetector.DetectCurrent();
         
         // Assert - should return a valid optimization level
-        Assert.True(Enum.IsDefined(typeof(OptimizationLevel), profile.OptimizationLevel));
+        Assert.True(Enum.IsDefined(typeof(Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel), profile.OptimizationLevel));
         
         // In debug mode, should be Debug
         #if DEBUG
-        Assert.Equal(OptimizationLevel.Debug, profile.OptimizationLevel);
+        Assert.Equal(Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Debug.ToString(), profile.OptimizationLevel);
         #else
         // In release mode, should be Balanced or Aggressive based on CPU cores
-        Assert.True(profile.OptimizationLevel == OptimizationLevel.Balanced || 
-                   profile.OptimizationLevel == OptimizationLevel.Aggressive);
+        Assert.True(profile.OptimizationLevel == Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Balanced || 
+                   profile.OptimizationLevel == Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Aggressive);
         #endif
     }
     
@@ -153,7 +153,7 @@ public class IterationStrategyComprehensiveTests
                 AvailableMemoryMB = 1024,
                 IsDebugMode = false,
                 FrameworkVersion = ".NET 8.0",
-                OptimizationLevel = OptimizationLevel.Balanced
+                OptimizationLevel = Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Balanced.ToString()
             }
         };
         
@@ -202,7 +202,7 @@ public class IterationStrategyComprehensiveTests
             AvailableMemoryMB = 512,
             IsDebugMode = true,
             FrameworkVersion = "Unity 2023.1",
-            OptimizationLevel = OptimizationLevel.Debug
+            OptimizationLevel = Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Debug.ToString()
         };
         
         // Act
@@ -650,11 +650,11 @@ public class IterationStrategyComprehensiveTests
     public void OptimizationLevel_ShouldHaveCorrectValues()
     {
         // Act & Assert
-        var levels = Enum.GetValues<OptimizationLevel>();
+        var levels = Enum.GetValues<Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel>();
         
-        Assert.Contains(OptimizationLevel.Debug, levels);
-        Assert.Contains(OptimizationLevel.Balanced, levels);
-        Assert.Contains(OptimizationLevel.Aggressive, levels);
+        Assert.Contains(Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Debug, levels);
+        Assert.Contains(Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Balanced, levels);
+        Assert.Contains(Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Aggressive, levels);
     }
 }
 

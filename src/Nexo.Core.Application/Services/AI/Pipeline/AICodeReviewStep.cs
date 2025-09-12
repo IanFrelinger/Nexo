@@ -7,6 +7,7 @@ using Nexo.Core.Domain.Enums.AI;
 using Nexo.Core.Domain.Enums.Code;
 using Nexo.Core.Domain.Entities.Pipeline;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -64,7 +65,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 var aiContext = new AIOperationContext
                 {
                     OperationType = AIOperationType.CodeReview,
-                    TargetPlatform = context.EnvironmentProfile?.CurrentPlatform ?? PlatformType.Unknown,
+                    TargetPlatform = ConvertToEnumsPlatformType(context.EnvironmentProfile?.CurrentPlatform ?? Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Unknown),
                     MaxTokens = 2048,
                     Temperature = 0.3, // Lower temperature for more consistent reviews
                     Priority = AIPriority.Quality.ToString(),
@@ -105,7 +106,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 var reviewContext = new AIOperationContext
                 {
                     OperationType = AIOperationType.CodeReview,
-                    Platform = PlatformType.Unknown,
+                    Platform = Nexo.Core.Domain.Enums.PlatformType.Unknown,
                     MaxTokens = 1000,
                     Temperature = 0.7,
                     Priority = AIPriority.Balanced.ToString()
@@ -345,12 +346,12 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             var suggestions = new List<string>();
 
             // Add context-specific suggestions based on the pipeline context
-            if (context.EnvironmentProfile?.CurrentPlatform == PlatformType.WebAssembly)
+            if (context.EnvironmentProfile?.CurrentPlatform == Nexo.Core.Domain.Entities.Infrastructure.PlatformType.WebAssembly)
             {
                 suggestions.Add("Consider WebAssembly-specific optimizations for better performance");
             }
 
-            if (context.EnvironmentProfile?.CurrentPlatform == PlatformType.Windows)
+            if (context.EnvironmentProfile?.CurrentPlatform == Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows)
             {
                 suggestions.Add("Consider Windows-specific APIs for enhanced functionality");
             }
@@ -443,6 +444,27 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
                 _logger.LogWarning(ex, "Error checking if code review step can execute");
                 return false;
             }
+        }
+
+        private Nexo.Core.Domain.Enums.PlatformType ConvertToEnumsPlatformType(Nexo.Core.Domain.Entities.Infrastructure.PlatformType platformType)
+        {
+            return platformType switch
+            {
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Web => Nexo.Core.Domain.Enums.PlatformType.Web,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Desktop => Nexo.Core.Domain.Enums.PlatformType.Desktop,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Mobile => Nexo.Core.Domain.Enums.PlatformType.Mobile,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Console => Nexo.Core.Domain.Enums.PlatformType.Desktop, // Map Console to Desktop
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Windows => Nexo.Core.Domain.Enums.PlatformType.Windows,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Linux => Nexo.Core.Domain.Enums.PlatformType.Linux,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.macOS => Nexo.Core.Domain.Enums.PlatformType.macOS,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.WebAssembly => Nexo.Core.Domain.Enums.PlatformType.Web, // Map WebAssembly to Web
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.iOS => Nexo.Core.Domain.Enums.PlatformType.iOS,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Android => Nexo.Core.Domain.Enums.PlatformType.Android,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Cloud => Nexo.Core.Domain.Enums.PlatformType.Cloud,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Docker => Nexo.Core.Domain.Enums.PlatformType.Container,
+                Nexo.Core.Domain.Entities.Infrastructure.PlatformType.Other => Nexo.Core.Domain.Enums.PlatformType.CrossPlatform,
+                _ => Nexo.Core.Domain.Enums.PlatformType.Unknown
+            };
         }
     }
 
