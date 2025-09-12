@@ -106,17 +106,13 @@ namespace Nexo.Core.Application.Services.AI.Engines
             
             return new CodeReviewResult
             {
-                Code = code,
+                IsSuccess = true,
                 Issues = issues,
                 Suggestions = suggestions,
                 QualityScore = qualityScore,
-                Confidence = GetConfidenceLevel(qualityScore),
-                Metrics = new Dictionary<string, object>
-                {
-                    ["LinesOfCode"] = code.Split('\n').Length,
-                    ["Complexity"] = "Medium",
-                    ["MockReview"] = true
-                }
+                SuccessMessage = "Code review completed successfully",
+                Duration = TimeSpan.FromMilliseconds(800),
+                EngineType = "MockAIEngine"
             };
         }
 

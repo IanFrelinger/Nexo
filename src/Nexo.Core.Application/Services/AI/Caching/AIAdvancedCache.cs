@@ -249,7 +249,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
         /// <summary>
         /// Preloads cache with frequently accessed data
         /// </summary>
-        public Task PreloadCacheAsync(List<PreloadItem> items)
+        public async Task PreloadCacheAsync(List<PreloadItem> items)
         {
             try
             {
@@ -266,8 +266,6 @@ namespace Nexo.Core.Application.Services.AI.Caching
             {
                 _logger.LogError(ex, "Failed to preload cache");
             }
-            
-            return Task.CompletedTask;
         }
 
         /// <summary>

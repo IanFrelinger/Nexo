@@ -119,9 +119,9 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
             {
                 lock (_lockObject)
                 {
-                    return _activeSessions.Values
+                    return Task.FromResult(_activeSessions.Values
                         .Where(s => s.Status == FineTuningStatus.Running || s.Status == FineTuningStatus.Initializing)
-                        .ToList();
+                        .ToList());
                 }
             }
             catch (Exception ex)

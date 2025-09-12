@@ -170,8 +170,6 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
             TotalAdaptationsApplied = totalAdaptations,
             OverallEffectiveness = overallEffectiveness
         };
-        
-        return status;
     }
     
     public Task<IEnumerable<Nexo.Core.Domain.Entities.Infrastructure.AdaptationRecord>> GetRecentAdaptationsAsync(TimeSpan timeWindow)
@@ -354,7 +352,7 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
             });
         }
         
-        return Task.FromResult(needs.OrderByDescending(n => n.Priority));
+        return Task.FromResult(needs.OrderByDescending(n => n.Priority).AsEnumerable());
     }
     
     private async Task ExecuteAdaptations(IEnumerable<AdaptationNeed> adaptationNeeds)
@@ -441,10 +439,10 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
         }
     }
     
-    private async Task<ResourceUtilization> GetResourceUtilizationAsync()
+    private Task<ResourceUtilization> GetResourceUtilizationAsync()
     {
         // This would integrate with actual system resource monitoring
-        return new ResourceUtilization
+        return Task.FromResult(new ResourceUtilization
         {
             CpuUsage = 0.0, // Would be populated from actual monitoring
             MemoryUsage = 0.0,
@@ -452,7 +450,7 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
             NetworkUsage = 0.0,
             IsConstrained = false,
             ConstraintType = ResourceConstraintType.None
-        };
+        });
     }
     
     private async Task<IEnumerable<ActiveWorkload>> GetActiveWorkloadsAsync()
