@@ -178,9 +178,9 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
             };
 
             // Generate test code using the AI engine
-            var testCode = await aiEngine.GenerateCodeAsync(codeGenRequest);
+            var testCodeResult = await aiEngine.GenerateCodeAsync(codeGenRequest);
             
-            return testCode;
+            return testCodeResult.GeneratedCode;
         }
 
         private string CreateTestPrompt(TestingRequest request, PipelineContext context)
@@ -256,7 +256,7 @@ Generate complete, runnable test code:";
             _logger.LogDebug("Applying safety validation to test code");
 
             // Validate test code for safety
-            var safetyIssues = await ValidateTestCodeSafetyAsync(testCode, request.Language);
+            var safetyIssues = await ValidateTestCodeSafetyAsync(testCode, ParseLanguage(request.Language));
             if (safetyIssues.Any())
             {
                 _logger.LogWarning("Safety issues detected in test code: {Issues}", string.Join(", ", safetyIssues));
@@ -589,7 +589,23 @@ const TestUtilities = {
                 return false;
             }
         }
+        
+        private Nexo.Core.Domain.Enums.Code.CodeLanguage ParseLanguage(string language)
+        {
+            return language.ToLower() switch
+            {
+                "csharp" or "c#" => Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp,
+                "javascript" or "js" => Nexo.Core.Domain.Enums.Code.CodeLanguage.JavaScript,
+                "typescript" or "ts" => Nexo.Core.Domain.Enums.Code.CodeLanguage.TypeScript,
+                "python" or "py" => Nexo.Core.Domain.Enums.Code.CodeLanguage.Python,
+                "java" => Nexo.Core.Domain.Enums.Code.CodeLanguage.Java,
+                "go" => Nexo.Core.Domain.Enums.Code.CodeLanguage.Go,
+                "rust" => Nexo.Core.Domain.Enums.Code.CodeLanguage.Rust,
+                _ => Nexo.Core.Domain.Enums.Code.CodeLanguage.CSharp
+            };
+        }
     }
+}
 
 
     /// <summary>
@@ -619,4 +635,3 @@ const TestUtilities = {
         Security,
         EndToEnd
     }
-}

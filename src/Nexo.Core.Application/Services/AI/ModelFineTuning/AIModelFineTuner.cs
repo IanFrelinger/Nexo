@@ -134,7 +134,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
         /// <summary>
         /// Validates fine-tuning data for quality and compatibility
         /// </summary>
-        public Task<FineTuningValidationResult> ValidateFineTuningDataAsync(FineTuningData data)
+        public async Task<FineTuningValidationResult> ValidateFineTuningDataAsync(FineTuningData data)
         {
             try
             {
@@ -169,12 +169,12 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                 _logger.LogInformation("Fine-tuning data validation completed. Valid: {IsValid}, Issues: {IssueCount}", 
                     result.IsValid, result.Issues.Count);
 
-                return Task.FromResult(result);
+                return result;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to validate fine-tuning data");
-                return Task.FromResult(new FineTuningValidationResult
+                return new FineTuningValidationResult
                 {
                     IsValid = false,
                     ValidationTime = DateTime.UtcNow,
@@ -189,7 +189,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning
                         }
                     },
                     Recommendations = new List<string> { "Review data manually for quality and format" }
-                });
+                };
             }
         }
 

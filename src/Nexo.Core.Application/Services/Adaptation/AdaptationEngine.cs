@@ -453,10 +453,10 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
         });
     }
     
-    private async Task<IEnumerable<ActiveWorkload>> GetActiveWorkloadsAsync()
+    private Task<IEnumerable<ActiveWorkload>> GetActiveWorkloadsAsync()
     {
         // This would integrate with actual workload monitoring
-        return Enumerable.Empty<ActiveWorkload>();
+        return Task.FromResult(Enumerable.Empty<ActiveWorkload>());
     }
     
     private void HandlePerformanceDegradation(object? sender, PerformanceDegradationEventArgs e)

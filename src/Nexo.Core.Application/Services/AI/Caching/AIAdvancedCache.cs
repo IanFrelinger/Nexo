@@ -408,7 +408,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
             }
         }
 
-        private async Task ApplyEvictionPolicyAsync()
+        private Task ApplyEvictionPolicyAsync()
         {
             try
             {
@@ -437,6 +437,8 @@ namespace Nexo.Core.Application.Services.AI.Caching
             {
                 _logger.LogError(ex, "Failed to apply eviction policy");
             }
+            
+            return Task.CompletedTask;
         }
 
         private double CalculateMemoryUsage()

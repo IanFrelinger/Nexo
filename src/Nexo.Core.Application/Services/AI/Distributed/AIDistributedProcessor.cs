@@ -373,7 +373,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed
                 n.ResourceInfo.MemoryUsage < 80).ToList();
 
             if (!suitableNodes.Any())
-                return Task.FromResult<DistributedTask?>(null);
+                return null;
 
             // Select node with lowest resource usage
             return suitableNodes.OrderBy(n => n.ResourceInfo.CpuUsage + n.ResourceInfo.MemoryUsage).First();
