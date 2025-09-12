@@ -271,7 +271,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
         /// <summary>
         /// Warms up cache with predictive loading
         /// </summary>
-        public Task WarmupCacheAsync(List<string> keys, Func<string, Task<object>> valueFactory)
+        public async Task WarmupCacheAsync(List<string> keys, Func<string, Task<object>> valueFactory)
         {
             try
             {
@@ -298,14 +298,12 @@ namespace Nexo.Core.Application.Services.AI.Caching
             {
                 _logger.LogError(ex, "Failed to warm up cache");
             }
-            
-            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Gets cache health information
         /// </summary>
-        public Task<CacheHealth> GetHealthAsync()
+        public async Task<CacheHealth> GetHealthAsync()
         {
             try
             {
@@ -334,16 +332,16 @@ namespace Nexo.Core.Application.Services.AI.Caching
                     health.Issues.Add("High memory usage detected");
                 }
 
-                return Task.FromResult(health);
+                return health;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to get cache health");
-                return Task.FromResult(new CacheHealth
+                return new CacheHealth
                 {
                     IsHealthy = false,
                     Issues = new List<string> { $"Health check failed: {ex.Message}" }
-                });
+                };
             }
         }
 
@@ -355,7 +353,7 @@ namespace Nexo.Core.Application.Services.AI.Caching
             lock (_lockObject)
             {
                 if (_policies.TryGetValue(policyName, out var policy))
-                    return Task.FromResult(policy);
+                    return policy;
             }
 
             // Return default policy
@@ -374,11 +372,11 @@ namespace Nexo.Core.Application.Services.AI.Caching
             
             // Refresh if entry is close to expiration
             if (entry.ExpiresAt.HasValue && DateTime.UtcNow.AddMinutes(5) > entry.ExpiresAt.Value)
-                return Task.FromResult(true);
+                return true;
 
             // Refresh if access count is high (frequently accessed)
             if (entry.AccessCount > 100)
-                return Task.FromResult(true);
+                return true;
 
             return false;
         }

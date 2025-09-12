@@ -176,7 +176,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         return Task.FromResult(recommendations.AsEnumerable());
     }
     
-    public Task ApplyEnvironmentConfigurationsAsync(DetectedEnvironment environment)
+    public async Task ApplyEnvironmentConfigurationsAsync(DetectedEnvironment environment)
     {
         _logger.LogInformation("Applying environment configurations for {Context} on {Platform}",
             environment.Context, environment.Platform);
@@ -195,11 +195,9 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
                 _logger.LogError(ex, "Failed to apply configuration: {ConfigType}", config.Type);
             }
         }
-        
-        return Task.CompletedTask;
     }
     
-    public async Task<IEnumerable<EnvironmentOptimization>> GetEnvironmentOptimizationsAsync(DetectedEnvironment environment)
+    public Task<IEnumerable<EnvironmentOptimization>> GetEnvironmentOptimizationsAsync(DetectedEnvironment environment)
     {
         var optimizations = new List<EnvironmentOptimization>();
         
@@ -225,7 +223,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         // Security-based optimizations
         optimizations.AddRange(GetSecurityOptimizations(environment.SecurityProfile));
         
-        return optimizations;
+        return Task.FromResult(optimizations.AsEnumerable());
     }
     
     public async Task<EnvironmentValidationResult> ValidateEnvironmentAsync(DetectedEnvironment environment)
@@ -248,7 +246,7 @@ public class EnvironmentAdaptationService : IEnvironmentAdaptationService
         await ValidateNetworkRequirements(environment, result);
         
         // Validate platform compatibility
-        await ValidatePlatformCompatibility(environment, result);
+        ValidatePlatformCompatibility(environment, result);
         
         result.IsValid = !result.ValidationErrors.Any();
         
