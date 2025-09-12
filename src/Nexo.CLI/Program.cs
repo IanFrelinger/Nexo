@@ -496,6 +496,10 @@ namespace Nexo.CLI
             iterationCommand.AddCommand(iterationCommands.CreateIterationRecommendationsCommand());
             rootCommand.AddCommand(iterationCommand);
 
+            // Extension generation commands
+            var extensionCommand = ExtensionCommands.CreateExtensionCommand(scope.ServiceProvider);
+            rootCommand.AddCommand(extensionCommand);
+
             // LLama AI Chat and Model Management commands
             var chatCommand = new ChatCommand(scope.ServiceProvider, logger, scope.ServiceProvider.GetRequiredService<IModelOrchestrator>());
             var chatCommandRoot = chatCommand.CreateChatCommand();
