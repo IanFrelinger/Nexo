@@ -288,7 +288,7 @@ namespace Nexo.Core.Application.Services.Monitoring
         /// <summary>
         /// Configures alerting rules
         /// </summary>
-        public async Task<AlertingConfigurationResult> ConfigureAlertingAsync(AlertingConfiguration config)
+        public Task<AlertingConfigurationResult> ConfigureAlertingAsync(AlertingConfiguration config)
         {
             _logger.LogInformation("Configuring alerting rules");
 
@@ -307,18 +307,18 @@ namespace Nexo.Core.Application.Services.Monitoring
                 };
 
                 _logger.LogInformation("Alerting configuration updated successfully");
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to configure alerting");
                 
-                return new AlertingConfigurationResult
+                return Task.FromResult(new AlertingConfigurationResult
                 {
                     Success = false,
                     Error = ex.Message,
                     ConfiguredAt = DateTime.UtcNow
-                };
+                });
             }
         }
 
@@ -352,7 +352,7 @@ namespace Nexo.Core.Application.Services.Monitoring
             }
         }
 
-        private async Task<List<Metric>> CollectSystemMetricsAsync()
+        private Task<List<Metric>> CollectSystemMetricsAsync()
         {
             var metrics = new List<Metric>();
 
@@ -386,10 +386,10 @@ namespace Nexo.Core.Application.Services.Monitoring
                 Tags = new Dictionary<string, string> { ["type"] = "system" }
             });
 
-            return metrics;
+            return Task.FromResult(metrics);
         }
 
-        private async Task<List<Metric>> CollectApplicationMetricsAsync()
+        private Task<List<Metric>> CollectApplicationMetricsAsync()
         {
             var metrics = new List<Metric>();
 
@@ -423,10 +423,10 @@ namespace Nexo.Core.Application.Services.Monitoring
                 Tags = new Dictionary<string, string> { ["type"] = "application" }
             });
 
-            return metrics;
+            return Task.FromResult(metrics);
         }
 
-        private async Task<List<Metric>> CollectBusinessMetricsAsync()
+        private Task<List<Metric>> CollectBusinessMetricsAsync()
         {
             var metrics = new List<Metric>();
 
@@ -450,10 +450,10 @@ namespace Nexo.Core.Application.Services.Monitoring
                 Tags = new Dictionary<string, string> { ["type"] = "business" }
             });
 
-            return metrics;
+            return Task.FromResult(metrics);
         }
 
-        private async Task CheckAlertsAsync(List<Metric> metrics)
+        private Task CheckAlertsAsync(List<Metric> metrics)
         {
             foreach (var metric in metrics)
             {
@@ -473,6 +473,8 @@ namespace Nexo.Core.Application.Services.Monitoring
                         });
                 }
             }
+            
+            return Task.CompletedTask;
         }
 
         private Nexo.Core.Domain.Enums.Monitoring.HealthStatus CalculateOverallHealth(List<HealthCheckResult> healthChecks)
@@ -492,7 +494,7 @@ namespace Nexo.Core.Application.Services.Monitoring
             return Nexo.Core.Domain.Enums.Monitoring.HealthStatus.Excellent;
         }
 
-        private async Task<List<Insight>> GenerateInsightsAsync(
+        private Task<List<Insight>> GenerateInsightsAsync(
             List<Metric> metrics, 
             HealthCheckResult healthChecks, 
             AnalyticsData analytics)
@@ -513,10 +515,10 @@ namespace Nexo.Core.Application.Services.Monitoring
                 });
             }
 
-            return insights;
+            return Task.FromResult(insights);
         }
 
-        private async Task<List<Recommendation>> GenerateRecommendationsAsync(
+        private Task<List<Recommendation>> GenerateRecommendationsAsync(
             List<Metric> metrics, 
             HealthCheckResult healthChecks, 
             AnalyticsData analytics)
@@ -536,7 +538,7 @@ namespace Nexo.Core.Application.Services.Monitoring
                 });
             }
 
-            return recommendations;
+            return Task.FromResult(recommendations);
         }
 
         private MonitoringSummary GenerateSummary(

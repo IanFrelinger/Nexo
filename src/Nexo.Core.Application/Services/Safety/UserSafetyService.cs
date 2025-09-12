@@ -301,6 +301,7 @@ namespace Nexo.Core.Application.Services.Safety
                 var result = new RollbackResult
                 {
                     OperationId = operationId,
+                    BackupId = backup.Id,
                     Success = restoreResult,
                     RestoredFiles = 0, // TODO: Get actual restored files count
                     Timestamp = DateTime.UtcNow

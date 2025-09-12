@@ -53,7 +53,7 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
         return StopAdaptationAsync(cancellationToken);
     }
     
-    public Task StartAdaptationAsync(CancellationToken cancellationToken = default)
+        public async Task StartAdaptationAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Starting Nexo Adaptation Engine");
         _engineStatus = AdaptationEngineStatus.Starting;
@@ -79,11 +79,9 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
             _logger.LogError(ex, "Failed to start adaptation engine");
             throw;
         }
-        
-        return Task.CompletedTask;
     }
     
-    public Task StopAdaptationAsync(CancellationToken cancellationToken = default)
+    public async Task StopAdaptationAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Stopping Nexo Adaptation Engine");
         _engineStatus = AdaptationEngineStatus.Stopping;
@@ -120,11 +118,9 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
             _logger.LogError(ex, "Error stopping adaptation engine");
             throw;
         }
-        
-        return Task.CompletedTask;
     }
     
-    public Task TriggerAdaptationAsync(AdaptationContext context)
+    public async Task TriggerAdaptationAsync(AdaptationContext context)
     {
         _logger.LogInformation("Triggering adaptation: {Trigger} with priority {Priority}", 
             context.Trigger, context.Priority);
@@ -136,8 +132,6 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
         {
             await ProcessAdaptationImmediately(context);
         }
-        
-        return Task.CompletedTask;
     }
     
     public void RegisterAdaptationStrategy(IAdaptationStrategy strategy)
@@ -146,7 +140,7 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
         _logger.LogInformation("Registered adaptation strategy: {StrategyId}", strategy.StrategyId);
     }
     
-    public Task<AdaptationStatus> GetAdaptationStatusAsync()
+    public async Task<AdaptationStatus> GetAdaptationStatusAsync()
     {
         var activeAdaptations = await _dataStore.GetActiveAdaptationsAsync();
         var recentImprovements = await _dataStore.GetRecentImprovementsAsync(24);
@@ -177,7 +171,7 @@ public class AdaptationEngine : IAdaptationEngine, IHostedService
             OverallEffectiveness = overallEffectiveness
         };
         
-        return Task.FromResult(status);
+        return status;
     }
     
     public Task<IEnumerable<Nexo.Core.Domain.Entities.Infrastructure.AdaptationRecord>> GetRecentAdaptationsAsync(TimeSpan timeWindow)
