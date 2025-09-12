@@ -185,7 +185,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             
             _logger.LogInformation("Enabled speed optimization based on user feedback about slow responses");
             
-            return Task.FromResult(new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "ResponseTime.SpeedOptimization",
                 Description = "Enabled speed optimization based on user feedback",
@@ -213,7 +213,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             
             _logger.LogInformation("Enhanced error messages based on user feedback");
             
-            return Task.FromResult(new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "ErrorHandling.EnhancedMessages",
                 Description = "Enhanced error messages based on user feedback",
@@ -241,7 +241,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
             
             _logger.LogInformation("Enhanced documentation based on user feedback");
             
-            return Task.FromResult(new AppliedAdaptation
+            return Task.FromResult<AppliedAdaptation?>(new AppliedAdaptation
             {
                 Type = "Documentation.Enhancement",
                 Description = "Enhanced documentation and explanations based on user feedback",

@@ -97,7 +97,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 .ToList());
         }
 
-        public async Task<List<ModelVariant>> ListModelVariantsAsync(string modelId)
+        public Task<List<ModelVariant>> ListModelVariantsAsync(string modelId)
         {
             // Return mock variants for different platforms
             var variants = new List<ModelVariant>();
@@ -117,7 +117,7 @@ namespace Nexo.Core.Application.Services.AI.Models
                 });
             }
 
-            return variants;
+            return Task.FromResult(variants);
         }
 
         public async Task CacheModelAsync(string modelId, Stream modelData, PlatformType platform)
@@ -151,7 +151,7 @@ namespace Nexo.Core.Application.Services.AI.Models
             _logger.LogInformation("Model {ModelId} cached successfully", modelId);
         }
 
-        public async Task RemoveModelAsync(string modelId, PlatformType platform)
+        public Task RemoveModelAsync(string modelId, PlatformType platform)
         {
             _logger.LogInformation("Removing model {ModelId} for platform {Platform}", modelId, platform);
 
@@ -164,18 +164,20 @@ namespace Nexo.Core.Application.Services.AI.Models
                 
                 _cachedModels.Remove(modelId);
             }
+            
+            return Task.CompletedTask;
         }
 
-        public async Task<bool> ValidateModelAsync(string modelPath)
+        public Task<bool> ValidateModelAsync(string modelPath)
         {
             if (!File.Exists(modelPath))
             {
-                return false;
+                return Task.FromResult(false);
             }
 
             // Simple validation - check file size and extension
             var fileInfo = new FileInfo(modelPath);
-            return fileInfo.Length > 0 && Path.GetExtension(fileInfo.Name).Equals(".gguf", StringComparison.OrdinalIgnoreCase);
+            return Task.FromResult(fileInfo.Length > 0 && Path.GetExtension(fileInfo.Name).Equals(".gguf", StringComparison.OrdinalIgnoreCase));
         }
 
         public async Task<ModelVariant> GetBestModelVariantAsync(PlatformType platform, AIRequirements requirements)

@@ -66,7 +66,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
             {
                 _logger.LogDebug("Ending performance monitoring for operation {OperationId}", operationId);
 
-                PerformanceMetrics metrics;
+                PerformanceMetrics? metrics;
                 lock (_lockObject)
                 {
                     if (!_activeOperations.TryGetValue(operationId, out metrics))
@@ -76,6 +76,12 @@ namespace Nexo.Core.Application.Services.AI.Performance
                     }
                     
                     _activeOperations.Remove(operationId);
+                }
+
+                if (metrics == null)
+                {
+                    _logger.LogWarning("Operation {OperationId} not found in active operations", operationId);
+                    return Task.FromResult(new PerformanceMetrics { OperationId = operationId });
                 }
 
                 // Update metrics
@@ -117,7 +123,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
             }
         }
 
-        public async Task<PerformanceMetrics> GetOperationMetricsAsync(string operationId)
+        public Task<PerformanceMetrics> GetOperationMetricsAsync(string operationId)
         {
             try
             {
@@ -125,7 +131,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
                 {
                     if (_activeOperations.TryGetValue(operationId, out var activeMetrics))
                     {
-                        return activeMetrics;
+                        return Task.FromResult(activeMetrics);
                     }
                 }
 
@@ -136,13 +142,13 @@ namespace Nexo.Core.Application.Services.AI.Performance
                     {
                         if (metrics.OperationId == operationId)
                         {
-                            return metrics;
+                            return Task.FromResult(metrics);
                         }
                     }
                 }
 
                 _logger.LogWarning("Operation {OperationId} not found in metrics", operationId);
-                return null;
+                return Task.FromResult(new PerformanceMetrics { OperationId = operationId });
             }
             catch (Exception ex)
             {
