@@ -468,7 +468,7 @@ namespace Nexo.Core.Domain.Tests.Composition
             // Act & Assert
             Assert.Equal(error1, error2);
             Assert.NotEqual(error1, error3);
-            Assert.NotEqual(error1, null!);
+            Assert.NotEqual(null!, error1);
         }
         
         [Fact]
@@ -482,7 +482,7 @@ namespace Nexo.Core.Domain.Tests.Composition
             // Act & Assert
             Assert.Equal(warning1, warning2);
             Assert.NotEqual(warning1, warning3);
-            Assert.NotEqual(warning1, null!);
+            Assert.NotEqual(null!, warning1);
         }
         
         [Fact]
@@ -524,10 +524,10 @@ namespace Nexo.Core.Domain.Tests.Composition
         public void ValidationRule_WithNullParameters_ThrowsException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new ValidationRule(null, "description", ValidationType.Required, "expression", "error", ValidationSeverity.Error));
-            Assert.Throws<ArgumentNullException>(() => new ValidationRule("name", null, ValidationType.Required, "expression", "error", ValidationSeverity.Error));
-            Assert.Throws<ArgumentNullException>(() => new ValidationRule("name", "description", ValidationType.Required, null, "error", ValidationSeverity.Error));
-            Assert.Throws<ArgumentNullException>(() => new ValidationRule("name", "description", ValidationType.Required, "expression", null, ValidationSeverity.Error));
+            Assert.Throws<ArgumentNullException>(() => new ValidationRule(null!, "description", ValidationType.Required, "expression", "error", ValidationSeverity.Error));
+            Assert.Throws<ArgumentNullException>(() => new ValidationRule("name", null!, ValidationType.Required, "expression", "error", ValidationSeverity.Error));
+            Assert.Throws<ArgumentNullException>(() => new ValidationRule("name", "description", ValidationType.Required, null!, "error", ValidationSeverity.Error));
+            Assert.Throws<ArgumentNullException>(() => new ValidationRule("name", "description", ValidationType.Required, "expression", null!, ValidationSeverity.Error));
         }
     }
 } 

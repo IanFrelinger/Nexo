@@ -1,10 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "rgPfhjXBiWY=",
+  "dgSpecHash": "x9DP2Ja3pJ0=",
   "success": true,
   "projectFilePath": "/Users/ianfrelinger/RiderProjects/Nexo/src/Nexo.Feature.AI/Nexo.Feature.AI.csproj",
   "expectedPackageFiles": [
     "/Users/ianfrelinger/.nuget/packages/jetbrains.annotations/2025.2.0/jetbrains.annotations.2025.2.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.analyzers/3.3.4/microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.common/4.8.0/microsoft.codeanalysis.common.4.8.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/microsoft.codeanalysis.csharp/4.8.0/microsoft.codeanalysis.csharp.4.8.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.configuration.abstractions/9.0.0/microsoft.extensions.configuration.abstractions.9.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection/9.0.0/microsoft.extensions.dependencyinjection.9.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/9.0.8/microsoft.extensions.dependencyinjection.abstractions.9.0.8.nupkg.sha512",
@@ -15,8 +18,11 @@
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.logging.abstractions/9.0.8/microsoft.extensions.logging.abstractions.9.0.8.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.options/9.0.0/microsoft.extensions.options.9.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/microsoft.extensions.primitives/9.0.0/microsoft.extensions.primitives.9.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.collections.immutable/7.0.0/system.collections.immutable.7.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/system.diagnostics.diagnosticsource/9.0.8/system.diagnostics.diagnosticsource.9.0.8.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/system.io.pipelines/9.0.7/system.io.pipelines.9.0.7.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.reflection.metadata/7.0.0/system.reflection.metadata.7.0.0.nupkg.sha512",
+    "/Users/ianfrelinger/.nuget/packages/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/system.text.encodings.web/9.0.7/system.text.encodings.web.9.0.7.nupkg.sha512",
     "/Users/ianfrelinger/.nuget/packages/system.text.json/9.0.7/system.text.json.9.0.7.nupkg.sha512"
   ],

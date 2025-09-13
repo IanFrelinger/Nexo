@@ -1,18 +1,17 @@
-using System.Threading.Tasks;
 using Nexo.Core.Domain.Composition;
+using Nexo.Core.Domain.Models.Extensions;
+using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Extensions
 {
     /// <summary>
-    /// Interface for validating C# syntax in generated extension code
+    /// Interface for validating C# syntax in generated code.
     /// </summary>
     public interface ICSharpSyntaxValidator
     {
         /// <summary>
-        /// Validates C# syntax for the provided code
+        /// Validates C# code for syntax errors and warnings.
         /// </summary>
-        /// <param name="code">The C# code to validate</param>
-        /// <returns>Validation result with syntax errors and warnings</returns>
-        Task<ValidationResult> ValidateAsync(string code);
+        Task<ExtensionGenerationResult> ValidateSyntaxAsync(string code, string assemblyName);
     }
 }

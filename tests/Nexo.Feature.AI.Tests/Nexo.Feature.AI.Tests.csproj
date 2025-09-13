@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +30,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Nexo.Feature.AI\Nexo.Feature.AI.csproj" />
-    <ProjectReference Include="..\Nexo.Core.Application.Tests\Nexo.Core.Application.Tests.csproj" />
   </ItemGroup>
 
 </Project>
