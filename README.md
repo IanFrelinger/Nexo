@@ -1,384 +1,254 @@
-# Nexo - Development Environment Orchestration Platform
+# Nexo - AI-Powered Code Generation Platform
 
-## Project Overview
+## 🚀 Overview
 
-Nexo is a comprehensive development environment orchestration platform that provides containerized development workflows, project initialization, code analysis, and agent-based automation capabilities.
+Nexo is a comprehensive AI-powered code generation platform that transforms natural language descriptions into executable C# tools. Built with Clean Architecture principles, it provides a complete pipeline from AI model integration to tool compilation, execution, and maintenance.
 
-## Architecture
+## ✨ Key Features
 
-This project follows Clean Architecture principles with clear separation of concerns:
+### 🤖 AI-Powered Code Generation
+- **Multi-Provider Support**: OpenAI, Ollama (local), Azure OpenAI
+- **Natural Language Processing**: Convert descriptions to compilable C# code
+- **Intelligent Orchestration**: Automatic provider selection and fallback
+- **Context-Aware Generation**: Maintains conversation context across sessions
+
+### 🔧 Tool Lifecycle Management
+- **Dynamic Compilation**: Roslyn-based C# compilation to executable assemblies
+- **Plugin System**: Hot-reloadable tool plugins with dependency injection
+- **Tool Persistence**: Save and retrieve generated tools across sessions
+- **Tool Evolution**: Modify and improve existing tools over time
+- **Tool Discovery**: List, search, and manage generated tools
+
+### 🛡️ Safety & Quality Assurance
+- **Enhanced Safety Validation**: Proactive checks for malicious patterns and security vulnerabilities
+- **Code Quality Analysis**: Automated assessment with scoring and quality gates
+- **Policy Engine**: Data-driven safety and quality rules with YAML configuration
+- **Guided Generation**: Step-by-step workflow to ensure proper tool requirements
+
+### 🏗️ Clean Architecture
+- **Domain Layer**: Core business logic and entities
+- **Application Layer**: Use cases, interfaces, and services
+- **Infrastructure Layer**: External integrations and implementations
+- **Feature Modules**: Modular architecture with clear separation of concerns
+
+## 🏛️ Architecture
 
 ```
 Nexo/
 ├── src/                          # Source code
-│   ├── Nexo.Core.Domain/         # Domain layer (entities, value objects, domain logic)
-│   ├── Nexo.Core.Application/    # Application layer (use cases, interfaces, services)
-│   └── Nexo.Infrastructure/      # Infrastructure layer (implementations, adapters)
+│   ├── Nexo.Core.Domain/         # Domain entities, value objects, interfaces
+│   ├── Nexo.Core.Application/    # Application services and use cases
+│   ├── Nexo.Infrastructure/      # Infrastructure implementations
+│   ├── Nexo.CLI/                 # Command-line interface
+│   └── Nexo.Feature.*/          # Feature modules (AI, Analysis, Pipeline, etc.)
 ├── tests/                        # Test projects
-│   └── Nexo.Tests/               # Integration and unit tests
-├── docs/                         # Documentation
-│   ├── README.md                 # Documentation index
-│   ├── DEVELOPMENT_PROGRESS.md   # Current development status
-│   ├── PROJECT_TRACKING.md       # Strategic project tracking
-│   ├── epics/                    # Epic completion summaries
-│   ├── development-summaries/    # Development progress reports
-│   ├── strategies/               # Strategic planning documents
-│   └── logs/                     # Build and execution logs
-├── scripts/                      # Shell scripts
-│   ├── README.md                 # Scripts documentation
-│   ├── build/                    # Build scripts
-│   └── test/                     # Test scripts
-└── docker/                       # Docker files
-    ├── README.md                 # Docker documentation
-    ├── docker-compose.yml        # Main application containerization
-    ├── docker-compose.test-environments.yml # Testing environment orchestration
-    └── Dockerfile.unity-test     # Unity testing environment container
+├── policies/                     # Safety and quality policies
+│   ├── safety/                   # Safety rules and allowlists
+│   ├── quality/                  # Quality gates and scoring
+│   └── schemas/                  # JSON schema validation
+├── docker/                       # Containerization files
+├── scripts/                      # Build and deployment scripts
+└── examples/                     # Configuration examples
 ```
 
-## 📚 Documentation
-
-For comprehensive documentation, see the [docs/](./docs/) directory:
-
-- **[Documentation Index](./docs/README.md)** - Complete documentation overview
-- **[Development Progress](./docs/DEVELOPMENT_PROGRESS.md)** - Current status and achievements
-- **[Project Tracking](./docs/PROJECT_TRACKING.md)** - Strategic vision and roadmap
-- **[Epic Summaries](./docs/epics/)** - Detailed feature implementation reports
-- **[Development Summaries](./docs/development-summaries/)** - Progress reports and integrations
-- **[Strategic Documents](./docs/strategies/)** - Planning and solution strategies
-
-### 🔧 [Scripts](./scripts/)
-Build and test automation scripts:
-- **[Scripts Documentation](./scripts/README.md)** - Complete scripts overview
-- **[Build Scripts](./scripts/build/)** - Build and compilation scripts
-- **[Test Scripts](./scripts/test/)** - Testing and validation scripts
-
-### 🐳 [Docker](./docker/)
-Containerization and deployment files:
-- **[Docker Documentation](./docker/README.md)** - Complete Docker overview
-- **[Docker Compose Files](./docker/)** - Application and test environment orchestration
-- **[Dockerfiles](./docker/)** - Container definitions
-
-## Project Structure
-
-### Core Domain Layer (`src/Nexo.Core.Domain/`)
-
-Contains the core business entities, value objects, and domain logic:
-
-- **Entities/**: Core business entities (Agent, Project, Sprint, SprintTask)
-- **ValueObjects/**: Immutable value objects (AgentId, ProjectId, etc.)
-- **Enums/**: Domain-specific enumerations
-- **Exceptions/**: Domain-specific exceptions
-
-### Core Application Layer (`src/Nexo.Core.Application/`)
-
-Contains application logic, use cases, and interfaces organized by domain:
-
-#### Interfaces/
-- **Agent/**: Agent-related interfaces
-- **Analysis/**: Code analysis interfaces
-- **Caching/**: Caching system interfaces
-- **Container/**: Container orchestration interfaces
-- **Platform/**: Platform-specific interfaces
-- **Plugin/**: Plugin system interfaces
-- **Project/**: Project management interfaces
-- **Template/**: Template system interfaces
-- **Validation/**: Validation interfaces
-
-#### Models/
-- **Agent/**: Agent-related models
-- **Analysis/**: Code analysis models
-- **Container/**: Container-related models
-- **Platform/**: Platform-specific models
-- **Plugin/**: Plugin system models
-- **Project/**: Project management models
-- **Template/**: Template system models
-- **Validation/**: Validation models
-
-#### UseCases/
-- **Agent/**: Agent-related use cases
-- **Analysis/**: Code analysis use cases
-- **Container/**: Container orchestration use cases
-- **Project/**: Project management use cases
-- **Template/**: Template system use cases
-
-#### Services/
-- **Agent/**: Agent-related services
-- **Analysis/**: Code analysis services
-- **Caching/**: Caching system services (CacheStrategy, CachingAsyncProcessor)
-- **Container/**: Container orchestration services
-- **Plugin/**: Plugin system services
-- **Project/**: Project management services
-- **Template/**: Template system services
-- **Validation/**: Validation services
-
-### Infrastructure Layer (`src/Nexo.Infrastructure/`)
-
-Contains implementations, adapters, and external integrations:
-
-#### Adapters/
-- **Command/**: Command execution adapters
-- **Configuration/**: Configuration management adapters
-- **Container/**: Container orchestration adapters (Docker, Podman)
-- **FileSystem/**: File system operation adapters
-- **Platform/**: Platform-specific adapters
-
-#### Services/
-- **Agent/**: Agent service implementations
-- **Analysis/**: Code analysis service implementations
-- **Caching/**: Caching service implementations (RedisCacheStrategy)
-- **Command/**: Command execution services
-- **Plugin/**: Plugin system implementations
-- **Project/**: Project management services
-- **Template/**: Template system implementations
-- **Validation/**: Validation service implementations
-
-#### Repositories/
-- **Project/**: Project data access implementations
-- **Agent/**: Agent data access implementations
-- **Sprint/**: Sprint data access implementations
-
-#### Initializers/
-- **Project/**: Project initialization implementations
-- **Container/**: Container initialization implementations
-- **Platform/**: Platform initialization implementations
-
-#### Validators/
-- **Command/**: Command validation implementations
-- **Project/**: Project validation implementations
-- **Template/**: Template validation implementations
-
-## Key Features
-
-### Container Orchestration
-- Support for Docker and Podman
-- Container lifecycle management
-- Volume mounting and port mapping
-- Development session management
-
-### Project Management
-- Project initialization workflows
-- Template-based project creation
-- Project configuration management
-- Sprint and task tracking
-
-### Code Analysis
-- Static code analysis
-- Architectural compliance checking
-- Code improvement recommendations
-- Issue categorization and prioritization
-
-### Agent System
-- Multi-agent architecture
-- Role-based agent capabilities
-- Agent communication and coordination
-- Task delegation and execution
-
-### Plugin System
-- Extensible plugin architecture
-- Plugin lifecycle management
-- Service injection and dependency management
-- Hot-reload capabilities
-
-### Platform Abstraction
-- Cross-platform support (Windows, macOS, Linux)
-- Runtime environment detection
-- Platform-specific optimizations
-- Unified API across platforms
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 - .NET 8.0 SDK
-- Docker or Podman (for container features)
+- Docker (for container features)
 - Git
 
-### Building the Project
+### Installation
 ```bash
+# Clone the repository
+git clone https://github.com/IanFrelinger/Nexo.git
+cd Nexo
+
+# Restore dependencies
 dotnet restore
+
+# Build the project
 dotnet build
 ```
 
-### Running Tests
+### Basic Usage
+
+#### Interactive Chat Mode
 ```bash
-dotnet test
+# Start interactive chat for tool generation
+dotnet run --project src/Nexo.CLI
+
+# Or use the nexo command (if installed)
+nexo chat
 ```
 
-### Running the Application
+#### Generate a Tool
 ```bash
-dotnet run --project src/Nexo.Infrastructure
+# Generate a JSON formatter tool
+nexo generate "Create a JSON formatter that takes a file path and pretty-prints the JSON"
+
+# Generate with specific AI provider
+nexo generate "Create a file organizer" --provider ollama --model llama2
 ```
 
-## Development Guidelines
-
-### Architecture Principles
-1. **Dependency Inversion**: High-level modules should not depend on low-level modules
-2. **Single Responsibility**: Each class should have one reason to change
-3. **Open/Closed**: Open for extension, closed for modification
-4. **Interface Segregation**: Clients should not be forced to depend on interfaces they don't use
-5. **Dependency Injection**: Use constructor injection for dependencies
-
-### Code Organization
-- Keep related functionality together
-- Use clear, descriptive names for folders and files
-- Group interfaces, models, and implementations by domain
-- Maintain consistent naming conventions
-
-### Testing Strategy
-- Unit tests for domain logic
-- Integration tests for use cases
-- End-to-end tests for critical workflows
-- Mock external dependencies
-
-## Contributing
-
-1. Follow the established architecture patterns
-2. Add appropriate tests for new functionality
-3. Update documentation for new features
-4. Use meaningful commit messages
-5. Create feature branches for significant changes
-
-## Development Progress
-
-For detailed information about our development progress, current status, and roadmap, see [DEVELOPMENT_PROGRESS.md](docs/DEVELOPMENT_PROGRESS.md).
-
-### Recent Achievements
-- ✅ **Cross-Platform Testing Integration** - Full CLI integration with multi-environment support
-- ✅ **AI Integration** - Multi-provider support with intelligent orchestration
-- ✅ **Container Orchestration** - Docker integration for development environments
-- ✅ **Caching System** - Dual backend support with compositional design
-
-### Current Focus
-- 🔄 **Docker Execution Integration** - Implementing real Docker container execution for testing
-- 🎯 **Smart Test Orchestration** - Intelligent test selection and parallel execution
-- 📊 **Enhanced Reporting** - Interactive reports with CI/CD integration
-
-## License
-
-[Add your license information here] 
-
-# Caching System
-
-Nexo provides a flexible, compositional caching system that supports both in-memory and distributed Redis caching. The caching system is designed to be decoupled from core services using the decorator pattern.
-
-## Features
-
-- **Dual Backend Support**: In-memory and Redis caching
-- **Compositional Design**: Caching is implemented as a decorator around `IAsyncProcessor`
-- **Semantic Cache Keys**: Intelligent key generation based on normalized input and context
-- **Configurable TTL**: Time-based expiration with configurable defaults
-- **Graceful Degradation**: Automatic fallback when Redis is unavailable
-- **Multi-target Compatibility**: Works with .NET 8, .NET Framework 4.8, and .NET Standard 2.0
-
-## Quick Start
-
-### Environment Configuration
-
+#### Tool Management
 ```bash
-# Use in-memory caching (default)
-export CACHE_BACKEND=inmemory
-export CACHE_TTL_SECONDS=300
+# List all generated tools
+nexo tools list
 
-# Use Redis caching
-export CACHE_BACKEND=redis
-export REDIS_CONNECTION_STRING=localhost:6379
-export REDIS_KEY_PREFIX=nexo:cache:
-export CACHE_TTL_SECONDS=600
+# Execute a generated tool
+nexo tools run json-formatter input.json
+
+# Evolve an existing tool
+nexo tools evolve json-formatter "Add support for minification"
 ```
 
-### CLI Configuration
+## 🔧 Configuration
 
+### AI Provider Setup
+
+#### OpenAI
 ```bash
-# Show current cache configuration
-nexo config show
-
-# Set cache backend and TTL
-nexo config set-cache redis 600
-```
-
-### Usage in Code
-
-```csharp
-// Create configured cache strategy
-var settings = new CacheSettings { Backend = "redis" };
-var cacheService = new CacheConfigurationService(settings);
-var cache = cacheService.CreateCacheStrategy<string, ModelResponse>();
-
-// Compose with caching
-var cachingProcessor = new CachingAsyncProcessor<ModelRequest, string, ModelResponse>(
-    coreProcessor,
-    cache,
-    keySelector: request => SemanticCacheKeyGenerator.Generate(request.Input)
-);
-
-// Use the caching processor
-var response = await cachingProcessor.ProcessAsync(request);
-```
-
-For detailed documentation, see [CACHING.md](docs/CACHING.md).
-
-# AI Provider/Model Configuration and Usage
-
-Nexo supports flexible configuration for AI model providers and models, allowing you to select and override your preferred provider/model at runtime.
-
-## Configuration Methods
-
-### 1. Environment Variables
-Set your preferred provider and model globally for all CLI commands:
-
-```
+export OPENAI_API_KEY="your-api-key"
 export AI_PROVIDER=openai
 export AI_MODEL=gpt-4
 ```
 
-### 2. CLI Options
-Override preferences per command using `--provider` and `--model` options:
+#### Ollama (Local)
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
 
-```
-nexo analyze myfile.cs --ai --provider ollama --model llama2
-nexo ai suggest "public class Foo {}" --provider openai --model gpt-3.5-turbo
-```
+# Pull a model
+ollama pull llama2
 
-If a CLI option is provided, it takes precedence over environment variables.
-
-### 3. Fallback Logic
-If no provider/model is specified, Nexo will automatically select the best available model for the requested task and type, using health checks and provider capabilities.
-
-## Supported Providers and Models
-- **OpenAI**: GPT-3.5, GPT-4, etc.
-- **Ollama**: Local models (e.g., llama2, codellama)
-- **Azure OpenAI**: Azure-hosted GPT models
-
-You can add new providers by implementing the `IModelProvider` interface and registering them in the orchestrator.
-
-## Example Usage
-
-**Analyze code with AI (using environment variable defaults):**
-```
-nexo analyze myfile.cs --ai
+# Configure Nexo
+export AI_PROVIDER=ollama
+export AI_MODEL=llama2
 ```
 
-**Analyze code with a specific provider/model:**
-```
-nexo analyze myfile.cs --ai --provider openai --model gpt-4
-```
-
-**Get AI-powered code suggestions:**
-```
-nexo ai suggest "public void Bar() {}" --provider ollama --model llama2
+#### Azure OpenAI
+```bash
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
+export AZURE_OPENAI_API_KEY="your-api-key"
+export AI_PROVIDER=azure-openai
+export AI_MODEL=gpt-4
 ```
 
-**Initialize a project with AI assistance:**
-```
-nexo project init MyProject --ai --provider azure-openai --model gpt-4
+### Policy Configuration
+
+Nexo includes a comprehensive policy system for safety and quality:
+
+```bash
+# Run safety scan
+nexo safety scan --policy policies/safety/default.yaml
+
+# Run quality checks
+nexo quality run --policy policies/quality/default.yaml --format sarif
+
+# Apply complete policy pack
+nexo policy apply --manifest policies/policy-pack.manifest.yaml
 ```
 
-## How It Works
-- The orchestrator registers all available providers at startup.
-- When a command is run, Nexo checks for CLI options, then environment variables, then falls back to auto-selection.
-- If the preferred provider/model is unavailable, Nexo will try other healthy providers.
+## 🧪 Testing
 
-## Extending Providers
-To add a new provider:
-1. Implement the `IModelProvider` interface.
-2. Register your provider in the orchestrator (see `Program.cs`).
-3. Optionally, document your provider in this section. 
+```bash
+# Run all tests
+dotnet test
+
+# Run with coverage
+dotnet test --collect:"XPlat Code Coverage"
+
+# Run specific test project
+dotnet test tests/Nexo.Infrastructure.Tests/
+```
+
+## 🐳 Docker Support
+
+```bash
+# Build and run with Docker
+docker-compose up --build
+
+# Run tests in container
+docker-compose -f docker-compose.testing.yml up --build
+```
+
+## 📊 Features by Module
+
+### Core Features
+- **Nexo.CLI**: Command-line interface with interactive chat
+- **Nexo.Core.Domain**: Business entities and domain logic
+- **Nexo.Core.Application**: Application services and use cases
+- **Nexo.Infrastructure**: External integrations and implementations
+
+### Feature Modules
+- **Nexo.Feature.AI**: AI model integration and orchestration
+- **Nexo.Feature.Analysis**: Code analysis and quality assessment
+- **Nexo.Feature.Pipeline**: Pipeline orchestration and execution
+- **Nexo.Feature.Plugin**: Plugin system and dynamic loading
+- **Nexo.Feature.Factory**: Code generation and tool creation
+- **Nexo.Feature.Container**: Container orchestration
+- **Nexo.Feature.Platform**: Cross-platform support
+- **Nexo.Feature.Security**: Security and validation
+- **Nexo.Feature.Data**: Data persistence and repositories
+
+## 🔒 Security & Safety
+
+### Safety Features
+- **Sandboxed Execution**: Restricted filesystem and network access
+- **Secret Detection**: Automatic detection of API keys and credentials
+- **Malicious Code Detection**: Pattern-based security scanning
+- **Network Restrictions**: Configurable domain and port allowlists
+
+### Quality Assurance
+- **Code Quality Scoring**: Automated assessment with configurable thresholds
+- **Test Coverage**: Minimum 75% coverage requirement
+- **Style Enforcement**: Consistent code formatting and standards
+- **Dependency Auditing**: Security vulnerability scanning
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and add tests
+4. Run the test suite: `dotnet test`
+5. Run policy checks: `nexo policy apply`
+6. Commit your changes: `git commit -m 'Add amazing feature'`
+7. Push to the branch: `git push origin feature/amazing-feature`
+8. Open a Pull Request
+
+## 📝 Development Guidelines
+
+### Architecture Principles
+- **Clean Architecture**: Clear separation of concerns
+- **Dependency Injection**: Constructor injection for all dependencies
+- **Interface Segregation**: Small, focused interfaces
+- **Single Responsibility**: One reason to change per class
+
+### Code Quality
+- Follow C# naming conventions
+- Write comprehensive tests
+- Use meaningful commit messages
+- Document public APIs
+
+## 📄 License
+
+[Add your license information here]
+
+## 🆘 Support
+
+- **Documentation**: Check the `docs/` directory for detailed guides
+- **Issues**: Report bugs and request features on GitHub
+- **Discussions**: Join community discussions for questions and ideas
+
+## 🗺️ Roadmap
+
+- **Enhanced AI Models**: Support for more AI providers and models
+- **Visual Tool Builder**: GUI for tool creation and management
+- **Team Collaboration**: Multi-user tool sharing and versioning
+- **Enterprise Features**: Advanced security and compliance tools
+- **Cloud Integration**: Seamless cloud deployment and scaling
+
+---
+
+**Nexo** - Transform your ideas into code with the power of AI! 🚀
