@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nexo.dev/schemas/policy.safety.v0.1.json",
   "title": "SafetyPolicy",
   "type": "object",
   "required": ["meta", "sandbox", "rules"],

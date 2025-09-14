@@ -34,10 +34,12 @@ sandbox:
       - "wget"
   network:
     default: deny
+    mode: enforce  # report|enforce
     allowlist_ref: safety-allowlists:network.allowlist
     denylist_ref:  safety-allowlists:network.denylist
     allow_loopback: true
     max_egress_kbps: 1024
+    wildcard_suffixes: true  # allow *.domain.com patterns
   env:
     allowed_prefixes:
       - "NEXO_"
@@ -83,6 +85,9 @@ rules:
     action: error
 
 outputs:
-  report_dir: "./test-reports"
-  formats: ["json", "md"]
+  report_dir: "./test-reports/policies"
+  formats: ["json", "md", "sarif"]
   sarif: true
+  summary:
+    include_violations: true
+    include_recommendations: true

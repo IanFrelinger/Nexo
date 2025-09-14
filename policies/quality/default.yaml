@@ -47,6 +47,15 @@ language_overrides:
   # Add more language sections as needed (python, ts, etc.)
 
 outputs:
-  report_dir: "./test-reports"
-  formats: ["json", "md"]
+  report_dir: "./test-reports/policies"
+  formats: ["json", "md", "sarif"]
   sarif: true
+  summary:
+    include_gates: true
+    include_scores: true
+    thresholds:
+      compile: 1.0
+      tests: 0.75
+      style: 0.8
+      complexity: 0.8
+      dependencies: 0.9

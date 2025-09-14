@@ -1,6 +1,9 @@
 # Policy Pack manifest (v0.1)
 name: nexo-policy-pack
 version: 0.1.0
+compatibility:
+  min_engine: 0.1.0
+  max_engine: 1.0.0
 includes:
   - quality/default.yaml
   - safety/default.yaml
