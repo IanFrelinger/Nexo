@@ -25,15 +25,18 @@ jobs:
         
       - name: Validate policy files
         run: |
+          set -e
           nexo policy validate --schema policies/schemas/policy.safety.schema.json policies/safety/default.yaml
           nexo policy validate --schema policies/schemas/policy.quality.schema.json policies/quality/default.yaml
           
       - name: Run safety scan
         run: |
+          set -e
           nexo safety scan --policy policies/safety/default.yaml --out test-reports/policies
           
       - name: Run quality checks
         run: |
+          set -e
           nexo quality run --policy policies/quality/default.yaml --out test-reports/policies --format sarif
           
       - name: Upload policy reports
@@ -41,6 +44,12 @@ jobs:
         with:
           name: policy-reports
           path: test-reports/policies
+          
+      - name: Upload SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: test-reports/policies/quality.sarif
           
       - name: Comment PR with policy results
         if: github.event_name == 'pull_request'

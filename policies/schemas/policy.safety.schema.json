@@ -3,6 +3,7 @@
   "$id": "https://nexo.dev/schemas/policy.safety.v0.1.json",
   "title": "SafetyPolicy",
   "type": "object",
+  "additionalProperties": false,
   "required": ["meta", "sandbox", "rules"],
   "properties": {
     "meta": {
@@ -29,28 +30,7 @@
     },
     "rules": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "kind", "action"],
-        "properties": {
-          "id": { "type": "string" },
-          "description": { "type": "string" },
-          "kind": { "enum": ["filesystem", "process", "network", "content", "license"] },
-          "action": { "enum": ["info", "warn", "error", "block"] },
-          "patterns": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "allow": {
-            "type": "array",
-            "items": { "type": "string" }
-          },
-          "deny": {
-            "type": "array",
-            "items": { "type": "string" }
-          }
-        }
-      }
+      "items": { "$ref": "#/$defs/rule" }
     },
     "outputs": { 
       "type": "object",
@@ -61,6 +41,32 @@
           "items": { "enum": ["json", "md", "sarif"] }
         },
         "sarif": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "required": ["id", "kind", "action"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "description": { "type": "string" },
+        "kind": { "enum": ["filesystem", "process", "network", "content", "license"] },
+        "action": { "enum": ["info", "warn", "error", "block"] },
+        "severity": { "enum": ["info", "warn", "error", "block"] },
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "allow": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "deny": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
       }
     }
   }

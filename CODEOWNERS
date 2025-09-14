@@ -1,0 +1,12 @@
+# Global owners
+* @IanFrelinger
+
+# Policy files require review
+/policies/ @IanFrelinger
+
+# CI/CD workflows require review
+/.github/workflows/ @IanFrelinger
+
+# Security-sensitive files
+appsettings*.json @IanFrelinger
+*.local.* @IanFrelinger

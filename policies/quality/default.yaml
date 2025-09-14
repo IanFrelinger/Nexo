@@ -10,6 +10,8 @@ gates:
   tests:
     must_pass: true
     min_coverage: 0.75          # 75% line coverage
+    coverage_collector: "coverlet"  # coverlet|dotcover|coverage
+    coverage_format: "lcov"     # lcov|cobertura|opencover
   style:
     max_warnings: 50
     treat_analyzers_as_errors: true

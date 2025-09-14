@@ -35,11 +35,23 @@ sandbox:
   network:
     default: deny
     mode: enforce  # report|enforce
-    allowlist_ref: safety-allowlists:network.allowlist
-    denylist_ref:  safety-allowlists:network.denylist
     allow_loopback: true
+    allow:
+      - "localhost"
+      - "127.0.0.1"
+      - "*.githubusercontent.com"
+      - "*.nuget.org"
+      - "api.github.com"
+      - "nuget.org"
+      - "api.nuget.org"
+      - "registry.npmjs.org"
+      - "packages.microsoft.com"
+      - "ghcr.io"
+      - "docker.io"
+      - "index.docker.io"
+    ports:
+      allow: [80, 443]
     max_egress_kbps: 1024
-    wildcard_suffixes: true  # allow *.domain.com patterns
   env:
     allowed_prefixes:
       - "NEXO_"
@@ -64,11 +76,28 @@ rules:
     description: Only allow HTTP(S) to approved domains
     kind: network
     action: error
-  - id: secret-leak-detection
-    description: Scan outputs/diffs for potential secrets
+  - id: secret-heuristic-entropy
+    description: Detect high-entropy strings that might be secrets
+    kind: content
+    patterns:
+      - "[A-Za-z0-9+/]{32,}={0,2}"
+    action: error
+  - id: secret-aws-akia
+    description: Detect AWS Access Key IDs
+    kind: content
+    patterns:
+      - "AKIA[0-9A-Z]{16}"
+    action: error
+  - id: secret-aws-secret-key
+    description: Detect AWS Secret Access Keys
     kind: content
     patterns:
       - "(?i)aws(.{0,20})?(secret|access)[=:]\\s*([A-Za-z0-9/+=]{40})"
+    action: error
+  - id: secret-api-key-generic
+    description: Detect generic API keys
+    kind: content
+    patterns:
       - "(?i)api[_-]?key[=:]\\s*[A-Za-z0-9\\-_]{16,}"
     action: error
   - id: license-compliance
