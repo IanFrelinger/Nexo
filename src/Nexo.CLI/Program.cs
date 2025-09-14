@@ -496,6 +496,30 @@ namespace Nexo.CLI
             iterationCommand.AddCommand(iterationCommands.CreateIterationRecommendationsCommand());
             rootCommand.AddCommand(iterationCommand);
 
+            // Tool generation commands
+            var toolCommand = ToolGenerationCommands.CreateToolGenerationCommand(scope.ServiceProvider);
+            rootCommand.AddCommand(toolCommand);
+
+            // Maintenance commands
+            var maintenanceService = scope.ServiceProvider.GetRequiredService<IToolMaintenanceService>();
+            var maintenanceCommand = new MaintenanceCommand(maintenanceService, logger);
+            var maintenanceCommandRoot = new Command("maintenance", "Tool maintenance and lifecycle management");
+            maintenanceCommandRoot.SetHandler(async (string[] args) =>
+            {
+                await maintenanceCommand.ExecuteAsync(args);
+            });
+            rootCommand.AddCommand(maintenanceCommandRoot);
+
+            // Hardware requirements commands
+            var hardwareChecker = scope.ServiceProvider.GetRequiredService<IHardwareRequirementsChecker>();
+            var hardwareCommand = new HardwareCommand(hardwareChecker, logger);
+            var hardwareCommandRoot = new Command("hardware", "Hardware requirements and cloud fallback options");
+            hardwareCommandRoot.SetHandler(async (string[] args) =>
+            {
+                await hardwareCommand.ExecuteAsync(args);
+            });
+            rootCommand.AddCommand(hardwareCommandRoot);
+
             // Extension generation commands
             var extensionCommand = ExtensionCommands.CreateExtensionCommand(scope.ServiceProvider);
             rootCommand.AddCommand(extensionCommand);

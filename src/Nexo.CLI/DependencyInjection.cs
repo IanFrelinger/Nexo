@@ -246,6 +246,9 @@ namespace Nexo.CLI
             // Add iteration strategy services
             services.AddNexoIterationStrategies();
 
+            // Add tool generation services
+            services.AddToolGenerationServices();
+
             return services;
         }
 
@@ -317,6 +320,37 @@ namespace Nexo.CLI
             services.AddTransient<Nexo.CLI.Help.IInteractiveHelpSystem, Nexo.CLI.Help.InteractiveHelpSystem>();
             services.AddTransient<Nexo.CLI.Help.IDocumentationGenerator, Nexo.CLI.Help.CommandDocumentationGenerator>();
             services.AddTransient<Nexo.CLI.Help.IExampleRepository, Nexo.CLI.Help.ExampleRepository>();
+            
+            return services;
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for registering tool generation services
+    /// </summary>
+    public static class ToolGenerationServiceExtensions
+    {
+        /// <summary>
+        /// Adds tool generation services including code generation, compilation, and persistence
+        /// </summary>
+        public static IServiceCollection AddToolGenerationServices(this IServiceCollection services)
+        {
+            // Core tool generation services
+            services.AddTransient<Nexo.Core.Domain.Interfaces.ICodeGenerator, Nexo.Infrastructure.Generation.CodeGenerator>();
+            services.AddTransient<Nexo.Core.Domain.Interfaces.ICompilationService, Nexo.Infrastructure.Compilation.RoslynCompilationService>();
+            services.AddTransient<Nexo.Core.Domain.Interfaces.IToolRepository, Nexo.Infrastructure.Persistence.ToolRepository>();
+            services.AddTransient<Nexo.Core.Domain.Interfaces.IToolEvolver, Nexo.Infrastructure.Evolution.ToolEvolver>();
+            services.AddTransient<Nexo.Core.Domain.Interfaces.ICodeQualityAnalyzer, Nexo.Infrastructure.Quality.CodeQualityAnalyzer>();
+            services.AddTransient<Nexo.Infrastructure.Safety.EnhancedSafetyValidator>();
+            services.AddTransient<Nexo.Core.Domain.Interfaces.IGuidedGenerationService, Nexo.Infrastructure.GuidedGeneration.GuidedGenerationService>();
+            services.AddTransient<Nexo.Core.Domain.Interfaces.IToolMaintenanceService, Nexo.Infrastructure.Maintenance.ToolMaintenanceService>();
+            services.AddTransient<Nexo.Core.Domain.Interfaces.IHardwareRequirementsChecker, Nexo.Infrastructure.Hardware.HardwareRequirementsChecker>();
+            
+            // Orchestrator
+            services.AddTransient<Nexo.Infrastructure.Orchestration.ToolGenerationOrchestrator>();
+            
+            // Plugin loader (use existing implementation)
+            services.AddTransient<Nexo.Core.Application.Interfaces.IPluginLoader, Nexo.Core.Application.Services.Extensions.PluginLoader>();
             
             return services;
         }

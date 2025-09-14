@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Nexo.Core.Domain.Models;
 
 namespace Nexo.Core.Domain.Interfaces
 {
@@ -17,5 +18,6 @@ namespace Nexo.Core.Domain.Interfaces
         bool IsEnabled { get; }
         Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken = default);
         Task ShutdownAsync(CancellationToken cancellationToken = default);
+        Task<PluginResult> ExecuteAsync(string[] args);
     }
 }
