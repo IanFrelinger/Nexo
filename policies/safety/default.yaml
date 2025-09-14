@@ -1,0 +1,88 @@
+# Safety Policy (v0.1)
+meta:
+  id: safety-default
+  description: Baseline safety rules for code-gen, analysis, and test runs.
+  version: 0.1.0
+  severity_scale: [info, warn, error, block]
+
+sandbox:
+  filesystem:
+    write_roots:
+      - "./"                  # workspace root
+      - "./.nexo/tmp"
+      - "./test-reports"
+    read_only_globs:
+      - "/**/*"               # everything outside workspace treated as read-only
+    deny_globs:
+      - "/etc/**"
+      - "/proc/**"
+      - "/sys/**"
+      - "/var/run/**"
+  process:
+    allow_exec:
+      - "dotnet"
+      - "bash"
+      - "sh"
+      - "pwsh"
+      - "python"
+      - "node"
+      - "git"
+    deny_exec:
+      - "ssh"
+      - "scp"
+      - "curl"                 # use network allowlist instead
+      - "wget"
+  network:
+    default: deny
+    allowlist_ref: safety-allowlists:network.allowlist
+    denylist_ref:  safety-allowlists:network.denylist
+    allow_loopback: true
+    max_egress_kbps: 1024
+  env:
+    allowed_prefixes:
+      - "NEXO_"
+      - "DOTNET_"
+      - "PATH"
+      - "HOME"
+    deny:
+      - "AWS_SECRET_ACCESS_KEY"
+      - "AZURE_CLIENT_SECRET"
+      - "OPENAI_API_KEY"       # must be supplied via secret store, not env in CI
+
+rules:
+  - id: fs-write-outside-workspace
+    description: Prevent writes outside declared write_roots
+    kind: filesystem
+    action: block
+  - id: exec-denylist
+    description: Block invocation of dangerous executables
+    kind: process
+    action: block
+  - id: net-egress-allowlist
+    description: Only allow HTTP(S) to approved domains
+    kind: network
+    action: error
+  - id: secret-leak-detection
+    description: Scan outputs/diffs for potential secrets
+    kind: content
+    patterns:
+      - "(?i)aws(.{0,20})?(secret|access)[=:]\\s*([A-Za-z0-9/+=]{40})"
+      - "(?i)api[_-]?key[=:]\\s*[A-Za-z0-9\\-_]{16,}"
+    action: error
+  - id: license-compliance
+    description: Disallow code injection with disallowed OSS licenses
+    kind: license
+    allow:
+      - MIT
+      - Apache-2.0
+      - BSD-2-Clause
+      - BSD-3-Clause
+    deny:
+      - GPL-3.0
+      - AGPL-3.0
+    action: error
+
+outputs:
+  report_dir: "./test-reports"
+  formats: ["json", "md"]
+  sarif: true

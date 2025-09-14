@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SafetyPolicy",
+  "type": "object",
+  "required": ["meta", "sandbox", "rules"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": { 
+        "id": { "type": "string" }, 
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "severity_scale": {
+          "type": "array",
+          "items": { "enum": ["info", "warn", "error", "block"] }
+        }
+      }
+    },
+    "sandbox": { 
+      "type": "object",
+      "properties": {
+        "filesystem": { "type": "object" },
+        "process": { "type": "object" },
+        "network": { "type": "object" },
+        "env": { "type": "object" }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "action"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "kind": { "enum": ["filesystem", "process", "network", "content", "license"] },
+          "action": { "enum": ["info", "warn", "error", "block"] },
+          "patterns": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "allow": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "deny": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "outputs": { 
+      "type": "object",
+      "properties": {
+        "report_dir": { "type": "string" },
+        "formats": {
+          "type": "array",
+          "items": { "enum": ["json", "md", "sarif"] }
+        },
+        "sarif": { "type": "boolean" }
+      }
+    }
+  }
+}

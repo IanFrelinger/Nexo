@@ -533,6 +533,11 @@ namespace Nexo.CLI
             var modelCommandRoot = modelCommand.CreateModelCommand();
             rootCommand.AddCommand(modelCommandRoot);
 
+            // Add policy commands
+            var policyCommands = scope.ServiceProvider.GetRequiredService<PolicyCommands>();
+            var policyCommandRoot = policyCommands.CreateCommand();
+            rootCommand.AddCommand(policyCommandRoot);
+
             // Remove duplicate testing commands - using simple testing commands above
 
             rootCommand.Description = "Nexo CLI provides AI-enhanced development environment orchestration capabilities with interactive mode, real-time dashboards, intelligent suggestions, and Unity game development tools.";

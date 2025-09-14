@@ -249,6 +249,9 @@ namespace Nexo.CLI
             // Add tool generation services
             services.AddToolGenerationServices();
 
+            // Add policy engine services
+            services.AddPolicyEngineServices();
+
             return services;
         }
 
@@ -351,6 +354,26 @@ namespace Nexo.CLI
             
             // Plugin loader (use existing implementation)
             services.AddTransient<Nexo.Core.Application.Interfaces.IPluginLoader, Nexo.Core.Application.Services.Extensions.PluginLoader>();
+            
+            return services;
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for registering policy engine services
+    /// </summary>
+    public static class PolicyEngineServiceExtensions
+    {
+        /// <summary>
+        /// Adds policy engine services for safety and quality validation
+        /// </summary>
+        public static IServiceCollection AddPolicyEngineServices(this IServiceCollection services)
+        {
+            // Policy engine
+            services.AddTransient<Nexo.Core.Domain.Interfaces.IPolicyEngine, Nexo.Infrastructure.Policy.PolicyEngine>();
+            
+            // Policy commands
+            services.AddTransient<Nexo.CLI.Commands.PolicyCommands>();
             
             return services;
         }

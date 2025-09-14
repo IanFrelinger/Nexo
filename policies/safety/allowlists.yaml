@@ -1,0 +1,19 @@
+# Named allow/deny sets referenced by default.yaml
+id: safety-allowlists
+network:
+  allowlist:
+    - "api.github.com"
+    - "raw.githubusercontent.com"
+    - "nuget.org"
+    - "api.nuget.org"
+    - "registry.npmjs.org"
+    - "packages.microsoft.com"
+    - "ghcr.io"
+    - "docker.io"
+    - "index.docker.io"
+    # add your model endpoints here (prefer staging):
+    - "localhost"
+    - "127.0.0.1"
+  denylist:
+    - "*. metadata.google.internal"
+    - "*. compute.internal"

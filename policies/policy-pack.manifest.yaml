@@ -1,0 +1,10 @@
+# Policy Pack manifest (v0.1)
+name: nexo-policy-pack
+version: 0.1.0
+includes:
+  - quality/default.yaml
+  - safety/default.yaml
+overrides:
+  # Users can add project- or developer-specific overrides here.
+  # e.g., policies/overrides/local.yaml (gitignored)
+  - overrides/local.yaml

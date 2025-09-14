@@ -1,0 +1,17 @@
+# Roslyn/Style baselines for C#
+rules:
+  naming:
+    private_fields: "camelCaseWithLeadingUnderscore"  # _myField
+    constants: "PascalCase"
+    async_methods_suffix: "Async"
+  formatting:
+    use_var_when_obvious: true
+    new_line_for_braces: true
+  docs:
+    require_public_xml_docs: false
+  nullable_reference_types:
+    enabled: true
+  analyzers:
+    enabled:
+      - "Microsoft.CodeAnalysis.NetAnalyzers"
+      - "StyleCop.Analyzers"
