@@ -3,8 +3,9 @@ id: safety-allowlists
 network:
   allowlist:
     - "api.github.com"
-    - "raw.githubusercontent.com"
+    - "*.githubusercontent.com"
     - "nuget.org"
+    - "*.nuget.org"
     - "api.nuget.org"
     - "registry.npmjs.org"
     - "packages.microsoft.com"

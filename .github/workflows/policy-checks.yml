@@ -1,0 +1,73 @@
+name: policy-checks
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+
+jobs:
+  policies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          
+      - name: Restore dependencies
+        run: dotnet restore
+        
+      - name: Build project
+        run: dotnet build --no-restore
+        
+      - name: Validate policy files
+        run: |
+          nexo policy validate --schema policies/schemas/policy.safety.schema.json policies/safety/default.yaml
+          nexo policy validate --schema policies/schemas/policy.quality.schema.json policies/quality/default.yaml
+          
+      - name: Run safety scan
+        run: |
+          nexo safety scan --policy policies/safety/default.yaml --out test-reports/policies
+          
+      - name: Run quality checks
+        run: |
+          nexo quality run --policy policies/quality/default.yaml --out test-reports/policies --format sarif
+          
+      - name: Upload policy reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: policy-reports
+          path: test-reports/policies
+          
+      - name: Comment PR with policy results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Read policy reports if they exist
+            const reportDir = 'test-reports/policies';
+            let comment = '## Policy Check Results\n\n';
+            
+            try {
+              if (fs.existsSync(path.join(reportDir, 'summary.md'))) {
+                const summary = fs.readFileSync(path.join(reportDir, 'summary.md'), 'utf8');
+                comment += summary;
+              } else {
+                comment += '✅ Policy checks completed successfully\n';
+              }
+            } catch (error) {
+              comment += '⚠️ Policy reports could not be generated\n';
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
