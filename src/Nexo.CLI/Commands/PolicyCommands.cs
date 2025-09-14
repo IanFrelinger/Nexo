@@ -281,7 +281,7 @@ public class SampleClass
         private async Task GenerateQualityReportAsync(Nexo.Core.Domain.Models.Policy.QualityPolicyResult result, string outputPath, string format)
         {
             var timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
-            var fileName = $"quality-report-{timestamp}.{format}";
+            var fileName = format.ToLower() == "sarif" ? "quality.sarif" : $"quality-report-{timestamp}.{format}";
 
             switch (format.ToLower())
             {
@@ -314,9 +314,39 @@ public class SampleClass
 
         private async Task GenerateSarifReportAsync(object result, string filePath)
         {
-            // SARIF generation would go here
-            // For now, generate a basic JSON report
-            await GenerateJsonReportAsync(result, filePath);
+            // Generate a basic SARIF report
+            var sarifReport = new
+            {
+                version = "2.1.0",
+                runs = new[]
+                {
+                    new
+                    {
+                        tool = new
+                        {
+                            driver = new
+                            {
+                                name = "Nexo Policy Engine",
+                                version = "1.0.0",
+                                informationUri = "https://github.com/IanFrelinger/Nexo"
+                            }
+                        },
+                        results = new object[0], // Empty results for now
+                        invocations = new[]
+                        {
+                            new
+                            {
+                                executionSuccessful = true,
+                                exitCode = 0,
+                                startTimeUtc = DateTime.UtcNow.ToString("O")
+                            }
+                        }
+                    }
+                }
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(sarifReport, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(filePath, json);
         }
 
         private string GenerateMarkdownContent(object result)

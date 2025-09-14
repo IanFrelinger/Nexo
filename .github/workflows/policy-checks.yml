@@ -29,6 +29,10 @@ jobs:
           dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release
           # Create a symlink or add to PATH for nexo commands
           sudo ln -sf $(pwd)/src/Nexo.CLI/bin/Release/net8.0/nexo /usr/local/bin/nexo || true
+          
+      - name: Create test reports directory
+        run: |
+          mkdir -p test-reports/policies
         
       - name: Validate policy files
         run: |
@@ -54,7 +58,7 @@ jobs:
           
       - name: Upload SARIF to Code Scanning
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('test-reports/policies/quality.sarif') != ''
         with:
           sarif_file: test-reports/policies/quality.sarif
           
