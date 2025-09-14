@@ -1,6 +1,6 @@
 # Build artifacts
-bin/
-obj/
+**/bin/
+**/obj/
 *.dll
 *.pdb
 *.exe
@@ -37,6 +37,7 @@ Thumbs.db
 # Test results
 TestResults/
 test-results/
+test-reports/
 *.trx
 *.coverage
 
