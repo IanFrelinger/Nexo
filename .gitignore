@@ -69,3 +69,7 @@ DerivedDataCache/
 # Archive directories
 archive/
 backup/
+**/bin/
+**/obj/
+/test-reports/
+appsettings.local.json
