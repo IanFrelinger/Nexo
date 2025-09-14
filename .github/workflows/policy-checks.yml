@@ -23,6 +23,13 @@ jobs:
       - name: Build project
         run: dotnet build --no-restore
         
+      - name: Install Nexo CLI
+        run: |
+          # Build and install the CLI locally for policy commands
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release
+          # Create a symlink or add to PATH for nexo commands
+          sudo ln -sf $(pwd)/src/Nexo.CLI/bin/Release/net8.0/nexo /usr/local/bin/nexo || true
+        
       - name: Validate policy files
         run: |
           set -e
