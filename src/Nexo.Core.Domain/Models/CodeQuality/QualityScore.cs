@@ -73,23 +73,6 @@ namespace Nexo.Core.Domain.Models.CodeQuality
         Unacceptable = 1
     }
 
-    /// <summary>
-    /// Represents a specific quality issue found in code
-    /// </summary>
-    public class QualityIssue
-    {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public IssueType Type { get; set; }
-        public IssueSeverity Severity { get; set; }
-        public string Title { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string FileName { get; set; } = "";
-        public int LineNumber { get; set; }
-        public int ColumnNumber { get; set; }
-        public string CodeSnippet { get; set; } = "";
-        public string FixSuggestion { get; set; } = "";
-        public DateTime DetectedAt { get; set; } = DateTime.UtcNow;
-    }
 
     /// <summary>
     /// Represents a quality improvement recommendation
@@ -106,53 +89,6 @@ namespace Nexo.Core.Domain.Models.CodeQuality
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    /// <summary>
-    /// Types of quality issues
-    /// </summary>
-    public enum IssueType
-    {
-        Security,
-        Performance,
-        Maintainability,
-        Testability,
-        Readability,
-        Documentation,
-        CodeStyle,
-        Architecture,
-        ErrorHandling,
-        ResourceManagement
-    }
-
-    /// <summary>
-    /// Severity levels for quality issues
-    /// </summary>
-    public enum IssueSeverity
-    {
-        /// <summary>
-        /// Critical issue that must be fixed
-        /// </summary>
-        Critical = 5,
-        
-        /// <summary>
-        /// High priority issue
-        /// </summary>
-        High = 4,
-        
-        /// <summary>
-        /// Medium priority issue
-        /// </summary>
-        Medium = 3,
-        
-        /// <summary>
-        /// Low priority issue
-        /// </summary>
-        Low = 2,
-        
-        /// <summary>
-        /// Informational issue
-        /// </summary>
-        Info = 1
-    }
 
     /// <summary>
     /// Types of quality recommendations

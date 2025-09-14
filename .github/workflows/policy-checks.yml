@@ -18,10 +18,10 @@ jobs:
           dotnet-version: '8.0.x'
           
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore Nexo.sln
         
       - name: Build project
-        run: dotnet build --no-restore
+        run: dotnet build Nexo.sln --no-restore
         
       - name: Install Nexo CLI
         run: |
