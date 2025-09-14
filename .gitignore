@@ -68,3 +68,4 @@ DerivedDataCache/
 # Archive directories
 archive/
 backup/
+appsettings.local.json
