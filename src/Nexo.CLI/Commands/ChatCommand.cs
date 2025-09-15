@@ -36,7 +36,7 @@ namespace Nexo.CLI.Commands
         /// <inheritdoc />
         public async Task ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
         {
-            Console.WriteLine("🤖 Nexo Interactive Mode");
+            Console.WriteLine("Nexo Interactive Mode");
             Console.WriteLine("Describe what you need, or 'exit' to quit");
             Console.WriteLine("Commands: 'list' to see available tools, 'help' for more info");
             Console.WriteLine();
@@ -83,11 +83,11 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error in chat command");
-                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    Console.WriteLine($"ERROR: {ex.Message}");
                 }
             }
 
-            Console.WriteLine("\n👋 Goodbye!");
+            Console.WriteLine("\nGoodbye!");
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Nexo.CLI.Commands
             {
                 var tool = await _orchestrator.GenerateToolAsync(description, cancellationToken);
                 
-                Console.WriteLine($"✅ Created: {tool.Name}");
+                Console.WriteLine($"SUCCESS: Created {tool.Name}");
                 Console.WriteLine($"   Description: {tool.Description}");
                 Console.WriteLine($"   Usage: nexo {tool.CommandName} [args]");
                 
@@ -110,33 +110,33 @@ namespace Nexo.CLI.Commands
                     var quality = tool.QualityScore;
                     var qualityIcon = quality.QualityLevel switch
                     {
-                        QualityLevel.Excellent => "🌟",
-                        QualityLevel.Good => "✅",
-                        QualityLevel.Acceptable => "⚠️",
-                        QualityLevel.Poor => "❌",
-                        QualityLevel.Unacceptable => "🚫",
-                        _ => "❓"
+                        QualityLevel.Excellent => "EXCELLENT",
+                        QualityLevel.Good => "GOOD",
+                        QualityLevel.Acceptable => "WARNING",
+                        QualityLevel.Poor => "POOR",
+                        QualityLevel.Unacceptable => "BLOCKED",
+                        _ => "UNKNOWN"
                     };
                     
                     Console.WriteLine($"   Quality: {qualityIcon} {quality.OverallScore:F1}/10 ({quality.QualityLevel})");
                     
                     if (quality.RequiresHumanReview)
                     {
-                        Console.WriteLine($"   ⚠️  Requires human review");
+                        Console.WriteLine($"   WARNING: Requires human review");
                     }
                     
                     if (!quality.IsProductionReady)
                     {
-                        Console.WriteLine($"   ⚠️  Not production ready");
+                        Console.WriteLine($"   WARNING: Not production ready");
                     }
                 }
                 
-                Console.WriteLine($"   🔒 Safety validated and approved");
+                Console.WriteLine($"   Safety validated and approved");
                 Console.WriteLine($"   Ready to use!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Generation failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Generation failed: {ex.Message}");
                 _logger.LogError(ex, "Tool generation failed for: {Description}", description);
             }
         }
@@ -152,31 +152,31 @@ namespace Nexo.CLI.Commands
                 var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length < 3)
                 {
-                    Console.WriteLine("❌ Evolution format: 'modify <tool-name> to <description>'");
+                    Console.WriteLine("ERROR: Evolution format: 'modify <tool-name> to <description>'");
                     return;
                 }
 
                 var toolName = parts[1];
                 var modification = string.Join(" ", parts.Skip(2));
 
-                Console.WriteLine($"🔄 Evolving tool: {toolName}");
+                Console.WriteLine($"Evolving tool: {toolName}");
 
                 var evolvedTool = await _evolver.EvolveToolAsync(toolName, modification, cancellationToken);
 
                 if (evolvedTool.Success)
                 {
-                    Console.WriteLine($"✅ Evolved: {evolvedTool.Name} v{evolvedTool.Version}");
+                    Console.WriteLine($"SUCCESS: Evolved {evolvedTool.Name} v{evolvedTool.Version}");
                     Console.WriteLine($"   Modification: {evolvedTool.EvolutionDescription}");
                     Console.WriteLine($"   Usage: nexo {toolName} [args]");
                 }
                 else
                 {
-                    Console.WriteLine($"❌ Evolution failed: {string.Join(", ", evolvedTool.Errors)}");
+                    Console.WriteLine($"ERROR: Evolution failed: {string.Join(", ", evolvedTool.Errors)}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Evolution failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Evolution failed: {ex.Message}");
                 _logger.LogError(ex, "Tool evolution failed for input: {Input}", input);
             }
         }
@@ -188,7 +188,7 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("📋 Available Tools:");
+                Console.WriteLine("Available Tools:");
                 Console.WriteLine();
 
                 var tools = await _toolRepo.ListToolsAsync(cancellationToken);
@@ -211,7 +211,7 @@ namespace Nexo.CLI.Commands
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Failed to list tools: {ex.Message}");
+                Console.WriteLine($"ERROR: Failed to list tools: {ex.Message}");
                 _logger.LogError(ex, "Failed to list tools");
             }
         }

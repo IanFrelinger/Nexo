@@ -1,31 +1,31 @@
 # Nexo - AI-Powered Code Generation Platform
 
-## 🚀 Overview
+## Overview
 
 Nexo is a comprehensive AI-powered code generation platform that transforms natural language descriptions into executable C# tools. Built with Clean Architecture principles, it provides a complete pipeline from AI model integration to tool compilation, execution, and maintenance.
 
-## ✨ Key Features
+## Key Features
 
-### 🤖 AI-Powered Code Generation
+### AI-Powered Code Generation
 - **Multi-Provider Support**: OpenAI, Ollama (local), Azure OpenAI
 - **Natural Language Processing**: Convert descriptions to compilable C# code
 - **Intelligent Orchestration**: Automatic provider selection and fallback
 - **Context-Aware Generation**: Maintains conversation context across sessions
 
-### 🔧 Tool Lifecycle Management
+### Tool Lifecycle Management
 - **Dynamic Compilation**: Roslyn-based C# compilation to executable assemblies
 - **Plugin System**: Hot-reloadable tool plugins with dependency injection
 - **Tool Persistence**: Save and retrieve generated tools across sessions
 - **Tool Evolution**: Modify and improve existing tools over time
 - **Tool Discovery**: List, search, and manage generated tools
 
-### 🛡️ Safety & Quality Assurance
+### Safety & Quality Assurance
 - **Enhanced Safety Validation**: Proactive checks for malicious patterns and security vulnerabilities
 - **Code Quality Analysis**: Automated assessment with scoring and quality gates
 - **Policy Engine**: Data-driven safety and quality rules with YAML configuration
 - **Guided Generation**: Step-by-step workflow to ensure proper tool requirements
 
-## 🏛️ Architecture
+## Architecture
 
 ```
 Nexo/
@@ -45,7 +45,7 @@ Nexo/
 └── examples/                     # Configuration examples
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - .NET 8.0 SDK
@@ -97,7 +97,7 @@ nexo tools run json-formatter input.json
 nexo tools evolve json-formatter "Add support for minification"
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### AI Provider Setup
 
@@ -144,7 +144,7 @@ nexo quality run --policy policies/quality/default.yaml --format sarif
 nexo policy apply --manifest policies/policy-pack.manifest.yaml
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -157,7 +157,7 @@ dotnet test --collect:"XPlat Code Coverage"
 dotnet test tests/Nexo.Infrastructure.Tests/
 ```
 
-## 🐳 Docker Support
+## Docker Support
 
 ```bash
 # Build and run with Docker
@@ -168,7 +168,7 @@ docker-compose -f docker-compose.testing.yml up --build
 ```
 
 
-## 🔒 Security & Safety
+## Security & Safety
 
 ### Safety Features
 - **Sandboxed Execution**: Restricted filesystem and network access
@@ -182,7 +182,7 @@ docker-compose -f docker-compose.testing.yml up --build
 - **Style Enforcement**: Consistent code formatting and standards
 - **Dependency Auditing**: Security vulnerability scanning
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
@@ -193,17 +193,17 @@ docker-compose -f docker-compose.testing.yml up --build
 7. Push to the branch: `git push origin feature/amazing-feature`
 8. Open a Pull Request
 
-## 📄 License
+## License
 
 [Add your license information here]
 
-## 🆘 Support
+## Support
 
 - **Documentation**: Check the `docs/` directory for detailed guides
 - **Issues**: Report bugs and request features on GitHub
 - **Discussions**: Join community discussions for questions and ideas
 
-## 🗺️ Roadmap
+## Roadmap
 
 - **Enhanced AI Models**: Support for more AI providers and models
 - **Visual Tool Builder**: GUI for tool creation and management
@@ -213,4 +213,4 @@ docker-compose -f docker-compose.testing.yml up --build
 
 ---
 
-**Nexo** - Transform your ideas into code with the power of AI! 🚀
+**Nexo** - Transform your ideas into code with the power of AI!
