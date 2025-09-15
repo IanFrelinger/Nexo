@@ -25,12 +25,6 @@ Nexo is a comprehensive AI-powered code generation platform that transforms natu
 - **Policy Engine**: Data-driven safety and quality rules with YAML configuration
 - **Guided Generation**: Step-by-step workflow to ensure proper tool requirements
 
-### 🏗️ Clean Architecture
-- **Domain Layer**: Core business logic and entities
-- **Application Layer**: Use cases, interfaces, and services
-- **Infrastructure Layer**: External integrations and implementations
-- **Feature Modules**: Modular architecture with clear separation of concerns
-
 ## 🏛️ Architecture
 
 ```
@@ -173,24 +167,6 @@ docker-compose up --build
 docker-compose -f docker-compose.testing.yml up --build
 ```
 
-## 📊 Features by Module
-
-### Core Features
-- **Nexo.CLI**: Command-line interface with interactive chat
-- **Nexo.Core.Domain**: Business entities and domain logic
-- **Nexo.Core.Application**: Application services and use cases
-- **Nexo.Infrastructure**: External integrations and implementations
-
-### Feature Modules
-- **Nexo.Feature.AI**: AI model integration and orchestration
-- **Nexo.Feature.Analysis**: Code analysis and quality assessment
-- **Nexo.Feature.Pipeline**: Pipeline orchestration and execution
-- **Nexo.Feature.Plugin**: Plugin system and dynamic loading
-- **Nexo.Feature.Factory**: Code generation and tool creation
-- **Nexo.Feature.Container**: Container orchestration
-- **Nexo.Feature.Platform**: Cross-platform support
-- **Nexo.Feature.Security**: Security and validation
-- **Nexo.Feature.Data**: Data persistence and repositories
 
 ## 🔒 Security & Safety
 
@@ -216,20 +192,6 @@ docker-compose -f docker-compose.testing.yml up --build
 6. Commit your changes: `git commit -m 'Add amazing feature'`
 7. Push to the branch: `git push origin feature/amazing-feature`
 8. Open a Pull Request
-
-## 📝 Development Guidelines
-
-### Architecture Principles
-- **Clean Architecture**: Clear separation of concerns
-- **Dependency Injection**: Constructor injection for all dependencies
-- **Interface Segregation**: Small, focused interfaces
-- **Single Responsibility**: One reason to change per class
-
-### Code Quality
-- Follow C# naming conventions
-- Write comprehensive tests
-- Use meaningful commit messages
-- Document public APIs
 
 ## 📄 License
 
