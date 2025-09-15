@@ -104,7 +104,7 @@ namespace Nexo.CLI.Commands
 
                 if (policy.Safety == null)
                 {
-                    Console.WriteLine("❌ No safety policy found in the specified file");
+                    Console.WriteLine("ERROR: No safety policy found in the specified file");
                     return;
                 }
 
@@ -128,7 +128,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error running safety scan");
-                Console.WriteLine($"❌ Error running safety scan: {ex.Message}");
+                Console.WriteLine($"ERROR: Error running safety scan: {ex.Message}");
             }
         }
 
@@ -143,7 +143,7 @@ namespace Nexo.CLI.Commands
 
                 if (policy.Quality == null)
                 {
-                    Console.WriteLine("❌ No quality policy found in the specified file");
+                    Console.WriteLine("ERROR: No quality policy found in the specified file");
                     return;
                 }
 
@@ -167,7 +167,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error running quality validation");
-                Console.WriteLine($"❌ Error running quality validation: {ex.Message}");
+                Console.WriteLine($"ERROR: Error running quality validation: {ex.Message}");
             }
         }
 
@@ -193,7 +193,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error applying policy manifest");
-                Console.WriteLine($"❌ Error applying policy manifest: {ex.Message}");
+                Console.WriteLine($"ERROR: Error applying policy manifest: {ex.Message}");
             }
         }
 
@@ -208,11 +208,11 @@ namespace Nexo.CLI.Commands
 
                 if (result.IsValid)
                 {
-                    Console.WriteLine("✅ Policy validation passed");
+                    Console.WriteLine("SUCCESS: Policy validation passed");
                 }
                 else
                 {
-                    Console.WriteLine("❌ Policy validation failed:");
+                    Console.WriteLine("ERROR: Policy validation failed:");
                     foreach (var error in result.Errors)
                     {
                         Console.WriteLine($"  - {error}");
@@ -221,7 +221,7 @@ namespace Nexo.CLI.Commands
 
                 if (result.Warnings.Any())
                 {
-                    Console.WriteLine("⚠️  Warnings:");
+                    Console.WriteLine("WARNINGS:");
                     foreach (var warning in result.Warnings)
                     {
                         Console.WriteLine($"  - {warning}");
@@ -231,7 +231,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating policy");
-                Console.WriteLine($"❌ Error validating policy: {ex.Message}");
+                Console.WriteLine($"ERROR: Error validating policy: {ex.Message}");
             }
         }
 
