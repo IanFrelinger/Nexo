@@ -56,7 +56,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Error generating feature");
-                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    Console.WriteLine($"ERROR: Error: {ex.Message}");
                     Environment.Exit(1);
                 }
             }, generateDescriptionOption, generatePlatformOption, generateOutputOption, generateVerboseOption, generateUseLocalOption, generateLocalModelOption, generateLocalEndpointOption);
@@ -82,7 +82,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Error analyzing feature");
-                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    Console.WriteLine($"ERROR: Error: {ex.Message}");
                     Environment.Exit(1);
                 }
             }, analyzeDescriptionOption, analyzePlatformOption, analyzeOutputOption);
@@ -105,7 +105,7 @@ namespace Nexo.CLI.Commands
         {
             logger.LogInformation("Starting feature generation: {Description}", description);
             
-            Console.WriteLine("🚀 AI-Native Feature Factory");
+            Console.WriteLine("Running AI-Native Feature Factory");
             Console.WriteLine("=============================");
             Console.WriteLine($"Description: {description}");
             Console.WriteLine($"Platform: {platform}");
@@ -113,7 +113,7 @@ namespace Nexo.CLI.Commands
             // Configure local model settings if requested
             if (useLocal)
             {
-                Console.WriteLine($"🤖 Using Local Model: {localModel}");
+                Console.WriteLine($"AI Using Local Model: {localModel}");
                 Console.WriteLine($"🔗 Local Endpoint: {localEndpoint}");
                 
                 // Set environment variables for local model usage
@@ -129,16 +129,16 @@ namespace Nexo.CLI.Commands
                     var testResponse = await httpClient.GetAsync($"{localEndpoint}/api/tags");
                     if (testResponse.IsSuccessStatusCode)
                     {
-                        Console.WriteLine("✅ Local model connection verified");
+                        Console.WriteLine("SUCCESS: Local model connection verified");
                     }
                     else
                     {
-                        Console.WriteLine("⚠️  Local model connection failed, but continuing...");
+                        Console.WriteLine("WARNING:  Local model connection failed, but continuing...");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"⚠️  Could not verify local model connection: {ex.Message}");
+                    Console.WriteLine($"WARNING:  Could not verify local model connection: {ex.Message}");
                 }
             }
             
@@ -147,12 +147,12 @@ namespace Nexo.CLI.Commands
             var orchestrator = serviceProvider.GetRequiredService<IFeatureOrchestrator>();
             
             // Step 1: Generate the feature
-            Console.WriteLine("📋 Analyzing feature requirements...");
+            Console.WriteLine("List Analyzing feature requirements...");
             var result = await orchestrator.GenerateFeatureAsync(description, platform, CancellationToken.None);
             
             if (!result.IsSuccess)
             {
-                Console.WriteLine("❌ Feature generation failed:");
+                Console.WriteLine("ERROR: Feature generation failed:");
                 foreach (var error in result.Errors)
                 {
                     Console.WriteLine($"   • {error}");
@@ -161,9 +161,9 @@ namespace Nexo.CLI.Commands
             }
             
             // Step 2: Display results
-            Console.WriteLine("✅ Feature generation completed successfully!");
+            Console.WriteLine("SUCCESS: Feature generation completed successfully!");
             Console.WriteLine();
-            Console.WriteLine("📊 Generation Summary:");
+            Console.WriteLine("Stats Generation Summary:");
             Console.WriteLine($"   • Duration: {result.Metadata.Duration.TotalSeconds:F2} seconds");
             Console.WriteLine($"   • Agents Used: {result.Metadata.AgentsUsed}");
             Console.WriteLine($"   • Execution Strategy: {result.Metadata.ExecutionStrategy}");
@@ -173,7 +173,7 @@ namespace Nexo.CLI.Commands
             // Step 3: Display specification details
             if (verbose && result.Specification != null)
             {
-                Console.WriteLine("📋 Feature Specification:");
+                Console.WriteLine("List Feature Specification:");
                 Console.WriteLine($"   • Entities: {result.Specification.Entities.Count}");
                 Console.WriteLine($"   • Value Objects: {result.Specification.ValueObjects.Count}");
                 Console.WriteLine($"   • Business Rules: {result.Specification.BusinessRules.Count}");
@@ -182,7 +182,7 @@ namespace Nexo.CLI.Commands
                 
                 foreach (var entity in result.Specification.Entities)
                 {
-                    Console.WriteLine($"   📦 Entity: {entity.Name}");
+                    Console.WriteLine($"   Package Entity: {entity.Name}");
                     Console.WriteLine($"      Description: {entity.Description}");
                     Console.WriteLine($"      Properties: {entity.Properties.Count}");
                     Console.WriteLine($"      CRUD Operations: {entity.IncludeCrudOperations}");
@@ -191,7 +191,7 @@ namespace Nexo.CLI.Commands
             }
             
             // Step 4: Display generated artifacts
-            Console.WriteLine("📁 Generated Artifacts:");
+            Console.WriteLine("Directory Generated Artifacts:");
             foreach (var artifact in result.CodeArtifacts)
             {
                 Console.WriteLine($"   • {artifact.Name} ({artifact.Type})");
@@ -208,11 +208,11 @@ namespace Nexo.CLI.Commands
             }
             else
             {
-                Console.WriteLine("💡 Use --output <directory> to save generated code to files");
+                Console.WriteLine("Idea Use --output <directory> to save generated code to files");
             }
             
             Console.WriteLine();
-            Console.WriteLine("🎉 Feature generation completed successfully!");
+            Console.WriteLine("SUCCESS Feature generation completed successfully!");
         }
         
         private static async Task HandleAnalyzeCommand(
@@ -224,7 +224,7 @@ namespace Nexo.CLI.Commands
         {
             logger.LogInformation("Starting feature analysis: {Description}", description);
             
-            Console.WriteLine("🔍 Feature Analysis");
+            Console.WriteLine("Search Feature Analysis");
             Console.WriteLine("===================");
             Console.WriteLine($"Description: {description}");
             Console.WriteLine($"Platform: {platform}");
@@ -233,13 +233,13 @@ namespace Nexo.CLI.Commands
             var orchestrator = serviceProvider.GetRequiredService<IFeatureOrchestrator>();
             
             // Analyze the feature
-            Console.WriteLine("📋 Analyzing feature requirements...");
+            Console.WriteLine("List Analyzing feature requirements...");
             var specification = await orchestrator.AnalyzeFeatureAsync(description, platform, CancellationToken.None);
             
             // Display results
-            Console.WriteLine("✅ Feature analysis completed!");
+            Console.WriteLine("SUCCESS: Feature analysis completed!");
             Console.WriteLine();
-            Console.WriteLine("📊 Analysis Summary:");
+            Console.WriteLine("Stats Analysis Summary:");
             Console.WriteLine($"   • Specification ID: {specification.Id}");
             Console.WriteLine($"   • Status: {specification.Status}");
             Console.WriteLine($"   • Entities: {specification.Entities.Count}");
@@ -251,7 +251,7 @@ namespace Nexo.CLI.Commands
             // Display detailed analysis
             if (specification.Entities.Count > 0)
             {
-                Console.WriteLine("📦 Entities:");
+                Console.WriteLine("Package Entities:");
                 foreach (var entity in specification.Entities)
                 {
                     Console.WriteLine($"   • {entity.Name}");
@@ -277,7 +277,7 @@ namespace Nexo.CLI.Commands
             
             if (specification.ValueObjects.Count > 0)
             {
-                Console.WriteLine("🔧 Value Objects:");
+                Console.WriteLine("Tool Value Objects:");
                 foreach (var valueObject in specification.ValueObjects)
                 {
                     Console.WriteLine($"   • {valueObject.Name}");
@@ -290,7 +290,7 @@ namespace Nexo.CLI.Commands
             
             if (specification.BusinessRules.Count > 0)
             {
-                Console.WriteLine("📋 Business Rules:");
+                Console.WriteLine("List Business Rules:");
                 foreach (var rule in specification.BusinessRules)
                 {
                     Console.WriteLine($"   • {rule.Name}");
@@ -306,7 +306,7 @@ namespace Nexo.CLI.Commands
             
             if (specification.ValidationRules.Count > 0)
             {
-                Console.WriteLine("✅ Validation Rules:");
+                Console.WriteLine("SUCCESS: Validation Rules:");
                 foreach (var rule in specification.ValidationRules)
                 {
                     Console.WriteLine($"   • {rule.Name}");
@@ -329,11 +329,11 @@ namespace Nexo.CLI.Commands
             }
             else
             {
-                Console.WriteLine("💡 Use --output <file> to save the specification to a JSON file");
+                Console.WriteLine("Idea Use --output <file> to save the specification to a JSON file");
             }
             
             Console.WriteLine();
-            Console.WriteLine("🎉 Feature analysis completed successfully!");
+            Console.WriteLine("SUCCESS Feature analysis completed successfully!");
         }
         
         private static async Task SaveArtifactsToDirectory(

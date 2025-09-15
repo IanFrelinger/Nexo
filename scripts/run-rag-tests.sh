@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🧪 Running RAG System Tests"
+echo "Testing Running RAG System Tests"
 echo "=========================="
 
 # Colors for output
@@ -176,10 +176,10 @@ dotnet test tests/Nexo.Feature.AI.Tests/RAG/ \
 
 print_success "All RAG tests completed successfully!"
 echo ""
-echo "📊 Test Summary:"
-echo "- Unit tests: ✅ Passed"
-echo "- Integration tests: ✅ Passed"
-echo "- Performance tests: ✅ Passed"
-echo "- Agent tests: ✅ Passed"
+echo "Stats Test Summary:"
+echo "- Unit tests: SUCCESS: Passed"
+echo "- Integration tests: SUCCESS: Passed"
+echo "- Performance tests: SUCCESS: Passed"
+echo "- Agent tests: SUCCESS: Passed"
 echo ""
-echo "🎉 RAG system is working correctly!"
+echo "SUCCESS RAG system is working correctly!"

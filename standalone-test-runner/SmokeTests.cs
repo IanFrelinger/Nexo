@@ -19,7 +19,7 @@ namespace StandaloneTestRunner
 
         public async Task RunAllSmokeTestsAsync()
         {
-            Console.WriteLine("🔥 Automated Smoke Tests for Test Aggregator");
+            Console.WriteLine("Hot Automated Smoke Tests for Test Aggregator");
             Console.WriteLine("===========================================");
             Console.WriteLine();
 
@@ -51,7 +51,7 @@ namespace StandaloneTestRunner
 
         private async Task RunBasicFunctionalityTests()
         {
-            Console.WriteLine("🧪 Test Suite 1: Basic Functionality");
+            Console.WriteLine("Testing Test Suite 1: Basic Functionality");
             Console.WriteLine("-----------------------------------");
 
             // Test 1.1: Basic Test Discovery
@@ -134,7 +134,7 @@ namespace StandaloneTestRunner
 
         private async Task RunFilteringTests()
         {
-            Console.WriteLine("🧪 Test Suite 2: Filtering Capabilities");
+            Console.WriteLine("Testing Test Suite 2: Filtering Capabilities");
             Console.WriteLine("--------------------------------------");
 
             // Test 2.1: Category Filtering
@@ -208,7 +208,7 @@ namespace StandaloneTestRunner
 
         private async Task RunConfigurationTests()
         {
-            Console.WriteLine("🧪 Test Suite 3: Configuration Options");
+            Console.WriteLine("Testing Test Suite 3: Configuration Options");
             Console.WriteLine("-------------------------------------");
 
             // Test 3.1: Force Timeout Configuration
@@ -276,7 +276,7 @@ namespace StandaloneTestRunner
 
         private async Task RunErrorHandlingTests()
         {
-            Console.WriteLine("🧪 Test Suite 4: Error Handling");
+            Console.WriteLine("Testing Test Suite 4: Error Handling");
             Console.WriteLine("-------------------------------");
 
             // Test 4.1: Empty Collection Handling
@@ -360,7 +360,7 @@ namespace StandaloneTestRunner
 
         private async Task RunPerformanceTests()
         {
-            Console.WriteLine("🧪 Test Suite 5: Performance & Stress Tests");
+            Console.WriteLine("Testing Test Suite 5: Performance & Stress Tests");
             Console.WriteLine("-------------------------------------------");
 
             // Test 5.1: Multiple Concurrent Executions
@@ -446,7 +446,7 @@ namespace StandaloneTestRunner
 
         private async Task RunIntegrationTests()
         {
-            Console.WriteLine("🧪 Test Suite 6: Integration Tests");
+            Console.WriteLine("Testing Test Suite 6: Integration Tests");
             Console.WriteLine("---------------------------------");
 
             // Test 6.1: Full Workflow Integration
@@ -576,7 +576,7 @@ namespace StandaloneTestRunner
                 var result = new SmokeTestResult(testName, true, stopwatch.Elapsed, null);
                 _results.Add(result);
                 
-                Console.WriteLine($"   ✅ {testName} - PASSED ({stopwatch.Elapsed.TotalMilliseconds:F0}ms)");
+                Console.WriteLine($"   SUCCESS: {testName} - PASSED ({stopwatch.Elapsed.TotalMilliseconds:F0}ms)");
             }
             catch (Exception ex)
             {
@@ -586,25 +586,25 @@ namespace StandaloneTestRunner
                 var result = new SmokeTestResult(testName, false, stopwatch.Elapsed, ex.Message);
                 _results.Add(result);
                 
-                Console.WriteLine($"   ❌ {testName} - FAILED ({stopwatch.Elapsed.TotalMilliseconds:F0}ms)");
+                Console.WriteLine($"   ERROR: {testName} - FAILED ({stopwatch.Elapsed.TotalMilliseconds:F0}ms)");
                 Console.WriteLine($"      Error: {ex.Message}");
             }
         }
 
         private void GenerateSmokeTestReport(TimeSpan totalDuration)
         {
-            Console.WriteLine("🔥 Smoke Test Report");
+            Console.WriteLine("Hot Smoke Test Report");
             Console.WriteLine("===================");
             Console.WriteLine($"Total Tests: {_totalTests}");
-            Console.WriteLine($"Passed: {_passedTests} ✅");
-            Console.WriteLine($"Failed: {_failedTests} ❌");
+            Console.WriteLine($"Passed: {_passedTests} SUCCESS:");
+            Console.WriteLine($"Failed: {_failedTests} ERROR:");
             Console.WriteLine($"Success Rate: {(_passedTests / (double)_totalTests * 100):F1}%");
             Console.WriteLine($"Total Duration: {totalDuration.TotalSeconds:F1}s");
             Console.WriteLine();
 
             if (_failedTests > 0)
             {
-                Console.WriteLine("❌ Failed Tests:");
+                Console.WriteLine("ERROR: Failed Tests:");
                 foreach (var result in _results.Where(r => !r.Passed))
                 {
                     Console.WriteLine($"   • {result.TestName}: {result.ErrorMessage}");
@@ -622,7 +622,7 @@ namespace StandaloneTestRunner
                 testSuites[suite].Add(result);
             }
 
-            Console.WriteLine("📊 Test Suite Summary:");
+            Console.WriteLine("Stats Test Suite Summary:");
             foreach (var suite in testSuites)
             {
                 var suitePassed = suite.Value.Count(r => r.Passed);
@@ -634,17 +634,17 @@ namespace StandaloneTestRunner
             Console.WriteLine();
 
             var overallSuccess = _failedTests == 0;
-            Console.WriteLine($"🎯 Overall Result: {(overallSuccess ? "ALL SMOKE TESTS PASSED! 🏆" : "SOME SMOKE TESTS FAILED ❌")}");
+            Console.WriteLine($"Target Overall Result: {(overallSuccess ? "ALL SMOKE TESTS PASSED! Trophy" : "SOME SMOKE TESTS FAILED ERROR:")}");
             
             if (overallSuccess)
             {
-                Console.WriteLine("✅ Test Aggregator is ready for production use!");
-                Console.WriteLine("✅ All core functionality verified and working correctly!");
-                Console.WriteLine("✅ Performance and reliability confirmed!");
+                Console.WriteLine("SUCCESS: Test Aggregator is ready for production use!");
+                Console.WriteLine("SUCCESS: All core functionality verified and working correctly!");
+                Console.WriteLine("SUCCESS: Performance and reliability confirmed!");
             }
             else
             {
-                Console.WriteLine("⚠️  Issues detected - review failed tests before production use");
+                Console.WriteLine("WARNING:  Issues detected - review failed tests before production use");
             }
         }
     }

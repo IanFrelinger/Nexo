@@ -29,11 +29,11 @@ namespace Nexo.CLI.Dashboard
             Console.WriteLine($"│ Processes: {status.ActiveProcesses}".PadRight(area.Width - 1) + "│");
             
             Console.SetCursorPosition(area.X, area.Y + 4);
-            var errorStatus = status.HasErrors ? "❌ Errors" : "✅ No Errors";
+            var errorStatus = status.HasErrors ? "ERROR: Errors" : "SUCCESS: No Errors";
             Console.WriteLine($"│ {errorStatus}".PadRight(area.Width - 1) + "│");
             
             Console.SetCursorPosition(area.X, area.Y + 5);
-            var warningStatus = status.HasWarnings ? "⚠️ Warnings" : "✅ No Warnings";
+            var warningStatus = status.HasWarnings ? "WARNING: Warnings" : "SUCCESS: No Warnings";
             Console.WriteLine($"│ {warningStatus}".PadRight(area.Width - 1) + "│");
             
             // Show recent activity
@@ -48,7 +48,7 @@ namespace Nexo.CLI.Dashboard
         {
             // Show detailed project information
             Console.Clear();
-            Console.WriteLine("📁 Detailed Project Information");
+            Console.WriteLine("Directory Detailed Project Information");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
@@ -61,13 +61,13 @@ namespace Nexo.CLI.Dashboard
             Console.WriteLine($"Has Warnings: {status.HasWarnings}");
             Console.WriteLine();
             
-            Console.WriteLine("📊 Recent Activity:");
+            Console.WriteLine("Stats Recent Activity:");
             Console.WriteLine($"  • Last Build: {DateTime.UtcNow.AddMinutes(-15):yyyy-MM-dd HH:mm:ss}");
             Console.WriteLine($"  • Last Test: {DateTime.UtcNow.AddMinutes(-30):yyyy-MM-dd HH:mm:ss}");
             Console.WriteLine($"  • Last Analysis: {DateTime.UtcNow.AddHours(-1):yyyy-MM-dd HH:mm:ss}");
             Console.WriteLine();
             
-            Console.WriteLine("🔧 Available Actions:");
+            Console.WriteLine("Tool Available Actions:");
             Console.WriteLine("  • Build project");
             Console.WriteLine("  • Run tests");
             Console.WriteLine("  • Analyze code");

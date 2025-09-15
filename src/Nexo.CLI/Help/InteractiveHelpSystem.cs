@@ -51,7 +51,7 @@ namespace Nexo.CLI.Help
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to generate documentation for command: {Command}", commandName);
-                Console.WriteLine($"❌ Failed to load documentation for '{commandName}': {ex.Message}");
+                Console.WriteLine($"ERROR: Failed to load documentation for '{commandName}': {ex.Message}");
             }
             
             Console.WriteLine();
@@ -62,7 +62,7 @@ namespace Nexo.CLI.Help
         public async Task SearchDocumentation(string searchTerm)
         {
             Console.Clear();
-            Console.WriteLine($"🔍 Search Results for '{searchTerm}'");
+            Console.WriteLine($"Search Search Results for '{searchTerm}'");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
@@ -74,7 +74,7 @@ namespace Nexo.CLI.Help
                 {
                     Console.WriteLine("No results found. Try different search terms.");
                     Console.WriteLine();
-                    Console.WriteLine("💡 Search Tips:");
+                    Console.WriteLine("Idea Search Tips:");
                     Console.WriteLine("  • Use specific keywords");
                     Console.WriteLine("  • Try different variations");
                     Console.WriteLine("  • Check spelling");
@@ -84,7 +84,7 @@ namespace Nexo.CLI.Help
                 {
                     foreach (var result in results.Take(10))
                     {
-                        Console.WriteLine($"📄 {result.Title}");
+                        Console.WriteLine($"File {result.Title}");
                         Console.WriteLine($"   {result.Summary}");
                         Console.WriteLine($"   Category: {result.Category} | Relevance: {result.Relevance:P0}");
                         Console.WriteLine();
@@ -94,7 +94,7 @@ namespace Nexo.CLI.Help
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to search documentation for: {SearchTerm}", searchTerm);
-                Console.WriteLine($"❌ Search failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Search failed: {ex.Message}");
             }
             
             Console.WriteLine("Press any key to continue...");
@@ -104,7 +104,7 @@ namespace Nexo.CLI.Help
         public async Task ShowExamples(string? category = null)
         {
             Console.Clear();
-            Console.WriteLine("🎯 Examples");
+            Console.WriteLine("Target Examples");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
@@ -124,12 +124,12 @@ namespace Nexo.CLI.Help
                 
                 foreach (var categoryGroup in examplesByCategory)
                 {
-                    Console.WriteLine($"📁 {categoryGroup.Key}:");
+                    Console.WriteLine($"Directory {categoryGroup.Key}:");
                     Console.WriteLine();
                     
                     foreach (var example in categoryGroup)
                     {
-                        Console.WriteLine($"  🎯 {example.Title}");
+                        Console.WriteLine($"  Target {example.Title}");
                         Console.WriteLine($"     {example.Description}");
                         Console.WriteLine($"     Command: {example.CommandLine}");
                         Console.WriteLine();
@@ -139,7 +139,7 @@ namespace Nexo.CLI.Help
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load examples for category: {Category}", category);
-                Console.WriteLine($"❌ Failed to load examples: {ex.Message}");
+                Console.WriteLine($"ERROR: Failed to load examples: {ex.Message}");
             }
             
             Console.WriteLine("Press any key to continue...");
@@ -160,7 +160,7 @@ namespace Nexo.CLI.Help
                 
                 foreach (var category in categories)
                 {
-                    Console.WriteLine($"🔧 {category.Key}:");
+                    Console.WriteLine($"Tool {category.Key}:");
                     Console.WriteLine();
                     
                     foreach (var topic in category.OrderBy(t => t.Name))
@@ -173,10 +173,10 @@ namespace Nexo.CLI.Help
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load command browser");
-                Console.WriteLine($"❌ Failed to load command browser: {ex.Message}");
+                Console.WriteLine($"ERROR: Failed to load command browser: {ex.Message}");
             }
             
-            Console.WriteLine("💡 Type 'nexo <command> --help' for detailed information about any command");
+            Console.WriteLine("Idea Type 'nexo <command> --help' for detailed information about any command");
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey(true);
         }
@@ -184,11 +184,11 @@ namespace Nexo.CLI.Help
         private async Task ShowMainHelpMenu()
         {
             Console.Clear();
-            Console.WriteLine("🔍 Nexo Interactive Help System");
+            Console.WriteLine("Search Nexo Interactive Help System");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
-            Console.WriteLine("📚 Available Topics:");
+            Console.WriteLine("Documentation Available Topics:");
             Console.WriteLine("  1. Getting Started");
             Console.WriteLine("  2. Project Management");
             Console.WriteLine("  3. Code Generation");
@@ -200,7 +200,7 @@ namespace Nexo.CLI.Help
             Console.WriteLine("  9. Examples & Tutorials");
             Console.WriteLine();
             
-            Console.WriteLine("💡 Interactive Options:");
+            Console.WriteLine("Idea Interactive Options:");
             Console.WriteLine("  • Type a number to explore a topic");
             Console.WriteLine("  • Type 'search <term>' to search documentation");
             Console.WriteLine("  • Type 'commands' to browse all commands");
@@ -241,7 +241,7 @@ namespace Nexo.CLI.Help
             }
             else
             {
-                Console.WriteLine("❓ Unknown command. Try typing a number, 'search <term>', 'commands', or 'examples'");
+                Console.WriteLine("UNKNOWN Unknown command. Try typing a number, 'search <term>', 'commands', or 'examples'");
             }
         }
         
@@ -340,12 +340,12 @@ namespace Nexo.CLI.Help
             
             ## Key Features
             
-            - 🚀 AI-powered code generation and analysis
-            - 📊 Real-time performance monitoring
-            - 🔄 Automatic adaptation and optimization
-            - 🎮 Unity game development support
-            - 🌐 Cross-platform development
-            - 📈 Advanced analytics and insights
+            - Running AI-powered code generation and analysis
+            - Stats Real-time performance monitoring
+            - Processing Automatic adaptation and optimization
+            - Game Unity game development support
+            - Web Cross-platform development
+            - Progress Advanced analytics and insights
             
             ## Next Steps
             

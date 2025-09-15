@@ -30,7 +30,7 @@ namespace FeatureFactoryDemo.Services
         {
             try
             {
-                Console.WriteLine($"\n🔍 Analyzing codebase at: {codebasePath}");
+                Console.WriteLine($"\nSearch Analyzing codebase at: {codebasePath}");
                 
                 var csharpFiles = Directory.GetFiles(codebasePath, "*.cs", SearchOption.AllDirectories)
                     .Where(f => !f.Contains("bin") && !f.Contains("obj") && !f.Contains(".g.cs"))
@@ -83,7 +83,7 @@ namespace FeatureFactoryDemo.Services
                             _context.CodebaseContexts.Add(newContext);
                         }
                         
-                        Console.WriteLine($"   ✅ Analyzed: {relativePath} (Score: {analysisResult.Score}/100)");
+                        Console.WriteLine($"   SUCCESS: Analyzed: {relativePath} (Score: {analysisResult.Score}/100)");
                     }
                     catch (Exception ex)
                     {
@@ -92,7 +92,7 @@ namespace FeatureFactoryDemo.Services
                 }
                 
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"   📊 Codebase analysis complete! Stored {csharpFiles.Count} file contexts.");
+                Console.WriteLine($"   Stats Codebase analysis complete! Stored {csharpFiles.Count} file contexts.");
             }
             catch (Exception ex)
             {

@@ -226,7 +226,7 @@ namespace StandaloneTestRunner
 
             if (progress)
             {
-                Console.WriteLine($"\n📊 Test Aggregation: Starting {_tests.Count} tests...");
+                Console.WriteLine($"\nStats Test Aggregation: Starting {_tests.Count} tests...");
             }
 
             // Iterate through each test in the collection
@@ -236,7 +236,7 @@ namespace StandaloneTestRunner
                 
                 if (progress)
                 {
-                    Console.WriteLine($"\n🔄 [{i + 1}/{_tests.Count}] Aggregating: {test.DisplayName}");
+                    Console.WriteLine($"\nProcessing [{i + 1}/{_tests.Count}] Aggregating: {test.DisplayName}");
                     Console.WriteLine($"   Category: {test.Category}, Priority: {test.Priority}");
                     Console.WriteLine($"   Timeout: {test.Timeout}s, Estimated: {test.EstimatedDuration}s");
                 }
@@ -251,7 +251,7 @@ namespace StandaloneTestRunner
                         passedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ✅ {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
+                            Console.WriteLine($"   SUCCESS: {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
                         }
                     }
                     else
@@ -259,7 +259,7 @@ namespace StandaloneTestRunner
                         failedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ❌ {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
+                            Console.WriteLine($"   ERROR: {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
                         }
                     }
                 }
@@ -275,7 +275,7 @@ namespace StandaloneTestRunner
 
                     if (progress)
                     {
-                        Console.WriteLine($"   ❌ {test.DisplayName} - EXCEPTION: {ex.Message}");
+                        Console.WriteLine($"   ERROR: {test.DisplayName} - EXCEPTION: {ex.Message}");
                     }
                 }
 
@@ -291,7 +291,7 @@ namespace StandaloneTestRunner
 
             if (progress)
             {
-                Console.WriteLine($"\n📊 Test Aggregation: Completed {_tests.Count} tests in {totalDuration.TotalSeconds:F1}s");
+                Console.WriteLine($"\nStats Test Aggregation: Completed {_tests.Count} tests in {totalDuration.TotalSeconds:F1}s");
             }
 
             var aggregationResult = new TestAggregationResult(

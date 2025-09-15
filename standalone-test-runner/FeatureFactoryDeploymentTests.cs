@@ -392,7 +392,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Manager basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Deployment Manager basic functionality test passed");
                 }
 
                 return true;
@@ -401,7 +401,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Manager basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Manager basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -427,7 +427,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Manager package creation test passed");
+                    Console.WriteLine("SUCCESS: Deployment Manager package creation test passed");
                 }
 
                 return true;
@@ -436,7 +436,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Manager package creation test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Manager package creation test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -462,7 +462,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Manager target configuration test passed");
+                    Console.WriteLine("SUCCESS: Deployment Manager target configuration test passed");
                 }
 
                 return true;
@@ -471,7 +471,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Manager target configuration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Manager target configuration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -497,7 +497,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Manager execution test passed");
+                    Console.WriteLine("SUCCESS: Deployment Manager execution test passed");
                 }
 
                 return true;
@@ -506,7 +506,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Manager execution test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Manager execution test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -532,7 +532,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Manager rollback test passed");
+                    Console.WriteLine("SUCCESS: Deployment Manager rollback test passed");
                 }
 
                 return true;
@@ -541,7 +541,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Manager rollback test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Manager rollback test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -567,7 +567,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Manager error handling test passed");
+                    Console.WriteLine("SUCCESS: Deployment Manager error handling test passed");
                 }
 
                 return true;
@@ -576,7 +576,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Manager error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Manager error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -602,7 +602,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Manager performance test passed");
+                    Console.WriteLine("SUCCESS: Deployment Manager performance test passed");
                 }
 
                 return true;
@@ -611,7 +611,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Manager performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Manager performance test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -641,7 +641,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ System Integrator basic functionality test passed");
+                    Console.WriteLine("SUCCESS: System Integrator basic functionality test passed");
                 }
 
                 return true;
@@ -650,7 +650,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ System Integrator basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: System Integrator basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -676,7 +676,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ System Integrator API integration test passed");
+                    Console.WriteLine("SUCCESS: System Integrator API integration test passed");
                 }
 
                 return true;
@@ -685,7 +685,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ System Integrator API integration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: System Integrator API integration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -711,7 +711,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ System Integrator database integration test passed");
+                    Console.WriteLine("SUCCESS: System Integrator database integration test passed");
                 }
 
                 return true;
@@ -720,7 +720,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ System Integrator database integration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: System Integrator database integration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -746,7 +746,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ System Integrator message queue integration test passed");
+                    Console.WriteLine("SUCCESS: System Integrator message queue integration test passed");
                 }
 
                 return true;
@@ -755,7 +755,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ System Integrator message queue integration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: System Integrator message queue integration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -781,7 +781,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ System Integrator enterprise systems integration test passed");
+                    Console.WriteLine("SUCCESS: System Integrator enterprise systems integration test passed");
                 }
 
                 return true;
@@ -790,7 +790,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ System Integrator enterprise systems integration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: System Integrator enterprise systems integration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -816,7 +816,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ System Integrator error handling test passed");
+                    Console.WriteLine("SUCCESS: System Integrator error handling test passed");
                 }
 
                 return true;
@@ -825,7 +825,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ System Integrator error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: System Integrator error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -851,7 +851,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ System Integrator performance test passed");
+                    Console.WriteLine("SUCCESS: System Integrator performance test passed");
                 }
 
                 return true;
@@ -860,7 +860,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ System Integrator performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: System Integrator performance test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -890,7 +890,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Monitor basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Application Monitor basic functionality test passed");
                 }
 
                 return true;
@@ -899,7 +899,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Monitor basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Monitor basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -925,7 +925,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Monitor health monitoring test passed");
+                    Console.WriteLine("SUCCESS: Application Monitor health monitoring test passed");
                 }
 
                 return true;
@@ -934,7 +934,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Monitor health monitoring test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Monitor health monitoring test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -960,7 +960,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Monitor performance metrics test passed");
+                    Console.WriteLine("SUCCESS: Application Monitor performance metrics test passed");
                 }
 
                 return true;
@@ -969,7 +969,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Monitor performance metrics test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Monitor performance metrics test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -995,7 +995,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Monitor log management test passed");
+                    Console.WriteLine("SUCCESS: Application Monitor log management test passed");
                 }
 
                 return true;
@@ -1004,7 +1004,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Monitor log management test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Monitor log management test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1030,7 +1030,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Monitor alerting system test passed");
+                    Console.WriteLine("SUCCESS: Application Monitor alerting system test passed");
                 }
 
                 return true;
@@ -1039,7 +1039,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Monitor alerting system test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Monitor alerting system test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1065,7 +1065,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Monitor error handling test passed");
+                    Console.WriteLine("SUCCESS: Application Monitor error handling test passed");
                 }
 
                 return true;
@@ -1074,7 +1074,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Monitor error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Monitor error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1100,7 +1100,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Monitor performance test passed");
+                    Console.WriteLine("SUCCESS: Application Monitor performance test passed");
                 }
 
                 return true;
@@ -1109,7 +1109,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Monitor performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Monitor performance test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1139,7 +1139,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Orchestrator basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Deployment Orchestrator basic functionality test passed");
                 }
 
                 return true;
@@ -1148,7 +1148,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Orchestrator basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Orchestrator basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1174,7 +1174,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Orchestrator workflow management test passed");
+                    Console.WriteLine("SUCCESS: Deployment Orchestrator workflow management test passed");
                 }
 
                 return true;
@@ -1183,7 +1183,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Orchestrator workflow management test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Orchestrator workflow management test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1209,7 +1209,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Orchestrator integration orchestration test passed");
+                    Console.WriteLine("SUCCESS: Deployment Orchestrator integration orchestration test passed");
                 }
 
                 return true;
@@ -1218,7 +1218,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Orchestrator integration orchestration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Orchestrator integration orchestration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1244,7 +1244,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Orchestrator monitoring orchestration test passed");
+                    Console.WriteLine("SUCCESS: Deployment Orchestrator monitoring orchestration test passed");
                 }
 
                 return true;
@@ -1253,7 +1253,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Orchestrator monitoring orchestration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Orchestrator monitoring orchestration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1279,7 +1279,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Orchestrator error handling test passed");
+                    Console.WriteLine("SUCCESS: Deployment Orchestrator error handling test passed");
                 }
 
                 return true;
@@ -1288,7 +1288,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Orchestrator error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Orchestrator error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1314,7 +1314,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment Orchestrator performance test passed");
+                    Console.WriteLine("SUCCESS: Deployment Orchestrator performance test passed");
                 }
 
                 return true;
@@ -1323,7 +1323,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment Orchestrator performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment Orchestrator performance test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1353,7 +1353,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ End-to-end deployment and integration workflow test passed");
+                    Console.WriteLine("SUCCESS: End-to-end deployment and integration workflow test passed");
                 }
 
                 return true;
@@ -1362,7 +1362,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ End-to-end deployment and integration workflow test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: End-to-end deployment and integration workflow test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1388,7 +1388,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment security and compliance test passed");
+                    Console.WriteLine("SUCCESS: Deployment security and compliance test passed");
                 }
 
                 return true;
@@ -1397,7 +1397,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment security and compliance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment security and compliance test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1423,7 +1423,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Deployment scalability and load handling test passed");
+                    Console.WriteLine("SUCCESS: Deployment scalability and load handling test passed");
                 }
 
                 return true;
@@ -1432,7 +1432,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Deployment scalability and load handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Deployment scalability and load handling test failed: {ex.Message}");
                 }
                 return false;
             }

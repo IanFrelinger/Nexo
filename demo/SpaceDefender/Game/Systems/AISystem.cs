@@ -241,7 +241,7 @@ namespace SpaceDefender.Game.Systems
             };
 
             _enemyBehaviors.Add(newBehavior);
-            Console.WriteLine($"🤖 AI generated new behavior: {newBehavior.Name}");
+            Console.WriteLine($"AI AI generated new behavior: {newBehavior.Name}");
 
             await Task.CompletedTask;
         }

@@ -12,7 +12,7 @@ param(
 )
 
 if ($Help) {
-    Write-Host "🚀 Nexo Build Script" -ForegroundColor Green
+    Write-Host "Running Nexo Build Script" -ForegroundColor Green
     Write-Host ""
     Write-Host "Usage: .\build-nexo.ps1 [-Target <target>] [-Configuration <config>] [options]" -ForegroundColor White
     Write-Host ""
@@ -39,7 +39,7 @@ if ($Help) {
     exit 0
 }
 
-Write-Host "🚀 Nexo Build System" -ForegroundColor Green
+Write-Host "Running Nexo Build System" -ForegroundColor Green
 Write-Host "Target: $Target | Configuration: $Configuration" -ForegroundColor Cyan
 Write-Host ""
 
@@ -51,7 +51,7 @@ $startTime = Get-Date
 try {
     switch ($Target) {
         "FeatureFactory" {
-            Write-Host "🎯 Building Feature Factory..." -ForegroundColor Yellow
+            Write-Host "Target Building Feature Factory..." -ForegroundColor Yellow
             $args = @("-Configuration", $Configuration)
             if ($Clean) { $args += "-Clean" }
             if ($Test) { $args += "-Test" }
@@ -71,7 +71,7 @@ try {
         }
         
         "Main" {
-            Write-Host "🏗️ Building main solution..." -ForegroundColor Yellow
+            Write-Host "Building Building main solution..." -ForegroundColor Yellow
             $buildArgs = @("build", "solutions/Nexo.Main.sln", "--configuration", $Configuration)
             if ($Clean) { $buildArgs = @("clean", "solutions/Nexo.Main.sln", "--configuration", $Configuration) + $buildArgs }
             if ($Verbose) { $buildArgs += "--verbosity", "detailed" }
@@ -84,13 +84,13 @@ try {
             }
             
             if ($Test) {
-                Write-Host "🧪 Running tests..." -ForegroundColor Yellow
+                Write-Host "Testing Running tests..." -ForegroundColor Yellow
                 dotnet test solutions/Nexo.Main.sln --configuration $Configuration --no-build
             }
         }
         
         "Features" {
-            Write-Host "🔧 Building features solution..." -ForegroundColor Yellow
+            Write-Host "Tool Building features solution..." -ForegroundColor Yellow
             $buildArgs = @("build", "solutions/Nexo.Features.sln", "--configuration", $Configuration)
             if ($Clean) { $buildArgs = @("clean", "solutions/Nexo.Features.sln", "--configuration", $Configuration) + $buildArgs }
             if ($Verbose) { $buildArgs += "--verbosity", "detailed" }
@@ -104,7 +104,7 @@ try {
         }
         
         "Tests" {
-            Write-Host "🧪 Building and running all tests..." -ForegroundColor Yellow
+            Write-Host "Testing Building and running all tests..." -ForegroundColor Yellow
             
             # Build test solution
             $buildArgs = @("build", "solutions/Nexo.Tests.sln", "--configuration", $Configuration)
@@ -119,7 +119,7 @@ try {
             }
             
             # Run tests
-            Write-Host "🧪 Running tests..." -ForegroundColor Yellow
+            Write-Host "Testing Running tests..." -ForegroundColor Yellow
             $testArgs = @("test", "solutions/Nexo.Tests.sln", "--configuration", $Configuration, "--no-build", "--verbosity", "normal")
             if ($Verbose) { $testArgs += "--verbosity", "detailed" }
             
@@ -127,7 +127,7 @@ try {
         }
         
         "Generation" {
-            Write-Host "🎨 Testing platform code generation..." -ForegroundColor Yellow
+            Write-Host "Design Testing platform code generation..." -ForegroundColor Yellow
             $args = @("-Configuration", $Configuration)
             if ($Clean) { $args += "-Clean" }
             if ($Verbose) { $args += "-Verbose" }
@@ -140,7 +140,7 @@ try {
     $duration = $endTime - $startTime
     
     Write-Host ""
-    Write-Host "✅ Build completed successfully!" -ForegroundColor Green
+    Write-Host "SUCCESS: Build completed successfully!" -ForegroundColor Green
     Write-Host "⏱️ Duration: $($duration.TotalSeconds.ToString('F1')) seconds" -ForegroundColor Cyan
     
 } catch {
@@ -148,7 +148,7 @@ try {
     $duration = $endTime - $startTime
     
     Write-Host ""
-    Write-Host "❌ Build failed!" -ForegroundColor Red
+    Write-Host "ERROR: Build failed!" -ForegroundColor Red
     Write-Host "⏱️ Duration: $($duration.TotalSeconds.ToString('F1')) seconds" -ForegroundColor Cyan
     Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
     

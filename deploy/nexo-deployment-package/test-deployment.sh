@@ -5,7 +5,7 @@
 
 set -e  # Exit on any error
 
-echo "🚀 Nexo Framework Deployment Test"
+echo "Running Nexo Framework Deployment Test"
 echo "=================================="
 echo ""
 
@@ -31,20 +31,20 @@ run_test() {
     if eval "$test_command" > /tmp/nexo_test_output 2>&1; then
         if [ -n "$expected_output" ]; then
             if grep -q "$expected_output" /tmp/nexo_test_output; then
-                echo -e "  ${GREEN}✅ PASS${NC}"
+                echo -e "  ${GREEN}SUCCESS: PASS${NC}"
                 ((TESTS_PASSED++))
             else
-                echo -e "  ${RED}❌ FAIL - Expected output not found${NC}"
+                echo -e "  ${RED}ERROR: FAIL - Expected output not found${NC}"
                 echo "    Expected: $expected_output"
                 echo "    Got: $(cat /tmp/nexo_test_output | head -5)"
                 ((TESTS_FAILED++))
             fi
         else
-            echo -e "  ${GREEN}✅ PASS${NC}"
+            echo -e "  ${GREEN}SUCCESS: PASS${NC}"
             ((TESTS_PASSED++))
         fi
     else
-        echo -e "  ${RED}❌ FAIL - Command failed${NC}"
+        echo -e "  ${RED}ERROR: FAIL - Command failed${NC}"
         echo "    Error: $(cat /tmp/nexo_test_output | tail -3)"
         ((TESTS_FAILED++))
     fi
@@ -56,17 +56,17 @@ check_dotnet() {
     echo -e "${YELLOW}Checking .NET Runtime...${NC}"
     if command -v dotnet >/dev/null 2>&1; then
         DOTNET_VERSION=$(dotnet --version)
-        echo -e "  ${GREEN}✅ .NET Runtime found: $DOTNET_VERSION${NC}"
+        echo -e "  ${GREEN}SUCCESS: .NET Runtime found: $DOTNET_VERSION${NC}"
         
         # Check if it's .NET 8.0 or higher
         if [[ "$DOTNET_VERSION" == 8.* ]]; then
-            echo -e "  ${GREEN}✅ .NET 8.0+ runtime confirmed${NC}"
+            echo -e "  ${GREEN}SUCCESS: .NET 8.0+ runtime confirmed${NC}"
         else
-            echo -e "  ${RED}❌ .NET 8.0+ required, found: $DOTNET_VERSION${NC}"
+            echo -e "  ${RED}ERROR: .NET 8.0+ required, found: $DOTNET_VERSION${NC}"
             exit 1
         fi
     else
-        echo -e "  ${RED}❌ .NET Runtime not found${NC}"
+        echo -e "  ${RED}ERROR: .NET Runtime not found${NC}"
         echo "    Please install .NET 8.0 runtime from https://dotnet.microsoft.com/download"
         exit 1
     fi
@@ -79,20 +79,20 @@ check_permissions() {
     
     if [ -f "./Nexo.CLI" ]; then
         if [ -x "./Nexo.CLI" ]; then
-            echo -e "  ${GREEN}✅ Nexo.CLI is executable${NC}"
+            echo -e "  ${GREEN}SUCCESS: Nexo.CLI is executable${NC}"
         else
-            echo -e "  ${YELLOW}⚠️  Making Nexo.CLI executable...${NC}"
+            echo -e "  ${YELLOW}WARNING:  Making Nexo.CLI executable...${NC}"
             chmod +x ./Nexo.CLI
         fi
     else
-        echo -e "  ${RED}❌ Nexo.CLI not found${NC}"
+        echo -e "  ${RED}ERROR: Nexo.CLI not found${NC}"
         exit 1
     fi
     
     if [ -f "./Nexo.CLI.dll" ]; then
-        echo -e "  ${GREEN}✅ Nexo.CLI.dll found${NC}"
+        echo -e "  ${GREEN}SUCCESS: Nexo.CLI.dll found${NC}"
     else
-        echo -e "  ${RED}❌ Nexo.CLI.dll not found${NC}"
+        echo -e "  ${RED}ERROR: Nexo.CLI.dll not found${NC}"
         exit 1
     fi
     echo ""
@@ -129,10 +129,10 @@ test_project_functionality() {
     # Test project initialization (dry run)
     echo -e "${BLUE}Testing: Project Initialization (Dry Run)${NC}"
     if ./Nexo.CLI project --help > /tmp/nexo_test_output 2>&1; then
-        echo -e "  ${GREEN}✅ PASS${NC}"
+        echo -e "  ${GREEN}SUCCESS: PASS${NC}"
         ((TESTS_PASSED++))
     else
-        echo -e "  ${RED}❌ FAIL${NC}"
+        echo -e "  ${RED}ERROR: FAIL${NC}"
         echo "    Error: $(cat /tmp/nexo_test_output | tail -3)"
         ((TESTS_FAILED++))
     fi
@@ -170,15 +170,15 @@ test_error_handling() {
     echo -e "${BLUE}Testing: Invalid Command Handling${NC}"
     if ! ./Nexo.CLI invalid-command > /tmp/nexo_test_output 2>&1; then
         if grep -q "error\|Error\|Unknown\|invalid" /tmp/nexo_test_output; then
-            echo -e "  ${GREEN}✅ PASS - Proper error handling${NC}"
+            echo -e "  ${GREEN}SUCCESS: PASS - Proper error handling${NC}"
             ((TESTS_PASSED++))
         else
-            echo -e "  ${YELLOW}⚠️  WARNING - Unexpected error response${NC}"
+            echo -e "  ${YELLOW}WARNING:  WARNING - Unexpected error response${NC}"
             echo "    Output: $(cat /tmp/nexo_test_output | head -3)"
             ((TESTS_PASSED++))
         fi
     else
-        echo -e "  ${RED}❌ FAIL - Should have failed with invalid command${NC}"
+        echo -e "  ${RED}ERROR: FAIL - Should have failed with invalid command${NC}"
         ((TESTS_FAILED++))
     fi
     echo ""
@@ -196,10 +196,10 @@ test_performance() {
     DURATION=$(( (END_TIME - START_TIME) / 1000000 ))
     
     if [ $DURATION -lt 5000 ]; then  # Less than 5 seconds
-        echo -e "  ${GREEN}✅ PASS - Startup time: ${DURATION}ms${NC}"
+        echo -e "  ${GREEN}SUCCESS: PASS - Startup time: ${DURATION}ms${NC}"
         ((TESTS_PASSED++))
     else
-        echo -e "  ${YELLOW}⚠️  SLOW - Startup time: ${DURATION}ms${NC}"
+        echo -e "  ${YELLOW}WARNING:  SLOW - Startup time: ${DURATION}ms${NC}"
         ((TESTS_PASSED++))
     fi
     echo ""
@@ -215,14 +215,14 @@ generate_report() {
     echo ""
     
     if [ $TESTS_FAILED -eq 0 ]; then
-        echo -e "${GREEN}🎉 All tests passed! Nexo framework is ready for use.${NC}"
+        echo -e "${GREEN}SUCCESS All tests passed! Nexo framework is ready for use.${NC}"
         echo ""
-        echo -e "${GREEN}Deployment Status: ✅ SUCCESS${NC}"
+        echo -e "${GREEN}Deployment Status: SUCCESS: SUCCESS${NC}"
         return 0
     else
-        echo -e "${RED}❌ Some tests failed. Please review the errors above.${NC}"
+        echo -e "${RED}ERROR: Some tests failed. Please review the errors above.${NC}"
         echo ""
-        echo -e "${RED}Deployment Status: ❌ FAILED${NC}"
+        echo -e "${RED}Deployment Status: ERROR: FAILED${NC}"
         return 1
     fi
 }

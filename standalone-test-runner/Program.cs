@@ -15,7 +15,7 @@ namespace StandaloneTestRunner
     {
         static async Task<int> Main(string[] args)
         {
-            Console.WriteLine("🧪 Standalone Test Runner - No Hanging Tests");
+            Console.WriteLine("Testing Standalone Test Runner - No Hanging Tests");
             Console.WriteLine("=============================================");
             Console.WriteLine();
 
@@ -107,7 +107,7 @@ namespace StandaloneTestRunner
 
             if (smokeTests)
             {
-                Console.WriteLine("🔥 Running Automated Smoke Tests...");
+                Console.WriteLine("Hot Running Automated Smoke Tests...");
                 var smokeTestsRunner = new SmokeTests();
                 await smokeTestsRunner.RunAllSmokeTestsAsync();
                 return 0;
@@ -115,7 +115,7 @@ namespace StandaloneTestRunner
 
             if (epic5_4Tests)
             {
-                Console.WriteLine("🚀 Running Epic 5.4: Deployment & Integration Tests...");
+                Console.WriteLine("Running Running Epic 5.4: Deployment & Integration Tests...");
                 await Epic5_4TestRunner.RunEpic5_4TestsAsync();
                 return 0;
             }
@@ -123,7 +123,7 @@ namespace StandaloneTestRunner
             if (epic5_4Category)
             {
                 var categoryValue = category ?? "Deployment";
-                Console.WriteLine($"🚀 Running Epic 5.4 {categoryValue} Tests...");
+                Console.WriteLine($"Running Running Epic 5.4 {categoryValue} Tests...");
                 await Epic5_4TestRunner.RunEpic5_4TestsByCategoryAsync(categoryValue);
                 return 0;
             }
@@ -131,14 +131,14 @@ namespace StandaloneTestRunner
             if (epic5_4Priority)
             {
                 var priorityValue = priority ?? "High";
-                Console.WriteLine($"🚀 Running Epic 5.4 {priorityValue} Priority Tests...");
+                Console.WriteLine($"Running Running Epic 5.4 {priorityValue} Priority Tests...");
                 await Epic5_4TestRunner.RunEpic5_4TestsByPriorityAsync(priorityValue);
                 return 0;
             }
 
             if (epic5_4Enhanced)
             {
-                Console.WriteLine("🚀 Running Enhanced Epic 5.4 Tests (All Phases)...");
+                Console.WriteLine("Running Running Enhanced Epic 5.4 Tests (All Phases)...");
                 await RunEnhancedEpic5_4TestsAsync();
                 return 0;
             }
@@ -146,59 +146,59 @@ namespace StandaloneTestRunner
             if (epic5_4Phase)
             {
                 var phaseValue = category ?? "Phase1-RealImplementation";
-                Console.WriteLine($"🚀 Running Epic 5.4 {phaseValue} Tests...");
+                Console.WriteLine($"Running Running Epic 5.4 {phaseValue} Tests...");
                 await RunEnhancedEpic5_4TestsByPhaseAsync(phaseValue);
                 return 0;
             }
 
             if (featureFactoryDomain)
             {
-                Console.WriteLine("🚀 Running Feature Factory Domain Logic Tests...");
+                Console.WriteLine("Running Running Feature Factory Domain Logic Tests...");
                 await RunFeatureFactoryDomainTestsAsync();
                 return 0;
             }
 
             if (featureFactoryApplication)
             {
-                Console.WriteLine("🚀 Running Feature Factory Application Logic Tests...");
+                Console.WriteLine("Running Running Feature Factory Application Logic Tests...");
                 await RunFeatureFactoryApplicationTestsAsync();
                 return 0;
             }
 
             if (featureFactoryDeployment)
             {
-                Console.WriteLine("🚀 Running Feature Factory Deployment Tests...");
+                Console.WriteLine("Running Running Feature Factory Deployment Tests...");
                 await RunFeatureFactoryDeploymentTestsAsync();
                 return 0;
             }
 
             if (aiServices)
             {
-                Console.WriteLine("🚀 Running AI Services Tests...");
+                Console.WriteLine("Running Running AI Services Tests...");
                 await RunAIServicesTestsAsync();
                 return 0;
             }
 
             if (coreDomainEntities)
             {
-                Console.WriteLine("🚀 Running Core Domain Entities Tests...");
+                Console.WriteLine("Running Running Core Domain Entities Tests...");
                 await RunCoreDomainEntitiesTestsAsync();
                 return 0;
             }
 
             if (coverage)
             {
-                Console.WriteLine("🧪 Running Test Coverage Demo...");
+                Console.WriteLine("Testing Running Test Coverage Demo...");
                 await TestCoverageDemo.RunCoverageDemoAsync();
                 return 0;
             }
 
             if (discover)
             {
-                Console.WriteLine("🔍 Discovering available tests...");
+                Console.WriteLine("Search Discovering available tests...");
                 testAggregator.DiscoverDefaultTests();
 
-                Console.WriteLine($"\n📋 Found {testAggregator.TestCount} tests:");
+                Console.WriteLine($"\nList Found {testAggregator.TestCount} tests:");
                 foreach (var test in testAggregator.Tests)
                 {
                     Console.WriteLine($"   • {test.DisplayName} ({test.TestId})");
@@ -218,31 +218,31 @@ namespace StandaloneTestRunner
             
             if (!string.IsNullOrEmpty(category))
             {
-                Console.WriteLine($"🚀 Running tests for category '{category}' using Test Aggregator...");
+                Console.WriteLine($"Running Running tests for category '{category}' using Test Aggregator...");
                 aggregationResult = await testAggregator.RunTestsByCategoryAsync(category, progress);
             }
             else if (!string.IsNullOrEmpty(priority))
             {
-                Console.WriteLine($"🚀 Running tests for priority '{priority}' using Test Aggregator...");
+                Console.WriteLine($"Running Running tests for priority '{priority}' using Test Aggregator...");
                 aggregationResult = await testAggregator.RunTestsByPriorityAsync(priority, progress);
             }
             else
             {
-                Console.WriteLine("🚀 Running all tests using Test Aggregator...");
+                Console.WriteLine("Running Running all tests using Test Aggregator...");
                 aggregationResult = await testAggregator.RunAllTestsAsync(progress);
             }
 
             // Report results
-            Console.WriteLine("\n📊 Test Aggregation Summary:");
+            Console.WriteLine("\nStats Test Aggregation Summary:");
             Console.WriteLine($"   Total Tests: {aggregationResult.TotalTests}");
-            Console.WriteLine($"   Passed: {aggregationResult.PassedTests} ✅");
-            Console.WriteLine($"   Failed: {aggregationResult.FailedTests} ❌");
+            Console.WriteLine($"   Passed: {aggregationResult.PassedTests} SUCCESS:");
+            Console.WriteLine($"   Failed: {aggregationResult.FailedTests} ERROR:");
             Console.WriteLine($"   Skipped: {aggregationResult.SkippedTests} ⏭️");
             Console.WriteLine($"   Total Duration: {aggregationResult.TotalDuration.TotalSeconds:F1}s");
             Console.WriteLine($"   Average Duration: {aggregationResult.AverageDuration:F1}ms");
 
             // Show metrics
-            Console.WriteLine("\n📈 Test Metrics:");
+            Console.WriteLine("\nProgress Test Metrics:");
             Console.WriteLine($"   Slow Tests (>1s): {aggregationResult.Metrics.SlowTests}");
             Console.WriteLine($"   Fast Tests (<500ms): {aggregationResult.Metrics.FastTests}");
             Console.WriteLine($"   Tests by Category: {string.Join(", ", aggregationResult.Metrics.TestsByCategory.Select(kv => $"{kv.Key}({kv.Value})"))}");
@@ -250,20 +250,20 @@ namespace StandaloneTestRunner
 
             if (aggregationResult.FailedTests > 0)
             {
-                Console.WriteLine("\n❌ Failed Tests:");
+                Console.WriteLine("\nERROR: Failed Tests:");
                 foreach (var result in aggregationResult.TestResults.Where(r => !r.IsSuccess))
                 {
                     Console.WriteLine($"   • {result.TestId}: {result.ErrorMessage}");
                 }
             }
 
-            Console.WriteLine("\n🎉 Test aggregation completed successfully!");
+            Console.WriteLine("\nSUCCESS Test aggregation completed successfully!");
             return aggregationResult.FailedTests > 0 ? 1 : 0;
         }
 
         private static async Task RunEnhancedEpic5_4TestsAsync()
         {
-            Console.WriteLine("🚀 Enhanced Epic 5.4: Comprehensive Test Suite 🚀");
+            Console.WriteLine("Running Enhanced Epic 5.4: Comprehensive Test Suite Running");
             Console.WriteLine("=================================================");
             Console.WriteLine();
 
@@ -273,7 +273,7 @@ namespace StandaloneTestRunner
             // Filter for enhanced Epic 5.4 tests
             var enhancedTests = aggregator.Tests.Where(t => t.TestId.StartsWith("epic5_4-phase")).ToList();
             
-            Console.WriteLine($"📊 Running {enhancedTests.Count} Enhanced Epic 5.4 tests...");
+            Console.WriteLine($"Stats Running {enhancedTests.Count} Enhanced Epic 5.4 tests...");
             Console.WriteLine();
 
             // Create a temporary aggregator with only enhanced tests
@@ -283,17 +283,17 @@ namespace StandaloneTestRunner
             var result = await enhancedAggregator.RunAllTestsAsync(progress: true);
 
             Console.WriteLine();
-            Console.WriteLine("📊 Enhanced Epic 5.4 Test Results Summary:");
+            Console.WriteLine("Stats Enhanced Epic 5.4 Test Results Summary:");
             Console.WriteLine("===========================================");
             Console.WriteLine($"Total Tests: {result.TotalTests}");
-            Console.WriteLine($"Passed: {result.PassedTests} ✅");
-            Console.WriteLine($"Failed: {result.FailedTests} ❌");
+            Console.WriteLine($"Passed: {result.PassedTests} SUCCESS:");
+            Console.WriteLine($"Failed: {result.FailedTests} ERROR:");
             Console.WriteLine($"Duration: {result.TotalDuration.TotalSeconds:F1}s");
         }
 
         private static async Task RunEnhancedEpic5_4TestsByPhaseAsync(string phase)
         {
-            Console.WriteLine($"🚀 Enhanced Epic 5.4: {phase} Tests 🚀");
+            Console.WriteLine($"Running Enhanced Epic 5.4: {phase} Tests Running");
             Console.WriteLine("=====================================");
             Console.WriteLine();
 
@@ -303,7 +303,7 @@ namespace StandaloneTestRunner
             // Filter for specific phase tests
             var phaseTests = aggregator.Tests.Where(t => t.Category == phase).ToList();
             
-            Console.WriteLine($"📊 Running {phaseTests.Count} {phase} tests...");
+            Console.WriteLine($"Stats Running {phaseTests.Count} {phase} tests...");
             Console.WriteLine();
 
             // Create a temporary aggregator with only phase tests
@@ -313,14 +313,14 @@ namespace StandaloneTestRunner
             var result = await phaseAggregator.RunAllTestsAsync(progress: true);
 
             Console.WriteLine();
-            Console.WriteLine($"📊 {phase} Test Results:");
+            Console.WriteLine($"Stats {phase} Test Results:");
             Console.WriteLine($"Total: {result.TotalTests}, Passed: {result.PassedTests}, Failed: {result.FailedTests}");
             Console.WriteLine($"Duration: {result.TotalDuration.TotalSeconds:F1}s");
         }
 
         private static async Task RunFeatureFactoryDomainTestsAsync()
         {
-            Console.WriteLine("🚀 Feature Factory Domain Logic Tests 🚀");
+            Console.WriteLine("Running Feature Factory Domain Logic Tests Running");
             Console.WriteLine("========================================");
             Console.WriteLine();
 
@@ -330,7 +330,7 @@ namespace StandaloneTestRunner
             // Filter for Feature Factory Domain Logic tests
             var domainTests = aggregator.Tests.Where(t => t.TestId.StartsWith("feature-factory-domain-logic-")).ToList();
             
-            Console.WriteLine($"📊 Running {domainTests.Count} Feature Factory Domain Logic tests...");
+            Console.WriteLine($"Stats Running {domainTests.Count} Feature Factory Domain Logic tests...");
             Console.WriteLine();
 
             // Create a temporary aggregator with only domain tests
@@ -340,14 +340,14 @@ namespace StandaloneTestRunner
             var result = await domainAggregator.RunAllTestsAsync(progress: true);
 
             Console.WriteLine();
-            Console.WriteLine("📊 Feature Factory Domain Logic Test Results:");
+            Console.WriteLine("Stats Feature Factory Domain Logic Test Results:");
             Console.WriteLine($"Total: {result.TotalTests}, Passed: {result.PassedTests}, Failed: {result.FailedTests}");
             Console.WriteLine($"Duration: {result.TotalDuration.TotalSeconds:F1}s");
         }
 
         private static async Task RunFeatureFactoryApplicationTestsAsync()
         {
-            Console.WriteLine("🚀 Feature Factory Application Logic Tests 🚀");
+            Console.WriteLine("Running Feature Factory Application Logic Tests Running");
             Console.WriteLine("=============================================");
             Console.WriteLine();
 
@@ -357,7 +357,7 @@ namespace StandaloneTestRunner
             // Filter for Feature Factory Application Logic tests
             var applicationTests = aggregator.Tests.Where(t => t.TestId.StartsWith("feature-factory-application-logic-") || t.TestId.StartsWith("feature-factory-framework-adapter-")).ToList();
             
-            Console.WriteLine($"📊 Running {applicationTests.Count} Feature Factory Application Logic tests...");
+            Console.WriteLine($"Stats Running {applicationTests.Count} Feature Factory Application Logic tests...");
             Console.WriteLine();
 
             // Create a temporary aggregator with only application tests
@@ -367,14 +367,14 @@ namespace StandaloneTestRunner
             var result = await applicationAggregator.RunAllTestsAsync(progress: true);
 
             Console.WriteLine();
-            Console.WriteLine("📊 Feature Factory Application Logic Test Results:");
+            Console.WriteLine("Stats Feature Factory Application Logic Test Results:");
             Console.WriteLine($"Total: {result.TotalTests}, Passed: {result.PassedTests}, Failed: {result.FailedTests}");
             Console.WriteLine($"Duration: {result.TotalDuration.TotalSeconds:F1}s");
         }
 
         private static async Task RunFeatureFactoryDeploymentTestsAsync()
         {
-            Console.WriteLine("🚀 Feature Factory Deployment Tests 🚀");
+            Console.WriteLine("Running Feature Factory Deployment Tests Running");
             Console.WriteLine("=====================================");
             Console.WriteLine();
 
@@ -384,7 +384,7 @@ namespace StandaloneTestRunner
             // Filter for Feature Factory Deployment tests
             var deploymentTests = aggregator.Tests.Where(t => t.TestId.StartsWith("feature-factory-deployment-") || t.TestId.StartsWith("feature-factory-system-integrator-") || t.TestId.StartsWith("feature-factory-application-monitor-") || t.TestId.StartsWith("feature-factory-deployment-orchestrator-")).ToList();
             
-            Console.WriteLine($"📊 Running {deploymentTests.Count} Feature Factory Deployment tests...");
+            Console.WriteLine($"Stats Running {deploymentTests.Count} Feature Factory Deployment tests...");
             Console.WriteLine();
 
             // Create a temporary aggregator with only deployment tests
@@ -394,14 +394,14 @@ namespace StandaloneTestRunner
             var result = await deploymentAggregator.RunAllTestsAsync(progress: true);
 
             Console.WriteLine();
-            Console.WriteLine("📊 Feature Factory Deployment Test Results:");
+            Console.WriteLine("Stats Feature Factory Deployment Test Results:");
             Console.WriteLine($"Total: {result.TotalTests}, Passed: {result.PassedTests}, Failed: {result.FailedTests}");
             Console.WriteLine($"Duration: {result.TotalDuration.TotalSeconds:F1}s");
         }
 
         private static async Task RunAIServicesTestsAsync()
         {
-            Console.WriteLine("🚀 AI Services Tests 🚀");
+            Console.WriteLine("Running AI Services Tests Running");
             Console.WriteLine("=======================");
             Console.WriteLine();
 
@@ -411,7 +411,7 @@ namespace StandaloneTestRunner
             // Filter for AI Services tests
             var aiTests = aggregator.Tests.Where(t => t.TestId.StartsWith("ai-")).ToList();
             
-            Console.WriteLine($"📊 Running {aiTests.Count} AI Services tests...");
+            Console.WriteLine($"Stats Running {aiTests.Count} AI Services tests...");
             Console.WriteLine();
 
             // Create a temporary aggregator with only AI tests
@@ -421,14 +421,14 @@ namespace StandaloneTestRunner
             var result = await aiAggregator.RunAllTestsAsync(progress: true);
 
             Console.WriteLine();
-            Console.WriteLine("📊 AI Services Test Results:");
+            Console.WriteLine("Stats AI Services Test Results:");
             Console.WriteLine($"Total: {result.TotalTests}, Passed: {result.PassedTests}, Failed: {result.FailedTests}");
             Console.WriteLine($"Duration: {result.TotalDuration.TotalSeconds:F1}s");
         }
 
         private static async Task RunCoreDomainEntitiesTestsAsync()
         {
-            Console.WriteLine("🚀 Core Domain Entities Tests 🚀");
+            Console.WriteLine("Running Core Domain Entities Tests Running");
             Console.WriteLine("===============================");
             Console.WriteLine();
 
@@ -438,7 +438,7 @@ namespace StandaloneTestRunner
             // Filter for Core Domain Entities tests
             var entityTests = aggregator.Tests.Where(t => t.TestId.StartsWith("core-domain-")).ToList();
             
-            Console.WriteLine($"📊 Running {entityTests.Count} Core Domain Entities tests...");
+            Console.WriteLine($"Stats Running {entityTests.Count} Core Domain Entities tests...");
             Console.WriteLine();
 
             // Create a temporary aggregator with only entity tests
@@ -448,14 +448,14 @@ namespace StandaloneTestRunner
             var result = await entityAggregator.RunAllTestsAsync(progress: true);
 
             Console.WriteLine();
-            Console.WriteLine("📊 Core Domain Entities Test Results:");
+            Console.WriteLine("Stats Core Domain Entities Test Results:");
             Console.WriteLine($"Total: {result.TotalTests}, Passed: {result.PassedTests}, Failed: {result.FailedTests}");
             Console.WriteLine($"Duration: {result.TotalDuration.TotalSeconds:F1}s");
         }
 
         private static void ShowHelp()
         {
-            Console.WriteLine("🧪 Standalone Test Runner - Usage");
+            Console.WriteLine("Testing Standalone Test Runner - Usage");
             Console.WriteLine("=================================");
             Console.WriteLine();
             Console.WriteLine("Basic Commands:");
@@ -604,7 +604,7 @@ namespace StandaloneTestRunner
 
             if (progress)
             {
-                Console.WriteLine($"\n📊 Progress: Starting {tests.Count} tests...");
+                Console.WriteLine($"\nStats Progress: Starting {tests.Count} tests...");
             }
 
             var results = new List<TestResult>();
@@ -616,7 +616,7 @@ namespace StandaloneTestRunner
                 var test = tests[i];
                 if (progress)
                 {
-                    Console.WriteLine($"\n🔄 [{i + 1}/{tests.Count}] Running: {test.DisplayName}");
+                    Console.WriteLine($"\nProcessing [{i + 1}/{tests.Count}] Running: {test.DisplayName}");
                 }
 
                 try
@@ -629,7 +629,7 @@ namespace StandaloneTestRunner
                         passedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ✅ {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
+                            Console.WriteLine($"   SUCCESS: {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
                         }
                     }
                     else
@@ -637,7 +637,7 @@ namespace StandaloneTestRunner
                         failedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ❌ {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
+                            Console.WriteLine($"   ERROR: {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
                         }
                     }
                 }
@@ -653,7 +653,7 @@ namespace StandaloneTestRunner
 
                     if (progress)
                     {
-                        Console.WriteLine($"   ❌ {test.DisplayName} - EXCEPTION: {ex.Message}");
+                        Console.WriteLine($"   ERROR: {test.DisplayName} - EXCEPTION: {ex.Message}");
                     }
                 }
             }
@@ -663,7 +663,7 @@ namespace StandaloneTestRunner
 
             if (progress)
             {
-                Console.WriteLine($"\n📊 Progress: Completed {tests.Count} tests in {totalDuration.TotalSeconds:F1}s");
+                Console.WriteLine($"\nStats Progress: Completed {tests.Count} tests in {totalDuration.TotalSeconds:F1}s");
             }
 
             return new TestSummary(

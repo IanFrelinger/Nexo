@@ -3,28 +3,28 @@
 # Docker Testing Script for Nexo Feature Factory
 # This script runs comprehensive tests in a containerized environment
 
-echo "🐳 Nexo Feature Factory Docker Testing"
+echo "Docker Nexo Feature Factory Docker Testing"
 echo "======================================="
 echo ""
 
 # Check if we're in the right directory
 if [ ! -f "Nexo.sln" ]; then
-    echo "❌ Error: Please run this script from the Nexo project root directory"
+    echo "ERROR: Error: Please run this script from the Nexo project root directory"
     exit 1
 fi
 
 # Check if Docker is available
 if ! command -v docker &> /dev/null; then
-    echo "❌ Error: Docker is not available"
+    echo "ERROR: Error: Docker is not available"
     exit 1
 fi
 
 if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Error: Docker Compose is not available"
+    echo "ERROR: Error: Docker Compose is not available"
     exit 1
 fi
 
-echo "✅ Docker and Docker Compose are available"
+echo "SUCCESS: Docker and Docker Compose are available"
 echo ""
 
 # Function to cleanup Docker resources
@@ -32,12 +32,12 @@ cleanup_docker() {
     echo "🧹 Cleaning up Docker resources..."
     docker-compose -f docker/docker-compose.testing.yml down --volumes --remove-orphans
     docker system prune -f
-    echo "✅ Docker cleanup completed"
+    echo "SUCCESS: Docker cleanup completed"
 }
 
 # Function to run tests
 run_tests() {
-    echo "🚀 Starting Docker testing environment..."
+    echo "Running Starting Docker testing environment..."
     echo ""
     
     # Start the testing environment
@@ -45,9 +45,9 @@ run_tests() {
     local test_result=$?
     
     if [ $test_result -eq 0 ]; then
-        echo "✅ Docker tests completed successfully"
+        echo "SUCCESS: Docker tests completed successfully"
     else
-        echo "❌ Docker tests failed"
+        echo "ERROR: Docker tests failed"
     fi
     
     return $test_result
@@ -56,37 +56,37 @@ run_tests() {
 # Function to show test results
 show_results() {
     echo ""
-    echo "📊 Test Results"
+    echo "Stats Test Results"
     echo "==============="
     
     # Check if test results exist
     if [ -d "test-results" ]; then
-        echo "📁 Test results directory contents:"
+        echo "Directory Test results directory contents:"
         ls -la test-results/
         echo ""
         
         # Find the latest test results
         local latest_test_file=$(find test-results -name "*.trx" -type f 2>/dev/null | sort | tail -1)
         if [ -n "$latest_test_file" ]; then
-            echo "📄 Latest test results: $latest_test_file"
+            echo "File Latest test results: $latest_test_file"
         fi
         
         # Find JSON results
         local latest_json_file=$(find test-results -name "test-results-*.json" -type f 2>/dev/null | sort | tail -1)
         if [ -n "$latest_json_file" ]; then
-            echo "📄 Latest JSON results: $latest_json_file"
+            echo "File Latest JSON results: $latest_json_file"
             
             # Show summary if jq is available
             if command -v jq &> /dev/null; then
                 echo ""
-                echo "📈 Test Summary:"
+                echo "Progress Test Summary:"
                 jq -r '.Summary // empty | "Success Rate: \(.SuccessRate)% (\(.SuccessfulCommandCount)/\(.TotalCommandCount))"' "$latest_json_file" 2>/dev/null || echo "Could not parse test results"
                 jq -r '.Summary // empty | "Total Duration: \(.TotalDuration)"' "$latest_json_file" 2>/dev/null || echo "Could not parse duration"
                 jq -r '.Summary // empty | "Overall Status: \(if .IsSuccess then "PASSED" else "FAILED" end)"' "$latest_json_file" 2>/dev/null || echo "Could not parse status"
             fi
         fi
     else
-        echo "⚠️ No test results found"
+        echo "WARNING: No test results found"
     fi
     
     echo ""
@@ -94,7 +94,7 @@ show_results() {
 
 # Function to show container logs
 show_logs() {
-    echo "📋 Container Logs"
+    echo "List Container Logs"
     echo "================="
     
     echo "Nexo Testing Container Logs:"
@@ -162,13 +162,13 @@ main() {
     
     # Final status
     if [ $test_result -eq 0 ]; then
-        echo "🎉 Docker testing completed successfully!"
+        echo "SUCCESS Docker testing completed successfully!"
         echo ""
-        echo "✅ All tests passed in containerized environment"
-        echo "✅ Feature Factory is ready for production use"
-        echo "✅ Docker environment is properly configured"
+        echo "SUCCESS: All tests passed in containerized environment"
+        echo "SUCCESS: Feature Factory is ready for production use"
+        echo "SUCCESS: Docker environment is properly configured"
     else
-        echo "❌ Docker testing failed"
+        echo "ERROR: Docker testing failed"
         echo ""
         echo "Check the logs above for details on what went wrong"
         echo "Use --logs flag to see detailed container logs"

@@ -56,7 +56,7 @@ namespace Nexo.CLI.Dashboard
         {
             // Show detailed adaptation information
             Console.Clear();
-            Console.WriteLine("🔄 Detailed Adaptation Information");
+            Console.WriteLine("Processing Detailed Adaptation Information");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
@@ -69,7 +69,7 @@ namespace Nexo.CLI.Dashboard
             
             if (status.ActiveAdaptations.Any())
             {
-                Console.WriteLine("🔄 Active Adaptations:");
+                Console.WriteLine("Processing Active Adaptations:");
                 foreach (var adaptation in status.ActiveAdaptations)
                 {
                     Console.WriteLine($"  • {adaptation.Type}: {adaptation.Description}");
@@ -80,7 +80,7 @@ namespace Nexo.CLI.Dashboard
             
             if (status.RecentImprovements.Any())
             {
-                Console.WriteLine("📈 Recent Improvements:");
+                Console.WriteLine("Progress Recent Improvements:");
                 foreach (var improvement in status.RecentImprovements.Take(10))
                 {
                     var timeAgo = DateTime.UtcNow - improvement.AppliedAt;

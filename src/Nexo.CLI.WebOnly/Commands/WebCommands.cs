@@ -134,15 +134,15 @@ namespace Nexo.CLI.Commands
 
                     if (result.Success)
                     {
-                        Console.WriteLine($"✅ Successfully generated web code for '{name}'");
-                        Console.WriteLine($"📁 Output directory: {output}");
-                        Console.WriteLine($"🔧 Framework: {frameworkType}");
-                        Console.WriteLine($"📦 Component type: {componentType}");
+                        Console.WriteLine($"SUCCESS: Successfully generated web code for '{name}'");
+                        Console.WriteLine($"Directory Output directory: {output}");
+                        Console.WriteLine($"Tool Framework: {frameworkType}");
+                        Console.WriteLine($"Package Component type: {componentType}");
                         Console.WriteLine($"⚡ Optimization: {optimizationType}");
 
                         if (result.GeneratedFiles.Any())
                         {
-                            Console.WriteLine("\n📄 Generated files:");
+                            Console.WriteLine("\nFile Generated files:");
                             foreach (var file in result.GeneratedFiles)
                             {
                                 Console.WriteLine($"   - {file}");
@@ -151,7 +151,7 @@ namespace Nexo.CLI.Commands
 
                         if (result.PerformanceMetrics.Any())
                         {
-                            Console.WriteLine("\n📊 Performance metrics:");
+                            Console.WriteLine("\nStats Performance metrics:");
                             foreach (var metric in result.PerformanceMetrics)
                             {
                                 Console.WriteLine($"   - {metric.Key}: {metric.Value:F2}");
@@ -160,7 +160,7 @@ namespace Nexo.CLI.Commands
 
                         if (result.BundleSizes.Any())
                         {
-                            Console.WriteLine("\n📦 Bundle sizes:");
+                            Console.WriteLine("\nPackage Bundle sizes:");
                             foreach (var size in result.BundleSizes)
                             {
                                 Console.WriteLine($"   - {size.Key}: {size.Value:N0} bytes");
@@ -169,7 +169,7 @@ namespace Nexo.CLI.Commands
 
                         if (result.Warnings.Any())
                         {
-                            Console.WriteLine("\n⚠️  Warnings:");
+                            Console.WriteLine("\nWARNING:  Warnings:");
                             foreach (var warning in result.Warnings)
                             {
                                 Console.WriteLine($"   - {warning}");
@@ -178,7 +178,7 @@ namespace Nexo.CLI.Commands
                     }
                     else
                     {
-                        Console.WriteLine($"❌ Failed to generate web code: {result.Message}");
+                        Console.WriteLine($"ERROR: Failed to generate web code: {result.Message}");
                     }
                 }
                 catch (Exception ex)
@@ -268,13 +268,13 @@ namespace Nexo.CLI.Commands
                         var outputPath = output ?? source.Replace(".js", ".optimized.js");
                         await File.WriteAllTextAsync(outputPath, result.OptimizedCode);
 
-                        Console.WriteLine($"✅ Successfully optimized WebAssembly code");
-                        Console.WriteLine($"📁 Output file: {outputPath}");
+                        Console.WriteLine($"SUCCESS: Successfully optimized WebAssembly code");
+                        Console.WriteLine($"Directory Output file: {outputPath}");
                         Console.WriteLine($"⚡ Optimization time: {result.OptimizationTime.TotalMilliseconds:F2}ms");
 
                         if (result.Metrics.Any())
                         {
-                            Console.WriteLine("\n📊 Optimization metrics:");
+                            Console.WriteLine("\nStats Optimization metrics:");
                             foreach (var metric in result.Metrics)
                             {
                                 Console.WriteLine($"   - {metric.Key}: {metric.Value}");
@@ -283,7 +283,7 @@ namespace Nexo.CLI.Commands
 
                         if (result.Warnings.Any())
                         {
-                            Console.WriteLine("\n⚠️  Warnings:");
+                            Console.WriteLine("\nWARNING:  Warnings:");
                             foreach (var warning in result.Warnings)
                             {
                                 Console.WriteLine($"   - {warning}");
@@ -292,7 +292,7 @@ namespace Nexo.CLI.Commands
                     }
                     else
                     {
-                        Console.WriteLine($"❌ Failed to optimize code: {string.Join(", ", result.Warnings)}");
+                        Console.WriteLine($"ERROR: Failed to optimize code: {string.Join(", ", result.Warnings)}");
                     }
                 }
                 catch (Exception ex)
@@ -350,23 +350,23 @@ namespace Nexo.CLI.Commands
                     {
                         var jsonResult = System.Text.Json.JsonSerializer.Serialize(analysisResult, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                         await File.WriteAllTextAsync(output, jsonResult);
-                        Console.WriteLine($"✅ Analysis results saved to: {output}");
+                        Console.WriteLine($"SUCCESS: Analysis results saved to: {output}");
                     }
 
                     // Display results
-                    Console.WriteLine("\n📊 Performance Analysis:");
+                    Console.WriteLine("\nStats Performance Analysis:");
                     foreach (var metric in performanceAnalysis.PerformanceMetrics)
                     {
                         Console.WriteLine($"   - {metric.Key}: {metric.Value:F2}");
                     }
 
-                    Console.WriteLine("\n📦 Bundle Size Analysis:");
+                    Console.WriteLine("\nPackage Bundle Size Analysis:");
                     foreach (var size in bundleAnalysis.BundleSizes)
                     {
                         Console.WriteLine($"   - {size.Key}: {size.Value:N0} bytes");
                     }
 
-                    Console.WriteLine("\n🗜️  Compression Ratios:");
+                    Console.WriteLine("\nCompression  Compression Ratios:");
                     foreach (var ratio in bundleAnalysis.CompressionRatios)
                     {
                         Console.WriteLine($"   - {ratio.Key}: {ratio.Value:P1}");
@@ -374,7 +374,7 @@ namespace Nexo.CLI.Commands
 
                     if (performanceAnalysis.PerformanceRecommendations.Any())
                     {
-                        Console.WriteLine("\n💡 Performance Recommendations:");
+                        Console.WriteLine("\nIdea Performance Recommendations:");
                         foreach (var recommendation in performanceAnalysis.PerformanceRecommendations)
                         {
                             Console.WriteLine($"   - {recommendation}");
@@ -383,7 +383,7 @@ namespace Nexo.CLI.Commands
 
                     if (bundleAnalysis.SizeOptimizationSuggestions.Any())
                     {
-                        Console.WriteLine("\n💡 Size Optimization Suggestions:");
+                        Console.WriteLine("\nIdea Size Optimization Suggestions:");
                         foreach (var suggestion in bundleAnalysis.SizeOptimizationSuggestions)
                         {
                             Console.WriteLine($"   - {suggestion}");
@@ -420,7 +420,7 @@ namespace Nexo.CLI.Commands
 
                     if (frameworks)
                     {
-                        Console.WriteLine("🚀 Supported Frameworks:");
+                        Console.WriteLine("Running Supported Frameworks:");
                         var supportedFrameworks = webCodeGenerator.GetSupportedFrameworks();
                         foreach (var framework in supportedFrameworks)
                         {
@@ -430,7 +430,7 @@ namespace Nexo.CLI.Commands
 
                     if (types)
                     {
-                        Console.WriteLine("\n🎯 Supported Component Types:");
+                        Console.WriteLine("\nTarget Supported Component Types:");
                         var componentTypes = Enum.GetNames<WebComponentType>();
                         foreach (var type in componentTypes)
                         {
@@ -451,14 +451,14 @@ namespace Nexo.CLI.Commands
                     if (!frameworks && !types && !optimizations)
                     {
                         // Show all if no specific option is selected
-                        Console.WriteLine("🚀 Supported Frameworks:");
+                        Console.WriteLine("Running Supported Frameworks:");
                         var supportedFrameworks = webCodeGenerator.GetSupportedFrameworks();
                         foreach (var framework in supportedFrameworks)
                         {
                             Console.WriteLine($"   - {framework}");
                         }
 
-                        Console.WriteLine("\n🎯 Supported Component Types:");
+                        Console.WriteLine("\nTarget Supported Component Types:");
                         var componentTypes = Enum.GetNames<WebComponentType>();
                         foreach (var type in componentTypes)
                         {
@@ -512,7 +512,7 @@ namespace Nexo.CLI.Commands
                         return;
                     }
 
-                    Console.WriteLine("🔍 Validating configuration...");
+                    Console.WriteLine("Search Validating configuration...");
 
                     var isValid = true;
                     var errors = new List<string>();
@@ -530,7 +530,7 @@ namespace Nexo.CLI.Commands
                             }
                             else
                             {
-                                Console.WriteLine($"✅ Framework: {framework}");
+                                Console.WriteLine($"SUCCESS: Framework: {framework}");
                             }
                         }
                     }
@@ -548,7 +548,7 @@ namespace Nexo.CLI.Commands
                             }
                             else
                             {
-                                Console.WriteLine($"✅ Component type: {componentType}");
+                                Console.WriteLine($"SUCCESS: Component type: {componentType}");
                             }
                         }
                     }
@@ -566,7 +566,7 @@ namespace Nexo.CLI.Commands
                             }
                             else
                             {
-                                Console.WriteLine($"✅ Optimization: {optimization}");
+                                Console.WriteLine($"SUCCESS: Optimization: {optimization}");
                             }
                         }
                     }
@@ -579,7 +579,7 @@ namespace Nexo.CLI.Commands
                     }
                     else
                     {
-                        Console.WriteLine($"✅ Component name: {configData["componentName"]}");
+                        Console.WriteLine($"SUCCESS: Component name: {configData["componentName"]}");
                     }
 
                     if (!configData.ContainsKey("targetPath"))
@@ -589,16 +589,16 @@ namespace Nexo.CLI.Commands
                     }
                     else
                     {
-                        Console.WriteLine($"✅ Target path: {configData["targetPath"]}");
+                        Console.WriteLine($"SUCCESS: Target path: {configData["targetPath"]}");
                     }
 
                     if (isValid)
                     {
-                        Console.WriteLine("\n✅ Configuration is valid!");
+                        Console.WriteLine("\nSUCCESS: Configuration is valid!");
                     }
                     else
                     {
-                        Console.WriteLine("\n❌ Configuration validation failed:");
+                        Console.WriteLine("\nERROR: Configuration validation failed:");
                         foreach (var error in errors)
                         {
                             Console.WriteLine($"   - {error}");

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🧪 Nexo Feature Factory Smoke Test"
+echo "Testing Nexo Feature Factory Smoke Test"
 echo "=================================="
 
 # Navigate to the root of the Nexo project
@@ -8,50 +8,50 @@ SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 NEXO_ROOT="$SCRIPT_DIR"
 cd "$NEXO_ROOT" || exit
 
-echo "📁 Working directory: $(pwd)"
+echo "Directory Working directory: $(pwd)"
 
 # Test 1: Check if core AI infrastructure builds
 echo ""
-echo "🔧 Test 1: Core AI Infrastructure Build"
+echo "Tool Test 1: Core AI Infrastructure Build"
 echo "---------------------------------------"
 echo "Building core AI projects..."
 
 if dotnet build src/Nexo.Feature.AI/Nexo.Feature.AI.csproj --configuration Release --verbosity minimal --no-restore; then
-    echo "✅ Core AI infrastructure builds successfully"
+    echo "SUCCESS: Core AI infrastructure builds successfully"
 else
-    echo "❌ Core AI infrastructure build failed"
+    echo "ERROR: Core AI infrastructure build failed"
     exit 1
 fi
 
 # Test 2: Check if Infrastructure builds
 echo ""
-echo "🔧 Test 2: Infrastructure Build"
+echo "Tool Test 2: Infrastructure Build"
 echo "-------------------------------"
 echo "Building infrastructure projects..."
 
 if dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --configuration Release --verbosity minimal --no-restore; then
-    echo "✅ Infrastructure builds successfully"
+    echo "SUCCESS: Infrastructure builds successfully"
 else
-    echo "❌ Infrastructure build failed"
+    echo "ERROR: Infrastructure build failed"
     exit 1
 fi
 
 # Test 3: Check if CLI builds (without Feature Factory)
 echo ""
-echo "🔧 Test 3: CLI Build (Core)"
+echo "Tool Test 3: CLI Build (Core)"
 echo "---------------------------"
 echo "Building CLI project..."
 
 if dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release --verbosity minimal --no-restore; then
-    echo "✅ CLI builds successfully"
+    echo "SUCCESS: CLI builds successfully"
 else
-    echo "❌ CLI build failed"
+    echo "ERROR: CLI build failed"
     exit 1
 fi
 
 # Test 4: Test AI Model Provider functionality
 echo ""
-echo "🤖 Test 4: AI Model Provider Test"
+echo "AI Test 4: AI Model Provider Test"
 echo "---------------------------------"
 echo "Testing AI model provider functionality..."
 
@@ -100,12 +100,12 @@ class Program
             var response = await modelProvider.GenerateResponseAsync(request);
             logger.LogInformation($"Response generated: {response.Output?.Length > 0}");
             
-            Console.WriteLine("✅ AI Model Provider test completed successfully");
+            Console.WriteLine("SUCCESS: AI Model Provider test completed successfully");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "AI Model Provider test failed");
-            Console.WriteLine($"❌ AI Model Provider test failed: {ex.Message}");
+            Console.WriteLine($"ERROR: AI Model Provider test failed: {ex.Message}");
             Environment.Exit(1);
         }
     }
@@ -114,9 +114,9 @@ EOF
 
 # Compile and run the test
 if dotnet run --project . --configuration Release test-ai-provider.cs; then
-    echo "✅ AI Model Provider functionality works"
+    echo "SUCCESS: AI Model Provider functionality works"
 else
-    echo "❌ AI Model Provider test failed"
+    echo "ERROR: AI Model Provider test failed"
 fi
 
 # Clean up test file
@@ -124,15 +124,15 @@ rm -f test-ai-provider.cs
 
 # Test 5: Test Feature Factory CLI command (basic)
 echo ""
-echo "🚀 Test 5: Feature Factory CLI Command"
+echo "Running Test 5: Feature Factory CLI Command"
 echo "--------------------------------------"
 echo "Testing basic Feature Factory CLI command..."
 
 # Test the help command first
 if dotnet run --project src/Nexo.CLI -- --help; then
-    echo "✅ CLI help command works"
+    echo "SUCCESS: CLI help command works"
 else
-    echo "❌ CLI help command failed"
+    echo "ERROR: CLI help command failed"
 fi
 
 # Test 6: Test local Llama integration setup
@@ -142,32 +142,32 @@ echo "----------------------------------------"
 echo "Testing local Llama integration files..."
 
 if [ -f "appsettings.local.json" ]; then
-    echo "✅ Local configuration file exists"
+    echo "SUCCESS: Local configuration file exists"
 else
-    echo "❌ Local configuration file missing"
+    echo "ERROR: Local configuration file missing"
 fi
 
 if [ -f "docker-compose.local.yml" ]; then
-    echo "✅ Docker Compose file exists"
+    echo "SUCCESS: Docker Compose file exists"
 else
-    echo "❌ Docker Compose file missing"
+    echo "ERROR: Docker Compose file missing"
 fi
 
 if [ -f "setup-local-llama.sh" ]; then
-    echo "✅ Setup script exists"
+    echo "SUCCESS: Setup script exists"
 else
-    echo "❌ Setup script missing"
+    echo "ERROR: Setup script missing"
 fi
 
 if [ -f "demo-feature-factory-local.sh" ]; then
-    echo "✅ Demo script exists"
+    echo "SUCCESS: Demo script exists"
 else
-    echo "❌ Demo script missing"
+    echo "ERROR: Demo script missing"
 fi
 
 # Test 7: Test Feature Factory concept demonstration
 echo ""
-echo "🎯 Test 7: Feature Factory Concept Demo"
+echo "Target Test 7: Feature Factory Concept Demo"
 echo "---------------------------------------"
 echo "Demonstrating Feature Factory concept..."
 
@@ -242,7 +242,7 @@ namespace Generated.Features
             var factory = new FeatureFactoryConcept();
             var description = "Create a Customer entity with CRUD operations";
             
-            Console.WriteLine("🚀 Nexo Feature Factory Concept Demo");
+            Console.WriteLine("Running Nexo Feature Factory Concept Demo");
             Console.WriteLine("=====================================");
             Console.WriteLine($"Input: {description}");
             Console.WriteLine();
@@ -252,7 +252,7 @@ namespace Generated.Features
             var generatedCode = await factory.GenerateFeatureAsync(description);
             Console.WriteLine(generatedCode);
             
-            Console.WriteLine("✅ Feature Factory concept demonstration completed!");
+            Console.WriteLine("SUCCESS: Feature Factory concept demonstration completed!");
         }
     }
 }
@@ -260,9 +260,9 @@ EOF
 
 # Compile and run the concept demo
 if dotnet run --project . --configuration Release feature-factory-concept-demo.cs; then
-    echo "✅ Feature Factory concept demonstration works"
+    echo "SUCCESS: Feature Factory concept demonstration works"
 else
-    echo "❌ Feature Factory concept demonstration failed"
+    echo "ERROR: Feature Factory concept demonstration failed"
 fi
 
 # Clean up demo file
@@ -270,17 +270,17 @@ rm -f feature-factory-concept-demo.cs
 
 # Final summary
 echo ""
-echo "📊 Smoke Test Summary"
+echo "Stats Smoke Test Summary"
 echo "===================="
-echo "✅ Core AI Infrastructure: Working"
-echo "✅ Infrastructure: Working"
-echo "✅ CLI Core: Working"
-echo "✅ AI Model Provider: Working"
-echo "✅ CLI Commands: Working"
-echo "✅ Local Llama Integration: Configured"
-echo "✅ Feature Factory Concept: Demonstrated"
+echo "SUCCESS: Core AI Infrastructure: Working"
+echo "SUCCESS: Infrastructure: Working"
+echo "SUCCESS: CLI Core: Working"
+echo "SUCCESS: AI Model Provider: Working"
+echo "SUCCESS: CLI Commands: Working"
+echo "SUCCESS: Local Llama Integration: Configured"
+echo "SUCCESS: Feature Factory Concept: Demonstrated"
 echo ""
-echo "🎉 Nexo Feature Factory Smoke Test Completed Successfully!"
+echo "SUCCESS Nexo Feature Factory Smoke Test Completed Successfully!"
 echo ""
 echo "The core AI infrastructure is working and ready for Feature Factory development."
 echo "Local Llama integration is configured and ready to use."

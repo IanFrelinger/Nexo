@@ -20,7 +20,7 @@ namespace Nexo.CLI.Dashboard
             Console.WriteLine($"┌─ {Title} ─".PadRight(area.Width - 1, '─') + "┐");
             
             Console.SetCursorPosition(area.X, area.Y + 1);
-            var healthIcon = health.IsHealthy ? "✅" : "❌";
+            var healthIcon = health.IsHealthy ? "SUCCESS:" : "ERROR:";
             var healthStatus = health.IsHealthy ? "Healthy" : "Issues Detected";
             Console.WriteLine($"│ {healthIcon} {healthStatus}".PadRight(area.Width - 1) + "│");
             
@@ -39,14 +39,14 @@ namespace Nexo.CLI.Dashboard
             foreach (var issue in recentIssues)
             {
                 Console.SetCursorPosition(area.X, area.Y + lineIndex);
-                Console.WriteLine($"│ ❌ {issue}".PadRight(area.Width - 1) + "│");
+                Console.WriteLine($"│ ERROR: {issue}".PadRight(area.Width - 1) + "│");
                 lineIndex++;
             }
             
             foreach (var warning in recentWarnings)
             {
                 Console.SetCursorPosition(area.X, area.Y + lineIndex);
-                Console.WriteLine($"│ ⚠️ {warning}".PadRight(area.Width - 1) + "│");
+                Console.WriteLine($"│ WARNING: {warning}".PadRight(area.Width - 1) + "│");
                 lineIndex++;
             }
             
@@ -58,20 +58,20 @@ namespace Nexo.CLI.Dashboard
         {
             // Show detailed system health information
             Console.Clear();
-            Console.WriteLine("🏥 Detailed System Health Information");
+            Console.WriteLine("Hospital Detailed System Health Information");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
             var health = await GetSystemHealth();
             
-            Console.WriteLine($"Overall Status: {(health.IsHealthy ? "✅ Healthy" : "❌ Issues Detected")}");
+            Console.WriteLine($"Overall Status: {(health.IsHealthy ? "SUCCESS: Healthy" : "ERROR: Issues Detected")}");
             Console.WriteLine($"Total Issues: {health.Issues.Count()}");
             Console.WriteLine($"Total Warnings: {health.Warnings.Count()}");
             Console.WriteLine();
             
             if (health.Issues.Any())
             {
-                Console.WriteLine("❌ Issues:");
+                Console.WriteLine("ERROR: Issues:");
                 foreach (var issue in health.Issues)
                 {
                     Console.WriteLine($"  • {issue}");
@@ -81,7 +81,7 @@ namespace Nexo.CLI.Dashboard
             
             if (health.Warnings.Any())
             {
-                Console.WriteLine("⚠️ Warnings:");
+                Console.WriteLine("WARNING: Warnings:");
                 foreach (var warning in health.Warnings)
                 {
                     Console.WriteLine($"  • {warning}");
@@ -89,7 +89,7 @@ namespace Nexo.CLI.Dashboard
                 Console.WriteLine();
             }
             
-            Console.WriteLine("🔧 System Information:");
+            Console.WriteLine("Tool System Information:");
             Console.WriteLine($"  • OS: {Environment.OSVersion}");
             Console.WriteLine($"  • .NET Version: {Environment.Version}");
             Console.WriteLine($"  • Processor Count: {Environment.ProcessorCount}");

@@ -23,7 +23,7 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("📚 Feature Factory Command Help");
+                Console.WriteLine("Documentation Feature Factory Command Help");
                 Console.WriteLine("===============================");
                 
                 if (args.Length > 0)
@@ -33,7 +33,7 @@ namespace FeatureFactoryDemo.Commands
                     if (_commands.ContainsKey(commandName))
                     {
                         var command = _commands[commandName];
-                        Console.WriteLine($"\n📋 {command.Name} Command");
+                        Console.WriteLine($"\nList {command.Name} Command");
                         Console.WriteLine("=" + new string('=', command.Name.Length + 8));
                         Console.WriteLine($"Description: {command.Description}");
                         Console.WriteLine($"Usage: {command.Usage}");
@@ -58,7 +58,7 @@ namespace FeatureFactoryDemo.Commands
                 
                 foreach (var command in _commands.Values)
                 {
-                    Console.WriteLine($"\n📋 {command.Name}");
+                    Console.WriteLine($"\nList {command.Name}");
                     Console.WriteLine($"   Description: {command.Description}");
                     Console.WriteLine($"   Usage: {command.Usage}");
                 }

@@ -54,7 +54,7 @@ namespace FeatureFactoryDemo
         public async Task<ValidationResult> RunComprehensiveValidationAsync()
         {
             var result = new ValidationResult();
-            _logger.LogInformation("🧪 Starting comprehensive logging system validation");
+            _logger.LogInformation("Testing Starting comprehensive logging system validation");
 
             try
             {
@@ -99,14 +99,14 @@ namespace FeatureFactoryDemo
                                       result.ConcurrentOperations.Success &&
                                       result.MemoryUsage.Success;
 
-                _logger.LogInformation("🎉 Comprehensive logging system validation completed: {Success}", 
+                _logger.LogInformation("SUCCESS Comprehensive logging system validation completed: {Success}", 
                     result.OverallSuccess ? "PASSED" : "FAILED");
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error during logging system validation");
+                _logger.LogError(ex, "ERROR: Error during logging system validation");
                 result.OverallSuccess = false;
                 result.ErrorMessage = ex.Message;
                 return result;
@@ -115,7 +115,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestBasicDependencyInjectionAsync()
         {
-            _logger.LogInformation("🔍 Testing basic dependency injection...");
+            _logger.LogInformation("Search Testing basic dependency injection...");
             
             try
             {
@@ -138,7 +138,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestLoggerTypeSafetyAsync()
         {
-            _logger.LogInformation("🔍 Testing logger type safety...");
+            _logger.LogInformation("Search Testing logger type safety...");
             
             try
             {
@@ -173,7 +173,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestLogLevelsAsync()
         {
-            _logger.LogInformation("🔍 Testing log levels...");
+            _logger.LogInformation("Search Testing log levels...");
             
             try
             {
@@ -203,7 +203,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestStructuredLoggingAsync()
         {
-            _logger.LogInformation("🔍 Testing structured logging...");
+            _logger.LogInformation("Search Testing structured logging...");
             
             try
             {
@@ -230,7 +230,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestExceptionLoggingAsync()
         {
-            _logger.LogInformation("🔍 Testing exception logging...");
+            _logger.LogInformation("Search Testing exception logging...");
             
             try
             {
@@ -258,7 +258,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestScopeFunctionalityAsync()
         {
-            _logger.LogInformation("🔍 Testing scope functionality...");
+            _logger.LogInformation("Search Testing scope functionality...");
             
             try
             {
@@ -283,7 +283,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestServiceLifetimeManagementAsync()
         {
-            _logger.LogInformation("🔍 Testing service lifetime management...");
+            _logger.LogInformation("Search Testing service lifetime management...");
             
             try
             {
@@ -315,7 +315,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestPerformanceAsync()
         {
-            _logger.LogInformation("🔍 Testing logging performance...");
+            _logger.LogInformation("Search Testing logging performance...");
             
             try
             {
@@ -347,7 +347,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestConcurrentOperationsAsync()
         {
-            _logger.LogInformation("🔍 Testing concurrent operations...");
+            _logger.LogInformation("Search Testing concurrent operations...");
             
             try
             {
@@ -390,7 +390,7 @@ namespace FeatureFactoryDemo
 
         private async Task<TestResult> TestMemoryUsageAsync()
         {
-            _logger.LogInformation("🔍 Testing memory usage...");
+            _logger.LogInformation("Search Testing memory usage...");
             
             try
             {

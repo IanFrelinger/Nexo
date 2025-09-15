@@ -101,11 +101,11 @@ namespace Nexo.CLI.Commands.AI
                     Console.WriteLine($"Expires: {apiKey.ExpiresAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never"}");
                     Console.WriteLine($"Permissions: {string.Join(", ", apiKey.Permissions)}");
                     Console.WriteLine();
-                    Console.WriteLine("⚠️  IMPORTANT: Store this API key securely. It cannot be retrieved again.");
+                    Console.WriteLine("WARNING:  IMPORTANT: Store this API key securely. It cannot be retrieved again.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate API key: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate API key: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate API key");
                 }
             }, nameOption, descriptionOption, expirationOption, permissionsOption);
@@ -129,7 +129,7 @@ namespace Nexo.CLI.Commands.AI
 
                     foreach (var key in apiKeys)
                     {
-                        var status = key.IsActive ? "✅ Active" : "❌ Inactive";
+                        var status = key.IsActive ? "SUCCESS: Active" : "ERROR: Inactive";
                         var expiration = key.ExpiresAt?.ToString("yyyy-MM-dd") ?? "Never";
                         var lastUsed = key.LastUsedAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never";
 
@@ -146,7 +146,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to list API keys: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to list API keys: {ex.Message}");
                     _logger.LogError(ex, "Failed to list API keys");
                 }
             });
@@ -166,7 +166,7 @@ namespace Nexo.CLI.Commands.AI
                     var success = await _apiKeyManager.RevokeApiKeyAsync(keyId);
                     if (success)
                     {
-                        Console.WriteLine($"✅ API key {keyId} revoked successfully");
+                        Console.WriteLine($"SUCCESS: API key {keyId} revoked successfully");
                         if (!string.IsNullOrEmpty(reason))
                         {
                             Console.WriteLine($"Reason: {reason}");
@@ -174,12 +174,12 @@ namespace Nexo.CLI.Commands.AI
                     }
                     else
                     {
-                        Console.WriteLine($"❌ Failed to revoke API key {keyId}");
+                        Console.WriteLine($"ERROR: Failed to revoke API key {keyId}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to revoke API key: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to revoke API key: {ex.Message}");
                     _logger.LogError(ex, "Failed to revoke API key");
                 }
             }, keyIdOption, reasonOption);
@@ -195,18 +195,18 @@ namespace Nexo.CLI.Commands.AI
                 try
                 {
                     var newKey = await _apiKeyManager.RotateApiKeyAsync(keyId);
-                    Console.WriteLine("🔄 API Key Rotated Successfully");
+                    Console.WriteLine("Processing API Key Rotated Successfully");
                     Console.WriteLine(new string('=', 30));
                     Console.WriteLine($"Old Key ID: {keyId}");
                     Console.WriteLine($"New Key ID: {newKey.Id}");
                     Console.WriteLine($"Name: {newKey.Name}");
                     Console.WriteLine($"Description: {newKey.Description}");
                     Console.WriteLine();
-                    Console.WriteLine("⚠️  IMPORTANT: Update your applications with the new API key.");
+                    Console.WriteLine("WARNING:  IMPORTANT: Update your applications with the new API key.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to rotate API key: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to rotate API key: {ex.Message}");
                     _logger.LogError(ex, "Failed to rotate API key");
                 }
             }, rotateKeyIdOption);
@@ -242,7 +242,7 @@ namespace Nexo.CLI.Commands.AI
                     Console.WriteLine($"Error Rate: {report.ErrorRate:P2}");
                     Console.WriteLine($"Average Response Time: {report.AverageResponseTime.TotalMilliseconds:F2}ms");
                     Console.WriteLine();
-                    Console.WriteLine("📊 Deduplication Statistics");
+                    Console.WriteLine("Stats Deduplication Statistics");
                     Console.WriteLine($"Total Cached Responses: {deduplicationStats.TotalCachedResponses}");
                     Console.WriteLine($"Duplicate Responses: {deduplicationStats.DuplicateResponses}");
                     Console.WriteLine($"Similarity Matches: {deduplicationStats.SimilarityMatches}");
@@ -250,7 +250,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to get cache status: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to get cache status: {ex.Message}");
                     _logger.LogError(ex, "Failed to get cache status");
                 }
             });
@@ -261,16 +261,16 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine("🔧 Optimizing Cache Configuration...");
+                    Console.WriteLine("Tool Optimizing Cache Configuration...");
                     var result = await _cacheConfigurationService.OptimizeConfigurationAsync();
 
-                    Console.WriteLine("✅ Cache Optimization Complete");
+                    Console.WriteLine("SUCCESS: Cache Optimization Complete");
                     Console.WriteLine(new string('=', 30));
                     Console.WriteLine($"Current Hit Rate: {result.CurrentHitRate:P2}");
                     Console.WriteLine($"Current Error Rate: {result.CurrentErrorRate:P2}");
                     Console.WriteLine($"Current Avg Response Time: {result.CurrentAverageResponseTime.TotalMilliseconds:F2}ms");
                     Console.WriteLine();
-                    Console.WriteLine("📋 Recommendations:");
+                    Console.WriteLine("List Recommendations:");
                     foreach (var recommendation in result.Recommendations)
                     {
                         Console.WriteLine($"  • {recommendation.Title}: {recommendation.Description}");
@@ -278,7 +278,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to optimize cache: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to optimize cache: {ex.Message}");
                     _logger.LogError(ex, "Failed to optimize cache");
                 }
             });
@@ -295,17 +295,17 @@ namespace Nexo.CLI.Commands.AI
                 {
                     if (!confirm)
                     {
-                        Console.WriteLine("⚠️  Use --confirm to clear the cache");
+                        Console.WriteLine("WARNING:  Use --confirm to clear the cache");
                         return;
                     }
 
-                    Console.WriteLine("🗑️  Clearing cache...");
+                    Console.WriteLine("Removing  Clearing cache...");
                     // Cache clearing would be implemented here
-                    Console.WriteLine("✅ Cache cleared successfully");
+                    Console.WriteLine("SUCCESS: Cache cleared successfully");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to clear cache: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to clear cache: {ex.Message}");
                     _logger.LogError(ex, "Failed to clear cache");
                 }
             }, confirmOption);
@@ -333,7 +333,7 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine($"📊 Performance Report (Last {days} days)");
+                    Console.WriteLine($"Stats Performance Report (Last {days} days)");
                     Console.WriteLine(new string('=', 40));
                     
                     var report = await _cacheConfigurationService.GetPerformanceReportAsync();
@@ -344,14 +344,14 @@ namespace Nexo.CLI.Commands.AI
                     Console.WriteLine($"Error Rate: {report.ErrorRate:P2}");
                     Console.WriteLine($"Average Response Time: {report.AverageResponseTime.TotalMilliseconds:F2}ms");
                     Console.WriteLine();
-                    Console.WriteLine("📈 Performance Metrics:");
+                    Console.WriteLine("Progress Performance Metrics:");
                     Console.WriteLine($"  Get Operations: {report.PerformanceMetrics.GetOperations:N0}");
                     Console.WriteLine($"  Set Operations: {report.PerformanceMetrics.SetOperations:N0}");
                     Console.WriteLine($"  Hit Count: {report.PerformanceMetrics.HitCount:N0}");
                     Console.WriteLine($"  Miss Count: {report.PerformanceMetrics.MissCount:N0}");
                     Console.WriteLine($"  Error Count: {report.PerformanceMetrics.ErrorCount:N0}");
                     Console.WriteLine();
-                    Console.WriteLine("🎯 Optimization Recommendations:");
+                    Console.WriteLine("Target Optimization Recommendations:");
                     foreach (var rec in recommendations)
                     {
                         var priority = rec.Priority switch
@@ -367,7 +367,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate performance report: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate performance report: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate performance report");
                 }
             }, daysOption);
@@ -381,14 +381,14 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine($"📈 Performance Trends (Last {days} days)");
+                    Console.WriteLine($"Progress Performance Trends (Last {days} days)");
                     Console.WriteLine(new string('=', 40));
                     Console.WriteLine("Performance trend analysis is not yet implemented.");
                     Console.WriteLine("This feature will be available in future updates.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to get performance trends: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to get performance trends: {ex.Message}");
                     _logger.LogError(ex, "Failed to get performance trends");
                 }
             }, trendsDaysOption);
@@ -412,7 +412,7 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine("🔒 Security Health Check");
+                    Console.WriteLine("Security Security Health Check");
                     Console.WriteLine(new string('=', 25));
                     
                     var healthCheck = await _securityComplianceService.PerformSecurityHealthCheckAsync();
@@ -421,7 +421,7 @@ namespace Nexo.CLI.Commands.AI
                     Console.WriteLine($"API Key Health: {healthCheck.ApiKeyHealth}/100");
                     Console.WriteLine($"Security Event Health: {healthCheck.SecurityEventHealth}/100");
                     Console.WriteLine();
-                    Console.WriteLine("📋 Recommendations:");
+                    Console.WriteLine("List Recommendations:");
                     foreach (var rec in healthCheck.Recommendations)
                     {
                         var priority = rec.Priority switch
@@ -437,7 +437,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to perform security health check: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to perform security health check: {ex.Message}");
                     _logger.LogError(ex, "Failed to perform security health check");
                 }
             });
@@ -461,7 +461,7 @@ namespace Nexo.CLI.Commands.AI
                         ? DateTimeOffset.UtcNow 
                         : DateTimeOffset.Parse(endDate);
 
-                    Console.WriteLine($"🔒 Security Compliance Report ({start:yyyy-MM-dd} to {end:yyyy-MM-dd})");
+                    Console.WriteLine($"Security Security Compliance Report ({start:yyyy-MM-dd} to {end:yyyy-MM-dd})");
                     Console.WriteLine(new string('=', 60));
                     
                     var report = await _securityComplianceService.GenerateComplianceReportAsync(start, end);
@@ -476,12 +476,12 @@ namespace Nexo.CLI.Commands.AI
                     Console.WriteLine($"  Expired Keys: {report.ApiKeyStatistics.ExpiredKeys}");
                     Console.WriteLine($"  Revoked Keys: {report.ApiKeyStatistics.RevokedKeys}");
                     Console.WriteLine();
-                    Console.WriteLine("📊 Security Metrics:");
+                    Console.WriteLine("Stats Security Metrics:");
                     Console.WriteLine($"  Threat Level: {report.SecurityMetrics.ThreatLevel}");
                     Console.WriteLine($"  Security Event Rate: {report.SecurityMetrics.SecurityEventRate:F2}/hour");
                     Console.WriteLine($"  Failed Auth Attempts: {report.SecurityMetrics.FailedAuthenticationAttempts:N0}");
                     Console.WriteLine();
-                    Console.WriteLine("⚠️  Violations:");
+                    Console.WriteLine("WARNING:  Violations:");
                     foreach (var violation in report.Violations)
                     {
                         var severity = violation.Severity switch
@@ -498,7 +498,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate compliance report: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate compliance report: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate compliance report");
                 }
             }, startDateOption, endDateOption);
@@ -522,14 +522,14 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine("🤖 Available AI Models");
+                    Console.WriteLine("AI Available AI Models");
                     Console.WriteLine(new string('=', 25));
                     Console.WriteLine("Model management is not yet implemented.");
                     Console.WriteLine("This feature will be available in future updates.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to list models: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to list models: {ex.Message}");
                     _logger.LogError(ex, "Failed to list AI models");
                 }
             });
@@ -540,14 +540,14 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine("📊 AI Model Status");
+                    Console.WriteLine("Stats AI Model Status");
                     Console.WriteLine(new string('=', 20));
                     Console.WriteLine("Model status monitoring is not yet implemented.");
                     Console.WriteLine("This feature will be available in future updates.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to get model status: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to get model status: {ex.Message}");
                     _logger.LogError(ex, "Failed to get AI model status");
                 }
             });
@@ -574,14 +574,14 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine($"📈 AI Usage Analytics (Last {days} days)");
+                    Console.WriteLine($"Progress AI Usage Analytics (Last {days} days)");
                     Console.WriteLine(new string('=', 40));
                     Console.WriteLine("Usage analytics are not yet implemented.");
                     Console.WriteLine("This feature will be available in future updates.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to get usage analytics: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to get usage analytics: {ex.Message}");
                     _logger.LogError(ex, "Failed to get AI usage analytics");
                 }
             }, usageDaysOption);
@@ -595,14 +595,14 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine($"📊 Performance Trends (Last {days} days)");
+                    Console.WriteLine($"Stats Performance Trends (Last {days} days)");
                     Console.WriteLine(new string('=', 40));
                     Console.WriteLine("Performance trend analysis is not yet implemented.");
                     Console.WriteLine("This feature will be available in future updates.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to get performance trends: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to get performance trends: {ex.Message}");
                     _logger.LogError(ex, "Failed to get performance trends");
                 }
             }, trendsDaysOption);

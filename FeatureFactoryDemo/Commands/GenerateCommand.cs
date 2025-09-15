@@ -31,7 +31,7 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("🚀 Code Generation Command");
+                Console.WriteLine("Running Code Generation Command");
                 Console.WriteLine("==========================");
                 
                 // Parse arguments
@@ -78,7 +78,7 @@ namespace FeatureFactoryDemo.Commands
                 DisplayInfo($"Max Iterations: {maxIterations}");
                 
                 // Get codebase context
-                Console.WriteLine("\n🔍 Gathering codebase context...");
+                Console.WriteLine("\nSearch Gathering codebase context...");
                 var context = await _codebaseAnalysisService.GetRelevantContextAsync(description, platform);
                 string? codebaseContext = null;
                 if (!string.IsNullOrEmpty(context.Content))
@@ -88,7 +88,7 @@ namespace FeatureFactoryDemo.Commands
                 }
                 
                 // Get similar commands
-                Console.WriteLine("🔍 Checking command history...");
+                Console.WriteLine("Search Checking command history...");
                 var similarCommands = await _commandHistoryService.GetSimilarCommandsAsync(description, platform);
                 if (similarCommands.Any())
                 {
@@ -100,23 +100,23 @@ namespace FeatureFactoryDemo.Commands
                 }
                 
                 // Generate code using the Feature Factory pipeline
-                Console.WriteLine("\n🔄 Feature Factory Pipeline Execution:");
-                Console.WriteLine("1. 📝 Parsing natural language requirements...");
+                Console.WriteLine("\nProcessing Feature Factory Pipeline Execution:");
+                Console.WriteLine("1. Document Parsing natural language requirements...");
                 await Task.Delay(500);
                 
                 Console.WriteLine("2. 🧠 AI-powered domain analysis...");
                 await Task.Delay(500);
                 
-                Console.WriteLine("3. 🏗️  Generating Clean Architecture components...");
+                Console.WriteLine("3. Building  Generating Clean Architecture components...");
                 await Task.Delay(500);
                 
-                Console.WriteLine("4. 🔧 Creating CRUD operations...");
+                Console.WriteLine("4. Tool Creating CRUD operations...");
                 await Task.Delay(500);
                 
-                Console.WriteLine("5. ✅ Validating generated code...");
+                Console.WriteLine("5. SUCCESS: Validating generated code...");
                 await Task.Delay(500);
                 
-                Console.WriteLine("6. 🔍 Running iterative coding standards analysis...");
+                Console.WriteLine("6. Search Running iterative coding standards analysis...");
                 await Task.Delay(500);
                 
                 // Generate initial code
@@ -141,15 +141,15 @@ namespace FeatureFactoryDemo.Commands
                 }
                 
                 // Display results
-                Console.WriteLine("\n📊 Generation Results:");
-                Console.WriteLine($"   Success: {(result.IsSuccess ? "✅ YES" : "❌ NO")}");
+                Console.WriteLine("\nStats Generation Results:");
+                Console.WriteLine($"   Success: {(result.IsSuccess ? "SUCCESS: YES" : "ERROR: NO")}");
                 Console.WriteLine($"   Final Quality Score: {result.QualityScore}/100");
                 Console.WriteLine($"   Total Iterations: {result.IterationCount}");
-                Console.WriteLine($"   Target Achieved: {(result.QualityScore >= targetScore ? "✅ YES" : "❌ NO")}");
+                Console.WriteLine($"   Target Achieved: {(result.QualityScore >= targetScore ? "SUCCESS: YES" : "ERROR: NO")}");
                 
                 if (result.IsSuccess)
                 {
-                    Console.WriteLine("\n📄 Generated Code:");
+                    Console.WriteLine("\nFile Generated Code:");
                     Console.WriteLine("================");
                     Console.WriteLine(result.GeneratedCode);
                     Console.WriteLine("================");
@@ -271,7 +271,7 @@ namespace Nexo.FeatureFactory.Generated
             int bestScore = 0;
             string bestCode = currentCode;
 
-            Console.WriteLine($"\n🔄 Starting Iterative Code Improvement (Target: {targetScore}/100, Max Iterations: {maxIterations})");
+            Console.WriteLine($"\nProcessing Starting Iterative Code Improvement (Target: {targetScore}/100, Max Iterations: {maxIterations})");
             Console.WriteLine(new string('=', 80));
 
             // Simulate progressive quality improvement
@@ -289,7 +289,7 @@ namespace Nexo.FeatureFactory.Generated
             while (iteration < maxIterations)
             {
                 iteration++;
-                Console.WriteLine($"\n📊 Iteration {iteration}/{maxIterations}:");
+                Console.WriteLine($"\nStats Iteration {iteration}/{maxIterations}:");
                 
                 try
                 {
@@ -318,19 +318,19 @@ namespace Nexo.FeatureFactory.Generated
                     // Check if we've reached the target
                     if (currentScore >= targetScore)
                     {
-                        Console.WriteLine($"   🎉 TARGET ACHIEVED! Quality score: {currentScore}/100");
-                        Console.WriteLine($"   ✅ Code meets all quality standards!");
+                        Console.WriteLine($"   SUCCESS TARGET ACHIEVED! Quality score: {currentScore}/100");
+                        Console.WriteLine($"   SUCCESS: Code meets all quality standards!");
                         break;
                     }
                     
                     // Simulate AI-powered code improvement
-                    Console.WriteLine($"   🔧 Applying AI-powered improvements...");
+                    Console.WriteLine($"   Tool Applying AI-powered improvements...");
                     await Task.Delay(800); // Simulate AI processing time
-                    Console.WriteLine($"   ✨ Code improved based on analysis");
+                    Console.WriteLine($"   Starting Code improved based on analysis");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"   ❌ Analysis failed in iteration {iteration}: {ex.Message}");
+                    Console.WriteLine($"   ERROR: Analysis failed in iteration {iteration}: {ex.Message}");
                     break;
                 }
             }

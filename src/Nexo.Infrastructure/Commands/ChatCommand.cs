@@ -73,7 +73,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to start interactive chat: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to start interactive chat: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to start interactive chat");
                 }
             }, modelOption, contextOption, temperatureOption, maxTokensOption);
@@ -103,7 +103,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to process quick chat: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to process quick chat: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to process quick chat");
                 }
             }, promptArgument, modelOption, temperatureOption);
@@ -135,7 +135,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to process code chat: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to process code chat: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to process code chat");
                 }
             }, promptArgument, modelOption, fileOption, directoryOption);
@@ -150,7 +150,7 @@ namespace Nexo.Infrastructure.Commands
         {
             AnsiConsole.Clear();
             AnsiConsole.Write(new FigletText("Nexo AI Chat").Color(Color.Blue));
-            AnsiConsole.MarkupLine($"[bold]🤖 Interactive AI Chat with Offline LLama Support[/]");
+            AnsiConsole.MarkupLine($"[bold]AI Interactive AI Chat with Offline LLama Support[/]");
             AnsiConsole.MarkupLine($"[dim]Model: {model} | Temperature: {temperature:F1} | Max Tokens: {maxTokens}[/]");
             
             if (!string.IsNullOrEmpty(context))
@@ -167,7 +167,7 @@ namespace Nexo.Infrastructure.Commands
             
             if (selectedModel == null)
             {
-                AnsiConsole.MarkupLine("[red]❌ No suitable model found. Please check your model configuration.[/]");
+                AnsiConsole.MarkupLine("[red]ERROR: No suitable model found. Please check your model configuration.[/]");
                 return;
             }
 
@@ -199,7 +199,7 @@ namespace Nexo.Infrastructure.Commands
                 if (input.ToLower() == "clear")
                 {
                     chatHistory.Clear();
-                    AnsiConsole.MarkupLine("[green]✅ Chat history cleared.[/]");
+                    AnsiConsole.MarkupLine("[green]SUCCESS: Chat history cleared.[/]");
                     continue;
                 }
 
@@ -234,12 +234,12 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Error: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Error: {ex.Message}[/]");
                     _logger.LogError(ex, "Error processing chat message");
                 }
             }
 
-            AnsiConsole.MarkupLine("[green]👋 Chat session ended.[/]");
+            AnsiConsole.MarkupLine("[green]Goodbye Chat session ended.[/]");
         }
 
         /// <summary>
@@ -250,11 +250,11 @@ namespace Nexo.Infrastructure.Commands
             var selectedModel = await SelectModelAsync(model);
             if (selectedModel == null)
             {
-                AnsiConsole.MarkupLine("[red]❌ No suitable model found.[/]");
+                AnsiConsole.MarkupLine("[red]ERROR: No suitable model found.[/]");
                 return;
             }
 
-            AnsiConsole.MarkupLine($"[bold]🤖 Quick AI Response[/]");
+            AnsiConsole.MarkupLine($"[bold]AI Quick AI Response[/]");
             AnsiConsole.MarkupLine($"[dim]Model: {selectedModel.Name} | Temperature: {temperature:F1}[/]");
             AnsiConsole.WriteLine();
 
@@ -278,7 +278,7 @@ namespace Nexo.Infrastructure.Commands
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]❌ Error: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]ERROR: Error: {ex.Message}[/]");
                 _logger.LogError(ex, "Error processing quick chat");
             }
         }
@@ -291,7 +291,7 @@ namespace Nexo.Infrastructure.Commands
             var selectedModel = await SelectModelAsync(model, preferCodeModels: true);
             if (selectedModel == null)
             {
-                AnsiConsole.MarkupLine("[red]❌ No suitable code model found.[/]");
+                AnsiConsole.MarkupLine("[red]ERROR: No suitable code model found.[/]");
                 return;
             }
 
@@ -313,7 +313,7 @@ namespace Nexo.Infrastructure.Commands
                 contextPrompt = $"Directory: {directory}\n\n{directoryContext}\n\nQuestion: {prompt}";
             }
 
-            AnsiConsole.MarkupLine($"[bold]🔧 Code AI Assistant[/]");
+            AnsiConsole.MarkupLine($"[bold]Tool Code AI Assistant[/]");
             AnsiConsole.MarkupLine($"[dim]Model: {selectedModel.Name}[/]");
             AnsiConsole.WriteLine();
 
@@ -338,7 +338,7 @@ namespace Nexo.Infrastructure.Commands
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]❌ Error: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]ERROR: Error: {ex.Message}[/]");
                 _logger.LogError(ex, "Error processing code chat");
             }
         }
@@ -380,11 +380,11 @@ namespace Nexo.Infrastructure.Commands
                         var newModel = await SelectModelAsync(parts[1]);
                         if (newModel != null)
                         {
-                            AnsiConsole.MarkupLine($"[green]✅ Switched to model: {newModel.Name}[/]");
+                            AnsiConsole.MarkupLine($"[green]SUCCESS: Switched to model: {newModel.Name}[/]");
                         }
                         else
                         {
-                            AnsiConsole.MarkupLine($"[red]❌ Model not found: {parts[1]}[/]");
+                            AnsiConsole.MarkupLine($"[red]ERROR: Model not found: {parts[1]}[/]");
                         }
                     }
                     else
@@ -402,7 +402,7 @@ namespace Nexo.Infrastructure.Commands
                             Role = "system",
                             Content = $"Context: {context}"
                         });
-                        AnsiConsole.MarkupLine($"[green]✅ Context updated: {context}[/]");
+                        AnsiConsole.MarkupLine($"[green]SUCCESS: Context updated: {context}[/]");
                     }
                     else
                     {
@@ -440,7 +440,7 @@ namespace Nexo.Infrastructure.Commands
                     break;
 
                 default:
-                    AnsiConsole.MarkupLine($"[red]❌ Unknown command: {cmd}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Unknown command: {cmd}[/]");
                     ShowChatHelp();
                     break;
             }
@@ -526,7 +526,7 @@ namespace Nexo.Infrastructure.Commands
         private static void ShowChatHelp()
         {
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold]🤖 Chat Commands:[/]");
+            AnsiConsole.MarkupLine("[bold]AI Chat Commands:[/]");
             AnsiConsole.MarkupLine("  [blue]exit[/]     - Exit the chat session");
             AnsiConsole.MarkupLine("  [blue]help[/]     - Show this help message");
             AnsiConsole.MarkupLine("  [blue]clear[/]    - Clear chat history");
@@ -535,7 +535,7 @@ namespace Nexo.Infrastructure.Commands
             AnsiConsole.MarkupLine("  [blue]/history[/] - Show chat history");
             AnsiConsole.MarkupLine("  [blue]/stats[/]   - Show model statistics");
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold]💡 Tips:[/]");
+            AnsiConsole.MarkupLine("[bold]Idea Tips:[/]");
             AnsiConsole.MarkupLine("  - Be specific in your questions");
             AnsiConsole.MarkupLine("  - Use code blocks for code examples");
             AnsiConsole.MarkupLine("  - Ask follow-up questions for clarification");

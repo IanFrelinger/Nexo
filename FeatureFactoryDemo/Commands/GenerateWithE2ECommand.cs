@@ -28,22 +28,22 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("🚀 Feature Generation with E2E Testing Command");
+                Console.WriteLine("Running Feature Generation with E2E Testing Command");
                 Console.WriteLine("=============================================");
 
                 // Parse arguments
                 var (description, platform, targetScore, maxIterations) = ParseArguments(args);
                 if (string.IsNullOrEmpty(description) || string.IsNullOrEmpty(platform))
                 {
-                    Console.WriteLine("❌ Error: Description and platform are required");
+                    Console.WriteLine("ERROR: Error: Description and platform are required");
                     Console.WriteLine($"Usage: {Usage}");
                     return 1;
                 }
 
-                Console.WriteLine($"ℹ️  Description: {description}");
-                Console.WriteLine($"ℹ️  Platform: {platform}");
-                Console.WriteLine($"ℹ️  Target Score: {targetScore}/100");
-                Console.WriteLine($"ℹ️  Max Iterations: {maxIterations}");
+                Console.WriteLine($"INFO:  Description: {description}");
+                Console.WriteLine($"INFO:  Platform: {platform}");
+                Console.WriteLine($"INFO:  Target Score: {targetScore}/100");
+                Console.WriteLine($"INFO:  Max Iterations: {maxIterations}");
 
                 // Get services
                 var serviceProvider = GetServiceProvider();
@@ -52,13 +52,13 @@ namespace FeatureFactoryDemo.Commands
                 var codebaseAnalysisService = serviceProvider.GetRequiredService<CodebaseAnalysisService>();
 
                 // Generate the feature
-                Console.WriteLine("\n🔄 Feature Factory Pipeline Execution:");
-                Console.WriteLine("1. 📝 Parsing natural language requirements...");
+                Console.WriteLine("\nProcessing Feature Factory Pipeline Execution:");
+                Console.WriteLine("1. Document Parsing natural language requirements...");
                 Console.WriteLine("2. 🧠 AI-powered domain analysis...");
-                Console.WriteLine("3. 🏗️  Generating Clean Architecture components...");
-                Console.WriteLine("4. 🔧 Creating CRUD operations...");
-                Console.WriteLine("5. ✅ Validating generated code...");
-                Console.WriteLine("6. 🔍 Running iterative coding standards analysis...");
+                Console.WriteLine("3. Building  Generating Clean Architecture components...");
+                Console.WriteLine("4. Tool Creating CRUD operations...");
+                Console.WriteLine("5. SUCCESS: Validating generated code...");
+                Console.WriteLine("6. Search Running iterative coding standards analysis...");
 
                 var generationResult = await RunIterativeImprovementAsync(
                     codeAnalyzer, 
@@ -70,27 +70,27 @@ namespace FeatureFactoryDemo.Commands
 
                 if (!generationResult.IsSuccess)
                 {
-                    Console.WriteLine("❌ Feature generation failed");
+                    Console.WriteLine("ERROR: Feature generation failed");
                     return 1;
                 }
 
-                Console.WriteLine($"\n✅ Feature generated successfully! Quality: {generationResult.QualityScore}/100");
+                Console.WriteLine($"\nSUCCESS: Feature generated successfully! Quality: {generationResult.QualityScore}/100");
 
                 // Generate E2E tests
-                Console.WriteLine("\n🧪 Generating Comprehensive E2E Tests...");
+                Console.WriteLine("\nTesting Generating Comprehensive E2E Tests...");
                 Console.WriteLine("=====================================");
 
                 var e2eTestResult = await GenerateE2ETestsAsync(platform, description, generationResult.GeneratedCode, generationResult.QualityScore);
 
                 // Display E2E test results
-                Console.WriteLine($"\n📊 E2E Test Results:");
+                Console.WriteLine($"\nStats E2E Test Results:");
                 Console.WriteLine($"   Total Tests: {e2eTestResult.TotalTests}");
                 Console.WriteLine($"   Passed: {e2eTestResult.PassedTests}");
                 Console.WriteLine($"   Failed: {e2eTestResult.FailedTests}");
                 Console.WriteLine($"   Success Rate: {(e2eTestResult.TotalTests > 0 ? (e2eTestResult.PassedTests * 100.0 / e2eTestResult.TotalTests):0):F1}%");
 
                 // Display test breakdown
-                Console.WriteLine($"\n📋 Test Suite Breakdown:");
+                Console.WriteLine($"\nList Test Suite Breakdown:");
                 Console.WriteLine($"   Unit Tests: {e2eTestResult.UnitTests}");
                 Console.WriteLine($"   Integration Tests: {e2eTestResult.IntegrationTests}");
                 Console.WriteLine($"   API Tests: {e2eTestResult.APITests}");
@@ -102,15 +102,15 @@ namespace FeatureFactoryDemo.Commands
                 // Save to database
                 await SaveE2ETestHistoryAsync(serviceProvider, platform, description, generationResult.GeneratedCode, generationResult.QualityScore, e2eTestResult);
 
-                Console.WriteLine($"\n✅ E2E test generation completed successfully!");
-                Console.WriteLine($"🎯 Overall Success: {(e2eTestResult.Success ? "✅ PASSED" : "❌ FAILED")}");
+                Console.WriteLine($"\nSUCCESS: E2E test generation completed successfully!");
+                Console.WriteLine($"Target Overall Success: {(e2eTestResult.Success ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
 
                 return e2eTestResult.Success ? 0 : 1;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in GenerateWithE2ECommand");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
                 return 1;
             }
         }
@@ -169,7 +169,7 @@ namespace FeatureFactoryDemo.Commands
             int targetScore,
             int maxIterations)
         {
-            Console.WriteLine($"\n🔄 Starting Iterative Code Improvement (Target: {targetScore}/100, Max Iterations: {maxIterations})");
+            Console.WriteLine($"\nProcessing Starting Iterative Code Improvement (Target: {targetScore}/100, Max Iterations: {maxIterations})");
             Console.WriteLine(new string('=', 80));
 
             var result = new FeatureGenerationResult
@@ -186,7 +186,7 @@ namespace FeatureFactoryDemo.Commands
                 var analysisResult = await codeAnalyzer.ValidateCodeAsync(result.GeneratedCode, "feature-generation");
                 result.IterationHistory.Add(analysisResult);
 
-                Console.WriteLine($"\n📊 Iteration {iteration}/{maxIterations}:");
+                Console.WriteLine($"\nStats Iteration {iteration}/{maxIterations}:");
                 Console.WriteLine($"   Quality Score: {analysisResult.Score}/100");
                 Console.WriteLine($"   Violations: {analysisResult.Violations.Count}");
 
@@ -198,8 +198,8 @@ namespace FeatureFactoryDemo.Commands
 
                 if (analysisResult.Score >= targetScore)
                 {
-                    Console.WriteLine($"   🎉 TARGET ACHIEVED! Quality score: {analysisResult.Score}/100");
-                    Console.WriteLine($"   ✅ Code meets all quality standards!");
+                    Console.WriteLine($"   SUCCESS TARGET ACHIEVED! Quality score: {analysisResult.Score}/100");
+                    Console.WriteLine($"   SUCCESS: Code meets all quality standards!");
                     break;
                 }
 
@@ -207,10 +207,10 @@ namespace FeatureFactoryDemo.Commands
                 {
                     var improvement = GetImprovementDescription(iteration, analysisResult.Score);
                     Console.WriteLine($"   Improvement: {improvement}");
-                    Console.WriteLine($"   🔧 Applying AI-powered improvements...");
+                    Console.WriteLine($"   Tool Applying AI-powered improvements...");
                     
                     result.GeneratedCode = ImproveCodeBasedOnViolations(result.GeneratedCode, analysisResult.Violations);
-                    Console.WriteLine($"   ✨ Code improved based on analysis");
+                    Console.WriteLine($"   Starting Code improved based on analysis");
                 }
             }
 

@@ -21,7 +21,7 @@ namespace Nexo.Demo
     {
         public static async Task Main(string[] args)
         {
-            Console.WriteLine("🚀 AI Integration Phase 3 Demo - Advanced Pipeline Integration");
+            Console.WriteLine("Running AI Integration Phase 3 Demo - Advanced Pipeline Integration");
             Console.WriteLine("===============================================================");
             Console.WriteLine();
 
@@ -58,16 +58,16 @@ namespace Nexo.Demo
                 await DemonstrateComprehensiveWorkflowAsync(logger, runtimeSelector, safetyValidator, usageMonitor);
 
                 Console.WriteLine();
-                Console.WriteLine("🎯 AI Integration Phase 3 Demo Complete!");
-                Console.WriteLine("✅ Advanced Pipeline Steps: Ready");
-                Console.WriteLine("✅ Safety Validation: Ready");
-                Console.WriteLine("✅ Usage Monitoring: Ready");
-                Console.WriteLine("✅ Comprehensive Workflow: Ready");
+                Console.WriteLine("Target AI Integration Phase 3 Demo Complete!");
+                Console.WriteLine("SUCCESS: Advanced Pipeline Steps: Ready");
+                Console.WriteLine("SUCCESS: Safety Validation: Ready");
+                Console.WriteLine("SUCCESS: Usage Monitoring: Ready");
+                Console.WriteLine("SUCCESS: Comprehensive Workflow: Ready");
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Demo failed with error");
-                Console.WriteLine($"❌ Demo failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Demo failed: {ex.Message}");
             }
             finally
             {
@@ -77,7 +77,7 @@ namespace Nexo.Demo
 
         private static async Task DemonstrateAdvancedPipelineStepsAsync(ILogger logger, IAIRuntimeSelector runtimeSelector)
         {
-            Console.WriteLine("🔧 Advanced AI Pipeline Steps Demo");
+            Console.WriteLine("Tool Advanced AI Pipeline Steps Demo");
             Console.WriteLine("==================================");
 
             try
@@ -97,7 +97,7 @@ namespace Nexo.Demo
             catch (Exception ex)
             {
                 logger.LogError(ex, "Advanced pipeline steps demo failed");
-                Console.WriteLine($"❌ Advanced pipeline steps demo failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Advanced pipeline steps demo failed: {ex.Message}");
             }
 
             Console.WriteLine();
@@ -105,7 +105,7 @@ namespace Nexo.Demo
 
         private static async Task DemonstrateCodeReviewStepAsync(ILogger logger, IAIRuntimeSelector runtimeSelector)
         {
-            Console.WriteLine("📝 Code Review Step Demo");
+            Console.WriteLine("Document Code Review Step Demo");
             Console.WriteLine("------------------------");
 
             try
@@ -139,14 +139,14 @@ public class Calculator
                     }
                 };
 
-                Console.WriteLine("  🔍 Reviewing C# calculator code...");
+                Console.WriteLine("  Search Reviewing C# calculator code...");
                 var result = await codeReviewStep.ExecuteAsync(request, context);
 
                 if (result.ReviewCompleted && result.Result != null)
                 {
-                    Console.WriteLine($"  ✅ Code review completed with quality score: {result.Result.QualityScore}");
-                    Console.WriteLine($"  📊 Issues found: {result.Result.Issues.Count}");
-                    Console.WriteLine($"  💡 Suggestions: {result.Result.Suggestions.Count}");
+                    Console.WriteLine($"  SUCCESS: Code review completed with quality score: {result.Result.QualityScore}");
+                    Console.WriteLine($"  Stats Issues found: {result.Result.Issues.Count}");
+                    Console.WriteLine($"  Idea Suggestions: {result.Result.Suggestions.Count}");
                     
                     foreach (var issue in result.Result.Issues.Take(3))
                     {
@@ -157,7 +157,7 @@ public class Calculator
             catch (Exception ex)
             {
                 logger.LogError(ex, "Code review step demo failed");
-                Console.WriteLine($"    ❌ Code review failed: {ex.Message}");
+                Console.WriteLine($"    ERROR: Code review failed: {ex.Message}");
             }
         }
 
@@ -198,14 +198,14 @@ public class DataProcessor
                     }
                 };
 
-                Console.WriteLine("  🔧 Optimizing C# data processor...");
+                Console.WriteLine("  Tool Optimizing C# data processor...");
                 var result = await optimizationStep.ExecuteAsync(request, context);
 
                 if (result.OptimizationCompleted && result.Result != null)
                 {
-                    Console.WriteLine($"  ✅ Optimization completed with score: {result.Result.OptimizationScore}");
-                    Console.WriteLine($"  📈 Performance gain: {result.Result.PerformanceGain:F1}%");
-                    Console.WriteLine($"  🛠️  Improvements: {result.Result.Improvements.Count}");
+                    Console.WriteLine($"  SUCCESS: Optimization completed with score: {result.Result.OptimizationScore}");
+                    Console.WriteLine($"  Progress Performance gain: {result.Result.PerformanceGain:F1}%");
+                    Console.WriteLine($"  Commands:  Improvements: {result.Result.Improvements.Count}");
                     
                     foreach (var improvement in result.Result.Improvements.Take(3))
                     {
@@ -216,13 +216,13 @@ public class DataProcessor
             catch (Exception ex)
             {
                 logger.LogError(ex, "Optimization step demo failed");
-                Console.WriteLine($"    ❌ Optimization failed: {ex.Message}");
+                Console.WriteLine($"    ERROR: Optimization failed: {ex.Message}");
             }
         }
 
         private static async Task DemonstrateDocumentationStepAsync(ILogger logger, IAIRuntimeSelector runtimeSelector)
         {
-            Console.WriteLine("📚 Documentation Step Demo");
+            Console.WriteLine("Documentation Documentation Step Demo");
             Console.WriteLine("--------------------------");
 
             try
@@ -258,21 +258,21 @@ public class UserService
 
                 if (result.DocumentationCompleted && result.Result != null)
                 {
-                    Console.WriteLine($"  ✅ Documentation generated with quality score: {result.Result.QualityScore}");
-                    Console.WriteLine($"  📊 Coverage: {result.Result.Coverage}%");
-                    Console.WriteLine($"  📝 Documentation length: {result.Result.GeneratedDocumentation.Length} characters");
+                    Console.WriteLine($"  SUCCESS: Documentation generated with quality score: {result.Result.QualityScore}");
+                    Console.WriteLine($"  Stats Coverage: {result.Result.Coverage}%");
+                    Console.WriteLine($"  Document Documentation length: {result.Result.GeneratedDocumentation.Length} characters");
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Documentation step demo failed");
-                Console.WriteLine($"    ❌ Documentation generation failed: {ex.Message}");
+                Console.WriteLine($"    ERROR: Documentation generation failed: {ex.Message}");
             }
         }
 
         private static async Task DemonstrateTestingStepAsync(ILogger logger, IAIRuntimeSelector runtimeSelector)
         {
-            Console.WriteLine("🧪 Testing Step Demo");
+            Console.WriteLine("Testing Testing Step Demo");
             Console.WriteLine("--------------------");
 
             try
@@ -303,26 +303,26 @@ public class MathUtils
                     }
                 };
 
-                Console.WriteLine("  🧪 Generating unit tests...");
+                Console.WriteLine("  Testing Generating unit tests...");
                 var result = await testingStep.ExecuteAsync(request, context);
 
                 if (result.TestGenerationCompleted && result.Result != null)
                 {
-                    Console.WriteLine($"  ✅ Test generation completed with quality score: {result.Result.QualityScore}");
-                    Console.WriteLine($"  📊 Coverage: {result.Result.Coverage}%");
-                    Console.WriteLine($"  📝 Test code length: {result.Result.GeneratedTests.Length} characters");
+                    Console.WriteLine($"  SUCCESS: Test generation completed with quality score: {result.Result.QualityScore}");
+                    Console.WriteLine($"  Stats Coverage: {result.Result.Coverage}%");
+                    Console.WriteLine($"  Document Test code length: {result.Result.GeneratedTests.Length} characters");
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Testing step demo failed");
-                Console.WriteLine($"    ❌ Test generation failed: {ex.Message}");
+                Console.WriteLine($"    ERROR: Test generation failed: {ex.Message}");
             }
         }
 
         private static async Task DemonstrateSafetyValidationAsync(ILogger logger, AISafetyValidator safetyValidator)
         {
-            Console.WriteLine("🛡️  Safety Validation Demo");
+            Console.WriteLine("Safety  Safety Validation Demo");
             Console.WriteLine("==========================");
 
             try
@@ -337,9 +337,9 @@ public class SafeClass
     }
 }";
 
-                Console.WriteLine("  ✅ Validating safe content...");
+                Console.WriteLine("  SUCCESS: Validating safe content...");
                 var safeResult = await safetyValidator.ValidateContentAsync(safeContent, SafetyLevel.High);
-                Console.WriteLine($"    Safe content validation: {(safeResult.IsValid ? "✅ Valid" : "❌ Invalid")}");
+                Console.WriteLine($"    Safe content validation: {(safeResult.IsValid ? "SUCCESS: Valid" : "ERROR: Invalid")}");
                 Console.WriteLine($"    Issues found: {safeResult.Issues.Count}");
 
                 // Test potentially unsafe content
@@ -352,9 +352,9 @@ public class UnsafeClass
     }
 }";
 
-                Console.WriteLine("  ⚠️  Validating potentially unsafe content...");
+                Console.WriteLine("  WARNING:  Validating potentially unsafe content...");
                 var unsafeResult = await safetyValidator.ValidateContentAsync(unsafeContent, SafetyLevel.High);
-                Console.WriteLine($"    Unsafe content validation: {(unsafeResult.IsValid ? "✅ Valid" : "❌ Invalid")}");
+                Console.WriteLine($"    Unsafe content validation: {(unsafeResult.IsValid ? "SUCCESS: Valid" : "ERROR: Invalid")}");
                 Console.WriteLine($"    Issues found: {unsafeResult.Issues.Count}");
                 
                 foreach (var issue in unsafeResult.Issues.Take(2))
@@ -372,15 +372,15 @@ public class UnsafeClass
                     Priority = AIPriority.Quality
                 };
 
-                Console.WriteLine("  🔍 Validating operation context...");
+                Console.WriteLine("  Search Validating operation context...");
                 var contextResult = await safetyValidator.ValidateOperationContextAsync(operationContext);
-                Console.WriteLine($"    Context validation: {(contextResult.IsValid ? "✅ Valid" : "❌ Invalid")}");
+                Console.WriteLine($"    Context validation: {(contextResult.IsValid ? "SUCCESS: Valid" : "ERROR: Invalid")}");
                 Console.WriteLine($"    Issues found: {contextResult.Issues.Count}");
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Safety validation demo failed");
-                Console.WriteLine($"❌ Safety validation demo failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Safety validation demo failed: {ex.Message}");
             }
 
             Console.WriteLine();
@@ -388,7 +388,7 @@ public class UnsafeClass
 
         private static async Task DemonstrateUsageMonitoringAsync(ILogger logger, AIUsageMonitor usageMonitor)
         {
-            Console.WriteLine("📊 Usage Monitoring Demo");
+            Console.WriteLine("Stats Usage Monitoring Demo");
             Console.WriteLine("========================");
 
             try
@@ -427,7 +427,7 @@ public class UnsafeClass
                 }
 
                 // Get usage statistics
-                Console.WriteLine("  📈 Generating usage statistics...");
+                Console.WriteLine("  Progress Generating usage statistics...");
                 var statistics = await usageMonitor.GetUsageStatisticsAsync();
                 Console.WriteLine($"    Total operations: {statistics.TotalOperations}");
                 Console.WriteLine($"    Success rate: {statistics.SuccessRate:F1}%");
@@ -438,7 +438,7 @@ public class UnsafeClass
                 Console.WriteLine($"    Active operations: {activeOperations.Count}");
 
                 // Generate analytics
-                Console.WriteLine("  🔍 Generating usage analytics...");
+                Console.WriteLine("  Search Generating usage analytics...");
                 var analytics = await usageMonitor.GenerateAnalyticsAsync();
                 Console.WriteLine($"    Usage trends: {analytics.UsageTrends.Count}");
                 Console.WriteLine($"    Performance insights: {analytics.PerformanceInsights.Count}");
@@ -452,7 +452,7 @@ public class UnsafeClass
             catch (Exception ex)
             {
                 logger.LogError(ex, "Usage monitoring demo failed");
-                Console.WriteLine($"❌ Usage monitoring demo failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Usage monitoring demo failed: {ex.Message}");
             }
 
             Console.WriteLine();
@@ -460,7 +460,7 @@ public class UnsafeClass
 
         private static async Task DemonstrateComprehensiveWorkflowAsync(ILogger logger, IAIRuntimeSelector runtimeSelector, AISafetyValidator safetyValidator, AIUsageMonitor usageMonitor)
         {
-            Console.WriteLine("🔄 Comprehensive AI Workflow Demo");
+            Console.WriteLine("Processing Comprehensive AI Workflow Demo");
             Console.WriteLine("=================================");
 
             try
@@ -485,21 +485,21 @@ public class UnsafeClass
                 };
 
                 // Start monitoring
-                Console.WriteLine("  🚀 Starting comprehensive AI workflow...");
+                Console.WriteLine("  Running Starting comprehensive AI workflow...");
                 await usageMonitor.StartOperationAsync(operationId, context, userId);
 
                 // Validate operation context
-                Console.WriteLine("  🛡️  Validating operation context...");
+                Console.WriteLine("  Safety  Validating operation context...");
                 var safetyResult = await safetyValidator.ValidateOperationContextAsync(context);
                 if (!safetyResult.IsValid)
                 {
-                    Console.WriteLine($"    ❌ Safety validation failed: {safetyResult.Issues.Count} issues");
+                    Console.WriteLine($"    ERROR: Safety validation failed: {safetyResult.Issues.Count} issues");
                     return;
                 }
-                Console.WriteLine("    ✅ Safety validation passed");
+                Console.WriteLine("    SUCCESS: Safety validation passed");
 
                 // Simulate AI operation
-                Console.WriteLine("  🤖 Executing AI operation...");
+                Console.WriteLine("  AI Executing AI operation...");
                 await usageMonitor.UpdateOperationAsync(operationId, AIOperationStatus.Running, 
                     new Dictionary<string, object> { ["Progress"] = 25 });
 
@@ -514,17 +514,17 @@ public class GeneratedClass
 }";
 
                 // Validate generated content
-                Console.WriteLine("  🔍 Validating generated content...");
+                Console.WriteLine("  Search Validating generated content...");
                 var contentSafetyResult = await safetyValidator.ValidateContentAsync(generatedCode, SafetyLevel.High);
                 if (!contentSafetyResult.IsValid)
                 {
-                    Console.WriteLine($"    ❌ Content safety validation failed: {contentSafetyResult.Issues.Count} issues");
+                    Console.WriteLine($"    ERROR: Content safety validation failed: {contentSafetyResult.Issues.Count} issues");
                     return;
                 }
-                Console.WriteLine("    ✅ Content safety validation passed");
+                Console.WriteLine("    SUCCESS: Content safety validation passed");
 
                 // Complete operation
-                Console.WriteLine("  ✅ Completing AI operation...");
+                Console.WriteLine("  SUCCESS: Completing AI operation...");
                 await usageMonitor.CompleteOperationAsync(operationId, true, null, 
                     new Dictionary<string, object> 
                     { 
@@ -534,7 +534,7 @@ public class GeneratedClass
                     });
 
                 // Generate final analytics
-                Console.WriteLine("  📊 Generating final analytics...");
+                Console.WriteLine("  Stats Generating final analytics...");
                 var analytics = await usageMonitor.GenerateAnalyticsAsync();
                 Console.WriteLine($"    Workflow completed successfully!");
                 Console.WriteLine($"    Final success rate: {analytics.Statistics.SuccessRate:F1}%");
@@ -543,7 +543,7 @@ public class GeneratedClass
             catch (Exception ex)
             {
                 logger.LogError(ex, "Comprehensive workflow demo failed");
-                Console.WriteLine($"❌ Comprehensive workflow demo failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Comprehensive workflow demo failed: {ex.Message}");
             }
 
             Console.WriteLine();

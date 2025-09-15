@@ -3,13 +3,13 @@
 # Nexo Feature Factory Demo Script with End-to-End Testing
 # This script demonstrates the AI-native feature factory capabilities with comprehensive testing
 
-echo "🚀 Nexo Feature Factory Demo with End-to-End Testing"
+echo "Running Nexo Feature Factory Demo with End-to-End Testing"
 echo "====================================================="
 echo ""
 
 # Check if we're in the right directory
 if [ ! -f "Nexo.sln" ]; then
-    echo "❌ Error: Please run this script from the Nexo project root directory"
+    echo "ERROR: Error: Please run this script from the Nexo project root directory"
     exit 1
 fi
 
@@ -18,31 +18,31 @@ run_tests() {
     local test_type=$1
     local test_name=$2
     
-    echo "🧪 Running $test_name..."
+    echo "Testing Running $test_name..."
     echo "=========================="
     
     if [ "$test_type" = "docker" ]; then
         # Run tests in Docker container
-        echo "🐳 Starting Docker testing environment..."
+        echo "Docker Starting Docker testing environment..."
         docker-compose -f docker/docker-compose.testing.yml up --build --abort-on-container-exit
         local test_result=$?
         
         if [ $test_result -eq 0 ]; then
-            echo "✅ Docker tests completed successfully"
+            echo "SUCCESS: Docker tests completed successfully"
         else
-            echo "❌ Docker tests failed"
+            echo "ERROR: Docker tests failed"
             return $test_result
         fi
     else
         # Run tests locally
-        echo "🏠 Running local tests..."
+        echo "Home Running local tests..."
         dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj test feature-factory --validate-e2e --output ./test-results --verbose
         local test_result=$?
         
         if [ $test_result -eq 0 ]; then
-            echo "✅ Local tests completed successfully"
+            echo "SUCCESS: Local tests completed successfully"
         else
-            echo "❌ Local tests failed"
+            echo "ERROR: Local tests failed"
             return $test_result
         fi
     fi
@@ -53,33 +53,33 @@ run_tests() {
 
 # Function to check prerequisites
 check_prerequisites() {
-    echo "🔍 Checking Prerequisites"
+    echo "Search Checking Prerequisites"
     echo "========================="
     
     # Check if Docker is available
     if command -v docker &> /dev/null; then
-        echo "✅ Docker is available"
+        echo "SUCCESS: Docker is available"
         DOCKER_AVAILABLE=true
     else
-        echo "⚠️ Docker is not available - will run local tests only"
+        echo "WARNING: Docker is not available - will run local tests only"
         DOCKER_AVAILABLE=false
     fi
     
     # Check if Ollama is available
     if command -v ollama &> /dev/null; then
-        echo "✅ Ollama is available"
+        echo "SUCCESS: Ollama is available"
         OLLAMA_AVAILABLE=true
     else
-        echo "⚠️ Ollama is not available - will use mock responses"
+        echo "WARNING: Ollama is not available - will use mock responses"
         OLLAMA_AVAILABLE=false
     fi
     
     # Check if .NET is available
     if command -v dotnet &> /dev/null; then
-        echo "✅ .NET SDK is available"
+        echo "SUCCESS: .NET SDK is available"
         DOTNET_AVAILABLE=true
     else
-        echo "❌ .NET SDK is not available"
+        echo "ERROR: .NET SDK is not available"
         exit 1
     fi
     
@@ -106,7 +106,7 @@ setup_environment() {
     # Create output directories
     mkdir -p demo-output
     mkdir -p test-results
-    echo "✅ Output directories created"
+    echo "SUCCESS: Output directories created"
     echo ""
 }
 
@@ -119,11 +119,11 @@ build_project() {
     echo "Building project..."
     dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release
     if [ $? -ne 0 ]; then
-        echo "❌ Build failed"
+        echo "ERROR: Build failed"
         exit 1
     fi
     
-    echo "✅ Build completed successfully"
+    echo "SUCCESS: Build completed successfully"
     echo ""
 }
 
@@ -138,9 +138,9 @@ run_quick_tests() {
     local quick_test_result=$?
     
     if [ $quick_test_result -eq 0 ]; then
-        echo "✅ Quick validation tests passed"
+        echo "SUCCESS: Quick validation tests passed"
     else
-        echo "❌ Quick validation tests failed"
+        echo "ERROR: Quick validation tests failed"
         echo "Skipping demo due to test failures"
         exit 1
     fi
@@ -150,7 +150,7 @@ run_quick_tests() {
 
 # Function to run comprehensive tests
 run_comprehensive_tests() {
-    echo "🧪 Comprehensive Testing"
+    echo "Testing Comprehensive Testing"
     echo "========================"
     
     if [ "$DOCKER_AVAILABLE" = true ]; then
@@ -165,9 +165,9 @@ run_comprehensive_tests() {
     fi
     
     if [ $comprehensive_test_result -eq 0 ]; then
-        echo "✅ Comprehensive tests passed"
+        echo "SUCCESS: Comprehensive tests passed"
     else
-        echo "❌ Comprehensive tests failed"
+        echo "ERROR: Comprehensive tests failed"
         echo "Continuing with demo despite test failures..."
     fi
     
@@ -176,11 +176,11 @@ run_comprehensive_tests() {
 
 # Function to run the demo
 run_demo() {
-    echo "🎮 Running Feature Factory Demo"
+    echo "Game Running Feature Factory Demo"
     echo "==============================="
     
     # Demo 1: Analyze a feature description
-    echo "🔍 Demo 1: Feature Analysis"
+    echo "Search Demo 1: Feature Analysis"
     echo "============================"
     echo "Analyzing: 'Customer with name, email, phone, billing address. Email must be unique and validated.'"
     echo ""
@@ -191,17 +191,17 @@ run_demo() {
         --output "demo-output/customer-analysis.json"
     
     if [ $? -eq 0 ]; then
-        echo "✅ Analysis completed successfully"
-        echo "📄 Results saved to: demo-output/customer-analysis.json"
+        echo "SUCCESS: Analysis completed successfully"
+        echo "File Results saved to: demo-output/customer-analysis.json"
     else
-        echo "❌ Analysis failed"
+        echo "ERROR: Analysis failed"
         return 1
     fi
     
     echo ""
     
     # Demo 2: Generate a complete feature
-    echo "🏭 Demo 2: Feature Generation"
+    echo "Factory Demo 2: Feature Generation"
     echo "=============================="
     echo "Generating complete Customer feature with CRUD operations..."
     echo ""
@@ -213,24 +213,24 @@ run_demo() {
         --verbose
     
     if [ $? -eq 0 ]; then
-        echo "✅ Feature generation completed successfully"
-        echo "📁 Generated code saved to: demo-output/customer-feature"
+        echo "SUCCESS: Feature generation completed successfully"
+        echo "Directory Generated code saved to: demo-output/customer-feature"
         
         # Show generated files
         echo ""
-        echo "📋 Generated Files:"
+        echo "List Generated Files:"
         find "demo-output/customer-feature" -type f -name "*.cs" 2>/dev/null | while read file; do
             echo "   • $(basename "$file")"
         done
     else
-        echo "❌ Feature generation failed"
+        echo "ERROR: Feature generation failed"
         return 1
     fi
     
     echo ""
     
     # Demo 3: Generate a more complex feature
-    echo "🏗️ Demo 3: Complex Feature Generation"
+    echo "Building Demo 3: Complex Feature Generation"
     echo "======================================"
     echo "Generating Order Management feature with multiple entities..."
     echo ""
@@ -242,17 +242,17 @@ run_demo() {
         --verbose
     
     if [ $? -eq 0 ]; then
-        echo "✅ Complex feature generation completed successfully"
-        echo "📁 Generated code saved to: demo-output/order-management"
+        echo "SUCCESS: Complex feature generation completed successfully"
+        echo "Directory Generated code saved to: demo-output/order-management"
         
         # Show generated files
         echo ""
-        echo "📋 Generated Files:"
+        echo "List Generated Files:"
         find "demo-output/order-management" -type f -name "*.cs" 2>/dev/null | while read file; do
             echo "   • $(basename "$file")"
         done
     else
-        echo "❌ Complex feature generation failed"
+        echo "ERROR: Complex feature generation failed"
         return 1
     fi
     
@@ -283,19 +283,19 @@ run_demo() {
 
 # Function to generate test report
 generate_test_report() {
-    echo "📊 Generating Test Report"
+    echo "Stats Generating Test Report"
     echo "========================="
     
     # Find the latest test results
     local latest_test_file=$(find test-results -name "test-results-*.json" -type f 2>/dev/null | sort | tail -1)
     
     if [ -n "$latest_test_file" ]; then
-        echo "📄 Latest test results: $latest_test_file"
+        echo "File Latest test results: $latest_test_file"
         
         # Extract key metrics from test results
         if command -v jq &> /dev/null; then
             echo ""
-            echo "📈 Test Summary:"
+            echo "Progress Test Summary:"
             jq -r '.Summary | "Success Rate: \(.SuccessRate)% (\(.SuccessfulCommandCount)/\(.TotalCommandCount))"' "$latest_test_file" 2>/dev/null || echo "Could not parse test results"
             jq -r '.Summary | "Total Duration: \(.TotalDuration)"' "$latest_test_file" 2>/dev/null || echo "Could not parse duration"
             jq -r '.Summary | "Overall Status: \(if .IsSuccess then "PASSED" else "FAILED" end)"' "$latest_test_file" 2>/dev/null || echo "Could not parse status"
@@ -303,7 +303,7 @@ generate_test_report() {
             echo "Install jq for detailed test report parsing"
         fi
     else
-        echo "⚠️ No test results found"
+        echo "WARNING: No test results found"
     fi
     
     echo ""
@@ -317,7 +317,7 @@ cleanup() {
     if [ "$CLEANUP_AFTER_DEMO" = "true" ]; then
         echo "Cleaning up temporary files..."
         rm -rf test-results/temp-*
-        echo "✅ Cleanup completed"
+        echo "SUCCESS: Cleanup completed"
     else
         echo "Skipping cleanup (set CLEANUP_AFTER_DEMO=true to enable)"
     fi
@@ -385,11 +385,11 @@ main() {
     cleanup
     
     # Final summary
-    echo "🎉 Demo Summary"
+    echo "SUCCESS Demo Summary"
     echo "==============="
-    echo "✅ Nexo Feature Factory Demo with End-to-End Testing completed!"
+    echo "SUCCESS: Nexo Feature Factory Demo with End-to-End Testing completed!"
     echo ""
-    echo "📊 What was demonstrated:"
+    echo "Stats What was demonstrated:"
     echo "   • End-to-end testing with command pattern"
     echo "   • Docker containerized testing environment"
     echo "   • Natural language feature analysis"
@@ -398,11 +398,11 @@ main() {
     echo "   • Complex multi-entity feature generation"
     echo "   • AI-powered domain analysis and code generation"
     echo ""
-    echo "📁 Generated artifacts are available in:"
+    echo "Directory Generated artifacts are available in:"
     echo "   • demo-output/ (demo results)"
     echo "   • test-results/ (test results and reports)"
     echo ""
-    echo "🚀 The AI-native feature factory with comprehensive testing is ready for production use!"
+    echo "Running The AI-native feature factory with comprehensive testing is ready for production use!"
     echo ""
     echo "Next steps:"
     echo "   • Review generated code for quality and completeness"

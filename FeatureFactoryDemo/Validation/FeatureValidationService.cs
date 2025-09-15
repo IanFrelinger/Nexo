@@ -39,7 +39,7 @@ namespace FeatureFactoryDemo.Validation
         {
             var results = new ValidationResults();
             
-            Console.WriteLine("🔍 Starting Comprehensive Feature Factory Validation");
+            Console.WriteLine("Search Starting Comprehensive Feature Factory Validation");
             Console.WriteLine("=====================================================");
             
             // Test 1: Database Operations
@@ -65,7 +65,7 @@ namespace FeatureFactoryDemo.Validation
         
         private async Task<DatabaseValidationResult> ValidateDatabaseOperationsAsync()
         {
-            Console.WriteLine("\n📊 Test 1: Database Operations Validation");
+            Console.WriteLine("\nStats Test 1: Database Operations Validation");
             Console.WriteLine("==========================================");
             
             var result = new DatabaseValidationResult();
@@ -75,13 +75,13 @@ namespace FeatureFactoryDemo.Validation
                 // Test database connection
                 var canConnect = await _context.Database.CanConnectAsync();
                 result.CanConnect = canConnect;
-                Console.WriteLine($"   ✅ Database Connection: {(canConnect ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Database Connection: {(canConnect ? "SUCCESS" : "FAILED")}");
                 
                 // Test table creation
                 var commandHistoryCount = await _context.CommandHistories.CountAsync();
                 var codebaseContextCount = await _context.CodebaseContexts.CountAsync();
                 result.TablesExist = commandHistoryCount >= 0 && codebaseContextCount >= 0;
-                Console.WriteLine($"   ✅ Tables Exist: {(result.TablesExist ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Tables Exist: {(result.TablesExist ? "SUCCESS" : "FAILED")}");
                 Console.WriteLine($"      - CommandHistories: {commandHistoryCount} records");
                 Console.WriteLine($"      - CodebaseContexts: {codebaseContextCount} records");
                 
@@ -101,37 +101,37 @@ namespace FeatureFactoryDemo.Validation
                 _context.CommandHistories.Add(testCommand);
                 await _context.SaveChangesAsync();
                 result.CanCreate = true;
-                Console.WriteLine($"   ✅ Create Operation: SUCCESS");
+                Console.WriteLine($"   SUCCESS: Create Operation: SUCCESS");
                 
                 var retrievedCommand = await _context.CommandHistories
                     .FirstOrDefaultAsync(c => c.Description == "Test Command for Validation");
                 result.CanRead = retrievedCommand != null;
-                Console.WriteLine($"   ✅ Read Operation: {(result.CanRead ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Read Operation: {(result.CanRead ? "SUCCESS" : "FAILED")}");
                 
                 if (retrievedCommand != null)
                 {
                     retrievedCommand.FinalQualityScore = 100;
                     await _context.SaveChangesAsync();
                     result.CanUpdate = true;
-                    Console.WriteLine($"   ✅ Update Operation: SUCCESS");
+                    Console.WriteLine($"   SUCCESS: Update Operation: SUCCESS");
                     
                     _context.CommandHistories.Remove(retrievedCommand);
                     await _context.SaveChangesAsync();
                     result.CanDelete = true;
-                    Console.WriteLine($"   ✅ Delete Operation: SUCCESS");
+                    Console.WriteLine($"   SUCCESS: Delete Operation: SUCCESS");
                 }
                 
                 result.IsValid = result.CanConnect && result.TablesExist && result.CanCreate && 
                                result.CanRead && result.CanUpdate && result.CanDelete;
                 
-                Console.WriteLine($"   📊 Database Validation: {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
+                Console.WriteLine($"   Stats Database Validation: {(result.IsValid ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Database validation failed");
                 result.IsValid = false;
                 result.ErrorMessage = ex.Message;
-                Console.WriteLine($"   ❌ Database Validation: FAILED - {ex.Message}");
+                Console.WriteLine($"   ERROR: Database Validation: FAILED - {ex.Message}");
             }
             
             return result;
@@ -139,7 +139,7 @@ namespace FeatureFactoryDemo.Validation
         
         private async Task<CodebaseValidationResult> ValidateCodebaseContextAsync()
         {
-            Console.WriteLine("\n📚 Test 2: Codebase Context Analysis Validation");
+            Console.WriteLine("\nDocumentation Test 2: Codebase Context Analysis Validation");
             Console.WriteLine("===============================================");
             
             var result = new CodebaseValidationResult();
@@ -152,7 +152,7 @@ namespace FeatureFactoryDemo.Validation
                 result.AverageQuality = stats.AverageQualityScore;
                 result.HighQualityFiles = stats.HighQualityFiles;
                 
-                Console.WriteLine($"   ✅ Codebase Analysis: SUCCESS");
+                Console.WriteLine($"   SUCCESS: Codebase Analysis: SUCCESS");
                 Console.WriteLine($"      - Files Analyzed: {stats.TotalFiles}");
                 Console.WriteLine($"      - Average Quality: {stats.AverageQualityScore}/100");
                 Console.WriteLine($"      - High Quality Files (80+): {stats.HighQualityFiles}");
@@ -160,7 +160,7 @@ namespace FeatureFactoryDemo.Validation
                 // Test context retrieval
                 var context = await _codebaseAnalysisService.GetRelevantContextAsync("Create a Customer entity", "DotNet");
                 result.CanRetrieveContext = !string.IsNullOrEmpty(context.Content);
-                Console.WriteLine($"   ✅ Context Retrieval: {(result.CanRetrieveContext ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Context Retrieval: {(result.CanRetrieveContext ? "SUCCESS" : "FAILED")}");
                 
                 if (result.CanRetrieveContext)
                 {
@@ -174,7 +174,7 @@ namespace FeatureFactoryDemo.Validation
                 {
                     var analysisResult = await _codeAnalyzer.ValidateCodeAsync(context.Content, context.FilePath, "validation-test");
                     result.CodeAnalysisWorks = analysisResult != null;
-                    Console.WriteLine($"   ✅ Code Analysis Integration: {(result.CodeAnalysisWorks ? "SUCCESS" : "FAILED")}");
+                    Console.WriteLine($"   SUCCESS: Code Analysis Integration: {(result.CodeAnalysisWorks ? "SUCCESS" : "FAILED")}");
                     
                     if (result.CodeAnalysisWorks && analysisResult != null)
                     {
@@ -185,14 +185,14 @@ namespace FeatureFactoryDemo.Validation
                 
                 result.IsValid = result.FilesAnalyzed > 0 && result.CanRetrieveContext && result.CodeAnalysisWorks;
                 
-                Console.WriteLine($"   📊 Codebase Validation: {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
+                Console.WriteLine($"   Stats Codebase Validation: {(result.IsValid ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Codebase validation failed");
                 result.IsValid = false;
                 result.ErrorMessage = ex.Message;
-                Console.WriteLine($"   ❌ Codebase Validation: FAILED - {ex.Message}");
+                Console.WriteLine($"   ERROR: Codebase Validation: FAILED - {ex.Message}");
             }
             
             return result;
@@ -200,7 +200,7 @@ namespace FeatureFactoryDemo.Validation
         
         private async Task<CommandHistoryValidationResult> ValidateCommandHistoryAsync()
         {
-            Console.WriteLine("\n📋 Test 3: Command History Operations Validation");
+            Console.WriteLine("\nList Test 3: Command History Operations Validation");
             Console.WriteLine("================================================");
             
             var result = new CommandHistoryValidationResult();
@@ -218,24 +218,24 @@ namespace FeatureFactoryDemo.Validation
                     "test,validation,entity"
                 );
                 result.CanSaveCommand = true;
-                Console.WriteLine($"   ✅ Save Command: SUCCESS");
+                Console.WriteLine($"   SUCCESS: Save Command: SUCCESS");
                 
                 // Test retrieving recent commands
                 var recentCommands = await _commandHistoryService.GetRecentSuccessfulCommandsAsync(5);
                 result.CanRetrieveRecent = recentCommands.Any();
-                Console.WriteLine($"   ✅ Retrieve Recent Commands: {(result.CanRetrieveRecent ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Retrieve Recent Commands: {(result.CanRetrieveRecent ? "SUCCESS" : "FAILED")}");
                 Console.WriteLine($"      - Recent Commands Found: {recentCommands.Count}");
                 
                 // Test similarity matching
                 var similarCommands = await _commandHistoryService.GetSimilarCommandsAsync("Create Customer", "DotNet");
                 result.CanFindSimilar = similarCommands.Any();
-                Console.WriteLine($"   ✅ Find Similar Commands: {(result.CanFindSimilar ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Find Similar Commands: {(result.CanFindSimilar ? "SUCCESS" : "FAILED")}");
                 Console.WriteLine($"      - Similar Commands Found: {similarCommands.Count}");
                 
                 // Test statistics
                 var stats = await _commandHistoryService.GetStatisticsAsync();
                 result.CanGetStatistics = stats.TotalCommands > 0;
-                Console.WriteLine($"   ✅ Get Statistics: {(result.CanGetStatistics ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Get Statistics: {(result.CanGetStatistics ? "SUCCESS" : "FAILED")}");
                 Console.WriteLine($"      - Total Commands: {stats.TotalCommands}");
                 Console.WriteLine($"      - Success Rate: {stats.SuccessRate:F1}%");
                 Console.WriteLine($"      - Average Quality: {stats.AverageQualityScore}/100");
@@ -243,14 +243,14 @@ namespace FeatureFactoryDemo.Validation
                 result.IsValid = result.CanSaveCommand && result.CanRetrieveRecent && 
                                result.CanFindSimilar && result.CanGetStatistics;
                 
-                Console.WriteLine($"   📊 Command History Validation: {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
+                Console.WriteLine($"   Stats Command History Validation: {(result.IsValid ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Command history validation failed");
                 result.IsValid = false;
                 result.ErrorMessage = ex.Message;
-                Console.WriteLine($"   ❌ Command History Validation: FAILED - {ex.Message}");
+                Console.WriteLine($"   ERROR: Command History Validation: FAILED - {ex.Message}");
             }
             
             return result;
@@ -258,7 +258,7 @@ namespace FeatureFactoryDemo.Validation
         
         private async Task<IterativeImprovementValidationResult> ValidateIterativeImprovementAsync()
         {
-            Console.WriteLine("\n🔄 Test 4: Iterative Improvement with Database Integration");
+            Console.WriteLine("\nProcessing Test 4: Iterative Improvement with Database Integration");
             Console.WriteLine("=========================================================");
             
             var result = new IterativeImprovementValidationResult();
@@ -274,7 +274,7 @@ namespace FeatureFactoryDemo.Validation
                 
                 var analysisResult = await _codeAnalyzer.ValidateCodeAsync(testCode, "TestEntity.cs", "validation-test");
                 result.CanAnalyzeCode = analysisResult != null;
-                Console.WriteLine($"   ✅ Code Analysis: {(result.CanAnalyzeCode ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Code Analysis: {(result.CanAnalyzeCode ? "SUCCESS" : "FAILED")}");
                 
                 if (result.CanAnalyzeCode && analysisResult != null)
                 {
@@ -287,7 +287,7 @@ namespace FeatureFactoryDemo.Validation
                     
                     var improvedAnalysis = await _codeAnalyzer.ValidateCodeAsync(improvedCode, "TestEntity.cs", "validation-test");
                     result.CanImproveCode = improvedAnalysis != null;
-                    Console.WriteLine($"   ✅ Code Improvement: {(result.CanImproveCode ? "SUCCESS" : "FAILED")}");
+                    Console.WriteLine($"   SUCCESS: Code Improvement: {(result.CanImproveCode ? "SUCCESS" : "FAILED")}");
                     
                     if (result.CanImproveCode && improvedAnalysis != null)
                     {
@@ -308,19 +308,19 @@ namespace FeatureFactoryDemo.Validation
                     "test,validation,iterative"
                 );
                 result.CanSaveToDatabase = true;
-                Console.WriteLine($"   ✅ Database Integration: SUCCESS");
+                Console.WriteLine($"   SUCCESS: Database Integration: SUCCESS");
                 
                 result.IsValid = result.CanAnalyzeCode && result.CanImproveCode && 
                                result.QualityImproved && result.CanSaveToDatabase;
                 
-                Console.WriteLine($"   📊 Iterative Improvement Validation: {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
+                Console.WriteLine($"   Stats Iterative Improvement Validation: {(result.IsValid ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Iterative improvement validation failed");
                 result.IsValid = false;
                 result.ErrorMessage = ex.Message;
-                Console.WriteLine($"   ❌ Iterative Improvement Validation: FAILED - {ex.Message}");
+                Console.WriteLine($"   ERROR: Iterative Improvement Validation: FAILED - {ex.Message}");
             }
             
             return result;
@@ -342,12 +342,12 @@ namespace FeatureFactoryDemo.Validation
                 // Get codebase context
                 var context = await _codebaseAnalysisService.GetRelevantContextAsync(description, platform);
                 result.CanGetContext = !string.IsNullOrEmpty(context.Content);
-                Console.WriteLine($"   ✅ Context Retrieval: {(result.CanGetContext ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Context Retrieval: {(result.CanGetContext ? "SUCCESS" : "FAILED")}");
                 
                 // Get similar commands
                 var similarCommands = await _commandHistoryService.GetSimilarCommandsAsync(description, platform);
                 result.CanGetSimilarCommands = true; // This will work even if no similar commands exist
-                Console.WriteLine($"   ✅ Similar Commands: SUCCESS (Found: {similarCommands.Count})");
+                Console.WriteLine($"   SUCCESS: Similar Commands: SUCCESS (Found: {similarCommands.Count})");
                 
                 // Generate test code
                 var generatedCode = $@"// Generated with context: {context.FilePath}
@@ -379,7 +379,7 @@ namespace Test.Generated
                 // Analyze generated code
                 var analysisResult = await _codeAnalyzer.ValidateCodeAsync(generatedCode, "Product.cs", "integration-test");
                 result.CanAnalyzeGeneratedCode = analysisResult != null;
-                Console.WriteLine($"   ✅ Generated Code Analysis: {(result.CanAnalyzeGeneratedCode ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Generated Code Analysis: {(result.CanAnalyzeGeneratedCode ? "SUCCESS" : "FAILED")}");
                 
                 if (result.CanAnalyzeGeneratedCode && analysisResult != null)
                 {
@@ -398,26 +398,26 @@ namespace Test.Generated
                     "integration,test,entity"
                 );
                 result.CanSaveGeneratedCode = true;
-                Console.WriteLine($"   ✅ Save Generated Code: SUCCESS");
+                Console.WriteLine($"   SUCCESS: Save Generated Code: SUCCESS");
                 
                 // Verify statistics updated
                 var stats = await _commandHistoryService.GetStatisticsAsync();
                 result.StatisticsUpdated = stats.TotalCommands > 0;
-                Console.WriteLine($"   ✅ Statistics Updated: {(result.StatisticsUpdated ? "SUCCESS" : "FAILED")}");
+                Console.WriteLine($"   SUCCESS: Statistics Updated: {(result.StatisticsUpdated ? "SUCCESS" : "FAILED")}");
                 Console.WriteLine($"      - Total Commands: {stats.TotalCommands}");
                 
                 result.IsValid = result.CanGetContext && result.CanGetSimilarCommands && 
                                result.CanAnalyzeGeneratedCode && result.CanSaveGeneratedCode && 
                                result.StatisticsUpdated;
                 
-                Console.WriteLine($"   📊 Integration Validation: {(result.IsValid ? "✅ PASSED" : "❌ FAILED")}");
+                Console.WriteLine($"   Stats Integration Validation: {(result.IsValid ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Integration validation failed");
                 result.IsValid = false;
                 result.ErrorMessage = ex.Message;
-                Console.WriteLine($"   ❌ Integration Validation: FAILED - {ex.Message}");
+                Console.WriteLine($"   ERROR: Integration Validation: FAILED - {ex.Message}");
             }
             
             return result;
@@ -425,7 +425,7 @@ namespace Test.Generated
         
         private void GenerateValidationReport(ValidationResults results)
         {
-            Console.WriteLine("\n📊 VALIDATION REPORT");
+            Console.WriteLine("\nStats VALIDATION REPORT");
             Console.WriteLine("====================");
             
             var totalTests = 5;
@@ -437,23 +437,23 @@ namespace Test.Generated
             if (results.IterativeImprovementValidation.IsValid) passedTests++;
             if (results.IntegrationValidation.IsValid) passedTests++;
             
-            Console.WriteLine($"📋 Test Results: {passedTests}/{totalTests} tests passed");
-            Console.WriteLine($"📊 Success Rate: {(double)passedTests / totalTests * 100:F1}%");
+            Console.WriteLine($"List Test Results: {passedTests}/{totalTests} tests passed");
+            Console.WriteLine($"Stats Success Rate: {(double)passedTests / totalTests * 100:F1}%");
             
-            Console.WriteLine("\n📝 Detailed Results:");
-            Console.WriteLine($"   ✅ Database Operations: {(results.DatabaseValidation.IsValid ? "PASSED" : "FAILED")}");
-            Console.WriteLine($"   ✅ Codebase Context: {(results.CodebaseValidation.IsValid ? "PASSED" : "FAILED")}");
-            Console.WriteLine($"   ✅ Command History: {(results.CommandHistoryValidation.IsValid ? "PASSED" : "FAILED")}");
-            Console.WriteLine($"   ✅ Iterative Improvement: {(results.IterativeImprovementValidation.IsValid ? "PASSED" : "FAILED")}");
-            Console.WriteLine($"   ✅ End-to-End Integration: {(results.IntegrationValidation.IsValid ? "PASSED" : "FAILED")}");
+            Console.WriteLine("\nDocument Detailed Results:");
+            Console.WriteLine($"   SUCCESS: Database Operations: {(results.DatabaseValidation.IsValid ? "PASSED" : "FAILED")}");
+            Console.WriteLine($"   SUCCESS: Codebase Context: {(results.CodebaseValidation.IsValid ? "PASSED" : "FAILED")}");
+            Console.WriteLine($"   SUCCESS: Command History: {(results.CommandHistoryValidation.IsValid ? "PASSED" : "FAILED")}");
+            Console.WriteLine($"   SUCCESS: Iterative Improvement: {(results.IterativeImprovementValidation.IsValid ? "PASSED" : "FAILED")}");
+            Console.WriteLine($"   SUCCESS: End-to-End Integration: {(results.IntegrationValidation.IsValid ? "PASSED" : "FAILED")}");
             
             if (passedTests == totalTests)
             {
-                Console.WriteLine("\n🎉 ALL VALIDATIONS PASSED! Feature Factory is fully operational!");
+                Console.WriteLine("\nSUCCESS ALL VALIDATIONS PASSED! Feature Factory is fully operational!");
             }
             else
             {
-                Console.WriteLine($"\n⚠️  {totalTests - passedTests} validation(s) failed. Check the details above.");
+                Console.WriteLine($"\nWARNING:  {totalTests - passedTests} validation(s) failed. Check the details above.");
             }
         }
     }

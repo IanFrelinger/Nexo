@@ -37,7 +37,7 @@ namespace Nexo.CLI.Progress
                 throw new ArgumentException("Number of executors must match number of defined steps");
             }
             
-            Console.WriteLine("🚀 Starting multi-step operation...\n");
+            Console.WriteLine("Running Starting multi-step operation...\n");
             
             for (int i = 0; i < _steps.Count; i++)
             {
@@ -61,7 +61,7 @@ namespace Nexo.CLI.Progress
                     _steps[i].Error = ex.Message;
                     _steps[i].EndTime = DateTime.UtcNow;
                     
-                    Console.WriteLine($"\n❌ Step {i + 1} failed: {ex.Message}");
+                    Console.WriteLine($"\nERROR: Step {i + 1} failed: {ex.Message}");
                     _logger.LogError(ex, "Step {StepIndex} failed: {StepDescription}", i + 1, _steps[i].Description);
                     return;
                 }
@@ -69,7 +69,7 @@ namespace Nexo.CLI.Progress
                 RenderStepsOverview();
             }
             
-            Console.WriteLine("\n✅ All steps completed successfully!");
+            Console.WriteLine("\nSUCCESS: All steps completed successfully!");
         }
         
         public void ShowProgressOverview()
@@ -88,7 +88,7 @@ namespace Nexo.CLI.Progress
                 Console.SetCursorPosition(0, Console.CursorTop - 1);
             }
             
-            Console.WriteLine("📋 Progress Overview:");
+            Console.WriteLine("List Progress Overview:");
             
             for (int i = 0; i < _steps.Count; i++)
             {
@@ -96,10 +96,10 @@ namespace Nexo.CLI.Progress
                 var statusIcon = step.Status switch
                 {
                     StepStatus.Pending => "⏳",
-                    StepStatus.InProgress => "🔄",
-                    StepStatus.Completed => "✅",
-                    StepStatus.Failed => "❌",
-                    _ => "❓"
+                    StepStatus.InProgress => "Processing",
+                    StepStatus.Completed => "SUCCESS:",
+                    StepStatus.Failed => "ERROR:",
+                    _ => "UNKNOWN"
                 };
                 
                 var timing = step.EndTime.HasValue 
@@ -116,7 +116,7 @@ namespace Nexo.CLI.Progress
                 
                 if (step.Status == StepStatus.Failed && !string.IsNullOrEmpty(step.Error))
                 {
-                    Console.WriteLine($"     ❌ Error: {step.Error}");
+                    Console.WriteLine($"     ERROR: Error: {step.Error}");
                 }
             }
             

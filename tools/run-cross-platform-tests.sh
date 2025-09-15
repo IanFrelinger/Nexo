@@ -188,35 +188,35 @@ EOF
     
     # Add local test results
     if [ -d "$TEST_RUN_DIR/local_net8.0" ]; then
-        echo "- .NET 8.0: ✅ Completed" >> "$REPORT_FILE"
+        echo "- .NET 8.0: SUCCESS: Completed" >> "$REPORT_FILE"
     else
-        echo "- .NET 8.0: ❌ Not run" >> "$REPORT_FILE"
+        echo "- .NET 8.0: ERROR: Not run" >> "$REPORT_FILE"
     fi
     
     if [ -d "$TEST_RUN_DIR/local_netstandard2.0" ]; then
-        echo "- .NET Standard 2.0: ✅ Completed" >> "$REPORT_FILE"
+        echo "- .NET Standard 2.0: SUCCESS: Completed" >> "$REPORT_FILE"
     else
-        echo "- .NET Standard 2.0: ❌ Not run" >> "$REPORT_FILE"
+        echo "- .NET Standard 2.0: ERROR: Not run" >> "$REPORT_FILE"
     fi
     
     cat >> "$REPORT_FILE" << EOF
 
 ### Docker Tests
-- .NET 8.0 Linux: ✅ Completed
-- .NET 7.0 Linux: ✅ Completed  
-- .NET 6.0 Linux: ✅ Completed
-- Cross-platform builds: ✅ Completed
-- Performance tests: ✅ Completed
+- .NET 8.0 Linux: SUCCESS: Completed
+- .NET 7.0 Linux: SUCCESS: Completed  
+- .NET 6.0 Linux: SUCCESS: Completed
+- Cross-platform builds: SUCCESS: Completed
+- Performance tests: SUCCESS: Completed
 
 ### Unity Compatibility
-- Unity 2022.3.0f1: ✅ Completed
-- Mono runtime: ✅ Completed
+- Unity 2022.3.0f1: SUCCESS: Completed
+- Mono runtime: SUCCESS: Completed
 
 ### Platform Support
-- Linux x64: ✅ Supported
-- Linux ARM64: ✅ Supported
-- Windows x64: ✅ Supported
-- macOS x64: ✅ Supported
+- Linux x64: SUCCESS: Supported
+- Linux ARM64: SUCCESS: Supported
+- Windows x64: SUCCESS: Supported
+- macOS x64: SUCCESS: Supported
 
 ## Detailed Results
 

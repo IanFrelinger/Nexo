@@ -38,7 +38,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
                 _testProgress.Clear();
 
                 Console.WriteLine();
-                Console.WriteLine("🚀 Starting Test Execution");
+                Console.WriteLine("Running Starting Test Execution");
                 Console.WriteLine("==========================");
                 Console.WriteLine($"Total Tests: {totalTests}");
                 Console.WriteLine($"Start Time: {_startTime:HH:mm:ss}");
@@ -66,7 +66,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
 
                 if (_verbose)
                 {
-                    Console.WriteLine($"▶️  [{testIndex + 1}/{_totalTests}] Starting: {testName}");
+                    Console.WriteLine($"Running  [{testIndex + 1}/{_totalTests}] Starting: {testName}");
                 }
                 else
                 {
@@ -91,7 +91,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
                     progressInfo.EndTime = DateTimeOffset.UtcNow;
                 }
 
-                var statusIcon = result ? "✅" : "❌";
+                var statusIcon = result ? "SUCCESS:" : "ERROR:";
                 var statusText = result ? "PASSED" : "FAILED";
                 var durationText = FormatDuration(duration);
 
@@ -137,11 +137,11 @@ namespace Nexo.Feature.Factory.Testing.Progress
                 var totalDuration = endTime - _startTime;
 
                 Console.WriteLine();
-                Console.WriteLine("🏁 Test Execution Complete");
+                Console.WriteLine("Finish Test Execution Complete");
                 Console.WriteLine("==========================");
                 Console.WriteLine($"Total Duration: {FormatDuration(totalDuration)}");
                 Console.WriteLine($"Success Rate: {summary.SuccessRate:F1}% ({summary.SuccessfulCommandCount}/{summary.TotalCommandCount})");
-                Console.WriteLine($"Overall Status: {(summary.IsSuccess ? "✅ PASSED" : "❌ FAILED")}");
+                Console.WriteLine($"Overall Status: {(summary.IsSuccess ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
 
                 // Show detailed results
                 ShowDetailedResults(summary);
@@ -160,7 +160,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
         {
             lock (_lock)
             {
-                Console.WriteLine($"❌ Error in {testId}: {error}");
+                Console.WriteLine($"ERROR: Error in {testId}: {error}");
             }
         }
 
@@ -171,7 +171,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
         {
             lock (_lock)
             {
-                Console.WriteLine($"⚠️  Warning in {testId}: {warning}");
+                Console.WriteLine($"WARNING:  Warning in {testId}: {warning}");
             }
         }
 
@@ -183,7 +183,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
             lock (_lock)
             {
                 Console.WriteLine();
-                Console.WriteLine("📊 Test Coverage Report");
+                Console.WriteLine("Stats Test Coverage Report");
                 Console.WriteLine("=======================");
                 Console.WriteLine($"Overall Coverage: {coverage.OverallCoverage:F1}%");
                 Console.WriteLine($"Line Coverage: {coverage.LineCoverage:F1}% ({coverage.CoveredLines}/{coverage.TotalLines})");
@@ -251,7 +251,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
             var running = _testProgress.Count(t => t.Status == TestStatus.Running);
 
             Console.WriteLine();
-            Console.WriteLine($"📈 Progress Summary: ✅ {passed} passed, ❌ {failed} failed, ▶️  {running} running");
+            Console.WriteLine($"Progress Progress Summary: SUCCESS: {passed} passed, ERROR: {failed} failed, Running  {running} running");
             Console.WriteLine();
         }
 
@@ -262,7 +262,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
 
             if (failedTests.Any())
             {
-                Console.WriteLine("❌ Failed Tests:");
+                Console.WriteLine("ERROR: Failed Tests:");
                 foreach (var test in failedTests)
                 {
                     var duration = FormatDuration(test.ExecutionResult.Duration);
@@ -273,7 +273,7 @@ namespace Nexo.Feature.Factory.Testing.Progress
 
             if (passedTests.Any())
             {
-                Console.WriteLine("✅ Passed Tests:");
+                Console.WriteLine("SUCCESS: Passed Tests:");
                 foreach (var test in passedTests.Take(5)) // Show first 5 passed tests
                 {
                     var duration = FormatDuration(test.ExecutionResult.Duration);

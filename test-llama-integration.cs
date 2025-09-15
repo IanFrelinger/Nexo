@@ -11,7 +11,7 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        Console.WriteLine("🤖 Testing LLama Integration");
+        Console.WriteLine("AI Testing LLama Integration");
         Console.WriteLine("=============================");
 
         // Create service collection
@@ -40,47 +40,47 @@ class Program
         try
         {
             var healthStatus = await ollamaProvider.GetHealthStatusAsync();
-            Console.WriteLine($"✅ Ollama Health: {healthStatus.Status}");
+            Console.WriteLine($"SUCCESS: Ollama Health: {healthStatus.Status}");
             Console.WriteLine($"   Response Time: {healthStatus.ResponseTimeMs}ms");
             Console.WriteLine($"   Is Healthy: {healthStatus.IsHealthy}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Ollama Error: {ex.Message}");
+            Console.WriteLine($"ERROR: Ollama Error: {ex.Message}");
         }
         
         // Test Native provider
-        Console.WriteLine("\n🔧 Testing Native Provider...");
+        Console.WriteLine("\nTool Testing Native Provider...");
         var nativeProvider = serviceProvider.GetRequiredService<LlamaNativeProvider>();
         
         try
         {
             var healthStatus = await nativeProvider.GetHealthStatusAsync();
-            Console.WriteLine($"✅ Native Health: {healthStatus.Status}");
+            Console.WriteLine($"SUCCESS: Native Health: {healthStatus.Status}");
             Console.WriteLine($"   Response Time: {healthStatus.ResponseTimeMs}ms");
             Console.WriteLine($"   Is Healthy: {healthStatus.IsHealthy}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Native Error: {ex.Message}");
+            Console.WriteLine($"ERROR: Native Error: {ex.Message}");
         }
         
         // Test model listing
-        Console.WriteLine("\n📋 Testing Model Listing...");
+        Console.WriteLine("\nList Testing Model Listing...");
         try
         {
             var ollamaModels = await ollamaProvider.GetAvailableModelsAsync();
-            Console.WriteLine($"✅ Ollama Models: {ollamaModels.Count()}");
+            Console.WriteLine($"SUCCESS: Ollama Models: {ollamaModels.Count()}");
             
             var nativeModels = await nativeProvider.GetAvailableModelsAsync();
-            Console.WriteLine($"✅ Native Models: {nativeModels.Count()}");
+            Console.WriteLine($"SUCCESS: Native Models: {nativeModels.Count()}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Model Listing Error: {ex.Message}");
+            Console.WriteLine($"ERROR: Model Listing Error: {ex.Message}");
         }
         
-        Console.WriteLine("\n🎉 LLama Integration Test Complete!");
+        Console.WriteLine("\nSUCCESS LLama Integration Test Complete!");
     }
 }
 

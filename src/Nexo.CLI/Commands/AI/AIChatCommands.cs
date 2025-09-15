@@ -69,7 +69,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to start interactive chat: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to start interactive chat: {ex.Message}");
                     _logger.LogError(ex, "Failed to start interactive chat");
                 }
             }, modelOption, contextOption, temperatureOption);
@@ -97,7 +97,7 @@ namespace Nexo.CLI.Commands.AI
                 {
                     if (string.IsNullOrEmpty(file) && string.IsNullOrEmpty(directory))
                     {
-                        Console.WriteLine("❌ Please specify either --file or --directory");
+                        Console.WriteLine("ERROR: Please specify either --file or --directory");
                         return;
                     }
 
@@ -105,7 +105,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to start code review chat: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to start code review chat: {ex.Message}");
                     _logger.LogError(ex, "Failed to start code review chat");
                 }
             }, fileOption, directoryOption, focusOption);
@@ -133,7 +133,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to start architecture chat: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to start architecture chat: {ex.Message}");
                     _logger.LogError(ex, "Failed to start architecture chat");
                 }
             }, projectOption, topicOption);
@@ -161,7 +161,7 @@ namespace Nexo.CLI.Commands.AI
                 {
                     if (string.IsNullOrEmpty(error) && string.IsNullOrEmpty(log))
                     {
-                        Console.WriteLine("❌ Please specify either --error or --log");
+                        Console.WriteLine("ERROR: Please specify either --error or --log");
                         return;
                     }
 
@@ -169,7 +169,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to start debugging chat: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to start debugging chat: {ex.Message}");
                     _logger.LogError(ex, "Failed to start debugging chat");
                 }
             }, errorOption, logOption, contextOption);
@@ -197,7 +197,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to start documentation chat: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to start documentation chat: {ex.Message}");
                     _logger.LogError(ex, "Failed to start documentation chat");
                 }
             }, typeOption, targetOption);
@@ -210,7 +210,7 @@ namespace Nexo.CLI.Commands.AI
         /// </summary>
         private async Task StartInteractiveChatAsync(string model, string context, double temperature)
         {
-            Console.WriteLine("🤖 AI Interactive Chat");
+            Console.WriteLine("AI AI Interactive Chat");
             Console.WriteLine(new string('=', 25));
             Console.WriteLine($"Model: {model}");
             Console.WriteLine($"Temperature: {temperature:F1}");
@@ -279,12 +279,12 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    Console.WriteLine($"ERROR: Error: {ex.Message}");
                     _logger.LogError(ex, "Error processing chat message");
                 }
             }
 
-            Console.WriteLine("👋 Chat session ended.");
+            Console.WriteLine("Goodbye Chat session ended.");
         }
 
         /// <summary>
@@ -292,7 +292,7 @@ namespace Nexo.CLI.Commands.AI
         /// </summary>
         private async Task StartCodeReviewChatAsync(string file, string directory, string focus)
         {
-            Console.WriteLine("🔍 AI Code Review Chat");
+            Console.WriteLine("Search AI Code Review Chat");
             Console.WriteLine(new string('=', 25));
             
             var context = "You are an expert code reviewer. Analyze the provided code and provide constructive feedback.";
@@ -324,7 +324,7 @@ namespace Nexo.CLI.Commands.AI
         /// </summary>
         private async Task StartArchitectureChatAsync(string project, string topic)
         {
-            Console.WriteLine("🏗️ AI Architecture Chat");
+            Console.WriteLine("Building AI Architecture Chat");
             Console.WriteLine(new string('=', 25));
             
             var context = "You are an expert software architect. Help with architecture design and decisions.";
@@ -380,7 +380,7 @@ namespace Nexo.CLI.Commands.AI
         /// </summary>
         private async Task StartDocumentationChatAsync(string type, string target)
         {
-            Console.WriteLine("📚 AI Documentation Chat");
+            Console.WriteLine("Documentation AI Documentation Chat");
             Console.WriteLine(new string('=', 25));
             
             var context = "You are an expert technical writer. Help create clear and comprehensive documentation.";
@@ -433,12 +433,12 @@ namespace Nexo.CLI.Commands.AI
         private void ShowChatHelp()
         {
             Console.WriteLine();
-            Console.WriteLine("🤖 Chat Commands:");
+            Console.WriteLine("AI Chat Commands:");
             Console.WriteLine("  exit    - Exit the chat session");
             Console.WriteLine("  help    - Show this help message");
             Console.WriteLine("  clear   - Clear chat history");
             Console.WriteLine();
-            Console.WriteLine("💡 Tips:");
+            Console.WriteLine("Idea Tips:");
             Console.WriteLine("  - Be specific in your questions");
             Console.WriteLine("  - Provide context when needed");
             Console.WriteLine("  - Ask follow-up questions for clarification");

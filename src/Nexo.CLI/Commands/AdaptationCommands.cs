@@ -25,7 +25,7 @@ public class AdaptationCommands
         var adaptationEngine = _serviceProvider.GetRequiredService<IAdaptationEngine>();
         var status = await adaptationEngine.GetAdaptationStatusAsync();
         
-        Console.WriteLine("🔄 Nexo Real-Time Adaptation Status");
+        Console.WriteLine("Processing Nexo Real-Time Adaptation Status");
         Console.WriteLine($"Engine Status: {status.EngineStatus}");
         Console.WriteLine($"Active Adaptations: {status.ActiveAdaptations.Count()}");
         Console.WriteLine($"Recent Improvements: {status.RecentImprovements.Count()}");
@@ -62,7 +62,7 @@ public class AdaptationCommands
     {
         var dashboard = _serviceProvider.GetRequiredService<IAdaptationDashboard>();
         
-        Console.WriteLine($"📊 Monitoring adaptations for {duration} seconds...");
+        Console.WriteLine($"Stats Monitoring adaptations for {duration} seconds...");
         Console.WriteLine("Press Ctrl+C to stop monitoring");
         Console.WriteLine();
         
@@ -79,7 +79,7 @@ public class AdaptationCommands
                 
                 if (adaptationEvent.PerformanceImpact.HasValue)
                 {
-                    var impactIcon = adaptationEvent.PerformanceImpact.Value > 0 ? "📈" : "📉";
+                    var impactIcon = adaptationEvent.PerformanceImpact.Value > 0 ? "Progress" : "📉";
                     Console.WriteLine($"    {impactIcon} Performance Impact: {adaptationEvent.PerformanceImpact:P}");
                 }
                 
@@ -97,11 +97,11 @@ public class AdaptationCommands
         }
         catch (OperationCanceledException)
         {
-            Console.WriteLine("\n⏹️  Monitoring stopped");
+            Console.WriteLine("\nStopped  Monitoring stopped");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n❌ Error during monitoring: {ex.Message}");
+            Console.WriteLine($"\nERROR: Error during monitoring: {ex.Message}");
         }
     }
     
@@ -114,23 +114,23 @@ public class AdaptationCommands
         
         if (!Enum.TryParse<AdaptationType>(type, true, out var adaptationType))
         {
-            Console.WriteLine($"❌ Invalid adaptation type: {type}");
+            Console.WriteLine($"ERROR: Invalid adaptation type: {type}");
             Console.WriteLine("Valid types: PerformanceOptimization, ResourceOptimization, UserExperienceOptimization, EnvironmentOptimization");
             return;
         }
         
         var adaptationContext = CreateAdaptationContext(adaptationType, context);
         
-        Console.WriteLine($"🚀 Triggering {adaptationType} adaptation...");
+        Console.WriteLine($"Running Triggering {adaptationType} adaptation...");
         
         try
         {
             await adaptationEngine.TriggerAdaptationAsync(adaptationContext);
-            Console.WriteLine("✅ Adaptation triggered successfully");
+            Console.WriteLine("SUCCESS: Adaptation triggered successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Failed to trigger adaptation: {ex.Message}");
+            Console.WriteLine($"ERROR: Failed to trigger adaptation: {ex.Message}");
         }
     }
     
@@ -157,7 +157,7 @@ public class AdaptationCommands
             Console.WriteLine($"  Confidence: {insight.Confidence:P}");
             Console.WriteLine($"  Recommended Action: {insight.RecommendedAction}");
             Console.WriteLine($"  Discovered: {insight.DiscoveredAt:yyyy-MM-dd HH:mm:ss}");
-            Console.WriteLine($"  Applied: {(insight.IsApplied ? "✅" : "⏳")}");
+            Console.WriteLine($"  Applied: {(insight.IsApplied ? "SUCCESS:" : "⏳")}");
             Console.WriteLine();
         }
     }
@@ -168,7 +168,7 @@ public class AdaptationCommands
         var dashboard = _serviceProvider.GetRequiredService<IAdaptationDashboard>();
         var effectiveness = await dashboard.GetAdaptationEffectivenessAsync();
         
-        Console.WriteLine("📈 Adaptation Effectiveness Analysis");
+        Console.WriteLine("Progress Adaptation Effectiveness Analysis");
         Console.WriteLine($"Overall Effectiveness: {effectiveness.OverallEffectiveness:P}");
         Console.WriteLine($"Total Adaptations: {effectiveness.TotalAdaptations}");
         Console.WriteLine($"Successful Adaptations: {effectiveness.SuccessfulAdaptations}");
@@ -208,7 +208,7 @@ public class AdaptationCommands
         var dashboard = _serviceProvider.GetRequiredService<IAdaptationDashboard>();
         var dashboardData = await dashboard.GetRealTimeDashboardDataAsync();
         
-        Console.WriteLine("📊 Nexo Real-Time Adaptation Dashboard");
+        Console.WriteLine("Stats Nexo Real-Time Adaptation Dashboard");
         Console.WriteLine($"Last Updated: {dashboardData.LastUpdated:yyyy-MM-dd HH:mm:ss}");
         Console.WriteLine();
         
@@ -232,7 +232,7 @@ public class AdaptationCommands
         // Recent Adaptations
         if (dashboardData.RecentAdaptations.Any())
         {
-            Console.WriteLine("🔄 Recent Adaptations:");
+            Console.WriteLine("Processing Recent Adaptations:");
             foreach (var adaptation in dashboardData.RecentAdaptations.Take(5))
             {
                 var adaptationIcon = GetAdaptationIcon(adaptation.Type);
@@ -261,7 +261,7 @@ public class AdaptationCommands
         Console.WriteLine($"  Context: {dashboardData.EnvironmentStatus.CurrentEnvironment.Context}");
         Console.WriteLine($"  Platform: {dashboardData.EnvironmentStatus.CurrentEnvironment.Platform}");
         Console.WriteLine($"  Active Optimizations: {dashboardData.EnvironmentStatus.ActiveOptimizations.Count()}");
-        Console.WriteLine($"  Validation: {(dashboardData.EnvironmentStatus.ValidationResult.IsValid ? "✅ Valid" : "❌ Invalid")}");
+        Console.WriteLine($"  Validation: {(dashboardData.EnvironmentStatus.ValidationResult.IsValid ? "SUCCESS: Valid" : "ERROR: Invalid")}");
     }
     
     [Command("environment")]
@@ -311,14 +311,14 @@ public class AdaptationCommands
         
         var validation = environmentStatus.ValidationResult;
         Console.WriteLine("Environment Validation:");
-        Console.WriteLine($"  Valid: {(validation.IsValid ? "✅" : "❌")}");
+        Console.WriteLine($"  Valid: {(validation.IsValid ? "SUCCESS:" : "ERROR:")}");
         
         if (validation.ValidationErrors.Any())
         {
             Console.WriteLine("  Errors:");
             foreach (var error in validation.ValidationErrors)
             {
-                Console.WriteLine($"    ❌ {error}");
+                Console.WriteLine($"    ERROR: {error}");
             }
         }
         
@@ -327,7 +327,7 @@ public class AdaptationCommands
             Console.WriteLine("  Warnings:");
             foreach (var warning in validation.ValidationWarnings)
             {
-                Console.WriteLine($"    ⚠️  {warning}");
+                Console.WriteLine($"    WARNING:  {warning}");
             }
         }
         
@@ -336,7 +336,7 @@ public class AdaptationCommands
             Console.WriteLine("  Recommendations:");
             foreach (var recommendation in validation.Recommendations)
             {
-                Console.WriteLine($"    💡 {recommendation}");
+                Console.WriteLine($"    Idea {recommendation}");
             }
         }
     }
@@ -346,16 +346,16 @@ public class AdaptationCommands
     {
         var adaptationEngine = _serviceProvider.GetRequiredService<IAdaptationEngine>();
         
-        Console.WriteLine("🚀 Starting adaptation engine...");
+        Console.WriteLine("Running Starting adaptation engine...");
         
         try
         {
             await adaptationEngine.StartAdaptationAsync();
-            Console.WriteLine("✅ Adaptation engine started successfully");
+            Console.WriteLine("SUCCESS: Adaptation engine started successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Failed to start adaptation engine: {ex.Message}");
+            Console.WriteLine($"ERROR: Failed to start adaptation engine: {ex.Message}");
         }
     }
     
@@ -364,16 +364,16 @@ public class AdaptationCommands
     {
         var adaptationEngine = _serviceProvider.GetRequiredService<IAdaptationEngine>();
         
-        Console.WriteLine("⏹️  Stopping adaptation engine...");
+        Console.WriteLine("Stopped  Stopping adaptation engine...");
         
         try
         {
             await adaptationEngine.StopAdaptationAsync();
-            Console.WriteLine("✅ Adaptation engine stopped successfully");
+            Console.WriteLine("SUCCESS: Adaptation engine stopped successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Failed to stop adaptation engine: {ex.Message}");
+            Console.WriteLine($"ERROR: Failed to stop adaptation engine: {ex.Message}");
         }
     }
     
@@ -397,14 +397,14 @@ public class AdaptationCommands
     {
         return eventType switch
         {
-            AdaptationEventType.AdaptationApplied => "🔄",
+            AdaptationEventType.AdaptationApplied => "Processing",
             AdaptationEventType.PerformanceDegradation => "📉",
-            AdaptationEventType.ResourceConstraint => "⚠️",
+            AdaptationEventType.ResourceConstraint => "WARNING:",
             AdaptationEventType.UserFeedback => "💬",
             AdaptationEventType.EnvironmentChange => "🌍",
             AdaptationEventType.LearningInsight => "🧠",
-            AdaptationEventType.ErrorOccurred => "❌",
-            _ => "📊"
+            AdaptationEventType.ErrorOccurred => "ERROR:",
+            _ => "Stats"
         };
     }
     
@@ -439,7 +439,7 @@ public class AdaptationCommands
             AdaptationEngineStatus.Stopping => "🟠",
             AdaptationEngineStatus.Stopped => "⚪",
             AdaptationEngineStatus.Error => "🔴",
-            _ => "❓"
+            _ => "UNKNOWN"
         };
     }
     
@@ -452,7 +452,7 @@ public class AdaptationCommands
             PerformanceSeverity.Medium => "🟡",
             PerformanceSeverity.Low => "🟢",
             PerformanceSeverity.None => "⚪",
-            _ => "❓"
+            _ => "UNKNOWN"
         };
     }
     
@@ -464,9 +464,9 @@ public class AdaptationCommands
             "ResourceOptimization" => "💾",
             "UserExperienceOptimization" => "👤",
             "EnvironmentOptimization" => "🌍",
-            "SecurityOptimization" => "🔒",
-            "ReliabilityOptimization" => "🛡️",
-            _ => "🔄"
+            "SecurityOptimization" => "Security",
+            "ReliabilityOptimization" => "Safety",
+            _ => "Processing"
         };
     }
     
@@ -478,9 +478,9 @@ public class AdaptationCommands
             "ResourceOptimization" => "💾",
             "UserExperienceOptimization" => "👤",
             "EnvironmentOptimization" => "🌍",
-            "SecurityOptimization" => "🔒",
-            "ReliabilityOptimization" => "🛡️",
-            _ => "📊"
+            "SecurityOptimization" => "Security",
+            "ReliabilityOptimization" => "Safety",
+            _ => "Stats"
         };
     }
     

@@ -75,7 +75,7 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine("📚 Generating API Documentation");
+                    Console.WriteLine("Documentation Generating API Documentation");
                     Console.WriteLine(new string('=', 35));
                     Console.WriteLine($"Input: {input ?? "Current directory"}");
                     Console.WriteLine($"Output: {output ?? "docs/api"}");
@@ -87,7 +87,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate API documentation: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate API documentation: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate API documentation");
                 }
             }, inputOption, outputOption, formatOption, includePrivateOption);
@@ -124,7 +124,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate README: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate README: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate README");
                 }
             }, projectOption, outputOption, templateOption);
@@ -164,7 +164,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate code comments: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate code comments: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate code comments");
                 }
             }, inputOption, outputOption, languageOption, styleOption);
@@ -190,7 +190,7 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine("🏗️ Generating Architecture Documentation");
+                    Console.WriteLine("Building Generating Architecture Documentation");
                     Console.WriteLine(new string('=', 40));
                     Console.WriteLine($"Project: {project ?? "Current directory"}");
                     Console.WriteLine($"Output: {output ?? "docs/architecture"}");
@@ -201,7 +201,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate architecture documentation: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate architecture documentation: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate architecture documentation");
                 }
             }, projectOption, outputOption, includeDiagramsOption);
@@ -229,7 +229,7 @@ namespace Nexo.CLI.Commands.AI
             {
                 try
                 {
-                    Console.WriteLine("📝 Generating CHANGELOG.md");
+                    Console.WriteLine("Document Generating CHANGELOG.md");
                     Console.WriteLine(new string('=', 30));
                     Console.WriteLine($"Project: {project ?? "Current directory"}");
                     Console.WriteLine($"Output: {output ?? "CHANGELOG.md"}");
@@ -241,7 +241,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate changelog: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate changelog: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate changelog");
                 }
             }, projectOption, outputOption, versionOption, sinceOption);
@@ -278,7 +278,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate user guide: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate user guide: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate user guide");
                 }
             }, projectOption, outputOption, audienceOption);
@@ -307,7 +307,7 @@ namespace Nexo.CLI.Commands.AI
                     var output = "docs";
                     var types = include.Length > 0 ? include : new[] { "api", "readme", "architecture", "changelog", "guide" };
 
-                    Console.WriteLine("📚 Generating Comprehensive Documentation");
+                    Console.WriteLine("Documentation Generating Comprehensive Documentation");
                     Console.WriteLine(new string('=', 45));
                     Console.WriteLine($"Project: {project ?? "Current directory"}");
                     Console.WriteLine($"Output: {output}");
@@ -318,7 +318,7 @@ namespace Nexo.CLI.Commands.AI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Failed to generate comprehensive documentation: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to generate comprehensive documentation: {ex.Message}");
                     _logger.LogError(ex, "Failed to generate comprehensive documentation");
                 }
             }, projectOption, includeOption);
@@ -334,7 +334,7 @@ namespace Nexo.CLI.Commands.AI
             // Placeholder implementation
             await Task.Delay(1000);
 
-            Console.WriteLine("✅ API documentation generation is not yet fully implemented.");
+            Console.WriteLine("SUCCESS: API documentation generation is not yet fully implemented.");
             Console.WriteLine("This feature will be available in future updates.");
             Console.WriteLine();
             Console.WriteLine("Planned features:");
@@ -352,7 +352,7 @@ namespace Nexo.CLI.Commands.AI
             // Placeholder implementation
             await Task.Delay(1000);
 
-            Console.WriteLine("✅ README generation is not yet fully implemented.");
+            Console.WriteLine("SUCCESS: README generation is not yet fully implemented.");
             Console.WriteLine("This feature will be available in future updates.");
             Console.WriteLine();
             Console.WriteLine("Planned features:");
@@ -370,7 +370,7 @@ namespace Nexo.CLI.Commands.AI
             // Placeholder implementation
             await Task.Delay(1000);
 
-            Console.WriteLine("✅ Code comment generation is not yet fully implemented.");
+            Console.WriteLine("SUCCESS: Code comment generation is not yet fully implemented.");
             Console.WriteLine("This feature will be available in future updates.");
             Console.WriteLine();
             Console.WriteLine("Planned features:");
@@ -388,7 +388,7 @@ namespace Nexo.CLI.Commands.AI
             // Placeholder implementation
             await Task.Delay(1000);
 
-            Console.WriteLine("✅ Architecture documentation generation is not yet fully implemented.");
+            Console.WriteLine("SUCCESS: Architecture documentation generation is not yet fully implemented.");
             Console.WriteLine("This feature will be available in future updates.");
             Console.WriteLine();
             Console.WriteLine("Planned features:");
@@ -406,7 +406,7 @@ namespace Nexo.CLI.Commands.AI
             // Placeholder implementation
             await Task.Delay(1000);
 
-            Console.WriteLine("✅ Changelog generation is not yet fully implemented.");
+            Console.WriteLine("SUCCESS: Changelog generation is not yet fully implemented.");
             Console.WriteLine("This feature will be available in future updates.");
             Console.WriteLine();
             Console.WriteLine("Planned features:");
@@ -424,7 +424,7 @@ namespace Nexo.CLI.Commands.AI
             // Placeholder implementation
             await Task.Delay(1000);
 
-            Console.WriteLine("✅ User guide generation is not yet fully implemented.");
+            Console.WriteLine("SUCCESS: User guide generation is not yet fully implemented.");
             Console.WriteLine("This feature will be available in future updates.");
             Console.WriteLine();
             Console.WriteLine("Planned features:");
@@ -442,7 +442,7 @@ namespace Nexo.CLI.Commands.AI
             // Placeholder implementation
             await Task.Delay(1000);
 
-            Console.WriteLine("✅ Comprehensive documentation generation is not yet fully implemented.");
+            Console.WriteLine("SUCCESS: Comprehensive documentation generation is not yet fully implemented.");
             Console.WriteLine("This feature will be available in future updates.");
             Console.WriteLine();
             Console.WriteLine("Planned features:");

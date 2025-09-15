@@ -2,19 +2,19 @@
 
 This directory contains all shell scripts for building, testing, and managing the Nexo project.
 
-## 📁 Directory Structure
+## Directory Directory Structure
 
 ### 🔨 [Build Scripts](./build/)
 Scripts for building and compiling the project:
 - **run-dotnet.sh** - Build and run .NET applications
 - **run-mono.sh** - Build and run Mono applications
 
-### 🧪 [Test Scripts](./test/)
+### Testing [Test Scripts](./test/)
 Scripts for testing and validation:
 - **run-all-tests.sh** - Execute all test suites across the project
 - **test-web-cli.sh** - Test web CLI functionality
 
-## 🚀 Usage Examples
+## Running Usage Examples
 
 ### Building the Project
 ```bash
@@ -34,7 +34,7 @@ Scripts for testing and validation:
 ./scripts/test/test-web-cli.sh
 ```
 
-## 📋 Script Details
+## List Script Details
 
 ### Build Scripts
 
@@ -67,7 +67,7 @@ Scripts for testing and validation:
   - CLI command validation
   - Integration testing
 
-## 🔧 Script Development
+## Tool Script Development
 
 ### Adding New Scripts
 1. Place scripts in appropriate subdirectory (`build/`, `test/`, `docker/`)
@@ -82,13 +82,13 @@ Scripts for testing and validation:
 - Make scripts idempotent when possible
 - Use relative paths from project root
 
-## 📊 Current Status
+## Stats Current Status
 
 - **Build Scripts**: 2 scripts (dotnet, mono)
 - **Test Scripts**: 2 scripts (all-tests, web-cli)
 - **Total Scripts**: 4 scripts
 
-## 🔄 Recent Updates
+## Processing Recent Updates
 
 - **Organization**: Moved all scripts from root directory to organized structure
 - **Documentation**: Added comprehensive script documentation

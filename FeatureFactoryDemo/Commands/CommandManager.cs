@@ -46,7 +46,7 @@ namespace FeatureFactoryDemo.Commands
             {
                 if (!_commands.ContainsKey(commandName.ToLower()))
                 {
-                    Console.WriteLine($"❌ Unknown command: {commandName}");
+                    Console.WriteLine($"ERROR: Unknown command: {commandName}");
                     Console.WriteLine("Available commands:");
                     foreach (var cmd in _commands.Keys)
                     {
@@ -64,7 +64,7 @@ namespace FeatureFactoryDemo.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Command execution failed for: {CommandName}", commandName);
-                Console.WriteLine($"❌ Command execution failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Command execution failed: {ex.Message}");
                 return 1;
             }
         }

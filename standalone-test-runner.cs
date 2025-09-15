@@ -15,7 +15,7 @@ namespace StandaloneTestRunner
     {
         static async Task<int> Main(string[] args)
         {
-            Console.WriteLine("🧪 Standalone Test Runner - No Hanging Tests");
+            Console.WriteLine("Testing Standalone Test Runner - No Hanging Tests");
             Console.WriteLine("=============================================");
             Console.WriteLine();
 
@@ -54,10 +54,10 @@ namespace StandaloneTestRunner
 
             if (discover)
             {
-                Console.WriteLine("🔍 Discovering available standalone tests...");
+                Console.WriteLine("Search Discovering available standalone tests...");
                 var tests = await testRunner.DiscoverTestsAsync();
 
-                Console.WriteLine($"\n📋 Found {tests.Count} standalone tests:");
+                Console.WriteLine($"\nList Found {tests.Count} standalone tests:");
                 foreach (var test in tests)
                 {
                     Console.WriteLine($"   • {test.DisplayName} ({test.TestId})");
@@ -70,27 +70,27 @@ namespace StandaloneTestRunner
             }
 
             // Run tests
-            Console.WriteLine("🚀 Running standalone tests with aggressive timeout protection...");
+            Console.WriteLine("Running Running standalone tests with aggressive timeout protection...");
             var summary = await testRunner.RunAllTestsAsync(progress);
 
             // Report results
-            Console.WriteLine("\n📊 Test Execution Summary:");
+            Console.WriteLine("\nStats Test Execution Summary:");
             Console.WriteLine($"   Total Tests: {summary.TotalTests}");
-            Console.WriteLine($"   Passed: {summary.PassedTests} ✅");
-            Console.WriteLine($"   Failed: {summary.FailedTests} ❌");
+            Console.WriteLine($"   Passed: {summary.PassedTests} SUCCESS:");
+            Console.WriteLine($"   Failed: {summary.FailedTests} ERROR:");
             Console.WriteLine($"   Total Duration: {summary.TotalDuration.TotalSeconds:F1}s");
             Console.WriteLine($"   Average Duration: {summary.AverageDuration.TotalMilliseconds:F1}ms");
 
             if (summary.FailedTests > 0)
             {
-                Console.WriteLine("\n❌ Failed Tests:");
+                Console.WriteLine("\nERROR: Failed Tests:");
                 foreach (var error in summary.ErrorMessages)
                 {
                     Console.WriteLine($"   • {error}");
                 }
             }
 
-            Console.WriteLine("\n🎉 Standalone tests completed successfully!");
+            Console.WriteLine("\nSUCCESS Standalone tests completed successfully!");
             return summary.FailedTests > 0 ? 1 : 0;
         }
     }
@@ -176,7 +176,7 @@ namespace StandaloneTestRunner
 
             if (progress)
             {
-                Console.WriteLine($"\n📊 Progress: Starting {tests.Count} tests...");
+                Console.WriteLine($"\nStats Progress: Starting {tests.Count} tests...");
             }
 
             var results = new List<TestResult>();
@@ -188,7 +188,7 @@ namespace StandaloneTestRunner
                 var test = tests[i];
                 if (progress)
                 {
-                    Console.WriteLine($"\n🔄 [{i + 1}/{tests.Count}] Running: {test.DisplayName}");
+                    Console.WriteLine($"\nProcessing [{i + 1}/{tests.Count}] Running: {test.DisplayName}");
                 }
 
                 try
@@ -201,7 +201,7 @@ namespace StandaloneTestRunner
                         passedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ✅ {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
+                            Console.WriteLine($"   SUCCESS: {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
                         }
                     }
                     else
@@ -209,7 +209,7 @@ namespace StandaloneTestRunner
                         failedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ❌ {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
+                            Console.WriteLine($"   ERROR: {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
                         }
                     }
                 }
@@ -225,7 +225,7 @@ namespace StandaloneTestRunner
 
                     if (progress)
                     {
-                        Console.WriteLine($"   ❌ {test.DisplayName} - EXCEPTION: {ex.Message}");
+                        Console.WriteLine($"   ERROR: {test.DisplayName} - EXCEPTION: {ex.Message}");
                     }
                 }
             }
@@ -235,7 +235,7 @@ namespace StandaloneTestRunner
 
             if (progress)
             {
-                Console.WriteLine($"\n📊 Progress: Completed {tests.Count} tests in {totalDuration.TotalSeconds:F1}s");
+                Console.WriteLine($"\nStats Progress: Completed {tests.Count} tests in {totalDuration.TotalSeconds:F1}s");
             }
 
             return new TestSummary(

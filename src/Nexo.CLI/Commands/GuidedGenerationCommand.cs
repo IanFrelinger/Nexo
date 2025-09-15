@@ -28,7 +28,7 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("🎯 Nexo Guided Tool Generation");
+                Console.WriteLine("Target Nexo Guided Tool Generation");
                 Console.WriteLine("Let's create your tool step by step!");
                 Console.WriteLine();
 
@@ -54,13 +54,13 @@ namespace Nexo.CLI.Commands
                 }
                 else if (session.Status == GenerationStatus.Failed)
                 {
-                    Console.WriteLine("❌ Tool generation failed. Please try again.");
+                    Console.WriteLine("ERROR: Tool generation failed. Please try again.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in guided generation");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -70,13 +70,13 @@ namespace Nexo.CLI.Commands
         private async Task ProcessStepAsync(GenerationSession session, GenerationStep step, CancellationToken cancellationToken)
         {
             Console.WriteLine($"Step {step.Order}: {step.Title}");
-            Console.WriteLine($"📝 {step.Description}");
+            Console.WriteLine($"Document {step.Description}");
             Console.WriteLine();
 
             // Show examples if available
             if (step.Examples.Any())
             {
-                Console.WriteLine("💡 Examples:");
+                Console.WriteLine("Idea Examples:");
                 foreach (var example in step.Examples)
                 {
                     Console.WriteLine($"   • {example}");
@@ -87,7 +87,7 @@ namespace Nexo.CLI.Commands
             // Show options if available
             if (step.Options.Any())
             {
-                Console.WriteLine("📋 Options:");
+                Console.WriteLine("List Options:");
                 for (int i = 0; i < step.Options.Count; i++)
                 {
                     Console.WriteLine($"   {i + 1}. {step.Options[i]}");
@@ -98,7 +98,7 @@ namespace Nexo.CLI.Commands
             // Show help text if available
             if (!string.IsNullOrEmpty(step.HelpText))
             {
-                Console.WriteLine($"ℹ️  {step.HelpText}");
+                Console.WriteLine($"INFO:  {step.HelpText}");
                 Console.WriteLine();
             }
 
@@ -120,7 +120,7 @@ namespace Nexo.CLI.Commands
                 
                 if (!validationResult.IsValid)
                 {
-                    Console.WriteLine($"❌ {validationResult.ErrorMessage}");
+                    Console.WriteLine($"ERROR: {validationResult.ErrorMessage}");
                     Console.WriteLine();
                 }
             } while (!validationResult.IsValid);
@@ -142,7 +142,7 @@ namespace Nexo.CLI.Commands
             {
                 var tool = await _guidedService.GenerateToolAsync(session.Id, cancellationToken);
                 
-                Console.WriteLine("✅ Tool generated successfully!");
+                Console.WriteLine("SUCCESS: Tool generated successfully!");
                 Console.WriteLine($"   Name: {tool.Name}");
                 Console.WriteLine($"   Description: {tool.Description}");
                 Console.WriteLine($"   Usage: nexo {tool.CommandName} [args]");
@@ -152,35 +152,35 @@ namespace Nexo.CLI.Commands
                     var quality = tool.QualityScore;
                     var qualityIcon = quality.QualityLevel switch
                     {
-                        QualityLevel.Excellent => "🌟",
-                        QualityLevel.Good => "✅",
-                        QualityLevel.Acceptable => "⚠️",
-                        QualityLevel.Poor => "❌",
-                        QualityLevel.Unacceptable => "🚫",
-                        _ => "❓"
+                        QualityLevel.Excellent => "EXCELLENT",
+                        QualityLevel.Good => "SUCCESS:",
+                        QualityLevel.Acceptable => "WARNING:",
+                        QualityLevel.Poor => "ERROR:",
+                        QualityLevel.Unacceptable => "BLOCKED",
+                        _ => "UNKNOWN"
                     };
                     
                     Console.WriteLine($"   Quality: {qualityIcon} {quality.OverallScore:F1}/10 ({quality.QualityLevel})");
                     
                     if (quality.RequiresHumanReview)
                     {
-                        Console.WriteLine($"   ⚠️  Requires human review");
+                        Console.WriteLine($"   WARNING:  Requires human review");
                     }
                     
                     if (!quality.IsProductionReady)
                     {
-                        Console.WriteLine($"   ⚠️  Not production ready");
+                        Console.WriteLine($"   WARNING:  Not production ready");
                     }
                 }
                 
-                Console.WriteLine($"   🔒 Safety validated and approved");
+                Console.WriteLine($"   Security Safety validated and approved");
                 Console.WriteLine();
-                Console.WriteLine("🎉 Your tool is ready to use!");
+                Console.WriteLine("SUCCESS Your tool is ready to use!");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating tool from session: {SessionId}", session.Id);
-                Console.WriteLine($"❌ Tool generation failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Tool generation failed: {ex.Message}");
             }
         }
     }

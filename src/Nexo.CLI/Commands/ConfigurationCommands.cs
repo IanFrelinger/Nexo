@@ -114,7 +114,7 @@ public static class ConfigurationCommands
                         Console.WriteLine("\nWarnings:");
                         foreach (var warning in validationResult.Warnings)
                         {
-                            Console.WriteLine($"  ⚠ {warning.Message} ({warning.FieldPath})");
+                            Console.WriteLine($"  WARNING: {warning.Message} ({warning.FieldPath})");
                         }
                     }
                 }
@@ -131,7 +131,7 @@ public static class ConfigurationCommands
                         Console.WriteLine("\nWarnings:");
                         foreach (var warning in validationResult.Warnings)
                         {
-                            Console.WriteLine($"  ⚠ {warning.Message} ({warning.FieldPath})");
+                            Console.WriteLine($"  WARNING: {warning.Message} ({warning.FieldPath})");
                         }
                     }
                 }

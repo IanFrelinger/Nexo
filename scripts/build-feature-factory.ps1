@@ -9,7 +9,7 @@ param(
     [switch]$Verbose
 )
 
-Write-Host "🚀 Building Nexo Feature Factory..." -ForegroundColor Green
+Write-Host "Running Building Nexo Feature Factory..." -ForegroundColor Green
 
 # Set error action preference
 $ErrorActionPreference = "Stop"
@@ -25,7 +25,7 @@ if ($Clean) {
 }
 
 # Restore packages
-Write-Host "📦 Restoring packages..." -ForegroundColor Yellow
+Write-Host "Package Restoring packages..." -ForegroundColor Yellow
 $restoreArgs = @("restore", "solutions/Nexo.FeatureFactory.sln")
 if ($Verbose) { $restoreArgs += "--verbosity", "detailed" }
 
@@ -49,7 +49,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Run tests if requested
 if ($Test) {
-    Write-Host "🧪 Running tests..." -ForegroundColor Yellow
+    Write-Host "Testing Running tests..." -ForegroundColor Yellow
     $testArgs = @("test", "solutions/Nexo.FeatureFactory.sln", "--configuration", $Configuration, "--no-build", "--verbosity", "normal")
     if ($Framework) { $testArgs += "--framework", $Framework }
     
@@ -60,11 +60,11 @@ if ($Test) {
     }
 }
 
-Write-Host "✅ Feature Factory build complete!" -ForegroundColor Green
+Write-Host "SUCCESS: Feature Factory build complete!" -ForegroundColor Green
 
 # Display build summary
 Write-Host ""
-Write-Host "📊 Build Summary:" -ForegroundColor Cyan
+Write-Host "Stats Build Summary:" -ForegroundColor Cyan
 Write-Host "  Configuration: $Configuration" -ForegroundColor White
 if ($Framework) { Write-Host "  Framework: $Framework" -ForegroundColor White }
 Write-Host "  Solution: Nexo.FeatureFactory.sln" -ForegroundColor White

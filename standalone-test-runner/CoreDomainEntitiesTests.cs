@@ -425,7 +425,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Entity basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Domain Entity basic functionality test passed");
                 }
 
                 return true;
@@ -434,7 +434,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Entity basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Entity basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -460,7 +460,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Entity properties test passed");
+                    Console.WriteLine("SUCCESS: Domain Entity properties test passed");
                 }
 
                 return true;
@@ -469,7 +469,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Entity properties test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Entity properties test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -495,7 +495,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Entity methods test passed");
+                    Console.WriteLine("SUCCESS: Domain Entity methods test passed");
                 }
 
                 return true;
@@ -504,7 +504,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Entity methods test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Entity methods test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -530,7 +530,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Entity business rules test passed");
+                    Console.WriteLine("SUCCESS: Domain Entity business rules test passed");
                 }
 
                 return true;
@@ -539,7 +539,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Entity business rules test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Entity business rules test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -565,7 +565,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Entity dependencies test passed");
+                    Console.WriteLine("SUCCESS: Domain Entity dependencies test passed");
                 }
 
                 return true;
@@ -574,7 +574,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Entity dependencies test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Entity dependencies test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -600,7 +600,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Entity metadata test passed");
+                    Console.WriteLine("SUCCESS: Domain Entity metadata test passed");
                 }
 
                 return true;
@@ -609,7 +609,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Entity metadata test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Entity metadata test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -639,7 +639,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Value Object basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Value Object basic functionality test passed");
                 }
 
                 return true;
@@ -648,7 +648,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Value Object basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Value Object basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -674,7 +674,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Value Object properties test passed");
+                    Console.WriteLine("SUCCESS: Value Object properties test passed");
                 }
 
                 return true;
@@ -683,7 +683,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Value Object properties test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Value Object properties test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -709,7 +709,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Value Object methods test passed");
+                    Console.WriteLine("SUCCESS: Value Object methods test passed");
                 }
 
                 return true;
@@ -718,7 +718,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Value Object methods test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Value Object methods test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -744,7 +744,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Value Object validation test passed");
+                    Console.WriteLine("SUCCESS: Value Object validation test passed");
                 }
 
                 return true;
@@ -753,7 +753,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Value Object validation test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Value Object validation test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -779,7 +779,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Value Object equality test passed");
+                    Console.WriteLine("SUCCESS: Value Object equality test passed");
                 }
 
                 return true;
@@ -788,7 +788,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Value Object equality test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Value Object equality test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -814,7 +814,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Value Object immutability test passed");
+                    Console.WriteLine("SUCCESS: Value Object immutability test passed");
                 }
 
                 return true;
@@ -823,7 +823,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Value Object immutability test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Value Object immutability test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -853,7 +853,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Business Rule basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Business Rule basic functionality test passed");
                 }
 
                 return true;
@@ -862,7 +862,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Business Rule basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Business Rule basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -888,7 +888,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Business Rule validation test passed");
+                    Console.WriteLine("SUCCESS: Business Rule validation test passed");
                 }
 
                 return true;
@@ -897,7 +897,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Business Rule validation test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Business Rule validation test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -923,7 +923,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Business Rule priority test passed");
+                    Console.WriteLine("SUCCESS: Business Rule priority test passed");
                 }
 
                 return true;
@@ -932,7 +932,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Business Rule priority test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Business Rule priority test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -958,7 +958,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Business Rule execution test passed");
+                    Console.WriteLine("SUCCESS: Business Rule execution test passed");
                 }
 
                 return true;
@@ -967,7 +967,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Business Rule execution test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Business Rule execution test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -993,7 +993,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Business Rule error handling test passed");
+                    Console.WriteLine("SUCCESS: Business Rule error handling test passed");
                 }
 
                 return true;
@@ -1002,7 +1002,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Business Rule error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Business Rule error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1032,7 +1032,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Agent basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Agent basic functionality test passed");
                 }
 
                 return true;
@@ -1041,7 +1041,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Agent basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Agent basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1067,7 +1067,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Agent state management test passed");
+                    Console.WriteLine("SUCCESS: Agent state management test passed");
                 }
 
                 return true;
@@ -1076,7 +1076,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Agent state management test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Agent state management test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1102,7 +1102,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Agent focus areas test passed");
+                    Console.WriteLine("SUCCESS: Agent focus areas test passed");
                 }
 
                 return true;
@@ -1111,7 +1111,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Agent focus areas test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Agent focus areas test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1137,7 +1137,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Agent capabilities test passed");
+                    Console.WriteLine("SUCCESS: Agent capabilities test passed");
                 }
 
                 return true;
@@ -1146,7 +1146,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Agent capabilities test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Agent capabilities test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1172,7 +1172,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Agent configuration test passed");
+                    Console.WriteLine("SUCCESS: Agent configuration test passed");
                 }
 
                 return true;
@@ -1181,7 +1181,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Agent configuration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Agent configuration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1207,7 +1207,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Agent lifecycle test passed");
+                    Console.WriteLine("SUCCESS: Agent lifecycle test passed");
                 }
 
                 return true;
@@ -1216,7 +1216,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Agent lifecycle test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Agent lifecycle test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1246,7 +1246,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Composable Entity basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Composable Entity basic functionality test passed");
                 }
 
                 return true;
@@ -1255,7 +1255,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Composable Entity basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Composable Entity basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1281,7 +1281,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Composable Entity composition test passed");
+                    Console.WriteLine("SUCCESS: Composable Entity composition test passed");
                 }
 
                 return true;
@@ -1290,7 +1290,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Composable Entity composition test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Composable Entity composition test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1316,7 +1316,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Composable Entity validation test passed");
+                    Console.WriteLine("SUCCESS: Composable Entity validation test passed");
                 }
 
                 return true;
@@ -1325,7 +1325,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Composable Entity validation test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Composable Entity validation test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1351,7 +1351,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Composable Entity metadata test passed");
+                    Console.WriteLine("SUCCESS: Composable Entity metadata test passed");
                 }
 
                 return true;
@@ -1360,7 +1360,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Composable Entity metadata test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Composable Entity metadata test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1386,7 +1386,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Composable Entity lifecycle test passed");
+                    Console.WriteLine("SUCCESS: Composable Entity lifecycle test passed");
                 }
 
                 return true;
@@ -1395,7 +1395,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Composable Entity lifecycle test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Composable Entity lifecycle test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1421,7 +1421,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Composable Entity error handling test passed");
+                    Console.WriteLine("SUCCESS: Composable Entity error handling test passed");
                 }
 
                 return true;
@@ -1430,7 +1430,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Composable Entity error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Composable Entity error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1460,7 +1460,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Entity relationships test passed");
+                    Console.WriteLine("SUCCESS: Entity relationships test passed");
                 }
 
                 return true;
@@ -1469,7 +1469,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Entity relationships test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Entity relationships test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1495,7 +1495,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Entity invariants test passed");
+                    Console.WriteLine("SUCCESS: Entity invariants test passed");
                 }
 
                 return true;
@@ -1504,7 +1504,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Entity invariants test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Entity invariants test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1530,7 +1530,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Entity events test passed");
+                    Console.WriteLine("SUCCESS: Entity events test passed");
                 }
 
                 return true;
@@ -1539,7 +1539,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Entity events test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Entity events test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1565,7 +1565,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Entity performance test passed");
+                    Console.WriteLine("SUCCESS: Entity performance test passed");
                 }
 
                 return true;
@@ -1574,7 +1574,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Entity performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Entity performance test failed: {ex.Message}");
                 }
                 return false;
             }

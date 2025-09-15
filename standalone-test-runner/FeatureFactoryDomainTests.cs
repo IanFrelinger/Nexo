@@ -283,7 +283,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator basic functionality test passed");
                 }
 
                 return true;
@@ -292,7 +292,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -318,7 +318,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator entity generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator entity generation test passed");
                 }
 
                 return true;
@@ -327,7 +327,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator entity test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator entity test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -353,7 +353,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator value object generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator value object generation test passed");
                 }
 
                 return true;
@@ -362,7 +362,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator value object test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator value object test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -388,7 +388,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator business rule generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator business rule generation test passed");
                 }
 
                 return true;
@@ -397,7 +397,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator business rule test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator business rule test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -423,7 +423,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator domain service generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator domain service generation test passed");
                 }
 
                 return true;
@@ -432,7 +432,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator domain service test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator domain service test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -458,7 +458,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator aggregate root generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator aggregate root generation test passed");
                 }
 
                 return true;
@@ -467,7 +467,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator aggregate root test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator aggregate root test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -493,7 +493,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator domain event generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator domain event generation test passed");
                 }
 
                 return true;
@@ -502,7 +502,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator domain event test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator domain event test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -528,7 +528,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator repository generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator repository generation test passed");
                 }
 
                 return true;
@@ -537,7 +537,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator repository test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator repository test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -563,7 +563,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator factory generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator factory generation test passed");
                 }
 
                 return true;
@@ -572,7 +572,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator factory test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator factory test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -598,7 +598,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator specification generation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator specification generation test passed");
                 }
 
                 return true;
@@ -607,7 +607,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator specification test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator specification test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -633,7 +633,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator error handling test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator error handling test passed");
                 }
 
                 return true;
@@ -642,7 +642,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -668,7 +668,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Generator performance test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Generator performance test passed");
                 }
 
                 return true;
@@ -677,7 +677,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Generator performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Generator performance test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -707,7 +707,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Validator basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Validator basic functionality test passed");
                 }
 
                 return true;
@@ -716,7 +716,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Validator basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Validator basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -742,7 +742,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Validator entity validation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Validator entity validation test passed");
                 }
 
                 return true;
@@ -751,7 +751,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Validator entity test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Validator entity test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -777,7 +777,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Validator business rule validation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Validator business rule validation test passed");
                 }
 
                 return true;
@@ -786,7 +786,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Validator business rule test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Validator business rule test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -812,7 +812,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Validator consistency validation test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Validator consistency validation test passed");
                 }
 
                 return true;
@@ -821,7 +821,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Validator consistency test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Validator consistency test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -851,7 +851,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Orchestrator basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Orchestrator basic functionality test passed");
                 }
 
                 return true;
@@ -860,7 +860,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Orchestrator basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Orchestrator basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -886,7 +886,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Orchestrator workflow execution test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Orchestrator workflow execution test passed");
                 }
 
                 return true;
@@ -895,7 +895,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Orchestrator workflow test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Orchestrator workflow test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -921,7 +921,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Orchestrator progress tracking test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Orchestrator progress tracking test passed");
                 }
 
                 return true;
@@ -930,7 +930,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Orchestrator progress test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Orchestrator progress test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -956,7 +956,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Domain Logic Orchestrator error handling test passed");
+                    Console.WriteLine("SUCCESS: Domain Logic Orchestrator error handling test passed");
                 }
 
                 return true;
@@ -965,7 +965,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Domain Logic Orchestrator error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Domain Logic Orchestrator error handling test failed: {ex.Message}");
                 }
                 return false;
             }

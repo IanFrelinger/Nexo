@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Setting up Nexo Demo Environment..."
+echo "Running Setting up Nexo Demo Environment..."
 
 # Colors for output
 RED='\033[0;31m'

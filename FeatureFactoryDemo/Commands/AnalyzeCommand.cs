@@ -25,7 +25,7 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("🔍 Codebase Analysis Command");
+                Console.WriteLine("Search Codebase Analysis Command");
                 Console.WriteLine("============================");
                 
                 // Parse arguments
@@ -59,7 +59,7 @@ namespace FeatureFactoryDemo.Commands
                 // Get and display statistics
                 var stats = await _codebaseAnalysisService.GetCodebaseStatsAsync();
                 
-                Console.WriteLine("\n📊 Analysis Results:");
+                Console.WriteLine("\nStats Analysis Results:");
                 Console.WriteLine($"   Files Analyzed: {stats.TotalFiles}");
                 Console.WriteLine($"   Average Quality Score: {stats.AverageQualityScore}/100");
                 Console.WriteLine($"   High Quality Files (80+): {stats.HighQualityFiles}");

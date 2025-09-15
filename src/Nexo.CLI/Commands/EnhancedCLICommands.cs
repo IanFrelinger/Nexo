@@ -37,7 +37,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to start interactive mode");
-                    Console.WriteLine($"❌ Failed to start interactive mode: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to start interactive mode: {ex.Message}");
                 }
             });
             
@@ -53,7 +53,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to open dashboard");
-                    Console.WriteLine($"❌ Failed to open dashboard: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to open dashboard: {ex.Message}");
                 }
             });
             
@@ -71,7 +71,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show help");
-                    Console.WriteLine($"❌ Failed to show help: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show help: {ex.Message}");
                 }
             }, helpTopicArgument);
             
@@ -87,7 +87,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show status");
-                    Console.WriteLine($"❌ Failed to show status: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show status: {ex.Message}");
                 }
             });
             
@@ -103,7 +103,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show contextual help");
-                    Console.WriteLine($"❌ Failed to show contextual help: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show contextual help: {ex.Message}");
                 }
             });
             
@@ -121,7 +121,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show examples");
-                    Console.WriteLine($"❌ Failed to show examples: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show examples: {ex.Message}");
                 }
             }, examplesCategoryArgument);
             
@@ -139,7 +139,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to search documentation");
-                    Console.WriteLine($"❌ Failed to search documentation: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to search documentation: {ex.Message}");
                 }
             }, searchTermArgument);
             
@@ -155,7 +155,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show command browser");
-                    Console.WriteLine($"❌ Failed to show command browser: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show command browser: {ex.Message}");
                 }
             });
             
@@ -192,7 +192,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show general help");
-                    Console.WriteLine($"❌ Failed to show help: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show help: {ex.Message}");
                 }
             });
             
@@ -209,7 +209,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show command help for: {Command}", name);
-                    Console.WriteLine($"❌ Failed to show help for command '{name}': {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show help for command '{name}': {ex.Message}");
                 }
             }, commandNameArgument);
             
@@ -226,7 +226,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to search help documentation");
-                    Console.WriteLine($"❌ Failed to search help: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to search help: {ex.Message}");
                 }
             }, searchTermArgument);
             
@@ -243,7 +243,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show examples");
-                    Console.WriteLine($"❌ Failed to show examples: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show examples: {ex.Message}");
                 }
             }, examplesCategoryArgument);
             
@@ -258,7 +258,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show command browser");
-                    Console.WriteLine($"❌ Failed to show command browser: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show command browser: {ex.Message}");
                 }
             });
             
@@ -293,7 +293,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to open dashboard");
-                    Console.WriteLine($"❌ Failed to open dashboard: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to open dashboard: {ex.Message}");
                 }
             });
             
@@ -304,13 +304,13 @@ namespace Nexo.CLI.Commands
                 try
                 {
                     logger.LogInformation("Checking dashboard status");
-                    Console.WriteLine("📊 Dashboard Status: Available");
-                    Console.WriteLine("💡 Use 'nexo dashboard show' to open the full dashboard");
+                    Console.WriteLine("Stats Dashboard Status: Available");
+                    Console.WriteLine("Idea Use 'nexo dashboard show' to open the full dashboard");
                 }
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to check dashboard status");
-                    Console.WriteLine($"❌ Failed to check dashboard status: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to check dashboard status: {ex.Message}");
                 }
             });
             
@@ -342,7 +342,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show system status");
-                    Console.WriteLine($"❌ Failed to show system status: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show system status: {ex.Message}");
                 }
             });
             
@@ -358,7 +358,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show context status");
-                    Console.WriteLine($"❌ Failed to show context status: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show context status: {ex.Message}");
                 }
             });
             
@@ -369,7 +369,7 @@ namespace Nexo.CLI.Commands
                 try
                 {
                     logger.LogInformation("Showing performance status");
-                    Console.WriteLine("📊 Performance Status:");
+                    Console.WriteLine("Stats Performance Status:");
                     Console.WriteLine("  CPU Usage: 25%");
                     Console.WriteLine("  Memory Usage: 512 MB");
                     Console.WriteLine("  Active Adaptations: 2");
@@ -378,7 +378,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Failed to show performance status");
-                    Console.WriteLine($"❌ Failed to show performance status: {ex.Message}");
+                    Console.WriteLine($"ERROR: Failed to show performance status: {ex.Message}");
                 }
             });
             

@@ -83,8 +83,8 @@ namespace SpaceDefender.Game
             var targetFPS = 60;
             var frameTime = 1000.0 / targetFPS; // 16.67ms per frame
 
-            Console.WriteLine("🚀 Space Defender Game Started!");
-            Console.WriteLine("🎮 Controls: WASD to move, Space to shoot, ESC to pause");
+            Console.WriteLine("Running Space Defender Game Started!");
+            Console.WriteLine("Game Controls: WASD to move, Space to shoot, ESC to pause");
 
             while (_isRunning)
             {
@@ -101,7 +101,7 @@ namespace SpaceDefender.Game
                     if (frameCount % 60 == 0)
                     {
                         var fps = 1000.0 / deltaTime;
-                        Console.WriteLine($"🎯 FPS: {fps:F1} | Score: {_gameState.Score} | Lives: {_gameState.Lives}");
+                        Console.WriteLine($"Target FPS: {fps:F1} | Score: {_gameState.Score} | Lives: {_gameState.Lives}");
                     }
                 }
 
@@ -152,7 +152,7 @@ namespace SpaceDefender.Game
         {
             _isRunning = false;
             Console.WriteLine($"💀 Game Over! Final Score: {_gameState.Score}");
-            Console.WriteLine("🔄 Press R to restart or ESC to exit");
+            Console.WriteLine("Processing Press R to restart or ESC to exit");
         }
 
         /// <summary>

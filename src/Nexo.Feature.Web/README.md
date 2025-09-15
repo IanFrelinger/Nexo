@@ -8,7 +8,7 @@ The Web feature provides advanced code generation capabilities for modern web fr
 
 ## Features
 
-### 🚀 Framework Support
+### Running Framework Support
 - **React** - Functional components, class components, hooks, and more
 - **Vue.js** - Composition API, Options API, composables
 - **Next.js** - Pages, components, and SSR support
@@ -16,7 +16,7 @@ The Web feature provides advanced code generation capabilities for modern web fr
 - **Angular** - Components and services
 - **Svelte** - Components and stores
 
-### 🎯 Component Types
+### Target Component Types
 - **Functional Components** - Modern React hooks and Vue composition API
 - **Class Components** - Traditional React class and Vue options API
 - **Pure Components** - Optimized for performance with memoization
@@ -35,7 +35,7 @@ The Web feature provides advanced code generation capabilities for modern web fr
 - **Memory Optimization** - Efficient memory allocation
 - **Performance Analysis** - Detailed metrics and recommendations
 
-### 📦 Bundle Analysis
+### Package Bundle Analysis
 - **Size Estimation** - Raw, minified, gzipped, and brotli sizes
 - **Compression Ratios** - Optimization effectiveness metrics
 - **Performance Metrics** - Complexity, memory efficiency, execution efficiency

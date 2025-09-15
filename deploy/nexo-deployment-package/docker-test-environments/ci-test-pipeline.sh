@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Nexo Framework CI/CD Multi-Platform Testing"
+echo "Running Nexo Framework CI/CD Multi-Platform Testing"
 echo "=============================================="
 echo ""
 
@@ -37,9 +37,9 @@ run_single_platform_test() {
     
     # Build with timeout
     if timeout $TEST_TIMEOUT docker build -f "$dockerfile" -t "nexo-ci-${platform,,}" .; then
-        echo -e "  ${GREEN}✅ ${platform} build successful${NC}"
+        echo -e "  ${GREEN}SUCCESS: ${platform} build successful${NC}"
     else
-        echo -e "  ${RED}❌ ${platform} build failed${NC}"
+        echo -e "  ${RED}ERROR: ${platform} build failed${NC}"
         TEST_RESULTS[$platform]="FAILED"
         ((FAILED_TESTS++))
         return 1
@@ -52,18 +52,18 @@ run_single_platform_test() {
         -e DOTNET_RUNNING_IN_CONTAINER=true \
         "nexo-ci-${platform,,}" > "$log_file" 2>&1; then
         
-        if grep -q "Deployment Status: ✅ SUCCESS" "$log_file"; then
-            echo -e "  ${GREEN}✅ ${platform} tests PASSED${NC}"
+        if grep -q "Deployment Status: SUCCESS: SUCCESS" "$log_file"; then
+            echo -e "  ${GREEN}SUCCESS: ${platform} tests PASSED${NC}"
             TEST_RESULTS[$platform]="PASSED"
             ((PASSED_TESTS++))
         else
-            echo -e "  ${RED}❌ ${platform} tests FAILED${NC}"
+            echo -e "  ${RED}ERROR: ${platform} tests FAILED${NC}"
             echo "    Log: $log_file"
             TEST_RESULTS[$platform]="FAILED"
             ((FAILED_TESTS++))
         fi
     else
-        echo -e "  ${RED}❌ ${platform} execution failed${NC}"
+        echo -e "  ${RED}ERROR: ${platform} execution failed${NC}"
         TEST_RESULTS[$platform]="FAILED"
         ((FAILED_TESTS++))
     fi
@@ -108,9 +108,9 @@ generate_ci_report() {
     # Platform-specific results
     for platform in "${!TEST_RESULTS[@]}"; do
         if [ "${TEST_RESULTS[$platform]}" = "PASSED" ]; then
-            echo -e "  ${platform}: ${GREEN}✅ PASSED${NC}"
+            echo -e "  ${platform}: ${GREEN}SUCCESS: PASSED${NC}"
         else
-            echo -e "  ${platform}: ${RED}❌ FAILED${NC}"
+            echo -e "  ${platform}: ${RED}ERROR: FAILED${NC}"
         fi
     done
     
@@ -118,12 +118,12 @@ generate_ci_report() {
     
     # Set exit code for CI
     if [ $FAILED_TESTS -eq 0 ]; then
-        echo -e "${GREEN}🎉 All CI tests passed!${NC}"
-        echo -e "${GREEN}CI Status: ✅ SUCCESS${NC}"
+        echo -e "${GREEN}SUCCESS All CI tests passed!${NC}"
+        echo -e "${GREEN}CI Status: SUCCESS: SUCCESS${NC}"
         exit 0
     else
-        echo -e "${RED}❌ Some CI tests failed${NC}"
-        echo -e "${RED}CI Status: ❌ FAILED${NC}"
+        echo -e "${RED}ERROR: Some CI tests failed${NC}"
+        echo -e "${RED}CI Status: ERROR: FAILED${NC}"
         exit 1
     fi
 }
@@ -155,7 +155,7 @@ EOF
     echo "- [macOS Test Log](./macos-ci.log)" >> "../test-results/ci-summary.md"
     echo "- [Alpine Test Log](./alpine-ci.log)" >> "../test-results/ci-summary.md"
     
-    echo -e "${GREEN}✅ Artifacts created in ../test-results/${NC}"
+    echo -e "${GREEN}SUCCESS: Artifacts created in ../test-results/${NC}"
 }
 
 # Function to clean up

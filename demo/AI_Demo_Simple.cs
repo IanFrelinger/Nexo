@@ -10,7 +10,7 @@ namespace Nexo.AI.Demo
     {
         public static async Task Main(string[] args)
         {
-            Console.WriteLine("🤖 Nexo AI Integration Demo");
+            Console.WriteLine("AI Nexo AI Integration Demo");
             Console.WriteLine("=============================");
             Console.WriteLine();
 
@@ -24,12 +24,12 @@ namespace Nexo.AI.Demo
             await DemonstrateAIOptimization();
             
             Console.WriteLine();
-            Console.WriteLine("✅ AI Integration Demo Complete!");
+            Console.WriteLine("SUCCESS: AI Integration Demo Complete!");
         }
 
         private static async Task DemonstrateAICodeGeneration()
         {
-            Console.WriteLine("📝 AI Code Generation Demo");
+            Console.WriteLine("Document AI Code Generation Demo");
             Console.WriteLine("---------------------------");
             
             var prompt = "Create a simple calculator class in C#";
@@ -67,7 +67,7 @@ public class Calculator
 
         private static async Task DemonstrateAICodeReview()
         {
-            Console.WriteLine("🔍 AI Code Review Demo");
+            Console.WriteLine("Search AI Code Review Demo");
             Console.WriteLine("----------------------");
             
             var code = @"

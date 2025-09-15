@@ -2,16 +2,16 @@
 
 This directory contains all Docker-related files for containerization and deployment of the Nexo project.
 
-## 📁 Directory Structure
+## Directory Directory Structure
 
-### 🐳 Docker Compose Files
+### Docker Docker Compose Files
 - **docker-compose.yml** - Main application containerization
 - **docker-compose.test-environments.yml** - Testing environment orchestration
 
-### 🏗️ Dockerfiles
+### Building Dockerfiles
 - **Dockerfile.unity-test** - Unity testing environment container
 
-## 🚀 Usage Examples
+## Running Usage Examples
 
 ### Running the Main Application
 ```bash
@@ -46,7 +46,7 @@ docker build -f docker/Dockerfile.unity-test -t nexo-unity-test .
 docker run --rm nexo-unity-test
 ```
 
-## 📋 File Details
+## List File Details
 
 ### Docker Compose Files
 
@@ -83,7 +83,7 @@ docker run --rm nexo-unity-test
   - Testing framework setup
   - Performance monitoring tools
 
-## 🔧 Docker Development
+## Tool Docker Development
 
 ### Adding New Docker Files
 1. Place Docker files in this directory
@@ -98,7 +98,7 @@ docker run --rm nexo-unity-test
 - Use specific base image versions
 - Document environment variables
 
-## 🧪 Test Environment Details
+## Testing Test Environment Details
 
 ### Available Test Environments
 The `docker-compose.test-environments.yml` provides 7 different test environments:
@@ -117,20 +117,20 @@ The `docker-compose.test-environments.yml` provides 7 different test environment
 - **Unity integration**: Full Unity development environment
 - **Legacy support**: .NET Framework and Mono compatibility
 
-## 📊 Current Status
+## Stats Current Status
 
 - **Docker Compose Files**: 2 files (main, test-environments)
 - **Dockerfiles**: 1 file (unity-test)
 - **Total Docker Files**: 3 files
 - **Test Environments**: 7 environments
 
-## 🔄 Recent Updates
+## Processing Recent Updates
 
 - **Organization**: Moved all Docker files from root directory to organized structure
 - **Documentation**: Added comprehensive Docker documentation
 - **Structure**: Created logical categorization and usage examples
 
-## 🚨 Troubleshooting
+## Alert Troubleshooting
 
 ### Common Issues
 1. **Port conflicts**: Check if ports are already in use

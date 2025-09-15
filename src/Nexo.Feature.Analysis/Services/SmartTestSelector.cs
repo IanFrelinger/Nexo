@@ -165,16 +165,16 @@ namespace Nexo.Feature.Analysis.Services
             
             summary.AppendLine($"🧠 Smart Test Selection Summary");
             summary.AppendLine($"=================================");
-            summary.AppendLine($"📊 Selection Method: {(result.UsedSmartSelection ? "Smart Analysis" : "All Tests")}");
-            summary.AppendLine($"🎯 Tests Selected: {result.SelectedTests.Count:N0} out of {result.AllTests.Count:N0} total");
-            summary.AppendLine($"📈 Confidence Level: {result.Confidence:P1}");
+            summary.AppendLine($"Stats Selection Method: {(result.UsedSmartSelection ? "Smart Analysis" : "All Tests")}");
+            summary.AppendLine($"Target Tests Selected: {result.SelectedTests.Count:N0} out of {result.AllTests.Count:N0} total");
+            summary.AppendLine($"Progress Confidence Level: {result.Confidence:P1}");
             summary.AppendLine($"⚡ Performance: {result.Metrics.TotalTimeMs}ms total");
-            summary.AppendLine($"📁 Files Analyzed: {result.Metrics.FilesAnalyzed:N0}");
-            summary.AppendLine($"🔍 Selection Reason: {result.SelectionReason}");
+            summary.AppendLine($"Directory Files Analyzed: {result.Metrics.FilesAnalyzed:N0}");
+            summary.AppendLine($"Search Selection Reason: {result.SelectionReason}");
             
             if (result.Warnings.Any())
             {
-                summary.AppendLine($"⚠️  Warnings:");
+                summary.AppendLine($"WARNING:  Warnings:");
                 foreach (var warning in result.Warnings)
                 {
                     summary.AppendLine($"   • {warning}");
@@ -183,7 +183,7 @@ namespace Nexo.Feature.Analysis.Services
 
             if (result.UsedSmartSelection && result.ImpactAnalysis != null)
             {
-                summary.AppendLine($"📋 Impact Analysis:");
+                summary.AppendLine($"List Impact Analysis:");
                 summary.AppendLine($"   • Strategy: {result.ImpactAnalysis.Metadata.Strategy}");
                 summary.AppendLine($"   • Duration: {result.ImpactAnalysis.Metadata.DurationMs}ms");
                 summary.AppendLine($"   • Selection Ratio: {result.ImpactAnalysis.SelectionRatio:P1}");

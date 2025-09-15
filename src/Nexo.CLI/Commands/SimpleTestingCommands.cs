@@ -65,7 +65,7 @@ namespace Nexo.CLI.Commands
             //     catch (Exception ex)
             //     {
             //         logger.LogError(ex, "Error running simple tests");
-            //         Console.WriteLine($"❌ Error: {ex.Message}");
+            //         Console.WriteLine($"ERROR: Error: {ex.Message}");
             //         Environment.Exit(1);
             //     }
             // }, outputOption, verboseOption, timeoutOption, forceTimeoutOption, heartbeatIntervalOption, processTimeoutOption, discoverOption, progressOption, coverageOption, coverageThresholdOption);
@@ -88,7 +88,7 @@ namespace Nexo.CLI.Commands
             bool coverage,
             double coverageThreshold)
         {
-            Console.WriteLine("🧪 Simple Testing - No Hanging Tests");
+            Console.WriteLine("Testing Simple Testing - No Hanging Tests");
             Console.WriteLine("====================================");
             Console.WriteLine($"Default Timeout: {timeout} seconds");
             Console.WriteLine($"Force Timeout: {(forceTimeout ? "Enabled" : "Disabled")}");
@@ -149,10 +149,10 @@ namespace Nexo.CLI.Commands
 
             if (discover)
             {
-                Console.WriteLine("🔍 Discovering available simple tests...");
+                Console.WriteLine("Search Discovering available simple tests...");
                 var discoveredTests = await testRunner.DiscoverTestsAsync();
 
-                Console.WriteLine($"\n📋 Found {discoveredTests.Count()} simple tests:");
+                Console.WriteLine($"\nList Found {discoveredTests.Count()} simple tests:");
                 foreach (var test in discoveredTests)
                 {
                     Console.WriteLine($"   • {test.DisplayName} ({test.TestId})");
@@ -165,20 +165,20 @@ namespace Nexo.CLI.Commands
             }
 
             // Run simple tests
-            Console.WriteLine("🚀 Running simple tests with aggressive timeout protection...");
+            Console.WriteLine("Running Running simple tests with aggressive timeout protection...");
             var summary = await testRunner.RunAllTestsAsync(configuration, CancellationToken.None);
 
             // Report results
-            Console.WriteLine("\n📊 Test Execution Summary:");
+            Console.WriteLine("\nStats Test Execution Summary:");
             Console.WriteLine($"   Total Tests: {summary.TotalTests}");
-            Console.WriteLine($"   Passed: {summary.PassedTests} ✅");
-            Console.WriteLine($"   Failed: {summary.FailedTests} ❌");
+            Console.WriteLine($"   Passed: {summary.PassedTests} SUCCESS:");
+            Console.WriteLine($"   Failed: {summary.FailedTests} ERROR:");
             Console.WriteLine($"   Total Duration: {summary.TotalDuration.TotalSeconds:F1}s");
             Console.WriteLine($"   Average Duration: {summary.AverageDuration:F1}ms");
 
             if (summary.FailedTests > 0)
             {
-                Console.WriteLine("\n❌ Failed Tests:");
+                Console.WriteLine("\nERROR: Failed Tests:");
                 foreach (var error in summary.ErrorMessages)
                 {
                     Console.WriteLine($"   • {error}");
@@ -187,13 +187,13 @@ namespace Nexo.CLI.Commands
 
             if (coverage)
             {
-                Console.WriteLine("\n📈 Coverage Analysis:");
+                Console.WriteLine("\nProgress Coverage Analysis:");
                 Console.WriteLine("   Coverage analysis completed (simulated)");
                 Console.WriteLine($"   Threshold: {coverageThreshold:F1}%");
             }
 
-            Console.WriteLine($"\n📁 Test results saved to: {outputDir}");
-            Console.WriteLine("🎉 Simple tests completed successfully!");
+            Console.WriteLine($"\nDirectory Test results saved to: {outputDir}");
+            Console.WriteLine("SUCCESS Simple tests completed successfully!");
         }
     }
 

@@ -36,15 +36,15 @@ print_header() {
 }
 
 print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
+    echo -e "${GREEN}SUCCESS: $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}❌ $1${NC}"
+    echo -e "${RED}ERROR: $1${NC}"
 }
 
 print_info() {
-    echo -e "${YELLOW}ℹ️  $1${NC}"
+    echo -e "${YELLOW}INFO:  $1${NC}"
 }
 
 # Function to run a test and track results
@@ -53,7 +53,7 @@ run_test() {
     local test_command="$2"
     
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
-    echo -e "\n${BLUE}🔄 Running: $test_name${NC}"
+    echo -e "\n${BLUE}Processing Running: $test_name${NC}"
     
     if eval "$test_command"; then
         print_success "$test_name - PASSED"
@@ -71,7 +71,7 @@ run_analysis() {
     local limit="${1:-$DEFAULT_ANALYSIS_LIMIT}"
     local path="${2:-../src}"
     
-    print_header "📊 CODEBASE ANALYSIS"
+    print_header "Stats CODEBASE ANALYSIS"
     echo "Analyzing codebase at: $path (limit: $limit)"
     
     cd "$FEATURE_DEMO_DIR"
@@ -91,7 +91,7 @@ generate_feature() {
 
 # Function to run logging tests
 run_logging_tests() {
-    print_header "🧪 LOGGING SYSTEM TESTS"
+    print_header "Testing LOGGING SYSTEM TESTS"
     
     cd "$FEATURE_DEMO_DIR"
     
@@ -106,7 +106,7 @@ run_logging_tests() {
 
 # Function to run E2E tests
 run_e2e_tests() {
-    print_header "🔄 END-TO-END TESTING"
+    print_header "Processing END-TO-END TESTING"
     
     cd "$FEATURE_DEMO_DIR"
     
@@ -123,7 +123,7 @@ run_e2e_tests() {
 run_stress_tests() {
     local complexity="${1:-medium}"
     
-    print_header "🚀 STRESS TESTS ($complexity complexity)"
+    print_header "Running STRESS TESTS ($complexity complexity)"
     
     case $complexity in
         "quick")
@@ -186,7 +186,7 @@ run_comprehensive_stress_tests() {
 run_multi_platform_tests() {
     local complexity="${1:-quick}"
     
-    print_header "🌐 MULTI-PLATFORM TESTS ($complexity)"
+    print_header "Web MULTI-PLATFORM TESTS ($complexity)"
     
     local platforms=("DotNet" "Java" "Python" "Node.js" "Go" "React" "Vue.js")
     local test_description="Create a simple User Management System with User entity (Id, Name, Email, IsActive, CreatedAt), UserRepository interface, and UserService with basic CRUD operations and validation"
@@ -200,7 +200,7 @@ run_multi_platform_tests() {
 run_scaling_tests() {
     local complexity="${1:-quick}"
     
-    print_header "📈 SCALING TESTS ($complexity)"
+    print_header "Progress SCALING TESTS ($complexity)"
     
     case $complexity in
         "quick")
@@ -290,13 +290,13 @@ show_help() {
 # Function to print final results
 print_results() {
     echo ""
-    print_header "📊 TEST RESULTS SUMMARY"
+    print_header "Stats TEST RESULTS SUMMARY"
     echo "Total Tests: $TOTAL_TESTS"
-    echo "Passed: $PASSED_TESTS ✅"
-    echo "Failed: $FAILED_TESTS ❌"
+    echo "Passed: $PASSED_TESTS SUCCESS:"
+    echo "Failed: $FAILED_TESTS ERROR:"
     
     if [ $FAILED_TESTS -eq 0 ]; then
-        print_success "All tests passed! 🎉"
+        print_success "All tests passed! SUCCESS"
         return 0
     else
         print_error "Some tests failed. Please review the output above."
@@ -361,7 +361,7 @@ main() {
     fi
     
     # Print configuration
-    print_header "🚀 UNIFIED FEATURE FACTORY TEST RUNNER"
+    print_header "Running UNIFIED FEATURE FACTORY TEST RUNNER"
     echo "Target Score: $target_score"
     echo "Max Iterations: $max_iterations"
     echo "Analysis Limit: $analysis_limit"

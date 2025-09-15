@@ -178,7 +178,7 @@ public class IterationCommands
     {
         try
         {
-            Console.WriteLine("🔍 Nexo Iteration Environment Analysis");
+            Console.WriteLine("Search Nexo Iteration Environment Analysis");
             Console.WriteLine("=====================================");
             
             var profile = RuntimeEnvironmentDetector.DetectCurrent();
@@ -198,18 +198,18 @@ public class IterationCommands
                 await ShowDetailedAnalysis(analyzer, profile);
             }
             
-            Console.WriteLine("✅ Environment analysis completed");
+            Console.WriteLine("SUCCESS: Environment analysis completed");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error analyzing environment");
-            Console.WriteLine($"❌ Error analyzing environment: {ex.Message}");
+            Console.WriteLine($"ERROR: Error analyzing environment: {ex.Message}");
         }
     }
     
     private async Task ShowDetailedAnalysis(IIterationStrategySelector analyzer, RuntimeEnvironmentProfile profile)
     {
-        Console.WriteLine("📊 Detailed Analysis");
+        Console.WriteLine("Stats Detailed Analysis");
         Console.WriteLine("-------------------");
         
         // Get recommendations for the current platform
@@ -251,7 +251,7 @@ public class IterationCommands
             
             foreach (var result in comparison.Take(3))
             {
-                var status = result.IsRecommended ? "✅" : "⚪";
+                var status = result.IsRecommended ? "SUCCESS:" : "⚪";
                 Console.WriteLine($"  {status} {result.Strategy.StrategyId}");
                 Console.WriteLine($"    Suitability: {result.SuitabilityScore:F1}%");
                 Console.WriteLine($"    Performance: {result.PerformanceEstimate.PerformanceScore:F1}");
@@ -265,7 +265,7 @@ public class IterationCommands
     {
         try
         {
-            Console.WriteLine($"🏃 Benchmarking iteration strategies for {dataSize} items...");
+            Console.WriteLine($"Running Benchmarking iteration strategies for {dataSize} items...");
             Console.WriteLine("========================================================");
             
             var benchmarker = _serviceProvider.GetRequiredService<IIterationBenchmarker>();
@@ -277,7 +277,7 @@ public class IterationCommands
             
             foreach (var result in results.OrderBy(r => r.ExecutionTime))
             {
-                var status = result.IsRecommended ? "✅" : "⚪";
+                var status = result.IsRecommended ? "SUCCESS:" : "⚪";
                 Console.WriteLine($"{status} {result.StrategyId}");
                 Console.WriteLine($"  Execution Time: {result.ExecutionTime:F2}ms");
                 Console.WriteLine($"  Memory Usage: {result.MemoryUsageMB:F2}MB");
@@ -286,12 +286,12 @@ public class IterationCommands
                 Console.WriteLine();
             }
             
-            Console.WriteLine("✅ Benchmarking completed");
+            Console.WriteLine("SUCCESS: Benchmarking completed");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error benchmarking strategies");
-            Console.WriteLine($"❌ Error benchmarking strategies: {ex.Message}");
+            Console.WriteLine($"ERROR: Error benchmarking strategies: {ex.Message}");
         }
     }
     
@@ -299,7 +299,7 @@ public class IterationCommands
     {
         try
         {
-            Console.WriteLine("🚀 Generating optimized iteration code...");
+            Console.WriteLine("Running Generating optimized iteration code...");
             Console.WriteLine("=========================================");
             
             var generator = _serviceProvider.GetRequiredService<IIterationCodeGenerator>();
@@ -320,15 +320,15 @@ public class IterationCommands
             if (!string.IsNullOrEmpty(output))
             {
                 await System.IO.File.WriteAllTextAsync(output, code);
-                Console.WriteLine($"✅ Code saved to: {output}");
+                Console.WriteLine($"SUCCESS: Code saved to: {output}");
             }
             
-            Console.WriteLine("✅ Code generation completed");
+            Console.WriteLine("SUCCESS: Code generation completed");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating iteration code");
-            Console.WriteLine($"❌ Error generating iteration code: {ex.Message}");
+            Console.WriteLine($"ERROR: Error generating iteration code: {ex.Message}");
         }
     }
     
@@ -366,15 +366,15 @@ public class IterationCommands
             if (!string.IsNullOrEmpty(output))
             {
                 await System.IO.File.WriteAllTextAsync(output, result.OptimizedCode);
-                Console.WriteLine($"✅ Optimized code saved to: {output}");
+                Console.WriteLine($"SUCCESS: Optimized code saved to: {output}");
             }
             
-            Console.WriteLine("✅ Code optimization completed");
+            Console.WriteLine("SUCCESS: Code optimization completed");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error optimizing iteration code");
-            Console.WriteLine($"❌ Error optimizing iteration code: {ex.Message}");
+            Console.WriteLine($"ERROR: Error optimizing iteration code: {ex.Message}");
         }
     }
     
@@ -382,7 +382,7 @@ public class IterationCommands
     {
         try
         {
-            Console.WriteLine("💡 Iteration Strategy Recommendations");
+            Console.WriteLine("Idea Iteration Strategy Recommendations");
             Console.WriteLine("=====================================");
             
             var analyzer = _serviceProvider.GetRequiredService<IIterationStrategySelector>();
@@ -395,7 +395,7 @@ public class IterationCommands
             
             foreach (var recommendation in recommendations)
             {
-                Console.WriteLine($"📋 {recommendation.Scenario}");
+                Console.WriteLine($"List {recommendation.Scenario}");
                 Console.WriteLine($"   Strategy: {recommendation.RecommendedStrategyId}");
                 Console.WriteLine($"   Reasoning: {recommendation.Reasoning}");
                 Console.WriteLine($"   Data Size Range: {recommendation.DataSizeRange.Min} - {recommendation.DataSizeRange.Max}");
@@ -403,12 +403,12 @@ public class IterationCommands
                 Console.WriteLine();
             }
             
-            Console.WriteLine("✅ Recommendations completed");
+            Console.WriteLine("SUCCESS: Recommendations completed");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error showing recommendations");
-            Console.WriteLine($"❌ Error showing recommendations: {ex.Message}");
+            Console.WriteLine($"ERROR: Error showing recommendations: {ex.Message}");
         }
     }
     

@@ -7,7 +7,7 @@ param(
     [switch]$Verbose
 )
 
-Write-Host "🧪 Testing platform code generation..." -ForegroundColor Green
+Write-Host "Testing Testing platform code generation..." -ForegroundColor Green
 
 # Set error action preference
 $ErrorActionPreference = "Stop"
@@ -34,7 +34,7 @@ try {
 
     # Test Unity generation
     Write-Host ""
-    Write-Host "🎮 Testing Unity code generation..." -ForegroundColor Yellow
+    Write-Host "Game Testing Unity code generation..." -ForegroundColor Yellow
     $unityOutput = "$tempDir/unity"
     New-Item -ItemType Directory -Path $unityOutput -Force | Out-Null
     
@@ -95,7 +95,7 @@ export const PlayerCard: React.FC<PlayerProps> = ({ name, health, speed }) => {
 
     # Test iOS generation
     Write-Host ""
-    Write-Host "📱 Testing iOS code generation..." -ForegroundColor Yellow
+    Write-Host "Mobile Testing iOS code generation..." -ForegroundColor Yellow
     $iosOutput = "$tempDir/ios"
     New-Item -ItemType Directory -Path $iosOutput -Force | Out-Null
     
@@ -130,7 +130,7 @@ class PlayerProfileViewController: UIViewController {
 
     # Test Android generation
     Write-Host ""
-    Write-Host "🤖 Testing Android code generation..." -ForegroundColor Yellow
+    Write-Host "AI Testing Android code generation..." -ForegroundColor Yellow
     $androidOutput = "$tempDir/android"
     New-Item -ItemType Directory -Path $androidOutput -Force | Out-Null
     
@@ -206,26 +206,26 @@ namespace Generated.DotNet
 
     # Display test results
     Write-Host ""
-    Write-Host "✅ Platform generation tests complete!" -ForegroundColor Green
+    Write-Host "SUCCESS: Platform generation tests complete!" -ForegroundColor Green
     Write-Host ""
-    Write-Host "📊 Generated Files:" -ForegroundColor Cyan
+    Write-Host "Stats Generated Files:" -ForegroundColor Cyan
     
     $generatedFiles = Get-ChildItem -Path $tempDir -Recurse -File
     foreach ($file in $generatedFiles) {
         $relativePath = $file.FullName.Replace((Get-Location).Path, "").TrimStart('\')
-        Write-Host "  📄 $relativePath" -ForegroundColor White
+        Write-Host "  File $relativePath" -ForegroundColor White
     }
     
     Write-Host ""
-    Write-Host "🎯 Test Summary:" -ForegroundColor Cyan
-    Write-Host "  Unity: ✅ Player.cs generated" -ForegroundColor White
-    Write-Host "  React: ✅ PlayerCard.tsx generated" -ForegroundColor White
-    Write-Host "  iOS: ✅ PlayerProfileViewController.swift generated" -ForegroundColor White
-    Write-Host "  Android: ✅ PlayerActivity.kt generated" -ForegroundColor White
-    Write-Host "  .NET: ✅ Player.cs generated" -ForegroundColor White
+    Write-Host "Target Test Summary:" -ForegroundColor Cyan
+    Write-Host "  Unity: SUCCESS: Player.cs generated" -ForegroundColor White
+    Write-Host "  React: SUCCESS: PlayerCard.tsx generated" -ForegroundColor White
+    Write-Host "  iOS: SUCCESS: PlayerProfileViewController.swift generated" -ForegroundColor White
+    Write-Host "  Android: SUCCESS: PlayerActivity.kt generated" -ForegroundColor White
+    Write-Host "  .NET: SUCCESS: Player.cs generated" -ForegroundColor White
     Write-Host "  Total Files: $($generatedFiles.Count)" -ForegroundColor White
     Write-Host ""
-    Write-Host "💡 Note: This demonstrates the platform generation capabilities." -ForegroundColor Yellow
+    Write-Host "Idea Note: This demonstrates the platform generation capabilities." -ForegroundColor Yellow
     Write-Host "   Actual CLI commands will be implemented in the Feature Factory." -ForegroundColor Yellow
 
 }
@@ -238,7 +238,7 @@ finally {
         Write-Host "  Cleanup complete." -ForegroundColor Gray
     } else {
         Write-Host ""
-        Write-Host "📁 Test files preserved in: $tempDir" -ForegroundColor Yellow
+        Write-Host "Directory Test files preserved in: $tempDir" -ForegroundColor Yellow
         Write-Host "   Use -Clean to remove test files." -ForegroundColor Gray
     }
 }

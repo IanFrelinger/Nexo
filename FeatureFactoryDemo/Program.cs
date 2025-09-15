@@ -69,23 +69,23 @@ public class MockFeatureGenerator
 
         if (_codebaseAnalysisService != null)
         {
-            Console.WriteLine("\n🔍 Gathering codebase context...");
+            Console.WriteLine("\nSearch Gathering codebase context...");
             var context = await _codebaseAnalysisService.GetRelevantContextAsync(description, platform.ToString());
             if (!string.IsNullOrEmpty(context.Content))
             {
                 codebaseContext = $"Based on {context.FilePath} (Quality: {context.QualityScore}/100)";
                 usedCodebaseContext = true;
-                Console.WriteLine($"   📚 Using codebase context: {context.FilePath}");
+                Console.WriteLine($"   Documentation Using codebase context: {context.FilePath}");
             }
         }
 
         if (_commandHistoryService != null)
         {
-            Console.WriteLine("🔍 Checking command history...");
+            Console.WriteLine("Search Checking command history...");
             similarCommands = await _commandHistoryService.GetSimilarCommandsAsync(description, platform.ToString());
             if (similarCommands.Any())
             {
-                Console.WriteLine($"   📋 Found {similarCommands.Count} similar successful commands");
+                Console.WriteLine($"   List Found {similarCommands.Count} similar successful commands");
                 foreach (var cmd in similarCommands.Take(2))
                 {
                     Console.WriteLine($"      - {cmd.Description} (Quality: {cmd.FinalQualityScore}/100)");
@@ -94,23 +94,23 @@ public class MockFeatureGenerator
         }
 
         // Simulate the Feature Factory pipeline
-        Console.WriteLine("\n🔄 Feature Factory Pipeline Execution:");
-        Console.WriteLine("1. 📝 Parsing natural language requirements...");
+        Console.WriteLine("\nProcessing Feature Factory Pipeline Execution:");
+        Console.WriteLine("1. Document Parsing natural language requirements...");
         await Task.Delay(500);
         
         Console.WriteLine("2. 🧠 AI-powered domain analysis...");
         await Task.Delay(500);
         
-        Console.WriteLine("3. 🏗️  Generating Clean Architecture components...");
+        Console.WriteLine("3. Building  Generating Clean Architecture components...");
         await Task.Delay(500);
         
-        Console.WriteLine("4. 🔧 Creating CRUD operations...");
+        Console.WriteLine("4. Tool Creating CRUD operations...");
         await Task.Delay(500);
         
-        Console.WriteLine("5. ✅ Validating generated code...");
+        Console.WriteLine("5. SUCCESS: Validating generated code...");
         await Task.Delay(500);
         
-        Console.WriteLine("6. 🔍 Running iterative coding standards analysis...");
+        Console.WriteLine("6. Search Running iterative coding standards analysis...");
         await Task.Delay(500);
 
         // Start with initial code generation (now with context)
@@ -155,7 +155,7 @@ public class MockFeatureGenerator
         int bestScore = 0;
         string bestCode = currentCode;
 
-        Console.WriteLine($"\n🔄 Starting Iterative Code Improvement (Target: {TargetQualityScore}/100, Max Iterations: {MaxIterations})");
+        Console.WriteLine($"\nProcessing Starting Iterative Code Improvement (Target: {TargetQualityScore}/100, Max Iterations: {MaxIterations})");
         Console.WriteLine(new string('=', 80));
 
         // Simulate progressive quality improvement
@@ -173,7 +173,7 @@ public class MockFeatureGenerator
         while (iteration < MaxIterations)
         {
             iteration++;
-            Console.WriteLine($"\n📊 Iteration {iteration}/{MaxIterations}:");
+            Console.WriteLine($"\nStats Iteration {iteration}/{MaxIterations}:");
             
             try
             {
@@ -212,21 +212,21 @@ public class MockFeatureGenerator
                 // Check if we've reached the target
                 if (analysisResult.Score >= TargetQualityScore)
                 {
-                    Console.WriteLine($"   🎉 TARGET ACHIEVED! Quality score: {analysisResult.Score}/100");
-                    Console.WriteLine($"   ✅ Code meets all quality standards!");
+                    Console.WriteLine($"   SUCCESS TARGET ACHIEVED! Quality score: {analysisResult.Score}/100");
+                    Console.WriteLine($"   SUCCESS: Code meets all quality standards!");
                     break;
                 }
                 
                 // Force continue to iteration 7 to reach 100/100
                 if (iteration == 6 && analysisResult.Score == 90)
                 {
-                    Console.WriteLine($"   🔄 Continuing to final iteration to achieve perfect score...");
+                    Console.WriteLine($"   Processing Continuing to final iteration to achieve perfect score...");
                 }
 
                 // Show violations if any
                 if (analysisResult.Violations.Any())
                 {
-                    Console.WriteLine($"   ⚠️  Violations to fix:");
+                    Console.WriteLine($"   WARNING:  Violations to fix:");
                     foreach (var violation in analysisResult.Violations.Take(3)) // Show first 3 violations
                     {
                         Console.WriteLine($"      - {violation.Message}");
@@ -237,37 +237,37 @@ public class MockFeatureGenerator
                     }
 
                     // Simulate AI-powered code improvement
-                    Console.WriteLine($"   🔧 Applying AI-powered improvements...");
+                    Console.WriteLine($"   Tool Applying AI-powered improvements...");
                     await Task.Delay(800); // Simulate AI processing time
                     
                     currentCode = ImproveCodeBasedOnViolations(currentCode, analysisResult.Violations, iteration);
-                    Console.WriteLine($"   ✨ Code improved based on violation analysis");
+                    Console.WriteLine($"   Starting Code improved based on violation analysis");
                 }
                 else if (iteration < 7)
                 {
-                    Console.WriteLine($"   ✅ No violations found, but continuing to achieve perfect score...");
+                    Console.WriteLine($"   SUCCESS: No violations found, but continuing to achieve perfect score...");
                     
                     // Simulate final improvements
-                    Console.WriteLine($"   🔧 Applying final perfection improvements...");
+                    Console.WriteLine($"   Tool Applying final perfection improvements...");
                     await Task.Delay(800);
-                    Console.WriteLine($"   ✨ Code perfected!");
+                    Console.WriteLine($"   Starting Code perfected!");
                 }
                 else
                 {
-                    Console.WriteLine($"   ✅ Perfect code achieved!");
+                    Console.WriteLine($"   SUCCESS: Perfect code achieved!");
                     break;
                 }
 
                 // Check for improvement stagnation (but allow more iterations to reach 100)
                 if (iteration > 5 && analysisResult.Score == bestScore && bestScore < 90)
                 {
-                    Console.WriteLine($"   ⚠️  No improvement detected in recent iterations. Using best result.");
+                    Console.WriteLine($"   WARNING:  No improvement detected in recent iterations. Using best result.");
                     break;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"   ❌ Analysis failed in iteration {iteration}: {ex.Message}");
+                Console.WriteLine($"   ERROR: Analysis failed in iteration {iteration}: {ex.Message}");
                 break;
             }
         }
@@ -277,10 +277,10 @@ public class MockFeatureGenerator
         result.QualityScore = bestScore;
         result.IterationCount = iteration;
         
-        Console.WriteLine($"\n📈 Final Results:");
+        Console.WriteLine($"\nProgress Final Results:");
         Console.WriteLine($"   Best Quality Score: {bestScore}/100");
         Console.WriteLine($"   Total Iterations: {iteration}");
-        Console.WriteLine($"   Target Achieved: {(bestScore >= TargetQualityScore ? "✅ YES" : "❌ NO")}");
+        Console.WriteLine($"   Target Achieved: {(bestScore >= TargetQualityScore ? "SUCCESS: YES" : "ERROR: NO")}");
         
         if (bestScore < TargetQualityScore)
         {
@@ -514,7 +514,7 @@ public class Program
             return;
         }
         
-        Console.WriteLine("🚀 Nexo Feature Factory Pipeline Demo with Code Analysis & Database Storage");
+        Console.WriteLine("Running Nexo Feature Factory Pipeline Demo with Code Analysis & Database Storage");
         Console.WriteLine("=============================================================================");
 
         // Set up dependency injection
@@ -547,22 +547,22 @@ public class Program
         try
         {
             await dbContext.Database.EnsureCreatedAsync();
-            logger.LogInformation("✅ Database initialized successfully");
+            logger.LogInformation("SUCCESS: Database initialized successfully");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "❌ Failed to initialize database");
+            logger.LogError(ex, "ERROR: Failed to initialize database");
         }
         
         // Load coding standards configuration
         try
         {
             await codeAnalyzer.LoadConfigurationAsync("../examples/coding-standards-config.json");
-            logger.LogInformation("✅ Coding standards configuration loaded successfully");
+            logger.LogInformation("SUCCESS: Coding standards configuration loaded successfully");
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "⚠️  Could not load coding standards configuration, using defaults");
+            logger.LogWarning(ex, "WARNING:  Could not load coding standards configuration, using defaults");
         }
 
         // Analyze codebase for context
@@ -572,7 +572,7 @@ public class Program
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "⚠️  Could not analyze codebase, continuing without context");
+            logger.LogWarning(ex, "WARNING:  Could not analyze codebase, continuing without context");
         }
 
         var featureGenerator = new MockFeatureGenerator(codeAnalyzer, serviceProvider.GetRequiredService<ILogger<MockFeatureGenerator>>(), 
@@ -582,24 +582,24 @@ public class Program
         string featureDescription = "Create a Customer entity with CRUD operations, including properties for Name (string), Email (string), and IsActive (boolean).";
         TargetPlatform targetPlatform = TargetPlatform.DotNet;
 
-        Console.WriteLine("\n📋 Generating Customer Feature...");
+        Console.WriteLine("\nList Generating Customer Feature...");
         var result = await featureGenerator.GenerateFeatureAsync(featureDescription, targetPlatform);
 
         if (result.IsSuccess)
         {
-            Console.WriteLine("\n✅ Feature Factory Pipeline Completed Successfully!");
+            Console.WriteLine("\nSUCCESS: Feature Factory Pipeline Completed Successfully!");
             
             // Display iterative improvement summary
             if (result.IterationCount > 0)
             {
-                Console.WriteLine($"\n📊 Iterative Improvement Summary:");
+                Console.WriteLine($"\nStats Iterative Improvement Summary:");
                 Console.WriteLine($"   Final Quality Score: {result.QualityScore}/100");
                 Console.WriteLine($"   Total Iterations: {result.IterationCount}");
-                Console.WriteLine($"   Target Achieved: {(result.QualityScore >= 100 ? "✅ YES" : "❌ NO")}");
+                Console.WriteLine($"   Target Achieved: {(result.QualityScore >= 100 ? "SUCCESS: YES" : "ERROR: NO")}");
                 
                 if (result.IterationHistory.Any())
                 {
-                    Console.WriteLine($"\n📈 Quality Score Progression:");
+                    Console.WriteLine($"\nProgress Quality Score Progression:");
                     for (int i = 0; i < result.IterationHistory.Count; i++)
                     {
                         var iteration = result.IterationHistory[i];
@@ -608,14 +608,14 @@ public class Program
                 }
             }
             
-            Console.WriteLine("\n📄 Final Generated Code:");
+            Console.WriteLine("\nFile Final Generated Code:");
             Console.WriteLine("===============");
             Console.WriteLine(result.GeneratedCode);
             Console.WriteLine("===============");
 
             if (result.Warnings.Any())
             {
-                Console.WriteLine("\n⚠️ Warnings:");
+                Console.WriteLine("\nWARNING: Warnings:");
                 foreach (var warning in result.Warnings)
                 {
                     Console.WriteLine($"- {warning}");
@@ -624,10 +624,10 @@ public class Program
         }
         else
         {
-            Console.WriteLine("\n❌ Feature Factory Pipeline Failed!");
+            Console.WriteLine("\nERROR: Feature Factory Pipeline Failed!");
             if (result.Errors.Any())
             {
-                Console.WriteLine("\n🔥 Errors:");
+                Console.WriteLine("\nHot Errors:");
                 foreach (var error in result.Errors)
                 {
                     Console.WriteLine($"- {error}");
@@ -635,45 +635,45 @@ public class Program
             }
         }
 
-        Console.WriteLine("\n🎯 Feature Factory Pipeline Components:");
-        Console.WriteLine("• 📝 Natural Language Processing");
+        Console.WriteLine("\nTarget Feature Factory Pipeline Components:");
+        Console.WriteLine("• Document Natural Language Processing");
         Console.WriteLine("• 🧠 AI-powered Domain Analysis");
-        Console.WriteLine("• 🏗️  Clean Architecture Generation");
-        Console.WriteLine("• 🔧 CRUD Operations & Repository Pattern");
-        Console.WriteLine("• ✅ Code Validation & Quality Assurance");
-        Console.WriteLine("• 🔍 Coding Standards Analysis & Enforcement");
-        Console.WriteLine("• 🔄 Iterative Code Improvement");
-        Console.WriteLine("• 🎯 Quality Score Optimization (Target: 100/100)");
+        Console.WriteLine("• Building  Clean Architecture Generation");
+        Console.WriteLine("• Tool CRUD Operations & Repository Pattern");
+        Console.WriteLine("• SUCCESS: Code Validation & Quality Assurance");
+        Console.WriteLine("• Search Coding Standards Analysis & Enforcement");
+        Console.WriteLine("• Processing Iterative Code Improvement");
+        Console.WriteLine("• Target Quality Score Optimization (Target: 100/100)");
         Console.WriteLine("• 💾 Local Database Storage (NEW!)");
-        Console.WriteLine("• 📚 Codebase Context Analysis (NEW!)");
-        Console.WriteLine("• 📋 Command History & Learning (NEW!)");
-        Console.WriteLine("• 🚀 Cross-platform Code Generation");
+        Console.WriteLine("• Documentation Codebase Context Analysis (NEW!)");
+        Console.WriteLine("• List Command History & Learning (NEW!)");
+        Console.WriteLine("• Running Cross-platform Code Generation");
 
-        Console.WriteLine("\n🔧 AI Integration Ready:");
-        Console.WriteLine("• Local Llama models via Ollama ✅");
-        Console.WriteLine("• OpenAI API ✅");
-        Console.WriteLine("• Azure OpenAI ✅");
-        Console.WriteLine("• Custom AI providers ✅");
+        Console.WriteLine("\nTool AI Integration Ready:");
+        Console.WriteLine("• Local Llama models via Ollama SUCCESS:");
+        Console.WriteLine("• OpenAI API SUCCESS:");
+        Console.WriteLine("• Azure OpenAI SUCCESS:");
+        Console.WriteLine("• Custom AI providers SUCCESS:");
 
-        Console.WriteLine("\n📊 Pipeline Status:");
-        Console.WriteLine("✅ Feature Factory Core: Working");
-        Console.WriteLine("✅ Domain Models: Fixed and working");
-        Console.WriteLine("✅ AI Infrastructure: Core components functional");
-        Console.WriteLine("✅ Local Llama Integration: Configured and ready");
-        Console.WriteLine("✅ Pipeline Architecture: Successfully demonstrated");
-        Console.WriteLine("✅ Code Generation: Working with realistic output");
-        Console.WriteLine("✅ Code Analysis: Integrated and functional");
-        Console.WriteLine("✅ Coding Standards: Configurable and enforced");
-        Console.WriteLine("✅ Iterative Improvement: Quality optimization active");
-        Console.WriteLine("✅ Quality Target: 100/100 score achievable");
-        Console.WriteLine("✅ Database Storage: NEW - SQLite local storage active");
-        Console.WriteLine("✅ Codebase Context: NEW - Context-aware generation");
-        Console.WriteLine("✅ Command History: NEW - Learning from successful commands");
-        Console.WriteLine("⚠️  Complex Testing Infrastructure: Has dependency issues");
-        Console.WriteLine("⚠️  Core Domain Project: Language version compatibility issues");
+        Console.WriteLine("\nStats Pipeline Status:");
+        Console.WriteLine("SUCCESS: Feature Factory Core: Working");
+        Console.WriteLine("SUCCESS: Domain Models: Fixed and working");
+        Console.WriteLine("SUCCESS: AI Infrastructure: Core components functional");
+        Console.WriteLine("SUCCESS: Local Llama Integration: Configured and ready");
+        Console.WriteLine("SUCCESS: Pipeline Architecture: Successfully demonstrated");
+        Console.WriteLine("SUCCESS: Code Generation: Working with realistic output");
+        Console.WriteLine("SUCCESS: Code Analysis: Integrated and functional");
+        Console.WriteLine("SUCCESS: Coding Standards: Configurable and enforced");
+        Console.WriteLine("SUCCESS: Iterative Improvement: Quality optimization active");
+        Console.WriteLine("SUCCESS: Quality Target: 100/100 score achievable");
+        Console.WriteLine("SUCCESS: Database Storage: NEW - SQLite local storage active");
+        Console.WriteLine("SUCCESS: Codebase Context: NEW - Context-aware generation");
+        Console.WriteLine("SUCCESS: Command History: NEW - Learning from successful commands");
+        Console.WriteLine("WARNING:  Complex Testing Infrastructure: Has dependency issues");
+        Console.WriteLine("WARNING:  Core Domain Project: Language version compatibility issues");
 
         // Demonstrate coding standards analysis with problematic code
-        Console.WriteLine("\n🔍 Coding Standards Analysis Demo:");
+        Console.WriteLine("\nSearch Coding Standards Analysis Demo:");
         Console.WriteLine("==================================");
         
         var problematicCode = @"
@@ -702,46 +702,46 @@ public class BadExample
         {
             var analysisResult = await codeAnalyzer.ValidateCodeAsync(problematicCode, "BadExample.cs", "demo-agent");
             
-            Console.WriteLine($"📊 Analysis Results:");
+            Console.WriteLine($"Stats Analysis Results:");
             Console.WriteLine($"   Quality Score: {analysisResult.Score}/100");
             Console.WriteLine($"   Violations: {analysisResult.Violations.Count}");
             Console.WriteLine($"   Summary: {analysisResult.Summary}");
             
             if (analysisResult.Violations.Any())
             {
-                Console.WriteLine("\n⚠️  Violations Found:");
+                Console.WriteLine("\nWARNING:  Violations Found:");
                 foreach (var violation in analysisResult.Violations)
                 {
                     Console.WriteLine($"   • {violation.Message} (Line {violation.LineNumber})");
                     if (!string.IsNullOrEmpty(violation.SuggestedFix))
                     {
-                        Console.WriteLine($"     💡 Suggested Fix: {violation.SuggestedFix}");
+                        Console.WriteLine($"     Idea Suggested Fix: {violation.SuggestedFix}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Analysis failed: {ex.Message}");
+            Console.WriteLine($"ERROR: Analysis failed: {ex.Message}");
         }
 
         // Display database statistics
         try
         {
-            Console.WriteLine("\n📊 Database Statistics:");
+            Console.WriteLine("\nStats Database Statistics:");
             Console.WriteLine("======================");
             
             var commandStats = await commandHistoryService.GetStatisticsAsync();
             var codebaseStats = await codebaseAnalysisService.GetCodebaseStatsAsync();
             
-            Console.WriteLine($"📋 Command History:");
+            Console.WriteLine($"List Command History:");
             Console.WriteLine($"   Total Commands: {commandStats.TotalCommands}");
             Console.WriteLine($"   Successful Commands: {commandStats.SuccessfulCommands}");
             Console.WriteLine($"   Success Rate: {commandStats.SuccessRate:F1}%");
             Console.WriteLine($"   Average Quality Score: {commandStats.AverageQualityScore}/100");
             Console.WriteLine($"   Average Iterations: {commandStats.AverageIterations}");
             
-            Console.WriteLine($"\n📚 Codebase Context:");
+            Console.WriteLine($"\nDocumentation Codebase Context:");
             Console.WriteLine($"   Analyzed Files: {codebaseStats.TotalFiles}");
             Console.WriteLine($"   Average Quality Score: {codebaseStats.AverageQualityScore}/100");
             Console.WriteLine($"   High Quality Files (80+): {codebaseStats.HighQualityFiles}");
@@ -749,10 +749,10 @@ public class BadExample
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "⚠️  Could not retrieve database statistics");
+            logger.LogWarning(ex, "WARNING:  Could not retrieve database statistics");
         }
 
-        Console.WriteLine("\n🎉 The Feature Factory Pipeline is operational!");
+        Console.WriteLine("\nSUCCESS The Feature Factory Pipeline is operational!");
         Console.WriteLine("   Ready for production use with AI-powered code generation, quality analysis,");
         Console.WriteLine("   database storage, and codebase context awareness!");
     }
@@ -790,18 +790,18 @@ public class BadExample
             
             // Initialize database
             await dbContext.Database.EnsureCreatedAsync();
-            logger.LogInformation("✅ Database initialized for commands");
+            logger.LogInformation("SUCCESS: Database initialized for commands");
             
             // Load coding standards configuration
             var codeAnalyzer = serviceProvider.GetRequiredService<ICodingStandardAnalyzer>();
             try
             {
                 await codeAnalyzer.LoadConfigurationAsync("../examples/coding-standards-config.json");
-                logger.LogInformation("✅ Coding standards configuration loaded");
+                logger.LogInformation("SUCCESS: Coding standards configuration loaded");
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "⚠️  Could not load coding standards configuration, using defaults");
+                logger.LogWarning(ex, "WARNING:  Could not load coding standards configuration, using defaults");
             }
             
             // Execute command
@@ -814,8 +814,8 @@ public class BadExample
         catch (Exception ex)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "❌ Command execution failed with exception");
-            Console.WriteLine($"\n❌ Command execution failed: {ex.Message}");
+            logger.LogError(ex, "ERROR: Command execution failed with exception");
+            Console.WriteLine($"\nERROR: Command execution failed: {ex.Message}");
             Environment.Exit(1);
         }
     }

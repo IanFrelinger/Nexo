@@ -368,9 +368,9 @@ Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}
         private void DisplaySafetySummary(Nexo.Core.Domain.Models.Policy.SafetyPolicyResult result)
         {
             Console.WriteLine();
-            Console.WriteLine("🔒 Safety Scan Summary");
+            Console.WriteLine("Security Safety Scan Summary");
             Console.WriteLine("=====================");
-            Console.WriteLine($"Status: {(result.Passed ? "✅ PASSED" : "❌ FAILED")}");
+            Console.WriteLine($"Status: {(result.Passed ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             Console.WriteLine($"Safety Score: {result.SafetyScore:F1}/10.0");
             Console.WriteLine($"Violations: {result.Violations.Count}");
 
@@ -382,10 +382,10 @@ Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}
                 {
                     var icon = violation.Severity switch
                     {
-                        "block" => "🚫",
-                        "error" => "❌",
-                        "warn" => "⚠️",
-                        "info" => "ℹ️",
+                        "block" => "BLOCKED",
+                        "error" => "ERROR:",
+                        "warn" => "WARNING:",
+                        "info" => "INFO:",
                         _ => "•"
                     };
                     Console.WriteLine($"  {icon} [{violation.Severity.ToUpper()}] {violation.Description}");
@@ -397,9 +397,9 @@ Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}
         private void DisplayQualitySummary(Nexo.Core.Domain.Models.Policy.QualityPolicyResult result)
         {
             Console.WriteLine();
-            Console.WriteLine("📊 Quality Validation Summary");
+            Console.WriteLine("Stats Quality Validation Summary");
             Console.WriteLine("=============================");
-            Console.WriteLine($"Status: {(result.Passed ? "✅ PASSED" : "❌ FAILED")}");
+            Console.WriteLine($"Status: {(result.Passed ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             Console.WriteLine($"Quality Score: {result.QualityScore:F2}");
             Console.WriteLine($"Violations: {result.Violations.Count}");
 
@@ -421,9 +421,9 @@ Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}
                 {
                     var icon = violation.Severity switch
                     {
-                        "error" => "❌",
-                        "warn" => "⚠️",
-                        "info" => "ℹ️",
+                        "error" => "ERROR:",
+                        "warn" => "WARNING:",
+                        "info" => "INFO:",
                         _ => "•"
                     };
                     Console.WriteLine($"  {icon} [{violation.Severity.ToUpper()}] {violation.Description}");
@@ -435,9 +435,9 @@ Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}
         private void DisplayPolicySummary(Nexo.Core.Domain.Models.Policy.PolicyExecutionResult result)
         {
             Console.WriteLine();
-            Console.WriteLine("📋 Policy Execution Summary");
+            Console.WriteLine("List Policy Execution Summary");
             Console.WriteLine("============================");
-            Console.WriteLine($"Status: {(result.Passed ? "✅ PASSED" : "❌ FAILED")}");
+            Console.WriteLine($"Status: {(result.Passed ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             Console.WriteLine($"Report: {result.ReportPath}");
 
             if (result.SafetyResult != null)
@@ -456,7 +456,7 @@ Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}
                 Console.WriteLine("Errors:");
                 foreach (var error in result.Errors)
                 {
-                    Console.WriteLine($"  ❌ {error}");
+                    Console.WriteLine($"  ERROR: {error}");
                 }
             }
         }

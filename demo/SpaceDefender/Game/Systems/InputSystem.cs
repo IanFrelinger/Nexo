@@ -74,7 +74,7 @@ namespace SpaceDefender.Game.Systems
             if (IsInputJustPressed(InputAction.Pause))
             {
                 gameState.IsPaused = !gameState.IsPaused;
-                Console.WriteLine(gameState.IsPaused ? "⏸️ Game Paused" : "▶️ Game Resumed");
+                Console.WriteLine(gameState.IsPaused ? "⏸️ Game Paused" : "Running Game Resumed");
             }
 
             // Handle restart
@@ -178,7 +178,7 @@ namespace SpaceDefender.Game.Systems
             gameState.IsPaused = false;
             gameState.GameObjects.Clear();
 
-            Console.WriteLine("🔄 Game Restarted!");
+            Console.WriteLine("Processing Game Restarted!");
             await Task.CompletedTask;
         }
 

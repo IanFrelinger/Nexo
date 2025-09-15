@@ -80,7 +80,7 @@ namespace TestConsole
                 }
                 else
                 {
-                    Console.WriteLine("   ⚠ Pipeline configuration has validation issues:");
+                    Console.WriteLine("   WARNING: Pipeline configuration has validation issues:");
                     foreach (var error in validationResult.Errors)
                     {
                         Console.WriteLine($"     - {error.Message}");
@@ -107,7 +107,7 @@ namespace TestConsole
             catch (Exception ex)
             {
                 logger.LogError(ex, "Pipeline demo failed");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
                 Console.WriteLine("Check the logs for more details.");
             }
 

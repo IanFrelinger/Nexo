@@ -28,7 +28,7 @@ namespace FeatureFactoryDemo.Commands
         /// </summary>
         protected void DisplayHelp()
         {
-            Console.WriteLine($"\n📋 {Name} Command");
+            Console.WriteLine($"\nList {Name} Command");
             Console.WriteLine("=" + new string('=', Name.Length + 8));
             Console.WriteLine($"Description: {Description}");
             Console.WriteLine($"Usage: {Usage}");
@@ -40,7 +40,7 @@ namespace FeatureFactoryDemo.Commands
         /// </summary>
         protected void DisplayError(string message)
         {
-            Console.WriteLine($"❌ Error: {message}");
+            Console.WriteLine($"ERROR: Error: {message}");
         }
         
         /// <summary>
@@ -48,7 +48,7 @@ namespace FeatureFactoryDemo.Commands
         /// </summary>
         protected void DisplaySuccess(string message)
         {
-            Console.WriteLine($"✅ {message}");
+            Console.WriteLine($"SUCCESS: {message}");
         }
         
         /// <summary>
@@ -56,7 +56,7 @@ namespace FeatureFactoryDemo.Commands
         /// </summary>
         protected void DisplayInfo(string message)
         {
-            Console.WriteLine($"ℹ️  {message}");
+            Console.WriteLine($"INFO:  {message}");
         }
     }
 }

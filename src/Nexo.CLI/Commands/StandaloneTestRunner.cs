@@ -56,7 +56,7 @@ namespace Nexo.CLI.Commands
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Error running standalone tests");
-                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    Console.WriteLine($"ERROR: Error: {ex.Message}");
                     Environment.Exit(1);
                 }
             }, outputOption, verboseOption, timeoutOption, forceTimeoutOption, heartbeatIntervalOption, processTimeoutOption, discoverOption, progressOption);
@@ -76,7 +76,7 @@ namespace Nexo.CLI.Commands
             bool discover,
             bool progress)
         {
-            Console.WriteLine("🧪 Standalone Testing - No Hanging Tests");
+            Console.WriteLine("Testing Standalone Testing - No Hanging Tests");
             Console.WriteLine("=========================================");
             Console.WriteLine($"Default Timeout: {timeout} seconds");
             Console.WriteLine($"Force Timeout: {(forceTimeout ? "Enabled" : "Disabled")}");
@@ -99,10 +99,10 @@ namespace Nexo.CLI.Commands
 
             if (discover)
             {
-                Console.WriteLine("🔍 Discovering available standalone tests...");
+                Console.WriteLine("Search Discovering available standalone tests...");
                 var discoveredTests = await testRunner.DiscoverTestsAsync();
 
-                Console.WriteLine($"\n📋 Found {discoveredTests.Count()} standalone tests:");
+                Console.WriteLine($"\nList Found {discoveredTests.Count()} standalone tests:");
                 foreach (var test in discoveredTests)
                 {
                     Console.WriteLine($"   • {test.DisplayName} ({test.TestId})");
@@ -115,28 +115,28 @@ namespace Nexo.CLI.Commands
             }
 
             // Run standalone tests
-            Console.WriteLine("🚀 Running standalone tests with aggressive timeout protection...");
+            Console.WriteLine("Running Running standalone tests with aggressive timeout protection...");
             var summary = await testRunner.RunAllTestsAsync(progress);
 
             // Report results
-            Console.WriteLine("\n📊 Test Execution Summary:");
+            Console.WriteLine("\nStats Test Execution Summary:");
             Console.WriteLine($"   Total Tests: {summary.TotalTests}");
-            Console.WriteLine($"   Passed: {summary.PassedTests} ✅");
-            Console.WriteLine($"   Failed: {summary.FailedTests} ❌");
+            Console.WriteLine($"   Passed: {summary.PassedTests} SUCCESS:");
+            Console.WriteLine($"   Failed: {summary.FailedTests} ERROR:");
             Console.WriteLine($"   Total Duration: {summary.TotalDuration.TotalSeconds:F1}s");
             Console.WriteLine($"   Average Duration: {summary.AverageDuration:F1}ms");
 
             if (summary.FailedTests > 0)
             {
-                Console.WriteLine("\n❌ Failed Tests:");
+                Console.WriteLine("\nERROR: Failed Tests:");
                 foreach (var error in summary.ErrorMessages)
                 {
                     Console.WriteLine($"   • {error}");
                 }
             }
 
-            Console.WriteLine($"\n📁 Test results saved to: {outputDir}");
-            Console.WriteLine("🎉 Standalone tests completed successfully!");
+            Console.WriteLine($"\nDirectory Test results saved to: {outputDir}");
+            Console.WriteLine("SUCCESS Standalone tests completed successfully!");
         }
     }
 
@@ -217,7 +217,7 @@ namespace Nexo.CLI.Commands
             
             if (progress)
             {
-                Console.WriteLine($"\n📊 Progress: Starting {tests.Count()} tests...");
+                Console.WriteLine($"\nStats Progress: Starting {tests.Count()} tests...");
             }
 
             var results = new List<StandaloneTestResult>();
@@ -229,7 +229,7 @@ namespace Nexo.CLI.Commands
             {
                 if (progress)
                 {
-                    Console.WriteLine($"\n🔄 [{i + 1}/{tests.Count()}] Running: {test.DisplayName}");
+                    Console.WriteLine($"\nProcessing [{i + 1}/{tests.Count()}] Running: {test.DisplayName}");
                 }
 
                 try
@@ -242,7 +242,7 @@ namespace Nexo.CLI.Commands
                         passedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ✅ {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
+                            Console.WriteLine($"   SUCCESS: {test.DisplayName} - PASSED ({result.Duration.TotalMilliseconds:F0}ms)");
                         }
                     }
                     else
@@ -250,7 +250,7 @@ namespace Nexo.CLI.Commands
                         failedTests++;
                         if (progress)
                         {
-                            Console.WriteLine($"   ❌ {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
+                            Console.WriteLine($"   ERROR: {test.DisplayName} - FAILED ({result.Duration.TotalMilliseconds:F0}ms): {result.ErrorMessage}");
                         }
                     }
                 }
@@ -263,7 +263,7 @@ namespace Nexo.CLI.Commands
                     
                     if (progress)
                     {
-                        Console.WriteLine($"   ❌ {test.DisplayName} - EXCEPTION: {ex.Message}");
+                        Console.WriteLine($"   ERROR: {test.DisplayName} - EXCEPTION: {ex.Message}");
                     }
                 }
 
@@ -275,7 +275,7 @@ namespace Nexo.CLI.Commands
 
             if (progress)
             {
-                Console.WriteLine($"\n📊 Progress: Completed {tests.Count()} tests in {totalDuration.TotalSeconds:F1}s");
+                Console.WriteLine($"\nStats Progress: Completed {tests.Count()} tests in {totalDuration.TotalSeconds:F1}s");
             }
 
             var summary = new StandaloneTestSummary(

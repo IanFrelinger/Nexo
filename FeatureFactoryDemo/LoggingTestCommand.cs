@@ -23,8 +23,8 @@ namespace FeatureFactoryDemo.Commands
         {
             var verbose = args.Contains("--verbose");
             
-            _logger.LogInformation("🧪 Starting comprehensive logging system validation");
-            Console.WriteLine("🧪 COMPREHENSIVE LOGGING SYSTEM VALIDATION");
+            _logger.LogInformation("Testing Starting comprehensive logging system validation");
+            Console.WriteLine("Testing COMPREHENSIVE LOGGING SYSTEM VALIDATION");
             Console.WriteLine("==========================================");
             Console.WriteLine();
 
@@ -54,7 +54,7 @@ namespace FeatureFactoryDemo.Commands
                 using var validation = new LoggingSystemValidation(testServiceProvider, verbose);
                 var result = await validation.RunComprehensiveValidationAsync();
 
-                Console.WriteLine("📊 VALIDATION RESULTS");
+                Console.WriteLine("Stats VALIDATION RESULTS");
                 Console.WriteLine("=====================");
                 Console.WriteLine();
 
@@ -71,30 +71,30 @@ namespace FeatureFactoryDemo.Commands
                 DisplayTestResult("Memory Usage", result.MemoryUsage, verbose);
 
                 Console.WriteLine();
-                Console.WriteLine("🎯 OVERALL RESULT");
+                Console.WriteLine("Target OVERALL RESULT");
                 Console.WriteLine("=================");
                 
                 if (result.OverallSuccess)
                 {
-                    Console.WriteLine("✅ ALL TESTS PASSED! Logging system is working correctly.");
+                    Console.WriteLine("SUCCESS: ALL TESTS PASSED! Logging system is working correctly.");
                     Console.WriteLine();
-                    Console.WriteLine("🎉 Dependency injection wrapped logging is properly implemented:");
-                    Console.WriteLine("   ✅ All logging levels are working correctly");
-                    Console.WriteLine("   ✅ Performance is within acceptable limits");
-                    Console.WriteLine("   ✅ Error handling and logging is functioning");
-                    Console.WriteLine("   ✅ Configuration is working as expected");
-                    Console.WriteLine("   ✅ Stress testing shows system stability");
-                    Console.WriteLine("   ✅ Type-safe generic loggers are working");
-                    Console.WriteLine("   ✅ Service lifetime management is correct");
-                    Console.WriteLine("   ✅ Concurrent operations are thread-safe");
-                    Console.WriteLine("   ✅ Memory usage is optimized");
+                    Console.WriteLine("SUCCESS Dependency injection wrapped logging is properly implemented:");
+                    Console.WriteLine("   SUCCESS: All logging levels are working correctly");
+                    Console.WriteLine("   SUCCESS: Performance is within acceptable limits");
+                    Console.WriteLine("   SUCCESS: Error handling and logging is functioning");
+                    Console.WriteLine("   SUCCESS: Configuration is working as expected");
+                    Console.WriteLine("   SUCCESS: Stress testing shows system stability");
+                    Console.WriteLine("   SUCCESS: Type-safe generic loggers are working");
+                    Console.WriteLine("   SUCCESS: Service lifetime management is correct");
+                    Console.WriteLine("   SUCCESS: Concurrent operations are thread-safe");
+                    Console.WriteLine("   SUCCESS: Memory usage is optimized");
                     
-                    _logger.LogInformation("✅ All logging system tests passed");
+                    _logger.LogInformation("SUCCESS: All logging system tests passed");
                     return 0;
                 }
                 else
                 {
-                    Console.WriteLine("❌ SOME TESTS FAILED! Please review the logging system.");
+                    Console.WriteLine("ERROR: SOME TESTS FAILED! Please review the logging system.");
                     Console.WriteLine();
                     if (!string.IsNullOrEmpty(result.ErrorMessage))
                     {
@@ -106,21 +106,21 @@ namespace FeatureFactoryDemo.Commands
                     Console.WriteLine("- Error handling");
                     Console.WriteLine("- System stability");
                     
-                    _logger.LogError("❌ Some logging system tests failed");
+                    _logger.LogError("ERROR: Some logging system tests failed");
                     return 1;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error during logging system validation: {ex.Message}");
-                _logger.LogError(ex, "❌ Error during logging system validation");
+                Console.WriteLine($"ERROR: Error during logging system validation: {ex.Message}");
+                _logger.LogError(ex, "ERROR: Error during logging system validation");
                 return 1;
             }
         }
 
         private void DisplayTestResult(string testName, TestResult result, bool verbose)
         {
-            var status = result.Success ? "✅ PASS" : "❌ FAIL";
+            var status = result.Success ? "SUCCESS: PASS" : "ERROR: FAIL";
             Console.WriteLine($"{status} {testName}");
             
             if (verbose || !result.Success)

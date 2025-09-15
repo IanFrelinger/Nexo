@@ -32,7 +32,7 @@ namespace Nexo.CLI.Commands.RAG
         {
             try
             {
-                AnsiConsole.MarkupLine($"[bold blue]🔍 Querying RAG Documentation System[/]");
+                AnsiConsole.MarkupLine($"[bold blue]Search Querying RAG Documentation System[/]");
                 AnsiConsole.MarkupLine($"[dim]Query: {query}[/]");
                 AnsiConsole.WriteLine();
 
@@ -67,7 +67,7 @@ namespace Nexo.CLI.Commands.RAG
         {
             try
             {
-                AnsiConsole.MarkupLine($"[bold blue]📚 Ingesting Documentation[/]");
+                AnsiConsole.MarkupLine($"[bold blue]Documentation Ingesting Documentation[/]");
                 AnsiConsole.MarkupLine($"[dim]Path: {path}[/]");
                 AnsiConsole.MarkupLine($"[dim]Type: {type}[/]");
                 AnsiConsole.WriteLine();
@@ -104,7 +104,7 @@ namespace Nexo.CLI.Commands.RAG
                     task.StopTask();
                 });
 
-                AnsiConsole.MarkupLine($"[green]✅ Successfully ingested {type} documentation from {path}[/]");
+                AnsiConsole.MarkupLine($"[green]SUCCESS: Successfully ingested {type} documentation from {path}[/]");
                 return 0;
             }
             catch (Exception ex)
@@ -119,7 +119,7 @@ namespace Nexo.CLI.Commands.RAG
         {
             try
             {
-                AnsiConsole.MarkupLine($"[bold blue]📋 RAG Documentation Status[/]");
+                AnsiConsole.MarkupLine($"[bold blue]List RAG Documentation Status[/]");
                 AnsiConsole.WriteLine();
 
                 // This would require extending the vector store interface to get statistics
@@ -153,7 +153,7 @@ namespace Nexo.CLI.Commands.RAG
         {
             try
             {
-                AnsiConsole.MarkupLine($"[bold blue]🧪 Testing RAG System[/]");
+                AnsiConsole.MarkupLine($"[bold blue]Testing Testing RAG System[/]");
                 AnsiConsole.WriteLine();
 
                 // Test queries
@@ -201,7 +201,7 @@ namespace Nexo.CLI.Commands.RAG
 
                 foreach (var (query, success, confidence, timeMs) in results)
                 {
-                    var status = success ? "[green]✅ Success[/]" : "[red]❌ Failed[/]";
+                    var status = success ? "[green]SUCCESS: Success[/]" : "[red]ERROR: Failed[/]";
                     var confidenceStr = success ? $"{confidence:P1}" : "N/A";
                     var timeStr = success ? timeMs.ToString() : "N/A";
 
@@ -250,14 +250,14 @@ namespace Nexo.CLI.Commands.RAG
             AnsiConsole.WriteLine();
 
             // Display AI response
-            AnsiConsole.MarkupLine($"[bold]🤖 AI Response:[/]");
+            AnsiConsole.MarkupLine($"[bold]AI AI Response:[/]");
             AnsiConsole.MarkupLine(response.AIResponse);
             AnsiConsole.WriteLine();
 
             // Display retrieved chunks
             if (response.RetrievedChunks.Any())
             {
-                AnsiConsole.MarkupLine($"[bold]📚 Retrieved Documentation:[/]");
+                AnsiConsole.MarkupLine($"[bold]Documentation Retrieved Documentation:[/]");
                 
                 foreach (var chunk in response.RetrievedChunks.Take(3))
                 {

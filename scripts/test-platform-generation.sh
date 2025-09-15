@@ -3,7 +3,7 @@
 
 set -e
 
-echo "🧪 Testing platform code generation..."
+echo "Testing Testing platform code generation..."
 
 # Create temporary output directory
 TEMP_DIR="temp/platform-generation-tests"
@@ -19,7 +19,7 @@ dotnet build solutions/Nexo.FeatureFactory.sln --configuration Release
 
 # Test Unity generation
 echo ""
-echo "🎮 Testing Unity code generation..."
+echo "Game Testing Unity code generation..."
 UNITY_OUTPUT="$TEMP_DIR/unity"
 mkdir -p "$UNITY_OUTPUT"
 
@@ -77,7 +77,7 @@ EOF
 
 # Test iOS generation
 echo ""
-echo "📱 Testing iOS code generation..."
+echo "Mobile Testing iOS code generation..."
 IOS_OUTPUT="$TEMP_DIR/ios"
 mkdir -p "$IOS_OUTPUT"
 
@@ -149,24 +149,24 @@ EOF
 
 # Display test results
 echo ""
-echo "✅ Platform generation tests complete!"
+echo "SUCCESS: Platform generation tests complete!"
 echo ""
-echo "📊 Generated Files:"
+echo "Stats Generated Files:"
 
 find "$TEMP_DIR" -type f | while read -r file; do
     relative_path=$(echo "$file" | sed "s|$(pwd)/||")
-    echo "  📄 $relative_path"
+    echo "  File $relative_path"
 done
 
 echo ""
-echo "🎯 Test Summary:"
-echo "  Unity: ✅ Player.cs generated"
-echo "  React: ✅ PlayerCard.tsx generated"
-echo "  iOS: ✅ PlayerProfileViewController.swift generated"
-echo "  .NET: ✅ Player.cs generated"
+echo "Target Test Summary:"
+echo "  Unity: SUCCESS: Player.cs generated"
+echo "  React: SUCCESS: PlayerCard.tsx generated"
+echo "  iOS: SUCCESS: PlayerProfileViewController.swift generated"
+echo "  .NET: SUCCESS: Player.cs generated"
 echo "  Total Files: $(find "$TEMP_DIR" -type f | wc -l)"
 echo ""
-echo "💡 Note: This demonstrates the platform generation capabilities."
+echo "Idea Note: This demonstrates the platform generation capabilities."
 echo "   Actual CLI commands will be implemented in the Feature Factory."
 
 # Clean up

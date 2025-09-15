@@ -188,12 +188,12 @@ namespace Nexo.CLI.Commands.Unity
             {
                 logger.LogInformation("Starting Unity project analysis for: {ProjectPath}", projectPath);
                 
-                Console.WriteLine($"🔍 Analyzing Unity project at {projectPath}...");
+                Console.WriteLine($"Search Analyzing Unity project at {projectPath}...");
                 
                 var analysis = await analyzer.AnalyzeProjectAsync(projectPath);
                 
-                Console.WriteLine($"✅ Analysis complete!");
-                Console.WriteLine($"📊 Project Analysis Results:");
+                Console.WriteLine($"SUCCESS: Analysis complete!");
+                Console.WriteLine($"Stats Project Analysis Results:");
                 Console.WriteLine($"  Scripts: {analysis.ScriptAnalysis.Scripts.Count()}");
                 Console.WriteLine($"  Scenes: {analysis.SceneAnalysis.Scenes.Count()}");
                 Console.WriteLine($"  Assets: {analysis.AssetAnalysis.Assets.Count()}");
@@ -201,7 +201,7 @@ namespace Nexo.CLI.Commands.Unity
                 
                 if (performance)
                 {
-                    Console.WriteLine($"\n🚀 Performance Optimization Opportunities:");
+                    Console.WriteLine($"\nRunning Performance Optimization Opportunities:");
                     foreach (var opt in analysis.IterationOptimizations.Take(5))
                     {
                         Console.WriteLine($"  • {opt.ScriptPath}:{opt.LineNumber}");
@@ -221,7 +221,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to analyze Unity project");
-                Console.WriteLine($"❌ Analysis failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Analysis failed: {ex.Message}");
             }
         }
         
@@ -239,7 +239,7 @@ namespace Nexo.CLI.Commands.Unity
             {
                 logger.LogInformation("Starting Unity project optimization for: {ProjectPath}", projectPath);
                 
-                Console.WriteLine($"🚀 Optimizing Unity project for {target}...");
+                Console.WriteLine($"Running Optimizing Unity project for {target}...");
                 
                 var optimizationRequest = new UnityOptimizationRequest
                 {
@@ -250,8 +250,8 @@ namespace Nexo.CLI.Commands.Unity
                 
                 var result = await optimizer.OptimizeProjectAsync(optimizationRequest);
                 
-                Console.WriteLine($"✅ Optimization complete!");
-                Console.WriteLine($"📈 Performance Improvements:");
+                Console.WriteLine($"SUCCESS: Optimization complete!");
+                Console.WriteLine($"Progress Performance Improvements:");
                 
                 foreach (var improvement in result.Improvements)
                 {
@@ -261,7 +261,7 @@ namespace Nexo.CLI.Commands.Unity
                 
                 if (!apply)
                 {
-                    Console.WriteLine($"\n💡 Run with --apply to apply optimizations");
+                    Console.WriteLine($"\nIdea Run with --apply to apply optimizations");
                 }
                 
                 logger.LogInformation("Unity project optimization completed successfully");
@@ -269,7 +269,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to optimize Unity project");
-                Console.WriteLine($"❌ Optimization failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Optimization failed: {ex.Message}");
             }
         }
         
@@ -287,7 +287,7 @@ namespace Nexo.CLI.Commands.Unity
             {
                 logger.LogInformation("Starting Unity project performance monitoring for: {ProjectPath}", projectPath);
                 
-                Console.WriteLine($"📊 Monitoring Unity project performance for {duration} seconds...");
+                Console.WriteLine($"Stats Monitoring Unity project performance for {duration} seconds...");
                 
                 var config = new GameMonitoringConfiguration
                 {
@@ -308,7 +308,7 @@ namespace Nexo.CLI.Commands.Unity
                 // Generate final report
                 var report = await monitor.GeneratePerformanceReportAsync(TimeSpan.FromSeconds(duration));
                 
-                Console.WriteLine($"\n📋 Performance Report:");
+                Console.WriteLine($"\nList Performance Report:");
                 Console.WriteLine($"  Average FPS: {report.AverageFrameRate:F1}");
                 Console.WriteLine($"  Min FPS: {report.MinFrameRate:F1}");
                 Console.WriteLine($"  Performance Issues: {report.CriticalEvents.Count()}");
@@ -319,7 +319,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to monitor Unity project performance");
-                Console.WriteLine($"❌ Monitoring failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Monitoring failed: {ex.Message}");
             }
         }
         
@@ -341,7 +341,7 @@ namespace Nexo.CLI.Commands.Unity
                     .Select(p => Enum.Parse<UnityBuildTarget>(p, true))
                     .ToArray();
                 
-                Console.WriteLine($"🏗️ Optimizing build for platforms: {string.Join(", ", targetPlatforms)}");
+                Console.WriteLine($"Building Optimizing build for platforms: {string.Join(", ", targetPlatforms)}");
                 
                 var buildRequest = new UnityBuildRequest
                 {
@@ -352,11 +352,11 @@ namespace Nexo.CLI.Commands.Unity
                 
                 var optimization = await buildOptimizer.OptimizeBuildAsync(buildRequest);
                 
-                Console.WriteLine($"✅ Build optimization complete!");
+                Console.WriteLine($"SUCCESS: Build optimization complete!");
                 
                 foreach (var platformOpt in optimization.PlatformOptimizations)
                 {
-                    Console.WriteLine($"\n📱 {platformOpt.Key} Optimizations:");
+                    Console.WriteLine($"\nMobile {platformOpt.Key} Optimizations:");
                     foreach (var appliedOpt in platformOpt.Value.AppliedOptimizations)
                     {
                         Console.WriteLine($"  • {appliedOpt}");
@@ -366,11 +366,11 @@ namespace Nexo.CLI.Commands.Unity
                 if (apply)
                 {
                     await buildOptimizer.ApplyBuildOptimizationsAsync(projectPath, optimization);
-                    Console.WriteLine($"✅ Optimizations applied to project");
+                    Console.WriteLine($"SUCCESS: Optimizations applied to project");
                 }
                 else
                 {
-                    Console.WriteLine($"\n💡 Run with --apply to apply build optimizations");
+                    Console.WriteLine($"\nIdea Run with --apply to apply build optimizations");
                 }
                 
                 logger.LogInformation("Unity build optimization completed successfully");
@@ -378,7 +378,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to optimize Unity build");
-                Console.WriteLine($"❌ Build optimization failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Build optimization failed: {ex.Message}");
             }
         }
         
@@ -387,34 +387,34 @@ namespace Nexo.CLI.Commands.Unity
         /// </summary>
         private static async Task ShowDetailedAnalysis(UnityProjectAnalysis analysis)
         {
-            Console.WriteLine($"\n📋 Detailed Analysis Results:");
+            Console.WriteLine($"\nList Detailed Analysis Results:");
             
             // Script analysis
-            Console.WriteLine($"\n📝 Script Analysis:");
+            Console.WriteLine($"\nDocument Script Analysis:");
             foreach (var script in analysis.ScriptAnalysis.Scripts.Take(10))
             {
                 Console.WriteLine($"  • {script.Name} ({script.LinesOfCode} lines)");
                 if (script.PerformanceIssues.Any())
                 {
-                    Console.WriteLine($"    ⚠️ {script.PerformanceIssues.Count()} performance issues");
+                    Console.WriteLine($"    WARNING: {script.PerformanceIssues.Count()} performance issues");
                 }
             }
             
             // Asset analysis
-            Console.WriteLine($"\n🎨 Asset Analysis:");
+            Console.WriteLine($"\nDesign Asset Analysis:");
             Console.WriteLine($"  Total Assets: {analysis.AssetAnalysis.Assets.Count()}");
             Console.WriteLine($"  Total Size: {analysis.AssetAnalysis.TotalAssetSize / 1024 / 1024:F1} MB");
             Console.WriteLine($"  Optimizable Size: {analysis.AssetAnalysis.OptimizableAssetSize / 1024 / 1024:F1} MB");
             
             // Scene analysis
-            Console.WriteLine($"\n🎬 Scene Analysis:");
+            Console.WriteLine($"\nMovie Scene Analysis:");
             foreach (var scene in analysis.SceneAnalysis.Scenes.Take(5))
             {
                 Console.WriteLine($"  • {scene.Name}: {scene.GameObjects} objects, {scene.DrawCalls} draw calls");
             }
             
             // Performance recommendations
-            Console.WriteLine($"\n💡 Performance Recommendations:");
+            Console.WriteLine($"\nIdea Performance Recommendations:");
             foreach (var rec in analysis.PerformanceRecommendations.Take(5))
             {
                 Console.WriteLine($"  • {rec.Category}: {rec.Description}");
@@ -427,7 +427,7 @@ namespace Nexo.CLI.Commands.Unity
         /// </summary>
         private static async Task StreamRealTimePerformance(IGamePerformanceMonitor monitor, CancellationToken cancellationToken)
         {
-            Console.WriteLine($"\n📊 Real-time Performance Updates:");
+            Console.WriteLine($"\nStats Real-time Performance Updates:");
             Console.WriteLine($"{"Time",-8} {"FPS",-6} {"CPU",-6} {"GPU",-6} {"Memory",-8} {"GC",-6}");
             Console.WriteLine(new string('-', 50));
             

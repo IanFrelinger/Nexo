@@ -47,7 +47,7 @@ namespace Nexo.CLI.Help
                     Title = "Create Web API Project",
                     Description = "Initialize a new ASP.NET Core Web API project with AI enhancement",
                     CommandLine = "nexo project init --name MyApi --type webapi --ai",
-                    ExpectedOutput = "✅ Project 'MyApi' initialized successfully with AI enhancements!",
+                    ExpectedOutput = "SUCCESS: Project 'MyApi' initialized successfully with AI enhancements!",
                     Category = "Project Management",
                     Tags = new List<string> { "project", "init", "webapi", "ai" }
                 },
@@ -56,7 +56,7 @@ namespace Nexo.CLI.Help
                     Title = "Scaffold Controller",
                     Description = "Generate a new API controller with CRUD operations",
                     CommandLine = "nexo project scaffold --type controller --name ProductsController",
-                    ExpectedOutput = "✅ Created ProductsController.cs with full CRUD operations",
+                    ExpectedOutput = "SUCCESS: Created ProductsController.cs with full CRUD operations",
                     Category = "Project Management",
                     Tags = new List<string> { "scaffold", "controller", "crud" }
                 },
@@ -65,7 +65,7 @@ namespace Nexo.CLI.Help
                     Title = "Set Up Development Environment",
                     Description = "Configure development environment for the current project",
                     CommandLine = "nexo project env --setup",
-                    ExpectedOutput = "✅ Development environment configured successfully",
+                    ExpectedOutput = "SUCCESS: Development environment configured successfully",
                     Category = "Project Management",
                     Tags = new List<string> { "environment", "setup", "development" }
                 },
@@ -76,7 +76,7 @@ namespace Nexo.CLI.Help
                     Title = "Generate Service with AI",
                     Description = "Create a service class using AI-powered code generation",
                     CommandLine = "nexo generate code --type service --name UserService --ai",
-                    ExpectedOutput = "✅ Generated UserService.cs with AI-optimized implementation",
+                    ExpectedOutput = "SUCCESS: Generated UserService.cs with AI-optimized implementation",
                     Category = "Code Generation",
                     Tags = new List<string> { "generate", "service", "ai" }
                 },
@@ -85,7 +85,7 @@ namespace Nexo.CLI.Help
                     Title = "Generate Unit Tests",
                     Description = "Create comprehensive unit tests for existing code",
                     CommandLine = "nexo generate tests --path ./src/Services --coverage",
-                    ExpectedOutput = "✅ Generated 15 unit tests with 95% coverage",
+                    ExpectedOutput = "SUCCESS: Generated 15 unit tests with 95% coverage",
                     Category = "Code Generation",
                     Tags = new List<string> { "generate", "tests", "coverage" }
                 },
@@ -94,7 +94,7 @@ namespace Nexo.CLI.Help
                     Title = "Generate Documentation",
                     Description = "Create API documentation from code comments",
                     CommandLine = "nexo generate docs --project . --format markdown",
-                    ExpectedOutput = "✅ Generated comprehensive API documentation",
+                    ExpectedOutput = "SUCCESS: Generated comprehensive API documentation",
                     Category = "Code Generation",
                     Tags = new List<string> { "generate", "docs", "documentation" }
                 },
@@ -105,7 +105,7 @@ namespace Nexo.CLI.Help
                     Title = "Analyze Performance",
                     Description = "Analyze application performance and identify bottlenecks",
                     CommandLine = "nexo analyze performance --project . --detailed",
-                    ExpectedOutput = "📊 Performance analysis complete. Found 3 optimization opportunities.",
+                    ExpectedOutput = "Stats Performance analysis complete. Found 3 optimization opportunities.",
                     Category = "Performance Optimization",
                     Tags = new List<string> { "analyze", "performance", "optimization" }
                 },
@@ -114,7 +114,7 @@ namespace Nexo.CLI.Help
                     Title = "Start Performance Monitoring",
                     Description = "Begin real-time performance monitoring",
                     CommandLine = "nexo monitor start --metrics performance,memory,cpu",
-                    ExpectedOutput = "📊 Performance monitoring started. View dashboard with 'nexo dashboard'",
+                    ExpectedOutput = "Stats Performance monitoring started. View dashboard with 'nexo dashboard'",
                     Category = "Performance Optimization",
                     Tags = new List<string> { "monitor", "performance", "real-time" }
                 },
@@ -123,7 +123,7 @@ namespace Nexo.CLI.Help
                     Title = "Apply Optimizations",
                     Description = "Apply recommended performance optimizations",
                     CommandLine = "nexo optimize apply --recommendations",
-                    ExpectedOutput = "✅ Applied 5 performance optimizations. Expected 25% improvement.",
+                    ExpectedOutput = "SUCCESS: Applied 5 performance optimizations. Expected 25% improvement.",
                     Category = "Performance Optimization",
                     Tags = new List<string> { "optimize", "apply", "recommendations" }
                 },
@@ -134,7 +134,7 @@ namespace Nexo.CLI.Help
                     Title = "Initialize Unity Project",
                     Description = "Create a new Unity project with optimal settings",
                     CommandLine = "nexo unity project init --name MyGame --template 3d",
-                    ExpectedOutput = "🎮 Unity project 'MyGame' initialized with 3D template",
+                    ExpectedOutput = "Game Unity project 'MyGame' initialized with 3D template",
                     Category = "Unity Game Development",
                     Tags = new List<string> { "unity", "project", "init", "3d" }
                 },
@@ -143,7 +143,7 @@ namespace Nexo.CLI.Help
                     Title = "Build for Multiple Platforms",
                     Description = "Build Unity project for Windows, macOS, and Linux",
                     CommandLine = "nexo unity build --platforms windows,macos,linux",
-                    ExpectedOutput = "🎮 Building for 3 platforms... ✅ All builds completed successfully",
+                    ExpectedOutput = "Game Building for 3 platforms... SUCCESS: All builds completed successfully",
                     Category = "Unity Game Development",
                     Tags = new List<string> { "unity", "build", "cross-platform" }
                 },
@@ -152,7 +152,7 @@ namespace Nexo.CLI.Help
                     Title = "Run Unity Tests",
                     Description = "Execute both play mode and edit mode tests",
                     CommandLine = "nexo unity test --playmode --editmode",
-                    ExpectedOutput = "🧪 Running Unity tests... ✅ All tests passed (45/45)",
+                    ExpectedOutput = "Testing Running Unity tests... SUCCESS: All tests passed (45/45)",
                     Category = "Unity Game Development",
                     Tags = new List<string> { "unity", "test", "playmode", "editmode" }
                 },
@@ -163,7 +163,7 @@ namespace Nexo.CLI.Help
                     Title = "Start Adaptation Engine",
                     Description = "Enable real-time adaptation with multiple strategies",
                     CommandLine = "nexo adaptation start --strategies performance,resource,ux",
-                    ExpectedOutput = "🔄 Adaptation engine started with 3 active strategies",
+                    ExpectedOutput = "Processing Adaptation engine started with 3 active strategies",
                     Category = "Real-Time Adaptation",
                     Tags = new List<string> { "adaptation", "start", "strategies" }
                 },
@@ -172,7 +172,7 @@ namespace Nexo.CLI.Help
                     Title = "Monitor Adaptations",
                     Description = "View detailed adaptation status and recent improvements",
                     CommandLine = "nexo adaptation status --detailed",
-                    ExpectedOutput = "📊 Adaptation Status: Active | Recent improvements: +15% performance",
+                    ExpectedOutput = "Stats Adaptation Status: Active | Recent improvements: +15% performance",
                     Category = "Real-Time Adaptation",
                     Tags = new List<string> { "adaptation", "status", "monitor" }
                 },
@@ -192,7 +192,7 @@ namespace Nexo.CLI.Help
                     Title = "Create Build Pipeline",
                     Description = "Set up a complete build, test, and deploy pipeline",
                     CommandLine = "nexo pipeline create --name build-test-deploy --template standard",
-                    ExpectedOutput = "🔧 Pipeline 'build-test-deploy' created with standard template",
+                    ExpectedOutput = "Tool Pipeline 'build-test-deploy' created with standard template",
                     Category = "Pipeline Management",
                     Tags = new List<string> { "pipeline", "create", "build", "deploy" }
                 },
@@ -201,7 +201,7 @@ namespace Nexo.CLI.Help
                     Title = "Execute Pipeline",
                     Description = "Run the pipeline asynchronously",
                     CommandLine = "nexo pipeline execute --name build-test-deploy --async",
-                    ExpectedOutput = "🚀 Pipeline execution started. Monitor with 'nexo pipeline status'",
+                    ExpectedOutput = "Running Pipeline execution started. Monitor with 'nexo pipeline status'",
                     Category = "Pipeline Management",
                     Tags = new List<string> { "pipeline", "execute", "async" }
                 },
@@ -221,7 +221,7 @@ namespace Nexo.CLI.Help
                     Title = "Start Interactive Mode",
                     Description = "Launch interactive CLI with intelligent suggestions",
                     CommandLine = "nexo interactive",
-                    ExpectedOutput = "🚀 Welcome to Nexo Interactive Mode\nType 'help' for available commands",
+                    ExpectedOutput = "Running Welcome to Nexo Interactive Mode\nType 'help' for available commands",
                     Category = "Interactive Mode",
                     Tags = new List<string> { "interactive", "cli", "suggestions" }
                 },
@@ -230,7 +230,7 @@ namespace Nexo.CLI.Help
                     Title = "Open Real-Time Dashboard",
                     Description = "Launch the monitoring dashboard",
                     CommandLine = "nexo dashboard",
-                    ExpectedOutput = "📊 Real-time dashboard opened. Press 'Q' to quit.",
+                    ExpectedOutput = "Stats Real-time dashboard opened. Press 'Q' to quit.",
                     Category = "Interactive Mode",
                     Tags = new List<string> { "dashboard", "monitor", "real-time" }
                 },
@@ -239,7 +239,7 @@ namespace Nexo.CLI.Help
                     Title = "Get Command Suggestions",
                     Description = "Get intelligent command recommendations",
                     CommandLine = "nexo suggest",
-                    ExpectedOutput = "💡 Based on your current context, try: 'nexo analyze performance'",
+                    ExpectedOutput = "Idea Based on your current context, try: 'nexo analyze performance'",
                     Category = "Interactive Mode",
                     Tags = new List<string> { "suggest", "recommendations", "ai" }
                 },
@@ -250,7 +250,7 @@ namespace Nexo.CLI.Help
                     Title = "Run All Tests",
                     Description = "Execute all tests in the project",
                     CommandLine = "nexo test run --project .",
-                    ExpectedOutput = "🧪 Running tests... ✅ 127/127 tests passed",
+                    ExpectedOutput = "Testing Running tests... SUCCESS: 127/127 tests passed",
                     Category = "Testing",
                     Tags = new List<string> { "test", "run", "all" }
                 },
@@ -259,7 +259,7 @@ namespace Nexo.CLI.Help
                     Title = "Generate Test Coverage Report",
                     Description = "Create detailed test coverage analysis",
                     CommandLine = "nexo test coverage --detailed --output html",
-                    ExpectedOutput = "📊 Test coverage: 94.2% | Report saved to coverage.html",
+                    ExpectedOutput = "Stats Test coverage: 94.2% | Report saved to coverage.html",
                     Category = "Testing",
                     Tags = new List<string> { "test", "coverage", "report" }
                 },

@@ -214,7 +214,7 @@ namespace Nexo.CLI.Dashboard
         
         private async Task RenderDashboardHeader()
         {
-            var header = $"🚀 Nexo Real-Time Dashboard - {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
+            var header = $"Running Nexo Real-Time Dashboard - {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
             WriteColoredLine(header, ConsoleColor.Cyan);
             WriteHorizontalLine('═', Console.WindowWidth);
         }
@@ -319,10 +319,10 @@ namespace Nexo.CLI.Dashboard
         private async Task ShowDashboardHelp()
         {
             Console.Clear();
-            Console.WriteLine("🚀 Nexo Dashboard Help");
+            Console.WriteLine("Running Nexo Dashboard Help");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
-            Console.WriteLine("📊 Widgets:");
+            Console.WriteLine("Stats Widgets:");
             for (int i = 0; i < _widgets.Count; i++)
             {
                 Console.WriteLine($"  {i + 1}. {_widgets[i].Title}");
@@ -343,7 +343,7 @@ namespace Nexo.CLI.Dashboard
             var errorY = Console.WindowHeight - 1;
             Console.SetCursorPosition(0, errorY);
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write($"❌ Dashboard Error: {ex.Message}".PadRight(Console.WindowWidth - 1));
+            Console.Write($"ERROR: Dashboard Error: {ex.Message}".PadRight(Console.WindowWidth - 1));
             Console.ResetColor();
         }
         

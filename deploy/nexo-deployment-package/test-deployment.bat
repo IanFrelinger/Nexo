@@ -2,7 +2,7 @@
 REM Nexo Framework Deployment Test Script (Windows)
 REM This script validates that the Nexo framework is properly deployed and functional
 
-echo 🚀 Nexo Framework Deployment Test
+echo Running Nexo Framework Deployment Test
 echo ==================================
 echo.
 
@@ -24,21 +24,21 @@ if %errorlevel% equ 0 (
     if not "%expected_output%"=="" (
         findstr /i "%expected_output%" temp_test_output.txt >nul
         if %errorlevel% equ 0 (
-            echo   ✅ PASS
+            echo   SUCCESS: PASS
             set /a TESTS_PASSED+=1
         ) else (
-            echo   ❌ FAIL - Expected output not found
+            echo   ERROR: FAIL - Expected output not found
             echo     Expected: %expected_output%
             echo     Got: 
             type temp_test_output.txt | head -5
             set /a TESTS_FAILED+=1
         )
     ) else (
-        echo   ✅ PASS
+        echo   SUCCESS: PASS
         set /a TESTS_PASSED+=1
     )
 ) else (
-    echo   ❌ FAIL - Command failed
+    echo   ERROR: FAIL - Command failed
     echo     Error: 
     type temp_test_output.txt | tail -3
     set /a TESTS_FAILED+=1
@@ -51,18 +51,18 @@ echo Checking .NET Runtime...
 dotnet --version >nul 2>&1
 if %errorlevel% equ 0 (
     for /f "tokens=*" %%i in ('dotnet --version') do set DOTNET_VERSION=%%i
-    echo   ✅ .NET Runtime found: %DOTNET_VERSION%
+    echo   SUCCESS: .NET Runtime found: %DOTNET_VERSION%
     
     REM Check if it's .NET 8.0 or higher
     echo %DOTNET_VERSION% | findstr /r "^8\." >nul
     if %errorlevel% equ 0 (
-        echo   ✅ .NET 8.0+ runtime confirmed
+        echo   SUCCESS: .NET 8.0+ runtime confirmed
     ) else (
-        echo   ❌ .NET 8.0+ required, found: %DOTNET_VERSION%
+        echo   ERROR: .NET 8.0+ required, found: %DOTNET_VERSION%
         exit /b 1
     )
 ) else (
-    echo   ❌ .NET Runtime not found
+    echo   ERROR: .NET Runtime not found
     echo     Please install .NET 8.0 runtime from https://dotnet.microsoft.com/download
     exit /b 1
 )
@@ -71,18 +71,18 @@ echo.
 REM Check file permissions
 echo Checking file permissions...
 if exist "Nexo.CLI.exe" (
-    echo   ✅ Nexo.CLI.exe found
+    echo   SUCCESS: Nexo.CLI.exe found
 ) else if exist "Nexo.CLI" (
-    echo   ✅ Nexo.CLI found
+    echo   SUCCESS: Nexo.CLI found
 ) else (
-    echo   ❌ Nexo.CLI executable not found
+    echo   ERROR: Nexo.CLI executable not found
     exit /b 1
 )
 
 if exist "Nexo.CLI.dll" (
-    echo   ✅ Nexo.CLI.dll found
+    echo   SUCCESS: Nexo.CLI.dll found
 ) else (
-    echo   ❌ Nexo.CLI.dll not found
+    echo   ERROR: Nexo.CLI.dll not found
     exit /b 1
 )
 echo.
@@ -122,10 +122,10 @@ if exist "Nexo.CLI.exe" (
     echo Testing: Project Help
     Nexo.CLI.exe project --help > temp_test_output.txt 2>&1
     if %errorlevel% equ 0 (
-        echo   ✅ PASS
+        echo   SUCCESS: PASS
         set /a TESTS_PASSED+=1
     ) else (
-        echo   ❌ FAIL
+        echo   ERROR: FAIL
         echo     Error: 
         type temp_test_output.txt | tail -3
         set /a TESTS_FAILED+=1
@@ -137,10 +137,10 @@ if exist "Nexo.CLI.exe" (
     echo Testing: Project Help
     dotnet Nexo.CLI.dll project --help > temp_test_output.txt 2>&1
     if %errorlevel% equ 0 (
-        echo   ✅ PASS
+        echo   SUCCESS: PASS
         set /a TESTS_PASSED+=1
     ) else (
-        echo   ❌ FAIL
+        echo   ERROR: FAIL
         echo     Error: 
         type temp_test_output.txt | tail -3
         set /a TESTS_FAILED+=1
@@ -187,16 +187,16 @@ if exist "Nexo.CLI.exe" (
 if %errorlevel% neq 0 (
     findstr /i "error Error Unknown invalid" temp_test_output.txt >nul
     if %errorlevel% equ 0 (
-        echo   ✅ PASS - Proper error handling
+        echo   SUCCESS: PASS - Proper error handling
         set /a TESTS_PASSED+=1
     ) else (
-        echo   ⚠️  WARNING - Unexpected error response
+        echo   WARNING:  WARNING - Unexpected error response
         echo     Output: 
         type temp_test_output.txt | head -3
         set /a TESTS_PASSED+=1
     )
 ) else (
-    echo   ❌ FAIL - Should have failed with invalid command
+    echo   ERROR: FAIL - Should have failed with invalid command
     set /a TESTS_FAILED+=1
 )
 echo.
@@ -211,7 +211,7 @@ if exist "Nexo.CLI.exe" (
     dotnet Nexo.CLI.dll --version >nul 2>&1
 )
 set end_time=%time%
-echo   ✅ PASS - Startup performance test completed
+echo   SUCCESS: PASS - Startup performance test completed
 set /a TESTS_PASSED+=1
 echo.
 
@@ -225,15 +225,15 @@ echo Total Tests: %total_tests%
 echo.
 
 if %TESTS_FAILED% equ 0 (
-    echo 🎉 All tests passed! Nexo framework is ready for use.
+    echo SUCCESS All tests passed! Nexo framework is ready for use.
     echo.
-    echo Deployment Status: ✅ SUCCESS
+    echo Deployment Status: SUCCESS: SUCCESS
     del temp_test_output.txt
     exit /b 0
 ) else (
-    echo ❌ Some tests failed. Please review the errors above.
+    echo ERROR: Some tests failed. Please review the errors above.
     echo.
-    echo Deployment Status: ❌ FAILED
+    echo Deployment Status: ERROR: FAILED
     del temp_test_output.txt
     exit /b 1
 ) 

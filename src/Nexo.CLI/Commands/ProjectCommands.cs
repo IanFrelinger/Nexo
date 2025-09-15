@@ -366,7 +366,7 @@ namespace Nexo.CLI.Commands
             await GenerateProjectDocumentation(name, projectPath, type);
             await Task.Delay(500);
             
-            Console.WriteLine($"🎉 AI-enhanced project '{name}' initialized successfully!");
+            Console.WriteLine($"SUCCESS AI-enhanced project '{name}' initialized successfully!");
         }
         
         /// <summary>
@@ -389,7 +389,7 @@ namespace Nexo.CLI.Commands
             Console.WriteLine("✓ Generating basic documentation...");
             await GenerateProjectDocumentation(name, projectPath, type);
             
-            Console.WriteLine($"✅ Project '{name}' initialized successfully!");
+            Console.WriteLine($"SUCCESS: Project '{name}' initialized successfully!");
         }
         
         /// <summary>

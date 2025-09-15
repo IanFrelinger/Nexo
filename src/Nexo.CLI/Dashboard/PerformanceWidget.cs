@@ -66,7 +66,7 @@ namespace Nexo.CLI.Dashboard
         {
             // Show detailed performance information
             Console.Clear();
-            Console.WriteLine("📊 Detailed Performance Information");
+            Console.WriteLine("Stats Detailed Performance Information");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             

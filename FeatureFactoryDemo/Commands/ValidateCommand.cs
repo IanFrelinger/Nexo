@@ -25,7 +25,7 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("🔍 Feature Factory Validation Command");
+                Console.WriteLine("Search Feature Factory Validation Command");
                 Console.WriteLine("====================================");
                 
                 // Parse arguments

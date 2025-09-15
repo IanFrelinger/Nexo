@@ -173,7 +173,7 @@ namespace Nexo.CLI.Commands
                 if (!result.IsSuccess)
                 {
                     logger.LogError("Failed to generate extension: {ExtensionName}", name);
-                    Console.WriteLine($"❌ Failed to generate extension '{name}':");
+                    Console.WriteLine($"ERROR: Failed to generate extension '{name}':");
                     foreach (var error in result.Errors)
                     {
                         Console.WriteLine($"  - {error}");
@@ -191,16 +191,16 @@ namespace Nexo.CLI.Commands
                 
                 logger.LogInformation("Successfully generated extension: {ExtensionName} at {FilePath}", name, filePath);
                 
-                Console.WriteLine($"✅ Successfully generated extension '{name}'");
-                Console.WriteLine($"📁 File: {filePath}");
-                Console.WriteLine($"📊 Code length: {result.Code.Length} characters");
-                Console.WriteLine($"🏷️  Type: {type}");
+                Console.WriteLine($"SUCCESS: Successfully generated extension '{name}'");
+                Console.WriteLine($"Directory File: {filePath}");
+                Console.WriteLine($"Stats Code length: {result.Code.Length} characters");
+                Console.WriteLine($"Tag:  Type: {type}");
                 Console.WriteLine($"👤 Author: {author}");
-                Console.WriteLine($"📝 Version: {version}");
+                Console.WriteLine($"Document Version: {version}");
                 
                 if (result.Warnings.Any())
                 {
-                    Console.WriteLine("⚠️  Warnings:");
+                    Console.WriteLine("WARNING:  Warnings:");
                     foreach (var warning in result.Warnings)
                     {
                         Console.WriteLine($"  - {warning}");
@@ -210,7 +210,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error generating extension: {ExtensionName}", name);
-                Console.WriteLine($"❌ Error generating extension '{name}': {ex.Message}");
+                Console.WriteLine($"ERROR: Error generating extension '{name}': {ex.Message}");
             }
         }
         
@@ -225,7 +225,7 @@ namespace Nexo.CLI.Commands
                 
                 if (!Directory.Exists(outputDir))
                 {
-                    Console.WriteLine($"❌ Output directory does not exist: {outputDir}");
+                    Console.WriteLine($"ERROR: Output directory does not exist: {outputDir}");
                     return;
                 }
                 
@@ -236,11 +236,11 @@ namespace Nexo.CLI.Commands
                 
                 if (extensionFiles.Length == 0)
                 {
-                    Console.WriteLine($"📁 No extension files found in: {outputDir}");
+                    Console.WriteLine($"Directory No extension files found in: {outputDir}");
                     return;
                 }
                 
-                Console.WriteLine($"📁 Found {extensionFiles.Length} extension file(s) in: {outputDir}");
+                Console.WriteLine($"Directory Found {extensionFiles.Length} extension file(s) in: {outputDir}");
                 Console.WriteLine();
                 
                 foreach (var file in extensionFiles)
@@ -250,7 +250,7 @@ namespace Nexo.CLI.Commands
                     var fileSize = fileInfo.Length;
                     var lastModified = fileInfo.LastWriteTime;
                     
-                    Console.WriteLine($"  📄 {fileName}");
+                    Console.WriteLine($"  File {fileName}");
                     Console.WriteLine($"     Size: {fileSize:N0} bytes");
                     Console.WriteLine($"     Modified: {lastModified:yyyy-MM-dd HH:mm:ss}");
                     Console.WriteLine();
@@ -259,7 +259,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error listing extensions in directory: {OutputDir}", output);
-                Console.WriteLine($"❌ Error listing extensions: {ex.Message}");
+                Console.WriteLine($"ERROR: Error listing extensions: {ex.Message}");
             }
         }
         
@@ -274,7 +274,7 @@ namespace Nexo.CLI.Commands
                 
                 if (!File.Exists(filePath))
                 {
-                    Console.WriteLine($"❌ Extension file does not exist: {filePath}");
+                    Console.WriteLine($"ERROR: Extension file does not exist: {filePath}");
                     return;
                 }
                 
@@ -318,13 +318,13 @@ namespace Nexo.CLI.Commands
                 // Display results
                 if (isValid)
                 {
-                    Console.WriteLine($"✅ Extension file is valid: {filePath}");
-                    Console.WriteLine($"📊 File size: {content.Length:N0} characters");
-                    Console.WriteLine($"📄 Lines: {content.Split('\n').Length:N0}");
+                    Console.WriteLine($"SUCCESS: Extension file is valid: {filePath}");
+                    Console.WriteLine($"Stats File size: {content.Length:N0} characters");
+                    Console.WriteLine($"File Lines: {content.Split('\n').Length:N0}");
                 }
                 else
                 {
-                    Console.WriteLine($"❌ Extension file has validation errors: {filePath}");
+                    Console.WriteLine($"ERROR: Extension file has validation errors: {filePath}");
                     Console.WriteLine();
                     Console.WriteLine("Errors found:");
                     foreach (var error in errors)
@@ -336,7 +336,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error validating extension file: {FilePath}", file);
-                Console.WriteLine($"❌ Error validating extension file: {ex.Message}");
+                Console.WriteLine($"ERROR: Error validating extension file: {ex.Message}");
             }
         }
     }

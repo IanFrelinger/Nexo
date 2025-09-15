@@ -3,75 +3,75 @@
 # Working test script for local Llama model with proper timeouts and shorter prompts
 set -e
 
-echo "🧪 Working Llama Model Test"
+echo "Testing Working Llama Model Test"
 echo "==========================="
 
 # Check if Ollama is running
-echo "🔍 Checking Ollama service..."
+echo "Search Checking Ollama service..."
 if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
-    echo "❌ Ollama is not running"
+    echo "ERROR: Ollama is not running"
     exit 1
 fi
-echo "✅ Ollama is running"
+echo "SUCCESS: Ollama is running"
 
 # List available models
 echo ""
-echo "📋 Available models:"
+echo "List Available models:"
 models=$(curl -s http://localhost:11434/api/tags | jq -r '.models[] | "   • \(.name) (\(.size | . / 1024 / 1024 / 1024 | floor)GB)"' 2>/dev/null || echo "   • Unable to list models")
 echo "$models"
 
 # Test 1: Simple greeting
 echo ""
-echo "🧪 Test 1: Simple greeting..."
+echo "Testing Test 1: Simple greeting..."
 response1=$(timeout 30 curl -s -X POST http://localhost:11434/api/generate \
   -H "Content-Type: application/json" \
   -d '{"model": "llama3.2:latest", "prompt": "Hello", "stream": false, "options": {"num_predict": 20}}' 2>/dev/null || echo "{}")
 
 content1=$(echo "$response1" | jq -r '.response' 2>/dev/null || echo "Failed")
 if [ "$content1" != "null" ] && [ -n "$content1" ] && [ "$content1" != "Failed" ]; then
-    echo "✅ Simple greeting: $content1"
+    echo "SUCCESS: Simple greeting: $content1"
 else
-    echo "❌ Simple greeting failed"
+    echo "ERROR: Simple greeting failed"
     exit 1
 fi
 
 # Test 2: Short code generation
 echo ""
-echo "🧪 Test 2: Code generation..."
+echo "Testing Test 2: Code generation..."
 response2=$(timeout 45 curl -s -X POST http://localhost:11434/api/generate \
   -H "Content-Type: application/json" \
   -d '{"model": "llama3.2:latest", "prompt": "Create a C# class with Name property", "stream": false, "options": {"num_predict": 150}}' 2>/dev/null || echo "{}")
 
 content2=$(echo "$response2" | jq -r '.response' 2>/dev/null || echo "Failed")
 if [ "$content2" != "null" ] && [ -n "$content2" ] && [ "$content2" != "Failed" ]; then
-    echo "✅ Code generation successful!"
+    echo "SUCCESS: Code generation successful!"
     echo ""
-    echo "📄 Generated code:"
+    echo "File Generated code:"
     echo "=================="
     echo "$content2"
     echo "=================="
 else
-    echo "❌ Code generation failed"
+    echo "ERROR: Code generation failed"
     exit 1
 fi
 
 # Test 3: Customer entity (shorter prompt)
 echo ""
-echo "🧪 Test 3: Customer entity generation..."
+echo "Testing Test 3: Customer entity generation..."
 response3=$(timeout 60 curl -s -X POST http://localhost:11434/api/generate \
   -H "Content-Type: application/json" \
   -d '{"model": "llama3.2:latest", "prompt": "C# Customer class with Id, Name, Email", "stream": false, "options": {"num_predict": 200}}' 2>/dev/null || echo "{}")
 
 content3=$(echo "$response3" | jq -r '.response' 2>/dev/null || echo "Failed")
 if [ "$content3" != "null" ] && [ -n "$content3" ] && [ "$content3" != "Failed" ]; then
-    echo "✅ Customer entity generation successful!"
+    echo "SUCCESS: Customer entity generation successful!"
     echo ""
-    echo "📄 Generated Customer class:"
+    echo "File Generated Customer class:"
     echo "============================"
     echo "$content3"
     echo "============================"
 else
-    echo "❌ Customer entity generation failed"
+    echo "ERROR: Customer entity generation failed"
     exit 1
 fi
 
@@ -87,19 +87,19 @@ perf_response=$(timeout 30 curl -s -X POST http://localhost:11434/api/generate \
 end_time=$(date +%s)
 duration=$((end_time - start_time))
 
-echo "✅ Performance test completed in ${duration} seconds"
+echo "SUCCESS: Performance test completed in ${duration} seconds"
 
 # Summary
 echo ""
-echo "🎉 Local Llama Model Test Summary"
+echo "SUCCESS Local Llama Model Test Summary"
 echo "================================="
-echo "✅ Ollama service: Running"
-echo "✅ Text generation: Working"
-echo "✅ Code generation: Working"
-echo "✅ Customer entity generation: Working"
-echo "✅ Performance: ${duration}s response time"
+echo "SUCCESS: Ollama service: Running"
+echo "SUCCESS: Text generation: Working"
+echo "SUCCESS: Code generation: Working"
+echo "SUCCESS: Customer entity generation: Working"
+echo "SUCCESS: Performance: ${duration}s response time"
 echo ""
-echo "🚀 Your local Llama model is ready for the Feature Factory!"
+echo "Running Your local Llama model is ready for the Feature Factory!"
 echo ""
 echo "Next steps:"
 echo "  1. Run: ./demo-feature-factory-local.sh"

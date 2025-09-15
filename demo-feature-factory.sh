@@ -3,13 +3,13 @@
 # Nexo Feature Factory Demo Script
 # This script demonstrates the AI-native feature factory capabilities
 
-echo "🚀 Nexo Feature Factory Demo"
+echo "Running Nexo Feature Factory Demo"
 echo "============================="
 echo ""
 
 # Check if we're in the right directory
 if [ ! -f "Nexo.sln" ]; then
-    echo "❌ Error: Please run this script from the Nexo project root directory"
+    echo "ERROR: Error: Please run this script from the Nexo project root directory"
     exit 1
 fi
 
@@ -17,11 +17,11 @@ fi
 echo "🔨 Building Nexo project..."
 dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release
 if [ $? -ne 0 ]; then
-    echo "❌ Build failed"
+    echo "ERROR: Build failed"
     exit 1
 fi
 
-echo "✅ Build completed successfully"
+echo "SUCCESS: Build completed successfully"
 echo ""
 
 # Create output directory
@@ -32,11 +32,11 @@ if [ -d "$OUTPUT_DIR" ]; then
 fi
 mkdir -p "$OUTPUT_DIR"
 
-echo "📁 Created output directory: $OUTPUT_DIR"
+echo "Directory Created output directory: $OUTPUT_DIR"
 echo ""
 
 # Demo 1: Analyze a feature description
-echo "🔍 Demo 1: Feature Analysis"
+echo "Search Demo 1: Feature Analysis"
 echo "============================"
 echo "Analyzing: 'Customer with name, email, phone, billing address. Email must be unique and validated.'"
 echo ""
@@ -47,16 +47,16 @@ dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj feature analyze \
     --output "$OUTPUT_DIR/customer-analysis.json"
 
 if [ $? -eq 0 ]; then
-    echo "✅ Analysis completed successfully"
-    echo "📄 Results saved to: $OUTPUT_DIR/customer-analysis.json"
+    echo "SUCCESS: Analysis completed successfully"
+    echo "File Results saved to: $OUTPUT_DIR/customer-analysis.json"
 else
-    echo "❌ Analysis failed"
+    echo "ERROR: Analysis failed"
 fi
 
 echo ""
 
 # Demo 2: Generate a complete feature
-echo "🏭 Demo 2: Feature Generation"
+echo "Factory Demo 2: Feature Generation"
 echo "=============================="
 echo "Generating complete Customer feature with CRUD operations..."
 echo ""
@@ -68,23 +68,23 @@ dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj feature generate \
     --verbose
 
 if [ $? -eq 0 ]; then
-    echo "✅ Feature generation completed successfully"
-    echo "📁 Generated code saved to: $OUTPUT_DIR/customer-feature"
+    echo "SUCCESS: Feature generation completed successfully"
+    echo "Directory Generated code saved to: $OUTPUT_DIR/customer-feature"
     
     # Show generated files
     echo ""
-    echo "📋 Generated Files:"
+    echo "List Generated Files:"
     find "$OUTPUT_DIR/customer-feature" -type f -name "*.cs" | while read file; do
         echo "   • $(basename "$file")"
     done
 else
-    echo "❌ Feature generation failed"
+    echo "ERROR: Feature generation failed"
 fi
 
 echo ""
 
 # Demo 3: Generate a more complex feature
-echo "🏗️ Demo 3: Complex Feature Generation"
+echo "Building Demo 3: Complex Feature Generation"
 echo "======================================"
 echo "Generating Order Management feature with multiple entities..."
 echo ""
@@ -96,17 +96,17 @@ dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj feature generate \
     --verbose
 
 if [ $? -eq 0 ]; then
-    echo "✅ Complex feature generation completed successfully"
-    echo "📁 Generated code saved to: $OUTPUT_DIR/order-management"
+    echo "SUCCESS: Complex feature generation completed successfully"
+    echo "Directory Generated code saved to: $OUTPUT_DIR/order-management"
     
     # Show generated files
     echo ""
-    echo "📋 Generated Files:"
+    echo "List Generated Files:"
     find "$OUTPUT_DIR/order-management" -type f -name "*.cs" | while read file; do
         echo "   • $(basename "$file")"
     done
 else
-    echo "❌ Complex feature generation failed"
+    echo "ERROR: Complex feature generation failed"
 fi
 
 echo ""
@@ -132,23 +132,23 @@ if [ -f "$OUTPUT_DIR/customer-feature/src/Application/UseCases/CreateCustomerUse
 fi
 
 # Summary
-echo "🎉 Demo Summary"
+echo "SUCCESS Demo Summary"
 echo "==============="
-echo "✅ Feature Factory Demo completed!"
+echo "SUCCESS: Feature Factory Demo completed!"
 echo ""
-echo "📊 What was demonstrated:"
+echo "Stats What was demonstrated:"
 echo "   • Natural language feature analysis"
 echo "   • Complete feature generation with Clean Architecture"
 echo "   • Entity, Repository, Use Case, and Test generation"
 echo "   • Complex multi-entity feature generation"
 echo "   • AI-powered domain analysis and code generation"
 echo ""
-echo "📁 Generated artifacts are available in:"
+echo "Directory Generated artifacts are available in:"
 echo "   • $OUTPUT_DIR/customer-analysis.json (analysis results)"
 echo "   • $OUTPUT_DIR/customer-feature/ (generated Customer feature)"
 echo "   • $OUTPUT_DIR/order-management/ (generated Order Management feature)"
 echo ""
-echo "🚀 The AI-native feature factory is ready for production use!"
+echo "Running The AI-native feature factory is ready for production use!"
 echo ""
 echo "Next steps:"
 echo "   • Review generated code for quality and completeness"

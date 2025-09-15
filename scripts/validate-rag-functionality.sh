@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🔍 Validating RAG Functionality"
+echo "Search Validating RAG Functionality"
 echo "==============================="
 
 # Colors for output
@@ -226,13 +226,13 @@ rm -rf ./test-docs
 
 print_success "RAG functionality validation completed successfully!"
 echo ""
-echo "📊 Validation Summary:"
-echo "- Basic RAG service: ✅ Working"
-echo "- Vector store: ✅ Working"
-echo "- Embedding service: ✅ Working"
-echo "- Integration: ✅ Working"
-echo "- Agent enhancement: ✅ Working"
-echo "- Performance: ✅ Working"
-echo "- Documentation ingestion: ✅ Working"
+echo "Stats Validation Summary:"
+echo "- Basic RAG service: SUCCESS: Working"
+echo "- Vector store: SUCCESS: Working"
+echo "- Embedding service: SUCCESS: Working"
+echo "- Integration: SUCCESS: Working"
+echo "- Agent enhancement: SUCCESS: Working"
+echo "- Performance: SUCCESS: Working"
+echo "- Documentation ingestion: SUCCESS: Working"
 echo ""
-echo "🎉 RAG system is fully functional and ready for use!"
+echo "SUCCESS RAG system is fully functional and ready for use!"

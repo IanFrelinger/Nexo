@@ -35,7 +35,7 @@ if ($Clean) {
 # Build for each target framework
 foreach ($target in $targets) {
     Write-Host ""
-    Write-Host "🎯 Building for $target..." -ForegroundColor Yellow
+    Write-Host "Target Building for $target..." -ForegroundColor Yellow
     
     foreach ($solution in $solutions) {
         Write-Host "  Building $solution..." -ForegroundColor Gray
@@ -74,11 +74,11 @@ foreach ($target in $targets) {
 }
 
 Write-Host ""
-Write-Host "✅ All platform builds complete!" -ForegroundColor Green
+Write-Host "SUCCESS: All platform builds complete!" -ForegroundColor Green
 
 # Display build summary
 Write-Host ""
-Write-Host "📊 Build Summary:" -ForegroundColor Cyan
+Write-Host "Stats Build Summary:" -ForegroundColor Cyan
 Write-Host "  Configuration: $Configuration" -ForegroundColor White
 Write-Host "  Target Frameworks: $($targets -join ', ')" -ForegroundColor White
 Write-Host "  Solutions: $($solutions.Count)" -ForegroundColor White

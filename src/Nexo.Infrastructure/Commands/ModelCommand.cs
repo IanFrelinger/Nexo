@@ -79,7 +79,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to list models: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to list models: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to list models");
                 }
             }, providerOption, typeOption, availableOption, installedOption);
@@ -109,7 +109,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to pull model: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to pull model: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to pull model {ModelName}", model);
                 }
             }, modelArgument, providerOption, forceOption);
@@ -139,7 +139,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to remove model: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to remove model: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to remove model {ModelName}", model);
                 }
             }, modelArgument, providerOption, forceOption);
@@ -167,7 +167,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to get model info: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to get model info: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to get model info for {ModelName}", model);
                 }
             }, modelArgument, providerOption);
@@ -193,7 +193,7 @@ namespace Nexo.Infrastructure.Commands
                 }
                 catch (Exception ex)
                 {
-                    AnsiConsole.MarkupLine($"[red]❌ Failed to check health: {ex.Message}[/]");
+                    AnsiConsole.MarkupLine($"[red]ERROR: Failed to check health: {ex.Message}[/]");
                     _logger.LogError(ex, "Failed to check health");
                 }
             }, providerOption);
@@ -304,7 +304,7 @@ namespace Nexo.Infrastructure.Commands
 
             if (selectedProvider == null)
             {
-                AnsiConsole.MarkupLine($"[red]❌ No provider found for model: {modelName}[/]");
+                AnsiConsole.MarkupLine($"[red]ERROR: No provider found for model: {modelName}[/]");
                 return;
             }
 
@@ -314,7 +314,7 @@ namespace Nexo.Infrastructure.Commands
                 var existingModels = await selectedProvider.GetAvailableModelsAsync();
                 if (existingModels.Any(m => m.Name.Contains(modelName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    AnsiConsole.MarkupLine($"[yellow]⚠️ Model {modelName} already exists. Use --force to re-download.[/]");
+                    AnsiConsole.MarkupLine($"[yellow]WARNING: Model {modelName} already exists. Use --force to re-download.[/]");
                     return;
                 }
             }
@@ -325,13 +325,13 @@ namespace Nexo.Infrastructure.Commands
             {
                 var modelInfo = await selectedProvider.DownloadModelAsync(modelName);
                 
-                AnsiConsole.MarkupLine($"[green]✅ Successfully downloaded model: {modelInfo.Name}[/]");
+                AnsiConsole.MarkupLine($"[green]SUCCESS: Successfully downloaded model: {modelInfo.Name}[/]");
                 AnsiConsole.MarkupLine($"[dim]Size: {FormatBytes(modelInfo.SizeBytes)}[/]");
                 AnsiConsole.MarkupLine($"[dim]Engine: {modelInfo.EngineType}[/]");
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]❌ Failed to download model: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]ERROR: Failed to download model: {ex.Message}[/]");
                 throw;
             }
         }
@@ -371,7 +371,7 @@ namespace Nexo.Infrastructure.Commands
 
             if (selectedProvider == null)
             {
-                AnsiConsole.MarkupLine($"[red]❌ Model {modelName} not found in any provider[/]");
+                AnsiConsole.MarkupLine($"[red]ERROR: Model {modelName} not found in any provider[/]");
                 return;
             }
 
@@ -380,12 +380,12 @@ namespace Nexo.Infrastructure.Commands
                 var confirmed = AnsiConsole.Confirm($"Are you sure you want to remove model '{modelName}' from {selectedProvider.Name}?");
                 if (!confirmed)
                 {
-                    AnsiConsole.MarkupLine("[yellow]❌ Operation cancelled[/]");
+                    AnsiConsole.MarkupLine("[yellow]ERROR: Operation cancelled[/]");
                     return;
                 }
             }
 
-            AnsiConsole.MarkupLine($"[blue]🗑️ Removing model {modelName} from {selectedProvider.Name}...[/]");
+            AnsiConsole.MarkupLine($"[blue]Removing Removing model {modelName} from {selectedProvider.Name}...[/]");
 
             try
             {
@@ -393,16 +393,16 @@ namespace Nexo.Infrastructure.Commands
                 
                 if (success)
                 {
-                    AnsiConsole.MarkupLine($"[green]✅ Successfully removed model: {modelName}[/]");
+                    AnsiConsole.MarkupLine($"[green]SUCCESS: Successfully removed model: {modelName}[/]");
                 }
                 else
                 {
-                    AnsiConsole.MarkupLine($"[yellow]⚠️ Model {modelName} was not found or could not be removed[/]");
+                    AnsiConsole.MarkupLine($"[yellow]WARNING: Model {modelName} was not found or could not be removed[/]");
                 }
             }
             catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[red]❌ Failed to remove model: {ex.Message}[/]");
+                AnsiConsole.MarkupLine($"[red]ERROR: Failed to remove model: {ex.Message}[/]");
                 throw;
             }
         }
@@ -447,7 +447,7 @@ namespace Nexo.Infrastructure.Commands
 
             if (modelInfo == null || selectedProvider == null)
             {
-                AnsiConsole.MarkupLine($"[red]❌ Model {modelName} not found[/]");
+                AnsiConsole.MarkupLine($"[red]ERROR: Model {modelName} not found[/]");
                 return;
             }
 

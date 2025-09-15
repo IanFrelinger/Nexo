@@ -89,7 +89,7 @@ namespace Epic5_4Test
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("🚀 Testing Epic 5.4: Deployment & Integration Features 🚀\n");
+            Console.WriteLine("Running Testing Epic 5.4: Deployment & Integration Features Running\n");
 
             // Create mock services
             var deploymentManager = new MockDeploymentManager();
@@ -141,39 +141,39 @@ namespace Epic5_4Test
             var deployResult = await deploymentManager.DeployAsync(azureTarget);
             if (deployResult.Success)
             {
-                Console.WriteLine("✅ Deployment completed successfully");
+                Console.WriteLine("SUCCESS: Deployment completed successfully");
                 
                 // Step 2: Test connectivity
                 var connectivity = await deploymentManager.TestConnectivityAsync(azureTarget);
                 if (connectivity)
                 {
-                    Console.WriteLine("✅ Connectivity test passed");
+                    Console.WriteLine("SUCCESS: Connectivity test passed");
                     
                     // Step 3: Integrate with external systems
                     var integration = await systemIntegrator.IntegrateWithApiAsync(apiEndpoints);
                     if (integration.Success)
                     {
-                        Console.WriteLine("✅ System integration completed");
+                        Console.WriteLine("SUCCESS: System integration completed");
                         
                         // Step 4: Monitor application health
                         var appHealth = await applicationMonitor.GetHealthAsync(deployResult.DeploymentId);
-                        Console.WriteLine($"✅ Application monitoring: {appHealth.Status}");
+                        Console.WriteLine($"SUCCESS: Application monitoring: {appHealth.Status}");
                         
-                        Console.WriteLine("\n🎉 Epic 5.4: Deployment & Integration - All tests completed successfully! 🎉");
+                        Console.WriteLine("\nSUCCESS Epic 5.4: Deployment & Integration - All tests completed successfully! SUCCESS");
                     }
                     else
                     {
-                        Console.WriteLine("❌ System integration failed");
+                        Console.WriteLine("ERROR: System integration failed");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("❌ Connectivity test failed");
+                    Console.WriteLine("ERROR: Connectivity test failed");
                 }
             }
             else
             {
-                Console.WriteLine("❌ Deployment failed");
+                Console.WriteLine("ERROR: Deployment failed");
             }
 
             Console.WriteLine("\nPress any key to exit...");

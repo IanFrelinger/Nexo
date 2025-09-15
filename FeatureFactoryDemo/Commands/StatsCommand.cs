@@ -27,7 +27,7 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("📊 Feature Factory Statistics");
+                Console.WriteLine("Stats Feature Factory Statistics");
                 Console.WriteLine("=============================");
                 
                 // Parse arguments
@@ -85,7 +85,7 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("\n📋 Command History Statistics:");
+                Console.WriteLine("\nList Command History Statistics:");
                 Console.WriteLine("==============================");
                 
                 var stats = await _commandHistoryService.GetStatisticsAsync();
@@ -119,7 +119,7 @@ namespace FeatureFactoryDemo.Commands
         {
             try
             {
-                Console.WriteLine("\n📚 Codebase Statistics:");
+                Console.WriteLine("\nDocumentation Codebase Statistics:");
                 Console.WriteLine("=======================");
                 
                 var stats = await _codebaseAnalysisService.GetCodebaseStatsAsync();

@@ -183,7 +183,7 @@ namespace Nexo.CLI.Commands.Unity
             {
                 logger.LogInformation("Generating game feature: {Type} - {Description}", type, description);
                 
-                Console.WriteLine($"🎮 Generating {type}: {description}");
+                Console.WriteLine($"Game Generating {type}: {description}");
                 
                 var request = new AgentRequest
                 {
@@ -197,8 +197,8 @@ namespace Nexo.CLI.Commands.Unity
                 
                 if (response.HasResult)
                 {
-                    Console.WriteLine($"✅ Generated {type} successfully!");
-                    Console.WriteLine($"📄 Generated Code:");
+                    Console.WriteLine($"SUCCESS: Generated {type} successfully!");
+                    Console.WriteLine($"File Generated Code:");
                     Console.WriteLine(response.Result);
                     
                     // Show metadata
@@ -215,7 +215,7 @@ namespace Nexo.CLI.Commands.Unity
                     if (response.Metadata.ContainsKey("PerformanceOptimizations"))
                     {
                         var optimizations = response.Metadata["PerformanceOptimizations"] as IEnumerable<string>;
-                        Console.WriteLine($"\n🚀 Performance Optimizations:");
+                        Console.WriteLine($"\nRunning Performance Optimizations:");
                         foreach (var optimization in optimizations ?? [])
                         {
                             Console.WriteLine($"  • {optimization}");
@@ -224,7 +224,7 @@ namespace Nexo.CLI.Commands.Unity
                 }
                 else
                 {
-                    Console.WriteLine($"❌ Failed to generate {type}");
+                    Console.WriteLine($"ERROR: Failed to generate {type}");
                 }
                 
                 logger.LogInformation("Game feature generation completed successfully");
@@ -232,7 +232,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to generate game feature");
-                Console.WriteLine($"❌ Generation failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Generation failed: {ex.Message}");
             }
         }
         
@@ -249,7 +249,7 @@ namespace Nexo.CLI.Commands.Unity
             {
                 logger.LogInformation("Analyzing game balance for project: {ProjectPath}", projectPath);
                 
-                Console.WriteLine($"⚖️ Analyzing game balance...");
+                Console.WriteLine($"Analyzing Analyzing game balance...");
                 
                 var request = new AgentRequest
                 {
@@ -264,12 +264,12 @@ namespace Nexo.CLI.Commands.Unity
                 if (response.HasResult)
                 {
                     var balanceScore = response.GetMetadata<double>("BalanceScore");
-                    Console.WriteLine($"📊 Overall Balance Score: {balanceScore:F2}/10");
+                    Console.WriteLine($"Stats Overall Balance Score: {balanceScore:F2}/10");
                     
                     var issues = response.GetMetadata<IEnumerable<string>>("BalanceIssues");
                     if (issues?.Any() == true)
                     {
-                        Console.WriteLine($"\n⚠️ Balance Issues Found:");
+                        Console.WriteLine($"\nWARNING: Balance Issues Found:");
                         foreach (var issue in issues)
                         {
                             Console.WriteLine($"  • {issue}");
@@ -279,7 +279,7 @@ namespace Nexo.CLI.Commands.Unity
                     var recommendations = response.GetMetadata<IEnumerable<string>>("Recommendations");
                     if (recommendations?.Any() == true)
                     {
-                        Console.WriteLine($"\n💡 Recommendations:");
+                        Console.WriteLine($"\nIdea Recommendations:");
                         foreach (var recommendation in recommendations)
                         {
                             Console.WriteLine($"  • {recommendation}");
@@ -293,7 +293,7 @@ namespace Nexo.CLI.Commands.Unity
                 }
                 else
                 {
-                    Console.WriteLine($"❌ Failed to analyze game balance");
+                    Console.WriteLine($"ERROR: Failed to analyze game balance");
                 }
                 
                 logger.LogInformation("Game balance analysis completed successfully");
@@ -301,7 +301,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to analyze game balance");
-                Console.WriteLine($"❌ Balance analysis failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Balance analysis failed: {ex.Message}");
             }
         }
         
@@ -318,7 +318,7 @@ namespace Nexo.CLI.Commands.Unity
             {
                 logger.LogInformation("Running game workflow: {Workflow} for project: {ProjectPath}", workflow, projectPath);
                 
-                Console.WriteLine($"🔄 Running {workflow} workflow...");
+                Console.WriteLine($"Processing Running {workflow} workflow...");
                 
                 switch (workflow.ToLower())
                 {
@@ -332,7 +332,7 @@ namespace Nexo.CLI.Commands.Unity
                         await RunOptimizationWorkflow(projectPath, verbose);
                         break;
                     default:
-                        Console.WriteLine($"❌ Unknown workflow: {workflow}");
+                        Console.WriteLine($"ERROR: Unknown workflow: {workflow}");
                         break;
                 }
                 
@@ -341,7 +341,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to run game workflow");
-                Console.WriteLine($"❌ Workflow failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Workflow failed: {ex.Message}");
             }
         }
         
@@ -359,7 +359,7 @@ namespace Nexo.CLI.Commands.Unity
             {
                 logger.LogInformation("Running game testing: {TestType} for project: {ProjectPath}", testType, projectPath);
                 
-                Console.WriteLine($"🧪 Running {testType} tests...");
+                Console.WriteLine($"Testing Running {testType} tests...");
                 
                 var request = new GameTestingWorkflowRequest
                 {
@@ -373,11 +373,11 @@ namespace Nexo.CLI.Commands.Unity
                 
                 if (result.Status == WorkflowStatus.Completed)
                 {
-                    Console.WriteLine($"✅ Testing completed successfully!");
+                    Console.WriteLine($"SUCCESS: Testing completed successfully!");
                     
                     if (result.FinalReport is GameTestReport report)
                     {
-                        Console.WriteLine($"\n📋 Test Report Summary:");
+                        Console.WriteLine($"\nList Test Report Summary:");
                         Console.WriteLine($"  Total Tests: {report.QualityMetrics.TotalTests}");
                         Console.WriteLine($"  Passed: {report.QualityMetrics.PassedTests}");
                         Console.WriteLine($"  Failed: {report.QualityMetrics.FailedTests}");
@@ -391,7 +391,7 @@ namespace Nexo.CLI.Commands.Unity
                         
                         if (report.Recommendations.Any())
                         {
-                            Console.WriteLine($"\n💡 Recommendations:");
+                            Console.WriteLine($"\nIdea Recommendations:");
                             foreach (var recommendation in report.Recommendations)
                             {
                                 Console.WriteLine($"  • {recommendation}");
@@ -401,7 +401,7 @@ namespace Nexo.CLI.Commands.Unity
                 }
                 else
                 {
-                    Console.WriteLine($"❌ Testing failed: {result.ErrorMessage}");
+                    Console.WriteLine($"ERROR: Testing failed: {result.ErrorMessage}");
                 }
                 
                 logger.LogInformation("Game testing completed");
@@ -409,7 +409,7 @@ namespace Nexo.CLI.Commands.Unity
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to run game testing");
-                Console.WriteLine($"❌ Testing failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Testing failed: {ex.Message}");
             }
         }
         
@@ -418,7 +418,7 @@ namespace Nexo.CLI.Commands.Unity
         /// </summary>
         private static async Task RunDevelopmentWorkflow(string projectPath, bool verbose)
         {
-            Console.WriteLine($"🔧 Running development workflow...");
+            Console.WriteLine($"Tool Running development workflow...");
             
             // This would integrate with the actual GameDevelopmentWorkflow
             Console.WriteLine($"  • Project analysis");
@@ -431,7 +431,7 @@ namespace Nexo.CLI.Commands.Unity
                 Console.WriteLine($"  • Detailed logging enabled");
             }
             
-            Console.WriteLine($"✅ Development workflow completed");
+            Console.WriteLine($"SUCCESS: Development workflow completed");
         }
         
         /// <summary>
@@ -439,7 +439,7 @@ namespace Nexo.CLI.Commands.Unity
         /// </summary>
         private static async Task RunTestingWorkflow(string projectPath, bool verbose)
         {
-            Console.WriteLine($"🧪 Running testing workflow...");
+            Console.WriteLine($"Testing Running testing workflow...");
             
             // This would integrate with the actual GameTestingWorkflow
             Console.WriteLine($"  • Unit testing");
@@ -452,7 +452,7 @@ namespace Nexo.CLI.Commands.Unity
                 Console.WriteLine($"  • Detailed test results");
             }
             
-            Console.WriteLine($"✅ Testing workflow completed");
+            Console.WriteLine($"SUCCESS: Testing workflow completed");
         }
         
         /// <summary>
@@ -460,7 +460,7 @@ namespace Nexo.CLI.Commands.Unity
         /// </summary>
         private static async Task RunOptimizationWorkflow(string projectPath, bool verbose)
         {
-            Console.WriteLine($"🚀 Running optimization workflow...");
+            Console.WriteLine($"Running Running optimization workflow...");
             
             // This would integrate with the actual optimization workflow
             Console.WriteLine($"  • Performance analysis");
@@ -473,7 +473,7 @@ namespace Nexo.CLI.Commands.Unity
                 Console.WriteLine($"  • Detailed optimization results");
             }
             
-            Console.WriteLine($"✅ Optimization workflow completed");
+            Console.WriteLine($"SUCCESS: Optimization workflow completed");
         }
         
         /// <summary>
@@ -481,13 +481,13 @@ namespace Nexo.CLI.Commands.Unity
         /// </summary>
         private static async Task ShowDetailedBalanceAnalysis(AgentResponse response)
         {
-            Console.WriteLine($"\n📋 Detailed Balance Analysis:");
+            Console.WriteLine($"\nList Detailed Balance Analysis:");
             
             // Show implementation guidance if available
             if (response.Metadata.ContainsKey("ImplementationGuidance"))
             {
                 var guidance = response.Metadata["ImplementationGuidance"];
-                Console.WriteLine($"\n🔧 Implementation Guidance:");
+                Console.WriteLine($"\nTool Implementation Guidance:");
                 Console.WriteLine($"  {guidance}");
             }
             
@@ -495,7 +495,7 @@ namespace Nexo.CLI.Commands.Unity
             if (response.Metadata.ContainsKey("TestingStrategy"))
             {
                 var strategy = response.Metadata["TestingStrategy"];
-                Console.WriteLine($"\n🧪 Testing Strategy:");
+                Console.WriteLine($"\nTesting Testing Strategy:");
                 Console.WriteLine($"  {strategy}");
             }
         }

@@ -67,7 +67,7 @@ namespace Nexo.CLI.Commands
             //         catch (Exception ex)
             //         {
             //             logger.LogError(ex, "Error running Feature Factory tests");
-            //             Console.WriteLine($"❌ Error: {ex.Message}");
+            //             Console.WriteLine($"ERROR: Error: {ex.Message}");
             //             Environment.Exit(1);
             //         }
             //     }, validateE2EOption, outputOption, verboseOption, timeoutOption, aiTimeoutOption, domainTimeoutOption, codeTimeoutOption, e2eTimeoutOption, perfTimeoutOption, filterOption, discoverOption, coverageOption, progressOption, coverageThresholdOption, forceTimeoutOption, heartbeatIntervalOption, processTimeoutOption);
@@ -97,7 +97,7 @@ namespace Nexo.CLI.Commands
             int heartbeatInterval,
             int processTimeout)
         {
-            Console.WriteLine("🧪 Feature Factory Testing (C# Test Runner)");
+            Console.WriteLine("Testing Feature Factory Testing (C# Test Runner)");
             Console.WriteLine("===========================================");
             Console.WriteLine($"Default Timeout: {timeout} minutes");
             Console.WriteLine($"AI Connectivity Timeout: {aiTimeout} seconds");
@@ -163,7 +163,7 @@ namespace Nexo.CLI.Commands
             
             if (discover)
             {
-                Console.WriteLine("🔍 Discovering available tests...");
+                Console.WriteLine("Search Discovering available tests...");
                 var discoveredTests = await testRunner.DiscoverTestsAsync();
                 
                 Console.WriteLine($"Found {discoveredTests.Count()} tests:");
@@ -191,20 +191,20 @@ namespace Nexo.CLI.Commands
                 testFilter = CreateTestFilter(filter);
             }
             
-            Console.WriteLine("🚀 Executing tests with C# test runner...");
+            Console.WriteLine("Running Executing tests with C# test runner...");
             SimpleTestSummary summary;
             
             // SimpleTestRunner doesn't have RunFilteredTestsAsync, so we'll use RunAllTestsAsync for now
             summary = await testRunner.RunAllTestsAsync(configuration, CancellationToken.None);
             
             Console.WriteLine($"Success Rate: {summary.PassedTests}/{summary.TotalTests} tests passed");
-            Console.WriteLine($"Overall Status: {(summary.FailedTests == 0 ? "✅ PASSED" : "❌ FAILED")}");
+            Console.WriteLine($"Overall Status: {(summary.FailedTests == 0 ? "SUCCESS: PASSED" : "ERROR: FAILED")}");
             
             // Show error information if any tests failed
             if (summary.FailedTests > 0)
             {
                 Console.WriteLine();
-                Console.WriteLine("❌ Failed tests:");
+                Console.WriteLine("ERROR: Failed tests:");
                 foreach (var error in summary.ErrorMessages)
                 {
                     Console.WriteLine($"   • {error}");

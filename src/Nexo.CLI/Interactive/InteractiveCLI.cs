@@ -38,7 +38,7 @@ namespace Nexo.CLI.Interactive
         
         public async Task StartInteractiveModeAsync()
         {
-            Console.WriteLine("🚀 Welcome to Nexo Interactive Mode");
+            Console.WriteLine("Running Welcome to Nexo Interactive Mode");
             Console.WriteLine("Type 'help' for available commands or 'exit' to quit");
             Console.WriteLine("Use Tab for auto-completion and Ctrl+R for command history");
             Console.WriteLine();
@@ -60,12 +60,12 @@ namespace Nexo.CLI.Interactive
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Error: {ex.Message}");
+                    Console.WriteLine($"ERROR: Error: {ex.Message}");
                     _logger.LogError(ex, "Interactive CLI error");
                 }
             }
             
-            Console.WriteLine("👋 Goodbye!");
+            Console.WriteLine("Goodbye Goodbye!");
         }
         
         public async Task ProcessInteractiveCommandAsync(string command)
@@ -78,22 +78,22 @@ namespace Nexo.CLI.Interactive
             var context = await _stateManager.GetCurrentContextAsync();
             var suggestions = await _suggestionEngine.GetContextualSuggestionsAsync(context);
             
-            Console.WriteLine("\n🔍 Contextual Help");
+            Console.WriteLine("\nSearch Contextual Help");
             Console.WriteLine("═══════════════════");
             Console.WriteLine();
             
             if (context.CurrentProject != null)
             {
-                Console.WriteLine($"📁 Current Project: {context.CurrentProject.Name} ({context.CurrentProject.Type})");
+                Console.WriteLine($"Directory Current Project: {context.CurrentProject.Name} ({context.CurrentProject.Type})");
             }
             
             if (!string.IsNullOrEmpty(context.CurrentPlatform))
             {
-                Console.WriteLine($"🖥️  Current Platform: {context.CurrentPlatform}");
+                Console.WriteLine($"System:  Current Platform: {context.CurrentPlatform}");
             }
             
             Console.WriteLine();
-            Console.WriteLine("💡 Suggested Commands:");
+            Console.WriteLine("Idea Suggested Commands:");
             
             foreach (var suggestion in suggestions.Take(5))
             {
@@ -111,16 +111,16 @@ namespace Nexo.CLI.Interactive
         {
             var context = await _stateManager.GetCurrentContextAsync();
             
-            Console.WriteLine("\n📊 System Status");
+            Console.WriteLine("\nStats System Status");
             Console.WriteLine("═══════════════════");
             Console.WriteLine();
             
-            Console.WriteLine($"📁 Working Directory: {context.WorkingDirectory}");
+            Console.WriteLine($"Directory Working Directory: {context.WorkingDirectory}");
             Console.WriteLine($"🕒 Last Activity: {context.LastActivity:yyyy-MM-dd HH:mm:ss}");
             
             if (context.CurrentProject != null)
             {
-                Console.WriteLine($"📁 Current Project: {context.CurrentProject.Name}");
+                Console.WriteLine($"Directory Current Project: {context.CurrentProject.Name}");
                 Console.WriteLine($"   Type: {context.CurrentProject.Type}");
                 Console.WriteLine($"   Path: {context.CurrentProject.Path}");
                 Console.WriteLine($"   Last Modified: {context.CurrentProject.LastModified:yyyy-MM-dd HH:mm:ss}");
@@ -128,15 +128,15 @@ namespace Nexo.CLI.Interactive
             
             if (!string.IsNullOrEmpty(context.CurrentPlatform))
             {
-                Console.WriteLine($"🖥️  Current Platform: {context.CurrentPlatform}");
+                Console.WriteLine($"System:  Current Platform: {context.CurrentPlatform}");
             }
             
-            Console.WriteLine($"📈 Active Monitoring: {(context.HasActiveMonitoring ? "Yes" : "No")}");
-            Console.WriteLine($"🔄 Pending Adaptations: {(context.HasPendingAdaptations ? "Yes" : "No")}");
-            Console.WriteLine($"⚠️  Performance Issues: {(context.HasPerformanceIssues ? "Yes" : "No")}");
+            Console.WriteLine($"Progress Active Monitoring: {(context.HasActiveMonitoring ? "Yes" : "No")}");
+            Console.WriteLine($"Processing Pending Adaptations: {(context.HasPendingAdaptations ? "Yes" : "No")}");
+            Console.WriteLine($"WARNING:  Performance Issues: {(context.HasPerformanceIssues ? "Yes" : "No")}");
             
             Console.WriteLine();
-            Console.WriteLine("📋 Recent Commands:");
+            Console.WriteLine("List Recent Commands:");
             foreach (var cmd in context.RecentCommands.Take(5))
             {
                 Console.WriteLine($"  • {cmd}");
@@ -182,17 +182,17 @@ namespace Nexo.CLI.Interactive
             // Add status indicators
             if (context.HasActiveMonitoring)
             {
-                promptBuilder.Append(" 📊");
+                promptBuilder.Append(" Stats");
             }
             
             if (context.HasPendingAdaptations)
             {
-                promptBuilder.Append(" 🔄");
+                promptBuilder.Append(" Processing");
             }
             
             if (context.HasPerformanceIssues)
             {
-                promptBuilder.Append(" ⚠️");
+                promptBuilder.Append(" WARNING:");
             }
             
             promptBuilder.Append("> ");
@@ -395,11 +395,11 @@ namespace Nexo.CLI.Interactive
                 return;
             }
             
-            Console.WriteLine("\n🔍 Nexo Interactive Help");
+            Console.WriteLine("\nSearch Nexo Interactive Help");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
-            Console.WriteLine("📚 Available Commands:");
+            Console.WriteLine("Documentation Available Commands:");
             Console.WriteLine("  help [topic]          - Show help for a specific topic");
             Console.WriteLine("  status                - Show current system status");
             Console.WriteLine("  dashboard             - Open real-time monitoring dashboard");
@@ -410,7 +410,7 @@ namespace Nexo.CLI.Interactive
             Console.WriteLine("  exit                  - Exit interactive mode");
             Console.WriteLine();
             
-            Console.WriteLine("💡 Interactive Features:");
+            Console.WriteLine("Idea Interactive Features:");
             Console.WriteLine("  • Tab completion for commands and parameters");
             Console.WriteLine("  • Command history with Up/Down arrows");
             Console.WriteLine("  • Intelligent suggestions based on context");
@@ -418,7 +418,7 @@ namespace Nexo.CLI.Interactive
             Console.WriteLine("  • Progress tracking for long operations");
             Console.WriteLine();
             
-            Console.WriteLine("🎯 Quick Start:");
+            Console.WriteLine("Target Quick Start:");
             Console.WriteLine("  • Type 'status' to see current context");
             Console.WriteLine("  • Type 'suggest' for intelligent recommendations");
             Console.WriteLine("  • Type 'dashboard' for real-time monitoring");
@@ -442,13 +442,13 @@ namespace Nexo.CLI.Interactive
             var context = await _stateManager.GetCurrentContextAsync();
             var suggestions = await _suggestionEngine.GetContextualSuggestionsAsync(context);
             
-            Console.WriteLine("\n💡 Intelligent Command Suggestions");
+            Console.WriteLine("\nIdea Intelligent Command Suggestions");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
             foreach (var suggestion in suggestions.Take(10))
             {
-                Console.WriteLine($"🎯 {suggestion.Command}");
+                Console.WriteLine($"Target {suggestion.Command}");
                 Console.WriteLine($"   {suggestion.Description}");
                 Console.WriteLine($"   Category: {suggestion.Category} | Relevance: {suggestion.Relevance:P0}");
                 if (!string.IsNullOrEmpty(suggestion.Reason))
@@ -463,7 +463,7 @@ namespace Nexo.CLI.Interactive
         {
             var history = await _stateManager.GetCommandHistoryAsync();
             
-            Console.WriteLine("\n📋 Command History");
+            Console.WriteLine("\nList Command History");
             Console.WriteLine("═══════════════════════════════════════");
             Console.WriteLine();
             
@@ -489,7 +489,7 @@ namespace Nexo.CLI.Interactive
             
             // For now, just simulate execution
             await Task.Delay(1000);
-            Console.WriteLine("✅ Command completed");
+            Console.WriteLine("SUCCESS: Command completed");
         }
     }
 }

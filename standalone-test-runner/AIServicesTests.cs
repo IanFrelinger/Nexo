@@ -326,7 +326,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Mock AI Provider basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Mock AI Provider basic functionality test passed");
                 }
 
                 return true;
@@ -335,7 +335,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Mock AI Provider basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Mock AI Provider basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -361,7 +361,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Llama WebAssembly Provider basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Llama WebAssembly Provider basic functionality test passed");
                 }
 
                 return true;
@@ -370,7 +370,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Llama WebAssembly Provider basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Llama WebAssembly Provider basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -396,7 +396,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Llama Native Provider basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Llama Native Provider basic functionality test passed");
                 }
 
                 return true;
@@ -405,7 +405,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Llama Native Provider basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Llama Native Provider basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -435,7 +435,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Mock AI Engine basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Mock AI Engine basic functionality test passed");
                 }
 
                 return true;
@@ -444,7 +444,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Mock AI Engine basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Mock AI Engine basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -470,7 +470,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Llama WebAssembly Engine basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Llama WebAssembly Engine basic functionality test passed");
                 }
 
                 return true;
@@ -479,7 +479,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Llama WebAssembly Engine basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Llama WebAssembly Engine basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -505,7 +505,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Llama Native Engine basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Llama Native Engine basic functionality test passed");
                 }
 
                 return true;
@@ -514,7 +514,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Llama Native Engine basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Llama Native Engine basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -544,7 +544,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Performance Monitor basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Performance Monitor basic functionality test passed");
                 }
 
                 return true;
@@ -553,7 +553,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Performance Monitor basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Performance Monitor basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -579,7 +579,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Safety Validator basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Safety Validator basic functionality test passed");
                 }
 
                 return true;
@@ -588,7 +588,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Safety Validator basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Safety Validator basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -614,7 +614,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Usage Monitor basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Usage Monitor basic functionality test passed");
                 }
 
                 return true;
@@ -623,7 +623,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Usage Monitor basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Usage Monitor basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -649,7 +649,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Model Fine Tuner basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Model Fine Tuner basic functionality test passed");
                 }
 
                 return true;
@@ -658,7 +658,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Model Fine Tuner basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Model Fine Tuner basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -684,7 +684,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Advanced Analytics basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Advanced Analytics basic functionality test passed");
                 }
 
                 return true;
@@ -693,7 +693,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Advanced Analytics basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Advanced Analytics basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -719,7 +719,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Distributed Processor basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Distributed Processor basic functionality test passed");
                 }
 
                 return true;
@@ -728,7 +728,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Distributed Processor basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Distributed Processor basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -754,7 +754,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Advanced Cache basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Advanced Cache basic functionality test passed");
                 }
 
                 return true;
@@ -763,7 +763,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Advanced Cache basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Advanced Cache basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -789,7 +789,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Operation Rollback basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Operation Rollback basic functionality test passed");
                 }
 
                 return true;
@@ -798,7 +798,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Operation Rollback basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Operation Rollback basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -824,7 +824,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Model Management basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Model Management basic functionality test passed");
                 }
 
                 return true;
@@ -833,7 +833,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Model Management basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Model Management basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -859,7 +859,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Runtime Selector basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Runtime Selector basic functionality test passed");
                 }
 
                 return true;
@@ -868,7 +868,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Runtime Selector basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Runtime Selector basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -898,7 +898,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Pipeline Code Generation basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Pipeline Code Generation basic functionality test passed");
                 }
 
                 return true;
@@ -907,7 +907,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Pipeline Code Generation basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Pipeline Code Generation basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -933,7 +933,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Pipeline Code Review basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Pipeline Code Review basic functionality test passed");
                 }
 
                 return true;
@@ -942,7 +942,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Pipeline Code Review basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Pipeline Code Review basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -968,7 +968,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Pipeline Optimization basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Pipeline Optimization basic functionality test passed");
                 }
 
                 return true;
@@ -977,7 +977,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Pipeline Optimization basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Pipeline Optimization basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1003,7 +1003,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Pipeline Documentation basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Pipeline Documentation basic functionality test passed");
                 }
 
                 return true;
@@ -1012,7 +1012,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Pipeline Documentation basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Pipeline Documentation basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1038,7 +1038,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI Pipeline Testing basic functionality test passed");
+                    Console.WriteLine("SUCCESS: AI Pipeline Testing basic functionality test passed");
                 }
 
                 return true;
@@ -1047,7 +1047,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI Pipeline Testing basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI Pipeline Testing basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1077,7 +1077,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ End-to-end AI service integration test passed");
+                    Console.WriteLine("SUCCESS: End-to-end AI service integration test passed");
                 }
 
                 return true;
@@ -1086,7 +1086,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ End-to-end AI service integration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: End-to-end AI service integration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1112,7 +1112,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI service performance and scalability test passed");
+                    Console.WriteLine("SUCCESS: AI service performance and scalability test passed");
                 }
 
                 return true;
@@ -1121,7 +1121,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI service performance and scalability test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI service performance and scalability test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1147,7 +1147,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ AI service security and compliance test passed");
+                    Console.WriteLine("SUCCESS: AI service security and compliance test passed");
                 }
 
                 return true;
@@ -1156,7 +1156,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ AI service security and compliance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: AI service security and compliance test failed: {ex.Message}");
                 }
                 return false;
             }

@@ -43,7 +43,7 @@ namespace Nexo.CLI.Commands
                     }
                     else
                     {
-                        Console.WriteLine("❌ Please specify a tool name to analyze");
+                        Console.WriteLine("ERROR: Please specify a tool name to analyze");
                     }
                     break;
 
@@ -54,7 +54,7 @@ namespace Nexo.CLI.Commands
                     }
                     else
                     {
-                        Console.WriteLine("❌ Please specify a tool name to update");
+                        Console.WriteLine("ERROR: Please specify a tool name to update");
                     }
                     break;
 
@@ -67,12 +67,12 @@ namespace Nexo.CLI.Commands
                         }
                         else
                         {
-                            Console.WriteLine("❌ Please specify a valid date for scheduling");
+                            Console.WriteLine("ERROR: Please specify a valid date for scheduling");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("❌ Please specify a tool name and date for scheduling");
+                        Console.WriteLine("ERROR: Please specify a tool name and date for scheduling");
                     }
                     break;
 
@@ -97,12 +97,12 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("🔧 Nexo Tool Maintenance Dashboard");
+                Console.WriteLine("Tool Nexo Tool Maintenance Dashboard");
                 Console.WriteLine();
 
                 var statistics = await _maintenanceService.GetStatisticsAsync(cancellationToken);
                 
-                Console.WriteLine("📊 Overview:");
+                Console.WriteLine("Stats Overview:");
                 Console.WriteLine($"   Total Tools: {statistics.TotalTools}");
                 Console.WriteLine($"   Requiring Maintenance: {statistics.ToolsRequiringMaintenance}");
                 Console.WriteLine($"   Critical Issues: {statistics.ToolsWithCriticalIssues}");
@@ -110,14 +110,14 @@ namespace Nexo.CLI.Commands
                 Console.WriteLine($"   Performance Issues: {statistics.ToolsWithPerformanceIssues}");
                 Console.WriteLine();
 
-                Console.WriteLine("📈 Maintenance Items:");
+                Console.WriteLine("Progress Maintenance Items:");
                 Console.WriteLine($"   Total: {statistics.TotalMaintenanceItems}");
                 Console.WriteLine($"   Completed: {statistics.CompletedMaintenanceItems}");
                 Console.WriteLine($"   Pending: {statistics.PendingMaintenanceItems}");
                 Console.WriteLine($"   Average Time: {statistics.AverageMaintenanceTime:F1} hours");
                 Console.WriteLine();
 
-                Console.WriteLine("🛠️  Available Commands:");
+                Console.WriteLine("Commands:  Available Commands:");
                 Console.WriteLine("   nexo maintenance analyze <tool-name>  - Analyze a specific tool");
                 Console.WriteLine("   nexo maintenance update <tool-name>   - Update a specific tool");
                 Console.WriteLine("   nexo maintenance schedule <tool> <date> - Schedule maintenance");
@@ -127,7 +127,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error showing maintenance dashboard");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -138,12 +138,12 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine($"🔍 Analyzing tool: {toolName}");
+                Console.WriteLine($"Search Analyzing tool: {toolName}");
                 Console.WriteLine();
 
                 var plan = await _maintenanceService.CreateMaintenancePlanAsync(toolName, cancellationToken);
 
-                Console.WriteLine($"📋 Maintenance Plan for {toolName}");
+                Console.WriteLine($"List Maintenance Plan for {toolName}");
                 Console.WriteLine($"   Priority: {plan.Priority}/10");
                 Console.WriteLine($"   Status: {plan.Status}");
                 Console.WriteLine($"   Estimated Effort: {plan.EstimatedEffort:F1} hours");
@@ -153,10 +153,10 @@ namespace Nexo.CLI.Commands
                 // Show dependency updates
                 if (plan.DependencyUpdates.Any())
                 {
-                    Console.WriteLine("📦 Dependency Updates:");
+                    Console.WriteLine("Package Dependency Updates:");
                     foreach (var update in plan.DependencyUpdates)
                     {
-                        var icon = update.IsBreakingChange ? "⚠️" : "✅";
+                        var icon = update.IsBreakingChange ? "WARNING:" : "SUCCESS:";
                         Console.WriteLine($"   {icon} {update.PackageName}: {update.CurrentVersion} → {update.LatestVersion} ({update.UpdateType})");
                     }
                     Console.WriteLine();
@@ -165,16 +165,16 @@ namespace Nexo.CLI.Commands
                 // Show security updates
                 if (plan.SecurityUpdates.Any())
                 {
-                    Console.WriteLine("🔒 Security Updates:");
+                    Console.WriteLine("Security Security Updates:");
                     foreach (var update in plan.SecurityUpdates)
                     {
                         var icon = update.Severity switch
                         {
-                            SecuritySeverity.Critical => "🚨",
-                            SecuritySeverity.High => "⚠️",
-                            SecuritySeverity.Medium => "ℹ️",
-                            SecuritySeverity.Low => "✅",
-                            _ => "❓"
+                            SecuritySeverity.Critical => "Alert",
+                            SecuritySeverity.High => "WARNING:",
+                            SecuritySeverity.Medium => "INFO:",
+                            SecuritySeverity.Low => "SUCCESS:",
+                            _ => "UNKNOWN"
                         };
                         Console.WriteLine($"   {icon} {update.Title} ({update.Severity})");
                         Console.WriteLine($"      Package: {update.AffectedPackage}");
@@ -189,7 +189,7 @@ namespace Nexo.CLI.Commands
                     Console.WriteLine("⚡ Performance Optimizations:");
                     foreach (var optimization in plan.PerformanceOptimizations)
                     {
-                        Console.WriteLine($"   🚀 {optimization.Title}");
+                        Console.WriteLine($"   Running {optimization.Title}");
                         Console.WriteLine($"      Current: {optimization.CurrentPerformance:F1} {optimization.Unit}");
                         Console.WriteLine($"      Expected: {optimization.ExpectedImprovement:F1} {optimization.Unit} improvement");
                     }
@@ -213,12 +213,12 @@ namespace Nexo.CLI.Commands
                     Console.WriteLine();
                 }
 
-                Console.WriteLine($"✅ Analysis complete. {plan.TotalIssues} issues found.");
+                Console.WriteLine($"SUCCESS: Analysis complete. {plan.TotalIssues} issues found.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing tool: {ToolName}", toolName);
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -229,7 +229,7 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine($"🔄 Updating tool: {toolName}");
+                Console.WriteLine($"Processing Updating tool: {toolName}");
                 Console.WriteLine();
 
                 // Get maintenance plan
@@ -237,37 +237,37 @@ namespace Nexo.CLI.Commands
 
                 if (plan.TotalIssues == 0)
                 {
-                    Console.WriteLine("✅ No updates needed for this tool.");
+                    Console.WriteLine("SUCCESS: No updates needed for this tool.");
                     return;
                 }
 
                 // Update dependencies
                 if (plan.DependencyUpdates.Any())
                 {
-                    Console.WriteLine("📦 Updating dependencies...");
+                    Console.WriteLine("Package Updating dependencies...");
                     var depResult = await _maintenanceService.UpdateDependenciesAsync(toolName, plan.DependencyUpdates, cancellationToken);
                     if (depResult.Success)
                     {
-                        Console.WriteLine($"   ✅ Dependencies updated successfully ({depResult.Duration:F1}s)");
+                        Console.WriteLine($"   SUCCESS: Dependencies updated successfully ({depResult.Duration:F1}s)");
                     }
                     else
                     {
-                        Console.WriteLine($"   ❌ Dependency update failed: {depResult.Message}");
+                        Console.WriteLine($"   ERROR: Dependency update failed: {depResult.Message}");
                     }
                 }
 
                 // Apply security updates
                 if (plan.SecurityUpdates.Any())
                 {
-                    Console.WriteLine("🔒 Applying security updates...");
+                    Console.WriteLine("Security Applying security updates...");
                     var secResult = await _maintenanceService.ApplySecurityUpdatesAsync(toolName, plan.SecurityUpdates, cancellationToken);
                     if (secResult.Success)
                     {
-                        Console.WriteLine($"   ✅ Security updates applied successfully ({secResult.Duration:F1}s)");
+                        Console.WriteLine($"   SUCCESS: Security updates applied successfully ({secResult.Duration:F1}s)");
                     }
                     else
                     {
-                        Console.WriteLine($"   ❌ Security update failed: {secResult.Message}");
+                        Console.WriteLine($"   ERROR: Security update failed: {secResult.Message}");
                     }
                 }
 
@@ -278,21 +278,21 @@ namespace Nexo.CLI.Commands
                     var perfResult = await _maintenanceService.ApplyOptimizationsAsync(toolName, plan.PerformanceOptimizations, cancellationToken);
                     if (perfResult.Success)
                     {
-                        Console.WriteLine($"   ✅ Performance optimizations applied successfully ({perfResult.Duration:F1}s)");
+                        Console.WriteLine($"   SUCCESS: Performance optimizations applied successfully ({perfResult.Duration:F1}s)");
                     }
                     else
                     {
-                        Console.WriteLine($"   ❌ Performance optimization failed: {perfResult.Message}");
+                        Console.WriteLine($"   ERROR: Performance optimization failed: {perfResult.Message}");
                     }
                 }
 
                 Console.WriteLine();
-                Console.WriteLine("✅ Tool update completed!");
+                Console.WriteLine("SUCCESS: Tool update completed!");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating tool: {ToolName}", toolName);
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -309,17 +309,17 @@ namespace Nexo.CLI.Commands
                 
                 if (scheduled)
                 {
-                    Console.WriteLine("✅ Maintenance scheduled successfully!");
+                    Console.WriteLine("SUCCESS: Maintenance scheduled successfully!");
                 }
                 else
                 {
-                    Console.WriteLine("❌ Failed to schedule maintenance. Tool not found.");
+                    Console.WriteLine("ERROR: Failed to schedule maintenance. Tool not found.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error scheduling maintenance for tool: {ToolName}", toolName);
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -330,19 +330,19 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("📊 Detailed Maintenance Statistics");
+                Console.WriteLine("Stats Detailed Maintenance Statistics");
                 Console.WriteLine();
 
                 var statistics = await _maintenanceService.GetStatisticsAsync(cancellationToken);
 
-                Console.WriteLine("📈 Maintenance by Type:");
+                Console.WriteLine("Progress Maintenance by Type:");
                 foreach (var kvp in statistics.MaintenanceByType)
                 {
                     Console.WriteLine($"   {kvp.Key}: {kvp.Value}");
                 }
                 Console.WriteLine();
 
-                Console.WriteLine("🎯 Maintenance by Priority:");
+                Console.WriteLine("Target Maintenance by Priority:");
                 foreach (var kvp in statistics.MaintenanceByPriority)
                 {
                     Console.WriteLine($"   {kvp.Key}: {kvp.Value}");
@@ -354,7 +354,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error showing statistics");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -365,14 +365,14 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("🔧 Tools Requiring Maintenance");
+                Console.WriteLine("Tool Tools Requiring Maintenance");
                 Console.WriteLine();
 
                 var tools = await _maintenanceService.GetToolsRequiringMaintenanceAsync(cancellationToken);
 
                 if (!tools.Any())
                 {
-                    Console.WriteLine("✅ No tools require maintenance at this time.");
+                    Console.WriteLine("SUCCESS: No tools require maintenance at this time.");
                     return;
                 }
 
@@ -387,7 +387,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing tools requiring maintenance");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -396,7 +396,7 @@ namespace Nexo.CLI.Commands
         /// </summary>
         private static void ShowHelp()
         {
-            Console.WriteLine("🔧 Nexo Tool Maintenance");
+            Console.WriteLine("Tool Nexo Tool Maintenance");
             Console.WriteLine();
             Console.WriteLine("Commands:");
             Console.WriteLine("   nexo maintenance                     - Show maintenance dashboard");

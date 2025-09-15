@@ -88,14 +88,14 @@ namespace Nexo.CLI.Commands
                 
                 var tool = await orchestrator.GenerateToolAsync(description);
                 
-                Console.WriteLine($"✅ Created: {tool.Name}");
+                Console.WriteLine($"SUCCESS: Created: {tool.Name}");
                 Console.WriteLine($"   Description: {tool.Description}");
                 Console.WriteLine($"   Usage: nexo tool {tool.CommandName} [args]");
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Tool generation failed");
-                Console.WriteLine($"❌ Generation failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Generation failed: {ex.Message}");
             }
         }
 
@@ -123,7 +123,7 @@ namespace Nexo.CLI.Commands
 
             try
             {
-                Console.WriteLine("📋 Available Tools:");
+                Console.WriteLine("List Available Tools:");
                 Console.WriteLine();
 
                 var tools = await toolRepo.ListToolsAsync();
@@ -147,7 +147,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to list tools");
-                Console.WriteLine($"❌ Failed to list tools: {ex.Message}");
+                Console.WriteLine($"ERROR: Failed to list tools: {ex.Message}");
             }
         }
 
@@ -173,24 +173,24 @@ namespace Nexo.CLI.Commands
 
             try
             {
-                Console.WriteLine($"🔄 Evolving tool: {toolName}");
+                Console.WriteLine($"Processing Evolving tool: {toolName}");
                 
                 var evolvedTool = await evolver.EvolveToolAsync(toolName, modification);
                 
                 if (evolvedTool.Success)
                 {
-                    Console.WriteLine($"✅ Evolved: {evolvedTool.Name} v{evolvedTool.Version}");
+                    Console.WriteLine($"SUCCESS: Evolved: {evolvedTool.Name} v{evolvedTool.Version}");
                     Console.WriteLine($"   Modification: {evolvedTool.EvolutionDescription}");
                 }
                 else
                 {
-                    Console.WriteLine($"❌ Evolution failed: {string.Join(", ", evolvedTool.Errors)}");
+                    Console.WriteLine($"ERROR: Evolution failed: {string.Join(", ", evolvedTool.Errors)}");
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Tool evolution failed");
-                Console.WriteLine($"❌ Evolution failed: {ex.Message}");
+                Console.WriteLine($"ERROR: Evolution failed: {ex.Message}");
             }
         }
     }

@@ -337,7 +337,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator basic functionality test passed");
                 }
 
                 return true;
@@ -346,7 +346,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -372,7 +372,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator controller generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator controller generation test passed");
                 }
 
                 return true;
@@ -381,7 +381,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator controller test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator controller test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -407,7 +407,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator service generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator service generation test passed");
                 }
 
                 return true;
@@ -416,7 +416,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator service test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator service test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -442,7 +442,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator model generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator model generation test passed");
                 }
 
                 return true;
@@ -451,7 +451,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator model test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator model test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -477,7 +477,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator DTO generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator DTO generation test passed");
                 }
 
                 return true;
@@ -486,7 +486,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator DTO test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator DTO test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -512,7 +512,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator ViewModel generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator ViewModel generation test passed");
                 }
 
                 return true;
@@ -521,7 +521,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator ViewModel test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator ViewModel test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -547,7 +547,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator Request generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator Request generation test passed");
                 }
 
                 return true;
@@ -556,7 +556,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator Request test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator Request test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -582,7 +582,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator Response generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator Response generation test passed");
                 }
 
                 return true;
@@ -591,7 +591,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator Response test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator Response test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -617,7 +617,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator Configuration generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator Configuration generation test passed");
                 }
 
                 return true;
@@ -626,7 +626,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator Configuration test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator Configuration test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -652,7 +652,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator Middleware generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator Middleware generation test passed");
                 }
 
                 return true;
@@ -661,7 +661,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator Middleware test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator Middleware test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -687,7 +687,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator Filter generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator Filter generation test passed");
                 }
 
                 return true;
@@ -696,7 +696,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator Filter test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator Filter test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -722,7 +722,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator Validator generation test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator Validator generation test passed");
                 }
 
                 return true;
@@ -731,7 +731,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator Validator test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator Validator test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -757,7 +757,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator error handling test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator error handling test passed");
                 }
 
                 return true;
@@ -766,7 +766,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -792,7 +792,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Application Logic Generator performance test passed");
+                    Console.WriteLine("SUCCESS: Application Logic Generator performance test passed");
                 }
 
                 return true;
@@ -801,7 +801,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Application Logic Generator performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Application Logic Generator performance test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -831,7 +831,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter basic functionality test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter basic functionality test passed");
                 }
 
                 return true;
@@ -840,7 +840,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter basic test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter basic test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -866,7 +866,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter ASP.NET Core integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter ASP.NET Core integration test passed");
                 }
 
                 return true;
@@ -875,7 +875,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter ASP.NET Core test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter ASP.NET Core test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -901,7 +901,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter Blazor Server integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter Blazor Server integration test passed");
                 }
 
                 return true;
@@ -910,7 +910,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter Blazor Server test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter Blazor Server test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -936,7 +936,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter Blazor WebAssembly integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter Blazor WebAssembly integration test passed");
                 }
 
                 return true;
@@ -945,7 +945,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter Blazor WebAssembly test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter Blazor WebAssembly test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -971,7 +971,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter MAUI integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter MAUI integration test passed");
                 }
 
                 return true;
@@ -980,7 +980,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter MAUI test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter MAUI test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1006,7 +1006,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter Console integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter Console integration test passed");
                 }
 
                 return true;
@@ -1015,7 +1015,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter Console test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter Console test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1041,7 +1041,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter WPF integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter WPF integration test passed");
                 }
 
                 return true;
@@ -1050,7 +1050,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter WPF test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter WPF test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1076,7 +1076,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter WinForms integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter WinForms integration test passed");
                 }
 
                 return true;
@@ -1085,7 +1085,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter WinForms test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter WinForms test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1111,7 +1111,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter Xamarin integration test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter Xamarin integration test passed");
                 }
 
                 return true;
@@ -1120,7 +1120,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter Xamarin test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter Xamarin test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1146,7 +1146,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter error handling test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter error handling test passed");
                 }
 
                 return true;
@@ -1155,7 +1155,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter error handling test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter error handling test failed: {ex.Message}");
                 }
                 return false;
             }
@@ -1181,7 +1181,7 @@ namespace StandaloneTestRunner
 
                 if (_verbose)
                 {
-                    Console.WriteLine("✅ Framework Adapter performance test passed");
+                    Console.WriteLine("SUCCESS: Framework Adapter performance test passed");
                 }
 
                 return true;
@@ -1190,7 +1190,7 @@ namespace StandaloneTestRunner
             {
                 if (_verbose)
                 {
-                    Console.WriteLine($"❌ Framework Adapter performance test failed: {ex.Message}");
+                    Console.WriteLine($"ERROR: Framework Adapter performance test failed: {ex.Message}");
                 }
                 return false;
             }

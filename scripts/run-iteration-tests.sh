@@ -3,7 +3,7 @@
 # Comprehensive test runner for Nexo Iteration Strategy System
 # This script runs all tests related to the iteration strategy system
 
-echo "🧪 Running Nexo Iteration Strategy System Tests"
+echo "Testing Running Nexo Iteration Strategy System Tests"
 echo "================================================"
 
 # Set error handling
@@ -117,21 +117,21 @@ main() {
     print_status "Test run completed in ${duration} seconds"
     
     if [ ${#failed_projects[@]} -eq 0 ]; then
-        print_success "🎉 All tests passed! The iteration strategy system is working correctly."
+        print_success "SUCCESS All tests passed! The iteration strategy system is working correctly."
         echo ""
         print_status "Test Summary:"
-        echo "  ✅ Core iteration strategies (ForLoop, Foreach, LINQ, Parallel, Unity)"
-        echo "  ✅ Strategy selection and environment detection"
-        echo "  ✅ AI agent integration for iteration optimization"
-        echo "  ✅ Pipeline command integration"
-        echo "  ✅ Configuration system with environment overrides"
-        echo "  ✅ CLI command integration"
-        echo "  ✅ End-to-end integration workflows"
+        echo "  SUCCESS: Core iteration strategies (ForLoop, Foreach, LINQ, Parallel, Unity)"
+        echo "  SUCCESS: Strategy selection and environment detection"
+        echo "  SUCCESS: AI agent integration for iteration optimization"
+        echo "  SUCCESS: Pipeline command integration"
+        echo "  SUCCESS: Configuration system with environment overrides"
+        echo "  SUCCESS: CLI command integration"
+        echo "  SUCCESS: End-to-end integration workflows"
         echo ""
         print_status "The iteration strategy system is ready for production use!"
         return 0
     else
-        print_error "❌ Some test projects failed:"
+        print_error "ERROR: Some test projects failed:"
         for project in "${failed_projects[@]}"; do
             echo "  • $project"
         done

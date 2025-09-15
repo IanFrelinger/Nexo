@@ -70,12 +70,12 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("💻 Nexo Hardware Requirements Dashboard");
+                Console.WriteLine("Computer Nexo Hardware Requirements Dashboard");
                 Console.WriteLine();
 
                 var capabilities = await _hardwareChecker.CheckSystemCapabilitiesAsync(cancellationToken);
                 
-                Console.WriteLine("🖥️  Current System:");
+                Console.WriteLine("System:  Current System:");
                 Console.WriteLine($"   Memory: {FormatBytes(capabilities.AvailableMemoryBytes)}");
                 Console.WriteLine($"   CPU: {capabilities.CpuCores} cores @ {capabilities.CpuFrequencyGhz:F1} GHz");
                 Console.WriteLine($"   Storage: {FormatBytes(capabilities.AvailableStorageBytes)}");
@@ -88,33 +88,33 @@ namespace Nexo.CLI.Commands
                 // Show capability assessment
                 var capabilityIcon = capabilities.OverallCapability switch
                 {
-                    CapabilityLevel.Excellent => "🌟",
-                    CapabilityLevel.Good => "✅",
-                    CapabilityLevel.Basic => "⚠️",
-                    CapabilityLevel.Minimal => "❌",
-                    CapabilityLevel.Insufficient => "🚫",
-                    _ => "❓"
+                    CapabilityLevel.Excellent => "EXCELLENT",
+                    CapabilityLevel.Good => "SUCCESS:",
+                    CapabilityLevel.Basic => "WARNING:",
+                    CapabilityLevel.Minimal => "ERROR:",
+                    CapabilityLevel.Insufficient => "BLOCKED",
+                    _ => "UNKNOWN"
                 };
 
-                Console.WriteLine($"📊 Capability Assessment:");
+                Console.WriteLine($"Stats Capability Assessment:");
                 Console.WriteLine($"   Overall: {capabilityIcon} {capabilities.OverallCapability}");
-                Console.WriteLine($"   Can Run Nexo: {(capabilities.CanRunNexo ? "✅ Yes" : "❌ No")}");
-                Console.WriteLine($"   Cloud Fallback: {(capabilities.CanRunWithCloudFallback ? "✅ Available" : "❌ Not Available")}");
+                Console.WriteLine($"   Can Run Nexo: {(capabilities.CanRunNexo ? "SUCCESS: Yes" : "ERROR: No")}");
+                Console.WriteLine($"   Cloud Fallback: {(capabilities.CanRunWithCloudFallback ? "SUCCESS: Available" : "ERROR: Not Available")}");
                 Console.WriteLine();
 
                 // Show issues
                 if (capabilities.Issues.Any())
                 {
-                    Console.WriteLine("⚠️  Issues Found:");
+                    Console.WriteLine("WARNING:  Issues Found:");
                     foreach (var issue in capabilities.Issues)
                     {
                         var severityIcon = issue.Severity switch
                         {
-                            IssueSeverity.Critical => "🚨",
-                            IssueSeverity.High => "⚠️",
-                            IssueSeverity.Medium => "ℹ️",
-                            IssueSeverity.Low => "✅",
-                            _ => "❓"
+                            IssueSeverity.Critical => "Alert",
+                            IssueSeverity.High => "WARNING:",
+                            IssueSeverity.Medium => "INFO:",
+                            IssueSeverity.Low => "SUCCESS:",
+                            _ => "UNKNOWN"
                         };
                         
                         Console.WriteLine($"   {severityIcon} {issue.Title}");
@@ -128,15 +128,15 @@ namespace Nexo.CLI.Commands
                 // Show recommendations
                 if (capabilities.Recommendations.Any())
                 {
-                    Console.WriteLine("💡 Recommendations:");
+                    Console.WriteLine("Idea Recommendations:");
                     foreach (var recommendation in capabilities.Recommendations.OrderBy(r => r.Priority))
                     {
                         var priorityIcon = recommendation.Priority switch
                         {
-                            1 => "🔥",
+                            1 => "Hot",
                             2 => "⚡",
-                            3 => "💡",
-                            _ => "ℹ️"
+                            3 => "Idea",
+                            _ => "INFO:"
                         };
                         
                         Console.WriteLine($"   {priorityIcon} {recommendation.Title}");
@@ -146,7 +146,7 @@ namespace Nexo.CLI.Commands
                     }
                 }
 
-                Console.WriteLine("🛠️  Available Commands:");
+                Console.WriteLine("Commands:  Available Commands:");
                 Console.WriteLine("   nexo hardware check        - Check system requirements");
                 Console.WriteLine("   nexo hardware cloud       - Show cloud fallback options");
                 Console.WriteLine("   nexo hardware recommend   - Show recommendations");
@@ -156,7 +156,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error showing hardware dashboard");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -167,57 +167,57 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("🔍 Checking System Requirements");
+                Console.WriteLine("Search Checking System Requirements");
                 Console.WriteLine();
 
                 var capabilities = await _hardwareChecker.CheckSystemCapabilitiesAsync(cancellationToken);
                 var requirements = await _hardwareChecker.GetHardwareRequirementsAsync(cancellationToken);
 
-                Console.WriteLine("📋 Requirements Check:");
+                Console.WriteLine("List Requirements Check:");
                 Console.WriteLine();
 
                 // Memory check
-                var memoryStatus = capabilities.AvailableMemoryBytes >= requirements.MinimumMemoryBytes ? "✅" : "❌";
+                var memoryStatus = capabilities.AvailableMemoryBytes >= requirements.MinimumMemoryBytes ? "SUCCESS:" : "ERROR:";
                 Console.WriteLine($"   Memory: {memoryStatus} {FormatBytes(capabilities.AvailableMemoryBytes)} / {FormatBytes(requirements.MinimumMemoryBytes)} (min)");
                 if (capabilities.AvailableMemoryBytes >= requirements.RecommendedMemoryBytes)
                 {
-                    Console.WriteLine($"   Memory: ✅ {FormatBytes(capabilities.AvailableMemoryBytes)} / {FormatBytes(requirements.RecommendedMemoryBytes)} (recommended)");
+                    Console.WriteLine($"   Memory: SUCCESS: {FormatBytes(capabilities.AvailableMemoryBytes)} / {FormatBytes(requirements.RecommendedMemoryBytes)} (recommended)");
                 }
 
                 // CPU check
-                var cpuStatus = capabilities.CpuCores >= requirements.MinimumCpuCores ? "✅" : "❌";
+                var cpuStatus = capabilities.CpuCores >= requirements.MinimumCpuCores ? "SUCCESS:" : "ERROR:";
                 Console.WriteLine($"   CPU Cores: {cpuStatus} {capabilities.CpuCores} / {requirements.MinimumCpuCores} (min)");
                 if (capabilities.CpuCores >= requirements.RecommendedCpuCores)
                 {
-                    Console.WriteLine($"   CPU Cores: ✅ {capabilities.CpuCores} / {requirements.RecommendedCpuCores} (recommended)");
+                    Console.WriteLine($"   CPU Cores: SUCCESS: {capabilities.CpuCores} / {requirements.RecommendedCpuCores} (recommended)");
                 }
 
-                var cpuFreqStatus = capabilities.CpuFrequencyGhz >= requirements.MinimumCpuFrequencyGhz ? "✅" : "❌";
+                var cpuFreqStatus = capabilities.CpuFrequencyGhz >= requirements.MinimumCpuFrequencyGhz ? "SUCCESS:" : "ERROR:";
                 Console.WriteLine($"   CPU Frequency: {cpuFreqStatus} {capabilities.CpuFrequencyGhz:F1} GHz / {requirements.MinimumCpuFrequencyGhz:F1} GHz (min)");
 
                 // Storage check
-                var storageStatus = capabilities.AvailableStorageBytes >= requirements.MinimumStorageBytes ? "✅" : "❌";
+                var storageStatus = capabilities.AvailableStorageBytes >= requirements.MinimumStorageBytes ? "SUCCESS:" : "ERROR:";
                 Console.WriteLine($"   Storage: {storageStatus} {FormatBytes(capabilities.AvailableStorageBytes)} / {FormatBytes(requirements.MinimumStorageBytes)} (min)");
                 if (capabilities.AvailableStorageBytes >= requirements.RecommendedStorageBytes)
                 {
-                    Console.WriteLine($"   Storage: ✅ {FormatBytes(capabilities.AvailableStorageBytes)} / {FormatBytes(requirements.RecommendedStorageBytes)} (recommended)");
+                    Console.WriteLine($"   Storage: SUCCESS: {FormatBytes(capabilities.AvailableStorageBytes)} / {FormatBytes(requirements.RecommendedStorageBytes)} (recommended)");
                 }
 
                 // OS check
-                var osStatus = requirements.SupportedOperatingSystems.Any(os => capabilities.OperatingSystem.Contains(os)) ? "✅" : "⚠️";
+                var osStatus = requirements.SupportedOperatingSystems.Any(os => capabilities.OperatingSystem.Contains(os)) ? "SUCCESS:" : "WARNING:";
                 Console.WriteLine($"   Operating System: {osStatus} {capabilities.OperatingSystem}");
 
                 // Architecture check
-                var archStatus = requirements.SupportedArchitectures.Contains(capabilities.Architecture) ? "✅" : "❌";
+                var archStatus = requirements.SupportedArchitectures.Contains(capabilities.Architecture) ? "SUCCESS:" : "ERROR:";
                 Console.WriteLine($"   Architecture: {archStatus} {capabilities.Architecture}");
 
                 Console.WriteLine();
-                Console.WriteLine($"Overall Status: {(capabilities.CanRunNexo ? "✅ System meets requirements" : "❌ System does not meet requirements")}");
+                Console.WriteLine($"Overall Status: {(capabilities.CanRunNexo ? "SUCCESS: System meets requirements" : "ERROR: System does not meet requirements")}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking system requirements");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -228,7 +228,7 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("☁️  Cloud Fallback Options");
+                Console.WriteLine("Cloud  Cloud Fallback Options");
                 Console.WriteLine();
 
                 var options = await _hardwareChecker.GetCloudFallbackOptionsAsync(cancellationToken);
@@ -240,7 +240,7 @@ namespace Nexo.CLI.Commands
                         CloudProvider.Azure => "🔵",
                         CloudProvider.AWS => "🟠",
                         CloudProvider.GoogleCloud => "🔴",
-                        _ => "☁️"
+                        _ => "Cloud"
                     };
 
                     Console.WriteLine($"{providerIcon} {option.Name}");
@@ -255,7 +255,7 @@ namespace Nexo.CLI.Commands
                     Console.WriteLine();
                 }
 
-                Console.WriteLine("💡 To get started with cloud fallback:");
+                Console.WriteLine("Idea To get started with cloud fallback:");
                 Console.WriteLine("   1. Choose a provider and instance type");
                 Console.WriteLine("   2. Follow the setup instructions");
                 Console.WriteLine("   3. Install Nexo on the cloud instance");
@@ -264,7 +264,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error showing cloud options");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -275,7 +275,7 @@ namespace Nexo.CLI.Commands
         {
             try
             {
-                Console.WriteLine("💡 Hardware Recommendations");
+                Console.WriteLine("Idea Hardware Recommendations");
                 Console.WriteLine();
 
                 var capabilities = await _hardwareChecker.CheckSystemCapabilitiesAsync(cancellationToken);
@@ -284,7 +284,7 @@ namespace Nexo.CLI.Commands
 
                 if (recommendedTier != null)
                 {
-                    Console.WriteLine("🎯 Recommended Performance Tier:");
+                    Console.WriteLine("Target Recommended Performance Tier:");
                     Console.WriteLine($"   {recommendedTier.Name} - {recommendedTier.Description}");
                     Console.WriteLine($"   Level: {recommendedTier.Level}");
                     Console.WriteLine($"   Features: {string.Join(", ", recommendedTier.Features)}");
@@ -293,7 +293,7 @@ namespace Nexo.CLI.Commands
 
                 if (recommendedCloud != null)
                 {
-                    Console.WriteLine("☁️  Recommended Cloud Option:");
+                    Console.WriteLine("Cloud  Recommended Cloud Option:");
                     Console.WriteLine($"   {recommendedCloud.Name} - {recommendedCloud.Description}");
                     Console.WriteLine($"   Provider: {recommendedCloud.Provider}");
                     Console.WriteLine($"   Cost: ${recommendedCloud.Pricing.MonthlyRate:F2}/month");
@@ -304,15 +304,15 @@ namespace Nexo.CLI.Commands
                 var recommendations = await _hardwareChecker.GetOptimizationRecommendationsAsync(cancellationToken);
                 if (recommendations.Any())
                 {
-                    Console.WriteLine("🔧 Optimization Recommendations:");
+                    Console.WriteLine("Tool Optimization Recommendations:");
                     foreach (var recommendation in recommendations.OrderBy(r => r.Priority))
                     {
                         var priorityIcon = recommendation.Priority switch
                         {
-                            1 => "🔥",
+                            1 => "Hot",
                             2 => "⚡",
-                            3 => "💡",
-                            _ => "ℹ️"
+                            3 => "Idea",
+                            _ => "INFO:"
                         };
                         
                         Console.WriteLine($"   {priorityIcon} {recommendation.Title}");
@@ -327,7 +327,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error showing recommendations");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -349,7 +349,7 @@ namespace Nexo.CLI.Commands
                 }
 
                 Console.WriteLine();
-                Console.WriteLine("💡 Cost Optimization Tips:");
+                Console.WriteLine("Idea Cost Optimization Tips:");
                 Console.WriteLine("   • Use spot instances for non-critical workloads");
                 Console.WriteLine("   • Implement auto-scaling to reduce idle time");
                 Console.WriteLine("   • Consider reserved instances for predictable usage");
@@ -358,7 +358,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error showing cost estimates");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -376,7 +376,7 @@ namespace Nexo.CLI.Commands
 
                 foreach (var tier in requirements.PerformanceTiers.OrderBy(t => t.Level))
                 {
-                    var recommendedIcon = tier.IsRecommended ? "⭐" : "  ";
+                    var recommendedIcon = tier.IsRecommended ? "Star" : "  ";
                     Console.WriteLine($"{recommendedIcon} {tier.Name}");
                     Console.WriteLine($"   Level: {tier.Level}");
                     Console.WriteLine($"   Description: {tier.Description}");
@@ -390,7 +390,7 @@ namespace Nexo.CLI.Commands
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error showing performance tiers");
-                Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"ERROR: Error: {ex.Message}");
             }
         }
 
@@ -399,7 +399,7 @@ namespace Nexo.CLI.Commands
         /// </summary>
         private static void ShowHelp()
         {
-            Console.WriteLine("💻 Nexo Hardware Requirements");
+            Console.WriteLine("Computer Nexo Hardware Requirements");
             Console.WriteLine();
             Console.WriteLine("Commands:");
             Console.WriteLine("   nexo hardware                    - Show hardware dashboard");

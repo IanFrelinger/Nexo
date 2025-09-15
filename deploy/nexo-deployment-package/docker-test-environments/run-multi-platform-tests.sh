@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Nexo Framework Multi-Platform Testing"
+echo "Running Nexo Framework Multi-Platform Testing"
 echo "========================================"
 echo ""
 
@@ -35,9 +35,9 @@ run_platform_test() {
     # Build the test container
     echo -e "${BLUE}Building ${platform} test container...${NC}"
     if docker build -f "$dockerfile" -t "nexo-test-${platform}" .; then
-        echo -e "  ${GREEN}✅ Container built successfully${NC}"
+        echo -e "  ${GREEN}SUCCESS: Container built successfully${NC}"
     else
-        echo -e "  ${RED}❌ Container build failed${NC}"
+        echo -e "  ${RED}ERROR: Container build failed${NC}"
         ((FAILED_TESTS++))
         return 1
     fi
@@ -51,16 +51,16 @@ run_platform_test() {
         "nexo-test-${platform}" > "../test-results/${platform}-test.log" 2>&1; then
         
         # Check if tests passed
-        if grep -q "Deployment Status: ✅ SUCCESS" "../test-results/${platform}-test.log"; then
-            echo -e "  ${GREEN}✅ ${platform} tests PASSED${NC}"
+        if grep -q "Deployment Status: SUCCESS: SUCCESS" "../test-results/${platform}-test.log"; then
+            echo -e "  ${GREEN}SUCCESS: ${platform} tests PASSED${NC}"
             ((PASSED_TESTS++))
         else
-            echo -e "  ${RED}❌ ${platform} tests FAILED${NC}"
+            echo -e "  ${RED}ERROR: ${platform} tests FAILED${NC}"
             echo "    Check logs: ../test-results/${platform}-test.log"
             ((FAILED_TESTS++))
         fi
     else
-        echo -e "  ${RED}❌ ${platform} container execution failed${NC}"
+        echo -e "  ${RED}ERROR: ${platform} container execution failed${NC}"
         ((FAILED_TESTS++))
     fi
     
@@ -78,14 +78,14 @@ generate_report() {
     echo ""
     
     if [ $FAILED_TESTS -eq 0 ]; then
-        echo -e "${GREEN}🎉 All platforms passed! Nexo framework is cross-platform ready.${NC}"
+        echo -e "${GREEN}SUCCESS All platforms passed! Nexo framework is cross-platform ready.${NC}"
         echo ""
-        echo -e "${GREEN}Multi-Platform Status: ✅ SUCCESS${NC}"
+        echo -e "${GREEN}Multi-Platform Status: SUCCESS: SUCCESS${NC}"
         return 0
     else
-        echo -e "${RED}❌ Some platforms failed. Check individual test logs.${NC}"
+        echo -e "${RED}ERROR: Some platforms failed. Check individual test logs.${NC}"
         echo ""
-        echo -e "${RED}Multi-Platform Status: ❌ FAILED${NC}"
+        echo -e "${RED}Multi-Platform Status: ERROR: FAILED${NC}"
         return 1
     fi
 }

@@ -337,13 +337,13 @@ namespace Generated.Features
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("🚀 Nexo Feature Factory Demo");
+            Console.WriteLine("Running Nexo Feature Factory Demo");
             Console.WriteLine("============================");
             Console.WriteLine();
             
             var factory = new FeatureFactoryDemo();
             
-            Console.WriteLine("📋 Generating Customer Feature...");
+            Console.WriteLine("List Generating Customer Feature...");
             Console.WriteLine("Input: Create a Customer entity with CRUD operations, including properties for Name (string), Email (string), and IsActive (boolean)");
             Console.WriteLine();
             Console.WriteLine("Generated Code:");
@@ -353,7 +353,7 @@ namespace Generated.Features
             Console.WriteLine(customerCode);
             
             Console.WriteLine();
-            Console.WriteLine("📋 Generating Product Feature...");
+            Console.WriteLine("List Generating Product Feature...");
             Console.WriteLine("Input: Create a Product entity with inventory management, including properties for Name, SKU, Price, and StockQuantity");
             Console.WriteLine();
             Console.WriteLine("Generated Code:");
@@ -363,9 +363,9 @@ namespace Generated.Features
             Console.WriteLine(productCode);
             
             Console.WriteLine();
-            Console.WriteLine("✅ Feature Factory Demo Completed Successfully!");
+            Console.WriteLine("SUCCESS: Feature Factory Demo Completed Successfully!");
             Console.WriteLine();
-            Console.WriteLine("🎯 Key Features Demonstrated:");
+            Console.WriteLine("Target Key Features Demonstrated:");
             Console.WriteLine("• AI-powered feature generation from natural language descriptions");
             Console.WriteLine("• Complete CRUD operations with proper validation");
             Console.WriteLine("• Clean Architecture with separation of concerns");
@@ -374,7 +374,7 @@ namespace Generated.Features
             Console.WriteLine("• Data validation and error handling");
             Console.WriteLine("• Cross-platform code generation");
             Console.WriteLine();
-            Console.WriteLine("🔧 Ready for integration with:");
+            Console.WriteLine("Tool Ready for integration with:");
             Console.WriteLine("• Local Llama models via Ollama");
             Console.WriteLine("• OpenAI API");
             Console.WriteLine("• Azure OpenAI");
