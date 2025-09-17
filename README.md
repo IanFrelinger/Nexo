@@ -1,44 +1,53 @@
-# Nexo: Native AI + Flexible Workflow = Durable Software
+# Nexo
 
-> **From prompt to production: generate, run, and self-heal .NET features—online or offline, no lock-in.**
+**Adaptive, safe .NET features that run online or offline—no lock‑in.**
 
-## Why Nexo is Different
+Nexo turns plain‑English requests into reusable .NET features (think LEGO‑style building blocks) you can drop into apps and CI/CD. Each feature is tested, scanned, signed, versioned, and easy to roll back. Use local models (Ollama) or cloud models (OpenAI/Azure)—swap providers later without rewrites.
 
-**Not just suggestions**: Nexo outputs versioned, signed .NET features ready for CI/CD.  
-**Native AI, not bolted on**: Same interfaces for dev-time and runtime, cloud or local.  
-**No platform lock-in**: Model/provider strategies + portable artifacts.
+⸻
 
-## Three Operating Modes
+## Why Nexo
 
-### 1. Development-time Assist
-- **Natural-language → compiled C# feature** (tests, SAST, signing)
-- **Publish to internal Feature Registry** with RBAC & provenance
-- **Deterministic rebuild profiles** for regulated teams
+- **Adaptive**: As your library of approved blocks grows, Nexo learns which ones work best and assembles them for you.
+- **Safe**: Policy packs (tests, SAST/SCA, license checks), signing, RBAC, audit trail, and instant rollback.
+- **Portable**: Run fully offline or online. Switch models/clouds/runtimes with flags—no vendor lock‑in.
 
-### 2. Runtime (Online)
-- **Agents call cloud models** when allowed (OpenAI/Azure)
-- **Tool-calling against approved features**; policy gates at the boundary
-- **Canary, metrics, rollback** baked in
+⸻
 
-### 3. Runtime (Offline/Local)
-- **Runs fully air-gapped** with Ollama/LLamaSharp
-- **Same agent and feature interfaces**; just swap providers
-- **Zero data egress**, same quality gates
+## The building blocks (LEGO‑style)
 
-## Self-Healing Feature Factory
+Nexo composes small, reusable parts into a feature:
+- **Sense** — notice context (e.g., driving, meeting, low battery)
+- **Decide** — pick what to do (rules or on‑device AI)
+- **Act** — do the thing (enable DND, auto‑reply, download maps)
+- **Guard** — keep it safe (consent, quiet hours, approvals, audit)
 
-1. **Detect**: Telemetry catches regressions or drift
-2. **Diagnose**: Failing traces auto-curate a minimal repro
-3. **Propose**: Agent drafts a patch (respecting coding standards)
-4. **Verify**: Generated tests + SAST + dependency audit
-5. **Release**: Sign, canary, promote on SLO pass
-6. **Rebuild**: Record prompt + seed → reproduce exact artifact later
+Blocks live in a Feature Library (your team's shelf of approved pieces). You can hand‑write them or let Nexo help generate them via the Feature Factory—either way, they're checked and approved before use.
 
-## Proof Points
-- **50–70% cycle-time reduction** for internal tools
-- **<30 min from prompt to signed artifact** in CI
-- **0 data-egress mode** for restricted environments
-- **Mean-time-to-rollback < 5 min** with canary channels
+⸻
+
+## Feature Factory (what it does)
+
+One pipeline from prompt → production:
+1. **Generate** a feature or block from plain English.
+2. **Scan & test** (policy packs: unit tests, SAST/SCA, license checks).
+3. **Sign & version** the artifact (DLL/NuGet) and record provenance.
+4. **Publish** to the Feature Library with RBAC.
+5. **Use & observe** in apps/CI; collect success/failure and overrides.
+6. **Self‑heal**: propose a patch on failure, canary, then promote or rollback in seconds.
+
+```
+[ Prompt ] → [ Generate ] → [ Scan/Test ] → [ Sign/Version ] → [ Publish ] → [ Use/Observe ] → [ Patch/Canary/Rollback ]
+```
+
+⸻
+
+## Modes (pick your comfort level)
+
+- **Hand‑Build (deterministic)**: rules/code‑only; 100% reproducible.
+- **Co‑Build (dev‑time AI)**: AI scaffolds code/tests; no AI at runtime.
+- **Hybrid (optional AI)**: rules first; call AI only when available.
+- **Self‑Healing (embedded AI)**: retries, failover, drift checks, auto‑patch proposals.
 
 ## Architecture
 
@@ -241,28 +250,72 @@ Nexo/
 └── examples/                     # Configuration examples
 ```
 
-## Code Example: Online/Offline Fallback
+⸻
+
+## Quick start
+
+These commands assume a CLI is available. If your setup differs, use `dotnet run` in the sample projects.
+
+```bash
+# Install (example)
+dotnet tool install --global nexo
+
+# Initialize a sample workspace
+nexo init
+
+# Run a scenario (provider‑agnostic)
+NEXO_AI_MODE=off \
+  nexo run examples/commute_guardian.yaml
+```
+
+### Swap backends without rewrites
+
+```bash
+# Local model (no data leaves machine)
+NEXO_AI_MODE=hybrid NEXO_PROVIDER=local NEXO_MODEL=llama3 \
+  nexo run examples/commute_guardian.yaml
+
+# Cloud model (quality/scale)
+NEXO_AI_MODE=embedded NEXO_PROVIDER=azure NEXO_MODEL=gpt-4o \
+  nexo run examples/commute_guardian.yaml
+```
+
+### Minimal FeatureSpec (YAML)
+
+```yaml
+feature: commute_guardian
+triggers:
+  - uses: sense/activity
+    expects: driving
+  - uses: sense/bluetooth
+    expects: "car_kit"
+plan:
+  - uses: reason/context_ranker
+    require_ai: false
+  - uses: guard/allowlist
+    data: ["Phone", "Messages", "Maps"]
+  - uses: act/set_focus
+    data: { mode: "Driving" }
+  - uses: act/announce_agenda
+  - uses: act/autoreply_sms
+    data: { template: "Driving—ETA {eta}." }
+policies:
+  offline_first: true
+  driving_safe_ops_only: true
+```
+
+⸻
+
+## Provider‑agnostic C# (tiny example)
 
 ```csharp
-public interface IModelClient 
-{ 
-    Task<string> CompleteAsync(string prompt, CancellationToken ct); 
-}
-
-public sealed class OnlineClient : IModelClient 
-{ 
-    /* OpenAI/Azure implementation */ 
-}
-
-public sealed class LocalClient : IModelClient 
-{ 
-    /* Ollama/LLamaSharp implementation */ 
-}
+public interface IModelClient { Task<string> CompleteAsync(string prompt, CancellationToken ct); }
+public sealed class OnlineClient : IModelClient { /* OpenAI/Azure */ }
+public sealed class LocalClient  : IModelClient { /* Ollama/LLamaSharp */ }
 
 public sealed class SmartClient : IModelClient
 {
     private readonly IModelClient _primary, _fallback;
-    
     public SmartClient(IModelClient primary, IModelClient fallback)
         => (_primary, _fallback) = (primary, fallback);
 
@@ -273,182 +326,88 @@ public sealed class SmartClient : IModelClient
     }
 }
 
-// Runtime feature uses the same abstraction whether dev-time or prod:
 public sealed class SummarizeFeature
 {
     private readonly IModelClient _llm;
     public SummarizeFeature(IModelClient llm) => _llm = llm;
-
     public Task<string> RunAsync(string text, CancellationToken ct)
         => _llm.CompleteAsync($"Summarize:\n{text}", ct);
 }
 ```
 
-## Quick Start
+⸻
 
-### Prerequisites
-- .NET 8.0 SDK
-- Docker (for container features)
-- Git
+## Security, privacy, compliance
 
-### Installation
-```bash
-# Clone the repository
-git clone https://github.com/IanFrelinger/Nexo.git
-cd Nexo
+- **Offline‑first**: local models; cloud is opt‑in per scenario.
+- **No data egress by default**.
+- **Policy packs** enforce tests, SAST/SCA, license checks before publish.
+- **Signed artifacts**, RBAC, audit log, deterministic rebuilds.
 
-# Restore dependencies
-dotnet restore
+⸻
 
-# Build the project
-dotnet build
-```
+## Integrations
 
-### Generate Your First Feature
-```bash
-# Development-time: prompt → compile → scan → test → sign → publish
-nexo generate "Create a customer management feature with validation and audit logging"
+- **Azure DevOps**: drop approved features into pipelines; canary + rollback.
+- **Visual Studio / VS Code**: generate/insert features during development.
+- **GitHub Actions / GitLab CI**: use published artifacts via NuGet/DLL.
 
-# Runtime (Online): agents + cloud LLMs, gated by policy packs
-nexo run --mode online --feature customer-management
+⸻
 
-# Runtime (Offline): local LLMs, same contracts; zero egress
-nexo run --mode offline --feature customer-management
-```
+## Competitive snapshot (plain language)
 
-### Self-Healing in Action
-```bash
-# Deploy with monitoring
-nexo deploy --feature customer-management --enable-telemetry
+- **Copilot / Codeium** — great suggestions in the editor, but not approved, reusable features for CI/CD.
+- **Microsoft Semantic Kernel** — strong orchestration; governance is DIY.
+- **LangChain / LlamaIndex / CrewAI** — powerful agents/RAG (mostly Python); less focus on .NET, signed features.
+- **Backstage templates / dev templates** — standardize scaffolds, not generate/test/sign/publish small .NET features.
+- **GPT‑Engineer** — one‑shot scaffolding, not a managed feature library.
 
-# When issues are detected, auto-heal
-nexo heal --feature customer-management --auto-patch
-```
+**Nexo's wedge**: Signed, versioned .NET features with offline/online parity, policy gates, and instant rollback.
 
-## Configuration
+⸻
 
-### AI Provider Setup
+## Who it's for
 
-#### OpenAI
-```bash
-export OPENAI_API_KEY="your-api-key"
-export AI_PROVIDER=openai
-export AI_MODEL=gpt-4
-```
+Platform/DevOps teams in Microsoft‑centric, regulated orgs (defense, healthcare, finance, utilities) that need reusable internal tools, sometimes without any cloud AI.
 
-#### Ollama (Local)
-```bash
-# Install Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
+⸻
 
-# Pull a model
-ollama pull llama2
+## Market snapshot (for investors & partners)
 
-# Configure Nexo
-export AI_PROVIDER=ollama
-export AI_MODEL=llama2
-```
+- **TAM**: ~7.5M C# devs × $240/yr ≈ $1.8B/yr
+- **SAM**: ~20% Microsoft‑centric/regulated ≈ $360M/yr
+- **SOM (12–24 mo)**: 0.5–2% of SAM ≈ $1.8–7.2M ARR
+- **Enterprise add‑on**: Feature Factory/Library license (e.g., 100 orgs × $40k ≈ $4M ARR upside)
 
-#### Azure OpenAI
-```bash
-export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com/"
-export AZURE_OPENAI_API_KEY="your-api-key"
-export AI_PROVIDER=azure-openai
-export AI_MODEL=gpt-4
-```
+*These are directional estimates for a deck; refine with your own ICP counts.*
 
-### Policy Configuration
+⸻
 
-Nexo includes a comprehensive policy system for safety and quality:
+## Roadmap (high‑level)
 
-```bash
-# Run safety scan
-nexo safety scan --policy policies/safety/default.yaml
+- **Feature Library GA**: signing, semver, RBAC, provenance UI
+- **Policy packs v1**: tests, SAST/SCA, licensing
+- **VS/VS Code and Azure DevOps extensions**
+- **Deterministic rebuild profiles**; offline parity improvements
+- **Self‑healing loop**: detect → patch → verify → canary → rollback
 
-# Run quality checks
-nexo quality run --policy policies/quality/default.yaml --format sarif
-
-# Apply complete policy pack
-nexo policy apply --manifest policies/policy-pack.manifest.yaml
-```
-
-## Testing
-
-```bash
-# Run all tests
-dotnet test
-
-# Run with coverage
-dotnet test --collect:"XPlat Code Coverage"
-
-# Run specific test project
-dotnet test tests/Nexo.Infrastructure.Tests/
-```
-
-## Docker Support
-
-```bash
-# Build and run with Docker
-docker-compose up --build
-
-# Run tests in container
-docker-compose -f docker-compose.testing.yml up --build
-```
-
-
-## The "Lego" Analogy
-
-> **"Nexo is your growing bin of re-usable, signed .NET bricks. Snap them together by hand, or let agents self-assemble and even replace broken bricks automatically—without switching your baseplate (cloud vs local)."**
-
-## Security & Safety
-
-### Policy-Driven Safety
-- **Sandboxed Execution**: Restricted filesystem and network access
-- **Secret Detection**: Automatic detection of API keys and credentials
-- **Malicious Code Detection**: Pattern-based security scanning
-- **Network Restrictions**: Configurable domain and port allowlists
-
-### Quality Gates
-- **Code Quality Scoring**: Automated assessment with configurable thresholds
-- **Test Coverage**: Minimum 75% coverage requirement
-- **Style Enforcement**: Consistent code formatting and standards
-- **Dependency Auditing**: Security vulnerability scanning
+⸻
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Run the test suite: `dotnet test`
-5. Run policy checks: `nexo policy apply`
-6. Commit your changes: `git commit -m 'Add amazing feature'`
-7. Push to the branch: `git push origin feature/amazing-feature`
-8. Open a Pull Request
+PRs and issues welcome! Please:
+1. Open an issue describing the change.
+2. Include tests where possible.
+3. Follow the code style and sign your commits.
+
+⸻
 
 ## License
 
-[Add your license information here]
+See LICENSE in this repo.
 
-## Support
+⸻
 
-- **Documentation**: Check the `docs/` directory for detailed guides
-- **Issues**: Report bugs and request features on GitHub
-- **Discussions**: Join community discussions for questions and ideas
+## Safety notes (mobile usage)
 
-## Roadmap
-
-- **Enhanced Self-Healing**: More sophisticated drift detection and auto-repair
-- **Visual Feature Builder**: GUI for feature creation and management
-- **Team Collaboration**: Multi-user feature sharing and versioning
-- **Enterprise Features**: Advanced security and compliance tools
-- **Cloud Integration**: Seamless cloud deployment and scaling
-
-## One-Liner Options
-
-- **"Ship AI-generated .NET features you can trust—online or offline."**
-- **"From spec to signed DLL to self-healed rollout."**
-- **"AI where you want it: in the editor, in production, or in a bunker."**
-
----
-
-**Nexo** - Native AI + Flexible Workflow = Durable Software
+On iOS, runtime code download is prohibited. Nexo ships config/FeatureSpecs and pre‑approved primitives; new capabilities ship as signed app updates. On Android, prefer the same pattern; dynamic modules must follow store policy.
