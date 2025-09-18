@@ -372,36 +372,6 @@ Platform/DevOps teams in Microsoft‑centric, regulated orgs (defense, healthcar
 
 ⸻
 
-## Market snapshot (for investors & partners)
-
-- **TAM**: ~7.5M C# devs × $240/yr ≈ $1.8B/yr
-- **SAM**: ~20% Microsoft‑centric/regulated ≈ $360M/yr
-- **SOM (12–24 mo)**: 0.5–2% of SAM ≈ $1.8–7.2M ARR
-- **Enterprise add‑on**: Feature Factory/Library license (e.g., 100 orgs × $40k ≈ $4M ARR upside)
-
-*These are directional estimates for a deck; refine with your own ICP counts.*
-
-⸻
-
-## Roadmap (high‑level)
-
-- **Feature Library GA**: signing, semver, RBAC, provenance UI
-- **Policy packs v1**: tests, SAST/SCA, licensing
-- **VS/VS Code and Azure DevOps extensions**
-- **Deterministic rebuild profiles**; offline parity improvements
-- **Self‑healing loop**: detect → patch → verify → canary → rollback
-
-⸻
-
-## Contributing
-
-PRs and issues welcome! Please:
-1. Open an issue describing the change.
-2. Include tests where possible.
-3. Follow the code style and sign your commits.
-
-⸻
-
 ## License
 
 See LICENSE in this repo.
