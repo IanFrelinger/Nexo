@@ -44,6 +44,7 @@
     <ProjectReference Include="../Nexo.Feature.Logging/Nexo.Feature.Logging.csproj" />
     <ProjectReference Include="../Nexo.Feature.Web/Nexo.Feature.Web.csproj" />
     <ProjectReference Include="../Nexo.Feature.Factory/Nexo.Feature.Factory.csproj" />
+    <ProjectReference Include="../Nexo.Verify/Nexo.Verify.csproj" />
   </ItemGroup>
 
 </Project>

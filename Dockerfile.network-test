@@ -1,0 +1,12 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+
+WORKDIR /app
+
+# Copy only the network test
+COPY network-test/ .
+
+# Build the network test
+RUN dotnet build -c Release
+
+# Set up the entrypoint
+ENTRYPOINT ["bash", "-lc"]

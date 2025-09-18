@@ -540,6 +540,10 @@ namespace Nexo.CLI
 
             // Remove duplicate testing commands - using simple testing commands above
 
+            // Add verify command
+            var verifyCommand = Commands.VerifyCommand.CreateVerifyCommand();
+            rootCommand.AddCommand(verifyCommand);
+
             rootCommand.Description = "Nexo CLI provides AI-enhanced development environment orchestration capabilities with interactive mode, real-time dashboards, intelligent suggestions, and Unity game development tools.";
 
             return await rootCommand.InvokeAsync(args);

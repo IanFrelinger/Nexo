@@ -1,0 +1,6 @@
+test_id,test_name,status,duration_ms,error_message
+1,login_test,passed,150,
+2,api_test,failed,2000,Connection timeout
+3,ui_test,passed,500,
+4,performance_test,failed,30000,Response time exceeded threshold
+5,integration_test,passed,1200,

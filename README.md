@@ -49,6 +49,31 @@ One pipeline from prompt → production:
 - **Hybrid (optional AI)**: rules first; call AI only when available.
 - **Self‑Healing (embedded AI)**: retries, failover, drift checks, auto‑patch proposals.
 
+## Verification System
+
+Nexo includes a comprehensive verification system that validates all product claims through automated testing:
+
+- **Zero Platform Lock-in**: Cross-provider parity tests ensure semantic equivalence ≥ 85%
+- **Offline ↔ Online Spectrum**: Mode-specific tests validate behavior and network isolation
+- **Deterministic Outputs**: Hash-based assertions ensure consistent OFF mode outputs
+- **Self-Healing Behavior**: Tests validate retry logic, failover, and circuit breaker behavior
+- **Compounding Bricks**: Contract tests validate reusable component interfaces
+
+### Quick Start
+
+```bash
+# Run all verification tests
+nexo verify tests/specs
+
+# Test specific mode
+nexo verify tests/specs --mode off
+
+# Test with Docker network isolation
+docker run --rm --network none nexo-tests nexo verify tests/specs --mode off
+```
+
+See [Verification Documentation](docs/verification.md) for detailed usage and configuration.
+
 ## Architecture
 
 ```mermaid

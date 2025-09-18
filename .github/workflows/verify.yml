@@ -1,0 +1,70 @@
+name: verify
+
+on:
+  push:
+    branches: [ master, feat/verification-harness ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        mode: [off, hybrid, embedded]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test -c Release --no-build --verbosity normal
+
+      # OFF: enforce no network on Ubuntu with Docker; rely on in-process guard on others
+      - name: OFF (no network, docker)
+        if: matrix.mode == 'off' && matrix.os == 'ubuntu-latest'
+        run: |
+          docker build -f Dockerfile.test -t nexo-tests .
+          docker run --rm --network none nexo-tests nexo verify tests/specs --mode off
+
+      - name: OFF (no network, in-process guard)
+        if: matrix.mode == 'off' && matrix.os != 'ubuntu-latest'
+        run: |
+          NEXO_AI_MODE=off nexo verify tests/specs --mode off
+
+      - name: HYBRID (local model)
+        if: matrix.mode == 'hybrid'
+        env:
+          NEXO_AI_MODE: hybrid
+          NEXO_PROVIDER: local
+          NEXO_MODEL: llama3
+        run: nexo verify tests/specs
+
+      - name: EMBEDDED (cloud) — gated on secret
+        if: matrix.mode == 'embedded' && secrets.OPENAI_API_KEY != ''
+        env:
+          NEXO_AI_MODE: embedded
+          NEXO_PROVIDER: openai
+          NEXO_MODEL: gpt-4o
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: nexo verify tests/specs
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.mode }}
+          path: test-results/
