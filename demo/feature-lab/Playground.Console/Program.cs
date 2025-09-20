@@ -26,15 +26,7 @@ class Program
         catch (Exception ex)
         {
             global::System.Console.WriteLine($"❌ Error: {ex.Message}");
-            global::System.Console.WriteLine("Press any key to exit...");
-            try
-            {
-                global::System.Console.ReadKey();
-            }
-            catch
-            {
-                // Ignore if we can't read key
-            }
+            global::System.Console.WriteLine("Exiting...");
             Environment.Exit(1);
         }
     }

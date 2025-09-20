@@ -130,6 +130,14 @@ namespace Nexo.CLI.Commands
             configCommands.AddCommand("policies", "Policy management", "config policies list");
             _commandCategories["config"] = configCommands;
 
+            // Natural Language Commands
+            var naturalLanguageCommands = new CommandCategory("build", "Natural language application building");
+            naturalLanguageCommands.AddCommand("app", "Build app from description", "build \"description\" --platform <type>");
+            naturalLanguageCommands.AddCommand("quick", "Quick build commands", "build quick <type> <name>");
+            naturalLanguageCommands.AddCommand("templates", "List available templates", "build templates");
+            naturalLanguageCommands.AddCommand("examples", "Show example descriptions", "build examples");
+            _commandCategories["build"] = naturalLanguageCommands;
+
             // Demo Commands
             var demoCommands = new CommandCategory("demo", "Demo and showcase commands");
             demoCommands.AddCommand("feature-lab", "Feature Lab demo", "demo feature-lab start");

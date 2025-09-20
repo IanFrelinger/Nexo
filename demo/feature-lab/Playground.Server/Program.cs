@@ -10,6 +10,9 @@ builder.Services.AddServerSideBlazor();
 // Add Feature Factory service
 builder.Services.AddScoped<Playground.Server.Services.FeatureFactoryService>();
 
+// Add Lovable Demo service
+builder.Services.AddScoped<Playground.Server.Services.LovableDemoService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

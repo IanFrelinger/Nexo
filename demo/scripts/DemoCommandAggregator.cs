@@ -176,6 +176,15 @@ namespace DemoScripts
 
             showcaseCommand.AddCommand(contractCommand);
 
+            // Lovable-style demo
+            var lovableCommand = new Command("lovable", "Lovable-style AI development platform demo");
+            lovableCommand.SetHandler(async () =>
+            {
+                await ShowcaseLovableDemo();
+            });
+
+            showcaseCommand.AddCommand(lovableCommand);
+
             return showcaseCommand;
         }
 
@@ -578,6 +587,64 @@ namespace DemoScripts
             Console.WriteLine($"🔍 Searching for commands matching: '{query}'");
             // Implementation would search through available commands
             Console.WriteLine("Search functionality would be implemented here");
+        }
+
+        private async Task ShowcaseLovableDemo()
+        {
+            Console.WriteLine("🚀 NEXO LOVABLE-STYLE DEMO");
+            Console.WriteLine("==========================");
+            Console.WriteLine();
+            Console.WriteLine("Welcome to Nexo - Your Local AI Development Platform!");
+            Console.WriteLine("Just like Lovable, but running entirely on your machine.");
+            Console.WriteLine();
+            
+            await Task.Delay(1000);
+            
+            Console.WriteLine("🎯 KEY FEATURES:");
+            Console.WriteLine("• Natural language app generation");
+            Console.WriteLine("• Runtime dependency installation");
+            Console.WriteLine("• Multiple platform support (Web, Mobile, Desktop, API, Games)");
+            Console.WriteLine("• Local AI processing (no cloud required)");
+            Console.WriteLine("• Instant project scaffolding");
+            Console.WriteLine();
+            
+            await Task.Delay(1000);
+            
+            Console.WriteLine("💡 EXAMPLE COMMANDS:");
+            Console.WriteLine();
+            Console.WriteLine("Build a web app:");
+            Console.WriteLine("  nexo build \"A todo app with dark mode and drag-and-drop\" --platform web");
+            Console.WriteLine();
+            Console.WriteLine("Build a mobile app:");
+            Console.WriteLine("  nexo build \"Fitness tracker with workout plans and progress charts\" --platform mobile");
+            Console.WriteLine();
+            Console.WriteLine("Build an API server:");
+            Console.WriteLine("  nexo build \"REST API for user management with JWT authentication\" --platform api");
+            Console.WriteLine();
+            Console.WriteLine("Quick commands:");
+            Console.WriteLine("  nexo build quick web \"My Todo App\" --features dark-mode,responsive");
+            Console.WriteLine("  nexo build quick mobile \"Fitness Tracker\" --features charts,offline");
+            Console.WriteLine();
+            
+            await Task.Delay(1000);
+            
+            Console.WriteLine("🔧 WHAT HAPPENS WHEN YOU RUN A COMMAND:");
+            Console.WriteLine("1. 🔍 Analyzes your natural language description");
+            Console.WriteLine("2. 🏗️ Generates project structure and scaffolding");
+            Console.WriteLine("3. 📦 Installs all required dependencies automatically");
+            Console.WriteLine("4. 💻 Generates complete application code");
+            Console.WriteLine("5. 📚 Creates documentation and README");
+            Console.WriteLine("6. ▶️ Optionally runs the application");
+            Console.WriteLine();
+            
+            await Task.Delay(1000);
+            
+            Console.WriteLine("🎉 READY TO BUILD?");
+            Console.WriteLine("Try one of the example commands above, or describe your own app!");
+            Console.WriteLine();
+            Console.WriteLine("For more examples: nexo build examples");
+            Console.WriteLine("For available templates: nexo build templates");
+            Console.WriteLine("✅ Lovable-style demo completed!");
         }
 
         private Dictionary<string, Workflow> GetPredefinedWorkflows()

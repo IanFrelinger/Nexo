@@ -1,0 +1,332 @@
+@page "/demo-scenarios"
+@using Playground.Server.Models
+@using Playground.Server.Services
+@inject LovableDemoService LovableDemoService
+@inject NavigationManager Navigation
+
+<PageTitle>Demo Scenarios - Nexo</PageTitle>
+
+<div class="demo-scenarios">
+    <div class="header">
+        <h1>🎯 Demo Scenarios</h1>
+        <p>Explore pre-built examples showcasing Nexo's AI capabilities</p>
+    </div>
+
+    <div class="scenarios-grid">
+        @if (scenarios == null)
+        {
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading scenarios...</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var scenario in scenarios)
+            {
+                <div class="scenario-card">
+                    <div class="scenario-header">
+                        <div class="scenario-icon">
+                            @GetAppTypeIcon(scenario.AppType)
+                        </div>
+                        <div class="scenario-info">
+                            <h3>@scenario.Name</h3>
+                            <p>@scenario.Description</p>
+                        </div>
+                    </div>
+
+                    <div class="scenario-features">
+                        <h4>Features:</h4>
+                        <div class="feature-tags">
+                            @foreach (var feature in scenario.Features)
+                            {
+                                <span class="feature-tag">@feature</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="scenario-prompt">
+                        <h4>AI Prompt:</h4>
+                        <p class="prompt-text">"@scenario.Prompt"</p>
+                    </div>
+
+                    <div class="scenario-actions">
+                        <button class="btn-primary" @onclick="() => TryScenario(scenario)">
+                            🚀 Try This Scenario
+                        </button>
+                        <button class="btn-secondary" @onclick="() => ViewCode(scenario)">
+                            👀 View Code
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="cta-section">
+        <h2>Ready to build your own app?</h2>
+        <p>Use our AI-powered platform to generate any application you can imagine</p>
+        <button class="btn-primary large" @onclick="() => Navigation.NavigateTo("/lovable-demo")">
+            🎨 Start Building
+        </button>
+    </div>
+</div>
+
+<style>
+.demo-scenarios {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 2rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 3rem;
+    color: white;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.header p {
+    margin: 0;
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.scenarios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.scenario-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e1e5e9;
+}
+
+.scenario-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.scenario-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.scenario-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    color: white;
+}
+
+.scenario-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.scenario-info p {
+    margin: 0;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+.scenario-features {
+    margin-bottom: 1.5rem;
+}
+
+.scenario-features h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.feature-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.feature-tag {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.25rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.scenario-prompt {
+    margin-bottom: 1.5rem;
+}
+
+.scenario-prompt h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.prompt-text {
+    margin: 0;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-style: italic;
+    color: #495057;
+    border-left: 4px solid #667eea;
+}
+
+.scenario-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+
+.btn-secondary:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.btn-primary.large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.cta-section {
+    text-align: center;
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 3rem;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.cta-section h2 {
+    margin: 0 0 1rem 0;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.cta-section p {
+    margin: 0 0 2rem 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    color: white;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+@code {
+    private List<DemoScenario>? scenarios;
+
+    protected override async Task OnInitializedAsync()
+    {
+        scenarios = await LovableDemoService.GetScenariosAsync();
+    }
+
+    private string GetAppTypeIcon(string appType)
+    {
+        return appType switch
+        {
+            "web" => "🌐",
+            "mobile" => "📱",
+            "desktop" => "💻",
+            "api" => "🔌",
+            "game" => "🎮",
+            _ => "📄"
+        };
+    }
+
+    private void TryScenario(DemoScenario scenario)
+    {
+        // Navigate to LovableDemo with pre-filled prompt
+        var encodedPrompt = Uri.EscapeDataString(scenario.Prompt);
+        Navigation.NavigateTo($"/lovable-demo?prompt={encodedPrompt}&type={scenario.AppType}");
+    }
+
+    private void ViewCode(DemoScenario scenario)
+    {
+        // Navigate to LovableDemo with code view
+        var encodedPrompt = Uri.EscapeDataString(scenario.Prompt);
+        Navigation.NavigateTo($"/lovable-demo?prompt={encodedPrompt}&type={scenario.AppType}&view=code");
+    }
+}

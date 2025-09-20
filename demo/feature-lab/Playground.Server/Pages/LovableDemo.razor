@@ -1,0 +1,761 @@
+@page "/lovable-demo"
+@using Playground.Server.Models
+@using Playground.Server.Services
+@inject IJSRuntime JSRuntime
+@inject FeatureService FeatureService
+@inject FrontendGeneratorService FrontendGeneratorService
+@inject LovableDemoService LovableDemoService
+@inject NavigationManager Navigation
+
+<PageTitle>Nexo - Local AI Development Platform</PageTitle>
+
+<div class="lovable-demo">
+    <div class="header">
+        <div class="logo">
+            <h1>🚀 Nexo</h1>
+            <p>Local AI Development Platform</p>
+        </div>
+        <div class="status">
+            <span class="status-indicator @(IsGenerating ? "generating" : "ready")"></span>
+            <span>@(IsGenerating ? "Generating..." : "Ready")</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="prompt-section">
+                <h3>Describe your app</h3>
+                <div class="prompt-input">
+                    <textarea @bind="UserPrompt" 
+                              @bind:event="oninput"
+                              placeholder="Describe the app you want to build... (e.g., 'A todo app with dark mode, drag-and-drop, and real-time sync')"
+                              disabled="@IsGenerating"></textarea>
+                    <div class="prompt-actions">
+                        <button class="btn-primary" @onclick="GenerateApp" disabled="@(IsGenerating || string.IsNullOrWhiteSpace(UserPrompt))">
+                            @if (IsGenerating)
+                            {
+                                <span class="spinner"></span>
+                                <span>Generating...</span>
+                            }
+                            else
+                            {
+                                <span>🚀 Generate App</span>
+                            }
+                        </button>
+                        <button class="btn-secondary" @onclick="ClearPrompt" disabled="@IsGenerating">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="app-type-selector">
+                <h4>App Type</h4>
+                <div class="app-types">
+                    @foreach (var appType in AppTypes)
+                    {
+                        <label class="app-type @(SelectedAppType == appType.Value ? "selected" : "")">
+                            <input type="radio" @bind="SelectedAppType" value="@appType.Value" disabled="@IsGenerating" />
+                            <div class="app-type-content">
+                                <span class="icon">@appType.Icon</span>
+                                <span class="name">@appType.Name</span>
+                                <span class="description">@appType.Description</span>
+                            </div>
+                        </label>
+                    }
+                </div>
+            </div>
+
+            <div class="features-section">
+                <h4>Additional Features</h4>
+                <div class="feature-toggles">
+                    @foreach (var feature in AvailableFeatures)
+                    {
+                        <label class="feature-toggle">
+                            <input type="checkbox" @bind="feature.Enabled" disabled="@IsGenerating" />
+                            <span class="feature-name">@feature.Name</span>
+                            <span class="feature-description">@feature.Description</span>
+                        </label>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="code-panel">
+                <div class="panel-header">
+                    <h3>Generated Code</h3>
+                    <div class="panel-actions">
+                        <button class="btn-small" @onclick="CopyCode" disabled="@(string.IsNullOrEmpty(GeneratedCode))">
+                            📋 Copy
+                        </button>
+                        <button class="btn-small" @onclick="DownloadCode" disabled="@(string.IsNullOrEmpty(GeneratedCode))">
+                            💾 Download
+                        </button>
+                    </div>
+                </div>
+                <div class="code-editor">
+                    <pre><code>@GeneratedCode</code></pre>
+                </div>
+            </div>
+
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <h3>Live Preview</h3>
+                    <div class="panel-actions">
+                        <button class="btn-small" @onclick="RefreshPreview" disabled="@(string.IsNullOrEmpty(GeneratedCode))">
+                            🔄 Refresh
+                        </button>
+                        <button class="btn-small" @onclick="OpenInNewTab" disabled="@(string.IsNullOrEmpty(GeneratedCode))">
+                            🔗 Open
+                        </button>
+                    </div>
+                </div>
+                <div class="preview-content">
+                    @if (IsGenerating)
+                    {
+                        <div class="preview-loading">
+                            <div class="spinner"></div>
+                            <p>Generating preview...</p>
+                        </div>
+                    }
+                    else if (string.IsNullOrEmpty(GeneratedCode))
+                    {
+                        <div class="preview-placeholder">
+                            <div class="placeholder-icon">🎨</div>
+                            <p>Your app preview will appear here</p>
+                            <small>Describe an app above to get started</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <iframe src="@PreviewUrl" class="preview-iframe"></iframe>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-panel">
+        <div class="generation-steps">
+            <h4>Generation Progress</h4>
+            <div class="steps">
+                @foreach (var step in GenerationSteps)
+                {
+                    <div class="step @(step.Status)">
+                        <span class="step-icon">@step.Icon</span>
+                        <span class="step-name">@step.Name</span>
+                        @if (step.Status == "completed")
+                        {
+                            <span class="step-time">@step.Duration</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="app-info">
+            <h4>App Information</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Platform:</span>
+                    <span class="value">@SelectedAppType</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Files Generated:</span>
+                    <span class="value">@GeneratedFiles.Count</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Generation Time:</span>
+                    <span class="value">@GenerationTime</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Confidence:</span>
+                    <span class="value">@ConfidenceScore%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.lovable-demo {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #0a0a0a;
+    color: #ffffff;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #333;
+    background: #111;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #00d4ff;
+}
+
+.logo p {
+    margin: 0;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff88;
+}
+
+.status-indicator.generating {
+    background: #ffaa00;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.main-content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+.right-panel {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 1rem;
+}
+
+.prompt-section h3,
+.app-type-selector h4,
+.features-section h4 {
+    margin: 0 0 1rem 0;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.prompt-input textarea {
+    width: 100%;
+    height: 120px;
+    padding: 1rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.prompt-input textarea:focus {
+    outline: none;
+    border-color: #00d4ff;
+}
+
+.prompt-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-primary, .btn-secondary, .btn-small {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #00d4ff;
+    color: #000;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #00b8e6;
+}
+
+.btn-secondary {
+    background: #333;
+    color: #fff;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #444;
+}
+
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    background: #333;
+    color: #fff;
+}
+
+.btn-small:hover:not(:disabled) {
+    background: #444;
+}
+
+.btn-primary:disabled, .btn-secondary:disabled, .btn-small:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.app-types {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.app-type {
+    display: block;
+    padding: 1rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.app-type:hover {
+    border-color: #444;
+}
+
+.app-type.selected {
+    border-color: #00d4ff;
+    background: #001a1f;
+}
+
+.app-type input[type="radio"] {
+    display: none;
+}
+
+.app-type-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.app-type .icon {
+    font-size: 1.5rem;
+}
+
+.app-type .name {
+    font-weight: 500;
+    color: #fff;
+}
+
+.app-type .description {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.feature-toggles {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.feature-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #1a1a1a;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.feature-toggle input[type="checkbox"] {
+    margin: 0;
+}
+
+.feature-name {
+    font-weight: 500;
+    color: #fff;
+}
+
+.feature-description {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.code-panel, .preview-panel {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #333;
+    background: #111;
+}
+
+.panel-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.code-editor {
+    flex: 1;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.code-editor pre {
+    margin: 0;
+    color: #e6e6e6;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.preview-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0a0a;
+}
+
+.preview-loading, .preview-placeholder {
+    text-align: center;
+    color: #888;
+}
+
+.placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.preview-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+}
+
+.bottom-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    border-top: 1px solid #333;
+    background: #111;
+}
+
+.generation-steps h4,
+.app-info h4 {
+    margin: 0 0 1rem 0;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: #1a1a1a;
+    border-radius: 6px;
+}
+
+.step.pending {
+    opacity: 0.5;
+}
+
+.step.completed {
+    background: #001a1f;
+    border: 1px solid #00d4ff;
+}
+
+.step-icon {
+    font-size: 1rem;
+}
+
+.step-name {
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.step-time {
+    color: #888;
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+.info-grid {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: #1a1a1a;
+    border-radius: 6px;
+}
+
+.label {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.value {
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #333;
+    border-top: 2px solid #00d4ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+@code {
+    private string UserPrompt = "";
+    private string SelectedAppType = "web";
+    private bool IsGenerating = false;
+    private string GeneratedCode = "";
+    private string PreviewUrl = "";
+    private List<GeneratedFile> GeneratedFiles = new();
+    private string GenerationTime = "";
+    private int ConfidenceScore = 0;
+    private List<GenerationStep> GenerationSteps = new();
+    private List<AppTypeInfo> AppTypes = new()
+    {
+        new() { Value = "web", Name = "Web App", Description = "React, Vue, or vanilla JS", Icon = "🌐" },
+        new() { Value = "mobile", Name = "Mobile App", Description = "iOS & Android with React Native", Icon = "📱" },
+        new() { Value = "desktop", Name = "Desktop App", Description = "Cross-platform with Electron", Icon = "💻" },
+        new() { Value = "api", Name = "API Server", Description = "REST/GraphQL backend", Icon = "🔌" },
+        new() { Value = "game", Name = "Game", Description = "2D/3D games with Unity", Icon = "🎮" }
+    };
+    private List<FeatureToggle> AvailableFeatures = new()
+    {
+        new() { Name = "Dark Mode", Description = "Toggle between light and dark themes" },
+        new() { Name = "Authentication", Description = "User login and registration" },
+        new() { Name = "Database", Description = "Data persistence layer" },
+        new() { Name = "Real-time", Description = "Live updates and notifications" },
+        new() { Name = "Responsive", Description = "Mobile-friendly design" },
+        new() { Name = "PWA", Description = "Progressive Web App features" }
+    };
+
+    protected override void OnInitialized()
+    {
+        // Handle URL parameters for pre-filling
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        
+        if (query["prompt"] != null)
+        {
+            UserPrompt = query["prompt"];
+        }
+        
+        if (query["type"] != null)
+        {
+            SelectedAppType = query["type"];
+        }
+    }
+
+    private async Task GenerateApp()
+    {
+        if (string.IsNullOrWhiteSpace(UserPrompt) || IsGenerating) return;
+
+        IsGenerating = true;
+        GeneratedCode = "";
+        GeneratedFiles.Clear();
+        GenerationSteps.Clear();
+        PreviewUrl = "";
+
+        try
+        {
+            // Initialize generation steps
+            var steps = new[]
+            {
+                new GenerationStep { Name = "Analyzing requirements", Icon = "🔍", Status = "pending" },
+                new GenerationStep { Name = "Generating architecture", Icon = "🏗️", Status = "pending" },
+                new GenerationStep { Name = "Writing code", Icon = "💻", Status = "pending" },
+                new GenerationStep { Name = "Creating tests", Icon = "🧪", Status = "pending" },
+                new GenerationStep { Name = "Building preview", Icon = "🎨", Status = "pending" }
+            };
+            GenerationSteps.AddRange(steps);
+
+            // Simulate generation process
+            await SimulateGeneration();
+
+            // Generate the actual app using LovableDemoService
+            var enabledFeatures = AvailableFeatures.Where(f => f.Enabled).Select(f => f.Name).ToList();
+            var result = await LovableDemoService.GenerateAppAsync(UserPrompt, SelectedAppType, enabledFeatures);
+            
+            GeneratedCode = result.GeneratedCode;
+            GeneratedFiles = result.Files;
+            ConfidenceScore = (int)(result.Confidence * 100);
+            PreviewUrl = result.PreviewUrl;
+            GenerationTime = $"{result.GenerationTime.TotalSeconds:F1}s";
+        }
+        catch (Exception ex)
+        {
+            GeneratedCode = $"// Error generating app: {ex.Message}";
+        }
+        finally
+        {
+            IsGenerating = false;
+        }
+    }
+
+    private async Task SimulateGeneration()
+    {
+        var startTime = DateTime.Now;
+        
+        for (int i = 0; i < GenerationSteps.Count; i++)
+        {
+            await Task.Delay(1000); // Simulate work
+            
+            GenerationSteps[i].Status = "completed";
+            GenerationSteps[i].Duration = $"{(DateTime.Now - startTime).TotalSeconds:F1}s";
+            StateHasChanged();
+        }
+        
+        GenerationTime = $"{(DateTime.Now - startTime).TotalSeconds:F1}s";
+    }
+
+    private string FormatCodeForDisplay(List<GeneratedFile> files)
+    {
+        var code = new System.Text.StringBuilder();
+        code.AppendLine("// Generated by Nexo - Local AI Development Platform");
+        code.AppendLine($"// Generated at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        code.AppendLine();
+        
+        foreach (var file in files.Take(5)) // Show first 5 files
+        {
+            code.AppendLine($"// {file.FileName}");
+            code.AppendLine(file.Content);
+            code.AppendLine();
+        }
+        
+        if (files.Count > 5)
+        {
+            code.AppendLine($"// ... and {files.Count - 5} more files");
+        }
+        
+        return code.ToString();
+    }
+
+    private string GeneratePreviewUrl(List<GeneratedFile> files)
+    {
+        // In a real implementation, this would serve the generated files
+        return "/preview-demo";
+    }
+
+    private async Task CopyCode()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", GeneratedCode);
+    }
+
+    private async Task DownloadCode()
+    {
+        var fileName = $"nexo-app-{DateTime.Now:yyyyMMdd-HHmmss}.txt";
+        await JSRuntime.InvokeVoidAsync("downloadFile", fileName, GeneratedCode);
+    }
+
+    private void RefreshPreview()
+    {
+        // Refresh preview logic
+    }
+
+    private void OpenInNewTab()
+    {
+        JSRuntime.InvokeVoidAsync("window.open", PreviewUrl, "_blank");
+    }
+
+    private void ClearPrompt()
+    {
+        UserPrompt = "";
+        GeneratedCode = "";
+        GeneratedFiles.Clear();
+        GenerationSteps.Clear();
+        PreviewUrl = "";
+        StateHasChanged();
+    }
+
+    public class AppTypeInfo
+    {
+        public string Value { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Icon { get; set; } = "";
+    }
+
+    public class FeatureToggle
+    {
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public bool Enabled { get; set; } = false;
+    }
+
+    public class GenerationStep
+    {
+        public string Name { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public string Status { get; set; } = "pending";
+        public string Duration { get; set; } = "";
+    }
+}
