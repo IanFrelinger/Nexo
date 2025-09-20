@@ -1,0 +1,29 @@
+EMPLOYMENT CONTRACT
+
+This Employment Contract is between Nexo Labs ("Employer") and Jane Developer ("Employee") effective January 15, 2024.
+
+1. POSITION
+Employee shall serve as Senior Software Engineer with responsibilities including:
+- Software development and maintenance
+- Code review and quality assurance
+- Technical documentation
+- Team collaboration
+
+2. COMPENSATION
+- Annual salary: $120,000 USD
+- Health insurance benefits
+- 401(k) matching up to 6%
+- 20 days paid vacation annually
+
+3. CONFIDENTIALITY
+Employee agrees to maintain strict confidentiality of all company information.
+
+4. INTELLECTUAL PROPERTY
+All work products shall be owned by Employer.
+
+5. TERM
+This is an at-will employment relationship.
+
+SIGNATURES:
+Employer: _________________ Date: _________
+Employee: _________________ Date: _________

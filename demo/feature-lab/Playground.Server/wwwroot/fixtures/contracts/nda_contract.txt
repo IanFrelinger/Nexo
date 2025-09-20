@@ -1,0 +1,28 @@
+NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement ("NDA") is made between Nexo Labs ("Disclosing Party") and Partner Corp ("Receiving Party") on January 15, 2024.
+
+1. CONFIDENTIAL INFORMATION
+Confidential Information includes but is not limited to:
+- Technical specifications and designs
+- Business plans and strategies
+- Customer lists and data
+- Financial information
+- Proprietary algorithms
+
+2. OBLIGATIONS
+Receiving Party agrees to:
+- Keep all Confidential Information strictly confidential
+- Use only for authorized purposes
+- Not disclose to third parties without written consent
+- Return all materials upon request
+
+3. DURATION
+This agreement shall remain in effect for 5 years from the date of execution.
+
+4. REMEDIES
+Breach of this agreement may result in injunctive relief and monetary damages.
+
+SIGNATURES:
+Disclosing Party: _________________ Date: _________
+Receiving Party: _________________ Date: _________

@@ -1,0 +1,25 @@
+feature: smart_reply_panel
+ui:
+  kind: panel
+  fields: [subject, label, confidence, reply]
+blocks:
+  - uses: ingest/read_email
+    with: { path: "demo/feature-lab/Playground.Server/wwwroot/fixtures/inbox/*.eml" }
+  - uses: transform/clean_text
+  - uses: transform/language_detect
+  - uses: reason/classify_intent
+    require_ai: false
+    provider: ${NEXO_PROVIDER}
+    model: ${NEXO_MODEL}
+  - uses: govern/approval_gate
+    with:
+      rules:
+        - name: "pii_in_reply"
+          match: "credit card|ssn|ss#"
+  - uses: reason/draft_reply
+    require_ai: false
+    provider: ${NEXO_PROVIDER}
+    model: ${NEXO_MODEL}
+  - uses: actuate/create_ticket
+  - uses: observe/report_csv
+    with: { path: "outputs/replies.csv" }

@@ -1,0 +1,4 @@
+subject,label,confidence,reply
+"URGENTE - Sistema no funciona","urgent",0.95,"Gracias por contactarnos. Hemos recibido su solicitud urgente."
+"Feature Request - Translation API","feature_request",0.87,"Thank you for your feature request. We'll review this."
+"Problème de facturation","billing",0.92,"Merci pour votre message. Nous allons examiner votre problème."

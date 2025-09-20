@@ -1,0 +1,207 @@
+@page "/"
+@using Playground.Server.Models
+@inject HttpClient Http
+
+<PageTitle>Build - Nexo Feature Lab</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4">🏗️ Build Features</h1>
+            <p class="lead">Choose a template and generate composable application features</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>📧 Smart Reply Panel</h5>
+                </div>
+                <div class="card-body">
+                    <p>Automatically generate intelligent email replies with sentiment analysis and policy enforcement.</p>
+                    <ul class="list-unstyled">
+                        <li>✅ Email ingestion and cleaning</li>
+                        <li>✅ Language detection</li>
+                        <li>✅ Intent classification</li>
+                        <li>✅ Policy approval gates</li>
+                        <li>✅ Reply generation</li>
+                    </ul>
+                    <button class="btn btn-primary" @onclick="() => SelectTemplate('smart-reply')">
+                        Select Template
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>📄 Contract Summary Panel</h5>
+                </div>
+                <div class="card-body">
+                    <p>Extract key information from contracts with risk assessment and compliance checking.</p>
+                    <ul class="list-unstyled">
+                        <li>✅ PDF document ingestion</li>
+                        <li>✅ PII redaction</li>
+                        <li>✅ Contract summarization</li>
+                        <li>✅ Risk assessment</li>
+                        <li>✅ DMS integration</li>
+                    </ul>
+                    <button class="btn btn-primary" @onclick="() => SelectTemplate('contract-summary')">
+                        Select Template
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (SelectedTemplate != null)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🔧 Feature Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>Selected: @SelectedTemplate</h6>
+                                <p>Configure your feature parameters and add micro-features to enhance functionality.</p>
+                                
+                                <div class="form-group mb-3">
+                                    <label for="featureName">Feature Name</label>
+                                    <input type="text" class="form-control" id="featureName" @bind="FeatureName" 
+                                           placeholder="Enter feature name" />
+                                </div>
+
+                                <div class="form-group mb-3">
+                                    <label for="description">Description</label>
+                                    <textarea class="form-control" id="description" @bind="Description" 
+                                              rows="3" placeholder="Describe your feature"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Micro-Features</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="translateTone" @bind="IncludeTranslateTone">
+                                    <label class="form-check-label" for="translateTone">
+                                        Translate & Tone
+                                    </label>
+                                    <small class="form-text text-muted">Add translation and tone analysis</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button class="btn btn-success" @onclick="GenerateFeature" disabled="@IsGenerating">
+                                @if (IsGenerating)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                }
+                                Generate Feature
+                            </button>
+                            <button class="btn btn-secondary ms-2" @onclick="ClearSelection">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (GeneratedFeature != null)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>✅ Generated Feature</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <h6>Feature Generated Successfully!</h6>
+                            <p>Your feature has been created and is ready to run.</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Feature Details</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Name:</strong> @GeneratedFeature.Name</li>
+                                    <li><strong>Type:</strong> @GeneratedFeature.Type</li>
+                                    <li><strong>Path:</strong> @GeneratedFeature.Path</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Next Steps</h6>
+                                <p>Go to the <strong>Run</strong> tab to execute your feature and see it in action.</p>
+                                <a href="/run" class="btn btn-primary">Run Feature</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string? SelectedTemplate { get; set; }
+    private string FeatureName { get; set; } = "";
+    private string Description { get; set; } = "";
+    private bool IncludeTranslateTone { get; set; } = false;
+    private bool IsGenerating { get; set; } = false;
+    private GeneratedFeatureInfo? GeneratedFeature { get; set; }
+
+    private void SelectTemplate(string template)
+    {
+        SelectedTemplate = template;
+        FeatureName = template == "smart-reply" ? "Smart Reply Panel" : "Contract Summary Panel";
+        Description = template == "smart-reply" 
+            ? "Automatically generate intelligent email replies with sentiment analysis"
+            : "Extract key information from contracts with risk assessment";
+    }
+
+    private void ClearSelection()
+    {
+        SelectedTemplate = null;
+        FeatureName = "";
+        Description = "";
+        IncludeTranslateTone = false;
+        GeneratedFeature = null;
+    }
+
+    private async Task GenerateFeature()
+    {
+        IsGenerating = true;
+        
+        try
+        {
+            // Simulate feature generation
+            await Task.Delay(2000);
+            
+            GeneratedFeature = new GeneratedFeatureInfo
+            {
+                Name = FeatureName,
+                Type = SelectedTemplate!,
+                Path = $"features/{SelectedTemplate}/{SelectedTemplate}.feature.yaml",
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+        finally
+        {
+            IsGenerating = false;
+        }
+    }
+
+    private class GeneratedFeatureInfo
+    {
+        public string Name { get; set; } = "";
+        public string Type { get; set; } = "";
+        public string Path { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+}

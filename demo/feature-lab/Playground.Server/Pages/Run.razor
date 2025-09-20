@@ -1,0 +1,340 @@
+@page "/run"
+@using Playground.Server.Models
+@inject HttpClient Http
+@inject Microsoft.JSInterop.IJSRuntime JSRuntime
+
+<PageTitle>Run - Nexo Feature Lab</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4">🚀 Run Features</h1>
+            <p class="lead">Execute features across different modes and providers</p>
+        </div>
+    </div>
+
+    @if (!ValidationPassed)
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <h5>⚠️ Validation Required</h5>
+                    <p>Please run validation before executing features.</p>
+                    <button class="btn btn-warning" @onclick="RunValidation" disabled="@IsValidating">
+                        @if (IsValidating)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        Run Validation
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>⚙️ Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="featureSelect" class="form-label">Feature</label>
+                        <select class="form-select" id="featureSelect" @bind="SelectedFeature">
+                            <option value="">Select a feature...</option>
+                            <option value="smart-reply">Smart Reply Panel</option>
+                            <option value="contract-summary">Contract Summary Panel</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modeSelect" class="form-label">AI Mode</label>
+                        <select class="form-select" id="modeSelect" @bind="SelectedMode" @onchange="OnModeChanged">
+                            <option value="off">🔒 Off (Deterministic)</option>
+                            <option value="hybrid">⚡ Hybrid (Local + Cloud)</option>
+                            <option value="embedded">☁️ Embedded (Cloud Required)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="providerSelect" class="form-label">Provider</label>
+                        <select class="form-select" id="providerSelect" @bind="SelectedProvider">
+                            <option value="local">🏠 Local</option>
+                            <option value="openai">🤖 OpenAI</option>
+                            <option value="azure">☁️ Azure</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modelSelect" class="form-label">Model</label>
+                        <select class="form-select" id="modelSelect" @bind="SelectedModel">
+                            <option value="llama3">Llama 3</option>
+                            <option value="gpt-4o">GPT-4o</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="simulateOutage" @bind="SimulateOutage">
+                        <label class="form-check-label" for="simulateOutage">
+                            Simulate Outage
+                        </label>
+                    </div>
+
+                    <button class="btn btn-primary w-100" @onclick="RunFeature" disabled="@(!ValidationPassed || IsRunning || string.IsNullOrEmpty(SelectedFeature))">
+                        @if (IsRunning)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        }
+                        Run Feature
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5>📊 Execution Results</h5>
+                    <div>
+                        @if (CurrentRun != null)
+                        {
+                            <span class="badge @GetStatusBadgeClass(CurrentRun.Completed)">
+                                @GetStatusText(CurrentRun.Completed)
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (CurrentRun == null)
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="oi oi-play-circle" style="font-size: 3rem;"></i>
+                            <p class="mt-3">Select a feature and click "Run Feature" to see results</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Run Details</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Mode:</strong> @CurrentRun.Mode</li>
+                                    <li><strong>Provider:</strong> @CurrentRun.Provider</li>
+                                    <li><strong>Duration:</strong> @GetDuration(CurrentRun)</li>
+                                    <li><strong>Steps:</strong> @CurrentRun.Steps.Count</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Outputs</h6>
+                                @if (CurrentRun.Completed)
+                                {
+                                    <div class="list-group">
+                                        @foreach (var output in GetOutputFiles(CurrentRun))
+                                        {
+                                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                @output
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="() => DownloadFile(output)">
+                                                    Download
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        @if (CurrentRun.Logs.Any())
+                        {
+                            <div class="mt-3">
+                                <h6>Execution Log</h6>
+                                <div class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                                    @foreach (var log in CurrentRun.Logs)
+                                    {
+                                        <div class="font-monospace small">@log</div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (ValidationResult != null)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🔍 Validation Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Check</th>
+                                        <th>Status</th>
+                                        <th>Message</th>
+                                        <th>Remediation</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var check in ValidationResult.Checks)
+                                    {
+                                        <tr>
+                                            <td>@check.Name</td>
+                                            <td><span class="badge @GetCheckBadgeClass(check.Passed)">@check.Status</span></td>
+                                            <td>@check.Message</td>
+                                            <td>@check.Remediation</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string SelectedFeature { get; set; } = "";
+    private string SelectedMode { get; set; } = "off";
+    private string SelectedProvider { get; set; } = "local";
+    private string SelectedModel { get; set; } = "llama3";
+    private bool SimulateOutage { get; set; } = false;
+    private bool IsRunning { get; set; } = false;
+    private bool IsValidating { get; set; } = false;
+    private bool ValidationPassed { get; set; } = false;
+    private RunResult? CurrentRun { get; set; }
+    private ValidationResult? ValidationResult { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RunValidation();
+    }
+
+    private async Task OnModeChanged(ChangeEventArgs e)
+    {
+        SelectedMode = e.Value?.ToString() ?? "off";
+        
+        // Update provider options based on mode
+        if (SelectedMode == "off")
+        {
+            SelectedProvider = "local";
+        }
+        else if (SelectedMode == "embedded")
+        {
+            SelectedProvider = "openai";
+        }
+    }
+
+    private async Task RunValidation()
+    {
+        IsValidating = true;
+        
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ValidationResult>("/api/validation");
+            ValidationResult = response;
+            ValidationPassed = response?.IsReady ?? false;
+        }
+        catch (Exception ex)
+        {
+            // Handle validation error
+            ValidationPassed = false;
+        }
+        finally
+        {
+            IsValidating = false;
+        }
+    }
+
+    private async Task RunFeature()
+    {
+        if (string.IsNullOrEmpty(SelectedFeature)) return;
+
+        IsRunning = true;
+        CurrentRun = null;
+
+        try
+        {
+            var env = new Dictionary<string, string>
+            {
+                ["NEXO_AI_MODE"] = SelectedMode,
+                ["NEXO_PROVIDER"] = SelectedProvider,
+                ["NEXO_MODEL"] = SelectedModel
+            };
+
+            if (SimulateOutage)
+            {
+                env["SIMULATE_OUTAGE"] = "1";
+            }
+
+            var request = new RunRequest(
+                $"features/{SelectedFeature}/{SelectedFeature}.feature.yaml",
+                env,
+                null
+            );
+
+            var response = await Http.PostAsJsonAsync("/api/run", request);
+            var result = await response.Content.ReadFromJsonAsync<RunResponse>();
+            
+            if (result != null)
+            {
+                CurrentRun = result.Result;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle run error
+        }
+        finally
+        {
+            IsRunning = false;
+        }
+    }
+
+    private string GetStatusBadgeClass(bool completed) => completed ? "bg-success" : "bg-warning";
+    private string GetStatusText(bool completed) => completed ? "Completed" : "Running";
+    
+    private string GetCheckBadgeClass(bool passed) => passed ? "bg-success" : "bg-warning";
+    
+    private string GetDuration(RunResult run)
+    {
+        if (run.EndTime.HasValue)
+        {
+            return (run.EndTime.Value - run.StartTime).TotalSeconds.ToString("F1") + "s";
+        }
+        return "Running...";
+    }
+
+    private List<string> GetOutputFiles(RunResult run)
+    {
+        var files = new List<string>();
+        
+        if (run.Completed && !string.IsNullOrEmpty(run.OutputDir))
+        {
+            var outputsDir = Path.Combine(run.OutputDir, "outputs");
+            if (Directory.Exists(outputsDir))
+            {
+                files.AddRange(Directory.GetFiles(outputsDir).Select(Path.GetFileName));
+            }
+        }
+        
+        return files;
+    }
+
+    private async Task DownloadFile(string fileName)
+    {
+        // Implement file download
+        await JSRuntime.InvokeVoidAsync("alert", $"Downloading {fileName}");
+    }
+
+    private record RunResponse(RunResult Result);
+}

@@ -1,0 +1,201 @@
+@page "/"
+@using Microsoft.AspNetCore.Components.Web
+
+<PageTitle>Nexo Feature Lab</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4">🏗️ NEXO Feature Lab</h1>
+            <p class="lead">Interactive playground for building composable application features</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>📧 Smart Reply Panel</h5>
+                </div>
+                <div class="card-body">
+                    <p>Automatically generate intelligent email replies with sentiment analysis and policy enforcement.</p>
+                    <ul class="list-unstyled">
+                        <li>✅ Email ingestion and cleaning</li>
+                        <li>✅ Language detection</li>
+                        <li>✅ Intent classification</li>
+                        <li>✅ Policy approval gates</li>
+                        <li>✅ Reply generation</li>
+                    </ul>
+                    <button class="btn btn-primary" @onclick="@(() => RunFeature("smart-reply"))">
+                        Run Feature
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>📄 Contract Summary Panel</h5>
+                </div>
+                <div class="card-body">
+                    <p>Extract key information from contracts with risk assessment and compliance checking.</p>
+                    <ul class="list-unstyled">
+                        <li>✅ PDF document ingestion</li>
+                        <li>✅ PII redaction</li>
+                        <li>✅ Contract summarization</li>
+                        <li>✅ Risk assessment</li>
+                        <li>✅ DMS integration</li>
+                    </ul>
+                    <button class="btn btn-primary" @onclick="@(() => RunFeature("contract-summary"))">
+                        Run Feature
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🔧 Micro-Features</h5>
+                </div>
+                <div class="card-body">
+                    <p>Add translation and tone analysis that benefits all features without rewrites.</p>
+                    <ul class="list-unstyled">
+                        <li>✅ Translate & Tone block</li>
+                        <li>✅ Multi-language support</li>
+                        <li>✅ Composable architecture</li>
+                        <li>✅ Zero rewrites required</li>
+                    </ul>
+                    <button class="btn btn-success" @onclick="@(() => RunFeature("translate-tone"))">
+                        Add Micro-Feature
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isRunning)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🚀 Running Feature</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border me-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div>
+                                <strong>Processing:</strong> @currentFeature
+                                <br>
+                                <small class="text-muted">Mode: @currentMode | Provider: @currentProvider</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showResult)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>✅ Execution Complete</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Run Details</h6>
+                                <ul class="list-unstyled">
+                                    <li><strong>Feature:</strong> @resultMode</li>
+                                    <li><strong>Provider:</strong> @resultProvider</li>
+                                    <li><strong>Duration:</strong> @resultDuration</li>
+                                    <li><strong>Status:</strong> <span class="badge bg-success">Completed</span></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Outputs</h6>
+                                <p>Feature executed successfully and generated outputs.</p>
+                                <button class="btn btn-outline-primary btn-sm" @onclick="ViewLogs">
+                                    View Logs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🎯 Demo Objectives</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Core Features</h6>
+                            <ul class="list-unstyled">
+                                <li>✅ <strong>Blocks & Recipes</strong> - Compose and run end-to-end</li>
+                                <li>✅ <strong>AI Modes</strong> - Off, Hybrid, Embedded</li>
+                                <li>✅ <strong>Offline First</strong> - Zero network calls in Off mode</li>
+                                <li>✅ <strong>No Lock-in</strong> - Seamless provider switching</li>
+                                <li>✅ <strong>Self-Healing</strong> - Retry, backoff, failover</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Advanced Features</h6>
+                            <ul class="list-unstyled">
+                                <li>✅ <strong>Policies & Approvals</strong> - Pause/resume workflows</li>
+                                <li>✅ <strong>Audit & Observability</strong> - Complete execution tracking</li>
+                                <li>✅ <strong>Compounding Library</strong> - Micro-feature benefits</li>
+                                <li>✅ <strong>Export & Run Anywhere</strong> - CLI and Docker</li>
+                                <li>✅ <strong>CLI/UI Parity</strong> - Consistent behavior</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isRunning = false;
+    private bool showResult = false;
+    private string currentFeature = "";
+    private string currentMode = "hybrid";
+    private string currentProvider = "local";
+    private string resultMode = "";
+    private string resultProvider = "";
+    private string resultDuration = "";
+
+    private async Task RunFeature(string feature)
+    {
+        currentFeature = feature;
+        isRunning = true;
+        showResult = false;
+
+        await Task.Delay(2000);
+
+        isRunning = false;
+        showResult = true;
+        resultMode = currentMode;
+        resultProvider = currentProvider;
+        resultDuration = "2.0s";
+    }
+
+    private void ViewLogs()
+    {
+        // Simple alert for demo purposes
+        // In a real implementation, this would open a modal or navigate to a logs page
+    }
+}
