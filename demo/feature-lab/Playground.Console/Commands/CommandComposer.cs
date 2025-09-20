@@ -28,7 +28,7 @@ public class CommandComposer
         return this;
     }
 
-    public T GetContext<T>(string key)
+    public T? GetContext<T>(string key)
     {
         return _context.TryGetValue(key, out var value) ? (T)value : default(T);
     }
