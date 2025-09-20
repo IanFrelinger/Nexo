@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Find all files with emojis and remove them
-find . -type f \( -name "*.cs" -o -name "*.md" -o -name "*.sh" -o -name "*.html" -o -name "*.json" \) -exec grep -l "[RunningStartingAIToolSafetyBuildingArchitectureDirectoryListStatsTargetDocumentProgressProcessingHelpRoadmapViolinCollaborationTestingDockerSecurityDocumentationERROR:UNKNOWNEXCELLENTSUCCESS:WARNING:BLOCKEDSecurityProcessingListGoodbyeIdeaSUCCESSHotStarTargetAlertComputerMobileWebSecureDesignTheaterCircusTicketMovieGameTargetDiceBowlingCardsMusicMelodyGuitarPianoTrumpet🎻ScoreTrackTennisSkiBasketballFinishSnowboardRunningSurfingMedalTrophyHorseFootballRugbySwimmingWeightGolfMotorcycleRaceCricketVolleyballHockeyIcePingMountainCampingBeachConstructionHousesCityHouseBuildingDesertIslandPark🏟HomeHouseOfficePostBankHospitalBankATMHotelLoveStoreSchoolDepartmentFactoryLanternCastleCastleFlagYinWhiteBlackRosesLabelTagBadmintonBowAmphoraLightMediumMediumDarkDark]" {} \;
