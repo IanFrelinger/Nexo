@@ -73,18 +73,25 @@
             </Frame>
 
             <!-- Action Buttons -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                <Button Grid.Column="0" 
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                <Button Grid.Row="0" Grid.Column="0" 
                         Text="Run Feature" 
                         Command="{Binding RunFeatureCommand}"
                         BackgroundColor="#512BD4" 
                         TextColor="White" 
                         CornerRadius="8" />
                 
-                <Button Grid.Column="1" 
+                <Button Grid.Row="0" Grid.Column="1" 
                         Text="Run Validation" 
                         Command="{Binding RunValidationCommand}"
                         BackgroundColor="#28a745" 
+                        TextColor="White" 
+                        CornerRadius="8" />
+                
+                <Button Grid.Row="1" Grid.ColumnSpan="2" 
+                        Text="🏭 Try Feature Factory" 
+                        Command="{Binding NavigateToFeatureFactoryCommand}"
+                        BackgroundColor="#17a2b8" 
                         TextColor="White" 
                         CornerRadius="8" />
             </Grid>

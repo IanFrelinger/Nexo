@@ -24,6 +24,7 @@ public class MainViewModel : BaseViewModel
         RunFeatureCommand = new Command(async () => await RunFeatureAsync());
         RunValidationCommand = new Command(async () => await RunValidationAsync());
         ClearResultsCommand = new Command(() => ClearResults());
+        NavigateToFeatureFactoryCommand = new Command(async () => await NavigateToFeatureFactoryAsync());
     }
 
     public ObservableCollection<FeatureTemplate> Features { get; }
@@ -73,6 +74,7 @@ public class MainViewModel : BaseViewModel
     public ICommand RunFeatureCommand { get; }
     public ICommand RunValidationCommand { get; }
     public ICommand ClearResultsCommand { get; }
+    public ICommand NavigateToFeatureFactoryCommand { get; }
 
     private async Task RunFeatureAsync()
     {
@@ -107,5 +109,10 @@ public class MainViewModel : BaseViewModel
     {
         LastRunResult = null;
         ValidationResult = null;
+    }
+
+    private async Task NavigateToFeatureFactoryAsync()
+    {
+        await Shell.Current.GoToAsync("//FeatureFactory");
     }
 }

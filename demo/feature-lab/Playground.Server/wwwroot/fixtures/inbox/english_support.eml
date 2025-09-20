@@ -1,0 +1,20 @@
+From: support@techcorp.com
+To: help@nexo.com
+Subject: Technical Support Request
+
+Hello Nexo Support Team,
+
+I'm experiencing issues with the API integration. The authentication is failing with error code 401.
+
+Here are the details:
+- API Version: v2.1
+- Endpoint: /api/features/execute
+- Error: Unauthorized access
+- Timestamp: 2024-01-15 14:30:00 UTC
+
+I've verified that my API key is correct and the endpoint URL is accurate. Could you please help me resolve this issue?
+
+Best regards,
+John Smith
+Senior Developer
+TechCorp Solutions

@@ -1,5 +1,6 @@
 @page "/run"
 @using Playground.Server.Models
+@using Microsoft.AspNetCore.Components.Web
 @inject HttpClient Http
 @inject Microsoft.JSInterop.IJSRuntime JSRuntime
 
@@ -50,7 +51,7 @@
 
                     <div class="mb-3">
                         <label for="modeSelect" class="form-label">AI Mode</label>
-                        <select class="form-select" id="modeSelect" @bind="SelectedMode" @onchange="OnModeChanged">
+                        <select class="form-select" id="modeSelect" @bind="SelectedMode" @bind:after="OnModeChanged">
                             <option value="off">🔒 Off (Deterministic)</option>
                             <option value="hybrid">⚡ Hybrid (Local + Cloud)</option>
                             <option value="embedded">☁️ Embedded (Cloud Required)</option>

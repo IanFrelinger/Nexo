@@ -7,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
+// Add Feature Factory service
+builder.Services.AddScoped<Playground.Server.Services.FeatureFactoryService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

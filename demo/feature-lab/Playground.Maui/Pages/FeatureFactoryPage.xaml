@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:Playground.Maui.ViewModels"
+             x:Class="Playground.Maui.Pages.FeatureFactoryPage"
+             x:DataType="viewmodels:FeatureFactoryViewModel"
+             Title="Feature Factory">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+            <!-- Header -->
+            <Label Text="🏭 NEXO Feature Factory"
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+            <Label Text="AI-native feature generation system"
+                   FontSize="18"
+                   HorizontalOptions="Center" />
+
+            <!-- Feature Description Input -->
+            <Frame Style="{StaticResource CardFrameStyle}">
+                <StackLayout Spacing="10">
+                    <Label Text="Describe your feature in natural language:"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+                    <Editor Text="{Binding FeatureDescription}"
+                            Placeholder="e.g., Create a user management system with authentication, profile management, and role-based access control"
+                            HeightRequest="100" />
+                </StackLayout>
+            </Frame>
+
+            <!-- Platform Selection -->
+            <Frame Style="{StaticResource CardFrameStyle}">
+                <StackLayout Spacing="10">
+                    <Label Text="Target Platform:"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+                    <Picker ItemsSource="{Binding Platforms}"
+                            SelectedItem="{Binding SelectedPlatform}" />
+                </StackLayout>
+            </Frame>
+
+            <!-- Requirements -->
+            <Frame Style="{StaticResource CardFrameStyle}">
+                <StackLayout Spacing="10">
+                    <Label Text="Additional Requirements:"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+                    <CheckBox IsChecked="{Binding CleanArchitecture}"
+                              Content="Clean Architecture" />
+                    <CheckBox IsChecked="{Binding UnitTests}"
+                              Content="Unit Tests" />
+                    <CheckBox IsChecked="{Binding IntegrationTests}"
+                              Content="Integration Tests" />
+                    <CheckBox IsChecked="{Binding Documentation}"
+                              Content="Documentation" />
+                </StackLayout>
+            </Frame>
+
+            <!-- Generate Button -->
+            <Button Text="🚀 Generate Feature"
+                    Command="{Binding GenerateFeatureCommand}"
+                    IsEnabled="{Binding IsGenerating, Converter={StaticResource InvertBoolConverter}}"
+                    Style="{StaticResource PrimaryButton}" />
+
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsGenerating}"
+                               IsVisible="{Binding IsGenerating}"
+                               HorizontalOptions="Center"
+                               Color="{StaticResource Primary}" />
+
+            <!-- Generation Result -->
+            <Frame Style="{StaticResource CardFrameStyle}" IsVisible="{Binding GenerationResult, Converter={StaticResource IsNotNullConverter}}">
+                <StackLayout Spacing="10">
+                    <Label Text="Generation Result:"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+                    <Label Text="{Binding GenerationResult.Status, StringFormat='Status: {0}'}"
+                           TextColor="{Binding GenerationResult.Status, Converter={StaticResource StatusToColorConverter}}" />
+                    <Label Text="{Binding GenerationResult.Duration, StringFormat='Duration: {0:F0}ms'}" />
+                    
+                    <!-- Steps -->
+                    <Label Text="AI Agent Steps:" FontAttributes="Bold" />
+                    <CollectionView ItemsSource="{Binding GenerationResult.Steps}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="10" Margin="0,5">
+                                    <StackLayout>
+                                        <Label Text="{Binding StepName}" FontAttributes="Bold" />
+                                        <Label Text="{Binding Description}" FontSize="12" TextColor="Gray" />
+                                        <Label Text="{Binding Output}" FontSize="12" TextColor="Green" />
+                                    </StackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
