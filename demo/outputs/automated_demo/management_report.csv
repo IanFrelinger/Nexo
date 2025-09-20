@@ -1,0 +1,4 @@
+ticket_id,language,priority,sentiment,subject,user_email,status,processing_time
+001,Spanish,CRITICAL,urgent,"URGENTE - Sistema no funciona",juan.perez@empresa.com,processed,15s
+002,English,MEDIUM,professional,"Feature Request - Translation API",user@company.com,processed,12s
+003,French,HIGH,concerned,"Problème de facturation",utilisateur@societe.fr,processed,18s

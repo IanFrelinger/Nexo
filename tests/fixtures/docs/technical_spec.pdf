@@ -1,0 +1,17 @@
+Technical Specification Document
+
+This is a sample PDF document containing technical specifications for the Nexo system.
+
+Key Features:
+- Adaptive AI modes
+- Offline-first architecture
+- Self-healing capabilities
+- Policy and approval system
+
+Implementation Details:
+- Built on .NET 8
+- Uses xUnit for testing
+- Supports multiple AI providers
+- Docker containerization
+
+This document is used for testing document summarization capabilities.

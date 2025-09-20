@@ -1,0 +1,37 @@
+PRÉSENTATION: PLATEFORME NEXO
+Innovation en Traitement de Documents
+
+INTRODUCTION
+Nexo révolutionne le traitement de documents grâce à l'intelligence artificielle adaptative. Notre plateforme offre une flexibilité unique entre traitement local et cloud.
+
+CARACTÉRISTIQUES PRINCIPALES
+1. Modes d'IA Adaptatifs
+   - Mode Off: Traitement déterministe et hors ligne
+   - Mode Assist: Génération d'échafaudage
+   - Mode Hybride: IA locale optionnelle
+   - Mode Intégré: IA cloud requise
+
+2. Sécurité et Conformité
+   - Analyse de politique en temps réel
+   - Workflows d'approbation
+   - Audit complet des décisions
+   - Protection des données sensibles
+
+3. Résilience et Auto-Récupération
+   - Retry automatique avec backoff exponentiel
+   - Circuit breaker pour éviter les cascades
+   - Basculement vers fournisseurs secondaires
+   - Récupération complète des pannes
+
+AVANTAGES CONCURRENTIELS
+- Aucun verrouillage fournisseur
+- Traitement hors ligne garanti
+- Parité locale/cloud
+- Bibliothèque composable
+- Export CLI et Docker
+
+INFORMATIONS SENSIBLES:
+- Budget R&D: €2.5M
+- Équipe technique: 45 personnes
+- Brevets déposés: 12
+- Partenaires stratégiques: Microsoft, Google, AWS

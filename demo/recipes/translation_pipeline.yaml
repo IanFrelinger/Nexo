@@ -1,0 +1,60 @@
+name: "Multilingual Translation Pipeline"
+version: "1.0.0"
+description: "Translate documents between multiple languages with quality assurance"
+
+blocks:
+  - name: "document_loader"
+    type: "input"
+    config:
+      supported_formats: ["pdf", "docx", "txt"]
+      
+  - name: "language_detector"
+    type: "ai_analysis"
+    config:
+      mode: "off"  # Deterministic language detection
+      
+  - name: "translator"
+    type: "ai_processing"
+    config:
+      mode: "embedded"  # Requires cloud AI for quality translation
+      providers: ["openai", "azure", "google"]
+      quality_threshold: 0.85
+      
+  - name: "quality_checker"
+    type: "ai_analysis"
+    config:
+      mode: "hybrid"  # Local quality check, cloud fallback
+      check_fluency: true
+      check_accuracy: true
+      
+  - name: "output_formatter"
+    type: "output"
+    config:
+      preserve_formatting: true
+      include_confidence_scores: true
+
+pipeline:
+  - step: "load_document"
+    block: "document_loader"
+    
+  - step: "detect_source_language"
+    block: "language_detector"
+    depends_on: ["load_document"]
+    
+  - step: "translate_document"
+    block: "translator"
+    depends_on: ["detect_source_language"]
+    
+  - step: "quality_assurance"
+    block: "quality_checker"
+    depends_on: ["translate_document"]
+    
+  - step: "format_output"
+    block: "output_formatter"
+    depends_on: ["quality_assurance"]
+
+self_healing:
+  enabled: true
+  retry_attempts: 2
+  backoff_strategy: "linear"
+  failover_providers: ["openai", "azure", "google"]

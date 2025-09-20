@@ -1,0 +1,80 @@
+name: "Smart Document Processing Pipeline"
+version: "1.0.0"
+description: "Process multilingual documents with AI analysis, security scanning, and reporting"
+
+blocks:
+  - name: "document_loader"
+    type: "input"
+    config:
+      supported_formats: ["pdf", "docx", "txt", "eml"]
+      max_file_size: "10MB"
+      
+  - name: "language_detector"
+    type: "ai_analysis"
+    config:
+      mode: "hybrid"  # Can be off, assist, hybrid, or embedded
+      providers: ["local", "openai", "azure"]
+      
+  - name: "content_extractor"
+    type: "ai_analysis"
+    config:
+      mode: "embedded"  # Requires cloud AI for advanced extraction
+      providers: ["openai", "azure"]
+      features: ["entities", "sentiment", "key_phrases"]
+      
+  - name: "security_scanner"
+    type: "policy"
+    config:
+      policies: ["pii_detection", "sensitive_content", "compliance_check"]
+      approval_required: true
+      
+  - name: "translator"
+    type: "ai_processing"
+    config:
+      mode: "hybrid"  # Optional local, fallback to cloud
+      target_languages: ["en", "es", "fr", "de"]
+      
+  - name: "report_generator"
+    type: "output"
+    config:
+      formats: ["json", "csv", "pdf"]
+      include_metadata: true
+      include_audit_trail: true
+
+pipeline:
+  - step: "load_document"
+    block: "document_loader"
+    
+  - step: "detect_language"
+    block: "language_detector"
+    depends_on: ["load_document"]
+    
+  - step: "extract_content"
+    block: "content_extractor"
+    depends_on: ["detect_language"]
+    
+  - step: "security_scan"
+    block: "security_scanner"
+    depends_on: ["extract_content"]
+    on_failure: "pause_for_approval"
+    
+  - step: "translate_content"
+    block: "translator"
+    depends_on: ["security_scan"]
+    condition: "language != 'en'"
+    
+  - step: "generate_report"
+    block: "report_generator"
+    depends_on: ["translate_content"]
+
+self_healing:
+  enabled: true
+  retry_attempts: 3
+  backoff_strategy: "exponential"
+  failover_providers: ["openai", "azure", "local"]
+  
+audit:
+  enabled: true
+  log_level: "detailed"
+  include_timings: true
+  include_provider_decisions: true

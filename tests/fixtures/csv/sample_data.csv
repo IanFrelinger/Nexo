@@ -1,6 +1,4 @@
-id,name,email,department,salary
-1,John Smith,john.smith@company.com,Engineering,75000
-2,Sarah Johnson,sarah.johnson@company.com,Marketing,65000
-3,Mike Wilson,mike.wilson@company.com,Sales,70000
-4,Lisa Brown,lisa.brown@company.com,HR,60000
-5,David Lee,david.lee@company.com,Engineering,80000
+id,name,email,priority,status
+1,John Doe,john@example.com,high,open
+2,Jane Smith,jane@example.com,medium,in_progress
+3,Bob Johnson,bob@example.com,low,closed

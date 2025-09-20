@@ -1,0 +1,47 @@
+{
+  "ticket_id": "001",
+  "original_language": "Spanish",
+  "translated_language": "English",
+  "priority": "CRITICAL",
+  "sentiment": {
+    "score": 0.87,
+    "label": "urgent/stressed",
+    "confidence": 0.92
+  },
+  "entities": [
+    {
+      "type": "email",
+      "value": "juan.perez@empresa.com",
+      "confidence": 0.98
+    },
+    {
+      "type": "phone",
+      "value": "+34-91-123-4567",
+      "confidence": 0.92
+    },
+    {
+      "type": "address",
+      "value": "Calle Mayor 123, Madrid",
+      "confidence": 0.88
+    },
+    {
+      "type": "client_id",
+      "value": "12345",
+      "confidence": 0.95
+    }
+  ],
+  "security": {
+    "pii_detected": true,
+    "policy_violation": "PII_DETECTION",
+    "approval_required": true,
+    "approval_status": "APPROVED",
+    "approval_id": "req_12345"
+  },
+  "translation": {
+    "original": "URGENTE - Sistema no funciona",
+    "translated": "URGENT - System not working",
+    "confidence": 0.96
+  },
+  "processing_time": "15 seconds",
+  "status": "completed"
+}
