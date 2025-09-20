@@ -28,6 +28,8 @@ class Program
                 "seed" => await RunSeedFixturesAsync(remainingArgs),
                 "build" => await RunBuildAsync(remainingArgs),
                 "run" => await RunDemoAsync(remainingArgs),
+                "uninstall" => await RunUninstallAsync(remainingArgs),
+                "list-workloads" => await RunListWorkloadsAsync(remainingArgs),
                 "help" or "--help" or "-h" => ShowUsage(),
                 _ => ShowUsage($"Unknown command: {command}")
             };
@@ -185,6 +187,84 @@ class Program
     }
 
     /// <summary>
+    /// Runs uninstall operations
+    /// </summary>
+    static async Task<int> RunUninstallAsync(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("❌ Please specify what to uninstall");
+            Console.WriteLine("Usage: uninstall <target>");
+            Console.WriteLine("Targets: maui, docker, node, dotnet, <package-name>");
+            return 1;
+        }
+
+        var target = args[0].ToLowerInvariant();
+        var dependencyManager = new DependencyManager();
+
+        Console.WriteLine($"🗑️  UNINSTALLING {target.ToUpper()}");
+        Console.WriteLine("===============================");
+
+        UninstallResult result = target switch
+        {
+            "maui" => await dependencyManager.UninstallMauiWorkloadsAsync(),
+            "docker" => await dependencyManager.UninstallDependencyAsync("docker"),
+            "node" => await dependencyManager.UninstallDependencyAsync("node"),
+            "dotnet" => await dependencyManager.UninstallDependencyAsync("dotnet"),
+            _ => await dependencyManager.UninstallDependencyAsync(target)
+        };
+
+        if (result.Success)
+        {
+            Console.WriteLine($"✅ {result.Message}");
+            return 0;
+        }
+        else
+        {
+            Console.WriteLine($"❌ {result.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
+    /// Lists installed workloads
+    /// </summary>
+    static async Task<int> RunListWorkloadsAsync(string[] args)
+    {
+        var dependencyManager = new DependencyManager();
+
+        Console.WriteLine("📋 INSTALLED WORKLOADS");
+        Console.WriteLine("======================");
+
+        var result = await dependencyManager.ListInstalledWorkloadsAsync();
+
+        if (result.Success)
+        {
+            Console.WriteLine(result.Message);
+            Console.WriteLine();
+            
+            if (result.Workloads.Count > 0)
+            {
+                foreach (var workload in result.Workloads)
+                {
+                    Console.WriteLine($"  • {workload}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("  No workloads installed");
+            }
+            
+            return 0;
+        }
+        else
+        {
+            Console.WriteLine($"❌ {result.Message}");
+            return 1;
+        }
+    }
+
+    /// <summary>
     /// Shows usage information
     /// </summary>
     static int ShowUsage(string error = null)
@@ -194,7 +274,7 @@ class Program
             Console.WriteLine($"❌ {error}");
             Console.WriteLine();
         }
-        
+
         Console.WriteLine("NEXO FEATURE LAB DEMO SCRIPTS");
         Console.WriteLine("=============================");
         Console.WriteLine();
@@ -205,7 +285,16 @@ class Program
         Console.WriteLine("  seed [project-root]         Seed demo fixtures");
         Console.WriteLine("  build [project-root]        Build the solution");
         Console.WriteLine("  run [project-root] [options] Run the complete demo");
+        Console.WriteLine("  uninstall <target>          Uninstall dependencies");
+        Console.WriteLine("  list-workloads              List installed workloads");
         Console.WriteLine("  help                        Show this help message");
+        Console.WriteLine();
+        Console.WriteLine("Uninstall Targets:");
+        Console.WriteLine("  maui                        Uninstall MAUI workloads");
+        Console.WriteLine("  docker                      Uninstall Docker");
+        Console.WriteLine("  node                        Uninstall Node.js");
+        Console.WriteLine("  dotnet                      Uninstall .NET workloads");
+        Console.WriteLine("  <package-name>              Uninstall specific package");
         Console.WriteLine();
         Console.WriteLine("Demo Options:");
         Console.WriteLine("  --maui                      Use MAUI application (default)");
@@ -219,6 +308,8 @@ class Program
         Console.WriteLine("  dotnet run -- seed /path/to/project");
         Console.WriteLine("  dotnet run -- run --blazor --port 8080");
         Console.WriteLine("  dotnet run -- run --maui --skip-validation");
+        Console.WriteLine("  dotnet run -- uninstall maui");
+        Console.WriteLine("  dotnet run -- list-workloads");
         
         return string.IsNullOrEmpty(error) ? 0 : 1;
     }

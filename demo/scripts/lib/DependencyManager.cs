@@ -181,7 +181,7 @@ public class DependencyManager
                 // Windows - try chocolatey or winget
                 if (SystemUtils.CommandExists("choco"))
                 {
-                    var result = await SystemUtils.SafeExecuteAsync("choco", "install docker-desktop -y");
+                    var result = await SystemUtils.SafeExecuteAsync("choco", "install docker-desktop -y", null);
                     return new InstallResult
                     {
                         Success = result.Success,
@@ -190,7 +190,7 @@ public class DependencyManager
                 }
                 else if (SystemUtils.CommandExists("winget"))
                 {
-                    var result = await SystemUtils.SafeExecuteAsync("winget", "install Docker.DockerDesktop");
+                    var result = await SystemUtils.SafeExecuteAsync("winget", "install Docker.DockerDesktop", null);
                     return new InstallResult
                     {
                         Success = result.Success,
@@ -260,7 +260,7 @@ public class DependencyManager
             if (packageManager != "unknown")
             {
                 var installCommand = GetPackageInstallCommand(packageManager);
-                var result = await SystemUtils.SafeExecuteAsync(installCommand, "nodejs npm");
+                var result = await SystemUtils.SafeExecuteAsync(installCommand, "nodejs npm", null);
                 
                 if (result.Success)
                 {
@@ -329,7 +329,7 @@ public class DependencyManager
             }
 
             var installCommand = GetPackageInstallCommand(packageManager);
-            var result = await SystemUtils.SafeExecuteAsync(installCommand, packageName);
+            var result = await SystemUtils.SafeExecuteAsync(installCommand, packageName, null);
 
             return new InstallResult
             {
@@ -444,6 +444,351 @@ public class DependencyManager
                 : $"Failed to install: {string.Join(", ", failedInstalls)}"
         };
     }
+
+    /// <summary>
+    /// Uninstalls a dependency
+    /// </summary>
+    public async Task<UninstallResult> UninstallDependencyAsync(string dependencyName, string packageName = null)
+    {
+        packageName ??= dependencyName;
+
+        // Check if installed
+        var checkResult = await CheckDependencyAsync(dependencyName);
+        if (!checkResult.IsInstalled)
+        {
+            return new UninstallResult
+            {
+                Success = true,
+                Message = $"{dependencyName} is not installed"
+            };
+        }
+
+        // Special handling for different dependencies
+        return dependencyName switch
+        {
+            "dotnet" => await UninstallDotNetAsync(),
+            "docker" => await UninstallDockerAsync(),
+            "node" => await UninstallNodeJsAsync(),
+            _ => await UninstallGenericPackageAsync(dependencyName, packageName)
+        };
+    }
+
+    /// <summary>
+    /// Uninstalls .NET SDK
+    /// </summary>
+    private async Task<UninstallResult> UninstallDotNetAsync()
+    {
+        try
+        {
+            // Try to uninstall using dotnet workload uninstall
+            var workloadResult = await SystemUtils.RunWithTimeoutAsync(
+                "dotnet", 
+                "workload uninstall maui maccatalyst android",
+                TimeSpan.FromMinutes(2));
+
+            if (workloadResult.Success)
+            {
+                return new UninstallResult
+                {
+                    Success = true,
+                    Message = "MAUI workloads uninstalled successfully"
+                };
+            }
+            else
+            {
+                return new UninstallResult
+                {
+                    Success = false,
+                    Message = $"Failed to uninstall MAUI workloads: {workloadResult.StandardError}"
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new UninstallResult
+            {
+                Success = false,
+                Message = $"Exception during .NET workload uninstallation: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Uninstalls Docker
+    /// </summary>
+    private async Task<UninstallResult> UninstallDockerAsync()
+    {
+        try
+        {
+            var platform = Environment.OSVersion.Platform;
+            
+            if (platform == PlatformID.Win32NT)
+            {
+                // Windows - try chocolatey or winget
+                if (SystemUtils.CommandExists("choco"))
+                {
+                    var result = await SystemUtils.SafeExecuteAsync("choco", "uninstall docker-desktop -y", null);
+                    return new UninstallResult
+                    {
+                        Success = result.Success,
+                        Message = result.Success ? "Docker uninstalled via Chocolatey" : result.StandardError
+                    };
+                }
+                else if (SystemUtils.CommandExists("winget"))
+                {
+                    var result = await SystemUtils.SafeExecuteAsync("winget", "uninstall Docker.DockerDesktop", null);
+                    return new UninstallResult
+                    {
+                        Success = result.Success,
+                        Message = result.Success ? "Docker uninstalled via Winget" : result.StandardError
+                    };
+                }
+                else
+                {
+                    return new UninstallResult
+                    {
+                        Success = false,
+                        Message = "Docker uninstallation on Windows requires Chocolatey, Winget, or manual removal"
+                    };
+                }
+            }
+            else
+            {
+                // Unix-like systems - use package manager
+                var packageManager = DetectPackageManager();
+                if (packageManager == "unknown")
+                {
+                    return new UninstallResult
+                    {
+                        Success = false,
+                        Message = "Unknown package manager, cannot uninstall Docker"
+                    };
+                }
+
+                var uninstallCommand = GetPackageUninstallCommand(packageManager);
+                var result = await SystemUtils.SafeExecuteAsync(uninstallCommand, "docker docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin", null);
+
+                return new UninstallResult
+                {
+                    Success = result.Success,
+                    Message = result.Success ? "Docker uninstalled successfully" : result.StandardError
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new UninstallResult
+            {
+                Success = false,
+                Message = $"Exception during Docker uninstallation: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Uninstalls Node.js
+    /// </summary>
+    private async Task<UninstallResult> UninstallNodeJsAsync()
+    {
+        try
+        {
+            // Try package manager first
+            var packageManager = DetectPackageManager();
+            if (packageManager != "unknown")
+            {
+                var uninstallCommand = GetPackageUninstallCommand(packageManager);
+                var result = await SystemUtils.SafeExecuteAsync(uninstallCommand, "nodejs npm", null);
+                
+                if (result.Success)
+                {
+                    return new UninstallResult
+                    {
+                        Success = true,
+                        Message = $"Node.js uninstalled via {packageManager}"
+                    };
+                }
+            }
+
+            // Fallback to nvm
+            var nvmResult = await SystemUtils.RunWithTimeoutAsync(
+                "bash", 
+                "-c 'source ~/.nvm/nvm.sh && nvm uninstall --lts'",
+                TimeSpan.FromMinutes(2));
+
+            return new UninstallResult
+            {
+                Success = nvmResult.Success,
+                Message = nvmResult.Success ? "Node.js uninstalled via nvm" : nvmResult.StandardError
+            };
+        }
+        catch (Exception ex)
+        {
+            return new UninstallResult
+            {
+                Success = false,
+                Message = $"Exception during Node.js uninstallation: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Uninstalls a generic package
+    /// </summary>
+    private async Task<UninstallResult> UninstallGenericPackageAsync(string dependencyName, string packageName)
+    {
+        try
+        {
+            var packageManager = DetectPackageManager();
+            if (packageManager == "unknown")
+            {
+                return new UninstallResult
+                {
+                    Success = false,
+                    Message = "Unknown package manager, cannot uninstall package"
+                };
+            }
+
+            var uninstallCommand = GetPackageUninstallCommand(packageManager);
+            var result = await SystemUtils.SafeExecuteAsync(uninstallCommand, packageName, null);
+
+            return new UninstallResult
+            {
+                Success = result.Success,
+                Message = result.Success ? $"{dependencyName} uninstalled successfully" : result.StandardError
+            };
+        }
+        catch (Exception ex)
+        {
+            return new UninstallResult
+            {
+                Success = false,
+                Message = $"Exception during package uninstallation: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Gets the package uninstall command for a package manager
+    /// </summary>
+    private string GetPackageUninstallCommand(string packageManager)
+    {
+        return packageManager switch
+        {
+            "brew" => "brew uninstall",
+            "apt" => "apt-get remove -y",
+            "yum" or "dnf" => $"{packageManager} remove -y",
+            "pacman" => "pacman -R --noconfirm",
+            "zypper" => "zypper remove -y",
+            "choco" => "choco uninstall -y",
+            "winget" => "winget uninstall",
+            _ => "unknown"
+        };
+    }
+
+    /// <summary>
+    /// Uninstalls MAUI workloads specifically
+    /// </summary>
+    public async Task<UninstallResult> UninstallMauiWorkloadsAsync()
+    {
+        try
+        {
+            Console.WriteLine("Uninstalling MAUI workloads...");
+            
+            var workloads = new[] { "maui", "maccatalyst", "android" };
+            var uninstalledWorkloads = new List<string>();
+            var failedWorkloads = new List<string>();
+
+            foreach (var workload in workloads)
+            {
+                var result = await SystemUtils.RunWithTimeoutAsync(
+                    "dotnet", 
+                    $"workload uninstall {workload}",
+                    TimeSpan.FromMinutes(2));
+
+                if (result.Success)
+                {
+                    uninstalledWorkloads.Add(workload);
+                }
+                else
+                {
+                    failedWorkloads.Add(workload);
+                }
+            }
+
+            if (failedWorkloads.Count == 0)
+            {
+                return new UninstallResult
+                {
+                    Success = true,
+                    Message = $"Successfully uninstalled MAUI workloads: {string.Join(", ", uninstalledWorkloads)}"
+                };
+            }
+            else
+            {
+                return new UninstallResult
+                {
+                    Success = false,
+                    Message = $"Failed to uninstall some workloads. Success: {string.Join(", ", uninstalledWorkloads)}, Failed: {string.Join(", ", failedWorkloads)}"
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new UninstallResult
+            {
+                Success = false,
+                Message = $"Exception during MAUI workload uninstallation: {ex.Message}"
+            };
+        }
+    }
+
+    /// <summary>
+    /// Lists all installed workloads
+    /// </summary>
+    public async Task<WorkloadListResult> ListInstalledWorkloadsAsync()
+    {
+        try
+        {
+            var result = await SystemUtils.RunWithTimeoutAsync(
+                "dotnet", 
+                "workload list",
+                TimeSpan.FromMinutes(1));
+
+            if (!result.Success)
+            {
+                return new WorkloadListResult
+                {
+                    Success = false,
+                    Message = $"Failed to list workloads: {result.StandardError}",
+                    Workloads = new List<string>()
+                };
+            }
+
+            var workloads = result.StandardOutput
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Where(line => !line.StartsWith("Installed Workload Id") && 
+                              !line.StartsWith("---") && 
+                              !string.IsNullOrWhiteSpace(line))
+                .Select(line => line.Split(' ')[0])
+                .ToList();
+
+            return new WorkloadListResult
+            {
+                Success = true,
+                Message = $"Found {workloads.Count} installed workloads",
+                Workloads = workloads
+            };
+        }
+        catch (Exception ex)
+        {
+            return new WorkloadListResult
+            {
+                Success = false,
+                Message = $"Exception while listing workloads: {ex.Message}",
+                Workloads = new List<string>()
+            };
+        }
+    }
 }
 
 /// <summary>
@@ -474,4 +819,23 @@ public class VerificationResult
     public bool AllInstalled { get; set; }
     public List<string> MissingDependencies { get; set; } = new();
     public List<DependencyCheckResult> DependencyResults { get; set; } = new();
+}
+
+/// <summary>
+/// Result of an uninstallation attempt
+/// </summary>
+public class UninstallResult
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Result of workload listing
+/// </summary>
+public class WorkloadListResult
+{
+    public bool Success { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public List<string> Workloads { get; set; } = new();
 }

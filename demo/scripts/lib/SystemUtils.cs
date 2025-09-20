@@ -225,6 +225,27 @@ public static class SystemUtils
     }
 
     /// <summary>
+    /// Safely executes a command with proper error handling
+    /// </summary>
+    public static async Task<CommandResult> SafeExecuteAsync(string command, string arguments, string workingDirectory = null)
+    {
+        try
+        {
+            return await RunWithTimeoutAsync(command, arguments, TimeSpan.FromMinutes(5), workingDirectory);
+        }
+        catch (Exception ex)
+        {
+            return new CommandResult
+            {
+                Success = false,
+                ExitCode = -1,
+                StandardOutput = "",
+                StandardError = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
     /// Checks if a port is available
     /// </summary>
     public static bool IsPortAvailable(int port)
