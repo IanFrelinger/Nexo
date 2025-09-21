@@ -1,5 +1,6 @@
 @page "/preview-demo"
 @using Playground.Server.Models
+@using Microsoft.JSInterop
 
 <PageTitle>App Preview - Nexo</PageTitle>
 
@@ -425,7 +426,7 @@
         }
     }
 
-    private void HandleKeyPress(KeyboardEventArgs e)
+    private void HandleKeyPress(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {

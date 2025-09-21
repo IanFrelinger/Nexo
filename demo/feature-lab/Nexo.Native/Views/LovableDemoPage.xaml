@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="Nexo.Native.Views.LovableDemoPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:Nexo.Native.ViewModels"
+             x:DataType="viewmodels:LovableDemoViewModel"
+             Title="Nexo - AI Development Platform"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="20">
+            
+            <!-- Header -->
+            <StackLayout Spacing="10">
+                <Label Text="🚀 NEXO AI DEVELOPMENT PLATFORM" 
+                       FontSize="24" 
+                       FontAttributes="Bold" 
+                       HorizontalOptions="Center"
+                       TextColor="{DynamicResource PrimaryTextColor}"/>
+                
+                <Label Text="Build applications with natural language" 
+                       FontSize="16" 
+                       HorizontalOptions="Center"
+                       TextColor="{DynamicResource SecondaryTextColor}"/>
+            </StackLayout>
+
+            <!-- Natural Language Input -->
+            <Frame BackgroundColor="{DynamicResource CardBackgroundColor}" 
+                   CornerRadius="12" 
+                   Padding="20" 
+                   HasShadow="True">
+                <StackLayout Spacing="15">
+                    <Label Text="💬 Describe your application" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <Editor x:Name="DescriptionEditor"
+                            Text="{Binding UserPrompt}"
+                            Placeholder="e.g., A modern todo app with dark mode, drag-and-drop reordering, and real-time sync"
+                            HeightRequest="100"
+                            BackgroundColor="{DynamicResource InputBackgroundColor}"
+                            TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <Label Text="💡 Be specific about features, design, and functionality" 
+                           FontSize="12" 
+                           TextColor="{DynamicResource SecondaryTextColor}"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- App Type Selection -->
+            <Frame BackgroundColor="{DynamicResource CardBackgroundColor}" 
+                   CornerRadius="12" 
+                   Padding="20" 
+                   HasShadow="True">
+                <StackLayout Spacing="15">
+                    <Label Text="📱 Choose your platform" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <CollectionView ItemsSource="{Binding AppTypes}" 
+                                    SelectedItem="{Binding SelectedAppType}">
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Vertical" 
+                                            Span="2" 
+                                            HorizontalItemSpacing="10" 
+                                            VerticalItemSpacing="10"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame BackgroundColor="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}}"
+                                       CornerRadius="8" 
+                                       Padding="15"
+                                       HasShadow="True">
+                                    <StackLayout Spacing="5">
+                                        <Label Text="{Binding Icon}" 
+                                               FontSize="24" 
+                                               HorizontalOptions="Center"/>
+                                        <Label Text="{Binding Name}" 
+                                               FontSize="14" 
+                                               FontAttributes="Bold"
+                                               HorizontalOptions="Center"
+                                               TextColor="{DynamicResource PrimaryTextColor}"/>
+                                        <Label Text="{Binding Description}" 
+                                               FontSize="12" 
+                                               HorizontalOptions="Center"
+                                               TextColor="{DynamicResource SecondaryTextColor}"/>
+                                    </StackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+            <!-- Features Selection -->
+            <Frame BackgroundColor="{DynamicResource CardBackgroundColor}" 
+                   CornerRadius="12" 
+                   Padding="20" 
+                   HasShadow="True">
+                <StackLayout Spacing="15">
+                    <Label Text="✨ Select features" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <FlexLayout Wrap="Wrap" 
+                                JustifyContent="Start" 
+                                AlignItems="Start">
+                        <FlexLayout.Children>
+                            <CheckBox x:Name="DarkModeCheck" 
+                                      IsChecked="{Binding DarkModeEnabled}"
+                                      Margin="0,0,10,10"/>
+                            <Label Text="Dark Mode" 
+                                   VerticalOptions="Center" 
+                                   Margin="0,0,20,10"/>
+                            
+                            <CheckBox x:Name="AuthCheck" 
+                                      IsChecked="{Binding AuthenticationEnabled}"
+                                      Margin="0,0,10,10"/>
+                            <Label Text="Authentication" 
+                                   VerticalOptions="Center" 
+                                   Margin="0,0,20,10"/>
+                            
+                            <CheckBox x:Name="DatabaseCheck" 
+                                      IsChecked="{Binding DatabaseEnabled}"
+                                      Margin="0,0,10,10"/>
+                            <Label Text="Database" 
+                                   VerticalOptions="Center" 
+                                   Margin="0,0,20,10"/>
+                            
+                            <CheckBox x:Name="ResponsiveCheck" 
+                                      IsChecked="{Binding ResponsiveEnabled}"
+                                      Margin="0,0,10,10"/>
+                            <Label Text="Responsive" 
+                                   VerticalOptions="Center" 
+                                   Margin="0,0,20,10"/>
+                            
+                            <CheckBox x:Name="RealTimeCheck" 
+                                      IsChecked="{Binding RealTimeEnabled}"
+                                      Margin="0,0,10,10"/>
+                            <Label Text="Real-time" 
+                                   VerticalOptions="Center" 
+                                   Margin="0,0,20,10"/>
+                            
+                            <CheckBox x:Name="PWACheck" 
+                                      IsChecked="{Binding PWAEnabled}"
+                                      Margin="0,0,10,10"/>
+                            <Label Text="PWA" 
+                                   VerticalOptions="Center" 
+                                   Margin="0,0,20,10"/>
+                        </FlexLayout.Children>
+                    </FlexLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Generate Button -->
+            <Button Text="🚀 Generate Application" 
+                    Command="{Binding GenerateCommand}"
+                    IsEnabled="{Binding CanGenerate}"
+                    BackgroundColor="{DynamicResource PrimaryColor}"
+                    TextColor="White"
+                    FontSize="18"
+                    FontAttributes="Bold"
+                    CornerRadius="25"
+                    HeightRequest="50"/>
+
+            <!-- Progress Section -->
+            <Frame IsVisible="{Binding IsGenerating}" 
+                   BackgroundColor="{DynamicResource CardBackgroundColor}" 
+                   CornerRadius="12" 
+                   Padding="20" 
+                   HasShadow="True">
+                <StackLayout Spacing="15">
+                    <Label Text="⚡ Generating your application..." 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <ProgressBar Progress="{Binding GenerationProgress}" 
+                                 ProgressColor="{DynamicResource PrimaryColor}"/>
+                    
+                    <Label Text="{Binding CurrentStep}" 
+                           FontSize="14" 
+                           HorizontalOptions="Center"
+                           TextColor="{DynamicResource SecondaryTextColor}"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- Results Section -->
+            <Frame IsVisible="{Binding ShowResults}" 
+                   BackgroundColor="{DynamicResource CardBackgroundColor}" 
+                   CornerRadius="12" 
+                   Padding="20" 
+                   HasShadow="True">
+                <StackLayout Spacing="15">
+                    <Label Text="🎉 Application Generated!" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <Label Text="{Binding GeneratedAppName}" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           TextColor="{DynamicResource PrimaryColor}"/>
+                    
+                    <Label Text="{Binding GeneratedDescription}" 
+                           FontSize="14" 
+                           HorizontalOptions="Center"
+                           TextColor="{DynamicResource SecondaryTextColor}"/>
+                    
+                    <StackLayout Orientation="Horizontal" 
+                                 HorizontalOptions="Center" 
+                                 Spacing="10">
+                        <Button Text="📁 Open Project" 
+                                Command="{Binding OpenProjectCommand}"
+                                BackgroundColor="{DynamicResource SecondaryColor}"
+                                TextColor="White"
+                                CornerRadius="20"/>
+                        
+                        <Button Text="▶️ Run App" 
+                                Command="{Binding RunAppCommand}"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                TextColor="White"
+                                CornerRadius="20"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Quick Examples -->
+            <Frame BackgroundColor="{DynamicResource CardBackgroundColor}" 
+                   CornerRadius="12" 
+                   Padding="20" 
+                   HasShadow="True">
+                <StackLayout Spacing="15">
+                    <Label Text="💡 Quick Examples" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+                    
+                    <CollectionView ItemsSource="{Binding QuickExamples}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame BackgroundColor="{DynamicResource InputBackgroundColor}" 
+                                       CornerRadius="8" 
+                                       Padding="15" 
+                                       Margin="0,5">
+                                    <StackLayout>
+                                        <Label Text="{Binding Title}" 
+                                               FontSize="14" 
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource PrimaryTextColor}"/>
+                                        <Label Text="{Binding Description}" 
+                                               FontSize="12" 
+                                               TextColor="{DynamicResource SecondaryTextColor}"/>
+                                        <Button Text="Use This" 
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.UseExampleCommand}"
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                                TextColor="White"
+                                                FontSize="12"
+                                                CornerRadius="15"
+                                                HeightRequest="30"
+                                                HorizontalOptions="End"/>
+                                    </StackLayout>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
