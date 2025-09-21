@@ -38,7 +38,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Asserts that a condition is true, with runtime-specific messaging.
         /// </summary>
-        protected void AssertRuntimeCondition(bool condition, string message = null)
+        protected void AssertRuntimeCondition(bool condition, string? message = null)
         {
             var runtimeInfo = RuntimeDetection.GetRuntimeInfo();
             var fullMessage = message != null 
@@ -51,7 +51,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Asserts that an exception is thrown, with runtime-specific handling.
         /// </summary>
-        protected T AssertRuntimeException<T>(Action action, string message = null) where T : Exception
+        protected T AssertRuntimeException<T>(Action action, string? message = null) where T : Exception
         {
             try
             {
@@ -131,7 +131,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Skips a test if the current runtime doesn't support a specific feature.
         /// </summary>
-        protected void SkipIfFeatureNotSupported(string feature, string reason = null)
+        protected void SkipIfFeatureNotSupported(string feature, string? reason = null)
         {
             if (!RuntimeSupportsFeature(feature))
             {
@@ -157,7 +157,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Gets runtime-specific test data.
         /// </summary>
-        protected T GetRuntimeSpecificData<T>(Dictionary<RuntimeDetection.RuntimeType, T> data, T defaultValue = default(T))
+        protected T GetRuntimeSpecificData<T>(Dictionary<RuntimeDetection.RuntimeType, T> data, T defaultValue = default(T)!)
         {
             if (data.TryGetValue(CurrentRuntime, out var value))
             {
@@ -195,7 +195,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
             _testOutput = testOutput;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             var message = formatter(state, exception);
             var logMessage = $"[{logLevel}] {message}";
@@ -210,7 +210,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
 
         public bool IsEnabled(LogLevel logLevel) => true;
 
-        public IDisposable BeginScope<TState>(TState state) => NullScope.Instance;
+        IDisposable ILogger.BeginScope<TState>(TState state) => NullScope.Instance;
 
         private class NullScope : IDisposable
         {

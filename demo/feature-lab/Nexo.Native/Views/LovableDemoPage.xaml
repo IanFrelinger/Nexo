@@ -12,7 +12,7 @@
             
             <!-- Header -->
             <StackLayout Spacing="10">
-                <Label Text="🚀 NEXO AI DEVELOPMENT PLATFORM" 
+                <Label Text="NEXO AI DEVELOPMENT PLATFORM" 
                        FontSize="24" 
                        FontAttributes="Bold" 
                        HorizontalOptions="Center"
@@ -30,7 +30,7 @@
                    Padding="20" 
                    HasShadow="True">
                 <StackLayout Spacing="15">
-                    <Label Text="💬 Describe your application" 
+                    <Label Text="Describe your application" 
                            FontSize="18" 
                            FontAttributes="Bold"
                            TextColor="{DynamicResource PrimaryTextColor}"/>
@@ -42,7 +42,7 @@
                             BackgroundColor="{DynamicResource InputBackgroundColor}"
                             TextColor="{DynamicResource PrimaryTextColor}"/>
                     
-                    <Label Text="💡 Be specific about features, design, and functionality" 
+                    <Label Text="Be specific about features, design, and functionality" 
                            FontSize="12" 
                            TextColor="{DynamicResource SecondaryTextColor}"/>
                 </StackLayout>
@@ -54,7 +54,7 @@
                    Padding="20" 
                    HasShadow="True">
                 <StackLayout Spacing="15">
-                    <Label Text="📱 Choose your platform" 
+                    <Label Text="Choose your platform" 
                            FontSize="18" 
                            FontAttributes="Bold"
                            TextColor="{DynamicResource PrimaryTextColor}"/>
@@ -68,8 +68,8 @@
                                             VerticalItemSpacing="10"/>
                         </CollectionView.ItemsLayout>
                         <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame BackgroundColor="{Binding IsSelected, Converter={StaticResource BoolToColorConverter}}"
+                            <DataTemplate x:DataType="viewmodels:AppTypeInfo">
+                                <Frame BackgroundColor="Transparent"
                                        CornerRadius="8" 
                                        Padding="15"
                                        HasShadow="True">
@@ -100,7 +100,7 @@
                    Padding="20" 
                    HasShadow="True">
                 <StackLayout Spacing="15">
-                    <Label Text="✨ Select features" 
+                    <Label Text="Select features" 
                            FontSize="18" 
                            FontAttributes="Bold"
                            TextColor="{DynamicResource PrimaryTextColor}"/>
@@ -156,7 +156,7 @@
             </Frame>
 
             <!-- Generate Button -->
-            <Button Text="🚀 Generate Application" 
+            <Button Text="Generate Application" 
                     Command="{Binding GenerateCommand}"
                     IsEnabled="{Binding CanGenerate}"
                     BackgroundColor="{DynamicResource PrimaryColor}"
@@ -173,7 +173,7 @@
                    Padding="20" 
                    HasShadow="True">
                 <StackLayout Spacing="15">
-                    <Label Text="⚡ Generating your application..." 
+                    <Label Text="Generating your application..." 
                            FontSize="18" 
                            FontAttributes="Bold"
                            HorizontalOptions="Center"
@@ -196,7 +196,7 @@
                    Padding="20" 
                    HasShadow="True">
                 <StackLayout Spacing="15">
-                    <Label Text="🎉 Application Generated!" 
+                    <Label Text="Application Generated!" 
                            FontSize="18" 
                            FontAttributes="Bold"
                            HorizontalOptions="Center"
@@ -216,13 +216,13 @@
                     <StackLayout Orientation="Horizontal" 
                                  HorizontalOptions="Center" 
                                  Spacing="10">
-                        <Button Text="📁 Open Project" 
+                        <Button Text="Open Project" 
                                 Command="{Binding OpenProjectCommand}"
                                 BackgroundColor="{DynamicResource SecondaryColor}"
                                 TextColor="White"
                                 CornerRadius="20"/>
                         
-                        <Button Text="▶️ Run App" 
+                        <Button Text="Run App" 
                                 Command="{Binding RunAppCommand}"
                                 BackgroundColor="{DynamicResource PrimaryColor}"
                                 TextColor="White"
@@ -237,14 +237,14 @@
                    Padding="20" 
                    HasShadow="True">
                 <StackLayout Spacing="15">
-                    <Label Text="💡 Quick Examples" 
+                    <Label Text="Quick Examples" 
                            FontSize="18" 
                            FontAttributes="Bold"
                            TextColor="{DynamicResource PrimaryTextColor}"/>
                     
                     <CollectionView ItemsSource="{Binding QuickExamples}">
                         <CollectionView.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="viewmodels:QuickExample">
                                 <Frame BackgroundColor="{DynamicResource InputBackgroundColor}" 
                                        CornerRadius="8" 
                                        Padding="15" 

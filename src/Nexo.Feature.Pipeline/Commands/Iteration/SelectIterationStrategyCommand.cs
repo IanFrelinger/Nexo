@@ -28,7 +28,7 @@ public class SelectIterationStrategyCommand : ICommand<SelectIterationStrategyRe
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
-    public async Task<SelectIterationStrategyResponse> ExecuteAsync(
+    public Task<SelectIterationStrategyResponse> ExecuteAsync(
         SelectIterationStrategyRequest request, 
         CancellationToken cancellationToken)
     {
@@ -56,23 +56,23 @@ public class SelectIterationStrategyCommand : ICommand<SelectIterationStrategyRe
             _logger.LogInformation("Selected iteration strategy {StrategyId} with performance score {Score}", 
                 strategy.StrategyId, performanceEstimate.PerformanceScore);
             
-            return new SelectIterationStrategyResponse
+            return Task.FromResult(new SelectIterationStrategyResponse
             {
                 SelectedStrategy = strategy,
                 SelectionReasoning = reasoning,
                 PerformanceEstimate = performanceEstimate,
                 Context = context,
                 Success = true
-            };
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error selecting iteration strategy");
-            return new SelectIterationStrategyResponse
+            return Task.FromResult(new SelectIterationStrategyResponse
             {
                 Success = false,
                 ErrorMessage = ex.Message
-            };
+            });
         }
     }
     

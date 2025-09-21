@@ -10,7 +10,7 @@
   <!-- Framework-specific package references are handled in Directory.Build.props -->
   <!-- Only add project-specific packages here -->
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2025.2.0" />
+    <PackageReference Include="JetBrains.Annotations" />
   </ItemGroup>
 
   <ItemGroup>

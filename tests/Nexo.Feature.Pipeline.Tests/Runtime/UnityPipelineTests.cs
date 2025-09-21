@@ -317,7 +317,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
                     // Test null reference handling in Unity
                     var nullRefException = AssertRuntimeException<ArgumentNullException>(() =>
                     {
-                        var context = new PipelineContext(null, null);
+                        var context = new PipelineContext(null!, null!);
                     });
                     
                     AssertRuntimeCondition(nullRefException != null, 
@@ -361,7 +361,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
                         var deserializedConfig = System.Text.Json.JsonSerializer.Deserialize<PipelineConfiguration>(json);
                         AssertRuntimeCondition(deserializedConfig != null, 
                             "Configuration should deserialize from JSON in Unity");
-                        AssertRuntimeCondition(deserializedConfig.Name == config.Name, 
+                        AssertRuntimeCondition(deserializedConfig!.Name == config.Name, 
                             "Deserialized configuration should match original in Unity");
                     }
                     catch (Exception ex)

@@ -35,6 +35,7 @@ namespace Nexo.Infrastructure.Compilation
         /// <inheritdoc />
         public async Task<CompilationResult> CompileToAssemblyAsync(string code, CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogInformation("Starting compilation of generated code");
 
             try

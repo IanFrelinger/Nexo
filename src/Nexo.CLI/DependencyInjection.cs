@@ -31,6 +31,7 @@ using Nexo.Shared.Interfaces.Resource;
 using Nexo.Feature.Factory;
 using Nexo.Feature.Unity;
 using Nexo.Core.Application.Services.Adaptation;
+using Nexo.Core.Extensions;
 using System;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -251,6 +252,9 @@ namespace Nexo.CLI
 
             // Add policy engine services
             services.AddPolicyEngineServices();
+
+            // Add pipeline services
+            services.AddPipelineServices();
 
             return services;
         }

@@ -42,6 +42,7 @@ namespace Nexo.Core.Domain.Models.Policy
         public string Version { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public List<string> SeverityScale { get; set; } = new List<string>();
+        public bool RequiresApproval { get; set; } = false;
     }
 
     /// <summary>

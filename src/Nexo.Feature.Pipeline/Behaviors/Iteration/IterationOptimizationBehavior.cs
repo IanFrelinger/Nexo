@@ -48,9 +48,12 @@ public class IterationOptimizationBehavior : IPipelineBehavior
                 
                 // Add strategy information to pipeline context
                 var pipelineContext = PipelineContext.Current;
-                pipelineContext.SetProperty("SelectedIterationStrategy", strategy);
-                pipelineContext.SetProperty("IterationOptimized", true);
-                pipelineContext.SetProperty("IterationContext", iterationContext);
+                if (pipelineContext != null)
+                {
+                    pipelineContext.SetProperty("SelectedIterationStrategy", strategy);
+                    pipelineContext.SetProperty("IterationOptimized", true);
+                    pipelineContext.SetProperty("IterationContext", iterationContext);
+                }
                 
                 _logger.LogInformation("Selected iteration strategy {StrategyId} for request", strategy.StrategyId);
             }

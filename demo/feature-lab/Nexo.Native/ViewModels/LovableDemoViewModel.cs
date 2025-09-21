@@ -11,7 +11,7 @@ namespace Nexo.Native.ViewModels
     public class LovableDemoViewModel : INotifyPropertyChanged
     {
         private string _userPrompt = "";
-        private AppTypeInfo _selectedAppType;
+        private AppTypeInfo? _selectedAppType;
         private bool _isGenerating = false;
         private bool _showResults = false;
         private double _generationProgress = 0;
@@ -25,7 +25,7 @@ namespace Nexo.Native.ViewModels
         private bool _realTimeEnabled = false;
         private bool _pwaEnabled = false;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public LovableDemoViewModel()
         {
@@ -48,7 +48,7 @@ namespace Nexo.Native.ViewModels
             }
         }
 
-        public AppTypeInfo SelectedAppType
+        public AppTypeInfo? SelectedAppType
         {
             get => _selectedAppType;
             set
@@ -180,7 +180,7 @@ namespace Nexo.Native.ViewModels
             }
         }
 
-        public bool CanGenerate => !string.IsNullOrWhiteSpace(UserPrompt) && SelectedAppType != null && !IsGenerating;
+        public bool CanGenerate => !string.IsNullOrWhiteSpace(UserPrompt) && SelectedAppType is not null && !IsGenerating;
 
         public ObservableCollection<AppTypeInfo> AppTypes { get; } = new();
         public ObservableCollection<QuickExample> QuickExamples { get; } = new();
@@ -297,38 +297,38 @@ namespace Nexo.Native.ViewModels
             try
             {
                 // Step 1: Analyze description
-                CurrentStep = "🔍 Analyzing your description...";
+                CurrentStep = "Analyzing your description...";
                 GenerationProgress = 0.1;
                 await Task.Delay(1000);
 
                 // Step 2: Generate project structure
-                CurrentStep = "🏗️ Generating project structure...";
+                CurrentStep = "Generating project structure...";
                 GenerationProgress = 0.3;
                 await Task.Delay(1500);
 
                 // Step 3: Install dependencies
-                CurrentStep = "📦 Installing dependencies...";
+                CurrentStep = "Installing dependencies...";
                 GenerationProgress = 0.5;
                 await Task.Delay(2000);
 
                 // Step 4: Generate code
-                CurrentStep = "💻 Generating application code...";
+                CurrentStep = "Generating application code...";
                 GenerationProgress = 0.7;
                 await Task.Delay(2000);
 
                 // Step 5: Create documentation
-                CurrentStep = "📚 Creating documentation...";
+                CurrentStep = "Creating documentation...";
                 GenerationProgress = 0.9;
                 await Task.Delay(1000);
 
                 // Complete
-                CurrentStep = "✅ Application generated successfully!";
+                CurrentStep = "Application generated successfully!";
                 GenerationProgress = 1.0;
                 await Task.Delay(500);
 
                 // Set results
                 GeneratedAppName = DetermineAppName(UserPrompt);
-                GeneratedDescription = $"A {SelectedAppType.Name.ToLower()} built with modern technologies";
+                GeneratedDescription = $"A {SelectedAppType?.Name.ToLower() ?? "application"} built with modern technologies";
                 ShowResults = true;
             }
             catch (Exception ex)
@@ -373,6 +373,9 @@ namespace Nexo.Native.ViewModels
 
         private string DetermineAppName(string description)
         {
+            if (string.IsNullOrWhiteSpace(description))
+                return "My App";
+                
             var words = description.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (words.Length > 0)
             {
@@ -386,7 +389,7 @@ namespace Nexo.Native.ViewModels
             return "My App";
         }
 
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

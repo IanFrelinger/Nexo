@@ -19,7 +19,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
 
         public RuntimeDetection.RuntimeType[] SupportedRuntimes { get; }
 
-        private string GetSkipReason()
+        private string? GetSkipReason()
         {
             var currentRuntime = RuntimeDetection.CurrentRuntime;
             
@@ -46,7 +46,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
 
         public RuntimeDetection.RuntimeType[] SupportedRuntimes { get; }
 
-        private string GetSkipReason()
+        private string? GetSkipReason()
         {
             var currentRuntime = RuntimeDetection.CurrentRuntime;
             
@@ -73,7 +73,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
 
         public string RequiredFeature { get; }
 
-        private string GetSkipReason()
+        private string? GetSkipReason()
         {
             if (!RuntimeDetection.SupportsFeature(RequiredFeature))
             {
@@ -98,7 +98,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
 
         public string RequiredFeature { get; }
 
-        private string GetSkipReason()
+        private string? GetSkipReason()
         {
             if (!RuntimeDetection.SupportsFeature(RequiredFeature))
             {
@@ -123,7 +123,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
 
         public RuntimeDetection.RuntimeType[] SkipRuntimes { get; }
 
-        private string GetSkipReason()
+        private string? GetSkipReason()
         {
             var currentRuntime = RuntimeDetection.CurrentRuntime;
             
@@ -150,7 +150,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
 
         public RuntimeDetection.RuntimeType[] SkipRuntimes { get; }
 
-        private string GetSkipReason()
+        private string? GetSkipReason()
         {
             var currentRuntime = RuntimeDetection.CurrentRuntime;
             

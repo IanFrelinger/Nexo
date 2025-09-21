@@ -59,7 +59,7 @@ namespace Nexo.Core.Domain.Services
             return await Task.FromResult(executionId);
         }
 
-        public async Task AddStepAsync(
+        public Task AddStepAsync(
             string executionId,
             string stepName,
             string stepType,
@@ -69,7 +69,7 @@ namespace Nexo.Core.Domain.Services
             if (!_executions.TryGetValue(executionId, out var execution))
             {
                 _logger.LogWarning("Execution {ExecutionId} not found for step {StepName}", executionId, stepName);
-                return;
+                return Task.CompletedTask;
             }
 
             var step = new AuditStep
@@ -96,9 +96,10 @@ namespace Nexo.Core.Domain.Services
             _events.Add(event_);
 
             _logger.LogDebug("Added step {StepName} to execution {ExecutionId}", stepName, executionId);
+            return Task.CompletedTask;
         }
 
-        public async Task CompleteStepAsync(
+        public Task CompleteStepAsync(
             string executionId,
             string stepName,
             bool success,
@@ -109,18 +110,17 @@ namespace Nexo.Core.Domain.Services
             if (!_executions.TryGetValue(executionId, out var execution))
             {
                 _logger.LogWarning("Execution {ExecutionId} not found for step completion {StepName}", executionId, stepName);
-                return;
+                return Task.CompletedTask;
             }
 
             var step = execution.Steps.FirstOrDefault(s => s.Name == stepName);
             if (step == null)
             {
                 _logger.LogWarning("Step {StepName} not found in execution {ExecutionId}", stepName, executionId);
-                return;
+                return Task.CompletedTask;
             }
 
             step.EndTime = DateTime.UtcNow;
-            step.Duration = step.EndTime - step.StartTime;
             step.Success = success;
             step.ErrorMessage = errorMessage;
 
@@ -146,9 +146,10 @@ namespace Nexo.Core.Domain.Services
 
             _logger.LogDebug("Completed step {StepName} in execution {ExecutionId}: Success={Success}, Duration={Duration}ms", 
                 stepName, executionId, success, step.Duration.TotalMilliseconds);
+            return Task.CompletedTask;
         }
 
-        public async Task AddProviderDecisionAsync(
+        public Task AddProviderDecisionAsync(
             string executionId,
             string providerName,
             string decision,
@@ -176,9 +177,10 @@ namespace Nexo.Core.Domain.Services
 
             _logger.LogInformation("Provider {ProviderName} decision for execution {ExecutionId}: {Decision} - {Reasoning}", 
                 providerName, executionId, decision, reasoning);
+            return Task.CompletedTask;
         }
 
-        public async Task AddPolicyDecisionAsync(
+        public Task AddPolicyDecisionAsync(
             string executionId,
             string policyId,
             string decision,
@@ -208,9 +210,10 @@ namespace Nexo.Core.Domain.Services
 
             _logger.LogInformation("Policy {PolicyId} decision for execution {ExecutionId}: {Decision} - {Reason} (RequiresApproval: {RequiresApproval})", 
                 policyId, executionId, decision, reason, requiresApproval);
+            return Task.CompletedTask;
         }
 
-        public async Task AddRetryAttemptAsync(
+        public Task AddRetryAttemptAsync(
             string executionId,
             string operation,
             int attemptNumber,
@@ -238,9 +241,10 @@ namespace Nexo.Core.Domain.Services
 
             _logger.LogWarning("Retry attempt {AttemptNumber} for operation {Operation} in execution {ExecutionId}: {ErrorMessage} (Delay: {Delay}ms)", 
                 attemptNumber, operation, executionId, errorMessage, delay.TotalMilliseconds);
+            return Task.CompletedTask;
         }
 
-        public async Task CompleteExecutionAsync(
+        public Task CompleteExecutionAsync(
             string executionId,
             bool success,
             Dictionary<string, object>? finalMetrics = null,
@@ -250,11 +254,10 @@ namespace Nexo.Core.Domain.Services
             if (!_executions.TryGetValue(executionId, out var execution))
             {
                 _logger.LogWarning("Execution {ExecutionId} not found for completion", executionId);
-                return;
+                return Task.CompletedTask;
             }
 
             execution.EndTime = DateTime.UtcNow;
-            execution.Duration = execution.EndTime - execution.StartTime;
             execution.Status = success ? ExecutionStatus.Completed : ExecutionStatus.Failed;
             execution.ErrorMessage = errorMessage;
 
@@ -280,35 +283,36 @@ namespace Nexo.Core.Domain.Services
 
             _logger.LogInformation("Completed execution {ExecutionId}: Success={Success}, Duration={Duration}ms", 
                 executionId, success, execution.Duration.TotalMilliseconds);
+            return Task.CompletedTask;
         }
 
-        public async Task<AuditExecution> GetExecutionAsync(
+        public Task<AuditExecution> GetExecutionAsync(
             string executionId,
             CancellationToken cancellationToken = default)
         {
             if (_executions.TryGetValue(executionId, out var execution))
             {
-                return await Task.FromResult(execution);
+                return Task.FromResult(execution);
             }
 
-            return await Task.FromResult(new AuditExecution { Id = executionId });
+            return Task.FromResult(new AuditExecution { Id = executionId });
         }
 
-        public async Task<List<AuditEvent>> GetExecutionEventsAsync(
+        public Task<List<AuditEvent>> GetExecutionEventsAsync(
             string executionId,
             CancellationToken cancellationToken = default)
         {
             var events = _events.Where(e => e.ExecutionId == executionId).ToList();
-            return await Task.FromResult(events);
+            return Task.FromResult(events);
         }
 
-        public async Task<AuditSummary> GetExecutionSummaryAsync(
+        public Task<AuditSummary> GetExecutionSummaryAsync(
             string executionId,
             CancellationToken cancellationToken = default)
         {
             if (!_executions.TryGetValue(executionId, out var execution))
             {
-                return await Task.FromResult(new AuditSummary { ExecutionId = executionId });
+                return Task.FromResult(new AuditSummary { ExecutionId = executionId });
             }
 
             var events = _events.Where(e => e.ExecutionId == executionId).ToList();
@@ -317,7 +321,7 @@ namespace Nexo.Core.Domain.Services
             var policyDecisions = events.Count(e => e.EventType == AuditEventType.PolicyDecision);
             var providerDecisions = events.Count(e => e.EventType == AuditEventType.ProviderDecision);
 
-            return await Task.FromResult(new AuditSummary
+            return Task.FromResult(new AuditSummary
             {
                 ExecutionId = executionId,
                 OperationType = execution.OperationType,

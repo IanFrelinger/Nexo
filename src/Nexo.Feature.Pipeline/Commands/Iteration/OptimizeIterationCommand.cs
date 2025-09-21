@@ -97,7 +97,7 @@ public class OptimizeIterationCommand : ICommand<OptimizeIterationRequest, Optim
         }
     }
     
-    private async Task<IterationCodeAnalysis> AnalyzeIterationCode(string code, PlatformTarget platform)
+    private Task<IterationCodeAnalysis> AnalyzeIterationCode(string code, PlatformTarget platform)
     {
         // Simple analysis - in a real implementation, this would use more sophisticated parsing
         var analysis = new IterationCodeAnalysis
@@ -112,7 +112,7 @@ public class OptimizeIterationCommand : ICommand<OptimizeIterationRequest, Optim
             CurrentStrategy = DetectCurrentStrategy(code)
         };
         
-        return analysis;
+        return Task.FromResult(analysis);
     }
     
     private int EstimateDataSizeFromCode(string code)

@@ -42,6 +42,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceOptimizationInitializationResult> InitializeAsync(PlatformType platformType, CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Initializing performance optimization for platform: {PlatformType}", platformType);
 
@@ -91,6 +92,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceTuningResult> ApplyPerformanceTuningAsync(PerformanceTuningProfile tuningProfile, CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Applying performance tuning profile: {ProfileName}", tuningProfile.Name);
 
@@ -142,6 +144,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<MemoryOptimizationResult> OptimizeMemoryAsync(MemoryOptimizationStrategy optimizationStrategy, CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Optimizing memory with strategy: {StrategyName}", optimizationStrategy.Name);
 
@@ -191,6 +194,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<BatteryOptimizationResult> OptimizeBatteryLifeAsync(BatteryOptimizationStrategy batteryStrategy, CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Optimizing battery life with strategy: {StrategyName}", batteryStrategy.Name);
 
@@ -234,6 +238,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceMonitoringResult> StartPerformanceMonitoringAsync(PerformanceMonitoringConfig monitoringConfig, CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogInformation("Starting performance monitoring with config: {ConfigName}", monitoringConfig.Name);
 
             try
@@ -282,6 +287,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceMonitoringResult> StopPerformanceMonitoringAsync(CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogInformation("Stopping performance monitoring");
 
             try
@@ -322,6 +328,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceMetricsResult> GetPerformanceMetricsAsync(CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogDebug("Getting current performance metrics");
 
             try
@@ -347,6 +354,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceAnalysisResult> AnalyzePerformanceAsync(CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogInformation("Analyzing performance");
 
             try
@@ -383,6 +391,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceRecommendationsResult> GetPerformanceRecommendationsAsync(CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogDebug("Getting performance recommendations");
 
             try
@@ -416,6 +425,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<AutomaticOptimizationResult> ApplyAutomaticOptimizationsAsync(CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Applying automatic performance optimizations");
 
@@ -474,6 +484,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceValidationResult> ValidateOptimizationSettingsAsync(PerformanceOptimizationSettings settings, CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogDebug("Validating performance optimization settings");
 
             try
@@ -516,6 +527,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceResetResult> ResetToDefaultsAsync(CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogInformation("Resetting performance optimization to defaults");
 
             try
@@ -563,6 +575,7 @@ namespace Nexo.Feature.Platform.Services
 
         public async Task<PerformanceDisposalResult> DisposeAsync(CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             _logger.LogInformation("Disposing performance optimization");
 
             try
@@ -606,6 +619,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task InitializeTuningProfilesAsync(PlatformType platformType, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             switch (platformType)
             {
                 case PlatformType.Windows:
@@ -685,6 +699,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task InitializeMemoryStrategiesAsync(PlatformType platformType, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             _memoryStrategies["GarbageCollection"] = new MemoryOptimizationStrategy
             {
                 Name = "GarbageCollection",
@@ -706,6 +721,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task InitializeBatteryStrategiesAsync(PlatformType platformType, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             _batteryStrategies["PowerSaving"] = new BatteryOptimizationStrategy
             {
                 Name = "PowerSaving",
@@ -727,6 +743,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<List<string>> ApplyPlatformTuningAsync(PerformanceTuningProfile profile, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var optimizations = new List<string>();
 
             switch (profile.Type)
@@ -750,6 +767,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<long> GetCurrentMemoryUsageAsync(CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             // Simulate memory usage measurement
             await Task.Delay(10, cancellationToken);
             return GC.GetTotalMemory(false);
@@ -757,6 +775,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<List<string>> ApplyMemoryOptimizationAsync(MemoryOptimizationStrategy strategy, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var optimizations = new List<string>();
 
             switch (strategy.Type)
@@ -778,6 +797,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<List<string>> ApplyBatteryOptimizationAsync(BatteryOptimizationStrategy strategy, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var optimizations = new List<string>();
 
             switch (strategy.Type)
@@ -816,6 +836,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task CollectMetricsAsync(CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             if (!_isMonitoring || _monitoringConfig == null) return;
 
             try
@@ -837,6 +858,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<PerformanceMetricsResult> CollectCurrentMetricsAsync(CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             // Simulate metrics collection
             await Task.Delay(10, cancellationToken);
 
@@ -856,6 +878,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<List<PerformanceBottleneck>> IdentifyBottlenecksAsync(CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var bottlenecks = new List<PerformanceBottleneck>();
 
             // Simulate bottleneck identification
@@ -879,6 +902,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<List<PerformanceRecommendation>> GenerateRecommendationsAsync(List<PerformanceBottleneck> bottlenecks, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var recommendations = new List<PerformanceRecommendation>();
 
             foreach (var bottleneck in bottlenecks)
@@ -924,6 +948,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<List<PerformanceRecommendation>> GeneratePlatformRecommendationsAsync(CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var recommendations = new List<PerformanceRecommendation>();
 
             switch (_currentPlatform)
@@ -968,6 +993,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task<List<string>> DetermineAutomaticOptimizationsAsync(CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var optimizations = new List<string>();
 
             // Determine optimizations based on current conditions
@@ -993,6 +1019,7 @@ namespace Nexo.Feature.Platform.Services
 
         private async Task ApplyAutomaticOptimizationAsync(string optimization, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             // Simulate automatic optimization application
             await Task.Delay(50, cancellationToken);
             _logger.LogDebug("Applied automatic optimization: {Optimization}", optimization);

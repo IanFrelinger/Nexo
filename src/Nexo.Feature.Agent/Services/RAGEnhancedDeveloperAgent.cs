@@ -93,6 +93,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessCodeReviewAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var code = request.Context.ContainsKey("code") ? request.Context["code"]?.ToString() ?? string.Empty : request.Content;
@@ -165,6 +166,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessBugFixAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var errorMessage = request.Context.ContainsKey("error") ? request.Context["error"]?.ToString() ?? string.Empty : request.Content;
@@ -207,6 +209,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessFeatureImplementationAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var featureDescription = request.Context.ContainsKey("feature") ? request.Context["feature"]?.ToString() ?? string.Empty : request.Content;
@@ -250,6 +253,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessAnalysisAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var analysisTarget = request.Context.ContainsKey("target") ? request.Context["target"]?.ToString() ?? string.Empty : request.Content;

@@ -41,7 +41,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Runs a test action with Unity-specific considerations.
         /// </summary>
-        public static void RunUnityTest(Action testAction, ILogger logger = null)
+        public static void RunUnityTest(Action testAction, ILogger? logger = null)
         {
             if (RuntimeDetection.CurrentRuntime != RuntimeDetection.RuntimeType.Unity)
             {
@@ -55,13 +55,13 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
             try
             {
                 // Unity-specific setup
-                SetupUnityTestEnvironment(logger);
+                SetupUnityTestEnvironment(logger!);
                 
                 // Execute the test
                 testAction();
                 
                 // Unity-specific cleanup
-                CleanupUnityTestEnvironment(logger);
+                CleanupUnityTestEnvironment(logger!);
             }
             catch (Exception ex)
             {
@@ -73,7 +73,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Runs an async test action with Unity-specific considerations.
         /// </summary>
-        public static async Task RunUnityTestAsync(Func<Task> testAction, ILogger logger = null)
+        public static async Task RunUnityTestAsync(Func<Task> testAction, ILogger? logger = null)
         {
             if (RuntimeDetection.CurrentRuntime != RuntimeDetection.RuntimeType.Unity)
             {
@@ -87,13 +87,13 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
             try
             {
                 // Unity-specific setup
-                SetupUnityTestEnvironment(logger);
+                SetupUnityTestEnvironment(logger!);
                 
                 // Execute the test
                 await testAction();
                 
                 // Unity-specific cleanup
-                CleanupUnityTestEnvironment(logger);
+                CleanupUnityTestEnvironment(logger!);
             }
             catch (Exception ex)
             {
@@ -105,7 +105,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Runs a coroutine-style test for Unity.
         /// </summary>
-        public static IEnumerator RunUnityCoroutineTest(Func<IEnumerator> testCoroutine, ILogger logger = null)
+        public static IEnumerator RunUnityCoroutineTest(Func<IEnumerator> testCoroutine, ILogger? logger = null)
         {
             if (RuntimeDetection.CurrentRuntime != RuntimeDetection.RuntimeType.Unity)
             {
@@ -118,13 +118,13 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
             logger?.LogInformation("Running Unity coroutine test");
             
             // Unity-specific setup
-            SetupUnityTestEnvironment(logger);
+            SetupUnityTestEnvironment(logger!);
             
             // Execute the coroutine
             yield return testCoroutine();
             
             // Unity-specific cleanup
-            CleanupUnityTestEnvironment(logger);
+            CleanupUnityTestEnvironment(logger!);
         }
 
         /// <summary>

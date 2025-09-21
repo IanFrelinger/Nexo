@@ -94,6 +94,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessFeatureCodeGenerationAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var featureDescription = request.Context.ContainsKey("feature") ? request.Context["feature"]?.ToString() ?? string.Empty : request.Content;
@@ -151,6 +152,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessTestCodeGenerationAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var testTarget = request.Context.ContainsKey("target") ? request.Context["target"]?.ToString() ?? string.Empty : request.Content;
@@ -210,6 +212,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessDocumentationGenerationAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var documentationTarget = request.Context.ContainsKey("target") ? request.Context["target"]?.ToString() ?? string.Empty : request.Content;
@@ -274,6 +277,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessCodeImprovementAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var codeToImprove = request.Context.ContainsKey("code") ? request.Context["code"]?.ToString() ?? string.Empty : request.Content;

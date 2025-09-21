@@ -33,6 +33,7 @@ public class AIIntegrationTests : IDisposable
     [Fact]
     public async Task AIServices_ShouldBeRegistered()
     {
+        await Task.CompletedTask;
         // Act & Assert
         _serviceProvider.GetService<IModelOrchestrator>().Should().NotBeNull();
         _serviceProvider.GetService<IIterationCodeGenerator>().Should().NotBeNull();

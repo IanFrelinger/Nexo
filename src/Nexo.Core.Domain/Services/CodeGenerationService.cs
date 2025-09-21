@@ -360,6 +360,7 @@ namespace {namespaceName}
     public class CodeGenerationOptions
     {
         public string AssemblyName { get; set; } = "GeneratedAssembly";
+        public string TargetFramework { get; set; } = "net8.0";
         public OutputKind OutputKind { get; set; } = OutputKind.DynamicallyLinkedLibrary;
         public OptimizationLevel OptimizationLevel { get; set; } = OptimizationLevel.Release;
         public Platform Platform { get; set; } = Platform.AnyCpu;

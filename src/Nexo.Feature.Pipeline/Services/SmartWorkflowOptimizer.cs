@@ -58,7 +58,7 @@ namespace Nexo.Feature.Pipeline.Services
         /// <summary>
         /// Analyzes the performance of a pipeline execution and provides optimization recommendations.
         /// </summary>
-        public async Task<OptimizationRecommendation> AnalyzePerformanceAsync(
+        public Task<OptimizationRecommendation> AnalyzePerformanceAsync(
             PipelineExecutionResult result,
             CancellationToken cancellationToken = default)
         {
@@ -80,18 +80,18 @@ namespace Nexo.Feature.Pipeline.Services
                 };
 
                 _logger.LogInformation("Generated performance recommendation for execution {ExecutionId}", result.ExecutionId);
-                return recommendation;
+                return Task.FromResult(recommendation);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing performance for execution {ExecutionId}", result.ExecutionId);
-                return new OptimizationRecommendation
+                return Task.FromResult(new OptimizationRecommendation
                 {
                     RecommendationId = Guid.NewGuid().ToString(),
                     Description = "Error occurred during analysis",
                     ExpectedPerformanceGain = 0.0,
                     Details = new Dictionary<string, object>()
-                };
+                });
             }
         }
 

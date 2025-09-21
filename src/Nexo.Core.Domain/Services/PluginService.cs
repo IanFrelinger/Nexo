@@ -193,7 +193,7 @@ namespace Nexo.Core.Domain.Services
             }
         }
 
-        public async Task<bool> ValidatePluginAsync(
+        public Task<bool> ValidatePluginAsync(
             string pluginPath,
             CancellationToken cancellationToken = default)
         {
@@ -201,7 +201,7 @@ namespace Nexo.Core.Domain.Services
             {
                 if (!File.Exists(pluginPath))
                 {
-                    return false;
+                    return Task.FromResult(false);
                 }
 
                 // Try to load assembly
@@ -214,7 +214,7 @@ namespace Nexo.Core.Domain.Services
                 if (!hasPluginInterface)
                 {
                     _logger.LogWarning("Assembly {PluginPath} does not contain valid plugin implementations", pluginPath);
-                    return false;
+                    return Task.FromResult(false);
                 }
 
                 // Check for required dependencies
@@ -224,15 +224,15 @@ namespace Nexo.Core.Domain.Services
                 if (!hasRequiredDependencies)
                 {
                     _logger.LogWarning("Assembly {PluginPath} does not reference required dependencies", pluginPath);
-                    return false;
+                    return Task.FromResult(false);
                 }
 
-                return true;
+                return Task.FromResult(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to validate plugin {PluginPath}", pluginPath);
-                return false;
+                return Task.FromResult(false);
             }
         }
 

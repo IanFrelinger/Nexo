@@ -31,6 +31,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             if (applicationLogic == null)
                 throw new ArgumentNullException(nameof(applicationLogic));
             
@@ -122,6 +123,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             if (applicationLogic == null)
                 throw new ArgumentNullException(nameof(applicationLogic));
             
@@ -213,6 +215,7 @@ namespace Nexo.Feature.Platform.Services
             WebAssemblyOptions wasmOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting WebAssembly optimization");
 
@@ -251,6 +254,7 @@ namespace Nexo.Feature.Platform.Services
             ProgressiveWebAppOptions pwaOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting Progressive Web App features generation");
 
@@ -298,6 +302,7 @@ namespace Nexo.Feature.Platform.Services
             WebUIPatternOptions uiPatternOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting web UI patterns generation");
 
@@ -335,6 +340,7 @@ namespace Nexo.Feature.Platform.Services
             WebPerformanceOptions performanceOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting web performance optimization");
 
@@ -372,6 +378,7 @@ namespace Nexo.Feature.Platform.Services
             WebAppConfigOptions configOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting web app configuration generation");
 
@@ -409,6 +416,7 @@ namespace Nexo.Feature.Platform.Services
             WebValidationOptions validationOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting web code validation");
 
@@ -548,6 +556,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<JavaScriptFile>();
 
             // Generate main App component
@@ -579,6 +588,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<JavaScriptFile>();
 
             // Generate main App component
@@ -610,6 +620,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<TypeScriptFile>();
 
             // Generate TypeScript interfaces
@@ -629,6 +640,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<TypeScriptFile>();
 
             // Generate Vue TypeScript interfaces
@@ -648,6 +660,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<WebAssemblyFile>();
 
             // Generate WebAssembly module
@@ -668,6 +681,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var patterns = new List<WebUIPattern>();
 
             // Add service worker pattern
@@ -696,6 +710,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var patterns = new List<WebUIPattern>();
 
             // Add component pattern
@@ -727,6 +742,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var optimizations = new List<WebPerformanceOptimization>();
 
             // Add code splitting optimization
@@ -757,6 +773,7 @@ namespace Nexo.Feature.Platform.Services
             WebGenerationOptions webOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             return new WebAppConfiguration
             {
                 AppName = "GeneratedWebApp",

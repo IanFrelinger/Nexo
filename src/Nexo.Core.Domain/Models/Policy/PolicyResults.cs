@@ -45,6 +45,12 @@ namespace Nexo.Core.Domain.Models.Policy
         public QualityPolicyResult? QualityResult { get; set; }
         public List<string> Errors { get; set; } = new List<string>();
         public string ReportPath { get; set; } = string.Empty;
+        public string ErrorMessage { get; set; } = string.Empty;
+        public string ExecutionId { get; set; } = string.Empty;
+        public bool RequiresApproval { get; set; } = false;
+        public string ApprovalRequestId { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public long ExecutionTimeMs { get; set; } = 0;
     }
 
     /// <summary>

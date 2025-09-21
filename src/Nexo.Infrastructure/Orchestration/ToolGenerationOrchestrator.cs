@@ -131,6 +131,16 @@ namespace Nexo.Infrastructure.Orchestration
 
                 // Step 5: Load plugin from assembly
                 _logger.LogDebug("Step 5: Loading plugin from assembly");
+                if (compilationResult.Assembly == null)
+                {
+                    return new GeneratedTool
+                    {
+                        Name = generatedCode.ToolName,
+                        IsReady = false,
+                        Description = "Compilation succeeded but no assembly was generated"
+                    };
+                }
+                
                 var pluginLoadResult = await _pluginLoader.LoadPluginAsync(compilationResult.Assembly, generatedCode.ToolName);
                 
                 if (!pluginLoadResult.IsSuccess || pluginLoadResult.Plugin == null)

@@ -90,7 +90,23 @@ namespace Nexo.Infrastructure.Evolution
 
                 _logger.LogDebug("Evolved code compiled successfully for tool: {ToolName}", toolName);
 
-                // Step 5: Load evolved plugin
+                // Step 5: Get current version and increment
+                var currentTool = await _toolRepo.GetToolAsync(toolName, cancellationToken);
+                var newVersion = (currentTool?.Version ?? 1) + 1;
+
+                // Step 6: Load evolved plugin
+                if (compilationResult.Assembly == null)
+                {
+                    return new EvolvedTool
+                    {
+                        Name = toolName,
+                        Version = newVersion,
+                        EvolutionDescription = modification,
+                        Success = false,
+                        Errors = new[] { "Compilation succeeded but no assembly was generated" }
+                    };
+                }
+                
                 var pluginLoadResult = await _pluginLoader.LoadPluginAsync(compilationResult.Assembly, toolName);
                 
                 if (!pluginLoadResult.IsSuccess || pluginLoadResult.Plugin == null)
@@ -108,10 +124,6 @@ namespace Nexo.Infrastructure.Evolution
                 }
 
                 _logger.LogDebug("Evolved plugin loaded successfully for tool: {ToolName}", toolName);
-
-                // Step 6: Get current version and increment
-                var currentTool = await _toolRepo.GetToolAsync(toolName, cancellationToken);
-                var newVersion = (currentTool?.Version ?? 1) + 1;
 
                 // Step 7: Save new version
                 await _toolRepo.SaveVersionAsync(toolName, compilationResult.FixedSourceCode ?? evolvedCode.SourceCode, newVersion, cancellationToken);

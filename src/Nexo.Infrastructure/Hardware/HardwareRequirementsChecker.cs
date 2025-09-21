@@ -402,6 +402,7 @@ namespace Nexo.Infrastructure.Hardware
 
         private async Task GetSystemInformationAsync(SystemCapabilities capabilities)
         {
+            await Task.CompletedTask;
             try
             {
                 // Get memory information

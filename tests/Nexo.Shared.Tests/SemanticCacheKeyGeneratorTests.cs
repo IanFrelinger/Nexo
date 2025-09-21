@@ -48,7 +48,7 @@ namespace Nexo.Shared.Tests
         [Fact]
         public void NullOrEmptyInput_ProducesValidKey()
         {
-            var key1 = SemanticCacheKeyGenerator.Generate(null);
+            var key1 = SemanticCacheKeyGenerator.Generate(null!);
             var key2 = SemanticCacheKeyGenerator.Generate("");
             Assert.False(string.IsNullOrWhiteSpace(key1));
             Assert.False(string.IsNullOrWhiteSpace(key2));

@@ -49,7 +49,7 @@ namespace Nexo.Core.Domain.Services
             try
             {
                 // Check if policy requires approval
-                if (policy.RequiresApproval)
+                if (policy.Meta.RequiresApproval)
                 {
                     return await HandlePolicyWithApproval(executionId, code, policy, cancellationToken);
                 }
@@ -211,7 +211,7 @@ namespace Nexo.Core.Domain.Services
                 SafetyResult = safetyResult,
                 QualityResult = qualityResult,
                 ExecutionId = executionId,
-                ExecutionTimeMs = (state.CompletedAt - state.StartTime).TotalMilliseconds
+                ExecutionTimeMs = state.CompletedAt.HasValue ? (long)(state.CompletedAt.Value - state.StartTime).TotalMilliseconds : 0
             };
         }
     }

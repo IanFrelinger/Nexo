@@ -294,6 +294,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckFilesystemRules(string code, SafetyPolicy policy, SafetyPolicyResult result)
         {
+            await Task.CompletedTask;
             // Check for dangerous filesystem operations
             var dangerousPatterns = new[]
             {
@@ -322,6 +323,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckProcessRules(string code, SafetyPolicy policy, SafetyPolicyResult result)
         {
+            await Task.CompletedTask;
             // Check for dangerous process operations
             var dangerousPatterns = new[]
             {
@@ -350,6 +352,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckNetworkRules(string code, SafetyPolicy policy, SafetyPolicyResult result)
         {
+            await Task.CompletedTask;
             // Check for insecure network operations
             var insecurePatterns = new[]
             {
@@ -377,6 +380,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckContentRules(string code, SafetyPolicy policy, SafetyPolicyResult result)
         {
+            await Task.CompletedTask;
             // Check for secret patterns
             var secretPatterns = new[]
             {
@@ -404,6 +408,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckLicenseRules(string code, SafetyPolicy policy, SafetyPolicyResult result)
         {
+            await Task.CompletedTask;
             // This would check for license compliance
             // For now, we'll just log that it's not implemented
             _logger.LogDebug("License compliance checking not implemented");
@@ -411,6 +416,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckCompileGate(string code, CompileGate gate, QualityPolicyResult result)
         {
+            await Task.CompletedTask;
             // This would check if code compiles
             // For now, we'll assume it compiles
             result.GateScores["compile"] = 1.0;
@@ -418,6 +424,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckTestGate(string code, TestGate gate, QualityPolicyResult result)
         {
+            await Task.CompletedTask;
             // This would check test coverage
             // For now, we'll assume 80% coverage
             result.GateScores["tests"] = 0.8;
@@ -425,6 +432,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckStyleGate(string code, StyleGate gate, QualityPolicyResult result)
         {
+            await Task.CompletedTask;
             // This would check code style
             // For now, we'll assume good style
             result.GateScores["style"] = 0.9;
@@ -432,6 +440,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckComplexityGate(string code, ComplexityGate gate, QualityPolicyResult result)
         {
+            await Task.CompletedTask;
             // This would check cyclomatic complexity
             // For now, we'll assume good complexity
             result.GateScores["complexity"] = 0.85;
@@ -439,6 +448,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task CheckDependencyGate(string code, DependencyGate gate, QualityPolicyResult result)
         {
+            await Task.CompletedTask;
             // This would check dependencies
             // For now, we'll assume good dependencies
             result.GateScores["dependencies"] = 0.9;
@@ -479,6 +489,7 @@ namespace Nexo.Infrastructure.Policy
 
         private async Task<string> GenerateReportAsync(PolicyDefinition policy, PolicyExecutionResult result, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var reportPath = Path.Combine(policy.Outputs.ReportDir, $"policy-report-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json");
             
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);

@@ -215,7 +215,7 @@ namespace Nexo.Feature.Pipeline.Services
         /// <summary>
         /// Updates user preferences based on feedback analysis.
         /// </summary>
-        public async Task UpdateUserPreferencesAsync(
+        public Task UpdateUserPreferencesAsync(
             string userId,
             Dictionary<string, object> feedbackAnalysis,
             CancellationToken cancellationToken = default)
@@ -249,6 +249,8 @@ namespace Nexo.Feature.Pipeline.Services
                 _logger.LogError(ex, "Error updating user preferences for user {UserId}", userId);
                 throw;
             }
+            
+            return Task.CompletedTask;
         }
 
         /// <summary>

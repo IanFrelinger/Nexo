@@ -31,6 +31,7 @@ namespace Nexo.Feature.Platform.Services
             IOSGenerationOptions iosOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             if (applicationLogic == null)
                 throw new ArgumentNullException(nameof(applicationLogic));
             
@@ -116,6 +117,7 @@ namespace Nexo.Feature.Platform.Services
             CoreDataOptions coreDataOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting Core Data integration");
 
@@ -153,6 +155,7 @@ namespace Nexo.Feature.Platform.Services
             MetalGraphicsOptions metalOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting Metal graphics optimization");
 
@@ -191,6 +194,7 @@ namespace Nexo.Feature.Platform.Services
             IOSUIPatternOptions uiPatternOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting iOS UI pattern generation");
 
@@ -228,6 +232,7 @@ namespace Nexo.Feature.Platform.Services
             IOSPerformanceOptions performanceOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting iOS performance optimization");
 
@@ -265,6 +270,7 @@ namespace Nexo.Feature.Platform.Services
             IOSAppConfigOptions configOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting iOS app configuration generation");
 
@@ -302,6 +308,7 @@ namespace Nexo.Feature.Platform.Services
             IOSValidationOptions validationOptions,
             CancellationToken cancellationToken = default)
         {
+            await Task.CompletedTask;
             var stopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Starting iOS code validation");
 
@@ -401,6 +408,7 @@ namespace Nexo.Feature.Platform.Services
             IOSGenerationOptions iosOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<SwiftUIFile>();
 
             // Generate ContentView
@@ -434,6 +442,7 @@ namespace Nexo.Feature.Platform.Services
             IOSGenerationOptions iosOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<CoreDataFile>();
 
             // Generate Core Data model
@@ -454,6 +463,7 @@ namespace Nexo.Feature.Platform.Services
             IOSGenerationOptions iosOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var files = new List<MetalFile>();
 
             // Generate basic Metal shader if graphics features are enabled
@@ -477,6 +487,7 @@ namespace Nexo.Feature.Platform.Services
             IOSGenerationOptions iosOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var optimizations = new List<IOSPerformanceOptimization>();
 
             // Add memory optimization
@@ -507,6 +518,7 @@ namespace Nexo.Feature.Platform.Services
             IOSGenerationOptions iosOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var patterns = new List<IOSUIPattern>();
 
             // Add navigation pattern
@@ -538,6 +550,7 @@ namespace Nexo.Feature.Platform.Services
             IOSGenerationOptions iosOptions,
             CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             return new IOSAppConfiguration
             {
                 AppName = "GeneratedIOSApp",

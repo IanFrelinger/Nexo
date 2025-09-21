@@ -15,21 +15,24 @@ namespace Nexo.Feature.AI.Services
     public class AiModeService : IAiModeService
     {
         private readonly ILogger<AiModeService> _logger;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly IAiConfigurationService _configurationService;
         private readonly Dictionary<AiMode, IAiModeHandler> _modeHandlers;
 
         public AiModeService(
             ILogger<AiModeService> logger,
+            ILoggerFactory loggerFactory,
             IAiConfigurationService configurationService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _configurationService = configurationService ?? throw new ArgumentNullException(nameof(configurationService));
             _modeHandlers = new Dictionary<AiMode, IAiModeHandler>
             {
-                { AiMode.Off, new OffModeHandler(logger) },
-                { AiMode.Assist, new AssistModeHandler(logger) },
-                { AiMode.Hybrid, new HybridModeHandler(logger) },
-                { AiMode.Embedded, new EmbeddedModeHandler(logger) }
+                { AiMode.Off, new OffModeHandler(_loggerFactory.CreateLogger<OffModeHandler>()) },
+                { AiMode.Assist, new AssistModeHandler(_loggerFactory.CreateLogger<AssistModeHandler>()) },
+                { AiMode.Hybrid, new HybridModeHandler(_loggerFactory.CreateLogger<HybridModeHandler>()) },
+                { AiMode.Embedded, new EmbeddedModeHandler(_loggerFactory.CreateLogger<EmbeddedModeHandler>()) }
             };
         }
 
@@ -306,20 +309,20 @@ namespace Nexo.Feature.AI.Services
         public bool CloudAiUsed { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
     }
-}
 
-/// <summary>
-/// Interface for AI mode service
-/// </summary>
-public interface IAiModeService
-{
-    Task<AiMode> GetCurrentModeAsync(CancellationToken cancellationToken = default);
-    Task<bool> SetModeAsync(AiMode mode, CancellationToken cancellationToken = default);
-    Task<bool> CanMakeNetworkCallsAsync(CancellationToken cancellationToken = default);
-    Task<bool> RequiresAiProcessingAsync(CancellationToken cancellationToken = default);
-    Task<bool> SupportsScaffoldGenerationAsync(CancellationToken cancellationToken = default);
-    Task<AiModeResult> ProcessRequestAsync(
-        string request,
-        Dictionary<string, object> context,
-        CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Interface for AI mode service
+    /// </summary>
+    public interface IAiModeService
+    {
+        Task<AiMode> GetCurrentModeAsync(CancellationToken cancellationToken = default);
+        Task<bool> SetModeAsync(AiMode mode, CancellationToken cancellationToken = default);
+        Task<bool> CanMakeNetworkCallsAsync(CancellationToken cancellationToken = default);
+        Task<bool> RequiresAiProcessingAsync(CancellationToken cancellationToken = default);
+        Task<bool> SupportsScaffoldGenerationAsync(CancellationToken cancellationToken = default);
+        Task<AiModeResult> ProcessRequestAsync(
+            string request,
+            Dictionary<string, object> context,
+            CancellationToken cancellationToken = default);
+    }
 }

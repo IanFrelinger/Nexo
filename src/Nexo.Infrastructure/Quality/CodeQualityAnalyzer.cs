@@ -227,6 +227,7 @@ namespace Nexo.Infrastructure.Quality
 
         private async Task<double> AnalyzeReadabilityAsync(string code, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             // Simple readability analysis based on code structure
             var score = 10.0;
             
@@ -250,6 +251,7 @@ namespace Nexo.Infrastructure.Quality
 
         private async Task<double> AnalyzeDocumentationAsync(string code, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             var score = 0.0;
             var lines = code.Split('\n');
             var totalLines = lines.Length;

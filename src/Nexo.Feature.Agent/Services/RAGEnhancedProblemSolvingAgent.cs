@@ -90,6 +90,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessProblemAnalysisAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var problemDescription = request.Context.ContainsKey("problem") ? request.Context["problem"]?.ToString() ?? string.Empty : request.Content;
@@ -137,6 +138,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessProblemResolutionAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var problemDetails = request.Context.ContainsKey("problem") ? request.Context["problem"]?.ToString() ?? string.Empty : request.Content;
@@ -192,6 +194,7 @@ namespace Nexo.Feature.Agent.Services
 
         private async Task<AgentResponse> ProcessCollaborativeProblemSolvingAsync(AgentRequest request, CancellationToken cancellationToken)
         {
+            await Task.CompletedTask;
             try
             {
                 var collaborationContext = request.Context.ContainsKey("collaboration") ? request.Context["collaboration"]?.ToString() ?? string.Empty : request.Content;
