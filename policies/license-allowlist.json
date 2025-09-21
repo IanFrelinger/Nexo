@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "License Allowlist Configuration",
+  "description": "Configuration for allowed and denied software licenses in the project",
+  "type": "object",
+  "properties": {
+    "allowed": {
+      "type": "array",
+      "description": "List of allowed license identifiers",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "MIT",
+        "Apache-2.0",
+        "BSD-2-Clause",
+        "BSD-3-Clause",
+        "ISC",
+        "Unlicense",
+        "0BSD",
+        "CC0-1.0",
+        "WTFPL"
+      ]
+    },
+    "denied": {
+      "type": "array",
+      "description": "List of explicitly denied license identifiers",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "GPL-3.0-only",
+        "GPL-3.0-or-later",
+        "AGPL-3.0-only",
+        "AGPL-3.0-or-later",
+        "GPL-2.0-only",
+        "GPL-2.0-or-later",
+        "LGPL-2.1-only",
+        "LGPL-2.1-or-later",
+        "LGPL-3.0-only",
+        "LGPL-3.0-or-later"
+      ]
+    },
+    "exceptions": {
+      "type": "array",
+      "description": "List of packages with explicit license exceptions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "package": {
+            "type": "string",
+            "description": "Package name or identifier"
+          },
+          "version": {
+            "type": "string",
+            "description": "Package version (optional, supports wildcards)"
+          },
+          "license": {
+            "type": "string",
+            "description": "License identifier that would normally be denied"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the exception"
+          },
+          "approvedBy": {
+            "type": "string",
+            "description": "Person or team who approved the exception"
+          },
+          "approvedDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the exception was approved"
+          }
+        },
+        "required": ["package", "license", "reason", "approvedBy", "approvedDate"]
+      }
+    },
+    "strictMode": {
+      "type": "boolean",
+      "description": "If true, only explicitly allowed licenses are permitted",
+      "default": false
+    },
+    "allowUnknown": {
+      "type": "boolean",
+      "description": "If true, packages with unknown licenses are allowed",
+      "default": false
+    }
+  },
+  "required": ["allowed", "denied", "exceptions"],
+  "additionalProperties": false
+}

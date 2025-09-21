@@ -256,6 +256,9 @@ namespace Nexo.CLI
             // Add pipeline services
             services.AddPipelineServices();
 
+            // Add FeatureSpec validation services
+            services.AddTransient<FeatureSpecValidator>();
+
             return services;
         }
 

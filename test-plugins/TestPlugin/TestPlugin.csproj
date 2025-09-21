@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="../../src/Nexo.Core/Nexo.Core.csproj" />
   </ItemGroup>
 
 </Project>

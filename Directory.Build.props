@@ -23,6 +23,18 @@
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     
+    <!-- Repository information -->
+    <RepositoryUrl>https://github.com/$(MSBuildThisFileDirectoryName)</RepositoryUrl>
+    <RepositoryCommit>$(GitCommitId)</RepositoryCommit>
+    <RepositoryType>git</RepositoryType>
+    
+    <!-- Package metadata -->
+    <PackageTags>nexo;ai;development;orchestration;cli;dotnet</PackageTags>
+    <PackageProjectUrl>https://github.com/$(MSBuildThisFileDirectoryName)</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    
     <!-- Build optimization -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
@@ -69,6 +81,16 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
   </ItemGroup>
+
+  <!-- Git commit ID for repository information -->
+  <Target Name="SetGitCommitId" BeforeTargets="GetAssemblyVersion">
+    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitId" />
+    </Exec>
+    <PropertyGroup>
+      <GitCommitId Condition="'$(GitCommitId)' == ''">unknown</GitCommitId>
+    </PropertyGroup>
+  </Target>
 
   <!-- Documentation generation for public libraries in src -->
   <PropertyGroup Condition="'$(IsTestProject)' != 'true'">

@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "FeatureSpec Schema",
+  "description": "Schema for validating FeatureSpec YAML/JSON files in the Nexo project",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "The name of the feature"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9\\-]+)?(\\+[a-zA-Z0-9\\-]+)?$",
+      "description": "The version of the feature (semantic versioning)"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "description": "Array of capabilities this feature provides"
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Dictionary of configuration parameters"
+    },
+    "policies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Array of policies that apply to this feature"
+    }
+  },
+  "required": [
+    "name",
+    "version",
+    "capabilities",
+    "parameters",
+    "policies"
+  ],
+  "additionalProperties": false
+}

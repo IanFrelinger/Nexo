@@ -74,6 +74,41 @@ docker run --rm --network none nexo-tests nexo verify tests/specs --mode off
 
 See [Verification Documentation](docs/verification.md) for detailed usage and configuration.
 
+## CLI Installation
+
+Install the Nexo CLI as a .NET global tool:
+
+```bash
+# Install from local package
+dotnet tool install --global Nexo.CLI --add-source ./nupkgs
+
+# Verify installation
+nexo --version
+```
+
+### Pipeline Run Command
+
+Execute pipelines with the new `pipeline run` command:
+
+```bash
+# Execute a pipeline with a request file
+nexo pipeline run --request ./examples/HelloWorld.yaml
+
+# Execute with dry-run mode
+nexo pipeline run --request ./examples/HelloWorld.yaml --dry-run
+
+# Execute with custom output directory
+nexo pipeline run --request ./examples/HelloWorld.yaml --out ./output
+
+# Execute with maximum repair attempts
+nexo pipeline run --request ./examples/HelloWorld.yaml --max-repairs 3
+
+# Execute with stdin input
+cat ./examples/HelloWorld.yaml | nexo pipeline run --stdin
+```
+
+The command supports both JSON and YAML request formats and generates both human-friendly and machine-readable reports.
+
 ## Architecture
 
 ```mermaid

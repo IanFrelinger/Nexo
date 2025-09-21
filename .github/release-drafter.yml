@@ -1,0 +1,97 @@
+name-template: 'Release $RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+      - 'fix'
+  - title: '🔧 Maintenance'
+    labels:
+      - 'maintenance'
+      - 'dependencies'
+      - 'chore'
+  - title: '📚 Documentation'
+    labels:
+      - 'documentation'
+      - 'docs'
+  - title: '🔒 Security'
+    labels:
+      - 'security'
+      - 'vulnerability'
+  - title: '🧪 Testing'
+    labels:
+      - 'test'
+      - 'testing'
+  - title: '🏗️ Build & CI'
+    labels:
+      - 'build'
+      - 'ci'
+      - 'workflow'
+  - title: '📦 Dependencies'
+    labels:
+      - 'dependencies'
+      - 'deps'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+  patch:
+    labels:
+      - 'patch'
+      - 'bug'
+      - 'fix'
+  default: patch
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ## Security
+
+  This release includes:
+  - 🔒 **SBOM Generation**: Software Bill of Materials for all dependencies
+  - 🔐 **Artifact Signing**: All packages and container images are cryptographically signed
+  - 🔍 **Vulnerability Scanning**: Comprehensive security scanning with Trivy
+  - 🛡️ **Supply Chain Security**: Full traceability and verification
+
+  ## Installation
+
+  ### NuGet Package
+  ```bash
+  dotnet tool install --global Nexo.CLI
+  ```
+
+  ### Container Image
+  ```bash
+  docker pull ghcr.io/$OWNER/$REPOSITORY/nexo:latest
+  ```
+
+  ### Verification
+  ```bash
+  # Verify package signatures
+  cosign verify-blob --certificate-identity="*" --certificate-oidc-issuer="*" nexo.nupkg
+
+  # Verify container signatures
+  cosign verify --certificate-identity="*" --certificate-oidc-issuer="*" ghcr.io/$OWNER/$REPOSITORY/nexo:latest
+  ```
+
+  ## SBOM
+
+  Download the Software Bill of Materials from the [workflow artifacts](https://github.com/$OWNER/$REPOSITORY/actions/runs/$RUN_ID):
+  - `sbom.json` - CycloneDX JSON format
+  - `sbom.xml` - CycloneDX XML format
+
+  ## Full Changelog
+
+  $FULL_CHANGELOG

@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Nexo.Core.Contracts;
 using Nexo.Core.Pipeline;
+using Nexo.Core.Configuration;
 
 namespace Nexo.Core.Extensions
 {
@@ -14,9 +16,20 @@ namespace Nexo.Core.Extensions
         /// Adds pipeline services to the service collection.
         /// </summary>
         /// <param name="services">The service collection</param>
+        /// <param name="configuration">Optional configuration section for repair loop options</param>
         /// <returns>The service collection for chaining</returns>
-        public static IServiceCollection AddPipelineServices(this IServiceCollection services)
+        public static IServiceCollection AddPipelineServices(this IServiceCollection services, IConfigurationSection? configuration = null)
         {
+            // Register repair loop configuration
+            if (configuration != null)
+            {
+                services.Configure<RepairLoopOptions>(options => configuration.Bind(options));
+            }
+            else
+            {
+                services.Configure<RepairLoopOptions>(options => { }); // Use defaults
+            }
+
             // Register the pipeline orchestrator as a generic service
             services.AddTransient(typeof(ExtensionPipeline<,>));
 
@@ -52,9 +65,20 @@ namespace Nexo.Core.Extensions
         /// <typeparam name="TRequest">The request type</typeparam>
         /// <typeparam name="TArtifact">The artifact type</typeparam>
         /// <param name="services">The service collection</param>
+        /// <param name="configuration">Optional configuration section for repair loop options</param>
         /// <returns>The service collection for chaining</returns>
-        public static IServiceCollection AddPipelineServices<TRequest, TArtifact>(this IServiceCollection services)
+        public static IServiceCollection AddPipelineServices<TRequest, TArtifact>(this IServiceCollection services, IConfigurationSection? configuration = null)
         {
+            // Register repair loop configuration
+            if (configuration != null)
+            {
+                services.Configure<RepairLoopOptions>(options => configuration.Bind(options));
+            }
+            else
+            {
+                services.Configure<RepairLoopOptions>(options => { }); // Use defaults
+            }
+
             // Register the specific pipeline type
             services.AddTransient<ExtensionPipeline<TRequest, TArtifact>>();
 

@@ -6,6 +6,22 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>12.0</LangVersion>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>nexo</ToolCommandName>
+    <AssemblyTitle>Nexo CLI</AssemblyTitle>
+    <AssemblyDescription>AI-Enhanced Development Environment Orchestration Platform CLI</AssemblyDescription>
+    <AssemblyCompany>Nexo</AssemblyCompany>
+    <AssemblyProduct>Nexo CLI</AssemblyProduct>
+    <AssemblyCopyright>Copyright © Nexo 2024</AssemblyCopyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <PackageId>Nexo.CLI</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <PackageDescription>AI-Enhanced Development Environment Orchestration Platform CLI</PackageDescription>
+    <PackageTags>cli;ai;development;orchestration;pipeline</PackageTags>
+    <PackageProjectUrl>https://github.com/nexo/nexo</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   
   <!-- Conditional compilation for feature exclusion -->

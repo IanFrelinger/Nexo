@@ -1,0 +1,9 @@
+{
+  "RepairLoop": {
+    "MaxRepairIterations": 2,
+    "EnableCanaryDeployment": true,
+    "EnableAutomaticRollback": true,
+    "RepairTimeoutMs": 30000,
+    "CanaryTimeoutMs": 60000
+  }
+}

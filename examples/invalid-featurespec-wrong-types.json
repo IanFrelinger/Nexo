@@ -1,0 +1,7 @@
+{
+  "name": "Test Feature",
+  "version": "invalid-version",
+  "capabilities": "not-an-array",
+  "parameters": "not-an-object",
+  "policies": []
+}

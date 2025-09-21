@@ -1,0 +1,58 @@
+name: "Hello World Pipeline"
+version: "1.0.0"
+description: "A simple hello world pipeline for testing the Nexo CLI"
+author: "Nexo Team"
+tags:
+  - "hello-world"
+  - "demo"
+  - "testing"
+
+execution:
+  maxParallelExecutions: 1
+  commandTimeoutMs: 30000
+  enableDetailedLogging: true
+
+commands:
+  - id: "hello-world-command"
+    name: "Hello World Command"
+    description: "Prints a hello world message"
+    category: "Demo"
+    priority: "High"
+    parameters:
+      message: "Hello, World from Nexo!"
+    canExecuteInParallel: false
+    timeoutMs: 5000
+
+behaviors:
+  - id: "hello-world-behavior"
+    name: "Hello World Behavior"
+    description: "Simple behavior that logs hello world"
+    executionStrategy: "Sequential"
+
+aggregators:
+  - id: "hello-world-aggregator"
+    name: "Hello World Aggregator"
+    description: "Aggregates hello world results"
+    executionStrategy: "Sequential"
+
+variables:
+  greeting: "Hello"
+  target: "World"
+  punctuation: "!"
+
+validation:
+  failOnError: true
+  timeoutMs: 10000
+  rules:
+    - name: "message-not-empty"
+      description: "Message should not be empty"
+      type: "string-validation"
+      severity: "Error"
+      parameters:
+        minLength: 1
+
+documentation:
+  summary: "A simple hello world pipeline for demonstration purposes"
+  userGuide: true
+  apiDocs: false
+  technicalSpec: false

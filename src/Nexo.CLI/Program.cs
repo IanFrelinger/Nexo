@@ -403,6 +403,10 @@ namespace Nexo.CLI
             }, pipelineArgument, dryRunOption, modeOption);
             pipelineCommand.AddCommand(executeCommand);
             
+            // Add the new pipeline run command
+            var pipelineRunCommand = PipelineRunCommand.CreateCommand(host.Services, host.Services.GetRequiredService<ILogger<PipelineRunCommand>>());
+            pipelineCommand.AddCommand(pipelineRunCommand);
+            
             rootCommand.AddCommand(pipelineCommand);
             
             // Project commands are now handled by the enhanced ProjectCommands class
@@ -543,6 +547,10 @@ namespace Nexo.CLI
             // Add verify command
             var verifyCommand = Commands.VerifyCommand.CreateVerifyCommand();
             rootCommand.AddCommand(verifyCommand);
+
+            // Add spec validation command
+            var specCommand = Commands.SpecValidationCommand.CreateSpecValidationCommand(scope.ServiceProvider);
+            rootCommand.AddCommand(specCommand);
 
             rootCommand.Description = "Nexo CLI provides AI-enhanced development environment orchestration capabilities with interactive mode, real-time dashboards, intelligent suggestions, and Unity game development tools.";
 

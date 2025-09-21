@@ -1,4 +1,5 @@
 using Nexo.Core.Domain.Interfaces;
+using Nexo.Core.Contracts.Capabilities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,24 @@ namespace TestPlugin
         public Task ShutdownAsync(CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
+        }
+
+        public Task<PluginResult> ExecuteAsync(string[] args)
+        {
+            return Task.FromResult(new PluginResult { Success = true, Message = "TestPlugin executed successfully" });
+        }
+    }
+
+    /// <summary>
+    /// Test sensing capability implementation.
+    /// </summary>
+    public class TestSenseCapability : ISense
+    {
+        public string CapabilityName => "TestSense";
+
+        public Task<object> SenseAsync(object input, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<object>($"Sensed: {input}");
         }
     }
 }

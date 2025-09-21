@@ -1,0 +1,7 @@
+version: "1.0.0"
+capabilities:
+  - "test-capability"
+parameters:
+  "test-param": "test-value"
+policies:
+  - "test-policy"

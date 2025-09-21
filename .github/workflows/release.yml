@@ -1,0 +1,322 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/release.yml'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SOLUTION_FILE: 'Nexo.sln'
+  PACKAGE_OUTPUT_DIR: './nupkgs'
+  SBOM_OUTPUT_DIR: './sbom'
+  CONTAINER_REGISTRY: 'ghcr.io'
+  CONTAINER_IMAGE_NAME: '${{ github.repository }}/nexo'
+
+jobs:
+  build-pack:
+    name: Build and Package
+    runs-on: ubuntu-latest
+    outputs:
+      package-version: ${{ steps.version.outputs.version }}
+      sbom-file: ${{ steps.sbom.outputs.sbom-file }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for SourceLink
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+      - name: Build solution
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore --verbosity normal
+
+      - name: Run tests
+        run: dotnet test ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal --logger trx --collect:"XPlat Code Coverage"
+
+      - name: Get version from tag
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
+            echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          else
+            # For PRs or non-tagged pushes, use a dev version
+            echo "version=0.0.0-dev+${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create output directories
+        run: |
+          mkdir -p ${{ env.PACKAGE_OUTPUT_DIR }}
+          mkdir -p ${{ env.SBOM_OUTPUT_DIR }}
+
+      - name: Pack NuGet packages
+        run: |
+          dotnet pack ${{ env.SOLUTION_FILE }} \
+            --configuration Release \
+            --no-build \
+            --output ${{ env.PACKAGE_OUTPUT_DIR }} \
+            --verbosity normal \
+            -p:PackageVersion=${{ steps.version.outputs.version }}
+
+      - name: Install CycloneDX .NET tool
+        run: dotnet tool install --global CycloneDX
+
+      - name: Generate SBOM
+        id: sbom
+        run: |
+          cyclonedx-dotnet ${{ env.SOLUTION_FILE }} \
+            --output-directory ${{ env.SBOM_OUTPUT_DIR }} \
+            --output-format json \
+            --output-format xml \
+            --include-dev \
+            --include-project-references
+          
+          # Find the generated SBOM file
+          SBOM_FILE=$(find ${{ env.SBOM_OUTPUT_DIR }} -name "*.json" | head -1)
+          echo "sbom-file=$SBOM_FILE" >> $GITHUB_OUTPUT
+          echo "Generated SBOM: $SBOM_FILE"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ steps.version.outputs.version }}
+          path: |
+            ${{ env.PACKAGE_OUTPUT_DIR }}/*.nupkg
+            ${{ env.SBOM_OUTPUT_DIR }}/*.json
+            ${{ env.SBOM_OUTPUT_DIR }}/*.xml
+          retention-days: 30
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ steps.version.outputs.version }}
+          path: |
+            **/TestResults/**/*.trx
+            **/TestResults/**/*.cobertura.xml
+          retention-days: 30
+
+  sign-and-publish:
+    name: Sign and Publish
+    runs-on: ubuntu-latest
+    needs: build-pack
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    environment: release
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: packages-${{ needs.build-pack.outputs.package-version }}
+          path: ./artifacts
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Configure NuGet authentication
+        run: |
+          if [ -n "${{ secrets.NUGET_API_KEY }}" ]; then
+            dotnet nuget add source --username ${{ secrets.NUGET_USERNAME }} --password ${{ secrets.NUGET_API_KEY }} --store-password-in-clear-text --name "nuget.org" https://api.nuget.org/v3/index.json
+          elif [ -n "${{ secrets.GITHUB_TOKEN }}" ]; then
+            dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name "github" https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+          fi
+
+      - name: Install Cosign
+        if: env.COSIGN_PRIVATE_KEY != ''
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.0'
+
+      - name: Sign packages with Cosign
+        if: env.COSIGN_PRIVATE_KEY != ''
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          for pkg in ./artifacts/*.nupkg; do
+            echo "Signing package: $pkg"
+            cosign sign-blob --bundle "$pkg.sig" "$pkg"
+          done
+
+      - name: Publish to NuGet.org
+        if: env.NUGET_API_KEY != ''
+        run: |
+          for pkg in ./artifacts/*.nupkg; do
+            echo "Publishing package: $pkg"
+            dotnet nuget push "$pkg" --api-key ${{ secrets.NUGET_API_KEY }} --source "nuget.org" --skip-duplicate
+          done
+
+      - name: Publish to GitHub Packages
+        if: env.GITHUB_TOKEN != '' && env.NUGET_API_KEY == ''
+        run: |
+          for pkg in ./artifacts/*.nupkg; do
+            echo "Publishing package: $pkg"
+            dotnet nuget push "$pkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source "github" --skip-duplicate
+          done
+
+      - name: Upload signed packages
+        if: env.COSIGN_PRIVATE_KEY != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-packages-${{ needs.build-pack.outputs.package-version }}
+          path: |
+            ./artifacts/*.nupkg
+            ./artifacts/*.nupkg.sig
+          retention-days: 90
+
+  container:
+    name: Build Container Image
+    runs-on: ubuntu-latest
+    needs: build-pack
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: packages-${{ needs.build-pack.outputs.package-version }}
+          path: ./artifacts
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.CONTAINER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.CONTAINER_REGISTRY }}/${{ env.CONTAINER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.cli
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            PACKAGE_VERSION=${{ needs.build-pack.outputs.package-version }}
+
+      - name: Install Cosign
+        if: env.COSIGN_PRIVATE_KEY != ''
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.0'
+
+      - name: Sign container image
+        if: env.COSIGN_PRIVATE_KEY != ''
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        run: |
+          for tag in ${{ steps.meta.outputs.tags }}; do
+            echo "Signing image: $tag"
+            cosign sign --yes "$tag"
+          done
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build-pack
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: packages-${{ needs.build-pack.outputs.package-version }}
+          path: ./artifacts
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  release-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-latest
+    needs: [build-pack, sign-and-publish, container]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: release-notes
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+          disable-autolabeler: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: ${{ steps.release-notes.outputs.body }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}

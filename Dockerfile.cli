@@ -1,0 +1,56 @@
+# Multi-stage build for Nexo CLI
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+
+# Install necessary packages
+RUN apk add --no-cache git
+
+# Set working directory
+WORKDIR /src
+
+# Copy project files
+COPY . .
+
+# Restore dependencies
+RUN dotnet restore Nexo.sln
+
+# Build the CLI
+RUN dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release --no-restore
+
+# Publish the CLI
+RUN dotnet publish src/Nexo.CLI/Nexo.CLI.csproj \
+    --configuration Release \
+    --no-build \
+    --output /app/publish \
+    --self-contained true \
+    --runtime linux-musl-x64 \
+    -p:PublishSingleFile=true \
+    -p:PublishTrimmed=true \
+    -p:TrimMode=partial
+
+# Final stage - minimal runtime
+FROM mcr.microsoft.com/dotnet/runtime-deps:8.0-alpine
+
+# Install git for repository operations
+RUN apk add --no-cache git
+
+# Create non-root user
+RUN addgroup -g 1001 -S nexo && \
+    adduser -u 1001 -S nexo -G nexo
+
+# Set working directory
+WORKDIR /app
+
+# Copy the published application
+COPY --from=build /app/publish/nexo /app/nexo
+
+# Make executable
+RUN chmod +x /app/nexo
+
+# Switch to non-root user
+USER nexo
+
+# Set entrypoint
+ENTRYPOINT ["/app/nexo"]
+
+# Default command
+CMD ["--help"]

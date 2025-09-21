@@ -45,6 +45,10 @@
     <PackageVersion Include="Spectre.Console" Version="0.48.0" />
     <PackageVersion Include="YamlDotNet" Version="13.7.1" />
     <PackageVersion Include="CsvHelper" Version="30.0.1" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+    <PackageVersion Include="JsonSchema.Net" Version="4.0.0" />
+    <PackageVersion Include="CycloneDX" Version="5.0.0" />
   </ItemGroup>
 
   <!-- Web/API Packages -->
@@ -106,6 +110,15 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
+  </ItemGroup>
+
+  <!-- OpenTelemetry Packages -->
+  <ItemGroup>
+    <PackageVersion Include="OpenTelemetry" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Otlp" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.7.0" />
   </ItemGroup>
 
   <!-- SourceLink -->
