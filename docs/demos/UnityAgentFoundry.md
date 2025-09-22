@@ -16,6 +16,14 @@ Steps:
 4) Click Validate to run offline validators (stubs included; full checks in tests).
 5) Open scene `Assets/AgentFoundryDemo/Scenes/E1M1_Blockout.unity` (scaffold placeholder created on first gen).
 
+Bootstrap a fresh Unity project and import local Nexo packages:
+```bash
+chmod +x scripts/unity-bootstrap.sh
+UNITY_PATH="/Applications/Unity/Hub/Editor/2021.3.41f1/Unity.app/Contents/MacOS/Unity" \
+scripts/unity-bootstrap.sh ~/Projects/NexoUnityDemo "$UNITY_PATH"
+```
+Then open `~/Projects/NexoUnityDemo` in Unity → Nexo → Agent Workbench.
+
 Headless CI (Unity Test Framework):
 ```bash
 /Applications/Unity/Hub/Editor/2021.3.41f1/Unity.app/Contents/MacOS/Unity \
