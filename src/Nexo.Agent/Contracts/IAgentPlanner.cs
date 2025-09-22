@@ -32,4 +32,13 @@ public interface IAgentPlanner
     /// <param name="availableTools">Currently available tools</param>
     /// <returns>List of tool requests for missing tools</returns>
     IReadOnlyList<ToolRequest> IdentifyMissingTools(Plan plan, IReadOnlyList<ToolManifest> availableTools);
+
+    /// <summary>
+    /// Decomposes natural language requirements into reusable command sequences.
+    /// </summary>
+    /// <param name="requirements">Natural language project requirements</param>
+    /// <param name="context">Additional context for decomposition</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Command decomposition result with reusable commands</returns>
+    Task<CommandDecompositionResult> DecomposeRequirementsAsync(ProjectRequirements requirements, CommandDecompositionContext context, CancellationToken cancellationToken = default);
 }
