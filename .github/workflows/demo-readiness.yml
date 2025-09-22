@@ -10,6 +10,10 @@ jobs:
   demo:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
+      HAS_AZURE: ${{ secrets.AZURE_OPENAI_ENDPOINT != '' && secrets.AZURE_OPENAI_KEY != '' }}
+      TEST_RESULTS_DIR: TestResults
     
     steps:
       - name: Checkout code
@@ -26,12 +30,25 @@ jobs:
       - name: Build project
         run: dotnet build tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --configuration Release --no-restore
         
+      - name: Create test results directory
+        run: mkdir -p $TEST_RESULTS_DIR
+        
+      - name: Detect local model prep
+        run: |
+          if [ -f "./setup-local-llama.sh" ]; then echo "PREP_LOCAL=true" >> $GITHUB_ENV; else echo "PREP_LOCAL=false" >> $GITHUB_ENV; fi
+        
+      - name: Prepare local model runtime (optional)
+        if: ${{ env.PREP_LOCAL == 'true' }}
+        run: |
+          set -e
+          ./setup-local-llama.sh || true
+        
       - name: Run Demo suite (Off mode)
         id: test-off
         env:
           NEXO_AI_MODE: off
         run: |
-          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-off.trx"
+          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-off.trx" --results-directory $TEST_RESULTS_DIR
           echo "off_completed=true" >> $GITHUB_OUTPUT
         
       - name: Run Demo suite (Assist mode)
@@ -39,7 +56,7 @@ jobs:
         env:
           NEXO_AI_MODE: assist
         run: |
-          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-assist.trx"
+          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-assist.trx" --results-directory $TEST_RESULTS_DIR
           echo "assist_completed=true" >> $GITHUB_OUTPUT
         
       - name: Run Demo suite (Hybrid Local)
@@ -49,23 +66,23 @@ jobs:
           NEXO_PROVIDER: local
           NEXO_MODEL: llama3
         run: |
-          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-hybrid.trx"
+          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-hybrid.trx" --results-directory $TEST_RESULTS_DIR
           echo "hybrid_completed=true" >> $GITHUB_OUTPUT
         
       - name: Run Demo suite (Embedded Cloud)
         id: test-embedded
-        if: ${{ secrets.OPENAI_API_KEY != '' }}
+        if: ${{ env.HAS_OPENAI == 'true' }}
         env:
           NEXO_AI_MODE: embedded
           NEXO_PROVIDER: openai
           NEXO_MODEL: gpt-4o
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-embedded.trx"
+          dotnet test tests/Nexo.Demo.Standalone.Tests/Nexo.Demo.Standalone.Tests.csproj --filter "Suite=Demo" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results-embedded.trx" --results-directory $TEST_RESULTS_DIR
           echo "embedded_completed=true" >> $GITHUB_OUTPUT
         
       - name: Run Demo suite (Cloud skipped - no API key)
-        if: ${{ secrets.OPENAI_API_KEY == '' }}
+        if: ${{ env.HAS_OPENAI != 'true' }}
         run: echo "Skipping cloud tests - OPENAI_API_KEY not provided"
         
       - name: Upload test artifacts
@@ -73,8 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: demo-test-results
-          path: |
-            test-results-*.trx
+          path: $TEST_RESULTS_DIR/
           retention-days: 30
         
       - name: Generate test report

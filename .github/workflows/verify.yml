@@ -14,9 +14,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         mode: [off, hybrid, embedded]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     env:
       HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
       HAS_AZURE: ${{ secrets.AZURE_OPENAI_ENDPOINT != '' && secrets.AZURE_OPENAI_KEY != '' }}
+      TEST_RESULTS_DIR: TestResults
 
     steps:
       - name: Checkout code
@@ -44,12 +46,25 @@ jobs:
           dotnet tool install --tool-path ./tools Nexo.CLI --add-source ./nupkgs
           echo "$PWD/tools" >> $GITHUB_PATH
 
+      - name: Create test results directory
+        run: mkdir -p $TEST_RESULTS_DIR
+
       - name: Run unit tests
-        run: dotnet test -c Release --no-build --verbosity normal
+        run: dotnet test -c Release --no-build --verbosity normal --logger "trx" --results-directory $TEST_RESULTS_DIR
+
+      - name: Detect local model prep
+        run: |
+          if [ -f "./setup-local-llama.sh" ]; then echo "PREP_LOCAL=true" >> $GITHUB_ENV; else echo "PREP_LOCAL=false" >> $GITHUB_ENV; fi
+
+      - name: Prepare local model runtime (optional)
+        if: ${{ matrix.mode == 'hybrid' && env.PREP_LOCAL == 'true' }}
+        run: |
+          set -e
+          ./setup-local-llama.sh || true
 
       # OFF: enforce no network calls, offline only
       - name: OFF (no network, docker preferred with fallback)
-        if: ${{ and(eq(matrix.mode, 'off'), eq(matrix.os, 'ubuntu-latest')) }}
+        if: ${{ matrix.mode == 'off' && matrix.os == 'ubuntu-latest' }}
         env:
           NEXO_AI_MODE: off
         shell: bash
@@ -63,14 +78,14 @@ jobs:
           fi
 
       - name: OFF (no network, in-process guard)
-        if: ${{ and(eq(matrix.mode, 'off'), ne(matrix.os, 'ubuntu-latest')) }}
+        if: ${{ matrix.mode == 'off' && matrix.os != 'ubuntu-latest' }}
         env:
           NEXO_AI_MODE: off
         run: |
           nexo verify tests/specs --mode off
 
       - name: HYBRID (local model)
-        if: ${{ eq(matrix.mode, 'hybrid') }}
+        if: ${{ matrix.mode == 'hybrid' }}
         env:
           NEXO_AI_MODE: hybrid
           NEXO_PROVIDER: local
@@ -78,7 +93,7 @@ jobs:
         run: nexo verify tests/specs
 
       - name: EMBEDDED (cloud) — gated on secret
-        if: ${{ and(eq(matrix.mode, 'embedded'), or(eq(env.HAS_OPENAI, 'true'), eq(env.HAS_AZURE, 'true'))) }}
+        if: ${{ matrix.mode == 'embedded' && (env.HAS_OPENAI == 'true' || env.HAS_AZURE == 'true') }}
         env:
           NEXO_AI_MODE: embedded
           NEXO_PROVIDER: ${{ env.HAS_OPENAI == 'true' && 'openai' || 'azure' }}
@@ -88,9 +103,20 @@ jobs:
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
         run: nexo verify tests/specs
 
+      # Unity headless scaffolding (commented out, for later enablement)
+      # - name: Set up Unity
+      #   uses: game-ci/unity-setup@v4
+      #   with:
+      #     unityVersion: 2022.3.39f1
+      # - name: PlayMode tests (headless)
+      #   if: ${{ env.RUN_UNITY == 'true' }}
+      #   run: |
+      #     Unity -batchmode -nographics -projectPath unity-test-project \
+      #       -runTests -testPlatform PlayMode -testResults $TEST_RESULTS_DIR/unity-playmode.xml -logFile -
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}-${{ matrix.mode }}
-          path: test-results/
+          path: $TEST_RESULTS_DIR/
