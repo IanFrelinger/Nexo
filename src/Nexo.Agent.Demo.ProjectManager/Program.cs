@@ -99,6 +99,9 @@ public class ProjectManagerDemo
         AnsiConsole.MarkupLine("You are the [bold cyan]Project Manager/Designer[/]. Task the Agent with project generation and validation.");
         AnsiConsole.WriteLine();
 
+        // Get natural language project requirements
+        var projectRequirements = await GetProjectRequirementsAsync();
+        
         // Show available project templates
         await ShowProjectTemplatesAsync();
 
@@ -181,6 +184,98 @@ public class ProjectManagerDemo
 
         AnsiConsole.Write(table);
         AnsiConsole.WriteLine();
+    }
+
+    private async Task<ProjectRequirements> GetProjectRequirementsAsync()
+    {
+        await Task.CompletedTask;
+        
+        AnsiConsole.MarkupLine("[bold cyan]📝 Project Requirements Input[/]");
+        AnsiConsole.WriteLine();
+        
+        AnsiConsole.MarkupLine("[bold]Please describe your project requirements in natural language:[/]");
+        AnsiConsole.MarkupLine("[dim]Example: 'Create a fully integrated FPS Character Controller that can be called via the Nexo aggregator'[/]");
+        AnsiConsole.WriteLine();
+        
+        var requirements = AnsiConsole.Ask<string>("[bold]Project Description:[/]");
+        
+        AnsiConsole.MarkupLine("[bold]Additional Context (optional):[/]");
+        AnsiConsole.MarkupLine("[dim]Example: 'Include movement, look controls, jump, physics, and full Nexo ecosystem integration'[/]");
+        var context = AnsiConsole.Ask<string>("[bold]Context:[/]");
+        
+        AnsiConsole.MarkupLine("[bold]Priority Level:[/]");
+        var priority = AnsiConsole.Prompt(new SelectionPrompt<string>()
+            .AddChoices("🔴 Critical", "🟡 High", "🟢 Medium", "🔵 Low"));
+        
+        AnsiConsole.MarkupLine("[bold]Estimated Timeline:[/]");
+        var timeline = AnsiConsole.Ask<string>("[bold]Timeline:[/]");
+        
+        var projectReq = new ProjectRequirements
+        {
+            Description = requirements,
+            Context = context,
+            Priority = priority,
+            Timeline = timeline,
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        AnsiConsole.MarkupLine($"[green]✅ Project requirements captured![/]");
+        AnsiConsole.WriteLine();
+        
+        // Display the captured requirements
+        AnsiConsole.MarkupLine("[bold cyan]📋 Captured Requirements:[/]");
+        AnsiConsole.MarkupLine($"[bold]Description:[/] {projectReq.Description}");
+        AnsiConsole.MarkupLine($"[bold]Context:[/] {projectReq.Context}");
+        AnsiConsole.MarkupLine($"[bold]Priority:[/] {projectReq.Priority}");
+        AnsiConsole.MarkupLine($"[bold]Timeline:[/] {projectReq.Timeline}");
+        AnsiConsole.WriteLine();
+        
+        AnsiConsole.MarkupLine("[yellow]🤖 The Nexo Agent will now analyze these requirements and create a detailed project plan...[/]");
+        AnsiConsole.WriteLine();
+        
+        return projectReq;
+    }
+
+    private async Task ShowNaturalLanguageRequirementsAsync()
+    {
+        await Task.CompletedTask;
+        
+        AnsiConsole.MarkupLine("[bold]Example Natural Language Requirements:[/]");
+        AnsiConsole.WriteLine();
+        
+        var examples = new[]
+        {
+            new { 
+                Description = "Create a fully integrated FPS Character Controller that can be called via the Nexo aggregator",
+                Context = "Include movement, look controls, jump, physics, and full Nexo ecosystem integration",
+                Priority = "🔴 Critical",
+                Timeline = "2 weeks"
+            },
+            new { 
+                Description = "Build a multiplayer game lobby system with real-time chat",
+                Context = "Support up to 100 concurrent users with voice chat integration",
+                Priority = "🟡 High", 
+                Timeline = "3 weeks"
+            },
+            new { 
+                Description = "Develop an AI-powered level generation system",
+                Context = "Procedural dungeon generation with difficulty scaling and loot distribution",
+                Priority = "🟢 Medium",
+                Timeline = "4 weeks"
+            }
+        };
+        
+        foreach (var example in examples)
+        {
+            AnsiConsole.MarkupLine($"[bold cyan]📝 Example Requirements:[/]");
+            AnsiConsole.MarkupLine($"[bold]Description:[/] {example.Description}");
+            AnsiConsole.MarkupLine($"[bold]Context:[/] {example.Context}");
+            AnsiConsole.MarkupLine($"[bold]Priority:[/] {example.Priority}");
+            AnsiConsole.MarkupLine($"[bold]Timeline:[/] {example.Timeline}");
+            AnsiConsole.WriteLine();
+        }
+        
+        AnsiConsole.MarkupLine("[yellow]🤖 The Nexo Agent analyzes these natural language requirements and automatically creates detailed project plans, tasks, and execution strategies![/]");
     }
 
     private async Task CreateProjectTaskAsync()
@@ -621,7 +716,12 @@ public class ProjectManagerDemo
 
         try
         {
-            // 1. Show project templates
+            // 1. Show natural language requirements input
+            AnsiConsole.MarkupLine("[bold cyan]📝 Natural Language Project Requirements:[/]");
+            await ShowNaturalLanguageRequirementsAsync();
+            AnsiConsole.WriteLine();
+
+            // 2. Show project templates
             AnsiConsole.MarkupLine("[bold cyan]📋 Available Project Templates:[/]");
             await ShowProjectTemplatesAsync();
             AnsiConsole.WriteLine();
@@ -652,13 +752,24 @@ public class ProjectManagerDemo
             AnsiConsole.WriteLine();
 
             // 7. Summary
-            AnsiConsole.MarkupLine("[bold green]🎉 Project Manager Demo Complete![/]");
+            AnsiConsole.MarkupLine("[bold green]🎉 FPS Character Controller Project Demo Complete![/]");
             AnsiConsole.MarkupLine("The Project Manager successfully demonstrated:");
-            AnsiConsole.MarkupLine("  • Task creation and assignment");
+            AnsiConsole.MarkupLine("  • Natural language requirements capture and analysis");
+            AnsiConsole.MarkupLine("  • FPS Character Controller task creation and assignment");
+            AnsiConsole.MarkupLine("  • Nexo ecosystem integration planning");
             AnsiConsole.MarkupLine("  • Agent task execution and monitoring");
-            AnsiConsole.MarkupLine("  • Project status tracking and reporting");
+            AnsiConsole.MarkupLine("  • Real-time project status tracking and reporting");
             AnsiConsole.MarkupLine("  • Validation testing and quality assurance");
-            AnsiConsole.MarkupLine("  • Comprehensive project reporting");
+            AnsiConsole.MarkupLine("  • Comprehensive project reporting with actionable insights");
+            AnsiConsole.WriteLine();
+            
+            AnsiConsole.MarkupLine("[bold cyan]🎮 FPS Character Controller Features Delivered:[/]");
+            AnsiConsole.MarkupLine("  • Core movement, look, and jump mechanics");
+            AnsiConsole.MarkupLine("  • Unity Input System integration");
+            AnsiConsole.MarkupLine("  • Advanced physics and collision handling");
+            AnsiConsole.MarkupLine("  • Full Nexo Agent ecosystem integration");
+            AnsiConsole.MarkupLine("  • Nexo aggregator tool calling capabilities");
+            AnsiConsole.MarkupLine("  • Performance optimization and validation");
             AnsiConsole.WriteLine();
 
             return 0;
@@ -677,11 +788,11 @@ public class ProjectManagerDemo
             new ProjectTask
             {
                 Id = "task-001",
-                Name = "Create Player Controller",
-                Description = "Implement FPS player movement and controls",
+                Name = "FPS Character Controller Core",
+                Description = "Implement FPS character controller with movement, look, jump, and physics integration",
                 Priority = "🔴 Critical",
                 Type = "🏗️ Development",
-                EstimatedEffort = 8,
+                EstimatedEffort = 12,
                 Status = "📝 Created",
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
                 AssignedTo = "Agent"
@@ -689,11 +800,11 @@ public class ProjectManagerDemo
             new ProjectTask
             {
                 Id = "task-002",
-                Name = "Implement Enemy AI",
-                Description = "Create NavMesh-based enemy AI with patrol and chase behaviors",
-                Priority = "🟡 High",
+                Name = "Nexo Ecosystem Integration",
+                Description = "Integrate FPS controller with Nexo Agent ecosystem and aggregator for tool calling",
+                Priority = "🔴 Critical",
                 Type = "🏗️ Development",
-                EstimatedEffort = 12,
+                EstimatedEffort = 8,
                 Status = "📝 Created",
                 CreatedAt = DateTime.UtcNow.AddHours(-1),
                 AssignedTo = "Agent"
@@ -701,11 +812,11 @@ public class ProjectManagerDemo
             new ProjectTask
             {
                 Id = "task-003",
-                Name = "UI Validation Testing",
-                Description = "Test UI elements for accessibility and usability",
-                Priority = "🟢 Medium",
-                Type = "🔍 Validation",
-                EstimatedEffort = 4,
+                Name = "Input System Integration",
+                Description = "Implement Unity Input System with customizable key bindings and gamepad support",
+                Priority = "🟡 High",
+                Type = "🏗️ Development",
+                EstimatedEffort = 6,
                 Status = "📝 Created",
                 CreatedAt = DateTime.UtcNow.AddMinutes(-30),
                 AssignedTo = "Agent"
@@ -713,13 +824,37 @@ public class ProjectManagerDemo
             new ProjectTask
             {
                 Id = "task-004",
-                Name = "Performance Optimization",
-                Description = "Optimize game performance and reduce frame drops",
+                Name = "Physics & Collision System",
+                Description = "Implement advanced physics with slope handling, ground detection, and collision response",
                 Priority = "🟡 High",
-                Type = "📊 Analysis",
-                EstimatedEffort = 6,
+                Type = "🏗️ Development",
+                EstimatedEffort = 10,
                 Status = "📝 Created",
                 CreatedAt = DateTime.UtcNow.AddMinutes(-15),
+                AssignedTo = "Agent"
+            },
+            new ProjectTask
+            {
+                Id = "task-005",
+                Name = "Nexo Tool Validation",
+                Description = "Create validation tools for FPS controller testing and optimization via Nexo aggregator",
+                Priority = "🟢 Medium",
+                Type = "🔍 Validation",
+                EstimatedEffort = 6,
+                Status = "📝 Created",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
+                AssignedTo = "Agent"
+            },
+            new ProjectTask
+            {
+                Id = "task-006",
+                Name = "Performance & Optimization",
+                Description = "Optimize FPS controller performance and ensure smooth 60+ FPS gameplay",
+                Priority = "🟡 High",
+                Type = "📊 Analysis",
+                EstimatedEffort = 8,
+                Status = "📝 Created",
+                CreatedAt = DateTime.UtcNow.AddMinutes(-5),
                 AssignedTo = "Agent"
             }
         };
@@ -818,4 +953,13 @@ public class ProjectReport
     public int TotalEffort { get; set; }
     public double AverageValidationScore { get; set; }
     public string[] TopRecommendations { get; set; } = Array.Empty<string>();
+}
+
+public class ProjectRequirements
+{
+    public string Description { get; set; } = string.Empty;
+    public string Context { get; set; } = string.Empty;
+    public string Priority { get; set; } = string.Empty;
+    public string Timeline { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
 }
