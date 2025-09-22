@@ -214,6 +214,7 @@ public class WebOptimizationAgent : ISpecializedAgent
                 capabilityScore += 0.1;
             }
             
+            await Task.CompletedTask;
             return new AgentCapabilityAssessment
             {
                 CapabilityScore = Math.Min(capabilityScore, 1.0),

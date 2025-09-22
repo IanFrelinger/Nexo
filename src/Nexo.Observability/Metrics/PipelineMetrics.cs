@@ -28,22 +28,22 @@ public class PipelineMetrics
 
         // Counters
         _generationDurationCounter = _meter.CreateCounter<long>(
-            "nexo.generation.duration",
+            "generation.duration",
             "ms",
             "Duration of generation operations in milliseconds");
 
         _validationFailuresCounter = _meter.CreateCounter<long>(
-            "nexo.validation.failures",
+            "validation.failures",
             "count",
             "Number of validation failures");
 
         _policyScoreCounter = _meter.CreateCounter<long>(
-            "nexo.policy.score",
+            "policy.score",
             "score",
             "Policy evaluation scores");
 
         _pipelineSuccessCounter = _meter.CreateCounter<long>(
-            "nexo.pipeline.success",
+            "pipeline.success",
             "count",
             "Number of successful pipeline executions");
 
@@ -54,22 +54,22 @@ public class PipelineMetrics
 
         // Histograms
         _generationDurationHistogram = _meter.CreateHistogram<double>(
-            "nexo.generation.duration.histogram",
+            "generation.duration",
             "ms",
             "Distribution of generation operation durations");
 
         _validationDurationHistogram = _meter.CreateHistogram<double>(
-            "nexo.validation.duration.histogram",
+            "validation.duration",
             "ms",
             "Distribution of validation operation durations");
 
         _policyEvaluationDurationHistogram = _meter.CreateHistogram<double>(
-            "nexo.policy.evaluation.duration.histogram",
+            "policy.evaluation.duration",
             "ms",
             "Distribution of policy evaluation durations");
 
         _pipelineDurationHistogram = _meter.CreateHistogram<double>(
-            "nexo.pipeline.duration.histogram",
+            "pipeline.duration",
             "ms",
             "Distribution of pipeline execution durations");
     }

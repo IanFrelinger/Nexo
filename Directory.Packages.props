@@ -28,6 +28,7 @@
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     <PackageVersion Include="System.Diagnostics.Process" Version="4.3.0" />
+    <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
 
   <!-- Code Analysis -->
@@ -117,7 +118,7 @@
     <PackageVersion Include="OpenTelemetry" Version="1.7.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.7.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Otlp" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.7.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.7.0" />
   </ItemGroup>
 

@@ -14,6 +14,9 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         mode: [off, hybrid, embedded]
     runs-on: ${{ matrix.os }}
+    env:
+      HAS_OPENAI: ${{ secrets.OPENAI_API_KEY != '' }}
+      HAS_AZURE: ${{ secrets.AZURE_OPENAI_ENDPOINT != '' && secrets.AZURE_OPENAI_KEY != '' }}
 
     steps:
       - name: Checkout code
@@ -30,23 +33,44 @@ jobs:
       - name: Build
         run: dotnet build -c Release --no-restore
 
+      - name: Build Nexo CLI
+        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj -c Release
+
+      - name: Pack Nexo CLI
+        run: dotnet pack src/Nexo.CLI/Nexo.CLI.csproj -c Release -o ./nupkgs
+
+      - name: Install Nexo CLI locally
+        run: |
+          dotnet tool install --tool-path ./tools Nexo.CLI --add-source ./nupkgs
+          echo "$PWD/tools" >> $GITHUB_PATH
+
       - name: Run unit tests
         run: dotnet test -c Release --no-build --verbosity normal
 
-      # OFF: enforce no network on Ubuntu with Docker; rely on in-process guard on others
-      - name: OFF (no network, docker)
-        if: matrix.mode == 'off' && matrix.os == 'ubuntu-latest'
+      # OFF: enforce no network calls, offline only
+      - name: OFF (no network, docker preferred with fallback)
+        if: ${{ and(eq(matrix.mode, 'off'), eq(matrix.os, 'ubuntu-latest')) }}
+        env:
+          NEXO_AI_MODE: off
+        shell: bash
         run: |
-          docker build -f Dockerfile.test -t nexo-tests .
-          docker run --rm --network none nexo-tests nexo verify tests/specs --mode off
+          if [ -f Dockerfile.test ]; then
+            docker build -f Dockerfile.test -t nexo-tests .
+            docker run --rm --network none nexo-tests nexo verify tests/specs --mode off
+          else
+            echo "Dockerfile.test missing; running in-process offline verify. TODO: add Docker test harness."
+            nexo verify tests/specs --mode off
+          fi
 
       - name: OFF (no network, in-process guard)
-        if: matrix.mode == 'off' && matrix.os != 'ubuntu-latest'
+        if: ${{ and(eq(matrix.mode, 'off'), ne(matrix.os, 'ubuntu-latest')) }}
+        env:
+          NEXO_AI_MODE: off
         run: |
-          NEXO_AI_MODE=off nexo verify tests/specs --mode off
+          nexo verify tests/specs --mode off
 
       - name: HYBRID (local model)
-        if: matrix.mode == 'hybrid'
+        if: ${{ eq(matrix.mode, 'hybrid') }}
         env:
           NEXO_AI_MODE: hybrid
           NEXO_PROVIDER: local
@@ -54,12 +78,14 @@ jobs:
         run: nexo verify tests/specs
 
       - name: EMBEDDED (cloud) — gated on secret
-        if: matrix.mode == 'embedded' && secrets.OPENAI_API_KEY != ''
+        if: ${{ and(eq(matrix.mode, 'embedded'), or(eq(env.HAS_OPENAI, 'true'), eq(env.HAS_AZURE, 'true'))) }}
         env:
           NEXO_AI_MODE: embedded
-          NEXO_PROVIDER: openai
-          NEXO_MODEL: gpt-4o
+          NEXO_PROVIDER: ${{ env.HAS_OPENAI == 'true' && 'openai' || 'azure' }}
+          NEXO_MODEL: ${{ env.HAS_OPENAI == 'true' && 'gpt-4o' || 'gpt-4o' }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
         run: nexo verify tests/specs
 
       - name: Upload test results

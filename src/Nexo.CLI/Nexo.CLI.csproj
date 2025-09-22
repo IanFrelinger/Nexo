@@ -17,9 +17,13 @@
     <FileVersion>1.0.0.0</FileVersion>
     <PackageId>Nexo.CLI</PackageId>
     <PackageVersion>1.0.0</PackageVersion>
-    <PackageDescription>AI-Enhanced Development Environment Orchestration Platform CLI</PackageDescription>
-    <PackageTags>cli;ai;development;orchestration;pipeline</PackageTags>
-    <PackageProjectUrl>https://github.com/nexo/nexo</PackageProjectUrl>
+    <Description>Provider-agnostic LEGO-style feature factory CLI</Description>
+    <PackageTags>nexo;ai;feature-factory;offline-first</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageProjectUrl>https://github.com/IanFrelinger/Nexo</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>

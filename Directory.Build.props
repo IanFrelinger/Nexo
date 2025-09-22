@@ -9,6 +9,9 @@
     <WarningsAsErrors />
     <WarningsNotAsErrors />
     
+    <!-- Central Package Management -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    
     <!-- Package generation -->
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>

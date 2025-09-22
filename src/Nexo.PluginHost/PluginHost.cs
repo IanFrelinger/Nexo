@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -10,6 +11,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Contracts;
 using Nexo.Core.Contracts.Capabilities;
+using Nexo.PluginHost.Abstractions;
+using Nexo.PluginHost.Schemas;
 
 namespace Nexo.PluginHost
 {
@@ -21,13 +24,26 @@ namespace Nexo.PluginHost
         private readonly ILogger<PluginHost> _logger;
         private readonly Dictionary<string, PluginContext> _loadedPlugins;
         private readonly string _pluginDependenciesPath;
+        private readonly string _curatedLibsPath;
+        private readonly INexoFileSystem _fileSystem;
+        private readonly INexoProcessRunner _processRunner;
+        private readonly ActivitySource _activitySource;
         private bool _disposed;
 
-        public PluginHost(ILogger<PluginHost> logger, string pluginDependenciesPath = null)
+        public PluginHost(
+            ILogger<PluginHost> logger, 
+            string pluginDependenciesPath = null,
+            string curatedLibsPath = null,
+            INexoFileSystem fileSystem = null,
+            INexoProcessRunner processRunner = null)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _loadedPlugins = new Dictionary<string, PluginContext>();
             _pluginDependenciesPath = pluginDependenciesPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "plugin-dependencies");
+            _curatedLibsPath = curatedLibsPath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "curated-libs");
+            _fileSystem = fileSystem ?? new DefaultFileSystem();
+            _processRunner = processRunner ?? new DefaultProcessRunner();
+            _activitySource = new ActivitySource("Nexo.PluginHost");
         }
 
         /// <summary>
@@ -41,38 +57,57 @@ namespace Nexo.PluginHost
             if (_disposed)
                 throw new ObjectDisposedException(nameof(PluginHost));
 
+            using var activity = _activitySource.StartActivity("LoadPlugin");
+            activity?.SetTag("plugin.path", pluginPath);
+            
             var startTime = DateTime.UtcNow;
             try
             {
                 _logger.LogInformation("Starting plugin load operation from: {PluginPath}", pluginPath);
 
-                if (!File.Exists(pluginPath))
+                if (!_fileSystem.FileExists(pluginPath))
                 {
                     _logger.LogError("Plugin file not found: {PluginPath}", pluginPath);
+                    activity?.SetStatus(ActivityStatusCode.Error, "Plugin file not found");
                     return false;
                 }
 
                 // Load plugin manifest
-                var manifestPath = Path.ChangeExtension(pluginPath, ".json");
+                var manifestPath = _fileSystem.ChangeExtension(pluginPath, ".json");
                 var manifest = await LoadPluginManifestAsync(manifestPath, cancellationToken);
                 if (manifest == null)
                 {
                     _logger.LogError("Failed to load plugin manifest: {ManifestPath}", manifestPath);
+                    activity?.SetStatus(ActivityStatusCode.Error, "Failed to load plugin manifest");
                     return false;
                 }
 
+                activity?.SetTag("plugin.name", manifest.Name);
+                activity?.SetTag("plugin.version", manifest.Version);
+                activity?.SetTag("plugin.capabilities", string.Join(",", manifest.Capabilities));
+
                 // Create collectible AssemblyLoadContext
-                var context = new CollectiblePluginLoadContext(pluginPath, _pluginDependenciesPath);
+                var context = new PluginAssemblyLoadContext(pluginPath, _pluginDependenciesPath, _curatedLibsPath, _logger as ILogger<PluginAssemblyLoadContext>);
                 
                 // Load the assembly
-                var assembly = context.LoadFromAssemblyPath(pluginPath);
+                var assembly = context.LoadPluginAssembly();
                 
                 // Validate capabilities
                 var capabilityTypes = ValidatePluginCapabilities(assembly, manifest);
                 if (capabilityTypes.Count == 0)
                 {
                     _logger.LogError("Plugin {PluginName} does not implement any declared capabilities", manifest.Name);
-                    context.Unload();
+                    context.UnloadAndWait();
+                    activity?.SetStatus(ActivityStatusCode.Error, "No valid capabilities found");
+                    return false;
+                }
+
+                // Validate constructor dependencies
+                if (!ValidateConstructorDependencies(capabilityTypes))
+                {
+                    _logger.LogError("Plugin {PluginName} has invalid constructor dependencies", manifest.Name);
+                    context.UnloadAndWait();
+                    activity?.SetStatus(ActivityStatusCode.Error, "Invalid constructor dependencies");
                     return false;
                 }
 
@@ -98,7 +133,8 @@ namespace Nexo.PluginHost
                 if (pluginInstances.Count == 0)
                 {
                     _logger.LogError("No valid capability instances could be created for plugin: {PluginName}", manifest.Name);
-                    context.Unload();
+                    context.UnloadAndWait();
+                    activity?.SetStatus(ActivityStatusCode.Error, "No valid instances created");
                     return false;
                 }
 
@@ -115,6 +151,9 @@ namespace Nexo.PluginHost
                 _loadedPlugins[manifest.Name] = pluginContext;
 
                 var loadDuration = DateTime.UtcNow - startTime;
+                activity?.SetTag("load.duration.ms", loadDuration.TotalMilliseconds);
+                activity?.SetTag("capability.count", pluginInstances.Count);
+                
                 _logger.LogInformation("Successfully loaded plugin: {PluginName} v{Version} with {CapabilityCount} capabilities in {LoadDuration}ms", 
                     manifest.Name, manifest.Version, pluginInstances.Count, loadDuration.TotalMilliseconds);
 
@@ -138,6 +177,50 @@ namespace Nexo.PluginHost
         }
 
         /// <summary>
+        /// Validates that plugin constructors only request allowed interfaces.
+        /// </summary>
+        private bool ValidateConstructorDependencies(List<Type> capabilityTypes)
+        {
+            var allowedInterfaces = new HashSet<Type>
+            {
+                typeof(INexoFileSystem),
+                typeof(INexoProcessRunner),
+                typeof(ILogger<>)
+            };
+
+            foreach (var type in capabilityTypes)
+            {
+                var constructors = type.GetConstructors();
+                foreach (var constructor in constructors)
+                {
+                    var parameters = constructor.GetParameters();
+                    foreach (var parameter in parameters)
+                    {
+                        var parameterType = parameter.ParameterType;
+                        
+                        // Check if it's a generic type (like ILogger<T>)
+                        if (parameterType.IsGenericType)
+                        {
+                            var genericTypeDefinition = parameterType.GetGenericTypeDefinition();
+                            if (!allowedInterfaces.Contains(genericTypeDefinition))
+                            {
+                                _logger.LogWarning("Constructor parameter {ParameterType} is not in allowed interfaces", parameterType.Name);
+                                return false;
+                            }
+                        }
+                        else if (!allowedInterfaces.Contains(parameterType))
+                        {
+                            _logger.LogWarning("Constructor parameter {ParameterType} is not in allowed interfaces", parameterType.Name);
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Unloads a plugin by name.
         /// </summary>
         /// <param name="pluginName">Name of the plugin to unload</param>
@@ -148,10 +231,14 @@ namespace Nexo.PluginHost
             if (_disposed)
                 throw new ObjectDisposedException(nameof(PluginHost));
 
+            using var activity = _activitySource.StartActivity("UnloadPlugin");
+            activity?.SetTag("plugin.name", pluginName);
+            
             var startTime = DateTime.UtcNow;
             if (!_loadedPlugins.TryGetValue(pluginName, out var pluginContext))
             {
                 _logger.LogWarning("Plugin not found for unloading: {PluginName}", pluginName);
+                activity?.SetStatus(ActivityStatusCode.Error, "Plugin not found");
                 return false;
             }
 
@@ -169,12 +256,20 @@ namespace Nexo.PluginHost
                 }
 
                 // Unload the AssemblyLoadContext
-                pluginContext.LoadContext.Unload();
+                if (pluginContext.LoadContext is PluginAssemblyLoadContext pluginLoadContext)
+                {
+                    pluginLoadContext.UnloadAndWait();
+                }
+                else
+                {
+                    pluginContext.LoadContext.Unload();
+                }
 
                 // Remove from loaded plugins
                 _loadedPlugins.Remove(pluginName);
 
                 var unloadDuration = DateTime.UtcNow - startTime;
+                activity?.SetTag("unload.duration.ms", unloadDuration.TotalMilliseconds);
                 _logger.LogInformation("Successfully unloaded plugin: {PluginName} in {UnloadDuration}ms", pluginName, unloadDuration.TotalMilliseconds);
 
                 // Audit log
@@ -231,13 +326,13 @@ namespace Nexo.PluginHost
         {
             try
             {
-                if (!File.Exists(manifestPath))
+                if (!_fileSystem.FileExists(manifestPath))
                 {
                     _logger.LogWarning("Plugin manifest not found: {ManifestPath}", manifestPath);
                     return null;
                 }
 
-                var manifestJson = await File.ReadAllTextAsync(manifestPath, cancellationToken);
+                var manifestJson = await _fileSystem.ReadAllTextAsync(manifestPath, cancellationToken);
                 var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestJson);
                 
                 if (manifest == null || string.IsNullOrEmpty(manifest.Name))
@@ -333,7 +428,7 @@ namespace Nexo.PluginHost
     {
         public PluginManifest Manifest { get; set; }
         public Assembly Assembly { get; set; }
-        public CollectiblePluginLoadContext LoadContext { get; set; }
+        public AssemblyLoadContext LoadContext { get; set; }
         public List<object> Instances { get; set; }
         public DateTime LoadTime { get; set; }
     }

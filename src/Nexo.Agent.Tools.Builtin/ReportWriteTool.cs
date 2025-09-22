@@ -1,0 +1,188 @@
+using System.Diagnostics;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Nexo.Agent.Contracts;
+using Nexo.Agent.Models;
+using Nexo.Agent.Abstractions;
+
+namespace Nexo.Agent.Tools.Builtin;
+
+/// <summary>
+/// Tool for writing reports in Markdown format.
+/// </summary>
+public class ReportWriteTool : ITool<ReportWriteInput, ReportWriteOutput>
+{
+    public ToolManifest Manifest { get; }
+
+    public ReportWriteTool()
+    {
+        Manifest = ToolManifest.Create(
+            id: "tool.report.write",
+            name: "Report Write",
+            description: "Write reports in Markdown format to files",
+            requiredPermissions: ToolPermissions.FileWrite,
+            capabilities: new[] { "report", "write", "markdown", "documentation" },
+            timeout: TimeSpan.FromMinutes(3)
+        );
+    }
+
+    public async Task<string> ExecuteAsync(string input, ToolContext context, CancellationToken cancellationToken = default)
+    {
+        var typedInput = JsonSerializer.Deserialize<ReportWriteInput>(input) ?? throw new ArgumentException("Invalid input");
+        var result = await ExecuteAsync(typedInput, context, cancellationToken);
+        return JsonSerializer.Serialize(result);
+    }
+
+    public async Task<ReportWriteOutput> ExecuteAsync(ReportWriteInput input, ToolContext context, CancellationToken cancellationToken = default)
+    {
+        using var activity = new ActivitySource("Nexo.Tool").StartActivity("ReportWrite");
+        activity?.SetTag("tool.report.output_path", input.OutputPath);
+        activity?.SetTag("tool.report.title", input.Title);
+
+        try
+        {
+            context.Logger.LogInformation("Writing report to: {OutputPath}", input.OutputPath);
+
+            // Ensure output directory exists
+            var outputDir = Path.GetDirectoryName(input.OutputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !context.FileSystem.DirectoryExists(outputDir))
+            {
+                context.FileSystem.CreateDirectory(outputDir);
+                context.Logger.LogInformation("Created output directory: {OutputDir}", outputDir);
+            }
+
+            // Generate report content
+            var reportContent = GenerateReportContent(input);
+            activity?.SetTag("tool.report.content_length", reportContent.Length);
+
+            // Write report to file
+            await context.FileSystem.WriteAllTextAsync(input.OutputPath, reportContent, cancellationToken);
+
+            var fileSize = context.FileSystem.GetFileSize(input.OutputPath);
+            context.Logger.LogInformation("Successfully wrote report to {OutputPath} ({Size} bytes)", input.OutputPath, fileSize);
+            activity?.SetTag("tool.report.file_size", fileSize);
+
+            return new ReportWriteOutput(true, input.OutputPath, null, fileSize);
+        }
+        catch (Exception ex)
+        {
+            var error = $"Error writing report to {input.OutputPath}: {ex.Message}";
+            context.Logger.LogError(ex, error);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            return new ReportWriteOutput(false, null, error, 0);
+        }
+    }
+
+    private static string GenerateReportContent(ReportWriteInput input)
+    {
+        var content = new System.Text.StringBuilder();
+
+        // Add title
+        if (!string.IsNullOrEmpty(input.Title))
+        {
+            content.AppendLine($"# {input.Title}");
+            content.AppendLine();
+        }
+
+        // Add timestamp
+        content.AppendLine($"**Generated:** {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        content.AppendLine();
+
+        // Add summary if provided
+        if (!string.IsNullOrEmpty(input.Summary))
+        {
+            content.AppendLine("## Summary");
+            content.AppendLine();
+            content.AppendLine(input.Summary);
+            content.AppendLine();
+        }
+
+        // Add main content
+        if (!string.IsNullOrEmpty(input.Content))
+        {
+            content.AppendLine("## Content");
+            content.AppendLine();
+            content.AppendLine(input.Content);
+            content.AppendLine();
+        }
+
+        // Add data tables if provided
+        if (input.Data != null && input.Data.Count > 0)
+        {
+            content.AppendLine("## Data");
+            content.AppendLine();
+            content.AppendLine(GenerateDataTable(input.Data));
+            content.AppendLine();
+        }
+
+        // Add metadata
+        if (input.Metadata != null && input.Metadata.Count > 0)
+        {
+            content.AppendLine("## Metadata");
+            content.AppendLine();
+            foreach (var kvp in input.Metadata)
+            {
+                content.AppendLine($"- **{kvp.Key}:** {kvp.Value}");
+            }
+            content.AppendLine();
+        }
+
+        // Add footer
+        content.AppendLine("---");
+        content.AppendLine($"*Report generated by Nexo Agent at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC*");
+
+        return content.ToString();
+    }
+
+    private static string GenerateDataTable(IReadOnlyList<Dictionary<string, string>> data)
+    {
+        if (data.Count == 0)
+            return "*No data available*";
+
+        var content = new System.Text.StringBuilder();
+        var columns = data[0].Keys.ToList();
+
+        // Add table header
+        content.AppendLine("| " + string.Join(" | ", columns) + " |");
+        content.AppendLine("| " + string.Join(" | ", columns.Select(_ => "---")) + " |");
+
+        // Add table rows
+        foreach (var row in data)
+        {
+            var values = columns.Select(col => row.GetValueOrDefault(col, "")).ToArray();
+            content.AppendLine("| " + string.Join(" | ", values) + " |");
+        }
+
+        return content.ToString();
+    }
+}
+
+/// <summary>
+/// Input for the ReportWrite tool.
+/// </summary>
+/// <param name="OutputPath">Path where the report should be written</param>
+/// <param name="Title">Report title</param>
+/// <param name="Summary">Report summary</param>
+/// <param name="Content">Main report content</param>
+/// <param name="Data">Data to include in tables</param>
+/// <param name="Metadata">Additional metadata</param>
+public record ReportWriteInput(
+    string OutputPath,
+    string? Title = null,
+    string? Summary = null,
+    string? Content = null,
+    IReadOnlyList<Dictionary<string, string>>? Data = null,
+    IReadOnlyDictionary<string, string>? Metadata = null);
+
+/// <summary>
+/// Output from the ReportWrite tool.
+/// </summary>
+/// <param name="Success">Whether the report was written successfully</param>
+/// <param name="OutputPath">Path where the report was written</param>
+/// <param name="Error">Error message if writing failed</param>
+/// <param name="FileSize">Size of the written file in bytes</param>
+public record ReportWriteOutput(
+    bool Success,
+    string? OutputPath,
+    string? Error,
+    long FileSize);

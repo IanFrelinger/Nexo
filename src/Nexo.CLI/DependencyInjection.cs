@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Nexo.Observability;
 using Nexo.Core.Application.Interfaces;
 using Nexo.Core.Application.Models;
 using Nexo.Core.Application.Services;
@@ -62,6 +63,9 @@ namespace Nexo.CLI
                 builder.AddDebug();
                 builder.SetMinimumLevel(LogLevel.Information);
             });
+
+            // Add observability
+            services.AddNexoObservability(configuration);
 
             // Add HTTP client
             services.AddHttpClient();

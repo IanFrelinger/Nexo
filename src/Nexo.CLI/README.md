@@ -4,8 +4,15 @@ AI-Enhanced Development Environment Orchestration Platform CLI
 
 ## Installation
 
+### Global Installation
 ```bash
 dotnet tool install --global Nexo.CLI --add-source ./nupkgs
+```
+
+### Local Installation (for CI/Development)
+```bash
+dotnet pack src/Nexo.CLI -c Release -o ./nupkgs
+dotnet tool install --tool-path ./tools Nexo.CLI --add-source ./nupkgs
 ```
 
 ## Usage

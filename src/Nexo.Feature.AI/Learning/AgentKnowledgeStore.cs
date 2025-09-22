@@ -68,6 +68,7 @@ public class AgentKnowledgeStore : IAgentKnowledgeStore
                 .OrderByDescending(r => r.Timestamp);
             
             _logger.LogDebug("Found {RecordCount} recent records for agent {AgentId}", recentRecords.Count(), agentId);
+            await Task.CompletedTask;
             return recentRecords;
         }
         catch (Exception ex)
@@ -116,6 +117,7 @@ public class AgentKnowledgeStore : IAgentKnowledgeStore
             _logger.LogDebug("Generated analytics for agent {AgentId}: SuccessRate={SuccessRate}, AvgConfidence={AvgConfidence}", 
                 agentId, analytics.OverallSuccessRate, analytics.AverageConfidence);
             
+            await Task.CompletedTask;
             return analytics;
         }
         catch (Exception ex)
@@ -179,6 +181,7 @@ public class AgentKnowledgeStore : IAgentKnowledgeStore
                 .Take(100); // Return the most recent 100 insights
             
             _logger.LogDebug("Found {InsightCount} learning insights for agent {AgentId}", insights.Count(), agentId);
+            await Task.CompletedTask;
             return insights;
         }
         catch (Exception ex)

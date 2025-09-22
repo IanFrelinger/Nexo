@@ -12,6 +12,11 @@ on:
       - 'Directory.Build.props'
       - 'Directory.Packages.props'
 
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
 env:
   DOTNET_VERSION: '8.0.x'
   SOLUTION_FILE: 'Nexo.sln'

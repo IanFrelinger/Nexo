@@ -23,23 +23,26 @@ jobs:
       - name: Build project
         run: dotnet build Nexo.sln --no-restore
         
-      - name: Install Nexo CLI
+      - name: Build Nexo CLI
+        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj -c Release
+        
+      - name: Pack Nexo CLI
+        run: dotnet pack src/Nexo.CLI/Nexo.CLI.csproj -c Release -o ./nupkgs
+        
+      - name: Install Nexo CLI locally
         run: |
-          # Skip CLI installation for now due to compilation issues
-          # TODO: Fix CLI compilation errors and re-enable this step
-          echo "Skipping CLI installation - using mock commands for policy validation"
-          # Create a mock nexo command for testing
-          echo '#!/bin/bash
-          echo "Mock nexo command - policy validation would run here"
-          echo "✅ Policy validation passed (mock)"
-          ' > nexo
-          chmod +x nexo
-          sudo mv nexo /usr/local/bin/nexo || true
+          dotnet tool install --tool-path ./tools Nexo.CLI --add-source ./nupkgs
+          echo "$PWD/tools" >> $GITHUB_PATH
           
       - name: Create test reports directory
         run: |
           mkdir -p test-reports/policies
         
+      - name: Validate featurespec files
+        run: |
+          set -e
+          nexo spec validate --schema policies/schemas/featurespec.schema.json examples/valid-featurespec.yaml
+          
       - name: Validate policy files
         run: |
           set -e

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -76,24 +77,43 @@ public static class ObservabilityServiceCollectionExtensions
     {
         var assembly = Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version?.ToString() ?? "1.0.0";
+        var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") ?? "Nexo";
 
-        builder
-            .AddService("Nexo", version)
-            .AddAttributes(new Dictionary<string, object>
+        var resourceAttributes = new Dictionary<string, object>
+        {
+            ["service.name"] = serviceName,
+            ["service.version"] = version,
+            ["service.namespace"] = "Nexo",
+            ["service.instance.id"] = Environment.MachineName,
+            ["deployment.environment"] = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
+        };
+
+        // Add custom resource attributes from environment
+        var customAttributes = Environment.GetEnvironmentVariable("OTEL_RESOURCE_ATTRIBUTES");
+        if (!string.IsNullOrEmpty(customAttributes))
+        {
+            var pairs = customAttributes.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var pair in pairs)
             {
-                ["service.namespace"] = "Nexo",
-                ["service.instance.id"] = Environment.MachineName,
-                ["deployment.environment"] = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
-            });
+                var keyValue = pair.Split('=', 2);
+                if (keyValue.Length == 2)
+                {
+                    resourceAttributes[keyValue[0].Trim()] = keyValue[1].Trim();
+                }
+            }
+        }
+
+        builder.AddService(serviceName, version)
+               .AddAttributes(resourceAttributes);
     }
 
     /// <summary>
     /// Configures OpenTelemetry tracing.
     /// </summary>
     /// <param name="builder">The tracing builder.</param>
-    private static void ConfigureTracing(IServiceProvider serviceProvider, TracerProviderBuilder builder)
+    private static void ConfigureTracing(TracerProviderBuilder builder)
     {
-        var options = serviceProvider.GetRequiredService<IOptions<ObservabilityOptions>>().Value;
+        // Note: We'll configure options through environment variables and defaults
 
         // Add sources
         builder
@@ -105,37 +125,32 @@ public static class ObservabilityServiceCollectionExtensions
             .AddSource(NexoActivitySources.Observability.Name);
 
         // Add instrumentation
-        builder
-            .AddHttpClientInstrumentation()
-            .AddAspNetCoreInstrumentation()
-            .AddSqlClientInstrumentation();
 
-        // Configure sampling
-        ConfigureSampling(builder, options.Sampling);
+        // Configure sampling - use default sampling
+        builder.SetSampler(new AlwaysOnSampler());
 
-        // Add exporters
-        if (options.Console.Enabled)
+        // Add exporters - always add console exporter unless explicitly disabled
+        var consoleEnabled = !string.Equals(Environment.GetEnvironmentVariable("OTEL_CONSOLE_DISABLED"), "true", StringComparison.OrdinalIgnoreCase);
+        
+        if (consoleEnabled)
         {
-            builder.AddConsoleExporter(options =>
-            {
-                options.IncludeScopes = options.IncludeScopes;
-                options.IncludeActivityTags = options.IncludeActivityTags;
-            });
+            builder.AddConsoleExporter();
         }
 
-        if (options.Otlp.Enabled && !string.IsNullOrEmpty(options.Otlp.Endpoint))
+        // Add OTLP exporter if endpoint is configured
+        var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
+        if (!string.IsNullOrEmpty(otlpEndpoint))
         {
             builder.AddOtlpExporter(otlpOptions =>
             {
-                otlpOptions.Endpoint = new Uri(options.Otlp.Endpoint);
-                otlpOptions.Protocol = options.Otlp.Protocol == OtlpProtocol.Grpc 
-                    ? OtlpExportProtocol.Grpc 
-                    : OtlpExportProtocol.HttpProtobuf;
-                
-                if (options.Otlp.Headers.Any())
+                otlpOptions.Endpoint = new Uri(otlpEndpoint);
+                var protocol = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL")?.ToLowerInvariant();
+                otlpOptions.Protocol = protocol switch
                 {
-                    otlpOptions.Headers = string.Join(",", options.Otlp.Headers.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-                }
+                    "http" or "http/protobuf" => OtlpExportProtocol.HttpProtobuf,
+                    "grpc" => OtlpExportProtocol.Grpc,
+                    _ => OtlpExportProtocol.Grpc
+                };
             });
         }
     }
@@ -144,57 +159,49 @@ public static class ObservabilityServiceCollectionExtensions
     /// Configures OpenTelemetry metrics.
     /// </summary>
     /// <param name="builder">The metrics builder.</param>
-    private static void ConfigureMetrics(IServiceProvider serviceProvider, MeterProviderBuilder builder)
+    private static void ConfigureMetrics(MeterProviderBuilder builder)
     {
-        var options = serviceProvider.GetRequiredService<IOptions<ObservabilityOptions>>().Value;
+        // Note: We'll configure options through environment variables and defaults
 
         // Add runtime instrumentation
         builder.AddRuntimeInstrumentation();
 
         // Add custom meters
         builder.AddMeter("Nexo.Pipeline");
+        builder.AddMeter("Nexo.Generation");
+        builder.AddMeter("Nexo.Validation");
+        builder.AddMeter("Nexo.Policy");
+        builder.AddMeter("Nexo.Repair");
 
-        // Add exporters
-        if (options.Console.Enabled)
+        // Add exporters - always add console exporter unless explicitly disabled
+        var consoleEnabled = !string.Equals(Environment.GetEnvironmentVariable("OTEL_CONSOLE_DISABLED"), "true", StringComparison.OrdinalIgnoreCase);
+        
+        if (consoleEnabled)
         {
             builder.AddConsoleExporter();
         }
 
-        if (options.Otlp.Enabled && !string.IsNullOrEmpty(options.Otlp.Endpoint))
+        // Add OTLP exporter if endpoint is configured
+        var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
+        if (!string.IsNullOrEmpty(otlpEndpoint))
         {
             builder.AddOtlpExporter(otlpOptions =>
             {
-                otlpOptions.Endpoint = new Uri(options.Otlp.Endpoint);
-                otlpOptions.Protocol = options.Otlp.Protocol == OtlpProtocol.Grpc 
-                    ? OtlpExportProtocol.Grpc 
-                    : OtlpExportProtocol.HttpProtobuf;
-                
-                if (options.Otlp.Headers.Any())
+                otlpOptions.Endpoint = new Uri(otlpEndpoint);
+                var protocol = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL")?.ToLowerInvariant();
+                otlpOptions.Protocol = protocol switch
                 {
-                    otlpOptions.Headers = string.Join(",", options.Otlp.Headers.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-                }
+                    "http" or "http/protobuf" => OtlpExportProtocol.HttpProtobuf,
+                    "grpc" => OtlpExportProtocol.Grpc,
+                    _ => OtlpExportProtocol.Grpc
+                };
             });
         }
     }
 
-    /// <summary>
-    /// Configures sampling based on the provided options.
-    /// </summary>
-    /// <param name="builder">The tracing builder.</param>
-    /// <param name="sampling">The sampling options.</param>
-    private static void ConfigureSampling(TracerProviderBuilder builder, SamplingOptions sampling)
-    {
-        switch (sampling.Type)
-        {
-            case SamplingType.AlwaysOn:
-                builder.SetSampler(new AlwaysOnSampler());
-                break;
-            case SamplingType.AlwaysOff:
-                builder.SetSampler(new AlwaysOffSampler());
-                break;
-            case SamplingType.TraceIdRatioBased:
-                builder.SetSampler(new TraceIdRatioBasedSampler(sampling.Ratio));
-                break;
-        }
-    }
 }
+
+
+
+
+

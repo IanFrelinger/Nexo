@@ -48,7 +48,7 @@ public static class ObservabilityHelpers
     /// <param name="tags">Additional tags.</param>
     public static void RecordCounter(Counter<long> counter, long value = 1, Dictionary<string, object?>? tags = null)
     {
-        var tagList = tags?.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray();
+        var tagList = tags?.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray() ?? Array.Empty<KeyValuePair<string, object?>>();
         counter.Add(value, tagList);
     }
 
@@ -60,7 +60,7 @@ public static class ObservabilityHelpers
     /// <param name="tags">Additional tags.</param>
     public static void RecordHistogram(Histogram<double> histogram, double value, Dictionary<string, object?>? tags = null)
     {
-        var tagList = tags?.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray();
+        var tagList = tags?.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, kvp.Value)).ToArray() ?? Array.Empty<KeyValuePair<string, object?>>();
         histogram.Record(value, tagList);
     }
 
