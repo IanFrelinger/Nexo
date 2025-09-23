@@ -29,4 +29,24 @@ public record ModelCapabilities
     /// Whether the model supports streaming responses
     /// </summary>
     public bool SupportsStreaming { get; init; } = false;
+    
+    /// <summary>
+    /// Whether the model supports image generation
+    /// </summary>
+    public bool SupportsImageGeneration { get; init; } = false;
+    
+    /// <summary>
+    /// Whether the model supports audio generation
+    /// </summary>
+    public bool SupportsAudioGeneration { get; init; } = false;
+    
+    /// <summary>
+    /// Whether the model supports video generation
+    /// </summary>
+    public bool SupportsVideoGeneration { get; init; } = false;
+    
+    /// <summary>
+    /// Whether the model supports multimodal input/output
+    /// </summary>
+    public bool SupportsMultimodal { get; init; } = false;
 }

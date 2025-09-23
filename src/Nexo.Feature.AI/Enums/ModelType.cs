@@ -38,5 +38,25 @@ public enum ModelType
     /// <summary>
     /// Llama models
     /// </summary>
-    Llama
+    Llama,
+    
+    /// <summary>
+    /// Image generation models (DALL-E, Stable Diffusion, etc.)
+    /// </summary>
+    ImageGeneration,
+    
+    /// <summary>
+    /// Audio generation models (music, speech synthesis)
+    /// </summary>
+    AudioGeneration,
+    
+    /// <summary>
+    /// Video generation models
+    /// </summary>
+    VideoGeneration,
+    
+    /// <summary>
+    /// Multimodal models (text + image + audio)
+    /// </summary>
+    Multimodal
 }
