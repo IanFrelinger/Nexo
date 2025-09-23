@@ -9,7 +9,7 @@ namespace Nexo.Agent.Implementations;
 /// <summary>
 /// Default implementation of the Atlas agent.
 /// </summary>
-public class AtlasAgent : IAgent
+public class AtlasAgent : ITaskExecutionAgent
 {
     private readonly ILogger<AtlasAgent> _logger;
     private readonly IAgentPlanner _planner;

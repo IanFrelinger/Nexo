@@ -23,7 +23,7 @@ public class Program
 
         // Get services
         var logger = host.Services.GetRequiredService<ILogger<Program>>();
-        var agent = host.Services.GetRequiredService<IAgent>();
+        var agent = host.Services.GetRequiredService<ITaskExecutionAgent>();
 
         try
         {
@@ -65,7 +65,7 @@ public class Program
                 services.AddSingleton<IToolRegistry, ToolRegistry>();
                 services.AddSingleton<IToolBroker, ToolBroker>();
                 services.AddSingleton<IToolFactory, PipelineToolFactory>();
-                services.AddSingleton<IAgent, AtlasAgent>();
+                services.AddSingleton<ITaskExecutionAgent, AtlasAgent>();
 
                 // Add built-in tools
                 services.AddSingleton<FileReadTool>();
@@ -80,12 +80,12 @@ public class Program
 /// </summary>
 public class ProjectManagerDemo
 {
-    private readonly IAgent _agent;
+    private readonly ITaskExecutionAgent _agent;
     private readonly ILogger _logger;
     private readonly List<ProjectTask> _projectTasks = new();
     private readonly List<ProjectValidation> _validations = new();
 
-    public ProjectManagerDemo(IAgent agent, ILogger logger)
+    public ProjectManagerDemo(ITaskExecutionAgent agent, ILogger logger)
     {
         _agent = agent ?? throw new ArgumentNullException(nameof(agent));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -57,6 +57,9 @@ namespace Nexo.CLI.Commands
             rootCommand.AddCommand(CreateDiscoveryCommand());
             rootCommand.AddCommand(CreateExecutionCommand());
 
+            // Add demo commands (consolidated from DemoCommandAggregator)
+            rootCommand.AddCommand(CreateDemoCommands());
+
             return rootCommand;
         }
 
@@ -72,6 +75,16 @@ namespace Nexo.CLI.Commands
             coreCommands.AddCommand("status", "Show system status", "status");
             coreCommands.AddCommand("help", "Show help information", "help");
             _commandCategories["core"] = coreCommands;
+
+            // Demo Commands (consolidated from DemoCommandAggregator)
+            var demoCommands = new CommandCategory("demo", "Demo and showcase commands");
+            demoCommands.AddCommand("feature-lab", "Feature Lab playground commands", "demo feature-lab start --platform blazor");
+            demoCommands.AddCommand("validation", "Validation and preflight checks", "demo validation run");
+            demoCommands.AddCommand("showcase", "Showcase different features", "demo showcase factory --type web");
+            demoCommands.AddCommand("frontend", "Frontend generation demos", "demo frontend generate \"E-commerce app\" --type mobile");
+            demoCommands.AddCommand("orchestration", "Orchestration demos", "demo orchestration run");
+            demoCommands.AddCommand("discovery", "Command discovery demos", "demo discovery list");
+            _commandCategories["demo"] = demoCommands;
 
             // Project Management Commands
             var projectCommands = new CommandCategory("project", "Project management and scaffolding");
@@ -573,6 +586,88 @@ namespace Nexo.CLI.Commands
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// Creates demo commands (consolidated from DemoCommandAggregator)
+        /// </summary>
+        private Command CreateDemoCommands()
+        {
+            var demoCommand = new Command("demo", "Demo and showcase commands");
+
+            // Feature Lab commands
+            var featureLabCommand = new Command("feature-lab", "Feature Lab playground commands");
+            
+            var startCommand = new Command("start", "Start the Feature Lab playground");
+            var platformOption = new Option<string>("--platform", () => "blazor", "Platform to use (blazor, maui, console)");
+            var portOption = new Option<int>("--port", () => 5000, "Port for web applications");
+            startCommand.AddOption(platformOption);
+            startCommand.AddOption(portOption);
+            startCommand.SetHandler(async (string platform, int port) =>
+            {
+                _logger.LogInformation("Starting Feature Lab with platform: {Platform}, port: {Port}", platform, port);
+                Console.WriteLine($"🚀 Starting Feature Lab - Platform: {platform}, Port: {port}");
+                // TODO: Implement actual Feature Lab startup
+                await Task.CompletedTask;
+            }, platformOption, portOption);
+            featureLabCommand.AddCommand(startCommand);
+
+            var stopCommand = new Command("stop", "Stop the Feature Lab playground");
+            stopCommand.SetHandler(async () =>
+            {
+                _logger.LogInformation("Stopping Feature Lab");
+                Console.WriteLine("🛑 Stopping Feature Lab");
+                // TODO: Implement actual Feature Lab shutdown
+                await Task.CompletedTask;
+            });
+            featureLabCommand.AddCommand(stopCommand);
+
+            var statusCommand = new Command("status", "Check Feature Lab status");
+            statusCommand.SetHandler(() =>
+            {
+                _logger.LogInformation("Checking Feature Lab status");
+                Console.WriteLine("📊 Feature Lab Status: Running");
+                // TODO: Implement actual status check
+            });
+            featureLabCommand.AddCommand(statusCommand);
+
+            demoCommand.AddCommand(featureLabCommand);
+
+            // Validation commands
+            var validationCommand = new Command("validation", "Validation and preflight checks");
+            
+            var runValidationCommand = new Command("run", "Run comprehensive validation checks");
+            var skipTestsOption = new Option<bool>("--skip-tests", "Skip test execution");
+            runValidationCommand.AddOption(skipTestsOption);
+            runValidationCommand.SetHandler(async (bool skipTests) =>
+            {
+                _logger.LogInformation("Running validation checks, skip tests: {SkipTests}", skipTests);
+                Console.WriteLine($"🔍 Running validation checks... (Skip tests: {skipTests})");
+                // TODO: Implement actual validation
+                await Task.CompletedTask;
+            }, skipTestsOption);
+            validationCommand.AddCommand(runValidationCommand);
+
+            demoCommand.AddCommand(validationCommand);
+
+            // Showcase commands
+            var showcaseCommand = new Command("showcase", "Showcase different features");
+            
+            var factoryCommand = new Command("factory", "Showcase Feature Factory");
+            var typeOption = new Option<string>("--type", () => "web", "Type of showcase (web, mobile, desktop)");
+            factoryCommand.AddOption(typeOption);
+            factoryCommand.SetHandler(async (string type) =>
+            {
+                _logger.LogInformation("Running Feature Factory showcase for type: {Type}", type);
+                Console.WriteLine($"🏭 Running Feature Factory showcase - Type: {type}");
+                // TODO: Implement actual showcase
+                await Task.CompletedTask;
+            }, typeOption);
+            showcaseCommand.AddCommand(factoryCommand);
+
+            demoCommand.AddCommand(showcaseCommand);
+
+            return demoCommand;
         }
     }
 

@@ -5,9 +5,9 @@ using Nexo.Agent.Models;
 namespace Nexo.Agent.Contracts;
 
 /// <summary>
-/// Core agent interface that plans tasks and executes them using available tools.
+/// Core task execution agent interface that plans tasks and executes them using available tools.
 /// </summary>
-public interface IAgent
+public interface ITaskExecutionAgent
 {
     /// <summary>
     /// Executes a task by planning and executing the necessary steps.

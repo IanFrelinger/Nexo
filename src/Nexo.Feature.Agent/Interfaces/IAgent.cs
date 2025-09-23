@@ -5,11 +5,11 @@ using Nexo.Core.Domain.ValueObjects;
 namespace Nexo.Feature.Agent.Interfaces
 {
     /// <summary>
-    /// Defines the contract for an agent entity capable of handling specific tasks,
+    /// Defines the contract for a domain agent entity capable of handling specific tasks,
     /// managing its lifecycle, and providing information about its capabilities, focus areas,
     /// and current state.
     /// </summary>
-    public interface IAgent
+    public interface IDomainAgent
     {
         /// <summary>
         /// Gets the unique identifier for the agent.
