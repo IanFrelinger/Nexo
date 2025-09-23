@@ -1,0 +1,167 @@
+{
+  "Defaults": {
+    "CrossDomainUsages": [
+      "Unity",
+      "Unreal", 
+      "WebGL",
+      "Mobile",
+      "Console",
+      "Desktop"
+    ],
+    "CommonDependencies": [
+      "IEventProvider",
+      "IStateProvider",
+      "INotificationProvider"
+    ],
+    "CommonResponsibilities": [
+      "Component Registration",
+      "Dependency Injection", 
+      "Lifecycle Management",
+      "Error Handling"
+    ]
+  },
+  "DomainLogicComponents": [
+    {
+      "Name": "MovementLogic",
+      "Description": "Abstract movement logic that can work across platforms",
+      "Domain": "Movement",
+      "Interfaces": [
+        "IMovementProvider",
+        "IMovementValidator",
+        "IMovementCalculator"
+      ],
+      "Dependencies": [
+        "IInputProvider",
+        "IPhysicsProvider",
+        "ICollisionProvider"
+      ],
+      "CrossDomainUsages": ["Unity", "Unreal", "WebGL", "Mobile", "Console"]
+    },
+    {
+      "Name": "CombatLogic", 
+      "Description": "Abstract combat system with weapon management and damage calculation",
+      "Domain": "Combat",
+      "Interfaces": [
+        "IWeaponProvider",
+        "IDamageCalculator", 
+        "ICombatValidator",
+        "IWeaponSelector"
+      ],
+      "Dependencies": [
+        "IHealthProvider",
+        "IAudioProvider",
+        "IAnimationProvider",
+        "IProjectileProvider"
+      ]
+    },
+    {
+      "Name": "HealthLogic",
+      "Description": "Abstract health and damage system with state management", 
+      "Domain": "Health",
+      "Interfaces": [
+        "IHealthProvider",
+        "IDamageProvider",
+        "IHealthValidator", 
+        "IHealthRegenerator"
+      ],
+      "Dependencies": [
+        "IEventProvider",
+        "IStateProvider",
+        "INotificationProvider"
+      ]
+    },
+    {
+      "Name": "AILogic",
+      "Description": "Abstract AI behavior system with decision making and pathfinding",
+      "Domain": "AI", 
+      "Interfaces": [
+        "IBehaviorProvider",
+        "IPathfindingProvider",
+        "IDecisionProvider",
+        "IStateMachineProvider"
+      ],
+      "Dependencies": [
+        "IWorldProvider",
+        "IStateProvider", 
+        "IEventProvider",
+        "INavigationProvider"
+      ]
+    },
+    {
+      "Name": "AudioLogic",
+      "Description": "Abstract audio management system with spatial audio support",
+      "Domain": "Audio",
+      "Interfaces": [
+        "IAudioProvider",
+        "ISoundValidator",
+        "IMusicProvider", 
+        "ISpatialAudioProvider"
+      ],
+      "Dependencies": [
+        "IResourceProvider",
+        "ISpatialProvider",
+        "IVolumeProvider"
+      ]
+    }
+  ],
+  "PlatformImplementations": [
+    {
+      "Platform": "Unity",
+      "TargetFramework": "Unity 2022.3 LTS",
+      "ImplementationStyle": "MonoBehaviour-based with Component System",
+      "Dependencies": [
+        "UnityEngine",
+        "Unity.InputSystem", 
+        "Unity.AI.Navigation",
+        "Unity.Audio",
+        "Unity.Physics"
+      ]
+    },
+    {
+      "Platform": "Unreal",
+      "TargetFramework": "Unreal Engine 5", 
+      "ImplementationStyle": "Actor-based with Component System",
+      "Dependencies": [
+        "Core",
+        "Engine",
+        "AIModule",
+        "AudioMixer",
+        "GameplayTags"
+      ]
+    },
+    {
+      "Platform": "WebGL",
+      "TargetFramework": "WebAssembly",
+      "ImplementationStyle": "Component-based with Web APIs", 
+      "Dependencies": [
+        "System",
+        "System.Threading.Tasks",
+        "WebAssembly"
+      ]
+    }
+  ],
+  "CompositionComponents": [
+    {
+      "Name": "GameOrchestrator",
+      "Description": "Orchestrates all domain logic components and manages their lifecycle",
+      "Responsibilities": [
+        "Component Registration",
+        "Dependency Injection",
+        "Lifecycle Management", 
+        "Cross-Component Communication",
+        "Error Handling and Recovery"
+      ]
+    },
+    {
+      "Name": "PlatformAdapter",
+      "Description": "Adapts domain logic to specific platforms and handles platform-specific concerns",
+      "Responsibilities": [
+        "Platform Detection",
+        "Implementation Selection",
+        "Interface Mapping",
+        "Platform-Specific Configuration",
+        "Performance Optimization"
+      ]
+    }
+  ]
+}
