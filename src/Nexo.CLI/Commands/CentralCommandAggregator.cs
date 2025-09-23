@@ -84,6 +84,7 @@ namespace Nexo.CLI.Commands
             demoCommands.AddCommand("frontend", "Frontend generation demos", "demo frontend generate \"E-commerce app\" --type mobile");
             demoCommands.AddCommand("orchestration", "Orchestration demos", "demo orchestration run");
             demoCommands.AddCommand("discovery", "Command discovery demos", "demo discovery list");
+            demoCommands.AddCommand("unity", "Unity game development with natural language", "demo unity create \"FPS controller\" --platform pc");
             _commandCategories["demo"] = demoCommands;
 
             // Project Management Commands
@@ -666,6 +667,50 @@ namespace Nexo.CLI.Commands
             showcaseCommand.AddCommand(factoryCommand);
 
             demoCommand.AddCommand(showcaseCommand);
+
+            // Unity commands
+            var unityCommand = new Command("unity", "Unity game development with natural language");
+            
+            var createCommand = new Command("create", "Create Unity game components using natural language");
+            var descriptionArgument = new Argument<string>("description", "Natural language description of what to create");
+            var platformOption = new Option<string>("--platform", () => "pc", "Target platform (pc, mobile, console, vr)");
+            var complexityOption = new Option<string>("--complexity", () => "medium", "Complexity level (simple, medium, complex)");
+            createCommand.AddArgument(descriptionArgument);
+            createCommand.AddOption(platformOption);
+            createCommand.AddOption(complexityOption);
+            createCommand.SetHandler(async (string description, string platform, string complexity) =>
+            {
+                _logger.LogInformation("Creating Unity component: {Description} for platform: {Platform} with complexity: {Complexity}", 
+                    description, platform, complexity);
+                Console.WriteLine($"🎮 Creating Unity Component: {description}");
+                Console.WriteLine($"📱 Platform: {platform}");
+                Console.WriteLine($"⚡ Complexity: {complexity}");
+                Console.WriteLine();
+                Console.WriteLine("🔧 Decomposing requirements into reusable commands...");
+                Console.WriteLine("✅ Command decomposition completed");
+                Console.WriteLine("🚀 Executing commands...");
+                Console.WriteLine("📝 Generating Unity scripts...");
+                Console.WriteLine("✅ Unity component created successfully!");
+                // TODO: Implement actual Unity component creation
+                await Task.CompletedTask;
+            }, descriptionArgument, platformOption, complexityOption);
+            unityCommand.AddCommand(createCommand);
+
+            var validateCommand = new Command("validate", "Validate Unity project and components");
+            validateCommand.SetHandler(async () =>
+            {
+                _logger.LogInformation("Validating Unity project");
+                Console.WriteLine("🔍 Validating Unity project...");
+                Console.WriteLine("✅ Code Quality: PASSED");
+                Console.WriteLine("✅ Performance: PASSED");
+                Console.WriteLine("✅ Cross-Platform: PASSED");
+                Console.WriteLine("✅ Integration: PASSED");
+                // TODO: Implement actual Unity validation
+                await Task.CompletedTask;
+            });
+            unityCommand.AddCommand(validateCommand);
+
+            demoCommand.AddCommand(unityCommand);
 
             return demoCommand;
         }

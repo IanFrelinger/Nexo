@@ -21,7 +21,7 @@ public class Program
 
         // Get services
         var logger = host.Services.GetRequiredService<ILogger<Program>>();
-        var agent = host.Services.GetRequiredService<IAgent>();
+        var agent = host.Services.GetRequiredService<ITaskExecutionAgent>();
 
         try
         {
@@ -63,7 +63,7 @@ public class Program
                 services.AddSingleton<IToolBroker, ToolBroker>();
                 services.AddSingleton<IAgentPlanner, SimplePlanner>();
                 services.AddSingleton<IToolFactory, PipelineToolFactory>();
-                services.AddSingleton<IAgent, AtlasAgent>();
+                services.AddSingleton<ITaskExecutionAgent, AtlasAgent>();
 
                 // Register built-in tools
                 services.AddSingleton<ITool, FileReadTool>();
@@ -78,12 +78,12 @@ public class Program
 /// </summary>
 public class AgentFoundryDemo
 {
-    private readonly IAgent _agent;
+    private readonly ITaskExecutionAgent _agent;
     private readonly ILogger _logger;
     private AgentMode _currentMode = AgentMode.Off;
     private bool _selfHealEnabled = false;
 
-    public AgentFoundryDemo(IAgent agent, ILogger logger)
+    public AgentFoundryDemo(ITaskExecutionAgent agent, ILogger logger)
     {
         _agent = agent ?? throw new ArgumentNullException(nameof(agent));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
