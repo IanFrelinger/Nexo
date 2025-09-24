@@ -1,144 +1,133 @@
-using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using FeatureFactoryDemo.Data;
-using FeatureFactoryDemo.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace FeatureFactoryDemo.Services
 {
-    /// <summary>
-    /// Service for managing command history and successful code generation records
-    /// </summary>
     public class CommandHistoryService
     {
-        private readonly FeatureFactoryDbContext _context;
         private readonly ILogger<CommandHistoryService> _logger;
-        
-        public CommandHistoryService(FeatureFactoryDbContext context, ILogger<CommandHistoryService> logger)
+        private readonly FeatureFactoryDbContext _context;
+
+        public CommandHistoryService(
+            ILogger<CommandHistoryService> logger,
+            FeatureFactoryDbContext context)
         {
-            _context = context;
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
-        
-        /// <summary>
-        /// Saves a successful command execution to the database
-        /// </summary>
-        public async Task SaveSuccessfulCommandAsync(string description, string platform, string generatedCode, 
-            int qualityScore, int iterationCount, string? context = null, string? tags = null)
+
+        public async Task<List<CommandHistory>> GetSimilarCommandsAsync(string description)
         {
             try
             {
-                var commandHistory = new CommandHistory
-                {
-                    Description = description,
-                    Platform = platform,
-                    GeneratedCode = generatedCode,
-                    FinalQualityScore = qualityScore,
-                    IterationCount = iterationCount,
-                    Context = context,
-                    Tags = tags,
-                    IsSuccessful = true,
-                    ExecutedAt = DateTime.UtcNow
-                };
+                _logger.LogInformation("Finding similar commands for: {Description}", description);
+
+                var commands = await _context.CommandHistories.ToListAsync();
                 
-                _context.CommandHistories.Add(commandHistory);
-                await _context.SaveChangesAsync();
+                // Simple similarity calculation based on common words
+                var descriptionWords = description.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 
-                _logger.LogInformation("Successfully saved command history: {Description} (Quality: {QualityScore}/100)", 
-                    description, qualityScore);
+                var similarCommands = commands
+                    .Select(cmd => new
+                    {
+                        Command = cmd,
+                        Similarity = CalculateSimilarity(descriptionWords, cmd.Command.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                    })
+                    .Where(x => x.Similarity > 0.3)
+                    .OrderByDescending(x => x.Similarity)
+                    .Select(x => new CommandHistory
+                    {
+                        Command = x.Command.Command,
+                        SimilarityScore = x.Similarity,
+                        Timestamp = x.Command.Timestamp
+                    })
+                    .ToList();
+
+                return similarCommands;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to save command history for: {Description}", description);
+                _logger.LogError(ex, "Error finding similar commands");
+                return new List<CommandHistory>();
             }
         }
-        
-        /// <summary>
-        /// Retrieves recent successful commands for context
-        /// </summary>
-        public async Task<List<CommandHistory>> GetRecentSuccessfulCommandsAsync(int count = 10)
+
+        public async Task SaveCommandAsync(string command, string description, bool success)
+        {
+            try
+            {
+                _logger.LogInformation("Saving command: {Command}", command);
+
+                var commandHistory = new CommandHistory
+                {
+                    Command = command,
+                    Description = description,
+                    Success = success,
+                    Timestamp = DateTime.UtcNow
+                };
+
+                _context.CommandHistories.Add(commandHistory);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving command");
+            }
+        }
+
+        public async Task<List<CommandHistory>> GetRecentCommandsAsync(int count = 10)
         {
             try
             {
                 return await _context.CommandHistories
-                    .Where(c => c.IsSuccessful && c.FinalQualityScore >= 80)
-                    .OrderByDescending(c => c.ExecutedAt)
+                    .OrderByDescending(c => c.Timestamp)
                     .Take(count)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to retrieve recent successful commands");
+                _logger.LogError(ex, "Error getting recent commands");
                 return new List<CommandHistory>();
             }
         }
-        
-        /// <summary>
-        /// Gets commands similar to the current request for context
-        /// </summary>
-        public async Task<List<CommandHistory>> GetSimilarCommandsAsync(string description, string platform)
+
+        public async Task<Dictionary<string, int>> GetCommandStatisticsAsync()
         {
             try
             {
-                var firstWord = description.Split(' ')[0];
-                var allCommands = await _context.CommandHistories
-                    .Where(c => c.IsSuccessful && c.Platform == platform)
-                    .ToListAsync();
+                var commands = await _context.CommandHistories.ToListAsync();
                 
-                return allCommands
-                    .Where(c => c.Description.Contains(firstWord) || description.Contains(c.Description.Split(' ')[0]))
-                    .OrderByDescending(c => c.FinalQualityScore)
-                    .Take(5)
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to retrieve similar commands");
-                return new List<CommandHistory>();
-            }
-        }
-        
-        /// <summary>
-        /// Gets statistics about command history
-        /// </summary>
-        public async Task<CommandHistoryStats> GetStatisticsAsync()
-        {
-            try
-            {
-                var totalCommands = await _context.CommandHistories.CountAsync();
-                var successfulCommands = await _context.CommandHistories.CountAsync(c => c.IsSuccessful);
-                var averageQuality = await _context.CommandHistories
-                    .Where(c => c.IsSuccessful)
-                    .AverageAsync(c => (double)c.FinalQualityScore);
-                var averageIterations = await _context.CommandHistories
-                    .Where(c => c.IsSuccessful)
-                    .AverageAsync(c => (double)c.IterationCount);
+                var statistics = new Dictionary<string, int>();
                 
-                return new CommandHistoryStats
+                foreach (var command in commands)
                 {
-                    TotalCommands = totalCommands,
-                    SuccessfulCommands = successfulCommands,
-                    AverageQualityScore = (int)Math.Round(averageQuality),
-                    AverageIterations = (int)Math.Round(averageIterations),
-                    SuccessRate = totalCommands > 0 ? (double)successfulCommands / totalCommands * 100 : 0
-                };
+                    var key = command.Success ? "Successful" : "Failed";
+                    statistics[key] = statistics.GetValueOrDefault(key, 0) + 1;
+                }
+
+                return statistics;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to retrieve command statistics");
-                return new CommandHistoryStats();
+                _logger.LogError(ex, "Error getting command statistics");
+                return new Dictionary<string, int>();
             }
         }
-    }
-    
-    /// <summary>
-    /// Statistics about command history
-    /// </summary>
-    public class CommandHistoryStats
-    {
-        public int TotalCommands { get; set; }
-        public int SuccessfulCommands { get; set; }
-        public int AverageQualityScore { get; set; }
-        public int AverageIterations { get; set; }
-        public double SuccessRate { get; set; }
+
+        private double CalculateSimilarity(string[] words1, string[] words2)
+        {
+            if (words1.Length == 0 || words2.Length == 0)
+                return 0;
+
+            var commonWords = words1.Intersect(words2).Count();
+            var totalWords = words1.Union(words2).Count();
+            
+            return (double)commonWords / totalWords;
+        }
     }
 }
