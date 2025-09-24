@@ -2,9 +2,9 @@ name: demo-readiness
 
 on:
   push:
-    branches: [ feat/demo-suite, main ]
+    branches: [ feat/demo-suite, main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   demo:

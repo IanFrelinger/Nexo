@@ -2,9 +2,9 @@ name: Feature Lab Demo Readiness
 
 on:
   push:
-    branches: [ main, feat/feature-lab-demo ]
+    branches: [ main, master, feat/feature-lab-demo ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   feature-lab-demo:
@@ -54,7 +54,7 @@ jobs:
         set -e
         ./setup-local-llama.sh || true
       
-    - name: Run Feature Lab Demo Tests (Off + Hybrid Local)
+    - name: Run Feature Lab Demo Tests (Hybrid Local)
       env:
         NEXO_AI_MODE: hybrid
         NEXO_PROVIDER: local

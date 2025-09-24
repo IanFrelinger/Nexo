@@ -1,6 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Nexo.Feature.AI.Models;
+using Nexo.Feature.AI.Enums;
+using Nexo.Feature.AI.Services;
 
 namespace Nexo.Feature.AI.Interfaces;
 
@@ -38,5 +40,5 @@ public interface IAiConfigurationService
     /// <param name="mode">The AI mode to use for defaults</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Task representing the reset operation</returns>
-    Task ResetToDefaultsAsync(AiMode mode, CancellationToken cancellationToken = default);
+    Task ResetToDefaultsAsync(Nexo.Feature.AI.Enums.AiMode mode, CancellationToken cancellationToken = default);
 }

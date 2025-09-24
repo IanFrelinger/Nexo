@@ -1,0 +1,71 @@
+{
+  "nexoAgent": {
+    "mode": "HYBRID",
+    "enableImageGeneration": true,
+    "enableCodeGeneration": true,
+    "enableAssetGeneration": true,
+    "enableRealTimeGeneration": true
+  },
+  "gameSpecification": {
+    "gameType": "First-Person Shooter",
+    "artStyle": "Dark Sci-Fi Horror",
+    "colorPalette": ["Red", "Orange", "Dark Gray"],
+    "enemyTypes": ["Imp", "Demon", "Cacodemon"],
+    "weaponTypes": ["Shotgun", "Plasma Rifle"],
+    "targetFPS": 60,
+    "platform": "Windows PC"
+  },
+  "generationSettings": {
+    "scriptGeneration": {
+      "includeComments": true,
+      "includeErrorHandling": true,
+      "includeLogging": true,
+      "codeStyle": "Unity",
+      "useInputSystem": true,
+      "useNavMesh": true,
+      "useAudioSystem": true
+    },
+    "assetGeneration": {
+      "textureResolution": 512,
+      "textureFormat": "PNG",
+      "generateNormalMaps": true,
+      "generateSpecularMaps": true,
+      "audioQuality": "High",
+      "modelDetail": "Medium"
+    },
+    "levelGeneration": {
+      "roomCount": 5,
+      "corridorCount": 8,
+      "enemyCount": 15,
+      "pickupCount": 10,
+      "lightingQuality": "High",
+      "fogEnabled": true
+    }
+  },
+  "outputSettings": {
+    "scriptsPath": "Assets/Scripts/",
+    "prefabsPath": "Assets/Prefabs/",
+    "scenesPath": "Assets/Scenes/",
+    "texturesPath": "Assets/Textures/",
+    "modelsPath": "Assets/Models/",
+    "audioPath": "Assets/Audio/",
+    "documentationPath": "Assets/Documentation/"
+  },
+  "testingSettings": {
+    "enablePerformanceTesting": true,
+    "enableGameplayTesting": true,
+    "enableAudioTesting": true,
+    "enableAITesting": true,
+    "targetFrameRate": 60,
+    "memoryLimit": "2GB",
+    "loadingTimeLimit": "30s"
+  },
+  "debuggingSettings": {
+    "enableDebugConsole": true,
+    "enablePerformanceOverlay": true,
+    "enableErrorLogging": true,
+    "enableAssetValidation": true,
+    "enableAIStateVisualization": true,
+    "logLevel": "Info"
+  }
+}

@@ -52,6 +52,11 @@
     <PackageVersion Include="CycloneDX" Version="5.0.0" />
     <PackageVersion Include="System.Drawing.Common" Version="8.0.0" />
     <PackageVersion Include="SkiaSharp" Version="2.88.6" />
+    <PackageVersion Include="NAudio" Version="2.2.1" />
+    <PackageVersion Include="System.Memory" Version="4.5.5" />
+    <PackageVersion Include="System.Numerics.Vectors" Version="4.5.0" />
+    <PackageVersion Include="System.Net.Http" Version="4.3.4" />
+    <PackageVersion Include="System.Threading.Channels" Version="8.0.0" />
   </ItemGroup>
 
   <!-- Web/API Packages -->

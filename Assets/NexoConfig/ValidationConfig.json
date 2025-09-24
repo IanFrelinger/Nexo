@@ -1,0 +1,175 @@
+{
+  "validationSettings": {
+    "enableAutoValidation": true,
+    "enableIterativeImprovement": true,
+    "maxIterations": 3,
+    "validationTimeout": 300
+  },
+  "qualityThresholds": {
+    "scriptQualityThreshold": 0.8,
+    "assetQualityThreshold": 0.7,
+    "performanceThreshold": 0.9,
+    "integrationThreshold": 0.85,
+    "overallQualityThreshold": 0.8
+  },
+  "validationCriteria": {
+    "scripts": {
+      "codeQuality": {
+        "weight": 0.25,
+        "criteria": [
+          "Proper Unity component usage",
+          "Error handling and null checks",
+          "Performance optimization",
+          "Code readability and documentation"
+        ]
+      },
+      "functionality": {
+        "weight": 0.25,
+        "criteria": [
+          "Correct implementation of required features",
+          "Proper input handling",
+          "Expected behavior implementation",
+          "Integration with other systems"
+        ]
+      },
+      "performance": {
+        "weight": 0.25,
+        "criteria": [
+          "Efficient algorithms and data structures",
+          "Minimal memory allocations",
+          "Optimized update loops",
+          "Proper object pooling where applicable"
+        ]
+      },
+      "bestPractices": {
+        "weight": 0.25,
+        "criteria": [
+          "Unity coding standards",
+          "Proper use of Unity APIs",
+          "Consistent naming conventions",
+          "Appropriate use of design patterns"
+        ]
+      }
+    },
+    "assets": {
+      "visualQuality": {
+        "weight": 0.3,
+        "criteria": [
+          "Resolution and clarity",
+          "Color accuracy and consistency",
+          "Artistic style adherence",
+          "Visual appeal and polish"
+        ]
+      },
+      "technicalQuality": {
+        "weight": 0.3,
+        "criteria": [
+          "Proper file format and compression",
+          "Appropriate resolution for use case",
+          "Memory efficiency",
+          "Loading performance"
+        ]
+      },
+      "gameplayIntegration": {
+        "weight": 0.2,
+        "criteria": [
+          "Fits the game's art style",
+          "Appropriate for intended use",
+          "Consistent with other assets",
+          "Enhances gameplay experience"
+        ]
+      },
+      "productionReadiness": {
+        "weight": 0.2,
+        "criteria": [
+          "Professional quality",
+          "Ready for production use",
+          "No obvious defects or issues",
+          "Meets project requirements"
+        ]
+      }
+    },
+    "performance": {
+      "frameRate": {
+        "weight": 0.4,
+        "targetFPS": 60,
+        "minimumFPS": 30
+      },
+      "memoryUsage": {
+        "weight": 0.3,
+        "targetMemoryMB": 1000,
+        "maximumMemoryMB": 2000
+      },
+      "loadingTime": {
+        "weight": 0.2,
+        "targetLoadingTimeSeconds": 30,
+        "maximumLoadingTimeSeconds": 60
+      },
+      "stability": {
+        "weight": 0.1,
+        "criteria": [
+          "No crashes or exceptions",
+          "Stable performance over time",
+          "Proper error handling"
+        ]
+      }
+    },
+    "integration": {
+      "componentIntegration": {
+        "weight": 0.25,
+        "criteria": [
+          "Scripts work together properly",
+          "Data flows correctly between components",
+          "No circular dependencies",
+          "Proper event handling"
+        ]
+      },
+      "assetIntegration": {
+        "weight": 0.25,
+        "criteria": [
+          "Assets are properly referenced",
+          "Textures applied correctly",
+          "Models imported properly",
+          "Audio plays correctly"
+        ]
+      },
+      "systemIntegration": {
+        "weight": 0.25,
+        "criteria": [
+          "Input system works with all components",
+          "Audio system integrates properly",
+          "UI system communicates correctly",
+          "Game state management works"
+        ]
+      },
+      "performanceIntegration": {
+        "weight": 0.25,
+        "criteria": [
+          "No performance bottlenecks",
+          "Efficient resource usage",
+          "Smooth gameplay experience",
+          "Proper memory management"
+        ]
+      }
+    }
+  },
+  "improvementSettings": {
+    "enableAutoImprovement": true,
+    "improvementTimeout": 180,
+    "maxImprovementAttempts": 3,
+    "improvementStrategies": [
+      "Code refactoring",
+      "Performance optimization",
+      "Asset quality enhancement",
+      "Integration fixes",
+      "Error handling improvements"
+    ]
+  },
+  "reportingSettings": {
+    "enableDetailedReports": true,
+    "enablePerformanceMetrics": true,
+    "enableQualityTrends": true,
+    "reportFormat": "JSON",
+    "exportPath": "Assets/ValidationReports/"
+  }
+}

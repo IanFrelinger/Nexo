@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Nexo.Feature.AI.Enums;
 
 namespace Nexo.Feature.AI.Models;
 
@@ -10,7 +11,7 @@ public record AiConfiguration
     /// <summary>
     /// The AI mode (Development, Production, etc.)
     /// </summary>
-    public AiMode Mode { get; init; } = AiMode.Development;
+    public Nexo.Feature.AI.Enums.AiMode Mode { get; init; } = Nexo.Feature.AI.Enums.AiMode.Development;
     
     /// <summary>
     /// Default model configuration

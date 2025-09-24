@@ -1,0 +1,51 @@
+name: "Doom-Style FPS Demo"
+description: "Interactive first-person shooter with procedural level generation, enemy AI, and key-door mechanics"
+version: "1.0.0"
+
+requirements:
+  - "Player movement with WASD + mouse look"
+  - "Shotgun weapon with hitscan mechanics"
+  - "Enemy AI with NavMesh pathfinding"
+  - "Key-door puzzle system"
+  - "Procedural room generation"
+  - "Health and ammo HUD"
+  - "Audio feedback for all actions"
+
+components:
+  player:
+    - "PlayerController (FPS movement)"
+    - "Shotgun (hitscan weapon)"
+    - "PlayerInventory (key management)"
+    - "Health system (100 HP)"
+  
+  enemies:
+    - "EnemyImp (NavMesh AI)"
+    - "Projectile attacks"
+    - "Patrol and chase behaviors"
+    - "Health system (50 HP)"
+  
+  environment:
+    - "BlockoutBuilder (procedural rooms)"
+    - "Door (key-locked doors)"
+    - "Key (collectible items)"
+    - "Materials (wall, floor, ceiling)"
+  
+  ui:
+    - "GameHUD (health, ammo, crosshair)"
+    - "Message system"
+    - "Minimap (optional)"
+
+validation:
+  - "Player can move and look around"
+  - "Weapon fires and damages enemies"
+  - "Enemies pathfind and attack player"
+  - "Keys can be collected and used"
+  - "Doors open with correct keys"
+  - "HUD displays correct information"
+  - "Audio plays for all actions"
+
+performance:
+  - "60 FPS target on mid-range hardware"
+  - "NavMesh updates at 10Hz"
+  - "Audio sources limited to 16 concurrent"
+  - "Particle effects capped at 50 per frame"
