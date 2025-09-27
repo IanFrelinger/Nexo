@@ -41,7 +41,7 @@ namespace Nexo.Core.Pipeline
                 currentGenerationResult = await ExecuteGenerationStep(request, notes, ct);
 
                 // Step 2: Run validation and repair loop
-                var repairSuccess = await ExecuteValidationAndRepairLoop(currentGenerationResult, validationResults, notes, ct);
+                var repairSuccess = await ExecuteValidationAndRepairLoop(request, currentGenerationResult, validationResults, notes, ct);
 
                 if (!repairSuccess)
                 {

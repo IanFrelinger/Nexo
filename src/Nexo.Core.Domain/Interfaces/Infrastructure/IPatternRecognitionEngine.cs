@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.Infrastructure.DataStore;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 
@@ -17,7 +18,7 @@ public interface IPatternRecognitionEngine
     /// <summary>
     /// Analyze correlations between performance data and adaptation records
     /// </summary>
-    Task<IEnumerable<Nexo.Core.Domain.Entities.Infrastructure.Correlation>> AnalyzeCorrelationsAsync(IEnumerable<PerformanceData> performanceData, IEnumerable<AdaptationRecord> adaptationRecords);
+    Task<IEnumerable<Correlation>> AnalyzeCorrelationsAsync(IEnumerable<PerformanceData> performanceData, IEnumerable<AdaptationRecord> adaptationRecords);
     
     /// <summary>
     /// Detect anomalies in data

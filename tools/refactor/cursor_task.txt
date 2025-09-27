@@ -1,0 +1,18 @@
+You are refactoring the following files into partials with an Orchestrator slice.
+FILES:
+Assets/Scripts/NexoCompositionSystem.Composition.cs
+Assets/Scripts/NexoCompositionSystem.Core.cs
+Assets/Scripts/NexoCompositionSystem.Loading.cs
+Assets/Scripts/NexoCompositionSystem.Models.cs
+Assets/Scripts/NexoCompositionSystem.Objects.cs
+
+Rules summary:
+- Add 'partial' to the main type; repeat full header (access + modifiers + partial + bases + constraints).
+- {Type}.Core.cs: type/fields/consts/ctors + type-level attributes only.
+- Slices (only if used): Orchestrator, Validation, Parsing, Execution, Mapping, IO, Diagnostics, Utilities.
+- Preserve #if/#endif/#nullable/pragmas/XML docs with members; remove regions (regions → slices).
+- Static classes: repeat 'static partial class' in every part.
+- Tests: keep [TestClass]/[TestFixture] only in Core.
+- No public API changes or logic edits; no empty files.
+
+When done, save files. This script will build/test/commit and advance.

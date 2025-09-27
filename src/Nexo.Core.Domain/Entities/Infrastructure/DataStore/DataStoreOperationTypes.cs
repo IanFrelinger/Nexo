@@ -52,7 +52,7 @@ namespace Nexo.Core.Domain.Entities.Infrastructure.DataStore
         /// <summary>
         /// Result data
         /// </summary>
-        public object Data { get; init; }
+        public object Data { get; init; } = new();
         
         /// <summary>
         /// Error message

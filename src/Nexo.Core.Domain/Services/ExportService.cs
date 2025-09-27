@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Services.Export;
+using Nexo.Core.Domain.Models.Export;
 
 namespace Nexo.Core.Domain.Services
 {
@@ -122,6 +123,18 @@ namespace Nexo.Core.Domain.Services
                     Files = new List<string>()
                 };
             }
+        }
+
+        public async Task<ExportResult> ExportAsync(string outputPath, ExportOptions options, CancellationToken cancellationToken = default)
+        {
+            return options switch
+            {
+                CliExportOptions cliOptions => await ExportCliAsync(outputPath, cliOptions, cancellationToken),
+                DockerExportOptions dockerOptions => await ExportDockerAsync(outputPath, dockerOptions, cancellationToken),
+                PackageExportOptions packageOptions => await ExportPackageAsync(outputPath, packageOptions, cancellationToken),
+                DocumentationExportOptions docOptions => await ExportDocumentationAsync(outputPath, docOptions, cancellationToken),
+                _ => new ExportResult { Success = false, Error = "Unsupported export options type" }
+            };
         }
     }
 }

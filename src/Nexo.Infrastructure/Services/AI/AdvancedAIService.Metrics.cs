@@ -4,15 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Interfaces.AI;
 using Nexo.Core.Application.Models.AI;
-using Nexo.Feature.AI.Interfaces;
-using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI
 {
     /// <summary>
-    /// Advanced AI service - Metrics functionality.
+    /// Metrics functionality for advanced AI service.
     /// </summary>
     public partial class AdvancedAIService
     {

@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.Iteration.Performance;
+using Nexo.Core.Domain.Entities.Iteration.Enums;
+using Nexo.Core.Domain.Entities.Iteration.Context;
 using Nexo.Core.Domain.ValueObjects;
 
 namespace Nexo.Core.Domain.Entities.Iteration.Core

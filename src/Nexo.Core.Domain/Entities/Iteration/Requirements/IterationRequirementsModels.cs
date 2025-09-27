@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.Iteration.Enums;
 
 namespace Nexo.Core.Domain.Entities.Iteration.Requirements
 {

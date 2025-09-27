@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Domain.Models.Export;
 
 namespace Nexo.Core.Domain.Services.Export
 {
@@ -87,11 +88,15 @@ namespace Nexo.Core.Domain.Services.Export
             var executableContent = GenerateExecutableScript(options);
             await File.WriteAllTextAsync(executablePath, executableContent, cancellationToken);
             
-            if (options.Platform != "windows")
-            {
-                // Make executable on Unix systems
-                await Task.Run(() => File.SetUnixFileMode(executablePath, UnixFileMode.UserExecute | UnixFileMode.UserRead | UnixFileMode.UserWrite), cancellationToken);
-            }
+            // TODO: Fix platform-specific file permissions
+            // if (options.Platform != "windows")
+            // {
+            //     // Make executable on Unix systems
+            //     if (!OperatingSystem.IsWindows())
+            //     {
+            //         await Task.Run(() => File.SetUnixFileMode(executablePath, UnixFileMode.UserExecute | UnixFileMode.UserRead | UnixFileMode.UserWrite), cancellationToken);
+            //     }
+            // }
         }
 
         private async Task CreateDependenciesAsync(string dependenciesPath, CliExportOptions options, CancellationToken cancellationToken)

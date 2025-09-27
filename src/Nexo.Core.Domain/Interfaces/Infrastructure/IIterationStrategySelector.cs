@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Iteration.Context;
+using Nexo.Core.Domain.Entities.Iteration.Requirements;
+using Nexo.Core.Domain.Entities.Iteration.Enums;
+using Nexo.Core.Domain.Entities.Iteration.Core;
 using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure;
@@ -77,5 +81,5 @@ public interface IIterationStrategySelector
     /// </summary>
     /// <param name="platform">Target platform</param>
     /// <returns>Strategy recommendations</returns>
-    IEnumerable<StrategyRecommendation> GetRecommendations(Entities.Iteration.PlatformTarget platform);
+    IEnumerable<StrategyRecommendation> GetRecommendations(PlatformTarget platform);
 }

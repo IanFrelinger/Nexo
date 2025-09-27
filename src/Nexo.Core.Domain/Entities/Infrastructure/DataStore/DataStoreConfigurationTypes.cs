@@ -170,7 +170,7 @@ namespace Nexo.Core.Domain.Entities.Infrastructure.DataStore
         /// <summary>
         /// Default value
         /// </summary>
-        public object DefaultValue { get; init; } = null;
+        public object? DefaultValue { get; init; } = null;
         
         /// <summary>
         /// Column metadata

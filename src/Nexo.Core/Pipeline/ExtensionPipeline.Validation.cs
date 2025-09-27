@@ -20,6 +20,7 @@ namespace Nexo.Core.Pipeline
         /// Executes validation and repair loop
         /// </summary>
         private async Task<bool> ExecuteValidationAndRepairLoop(
+            TRequest request,
             GenerationResult<TArtifact> currentGenerationResult,
             List<ValidationResult> validationResults,
             List<string> notes,
@@ -41,7 +42,7 @@ namespace Nexo.Core.Pipeline
                     // Attempt repair if available
                     if (_repairStrategy != null && repairAttempts < maxRepairAttempts)
                     {
-                        var repairResult = await AttemptRepair(currentGenerationResult, validationResults, null, notes, ct);
+                        var repairResult = await AttemptRepair(request, currentGenerationResult, validationResults, null, notes, ct);
                         if (repairResult != null)
                         {
                             currentGenerationResult = repairResult;
@@ -57,7 +58,7 @@ namespace Nexo.Core.Pipeline
                 
                 if (!policySuccess && _repairStrategy != null && repairAttempts < maxRepairAttempts)
                 {
-                    var repairResult = await AttemptRepair(currentGenerationResult, validationResults, null, notes, ct);
+                    var repairResult = await AttemptRepair(request, currentGenerationResult, validationResults, null, notes, ct);
                     if (repairResult != null)
                     {
                         currentGenerationResult = repairResult;
@@ -169,6 +170,7 @@ namespace Nexo.Core.Pipeline
         /// Attempts repair on failed validation
         /// </summary>
         private async Task<GenerationResult<TArtifact>?> AttemptRepair(
+            TRequest request,
             GenerationResult<TArtifact> currentGenerationResult,
             List<ValidationResult> validationResults,
             PolicyOutcome? policyOutcome,
@@ -185,6 +187,7 @@ namespace Nexo.Core.Pipeline
             try
             {
                 var repairResult = await _repairStrategy.TryRepairAsync(
+                    request,
                     currentGenerationResult,
                     validationResults,
                     policyOutcome,

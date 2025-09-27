@@ -1,5 +1,6 @@
 using System;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.Iteration.Requirements;
 
 namespace Nexo.Core.Domain.Entities.Iteration.Extensions
 {

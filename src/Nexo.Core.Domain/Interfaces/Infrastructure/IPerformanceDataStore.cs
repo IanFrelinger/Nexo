@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Nexo.Core.Domain.Entities.Infrastructure;
+using Nexo.Core.Domain.Entities.Infrastructure.DataStore;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 

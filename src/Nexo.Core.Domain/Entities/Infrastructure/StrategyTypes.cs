@@ -1,5 +1,6 @@
 using System;
 using Nexo.Core.Domain.Entities.Iteration;
+using Nexo.Core.Domain.Entities.Iteration.Core;
 
 namespace Nexo.Core.Domain.Entities.Infrastructure;
 
