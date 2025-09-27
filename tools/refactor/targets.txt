@@ -1,8 +1,3 @@
-Assets/Scripts/NexoCompositionSystem.Testing.cs
-Assets/Scripts/NexoCompositionSystem.cs
-Assets/Scripts/NexoDebugger.cs
-Assets/Scripts/NexoFrameworkTest.cs
-Assets/Scripts/NexoGameAgent.AssetGeneration.cs
 Assets/Scripts/NexoGameAgent.Core.cs
 Assets/Scripts/NexoGameAgent.EnemyImplementation.cs
 Assets/Scripts/NexoGameAgent.HelperClasses.cs
