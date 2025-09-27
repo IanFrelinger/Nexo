@@ -1,8 +1,3 @@
-FeatureFactoryDemo/Commands/HelpCommand.cs
-FeatureFactoryDemo/Commands/StatsCommand.cs
-FeatureFactoryDemo/Commands/ValidateCommand.cs
-FeatureFactoryDemo/Data/FeatureFactoryDbContext.cs
-FeatureFactoryDemo/LoggingSystemValidation.Core.cs
 FeatureFactoryDemo/LoggingSystemValidation.DependencyInjection.cs
 FeatureFactoryDemo/LoggingSystemValidation.Logging.cs
 FeatureFactoryDemo/LoggingSystemValidation.Performance.cs
