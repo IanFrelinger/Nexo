@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -10,8 +8,7 @@ using TMPro;
 namespace NexoDoomGame
 {
     /// <summary>
-    /// Embedded Nexo instance responsible for composing all generated pieces together
-    /// This class acts as an orchestrator, delegating specific functionalities to partial class implementations.
+    /// Core functionality for NexoCompositionSystem.
     /// </summary>
     public partial class NexoCompositionSystem : MonoBehaviour
     {
