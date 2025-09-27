@@ -1,10 +1,10 @@
 You are refactoring the following files into partials with an Orchestrator slice.
 FILES:
-Assets/Scripts/NexoValidationTestRunner.cs
-Assets/Scripts/QualityImprovementEngine.cs
-Assets/Scripts/TestRunner.cs
-Assets/Scripts/Validators/AssetValidator.cs
-Assets/Scripts/Validators/IntegrationValidator.cs
+Assets/Scripts/Validators/PerformanceValidator.cs
+Assets/Scripts/Validators/ScriptValidator.cs
+Assets/Scripts/Validators/ValidationUIManager.cs
+Assets/Tests/EditMode/ComponentTests.cs
+Assets/Tests/PlayMode/ComponentPlayTests.cs
 
 Rules summary:
 - Add 'partial' to the main type; repeat full header (access + modifiers + partial + bases + constraints).
