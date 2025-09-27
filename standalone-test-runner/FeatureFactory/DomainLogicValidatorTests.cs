@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace StandaloneTestRunner
 {
-    public class DomainLogicValidatorTests
+    public partial class DomainLogicValidatorTests
     {
         private readonly bool _verbose;
 

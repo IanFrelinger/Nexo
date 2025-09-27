@@ -15,7 +15,7 @@ namespace Nexo.CLI.Tests
     /// <summary>
     /// Tests for enhanced CLI functionality
     /// </summary>
-    public class EnhancedCLITests
+    public partial class EnhancedCLITests
     {
         [Fact]
         public void CanCreateInteractiveCLI()

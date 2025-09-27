@@ -1,0 +1,11 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Nexo.Feature.Data.Interfaces
+{
+    public interface ICacheService
+{
+    // Orchestration methods will be added here
+}
+}

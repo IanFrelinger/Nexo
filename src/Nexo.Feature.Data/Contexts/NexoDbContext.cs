@@ -8,7 +8,7 @@ namespace Nexo.Feature.Data.Contexts
     /// <summary>
     /// Main Nexo database context
     /// </summary>
-    public class NexoDbContext : DbContext
+    public partial class NexoDbContext : DbContext
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<NexoDbContext> _logger;

@@ -7,7 +7,7 @@ namespace StandaloneTestRunner
     /// <summary>
     /// Orchestrator for Feature Factory Domain Logic tests that delegates to specialized test classes.
     /// </summary>
-    public class FeatureFactoryDomainTests
+    public partial class FeatureFactoryDomainTests
     {
         private readonly bool _verbose;
         private readonly DomainLogicGeneratorTests _domainLogicGeneratorTests;

@@ -6,7 +6,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Tests for brick contract compliance and typed I/O
     /// </summary>
-    public class BrickContractTests
+    public partial class BrickContractTests
     {
         [Fact]
         public async Task PiiRedactor_Removes_Email()
@@ -116,7 +116,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Text data type
     /// </summary>
-    public class Text
+    public partial class Text
     {
         public string Value { get; }
         public Dictionary<string, object> Metadata { get; } = new();
@@ -130,7 +130,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Execution context
     /// </summary>
-    public class Context
+    public partial class Context
     {
         public Dictionary<string, object> Properties { get; } = new();
     }
@@ -138,7 +138,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Test brick implementations
     /// </summary>
-    public class EmailIngesterBrick : IBrick<Text, Text>
+    public partial class EmailIngesterBrick : IBrick<Text, Text>
     {
         public async Task<Text> RunAsync(Text input, Context context)
         {
@@ -152,7 +152,7 @@ namespace Nexo.Verify.Tests
         }
     }
 
-    public class PiiRedactorBrick : IBrick<Text, Text>
+    public partial class PiiRedactorBrick : IBrick<Text, Text>
     {
         public async Task<Text> RunAsync(Text input, Context context)
         {
@@ -165,7 +165,7 @@ namespace Nexo.Verify.Tests
         }
     }
 
-    public class LabelClassifierBrick : IBrick<Text, Text>
+    public partial class LabelClassifierBrick : IBrick<Text, Text>
     {
         public async Task<Text> RunAsync(Text input, Context context)
         {
@@ -178,7 +178,7 @@ namespace Nexo.Verify.Tests
         }
     }
 
-    public class PolicyCheckBrick : IBrick<Text, Text>
+    public partial class PolicyCheckBrick : IBrick<Text, Text>
     {
         public async Task<Text> RunAsync(Text input, Context context)
         {

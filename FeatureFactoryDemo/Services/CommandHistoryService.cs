@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FeatureFactoryDemo.Services
 {
-    public class CommandHistoryService
+    public partial class CommandHistoryService
     {
         private readonly ILogger<CommandHistoryService> _logger;
         private readonly FeatureFactoryDbContext _context;

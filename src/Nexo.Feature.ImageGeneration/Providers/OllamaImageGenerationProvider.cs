@@ -13,7 +13,7 @@ namespace Nexo.Feature.ImageGeneration.Providers;
 /// <summary>
 /// Offline image generation provider using Ollama with local models
 /// </summary>
-public class OllamaImageGenerationProvider : IImageGenerationProvider
+public partial class OllamaImageGenerationProvider : IImageGenerationProvider
 {
     private readonly ILogger<OllamaImageGenerationProvider> _logger;
     private readonly List<ImageGenerationModel> _availableModels;

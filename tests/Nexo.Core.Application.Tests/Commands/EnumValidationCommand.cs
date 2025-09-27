@@ -8,7 +8,7 @@ namespace Nexo.Core.Application.Tests.Commands;
 /// <summary>
 /// Command for validating Core.Application enums with proper logging and timeouts.
 /// </summary>
-public class EnumValidationCommand
+public partial class EnumValidationCommand
 {
     private readonly ILogger<EnumValidationCommand> _logger;
 

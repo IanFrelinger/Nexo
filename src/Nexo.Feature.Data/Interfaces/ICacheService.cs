@@ -61,7 +61,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Cache statistics
     /// </summary>
-    public class CacheStatistics
+    public partial class CacheStatistics
     {
         public long TotalKeys { get; set; }
         public long HitCount { get; set; }
@@ -76,7 +76,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Cache options for repository operations
     /// </summary>
-    public class CacheOptions
+    public partial class CacheOptions
     {
         public bool EnableCaching { get; set; } = true;
         public TimeSpan? Expiration { get; set; } = TimeSpan.FromMinutes(30);

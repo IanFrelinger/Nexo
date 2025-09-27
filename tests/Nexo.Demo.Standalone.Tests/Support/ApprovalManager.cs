@@ -68,7 +68,7 @@ namespace Nexo.Demo.Tests.Support
     /// <summary>
     /// Represents a mock approval result
     /// </summary>
-    public class MockApprovalResult
+    public partial class MockApprovalResult
     {
         public string RequestId { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

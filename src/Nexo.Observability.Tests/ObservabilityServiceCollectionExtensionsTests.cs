@@ -16,7 +16,7 @@ namespace Nexo.Observability.Tests;
 /// <summary>
 /// Tests for the ObservabilityServiceCollectionExtensions.
 /// </summary>
-public class ObservabilityServiceCollectionExtensionsTests
+public partial class ObservabilityServiceCollectionExtensionsTests
 {
     [Fact]
     public void AddNexoObservability_ShouldRegisterServices()

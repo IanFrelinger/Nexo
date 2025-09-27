@@ -8,7 +8,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// System health widget showing overall system status
     /// </summary>
-    public class SystemHealthWidget : IDashboardWidget
+    public partial class SystemHealthWidget : IDashboardWidget
     {
         public string Title => "System Health";
         

@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test suite for System Integrator functionality
     /// </summary>
-    public class SystemIntegratorTests
+    public partial class SystemIntegratorTests
     {
         private readonly bool _verbose;
 
@@ -295,7 +295,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test system integrator for testing purposes
     /// </summary>
-    public class TestSystemIntegrator
+    public partial class TestSystemIntegrator
     {
         public bool IsInitialized { get; } = true;
 
@@ -327,7 +327,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test connection result for testing purposes
     /// </summary>
-    public class TestConnectionResult
+    public partial class TestConnectionResult
     {
         public bool Success { get; set; }
         public string SystemName { get; set; } = string.Empty;
@@ -336,7 +336,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test API request for testing purposes
     /// </summary>
-    public class TestApiRequest
+    public partial class TestApiRequest
     {
         public string Endpoint { get; set; } = string.Empty;
         public string Method { get; set; } = string.Empty;
@@ -345,7 +345,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test API response for testing purposes
     /// </summary>
-    public class TestApiResponse
+    public partial class TestApiResponse
     {
         public bool Success { get; set; }
         public string Data { get; set; } = string.Empty;
@@ -355,7 +355,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test sync request for testing purposes
     /// </summary>
-    public class TestSyncRequest
+    public partial class TestSyncRequest
     {
         public string SourceSystem { get; set; } = string.Empty;
         public string TargetSystem { get; set; } = string.Empty;
@@ -364,7 +364,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test sync result for testing purposes
     /// </summary>
-    public class TestSyncResult
+    public partial class TestSyncResult
     {
         public bool Success { get; set; }
         public int RecordsSynced { get; set; }

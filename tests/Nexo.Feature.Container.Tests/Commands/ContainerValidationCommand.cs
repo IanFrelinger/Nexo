@@ -11,7 +11,7 @@ namespace Nexo.Feature.Container.Tests.Commands;
 /// <summary>
 /// Command for validating Container functionality with proper logging and timeouts.
 /// </summary>
-public class ContainerValidationCommand
+public partial class ContainerValidationCommand
 {
     private readonly ILogger<ContainerValidationCommand> _logger;
 

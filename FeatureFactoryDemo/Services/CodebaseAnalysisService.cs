@@ -7,7 +7,7 @@ using Nexo.Feature.Analysis.Interfaces;
 
 namespace FeatureFactoryDemo.Services
 {
-    public class CodebaseAnalysisService
+    public partial class CodebaseAnalysisService
     {
         private readonly ILogger<CodebaseAnalysisService> _logger;
         private readonly ICodebaseAnalyzer _codebaseAnalyzer;
@@ -220,7 +220,7 @@ namespace FeatureFactoryDemo.Services
         }
     }
 
-    public class CodebasePattern
+    public partial class CodebasePattern
     {
         public string PatternName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test suite for Business Rule functionality
     /// </summary>
-    public class BusinessRuleTests
+    public partial class BusinessRuleTests
     {
         private readonly bool _verbose;
 
@@ -296,7 +296,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test business rule for testing purposes
     /// </summary>
-    public class TestBusinessRule
+    public partial class TestBusinessRule
     {
         public string Name { get; }
         public string Description { get; }
@@ -334,7 +334,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Composed business rule for testing purposes
     /// </summary>
-    public class ComposedBusinessRule
+    public partial class ComposedBusinessRule
     {
         private readonly TestBusinessRule[] _rules;
 
@@ -365,7 +365,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test input for business rule testing
     /// </summary>
-    public class TestInput
+    public partial class TestInput
     {
         public int Value { get; set; }
         public bool IsValid { get; set; }
@@ -374,7 +374,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test execution result for business rule testing
     /// </summary>
-    public class TestExecutionResult
+    public partial class TestExecutionResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

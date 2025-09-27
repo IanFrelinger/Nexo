@@ -6,7 +6,7 @@ namespace StandaloneTestRunner
     /// <summary>
     /// Orchestrator for Enhanced Epic 5.4 test suite that delegates to phase-specific providers.
     /// </summary>
-    public class Epic5_4EnhancedTestSuite
+    public partial class Epic5_4EnhancedTestSuite
     {
         private readonly bool _verbose;
         private readonly IEpic54Phase1RealImplementationTests _phase1;

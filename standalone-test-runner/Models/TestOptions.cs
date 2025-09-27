@@ -2,7 +2,7 @@ using System;
 
 namespace StandaloneTestRunner.Models
 {
-    public class TestOptions
+    public partial class TestOptions
     {
         public bool Discover { get; set; }
         public bool ForceTimeout { get; set; }

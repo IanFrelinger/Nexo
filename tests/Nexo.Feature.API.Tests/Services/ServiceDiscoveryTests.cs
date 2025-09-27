@@ -10,7 +10,7 @@ namespace Nexo.Feature.API.Tests.Services;
 /// <summary>
 /// Tests for the Service Discovery service
 /// </summary>
-public class ServiceDiscoveryTests
+public partial class ServiceDiscoveryTests
 {
     private readonly Mock<ILogger<ServiceDiscovery>> _mockLogger;
     private readonly ServiceDiscovery _serviceDiscovery;

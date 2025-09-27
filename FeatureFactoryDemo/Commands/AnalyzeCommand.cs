@@ -7,7 +7,7 @@ namespace FeatureFactoryDemo.Commands
     /// <summary>
     /// Command to analyze the codebase and store context information
     /// </summary>
-    public class AnalyzeCommand : BaseCommand
+    public partial class AnalyzeCommand : BaseCommand
     {
         private readonly CodebaseAnalysisService _codebaseAnalysisService;
         

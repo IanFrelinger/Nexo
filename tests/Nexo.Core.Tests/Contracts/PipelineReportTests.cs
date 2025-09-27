@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Contracts
 {
-    public class PipelineReportTests
+    public partial class PipelineReportTests
     {
         [Theory]
         [InlineData("artifact-123", true, 0.95, new[] { "Pipeline completed successfully" })]

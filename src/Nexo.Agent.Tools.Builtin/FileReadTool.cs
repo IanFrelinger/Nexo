@@ -10,7 +10,7 @@ namespace Nexo.Agent.Tools.Builtin;
 /// <summary>
 /// Tool for reading files from the file system.
 /// </summary>
-public class FileReadTool : ITool<FileReadInput, FileReadOutput>
+public partial class FileReadTool : ITool<FileReadInput, FileReadOutput>
 {
     public ToolManifest Manifest { get; }
 

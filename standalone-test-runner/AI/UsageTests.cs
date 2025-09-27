@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Usage functionality
 /// </summary>
-public class UsageTests
+public partial class UsageTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class UsageTests
 }
 
 // Mock AI Usage Monitor class for testing
-public class AIUsageMonitor
+public partial class AIUsageMonitor
 {
     public Dictionary<string, object> GetUsageStats()
     {

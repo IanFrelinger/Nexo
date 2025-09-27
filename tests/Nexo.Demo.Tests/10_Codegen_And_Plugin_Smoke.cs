@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests code generation and plugin loading capabilities
 /// </summary>
-public class Codegen_And_Plugin_Smoke
+public partial class Codegen_And_Plugin_Smoke
 {
     [Fact, Trait("Suite", "Demo")]
     public void Generated_Typed_Code_Compiles_And_Runs()
@@ -167,8 +167,8 @@ public class Codegen_And_Plugin_Smoke
         // Simulate generating code files
         var mainFile = Path.Combine(outputDir, "GeneratedRecipe.cs");
         var content = useRoslyn 
-            ? "using Microsoft.CodeAnalysis;\npublic class GeneratedRecipe { public void Execute() { } }"
-            : "public class GeneratedRecipe { public void Execute() { } }";
+            ? "using Microsoft.CodeAnalysis;\npublic partial class GeneratedRecipe { public void Execute() { } }"
+            : "public partial class GeneratedRecipe { public void Execute() { } }";
             
         await File.WriteAllTextAsync(mainFile, content);
         

@@ -7,7 +7,7 @@ using Nexo.Agent.Contracts;
 
 namespace NexoDoomGame.Validators
 {
-    public class ScriptValidator
+    public partial class ScriptValidator
     {
         private readonly ITaskExecutionAgent _nexoAgent;
 

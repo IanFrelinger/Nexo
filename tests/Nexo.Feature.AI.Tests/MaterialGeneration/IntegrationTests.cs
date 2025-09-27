@@ -13,7 +13,7 @@ namespace Nexo.Feature.AI.Tests.MaterialGeneration
     /// <summary>
     /// Tests for Material Generation System integration.
     /// </summary>
-    public class IntegrationTests
+    public partial class IntegrationTests
     {
         private readonly ILogger _logger;
 

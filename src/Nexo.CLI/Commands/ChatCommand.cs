@@ -14,7 +14,7 @@ namespace Nexo.CLI.Commands
     /// <summary>
     /// Interactive chat command for tool generation and management
     /// </summary>
-    public class ChatCommand : ICommand
+    public partial class ChatCommand : ICommand
     {
         private readonly ToolGenerationOrchestrator _orchestrator;
         private readonly IToolEvolver _evolver;

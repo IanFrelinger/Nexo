@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Nexo.Core.Domain.Tests.Extensions
 {
-    public class ExtensionRequestTests
+    public partial class ExtensionRequestTests
     {
         [Fact]
         public void ExtensionRequest_Should_Validate_Required_Fields()

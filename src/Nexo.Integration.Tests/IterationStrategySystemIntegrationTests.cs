@@ -17,7 +17,7 @@ namespace Nexo.Integration.Tests;
 /// <summary>
 /// Integration tests for the complete iteration strategy system
 /// </summary>
-public class IterationStrategySystemIntegrationTests
+public partial class IterationStrategySystemIntegrationTests
 {
     private readonly ServiceProvider _serviceProvider;
     

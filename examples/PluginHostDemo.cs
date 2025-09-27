@@ -11,7 +11,7 @@ namespace Examples
     /// Simple demonstration of the PluginHost system without external dependencies.
     /// This shows the conceptual structure and usage patterns.
     /// </summary>
-    public class PluginHostDemo
+    public partial class PluginHostDemo
     {
         public static async Task Main(string[] args)
         {

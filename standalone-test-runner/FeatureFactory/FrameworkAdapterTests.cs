@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test suite for Framework Adapter functionality
     /// </summary>
-    public class FrameworkAdapterTests
+    public partial class FrameworkAdapterTests
     {
         private readonly bool _verbose;
 
@@ -299,7 +299,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test framework adapter for testing purposes
     /// </summary>
-    public class TestFrameworkAdapter
+    public partial class TestFrameworkAdapter
     {
         public bool IsInitialized { get; } = true;
 
@@ -336,7 +336,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test framework for testing purposes
     /// </summary>
-    public class TestFramework
+    public partial class TestFramework
     {
         public string Name { get; }
         public string Version { get; }
@@ -351,7 +351,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test adaptation result for testing purposes
     /// </summary>
-    public class TestAdaptationResult
+    public partial class TestAdaptationResult
     {
         public bool Success { get; set; }
         public string AdaptedCode { get; set; } = string.Empty;
@@ -362,7 +362,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test integration result for testing purposes
     /// </summary>
-    public class TestIntegrationResult
+    public partial class TestIntegrationResult
     {
         public bool Success { get; set; }
         public string FrameworkName { get; set; } = string.Empty;

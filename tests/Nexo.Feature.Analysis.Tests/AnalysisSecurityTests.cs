@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Nexo.Feature.Analysis.Tests;
 
-public class AnalysisSecurityTests
+public partial class AnalysisSecurityTests
 {
     [Fact]
     public void Analysis_Security_Basics()

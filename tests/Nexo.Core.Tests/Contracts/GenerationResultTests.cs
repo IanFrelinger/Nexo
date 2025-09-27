@@ -6,14 +6,14 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Contracts
 {
-    public class GenerationResultTests
+    public partial class GenerationResultTests
     {
         [Fact]
         public void GenerationResult_ShouldCreateWithCorrectValues()
         {
             // Arrange
-            var artifact = new GeneratedExtension("test-id", "TestExtension", "public class Test { }", null, DateTime.UtcNow);
-            var sourceCode = "public class Test { }";
+            var artifact = new GeneratedExtension("test-id", "TestExtension", "public partial class Test { }", null, DateTime.UtcNow);
+            var sourceCode = "public partial class Test { }";
             var notes = new List<string> { "Generated successfully" };
 
             // Act
@@ -29,8 +29,8 @@ namespace Nexo.Core.Tests.Contracts
         public void GenerationResult_ShouldBeImmutable()
         {
             // Arrange
-            var artifact = new GeneratedExtension("test-id", "TestExtension", "public class Test { }", null, DateTime.UtcNow);
-            var sourceCode = "public class Test { }";
+            var artifact = new GeneratedExtension("test-id", "TestExtension", "public partial class Test { }", null, DateTime.UtcNow);
+            var sourceCode = "public partial class Test { }";
             var notes = new List<string> { "Generated successfully" };
 
             // Act

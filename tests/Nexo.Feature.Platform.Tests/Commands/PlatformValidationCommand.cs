@@ -9,7 +9,7 @@ namespace Nexo.Feature.Platform.Tests.Commands;
 /// <summary>
 /// Command for validating Platform functionality with proper logging and timeouts.
 /// </summary>
-public class PlatformValidationCommand
+public partial class PlatformValidationCommand
 {
     private readonly ILogger<PlatformValidationCommand> _logger;
 

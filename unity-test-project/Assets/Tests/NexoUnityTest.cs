@@ -6,7 +6,7 @@ using Nexo.Core.Domain.Enums;
 
 namespace Nexo.Unity.Tests
 {
-    public class NexoUnityTest
+    public partial class NexoUnityTest
     {
         [Test]
         public void TestCommandPriorityEnum()

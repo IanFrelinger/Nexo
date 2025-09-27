@@ -4,7 +4,7 @@ using Nexo.Shared;
 
 namespace Nexo.Shared.Tests
 {
-    public class SemanticCacheKeyGeneratorTests
+    public partial class SemanticCacheKeyGeneratorTests
     {
         [Fact]
         public void Normalization_WhitespaceAndCase_ProducesSameKey()

@@ -7,7 +7,7 @@ namespace FeatureFactoryDemo.Commands
     /// <summary>
     /// Command to display statistics about the Feature Factory system
     /// </summary>
-    public class StatsCommand : BaseCommand
+    public partial class StatsCommand : BaseCommand
     {
         private readonly CommandHistoryService _commandHistoryService;
         private readonly CodebaseAnalysisService _codebaseAnalysisService;

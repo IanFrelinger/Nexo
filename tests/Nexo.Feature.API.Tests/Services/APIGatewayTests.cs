@@ -10,7 +10,7 @@ namespace Nexo.Feature.API.Tests.Services;
 /// <summary>
 /// Tests for the API Gateway service
 /// </summary>
-public class APIGatewayTests
+public partial class APIGatewayTests
 {
     private readonly Mock<ILogger<APIGateway>> _mockLogger;
     private readonly Mock<HttpClient> _mockHttpClient;

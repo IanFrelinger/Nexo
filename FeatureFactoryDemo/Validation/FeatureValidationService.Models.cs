@@ -1,7 +1,7 @@
 namespace FeatureFactoryDemo.Validation
 {
     // Validation result classes
-    public class ValidationResults
+    public partial class ValidationResults
     {
         public DatabaseValidationResult DatabaseValidation { get; set; } = new();
         public CodebaseValidationResult CodebaseValidation { get; set; } = new();
@@ -10,7 +10,7 @@ namespace FeatureFactoryDemo.Validation
         public IntegrationValidationResult IntegrationValidation { get; set; } = new();
     }
     
-    public class DatabaseValidationResult
+    public partial class DatabaseValidationResult
     {
         public bool IsValid { get; set; }
         public bool CanConnect { get; set; }
@@ -22,7 +22,7 @@ namespace FeatureFactoryDemo.Validation
         public string? ErrorMessage { get; set; }
     }
     
-    public class CodebaseValidationResult
+    public partial class CodebaseValidationResult
     {
         public bool IsValid { get; set; }
         public int FilesAnalyzed { get; set; }
@@ -33,7 +33,7 @@ namespace FeatureFactoryDemo.Validation
         public string? ErrorMessage { get; set; }
     }
     
-    public class CommandHistoryValidationResult
+    public partial class CommandHistoryValidationResult
     {
         public bool IsValid { get; set; }
         public bool CanSaveCommand { get; set; }
@@ -43,7 +43,7 @@ namespace FeatureFactoryDemo.Validation
         public string? ErrorMessage { get; set; }
     }
     
-    public class IterativeImprovementValidationResult
+    public partial class IterativeImprovementValidationResult
     {
         public bool IsValid { get; set; }
         public bool CanAnalyzeCode { get; set; }
@@ -53,7 +53,7 @@ namespace FeatureFactoryDemo.Validation
         public string? ErrorMessage { get; set; }
     }
     
-    public class IntegrationValidationResult
+    public partial class IntegrationValidationResult
     {
         public bool IsValid { get; set; }
         public bool CanGetContext { get; set; }

@@ -10,7 +10,7 @@ namespace Nexo.Feature.Project.Tests.Commands;
 /// <summary>
 /// Command for validating Project functionality with proper logging and timeouts.
 /// </summary>
-public class ProjectValidationCommand
+public partial class ProjectValidationCommand
 {
     private readonly ILogger<ProjectValidationCommand> _logger;
 

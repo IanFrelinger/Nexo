@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace StandaloneTestRunner.Models
 {
-    public class TestResult
+    public partial class TestResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -20,7 +20,7 @@ namespace StandaloneTestRunner.Models
         public List<TestInfo> SkippedTests => Tests.Where(t => t.Status == "Skipped").ToList();
     }
 
-    public class TestInfo
+    public partial class TestInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;

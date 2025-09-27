@@ -11,7 +11,7 @@ namespace Nexo.Feature.Data.Tests.Contexts;
 /// <summary>
 /// Tests for the NexoDbContext
 /// </summary>
-public class NexoDbContextTests : IDisposable
+public partial class NexoDbContextTests : IDisposable
 {
     private readonly IConfiguration _configuration;
     private readonly Mock<ILogger<NexoDbContext>> _mockLogger;

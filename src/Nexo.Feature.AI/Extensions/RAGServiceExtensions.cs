@@ -69,7 +69,7 @@ namespace Nexo.Feature.AI.Extensions
     /// <summary>
     /// Configuration options for RAG services
     /// </summary>
-    public class RAGServiceOptions
+    public partial class RAGServiceOptions
     {
         /// <summary>
         /// Path to the documentation directory
@@ -110,7 +110,7 @@ namespace Nexo.Feature.AI.Extensions
     /// <summary>
     /// Configuration options for embedding models
     /// </summary>
-    public class EmbeddingModelOptions
+    public partial class EmbeddingModelOptions
     {
         /// <summary>
         /// The embedding model to use
@@ -136,7 +136,7 @@ namespace Nexo.Feature.AI.Extensions
     /// <summary>
     /// Configuration options for vector store
     /// </summary>
-    public class VectorStoreOptions
+    public partial class VectorStoreOptions
     {
         /// <summary>
         /// The type of vector store to use

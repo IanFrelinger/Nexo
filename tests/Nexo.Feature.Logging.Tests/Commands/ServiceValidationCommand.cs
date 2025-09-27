@@ -10,7 +10,7 @@ namespace Nexo.Feature.Logging.Tests.Commands;
 /// <summary>
 /// Command for validating Logging services with proper logging and timeouts.
 /// </summary>
-public class ServiceValidationCommand
+public partial class ServiceValidationCommand
 {
     private readonly ILogger<ServiceValidationCommand> _logger;
 

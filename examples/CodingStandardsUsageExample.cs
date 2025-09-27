@@ -16,7 +16,7 @@ namespace Examples
     /// Example demonstrating how to use the configurable coding standards analyzer
     /// with code generation agents in the Nexo framework.
     /// </summary>
-    public class CodingStandardsUsageExample
+    public partial class CodingStandardsUsageExample
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CodingStandardsUsageExample> _logger;
@@ -41,7 +41,7 @@ namespace Examples
             var sampleCode = @"
 using System;
 
-public class UserService
+public partial class UserService
 {
     public string GetUser(int userId)
     {
@@ -98,7 +98,7 @@ public class UserService
                 ["User.cs"] = @"
 using System;
 
-public class User
+public partial class User
 {
     public int id { get; set; }
     public string name { get; set; }
@@ -252,7 +252,7 @@ using System;
 
 namespace MyApp
 {
-    public class TestClass
+    public partial class TestClass
     {
         public void DoSomething()
         {

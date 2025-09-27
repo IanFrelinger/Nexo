@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that adding a Translate block benefits multiple existing recipes without rewrites
 /// </summary>
-public class Compounding_AddTranslate_BenefitsTwoRecipes
+public partial class Compounding_AddTranslate_BenefitsTwoRecipes
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task Adding_Translate_Improves_Triage_And_Doc_Summary()

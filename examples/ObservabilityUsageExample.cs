@@ -14,7 +14,7 @@ namespace Nexo.Examples;
 /// <summary>
 /// Example demonstrating how to use Nexo observability features.
 /// </summary>
-public class ObservabilityUsageExample
+public partial class ObservabilityUsageExample
 {
     /// <summary>
     /// Demonstrates basic observability setup and usage.
@@ -53,7 +53,7 @@ public class ObservabilityUsageExample
 /// <summary>
 /// Example service demonstrating observability usage.
 /// </summary>
-public class ExampleService
+public partial class ExampleService
 {
     private readonly ILogger<ExampleService> _logger;
     private readonly ActivitySource _generationActivitySource;

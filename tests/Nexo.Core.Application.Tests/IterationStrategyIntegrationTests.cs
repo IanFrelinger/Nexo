@@ -18,7 +18,7 @@ namespace Nexo.Core.Application.Tests;
 /// <summary>
 /// Integration tests for the iteration strategy system
 /// </summary>
-public class IterationStrategyIntegrationTests
+public partial class IterationStrategyIntegrationTests
 {
     private readonly IServiceProvider _serviceProvider;
     
@@ -357,7 +357,7 @@ public class IterationStrategyIntegrationTests
 /// <summary>
 /// Test data item for integration tests
 /// </summary>
-public class TestDataItem
+public partial class TestDataItem
 {
     public int Id { get; set; }
     public double Value { get; set; }
@@ -367,7 +367,7 @@ public class TestDataItem
 /// <summary>
 /// Complex data item for testing complex scenarios
 /// </summary>
-public class ComplexDataItem
+public partial class ComplexDataItem
 {
     public int Id { get; set; }
     public string Name { get; set; } = "";

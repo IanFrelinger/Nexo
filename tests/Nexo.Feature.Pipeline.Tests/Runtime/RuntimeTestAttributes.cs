@@ -9,7 +9,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that should only run on specific runtimes.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class RuntimeFactAttribute : FactAttribute
+    public partial class RuntimeFactAttribute : FactAttribute
     {
         public RuntimeFactAttribute(params RuntimeDetection.RuntimeType[] supportedRuntimes)
         {
@@ -36,7 +36,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that should only run on specific runtimes with theory data.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class RuntimeTheoryAttribute : TheoryAttribute
+    public partial class RuntimeTheoryAttribute : TheoryAttribute
     {
         public RuntimeTheoryAttribute(params RuntimeDetection.RuntimeType[] supportedRuntimes)
         {
@@ -63,7 +63,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that require specific runtime features.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class RequiresFeatureAttribute : FactAttribute
+    public partial class RequiresFeatureAttribute : FactAttribute
     {
         public RequiresFeatureAttribute(string requiredFeature)
         {
@@ -88,7 +88,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that require specific runtime features with theory data.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class RequiresFeatureTheoryAttribute : TheoryAttribute
+    public partial class RequiresFeatureTheoryAttribute : TheoryAttribute
     {
         public RequiresFeatureTheoryAttribute(string requiredFeature)
         {
@@ -113,7 +113,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that should be skipped on specific runtimes.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class SkipOnRuntimeAttribute : FactAttribute
+    public partial class SkipOnRuntimeAttribute : FactAttribute
     {
         public SkipOnRuntimeAttribute(params RuntimeDetection.RuntimeType[] skipRuntimes)
         {
@@ -140,7 +140,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that should be skipped on specific runtimes with theory data.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class SkipOnRuntimeTheoryAttribute : TheoryAttribute
+    public partial class SkipOnRuntimeTheoryAttribute : TheoryAttribute
     {
         public SkipOnRuntimeTheoryAttribute(params RuntimeDetection.RuntimeType[] skipRuntimes)
         {
@@ -167,7 +167,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that have runtime-specific timeouts.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class RuntimeTimeoutAttribute : FactAttribute
+    public partial class RuntimeTimeoutAttribute : FactAttribute
     {
         public RuntimeTimeoutAttribute(int baseTimeoutMs = 10000)
         {
@@ -201,7 +201,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Attribute to mark tests that have runtime-specific timeouts with theory data.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
-    public class RuntimeTimeoutTheoryAttribute : TheoryAttribute
+    public partial class RuntimeTimeoutTheoryAttribute : TheoryAttribute
     {
         public RuntimeTimeoutTheoryAttribute(int baseTimeoutMs = 10000)
         {

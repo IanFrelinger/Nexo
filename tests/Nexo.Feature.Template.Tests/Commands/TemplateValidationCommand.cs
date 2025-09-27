@@ -9,7 +9,7 @@ namespace Nexo.Feature.Template.Tests.Commands;
 /// <summary>
 /// Command for validating Template functionality with proper logging and timeouts.
 /// </summary>
-public class TemplateValidationCommand
+public partial class TemplateValidationCommand
 {
     private readonly ILogger<TemplateValidationCommand> _logger;
 

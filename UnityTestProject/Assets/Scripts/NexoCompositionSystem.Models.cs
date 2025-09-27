@@ -6,7 +6,7 @@ namespace NexoDoomGame
     /// Composition result data
     /// </summary>
     [System.Serializable]
-    public class CompositionResult
+    public partial class CompositionResult
     {
         public string Component;
         public CompositionType Type;

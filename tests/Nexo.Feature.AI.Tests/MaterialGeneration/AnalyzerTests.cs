@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Tests.MaterialGeneration
     /// <summary>
     /// Tests for Material Context Analyzer functionality.
     /// </summary>
-    public class AnalyzerTests
+    public partial class AnalyzerTests
     {
         private readonly ILogger _logger;
 

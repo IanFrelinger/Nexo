@@ -17,7 +17,7 @@ namespace Nexo.Core.Application.Tests;
 /// <summary>
 /// Performance-focused tests for iteration strategies
 /// </summary>
-public class IterationStrategyPerformanceTests
+public partial class IterationStrategyPerformanceTests
 {
     private readonly IServiceProvider _serviceProvider;
     

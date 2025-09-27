@@ -9,7 +9,7 @@ namespace Examples
     /// Standalone demonstration of the PluginHost system without external dependencies.
     /// This shows the conceptual structure and usage patterns.
     /// </summary>
-    public class StandalonePluginHostDemo
+    public partial class StandalonePluginHostDemo
     {
         public static void Main(string[] args)
         {

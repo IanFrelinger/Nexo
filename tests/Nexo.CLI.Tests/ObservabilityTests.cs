@@ -15,7 +15,7 @@ namespace Nexo.CLI.Tests
     /// <summary>
     /// Tests for observability functionality.
     /// </summary>
-    public class ObservabilityTests
+    public partial class ObservabilityTests
     {
         [Fact]
         public void AddNexoObservability_ShouldRegisterServices()

@@ -5,7 +5,7 @@ namespace Nexo.Observability.Configuration;
 /// <summary>
 /// Configuration options for OpenTelemetry observability.
 /// </summary>
-public class ObservabilityOptions
+public partial class ObservabilityOptions
 {
     /// <summary>
     /// Configuration section name.
@@ -71,7 +71,7 @@ public class ObservabilityOptions
 /// <summary>
 /// Sampling configuration options.
 /// </summary>
-public class SamplingOptions
+public partial class SamplingOptions
 {
     /// <summary>
     /// Sampling ratio (0.0 to 1.0).
@@ -109,7 +109,7 @@ public enum SamplingType
 /// <summary>
 /// Console exporter configuration.
 /// </summary>
-public class ConsoleExporterOptions
+public partial class ConsoleExporterOptions
 {
     /// <summary>
     /// Whether to enable console exporter.
@@ -130,7 +130,7 @@ public class ConsoleExporterOptions
 /// <summary>
 /// OTLP exporter configuration.
 /// </summary>
-public class OtlpExporterOptions
+public partial class OtlpExporterOptions
 {
     /// <summary>
     /// Whether to enable OTLP exporter.

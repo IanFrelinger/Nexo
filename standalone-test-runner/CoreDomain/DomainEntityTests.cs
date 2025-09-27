@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test suite for Domain Entity functionality
     /// </summary>
-    public class DomainEntityTests
+    public partial class DomainEntityTests
     {
         private readonly bool _verbose;
 
@@ -350,7 +350,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test domain entity for testing purposes
     /// </summary>
-    public class TestDomainEntity
+    public partial class TestDomainEntity
     {
         public string Name { get; private set; }
         public string Description { get; private set; }

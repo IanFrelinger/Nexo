@@ -9,7 +9,7 @@ namespace Nexo.Demo.Tests;
 /// Tests policy enforcement, approval workflows, and pause/resume functionality
 /// </summary>
 [Collection("StaticState")]
-public class Policies_Approvals_PauseResume
+public partial class Policies_Approvals_PauseResume
 {
     public Policies_Approvals_PauseResume()
     {

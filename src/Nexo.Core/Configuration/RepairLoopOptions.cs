@@ -5,7 +5,7 @@ namespace Nexo.Core.Configuration
     /// <summary>
     /// Configuration options for the repair loop in pipeline execution.
     /// </summary>
-    public class RepairLoopOptions
+    public partial class RepairLoopOptions
     {
         /// <summary>
         /// Maximum number of repair iterations to attempt before giving up.

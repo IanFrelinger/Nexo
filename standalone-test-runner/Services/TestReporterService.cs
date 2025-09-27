@@ -5,7 +5,7 @@ using StandaloneTestRunner.Models;
 
 namespace StandaloneTestRunner.Services
 {
-    public class TestReporterService
+    public partial class TestReporterService
     {
         public void ReportResults(TestResult result)
         {

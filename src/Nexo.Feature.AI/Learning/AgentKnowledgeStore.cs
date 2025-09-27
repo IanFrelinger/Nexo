@@ -9,7 +9,7 @@ namespace Nexo.Feature.AI.Learning;
 /// <summary>
 /// Stores and retrieves agent knowledge and performance data
 /// </summary>
-public class AgentKnowledgeStore : IAgentKnowledgeStore
+public partial class AgentKnowledgeStore : IAgentKnowledgeStore
 {
     private readonly ILogger<AgentKnowledgeStore> _logger;
     private readonly Dictionary<string, List<AgentLearningRecord>> _performanceRecords = new();

@@ -10,7 +10,7 @@ namespace Nexo.CLI.Tests;
 /// Pipeline-architecture test suite for Nexo.CLI layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class CLIPipelineTests
+public partial class CLIPipelineTests
 {
     private readonly ILogger<CLIPipelineTests> _logger;
 

@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Nexo.Core.Application.Tests.Services
 {
-    public class AsyncProcessingIntegrationTests
+    public partial class AsyncProcessingIntegrationTests
     {
         [Fact]
         public async Task ProcessingQueue_Enqueue_Dequeue_Works()

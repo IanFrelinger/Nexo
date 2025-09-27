@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Tests.MaterialGeneration
     /// <summary>
     /// Tests for Dynamic Material Generator functionality.
     /// </summary>
-    public class GeneratorTests
+    public partial class GeneratorTests
     {
         private readonly ILogger _logger;
 

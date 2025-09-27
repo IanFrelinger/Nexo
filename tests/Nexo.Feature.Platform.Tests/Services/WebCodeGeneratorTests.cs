@@ -19,7 +19,7 @@ namespace Nexo.Feature.Platform.Tests.Services
     /// Unit tests for the WebCodeGenerator service.
     /// Part of Epic 6.1: Native Platform Code Generation, Story 6.1.3: Web Implementation.
     /// </summary>
-    public class WebCodeGeneratorTests
+    public partial class WebCodeGeneratorTests
     {
         private readonly Mock<ILogger<WebCodeGenerator>> _mockLogger;
         private readonly IWebCodeGenerator _generator;

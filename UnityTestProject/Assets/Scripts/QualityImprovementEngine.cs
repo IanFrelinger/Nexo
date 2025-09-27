@@ -8,7 +8,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Quality improvement engine that iteratively improves components based on validation results
     /// </summary>
-    public class QualityImprovementEngine : MonoBehaviour
+    public partial class QualityImprovementEngine : MonoBehaviour
     {
         [Header("Improvement Configuration")]
         [SerializeField] private ImprovementConfig improvementConfig;
@@ -310,7 +310,7 @@ Return the score as a simple number between 0.0 and 1.0.
     /// Improvement configuration
     /// </summary>
     [System.Serializable]
-    public class ImprovementConfig
+    public partial class ImprovementConfig
     {
         public bool enableAutoImprovement;
         public int maxImprovementAttempts;
@@ -322,7 +322,7 @@ Return the score as a simple number between 0.0 and 1.0.
     /// Improvement strategy
     /// </summary>
     [System.Serializable]
-    public class ImprovementStrategy
+    public partial class ImprovementStrategy
     {
         public string Name;
         public string Description;
@@ -334,7 +334,7 @@ Return the score as a simple number between 0.0 and 1.0.
     /// Improvement result
     /// </summary>
     [System.Serializable]
-    public class ImprovementResult
+    public partial class ImprovementResult
     {
         public string Component;
         public ValidationType Type;

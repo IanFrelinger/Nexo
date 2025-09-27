@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Tests.MaterialGeneration
     /// <summary>
     /// Tests for Platform Material Optimizer functionality.
     /// </summary>
-    public class OptimizerTests
+    public partial class OptimizerTests
     {
         private readonly ILogger _logger;
 

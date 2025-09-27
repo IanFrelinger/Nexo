@@ -10,7 +10,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Orchestrates Nexo Agent tasks for Unity game generation
     /// </summary>
-    public class NexoTaskOrchestrator : MonoBehaviour
+    public partial class NexoTaskOrchestrator : MonoBehaviour
     {
         [Header("Nexo Agent Configuration")]
         [SerializeField] private string configFilePath = "Assets/NexoConfig/UnityGenerationConfig.json";
@@ -368,7 +368,7 @@ OUTPUT FORMAT:
     /// Configuration classes for JSON serialization
     /// </summary>
     [System.Serializable]
-    public class UnityGenerationConfig
+    public partial class UnityGenerationConfig
     {
         public NexoAgentConfig nexoAgent;
         public GameSpecificationConfig gameSpecification;
@@ -379,7 +379,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class NexoAgentConfig
+    public partial class NexoAgentConfig
     {
         public string mode;
         public bool enableImageGeneration;
@@ -389,7 +389,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class GameSpecificationConfig
+    public partial class GameSpecificationConfig
     {
         public string gameType;
         public string artStyle;
@@ -401,7 +401,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class GenerationSettings
+    public partial class GenerationSettings
     {
         public ScriptGenerationSettings scriptGeneration;
         public AssetGenerationSettings assetGeneration;
@@ -409,7 +409,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class ScriptGenerationSettings
+    public partial class ScriptGenerationSettings
     {
         public bool includeComments;
         public bool includeErrorHandling;
@@ -421,7 +421,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class AssetGenerationSettings
+    public partial class AssetGenerationSettings
     {
         public int textureResolution;
         public string textureFormat;
@@ -432,7 +432,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class LevelGenerationSettings
+    public partial class LevelGenerationSettings
     {
         public int roomCount;
         public int corridorCount;
@@ -443,7 +443,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class OutputSettings
+    public partial class OutputSettings
     {
         public string scriptsPath;
         public string prefabsPath;
@@ -455,7 +455,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class TestingSettings
+    public partial class TestingSettings
     {
         public bool enablePerformanceTesting;
         public bool enableGameplayTesting;
@@ -467,7 +467,7 @@ OUTPUT FORMAT:
     }
     
     [System.Serializable]
-    public class DebuggingSettings
+    public partial class DebuggingSettings
     {
         public bool enableDebugConsole;
         public bool enablePerformanceOverlay;

@@ -15,7 +15,7 @@ namespace Nexo.Feature.AI.Tests;
 /// <summary>
 /// Tests for the MockModelProvider service
 /// </summary>
-public class MockModelProviderTests : IDisposable
+public partial class MockModelProviderTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly IModelProvider _provider;

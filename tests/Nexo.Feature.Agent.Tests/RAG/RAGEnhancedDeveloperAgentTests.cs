@@ -18,7 +18,7 @@ namespace Nexo.Feature.Agent.Tests.RAG
     /// <summary>
     /// Unit tests for RAGEnhancedDeveloperAgent
     /// </summary>
-    public class RAGEnhancedDeveloperAgentTests
+    public partial class RAGEnhancedDeveloperAgentTests
     {
         private readonly Mock<ILogger<RAGEnhancedDeveloperAgent>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

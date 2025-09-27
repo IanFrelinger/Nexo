@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that local and cloud providers produce semantically similar results
 /// </summary>
-public class Parity_Local_And_Cloud
+public partial class Parity_Local_And_Cloud
 {
     public Parity_Local_And_Cloud()
     {

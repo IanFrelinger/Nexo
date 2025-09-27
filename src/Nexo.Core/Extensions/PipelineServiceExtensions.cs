@@ -110,7 +110,7 @@ namespace Nexo.Core.Extensions
     /// <summary>
     /// Default compilation gate that always passes (used when no gates are registered).
     /// </summary>
-    public class DefaultCompilationGate : ICompilationGate
+    public partial class DefaultCompilationGate : ICompilationGate
     {
         /// <summary>
         /// Validates the source code and always returns a passing result.
@@ -131,7 +131,7 @@ namespace Nexo.Core.Extensions
     /// <summary>
     /// Default policy gate that always passes (used when no policies are registered).
     /// </summary>
-    public class DefaultPolicyGate<TArtifact> : IPolicyGate<TArtifact>
+    public partial class DefaultPolicyGate<TArtifact> : IPolicyGate<TArtifact>
     {
         /// <summary>
         /// Evaluates the artifact and always returns a passing policy outcome.

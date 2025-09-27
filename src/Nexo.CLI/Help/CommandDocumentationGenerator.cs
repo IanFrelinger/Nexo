@@ -11,7 +11,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Generates comprehensive documentation for commands and features
     /// </summary>
-    public class CommandDocumentationGenerator : IDocumentationGenerator
+    public partial class CommandDocumentationGenerator : IDocumentationGenerator
     {
         private readonly IModelOrchestrator _aiOrchestrator;
         private readonly ILogger<CommandDocumentationGenerator> _logger;
@@ -394,7 +394,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Represents command documentation
     /// </summary>
-    public class CommandDocumentation
+    public partial class CommandDocumentation
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -408,7 +408,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Represents a command parameter
     /// </summary>
-    public class CommandParameter
+    public partial class CommandParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -420,7 +420,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Represents a command reference
     /// </summary>
-    public class CommandReference
+    public partial class CommandReference
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

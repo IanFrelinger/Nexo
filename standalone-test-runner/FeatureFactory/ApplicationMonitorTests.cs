@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test suite for Application Monitor functionality
     /// </summary>
-    public class ApplicationMonitorTests
+    public partial class ApplicationMonitorTests
     {
         private readonly bool _verbose;
 
@@ -291,7 +291,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test application monitor for testing purposes
     /// </summary>
-    public class TestApplicationMonitor
+    public partial class TestApplicationMonitor
     {
         public bool IsInitialized { get; } = true;
 
@@ -323,7 +323,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test monitoring result for testing purposes
     /// </summary>
-    public class TestMonitoringResult
+    public partial class TestMonitoringResult
     {
         public bool Success { get; set; }
         public string ApplicationName { get; set; } = string.Empty;
@@ -332,7 +332,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test health check for testing purposes
     /// </summary>
-    public class TestHealthCheck
+    public partial class TestHealthCheck
     {
         public string Status { get; set; } = string.Empty;
         public string ApplicationName { get; set; } = string.Empty;
@@ -341,7 +341,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test performance metrics for testing purposes
     /// </summary>
-    public class TestPerformanceMetrics
+    public partial class TestPerformanceMetrics
     {
         public double CpuUsage { get; set; }
         public long MemoryUsage { get; set; }
@@ -351,7 +351,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test alert for testing purposes
     /// </summary>
-    public class TestAlert
+    public partial class TestAlert
     {
         public string Message { get; set; } = string.Empty;
         public string Severity { get; set; } = string.Empty;
@@ -360,7 +360,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test alert result for testing purposes
     /// </summary>
-    public class TestAlertResult
+    public partial class TestAlertResult
     {
         public bool Success { get; set; }
         public string AlertId { get; set; } = string.Empty;

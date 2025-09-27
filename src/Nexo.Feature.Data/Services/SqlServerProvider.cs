@@ -13,7 +13,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// SQL Server database provider implementation
     /// </summary>
-    public class SqlServerProvider : IDatabaseProvider
+    public partial class SqlServerProvider : IDatabaseProvider
     {
         private readonly ILogger<SqlServerProvider> _logger;
         private readonly string _connectionString;
@@ -304,7 +304,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// SQL Server transaction implementation
     /// </summary>
-    public class SqlServerTransaction : IDatabaseTransaction
+    public partial class SqlServerTransaction : IDatabaseTransaction
     {
         private readonly Microsoft.Data.SqlClient.SqlTransaction _transaction;
         private readonly Microsoft.Data.SqlClient.SqlConnection _connection;

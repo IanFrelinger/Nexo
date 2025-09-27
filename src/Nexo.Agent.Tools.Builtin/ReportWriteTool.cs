@@ -10,7 +10,7 @@ namespace Nexo.Agent.Tools.Builtin;
 /// <summary>
 /// Tool for writing reports in Markdown format.
 /// </summary>
-public class ReportWriteTool : ITool<ReportWriteInput, ReportWriteOutput>
+public partial class ReportWriteTool : ITool<ReportWriteInput, ReportWriteOutput>
 {
     public ToolManifest Manifest { get; }
 

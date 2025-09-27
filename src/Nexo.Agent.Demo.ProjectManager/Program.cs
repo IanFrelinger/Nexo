@@ -14,7 +14,7 @@ namespace Nexo.Agent.Demo.ProjectManager;
 /// <summary>
 /// Interactive Project Manager/Designer demo where the user tasks the Agent with project generation and validation.
 /// </summary>
-public class Program
+public partial class Program
 {
     public static async Task<int> Main(string[] args)
     {
@@ -57,7 +57,7 @@ public class Program
 /// <summary>
 /// Project Manager demo where the user acts as PM/Designer and tasks the Agent.
 /// </summary>
-public class ProjectManagerDemo
+public partial class ProjectManagerDemo
 {
     private readonly ITaskExecutionAgent _agent;
     private readonly ILogger _logger;
@@ -166,7 +166,7 @@ public class ProjectManagerDemo
 }
 
 // Data models
-public class ProjectTask
+public partial class ProjectTask
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -182,7 +182,7 @@ public class ProjectTask
     public DateTime? CompletedAt { get; set; }
 }
 
-public class ProjectTemplate
+public partial class ProjectTemplate
 {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -194,7 +194,7 @@ public class ProjectTemplate
     }
 }
 
-public class ProjectValidation
+public partial class ProjectValidation
 {
     public string TaskId { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
@@ -204,7 +204,7 @@ public class ProjectValidation
     public DateTime Timestamp { get; set; }
 }
 
-public class ProjectReport
+public partial class ProjectReport
 {
     public string ProjectName { get; set; } = string.Empty;
     public DateTime GeneratedAt { get; set; }
@@ -215,7 +215,7 @@ public class ProjectReport
     public string[] TopRecommendations { get; set; } = Array.Empty<string>();
 }
 
-public class ProjectRequirements
+public partial class ProjectRequirements
 {
     public string Description { get; set; } = string.Empty;
     public string Context { get; set; } = string.Empty;
@@ -225,7 +225,7 @@ public class ProjectRequirements
 }
 
 // Command decomposition models
-public class Command
+public partial class Command
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -236,7 +236,7 @@ public class Command
     public DateTime LastUsed { get; set; }
 }
 
-public class CommandSequence
+public partial class CommandSequence
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -246,14 +246,14 @@ public class CommandSequence
     public Dictionary<string, object> Parameters { get; set; } = new();
 }
 
-public class CommandDependency
+public partial class CommandDependency
 {
     public string CommandId { get; set; } = string.Empty;
     public string DependencyType { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
 }
 
-public class CommandReuseAnalysis
+public partial class CommandReuseAnalysis
 {
     public int TotalCommands { get; set; }
     public int ReusedCommands { get; set; }
@@ -263,7 +263,7 @@ public class CommandReuseAnalysis
     public CommandGap[] IdentifiedGaps { get; set; } = Array.Empty<CommandGap>();
 }
 
-public class CommandReuse
+public partial class CommandReuse
 {
     public string CommandId { get; set; } = string.Empty;
     public string CommandName { get; set; } = string.Empty;
@@ -273,14 +273,14 @@ public class CommandReuse
     public double SimilarityScore { get; set; }
 }
 
-public class CommandGap
+public partial class CommandGap
 {
     public string GapType { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string Severity { get; set; } = string.Empty;
 }
 
-public class DocumentationCrossReference
+public partial class DocumentationCrossReference
 {
     public string CommandId { get; set; } = string.Empty;
     public string DocumentationSource { get; set; } = string.Empty;
@@ -290,7 +290,7 @@ public class DocumentationCrossReference
     public string[] CodeExamples { get; set; } = Array.Empty<string>();
 }
 
-public class CommandDecompositionContext
+public partial class CommandDecompositionContext
 {
     public string TargetRuntime { get; set; } = string.Empty;
     public string TargetFramework { get; set; } = string.Empty;
@@ -299,7 +299,7 @@ public class CommandDecompositionContext
     public Dictionary<string, object> RuntimeParameters { get; set; } = new();
 }
 
-public class CommandDecompositionResult
+public partial class CommandDecompositionResult
 {
     public string OriginalPrompt { get; set; } = string.Empty;
     public CommandSequence Commands { get; set; } = new();

@@ -15,7 +15,7 @@ namespace Nexo.CLI.Tests.Commands
     /// <summary>
     /// Tests for the ExtensionCommands CLI functionality
     /// </summary>
-    public class ExtensionCommandTests
+    public partial class ExtensionCommandTests
     {
         private readonly Mock<IExtensionGenerator> _mockExtensionGenerator;
         private readonly Mock<ILogger<ExtensionCommands>> _mockLogger;
@@ -113,7 +113,7 @@ namespace Nexo.CLI.Tests.Commands
             // Arrange
             var mockResult = new GeneratedCode
             {
-                Code = "public class TestExtension { }",
+                Code = "public partial class TestExtension { }",
                 FileName = "TestExtension.cs",
                 FileExtension = ".cs"
             };

@@ -10,7 +10,7 @@ namespace Nexo.Feature.Template.Tests;
 /// Pipeline-architecture test suite for Nexo.Feature.Template layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class TemplatePipelineTests
+public partial class TemplatePipelineTests
 {
     private readonly ILogger<TemplatePipelineTests> _logger;
 

@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Cache functionality
 /// </summary>
-public class CacheTests
+public partial class CacheTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class CacheTests
 }
 
 // Mock AI Advanced Cache class for testing
-public class AIAdvancedCache
+public partial class AIAdvancedCache
 {
     public string Get(string key)
     {

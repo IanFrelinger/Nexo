@@ -10,7 +10,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// Test implementation of ICanaryDeployer for testing purposes.
     /// </summary>
     /// <typeparam name="TArtifact">The type of artifact to deploy</typeparam>
-    public class TestCanaryDeployer<TArtifact> : ICanaryDeployer<TArtifact>
+    public partial class TestCanaryDeployer<TArtifact> : ICanaryDeployer<TArtifact>
     {
         private readonly ILogger<TestCanaryDeployer<TArtifact>> _logger;
         private readonly bool _shouldSucceed;
@@ -52,7 +52,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// <summary>
     /// Test implementation that simulates canary failure for rollback testing.
     /// </summary>
-    public class FailingCanaryDeployer<TArtifact> : ICanaryDeployer<TArtifact>
+    public partial class FailingCanaryDeployer<TArtifact> : ICanaryDeployer<TArtifact>
     {
         private readonly ILogger<FailingCanaryDeployer<TArtifact>> _logger;
         private int _callCount = 0;

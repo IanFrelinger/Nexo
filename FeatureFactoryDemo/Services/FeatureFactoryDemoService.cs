@@ -5,7 +5,7 @@ using FeatureFactoryDemo.Services;
 
 namespace FeatureFactoryDemo.Services
 {
-    public class FeatureFactoryDemoService
+    public partial class FeatureFactoryDemoService
     {
         private readonly ILogger<FeatureFactoryDemoService> _logger;
         private readonly FeatureGenerationService _featureGenerationService;

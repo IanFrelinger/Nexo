@@ -32,7 +32,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Represents a command suggestion with relevance scoring
     /// </summary>
-    public class CommandSuggestion
+    public partial class CommandSuggestion
     {
         public string Command { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -44,7 +44,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Represents the current CLI context for intelligent suggestions
     /// </summary>
-    public class CLIContext
+    public partial class CLIContext
     {
         public ProjectInfo? CurrentProject { get; set; }
         public string? CurrentPlatform { get; set; }
@@ -60,7 +60,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Represents project information for context
     /// </summary>
-    public class ProjectInfo
+    public partial class ProjectInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;

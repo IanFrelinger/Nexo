@@ -8,7 +8,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Tests for network isolation in OFF/ASSIST modes
     /// </summary>
-    public class NetworkTests
+    public partial class NetworkTests
     {
         [Fact]
         public async Task OffMode_Performs_No_Network_Calls()

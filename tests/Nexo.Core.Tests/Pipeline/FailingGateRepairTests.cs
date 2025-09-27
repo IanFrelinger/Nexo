@@ -16,7 +16,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// <summary>
     /// Tests for the specific scenario: failing gate that becomes passing after repair.
     /// </summary>
-    public class FailingGateRepairTests
+    public partial class FailingGateRepairTests
     {
         private readonly Mock<IExtensionGenerator<string, string>> _mockGenerator;
         private readonly Mock<ICompilationGate> _mockCompilationGate;

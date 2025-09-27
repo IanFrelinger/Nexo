@@ -95,7 +95,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Migration information
     /// </summary>
-    public class MigrationInfo
+    public partial class MigrationInfo
     {
         /// <summary>
         /// Gets or sets the migration ID
@@ -151,7 +151,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Migration result
     /// </summary>
-    public class MigrationResult
+    public partial class MigrationResult
     {
         /// <summary>
         /// Gets or sets whether the migration was successful
@@ -192,7 +192,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Migration validation result
     /// </summary>
-    public class MigrationValidationResult
+    public partial class MigrationValidationResult
     {
         /// <summary>
         /// Gets or sets whether the validation was successful
@@ -228,7 +228,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Migration history
     /// </summary>
-    public class MigrationHistory
+    public partial class MigrationHistory
     {
         /// <summary>
         /// Gets or sets the migration ID

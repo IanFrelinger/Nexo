@@ -14,7 +14,7 @@ namespace Nexo.Feature.AI.Monitoring;
 /// <summary>
 /// Real-time adaptation service that monitors agent performance and adapts strategies
 /// </summary>
-public class RealTimeAdaptationService : IHostedService
+public partial class RealTimeAdaptationService : IHostedService
 {
     private readonly IAgentCoordinator _coordinator;
     private readonly IPerformanceMetricsCollector _metricsCollector;

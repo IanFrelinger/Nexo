@@ -14,7 +14,7 @@ namespace Nexo.Feature.ImageGeneration.Tools;
 /// <summary>
 /// Agent tool for image generation that integrates with the Nexo Agent system
 /// </summary>
-public class ImageGenerationTool : ITool<ImageGenerationToolRequest, ImageGenerationToolResult>
+public partial class ImageGenerationTool : ITool<ImageGenerationToolRequest, ImageGenerationToolResult>
 {
     private readonly ILogger<ImageGenerationTool> _logger;
     private readonly ImageGenerationOrchestrator _orchestrator;

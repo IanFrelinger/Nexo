@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Tests;
 /// Pipeline-architecture test suite for Nexo.Infrastructure layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class InfrastructurePipelineTests
+public partial class InfrastructurePipelineTests
 {
     private readonly ILogger<InfrastructurePipelineTests> _logger;
 

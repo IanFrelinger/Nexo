@@ -5,7 +5,7 @@ namespace FeatureFactoryDemo.Commands
     /// <summary>
     /// Command to display help information for all available commands
     /// </summary>
-    public class HelpCommand : BaseCommand
+    public partial class HelpCommand : BaseCommand
     {
         private readonly Dictionary<string, ICommand> _commands;
         

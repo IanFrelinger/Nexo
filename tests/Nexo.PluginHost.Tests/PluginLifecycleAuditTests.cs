@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Nexo.PluginHost.Tests
 {
-    public class PluginLifecycleAuditTests : IDisposable
+    public partial class PluginLifecycleAuditTests : IDisposable
     {
         private readonly TestLogger<PluginHost> _logger;
         private readonly string _tempDirectory;
@@ -111,7 +111,7 @@ namespace Nexo.PluginHost.Tests
     /// <summary>
     /// Test logger that captures log entries for verification.
     /// </summary>
-    public class TestLogger<T> : ILogger<T>
+    public partial class TestLogger<T> : ILogger<T>
     {
         public List<string> LogEntries { get; } = new List<string>();
 

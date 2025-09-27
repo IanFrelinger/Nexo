@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Runtime functionality
 /// </summary>
-public class RuntimeTests
+public partial class RuntimeTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class RuntimeTests
 }
 
 // Mock AI Runtime Selector class for testing
-public class AIRuntimeSelector
+public partial class AIRuntimeSelector
 {
     public string SelectRuntime(string task)
     {

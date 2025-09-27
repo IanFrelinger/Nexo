@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FeatureFactoryDemo.Services
 {
-    public class DemoDataService
+    public partial class DemoDataService
     {
         private readonly ILogger<DemoDataService> _logger;
         private readonly FeatureFactoryDbContext _context;

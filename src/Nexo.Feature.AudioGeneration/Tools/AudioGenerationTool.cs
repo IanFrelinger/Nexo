@@ -14,7 +14,7 @@ namespace Nexo.Feature.AudioGeneration.Tools;
 /// <summary>
 /// Agent tool for audio generation
 /// </summary>
-public class AudioGenerationTool : ITool
+public partial class AudioGenerationTool : ITool
 {
     private readonly ILogger<AudioGenerationTool> _logger;
     private readonly AudioGenerationOrchestrator _orchestrator;

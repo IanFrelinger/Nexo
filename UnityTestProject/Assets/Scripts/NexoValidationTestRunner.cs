@@ -7,7 +7,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Test runner for executing Nexo validation from Unity command line
     /// </summary>
-    public class NexoValidationTestRunner : MonoBehaviour
+    public partial class NexoValidationTestRunner : MonoBehaviour
     {
         [Header("Test Configuration")]
         [SerializeField] private bool runOnStart = true;

@@ -9,7 +9,7 @@ namespace StandaloneTestRunner
     /// <summary>
     /// Orchestrator for logging test suite that delegates to specialized test classes.
     /// </summary>
-    public class LoggingTestSuite
+    public partial class LoggingTestSuite
     {
         private readonly bool _verbose;
         private readonly BasicLoggingTests _basicLoggingTests;

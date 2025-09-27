@@ -10,7 +10,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Analyzes material generation requests to determine appropriate material properties
     /// </summary>
-    public class MaterialContextAnalyzer : IMaterialContextAnalyzer
+    public partial class MaterialContextAnalyzer : IMaterialContextAnalyzer
     {
         private readonly ILogger<MaterialContextAnalyzer> _logger;
         private readonly IColorPaletteAnalyzer _colorAnalyzer;

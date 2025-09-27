@@ -11,7 +11,7 @@ namespace Nexo.CLI.Tests.Mocks
     /// <summary>
     /// Mock AI provider for testing that doesn't require external connections
     /// </summary>
-    public class MockAIProvider : IModelProvider
+    public partial class MockAIProvider : IModelProvider
     {
         private readonly string _providerName;
         private readonly bool _shouldFail;

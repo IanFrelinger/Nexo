@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that local and cloud providers produce semantically similar results
 /// </summary>
-public class Parity_Local_And_Cloud
+public partial class Parity_Local_And_Cloud
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task Labels_Are_Semantically_Similar_Across_Providers()

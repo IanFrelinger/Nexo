@@ -196,7 +196,7 @@ namespace TestConsole
     }
 
     // Mock implementations for demo purposes
-    public class MockResourceMonitor : IResourceMonitor
+    public partial class MockResourceMonitor : IResourceMonitor
     {
         public Task<double> GetCpuUsageAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(25.0);
@@ -234,7 +234,7 @@ namespace TestConsole
             });
     }
 
-    public class MockResourceOptimizer : IResourceOptimizer
+    public partial class MockResourceOptimizer : IResourceOptimizer
     {
         public Task<OptimizationResult> OptimizeAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(new OptimizationResult

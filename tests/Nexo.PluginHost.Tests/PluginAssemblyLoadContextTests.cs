@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Nexo.PluginHost.Tests
 {
-    public class PluginAssemblyLoadContextTests : IDisposable
+    public partial class PluginAssemblyLoadContextTests : IDisposable
     {
         private readonly ILogger<PluginAssemblyLoadContext> _logger;
         private readonly string _tempDirectory;
@@ -143,7 +143,7 @@ using Nexo.Core.Contracts.Capabilities;
 
 namespace TestPlugin
 {
-    public class TestSense : ISense
+    public partial class TestSense : ISense
     {
         public string CapabilityName => ""TestSense"";
 

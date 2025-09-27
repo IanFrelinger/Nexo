@@ -57,7 +57,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Represents a command history entry
     /// </summary>
-    public class CommandHistoryEntry
+    public partial class CommandHistoryEntry
     {
         public string Command { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }

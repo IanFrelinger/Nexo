@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Model functionality
 /// </summary>
-public class ModelTests
+public partial class ModelTests
 {
     private readonly bool _verbose;
 
@@ -119,7 +119,7 @@ public class ModelTests
 }
 
 // Mock AI Model classes for testing
-public class AIModelFineTuner
+public partial class AIModelFineTuner
 {
     public string FineTuneModel(string baseModel, string trainingData)
     {
@@ -127,7 +127,7 @@ public class AIModelFineTuner
     }
 }
 
-public class AIModelManager
+public partial class AIModelManager
 {
     public List<string> GetAvailableModels()
     {

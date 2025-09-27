@@ -252,7 +252,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
         /// <summary>
         /// Unity performance metrics.
         /// </summary>
-        public class UnityPerformanceMetrics
+        public partial class UnityPerformanceMetrics
         {
             public float FrameRate { get; set; }
             public float MemoryUsageMB { get; set; }

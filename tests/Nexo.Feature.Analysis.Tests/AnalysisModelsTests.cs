@@ -4,7 +4,7 @@ using Nexo.Feature.Analysis.Models;
 
 namespace Nexo.Feature.Analysis.Tests;
 
-public class AnalysisModelsTests
+public partial class AnalysisModelsTests
 {
     [Fact]
     public void Analysis_Models_WorkCorrectly()

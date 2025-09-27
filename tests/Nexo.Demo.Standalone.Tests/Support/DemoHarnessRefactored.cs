@@ -151,7 +151,7 @@ namespace Nexo.Demo.Tests.Support
     /// <summary>
     /// Represents the result of a demo run
     /// </summary>
-    public class RunResult
+    public partial class RunResult
     {
         public bool Success { get; set; }
         public string OutputDirectory { get; set; } = string.Empty;
@@ -171,17 +171,17 @@ namespace Nexo.Demo.Tests.Support
     public interface IMockExportService { }
     public interface IPipelineOrchestrator { }
 
-    public class MockAiModeService : IMockAiModeService { }
-    public class MockPolicyService : IMockPolicyService { }
-    public class MockSelfHealingService : IMockSelfHealingService { }
-    public class MockParityService : IMockParityService { }
-    public class MockAuditService : IMockAuditService { }
-    public class MockPluginService : IMockPluginService { }
-    public class MockCodeGenService : IMockCodeGenService { }
-    public class MockExportService : IMockExportService { }
-    public class MockPipelineOrchestrator : IPipelineOrchestrator { }
+    public partial class MockAiModeService : IMockAiModeService { }
+    public partial class MockPolicyService : IMockPolicyService { }
+    public partial class MockSelfHealingService : IMockSelfHealingService { }
+    public partial class MockParityService : IMockParityService { }
+    public partial class MockAuditService : IMockAuditService { }
+    public partial class MockPluginService : IMockPluginService { }
+    public partial class MockCodeGenService : IMockCodeGenService { }
+    public partial class MockExportService : IMockExportService { }
+    public partial class MockPipelineOrchestrator : IPipelineOrchestrator { }
 
-    public class NetworkGuardHandler : DelegatingHandler
+    public partial class NetworkGuardHandler : DelegatingHandler
     {
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {

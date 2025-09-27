@@ -5,7 +5,7 @@ using StandaloneTestRunner.Models;
 
 namespace StandaloneTestRunner.Services
 {
-    public class TimeoutService
+    public partial class TimeoutService
     {
         public async Task<TestResult> ExecuteWithTimeoutAsync(
             Func<Task<TestResult>> testAction,

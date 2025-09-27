@@ -12,7 +12,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Manages persistent CLI state including user preferences, command history, and context
     /// </summary>
-    public class CLIStateManager : ICLIStateManager
+    public partial class CLIStateManager : ICLIStateManager
     {
         private readonly string _stateFilePath;
         private readonly ILogger<CLIStateManager> _logger;
@@ -199,7 +199,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Represents the persistent CLI state
     /// </summary>
-    public class CLIState
+    public partial class CLIState
     {
         public ProjectInfo? CurrentProject { get; set; }
         public string? CurrentPlatform { get; set; }

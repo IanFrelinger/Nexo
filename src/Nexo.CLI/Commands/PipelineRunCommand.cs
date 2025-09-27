@@ -18,7 +18,7 @@ namespace Nexo.CLI.Commands
     /// <summary>
     /// Command handler for the pipeline run command.
     /// </summary>
-    public class PipelineRunCommand
+    public partial class PipelineRunCommand
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<PipelineRunCommand> _logger;
@@ -394,7 +394,7 @@ namespace Nexo.CLI.Commands
     /// <summary>
     /// Represents the result of a pipeline execution.
     /// </summary>
-    public class PipelineExecutionResult
+    public partial class PipelineExecutionResult
     {
         public bool Succeeded { get; set; }
         public string ArtifactId { get; set; } = string.Empty;

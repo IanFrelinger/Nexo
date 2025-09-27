@@ -8,7 +8,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Tests for self-healing behavior (retries, failover, circuit breaker)
     /// </summary>
-    public class SelfHealingTests
+    public partial class SelfHealingTests
     {
         [Fact]
         public async Task Hybrid_FailsOver_On_429()

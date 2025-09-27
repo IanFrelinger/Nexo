@@ -17,7 +17,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// <summary>
     /// Tests for the recovery loop functionality in ExtensionPipeline.
     /// </summary>
-    public class RecoveryLoopTests
+    public partial class RecoveryLoopTests
     {
         private readonly Mock<IExtensionGenerator<string, string>> _mockGenerator;
         private readonly Mock<ICompilationGate> _mockCompilationGate;

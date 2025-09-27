@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Engine functionality
 /// </summary>
-public class EngineTests
+public partial class EngineTests
 {
     private readonly bool _verbose;
 
@@ -161,7 +161,7 @@ public class EngineTests
 }
 
 // Mock AI Engine classes for testing
-public class MockAIEngine
+public partial class MockAIEngine
 {
     public string ProcessRequest(string request)
     {
@@ -169,7 +169,7 @@ public class MockAIEngine
     }
 }
 
-public class LlamaWasmEngine
+public partial class LlamaWasmEngine
 {
     public string ProcessRequest(string request)
     {
@@ -177,7 +177,7 @@ public class LlamaWasmEngine
     }
 }
 
-public class LlamaNativeEngine
+public partial class LlamaNativeEngine
 {
     public string ProcessRequest(string request)
     {

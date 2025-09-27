@@ -6,7 +6,7 @@ namespace StandaloneTestRunner
     /// <summary>
     /// Epic 5.4 Test Runner - Demonstrates Epic 5.4 tests integration with TestAggregator
     /// </summary>
-    public class Epic5_4TestRunner
+    public partial class Epic5_4TestRunner
     {
         public static async Task RunEpic5_4TestsAsync()
         {

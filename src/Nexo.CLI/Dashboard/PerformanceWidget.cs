@@ -8,7 +8,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Performance monitoring widget for the dashboard
     /// </summary>
-    public class PerformanceWidget : IDashboardWidget
+    public partial class PerformanceWidget : IDashboardWidget
     {
         public string Title => "Performance Metrics";
         
@@ -131,7 +131,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents a performance snapshot for history tracking
     /// </summary>
-    public class PerformanceSnapshot
+    public partial class PerformanceSnapshot
     {
         public DateTime Timestamp { get; set; }
         public double CpuUsage { get; set; }

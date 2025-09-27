@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 
 // Simple verification runner for testing our verification specs
-public class SimpleVerifyRunner
+public partial class SimpleVerifyRunner
 {
     public static async Task<int> RunAsync(string specPath)
     {

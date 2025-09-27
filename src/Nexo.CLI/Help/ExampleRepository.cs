@@ -9,7 +9,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Repository for command examples and tutorials
     /// </summary>
-    public class ExampleRepository : IExampleRepository
+    public partial class ExampleRepository : IExampleRepository
     {
         private readonly ILogger<ExampleRepository> _logger;
         private readonly List<CommandExample> _examples;

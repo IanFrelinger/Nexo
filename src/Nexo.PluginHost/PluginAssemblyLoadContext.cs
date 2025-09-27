@@ -10,7 +10,7 @@ namespace Nexo.PluginHost
     /// <summary>
     /// A hardened, collectible AssemblyLoadContext for loading plugins with controlled dependency resolution.
     /// </summary>
-    public class PluginAssemblyLoadContext : AssemblyLoadContext
+    public partial class PluginAssemblyLoadContext : AssemblyLoadContext
     {
         private readonly string _pluginPath;
         private readonly string _pluginDependenciesPath;

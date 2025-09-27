@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TestPlugin
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => "TestPlugin";
         public string Version => "1.0.0";
@@ -33,7 +33,7 @@ namespace TestPlugin
     /// <summary>
     /// Test sensing capability implementation.
     /// </summary>
-    public class TestSenseCapability : ISense
+    public partial class TestSenseCapability : ISense
     {
         public string CapabilityName => "TestSense";
 

@@ -7,7 +7,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Tests for deterministic behavior in OFF mode
     /// </summary>
-    public class DeterminismTests
+    public partial class DeterminismTests
     {
         [Fact]
         public async Task OffMode_Is_Deterministic()

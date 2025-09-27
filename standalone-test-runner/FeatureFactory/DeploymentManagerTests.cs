@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test suite for Deployment Manager functionality
     /// </summary>
-    public class DeploymentManagerTests
+    public partial class DeploymentManagerTests
     {
         private readonly bool _verbose;
 
@@ -287,7 +287,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test deployment manager for testing purposes
     /// </summary>
-    public class TestDeploymentManager
+    public partial class TestDeploymentManager
     {
         public bool IsInitialized { get; } = true;
 
@@ -319,7 +319,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test deployment for testing purposes
     /// </summary>
-    public class TestDeployment
+    public partial class TestDeployment
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -328,7 +328,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test package for testing purposes
     /// </summary>
-    public class TestPackage
+    public partial class TestPackage
     {
         public string Name { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
@@ -337,7 +337,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test deployment target for testing purposes
     /// </summary>
-    public class TestDeploymentTarget
+    public partial class TestDeploymentTarget
     {
         public string Name { get; }
         public string Environment { get; }
@@ -352,7 +352,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test configuration for testing purposes
     /// </summary>
-    public class TestConfiguration
+    public partial class TestConfiguration
     {
         public string TargetName { get; set; } = string.Empty;
         public string Environment { get; set; } = string.Empty;
@@ -361,7 +361,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test rollback result for testing purposes
     /// </summary>
-    public class TestRollbackResult
+    public partial class TestRollbackResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

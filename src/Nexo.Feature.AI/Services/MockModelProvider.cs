@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Services;
 /// <summary>
 /// Mock model provider for testing and development
 /// </summary>
-public class MockModelProvider : IModelProvider
+public partial class MockModelProvider : IModelProvider
 {
     private readonly ILogger<MockModelProvider> _logger;
     private readonly List<ModelInfo> _availableModels;
@@ -180,7 +180,7 @@ public class MockModelProvider : IModelProvider
     {
         return """
             // AI-generated code with best practices
-            public class OptimizedProcessor
+            public partial class OptimizedProcessor
             {
                 public void ProcessItems<T>(IEnumerable<T> items, Action<T> processor)
                 {
@@ -211,7 +211,7 @@ public class MockModelProvider : IModelProvider
 /// <summary>
 /// Mock model implementation
 /// </summary>
-public class MockModel : IModel
+public partial class MockModel : IModel
 {
     private readonly ModelInfo _modelInfo;
     private readonly ILogger _logger;

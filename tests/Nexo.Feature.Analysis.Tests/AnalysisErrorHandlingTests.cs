@@ -3,7 +3,7 @@ using System;
 
 namespace Nexo.Feature.Analysis.Tests;
 
-public class AnalysisErrorHandlingTests
+public partial class AnalysisErrorHandlingTests
 {
     [Fact]
     public void Analysis_Invalid_Input_Throws()

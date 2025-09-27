@@ -10,7 +10,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Real-time terminal dashboard with live performance metrics and status
     /// </summary>
-    public class RealTimeDashboard : IRealTimeDashboard
+    public partial class RealTimeDashboard : IRealTimeDashboard
     {
         private readonly ILogger<RealTimeDashboard> _logger;
         private readonly List<IDashboardWidget> _widgets;

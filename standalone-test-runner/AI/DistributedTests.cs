@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Distributed functionality
 /// </summary>
-public class DistributedTests
+public partial class DistributedTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class DistributedTests
 }
 
 // Mock AI Distributed Processor class for testing
-public class AIDistributedProcessor
+public partial class AIDistributedProcessor
 {
     public string ProcessDistributed(string task)
     {

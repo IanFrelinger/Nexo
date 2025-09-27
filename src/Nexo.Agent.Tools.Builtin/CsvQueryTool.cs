@@ -10,7 +10,7 @@ namespace Nexo.Agent.Tools.Builtin;
 /// <summary>
 /// Tool for querying CSV files with simple operations.
 /// </summary>
-public class CsvQueryTool : ITool<CsvQueryInput, CsvQueryOutput>
+public partial class CsvQueryTool : ITool<CsvQueryInput, CsvQueryOutput>
 {
     public ToolManifest Manifest { get; }
 

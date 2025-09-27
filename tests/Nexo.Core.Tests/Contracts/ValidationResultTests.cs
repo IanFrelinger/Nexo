@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Contracts
 {
-    public class ValidationResultTests
+    public partial class ValidationResultTests
     {
         [Theory]
         [InlineData(true, "TestGate", new[] { "No issues found" })]

@@ -11,7 +11,7 @@ namespace Nexo.Feature.Data.Tests.Services;
 /// <summary>
 /// Tests for the Unit of Work service
 /// </summary>
-public class UnitOfWorkTests : IDisposable
+public partial class UnitOfWorkTests : IDisposable
 {
     private readonly TestDbContext _context;
     private readonly Mock<ILogger<UnitOfWork>> _mockLogger;
@@ -165,7 +165,7 @@ public class UnitOfWorkTests : IDisposable
     }
 
     // Test entity for unit of work tests
-    public class TestEntity
+    public partial class TestEntity
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -175,7 +175,7 @@ public class UnitOfWorkTests : IDisposable
     }
 
     // Another test entity for unit of work tests
-    public class AnotherTestEntity
+    public partial class AnotherTestEntity
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -184,7 +184,7 @@ public class UnitOfWorkTests : IDisposable
     }
 
     // Test DbContext for unit of work tests
-    public class TestDbContext : DbContext
+    public partial class TestDbContext : DbContext
     {
         public TestDbContext(DbContextOptions<TestDbContext> options) : base(options)
         {

@@ -9,7 +9,7 @@ namespace Nexo.Core.Domain.Tests.Commands;
 /// <summary>
 /// Command for validating Core.Domain entities with proper logging and timeouts.
 /// </summary>
-public class EntityValidationCommand
+public partial class EntityValidationCommand
 {
     private readonly ILogger<EntityValidationCommand> _logger;
 

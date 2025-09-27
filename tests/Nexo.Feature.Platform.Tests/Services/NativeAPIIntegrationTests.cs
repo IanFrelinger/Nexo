@@ -19,7 +19,7 @@ namespace Nexo.Feature.Platform.Tests.Services
     /// Orchestrator for Native API Integration tests that delegates to specialized test classes.
     /// Part of Epic 6.2: Platform-Specific Feature Integration, Story 6.2.2: Native API Integration.
     /// </summary>
-    public class NativeAPIIntegrationTests
+    public partial class NativeAPIIntegrationTests
     {
         private readonly Mock<ILogger<NativeAPIIntegration>> _mockLogger;
         private readonly NativeAPIIntegration _integration;

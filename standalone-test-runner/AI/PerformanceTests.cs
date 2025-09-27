@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Performance functionality
 /// </summary>
-public class PerformanceTests
+public partial class PerformanceTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class PerformanceTests
 }
 
 // Mock AI Performance Monitor class for testing
-public class AIPerformanceMonitor
+public partial class AIPerformanceMonitor
 {
     public Dictionary<string, object> GetMetrics()
     {

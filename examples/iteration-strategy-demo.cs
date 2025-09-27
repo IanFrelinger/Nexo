@@ -16,7 +16,7 @@ namespace Nexo.Examples;
 /// <summary>
 /// Comprehensive demonstration of the Iteration Strategy Pattern system
 /// </summary>
-public class IterationStrategyDemo
+public partial class IterationStrategyDemo
 {
     public static async Task RunDemo()
     {

@@ -10,7 +10,7 @@ namespace Nexo.Feature.Logging.Tests
     /// Pipeline-architecture test suite for Nexo.Feature.Logging layer.
     /// Uses command classes with proper timeouts and logging to prevent hanging tests.
     /// </summary>
-    public class LoggingPipelineTests
+    public partial class LoggingPipelineTests
     {
         private readonly ILogger<LoggingPipelineTests> _logger;
 

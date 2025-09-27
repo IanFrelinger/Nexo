@@ -13,7 +13,7 @@ namespace Nexo.Observability.Tests;
 /// <summary>
 /// Tests for OTLP configuration scenarios.
 /// </summary>
-public class OtlpConfigurationTests
+public partial class OtlpConfigurationTests
 {
     [Fact]
     public void AddNexoObservability_WithOtlpDisabled_ShouldNotThrow()

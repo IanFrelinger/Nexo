@@ -11,7 +11,7 @@ namespace Nexo.Core.Domain.Tests;
 /// Pipeline-architecture test suite for Nexo.Core.Domain layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class CoreDomainPipelineTests
+public partial class CoreDomainPipelineTests
 {
     private readonly ILogger<CoreDomainPipelineTests> _logger;
 

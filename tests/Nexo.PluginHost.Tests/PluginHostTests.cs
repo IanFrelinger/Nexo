@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Nexo.PluginHost.Tests
 {
-    public class PluginHostTests : IDisposable
+    public partial class PluginHostTests : IDisposable
     {
         private readonly ILogger<PluginHost> _logger;
         private readonly string _testPluginPath;
@@ -246,7 +246,7 @@ using System.Threading.Tasks;
 
 namespace TestPlugin
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => ""TestPlugin"";
         public string Version => ""1.0.0"";
@@ -270,7 +270,7 @@ namespace TestPlugin
         }
     }
 
-    public class TestSenseCapability : ISense
+    public partial class TestSenseCapability : ISense
     {
         public string CapabilityName => ""TestSense"";
 
@@ -316,7 +316,7 @@ namespace TestPlugin
     }
 
     // Mock implementations for testing
-    public class MockFileSystem : INexoFileSystem
+    public partial class MockFileSystem : INexoFileSystem
     {
         public bool FileExistsCalled { get; private set; }
         public bool ReadAllTextAsyncCalled { get; private set; }
@@ -353,7 +353,7 @@ namespace TestPlugin
         public string ChangeExtension(string path, string extension) => Path.ChangeExtension(path, extension);
     }
 
-    public class MockProcessRunner : INexoProcessRunner
+    public partial class MockProcessRunner : INexoProcessRunner
     {
         public Task<INexoProcess> StartProcessAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<INexoProcess> StartProcessAsync(string fileName, string arguments = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();

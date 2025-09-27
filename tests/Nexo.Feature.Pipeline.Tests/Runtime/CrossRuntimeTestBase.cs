@@ -178,7 +178,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// <summary>
     /// Custom exception for skipping tests.
     /// </summary>
-    public class SkipException : Exception
+    public partial class SkipException : Exception
     {
         public SkipException(string message) : base(message) { }
     }
@@ -186,7 +186,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// <summary>
     /// Logger that outputs to test output.
     /// </summary>
-    public class TestOutputLogger : ILogger
+    public partial class TestOutputLogger : ILogger
     {
         private readonly ITestOutputHelper _testOutput;
 

@@ -11,7 +11,7 @@ namespace Nexo.Feature.Analysis.Tests.Commands;
 /// <summary>
 /// Command for validating Analysis functionality with proper logging and timeouts.
 /// </summary>
-public class AnalysisValidationCommand
+public partial class AnalysisValidationCommand
 {
     private readonly ILogger<AnalysisValidationCommand> _logger;
 

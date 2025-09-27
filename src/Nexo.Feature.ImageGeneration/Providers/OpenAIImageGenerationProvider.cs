@@ -16,7 +16,7 @@ namespace Nexo.Feature.ImageGeneration.Providers;
 /// <summary>
 /// Online image generation provider using OpenAI DALL-E API
 /// </summary>
-public class OpenAIImageGenerationProvider : IImageGenerationProvider
+public partial class OpenAIImageGenerationProvider : IImageGenerationProvider
 {
     private readonly ILogger<OpenAIImageGenerationProvider> _logger;
     private readonly HttpClient _httpClient;

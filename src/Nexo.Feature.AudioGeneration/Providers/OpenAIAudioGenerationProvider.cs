@@ -13,7 +13,7 @@ namespace Nexo.Feature.AudioGeneration.Providers;
 /// <summary>
 /// Online audio generation provider using OpenAI (simulated)
 /// </summary>
-public class OpenAIAudioGenerationProvider : IAudioGenerationProvider
+public partial class OpenAIAudioGenerationProvider : IAudioGenerationProvider
 {
     private readonly ILogger<OpenAIAudioGenerationProvider> _logger;
     private readonly List<AudioGenerationModel> _availableModels = new();

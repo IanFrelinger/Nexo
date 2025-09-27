@@ -4,7 +4,7 @@ namespace Nexo.Feature.Data.Models
     /// Paginated result wrapper for query results
     /// </summary>
     /// <typeparam name="T">The type of items in the result</typeparam>
-    public class PaginatedResult<T>
+    public partial class PaginatedResult<T>
     {
         /// <summary>
         /// The items in the current page

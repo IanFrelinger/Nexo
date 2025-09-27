@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Validation
 {
-    public class FeatureSpecValidatorTests
+    public partial class FeatureSpecValidatorTests
     {
         private readonly Mock<ILogger<FeatureSpecValidator>> _mockLogger;
         private readonly FeatureSpecValidator _validator;

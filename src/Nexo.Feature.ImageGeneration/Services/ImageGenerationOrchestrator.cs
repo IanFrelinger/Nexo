@@ -12,7 +12,7 @@ namespace Nexo.Feature.ImageGeneration.Services;
 /// <summary>
 /// Orchestrator for image generation services that manages multiple providers
 /// </summary>
-public class ImageGenerationOrchestrator
+public partial class ImageGenerationOrchestrator
 {
     private readonly ILogger<ImageGenerationOrchestrator> _logger;
     private readonly List<IImageGenerationProvider> _providers;

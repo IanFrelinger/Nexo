@@ -9,7 +9,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Main test script for Nexo Framework - orchestrates the entire generation process
     /// </summary>
-    public class NexoFrameworkTest : MonoBehaviour
+    public partial class NexoFrameworkTest : MonoBehaviour
     {
         [Header("Test Configuration")]
         [SerializeField] private bool runTestOnStart = false;
@@ -442,7 +442,7 @@ namespace NexoDoomGame
     /// Test results container
     /// </summary>
     [System.Serializable]
-    public class TestResults
+    public partial class TestResults
     {
         public List<TestResult> Results = new List<TestResult>();
         
@@ -464,7 +464,7 @@ namespace NexoDoomGame
     /// Individual test result
     /// </summary>
     [System.Serializable]
-    public class TestResult
+    public partial class TestResult
     {
         public string Category;
         public string Message;

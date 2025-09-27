@@ -10,7 +10,7 @@ namespace Nexo.Feature.Validation.Tests;
 /// Pipeline-architecture test suite for Nexo.Feature.Validation layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class ValidationPipelineTests
+public partial class ValidationPipelineTests
 {
     private readonly ILogger<ValidationPipelineTests> _logger;
 

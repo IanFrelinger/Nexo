@@ -11,7 +11,7 @@ namespace StandaloneTestRunner
     /// Test suite for Feature Factory Deployment & Integration services
     /// Uses smaller, focused test classes for better maintainability
     /// </summary>
-    public class FeatureFactoryDeploymentTests
+    public partial class FeatureFactoryDeploymentTests
     {
         private readonly bool _verbose;
         private readonly DeploymentManagerTests _deploymentManagerTests;

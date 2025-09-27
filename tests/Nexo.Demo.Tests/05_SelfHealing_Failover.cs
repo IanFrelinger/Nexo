@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests self-healing capabilities including retry, backoff, and failover
 /// </summary>
-public class SelfHealing_Failover
+public partial class SelfHealing_Failover
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task Flaky_Primary_Fails_Once_Then_Failover_Completes()

@@ -9,7 +9,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Test runner for executing Nexo Framework tests
     /// </summary>
-    public class TestRunner : MonoBehaviour
+    public partial class TestRunner : MonoBehaviour
     {
         [Header("Test Configuration")]
         [SerializeField] private bool runTestsOnStart = false;

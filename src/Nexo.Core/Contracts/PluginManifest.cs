@@ -6,7 +6,7 @@ namespace Nexo.Core.Contracts
     /// <summary>
     /// Represents a plugin manifest that declares plugin metadata and capabilities.
     /// </summary>
-    public class PluginManifest
+    public partial class PluginManifest
     {
         /// <summary>
         /// Gets or sets the plugin name.

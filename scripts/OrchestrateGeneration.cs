@@ -47,7 +47,7 @@ namespace NexoDoomGame.ExternalGeneration
     /// <summary>
     /// Orchestrates the entire generation, testing, and composition process
     /// </summary>
-    public class GenerationOrchestrator
+    public partial class GenerationOrchestrator
     {
         private readonly ILogger<GenerationOrchestrator> _logger;
         

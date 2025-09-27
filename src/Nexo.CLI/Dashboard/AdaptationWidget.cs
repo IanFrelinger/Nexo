@@ -8,7 +8,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Adaptation status widget showing real-time adaptations
     /// </summary>
-    public class AdaptationWidget : IDashboardWidget
+    public partial class AdaptationWidget : IDashboardWidget
     {
         public string Title => "Real-Time Adaptations";
         
@@ -146,7 +146,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents an adaptation event for history tracking
     /// </summary>
-    public class AdaptationEvent
+    public partial class AdaptationEvent
     {
         public DateTime Timestamp { get; set; }
         public string Type { get; set; } = string.Empty;

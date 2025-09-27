@@ -9,7 +9,7 @@ namespace FeatureFactoryDemo.Commands
     /// <summary>
     /// Command to generate code using the Feature Factory pipeline
     /// </summary>
-    public class GenerateCommand : BaseCommand
+    public partial class GenerateCommand : BaseCommand
     {
         private readonly CommandHistoryService _commandHistoryService;
         private readonly CodebaseAnalysisService _codebaseAnalysisService;
@@ -175,7 +175,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Nexo.FeatureFactory.Generated
 {{
-    public class GeneratedEntity
+    public partial class GeneratedEntity
     {{
         [Key]
         public int Id {{ get; set; }}
@@ -203,7 +203,7 @@ namespace Nexo.FeatureFactory.Generated
         Task DeleteAsync(int id);
     }}
 
-    public class GeneratedEntityService
+    public partial class GeneratedEntityService
     {{
         private readonly IGeneratedEntityRepository _repository;
         private readonly ILogger<GeneratedEntityService> _logger;
@@ -345,7 +345,7 @@ namespace Nexo.FeatureFactory.Generated
         }
     }
     
-    public class GenerationResult
+    public partial class GenerationResult
     {
         public bool IsSuccess { get; set; }
         public string GeneratedCode { get; set; } = string.Empty;

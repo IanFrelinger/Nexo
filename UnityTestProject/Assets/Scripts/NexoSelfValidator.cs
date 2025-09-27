@@ -12,7 +12,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Orchestrator for Nexo self-validation system that delegates to specialized validators.
     /// </summary>
-    public class NexoSelfValidator : MonoBehaviour
+    public partial class NexoSelfValidator : MonoBehaviour
     {
         [Header("Validation Configuration")]
         [SerializeField] private ValidationConfig validationConfig;

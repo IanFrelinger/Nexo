@@ -11,7 +11,7 @@ namespace Nexo.CLI.Commands
     /// <summary>
     /// Tool maintenance command
     /// </summary>
-    public class MaintenanceCommand : ICommand
+    public partial class MaintenanceCommand : ICommand
     {
         private readonly IToolMaintenanceService _maintenanceService;
         private readonly ILogger<MaintenanceCommand> _logger;

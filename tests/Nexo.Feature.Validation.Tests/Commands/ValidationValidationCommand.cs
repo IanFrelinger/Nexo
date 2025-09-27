@@ -8,7 +8,7 @@ namespace Nexo.Feature.Validation.Tests.Commands;
 /// <summary>
 /// Command for validating Validation functionality with proper logging and timeouts.
 /// </summary>
-public class ValidationValidationCommand
+public partial class ValidationValidationCommand
 {
     private readonly ILogger<ValidationValidationCommand> _logger;
 

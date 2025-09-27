@@ -8,7 +8,7 @@ namespace Nexo.Demo.Tests;
 /// Tests that the same recipe runs across different AI modes
 /// </summary>
 [Collection("StaticState")]
-public class Modes_Off_Hybrid_Embedded
+public partial class Modes_Off_Hybrid_Embedded
 {
     public Modes_Off_Hybrid_Embedded()
     {

@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Analytics functionality
 /// </summary>
-public class AnalyticsTests
+public partial class AnalyticsTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class AnalyticsTests
 }
 
 // Mock AI Advanced Analytics class for testing
-public class AIAdvancedAnalytics
+public partial class AIAdvancedAnalytics
 {
     public Dictionary<string, object> GetInsights()
     {

@@ -11,7 +11,7 @@ namespace Nexo.CLI.Tests.Commands;
 /// <summary>
 /// Command for testing CLI AI functionality with proper logging and timeouts.
 /// </summary>
-public class AICommandTests
+public partial class AICommandTests
 {
     private readonly ILogger<AICommandTests> _logger;
 

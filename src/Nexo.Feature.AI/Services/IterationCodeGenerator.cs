@@ -13,7 +13,7 @@ namespace Nexo.Feature.AI.Services;
 /// <summary>
 /// Service for generating optimized iteration code using AI
 /// </summary>
-public class IterationCodeGenerator : IIterationCodeGenerator
+public partial class IterationCodeGenerator : IIterationCodeGenerator
 {
     private readonly IModelOrchestrator _modelOrchestrator;
     private readonly ILogger<IterationCodeGenerator> _logger;

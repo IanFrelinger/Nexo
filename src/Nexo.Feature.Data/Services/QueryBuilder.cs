@@ -10,7 +10,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// Query builder for converting LINQ expressions to SQL queries
     /// </summary>
-    public class QueryBuilder
+    public partial class QueryBuilder
     {
         private readonly ILogger<QueryBuilder> _logger;
         private readonly Dictionary<string, object> _parameters;

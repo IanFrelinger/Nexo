@@ -11,7 +11,7 @@ namespace Nexo.Feature.Agent.Tests;
 /// Pipeline-architecture test suite for Nexo.Feature.Agent layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class AgentPipelineTests
+public partial class AgentPipelineTests
 {
     private readonly ILogger<AgentPipelineTests> _logger;
 

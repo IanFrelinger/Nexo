@@ -11,7 +11,7 @@ namespace Nexo.Feature.AI.Learning;
 /// <summary>
 /// System for learning from agent performance and improving future results
 /// </summary>
-public class AgentLearningSystem : IAgentLearningSystem
+public partial class AgentLearningSystem : IAgentLearningSystem
 {
     private readonly IPerformanceFeedbackCollector _feedbackCollector;
     private readonly IAgentKnowledgeStore _knowledgeStore;

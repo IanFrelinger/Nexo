@@ -11,7 +11,7 @@ namespace Nexo.Shared.Tests;
 /// Pipeline-architecture test suite for Nexo.Shared layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class SharedPipelineTests
+public partial class SharedPipelineTests
 {
     private readonly ILogger<SharedPipelineTests> _logger;
 

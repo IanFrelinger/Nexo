@@ -7,7 +7,7 @@ namespace Nexo.Infrastructure.Tests.Commands;
 /// <summary>
 /// Command for validating enum values in the Infrastructure layer.
 /// </summary>
-public class EnumValidationCommand
+public partial class EnumValidationCommand
 {
     private readonly ILogger<EnumValidationCommand> _logger;
 

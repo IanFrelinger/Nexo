@@ -9,7 +9,7 @@ namespace Nexo.CLI.Tests.Commands;
 /// <summary>
 /// Command for testing CLI analyze functionality with proper logging and timeouts.
 /// </summary>
-public class AnalyzeCommandTests
+public partial class AnalyzeCommandTests
 {
     private readonly ILogger<AnalyzeCommandTests> _logger;
 

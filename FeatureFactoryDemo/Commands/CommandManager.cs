@@ -6,7 +6,7 @@ namespace FeatureFactoryDemo.Commands
     /// <summary>
     /// Manages all available commands and handles command execution
     /// </summary>
-    public class CommandManager
+    public partial class CommandManager
     {
         private readonly Dictionary<string, ICommand> _commands;
         private readonly ILogger<CommandManager> _logger;

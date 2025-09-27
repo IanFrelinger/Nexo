@@ -9,7 +9,7 @@ using Nexo.Shared.Models;
 
 namespace Nexo.Feature.Pipeline.Tests.Services
 {
-    public class PipelineOrchestratorTests
+    public partial class PipelineOrchestratorTests
     {
         private readonly ILogger<PipelineOrchestratorTests> _logger;
         private readonly MockPipelineExecutionEngine _mockExecutionEngine;

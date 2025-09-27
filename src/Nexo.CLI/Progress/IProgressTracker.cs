@@ -123,7 +123,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Represents step progress information
     /// </summary>
-    public class StepProgress
+    public partial class StepProgress
     {
         public string Description { get; set; } = string.Empty;
         public StepStatus Status { get; set; }

@@ -10,7 +10,7 @@ namespace Nexo.Agent.Tools.Builtin;
 /// <summary>
 /// Tool for summarizing text content using heuristics or LLM.
 /// </summary>
-public class SummarizeTool : ITool<SummarizeInput, SummarizeOutput>
+public partial class SummarizeTool : ITool<SummarizeInput, SummarizeOutput>
 {
     public ToolManifest Manifest { get; }
 

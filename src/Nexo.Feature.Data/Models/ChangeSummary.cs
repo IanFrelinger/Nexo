@@ -3,7 +3,7 @@ namespace Nexo.Feature.Data.Models
     /// <summary>
     /// Summary of entity changes in the database context
     /// </summary>
-    public class ChangeSummary
+    public partial class ChangeSummary
     {
         /// <summary>
         /// Number of added entities

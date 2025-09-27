@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that exported CLI and Docker artifacts can run simple recipes
 /// </summary>
-public class Export_CLI_And_Docker_Smoke
+public partial class Export_CLI_And_Docker_Smoke
 {
     public Export_CLI_And_Docker_Smoke()
     {

@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Tests.Commands;
 /// <summary>
 /// Command for validating Core.Domain value objects with proper logging and timeouts.
 /// </summary>
-public class ValueObjectValidationCommand
+public partial class ValueObjectValidationCommand
 {
     private readonly ILogger<ValueObjectValidationCommand> _logger;
 

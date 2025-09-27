@@ -16,7 +16,7 @@ namespace Nexo.Core.Validation
     /// <summary>
     /// Validates FeatureSpec records and JSON/YAML input against the JSON Schema.
     /// </summary>
-    public class FeatureSpecValidator : ICompilationGate
+    public partial class FeatureSpecValidator : ICompilationGate
     {
         private readonly ILogger<FeatureSpecValidator> _logger;
         // private readonly JsonSchema _schema;

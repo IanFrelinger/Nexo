@@ -16,7 +16,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// <summary>
     /// Tests for canary failure scenarios that trigger rollback.
     /// </summary>
-    public class CanaryFailureTests
+    public partial class CanaryFailureTests
     {
         private readonly Mock<IExtensionGenerator<string, string>> _mockGenerator;
         private readonly Mock<ICompilationGate> _mockCompilationGate;

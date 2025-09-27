@@ -7,7 +7,7 @@ namespace FeatureFactoryDemo.Commands
     /// <summary>
     /// Command to run comprehensive validation of all Feature Factory features
     /// </summary>
-    public class ValidateCommand : BaseCommand
+    public partial class ValidateCommand : BaseCommand
     {
         private readonly FeatureValidationService _validationService;
         

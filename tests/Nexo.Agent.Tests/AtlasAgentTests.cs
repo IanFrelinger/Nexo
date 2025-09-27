@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Nexo.Agent.Tests;
 
-public class AtlasAgentTests
+public partial class AtlasAgentTests
 {
     private readonly Mock<ILogger<AtlasAgent>> _mockLogger;
     private readonly Mock<IAgentPlanner> _mockPlanner;

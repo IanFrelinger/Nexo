@@ -6,7 +6,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Tests for Jaccard similarity calculations
     /// </summary>
-    public class SimilarityTests
+    public partial class SimilarityTests
     {
         [Fact]
         public void Jaccard_Identical_Texts_Returns_One()

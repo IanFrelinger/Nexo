@@ -8,7 +8,7 @@ namespace Nexo.CLI.Tests.Commands;
 /// <summary>
 /// Command for testing CLI version functionality with proper logging and timeouts.
 /// </summary>
-public class VersionCommandTests
+public partial class VersionCommandTests
 {
     private readonly ILogger<VersionCommandTests> _logger;
 

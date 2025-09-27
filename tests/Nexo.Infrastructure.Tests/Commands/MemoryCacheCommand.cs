@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Tests.Commands;
 /// <summary>
 /// Command for testing MemoryCache functionality with proper resource management.
 /// </summary>
-public class MemoryCacheCommand : IDisposable
+public partial class MemoryCacheCommand : IDisposable
 {
     private readonly ILogger<MemoryCacheCommand> _logger;
     private MemoryCacheAdapter? _cache;

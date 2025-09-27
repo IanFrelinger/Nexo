@@ -11,7 +11,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// In-memory cache service implementation
     /// </summary>
-    public class MemoryCacheService : ICacheService
+    public partial class MemoryCacheService : ICacheService
     {
         private readonly ILogger<MemoryCacheService> _logger;
         private readonly ConcurrentDictionary<string, CacheItem> _cache;

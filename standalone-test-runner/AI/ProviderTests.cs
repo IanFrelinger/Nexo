@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Provider functionality
 /// </summary>
-public class ProviderTests
+public partial class ProviderTests
 {
     private readonly bool _verbose;
 
@@ -161,7 +161,7 @@ public class ProviderTests
 }
 
 // Mock AI Provider classes for testing
-public class MockAIProvider
+public partial class MockAIProvider
 {
     public string GenerateResponse(string prompt)
     {
@@ -169,7 +169,7 @@ public class MockAIProvider
     }
 }
 
-public class LlamaWasmProvider
+public partial class LlamaWasmProvider
 {
     public string GenerateResponse(string prompt)
     {
@@ -177,7 +177,7 @@ public class LlamaWasmProvider
     }
 }
 
-public class LlamaNativeProvider
+public partial class LlamaNativeProvider
 {
     public string GenerateResponse(string prompt)
     {

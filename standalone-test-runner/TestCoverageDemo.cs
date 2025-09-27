@@ -8,7 +8,7 @@ namespace StandaloneTestRunner
     /// <summary>
     /// Test Coverage Demo - Demonstrates comprehensive test coverage for TestAggregator
     /// </summary>
-    public class TestCoverageDemo
+    public partial class TestCoverageDemo
     {
         public static async Task RunCoverageDemoAsync()
         {
@@ -255,7 +255,7 @@ namespace StandaloneTestRunner
         }
     }
 
-    public class CoverageResult
+    public partial class CoverageResult
     {
         public string Category { get; }
         public string TestName { get; }

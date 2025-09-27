@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Rollback functionality
 /// </summary>
-public class RollbackTests
+public partial class RollbackTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class RollbackTests
 }
 
 // Mock AI Operation Rollback class for testing
-public class AIOperationRollback
+public partial class AIOperationRollback
 {
     public bool RollbackOperation(string operation)
     {

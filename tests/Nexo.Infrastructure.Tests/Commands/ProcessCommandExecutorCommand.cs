@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Tests.Commands;
 /// <summary>
 /// Command for testing ProcessCommandExecutor functionality with proper resource management.
 /// </summary>
-public class ProcessCommandExecutorCommand
+public partial class ProcessCommandExecutorCommand
 {
     private readonly ILogger<ProcessCommandExecutorCommand> _logger;
 

@@ -5,7 +5,7 @@ using StandaloneTestRunner.Models;
 
 namespace StandaloneTestRunner.Services
 {
-    public class TestRunnerService
+    public partial class TestRunnerService
     {
         public async Task<TestResult> RunTestsAsync(TestOptions options)
         {

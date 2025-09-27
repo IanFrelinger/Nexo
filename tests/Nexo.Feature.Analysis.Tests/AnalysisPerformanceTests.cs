@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Nexo.Feature.Analysis.Tests;
 
-public class AnalysisPerformanceTests
+public partial class AnalysisPerformanceTests
 {
     [Fact(Timeout = 2000)]
     public void Analysis_Performance_Smoke()

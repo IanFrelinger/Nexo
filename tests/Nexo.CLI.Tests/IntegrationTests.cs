@@ -18,7 +18,7 @@ namespace Nexo.CLI.Tests
     /// <summary>
     /// Integration tests for the Nexo CLI application.
     /// </summary>
-    public class IntegrationTests : IDisposable
+    public partial class IntegrationTests : IDisposable
     {
         private readonly IHost _host;
 

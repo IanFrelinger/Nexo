@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Service for managing AI modes and their behavior
     /// </summary>
-    public class AiModeService : IAiModeService
+    public partial class AiModeService : IAiModeService
     {
         private readonly ILogger<AiModeService> _logger;
         private readonly ILoggerFactory _loggerFactory;
@@ -108,7 +108,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Off mode handler - deterministic, no network calls
     /// </summary>
-    public class OffModeHandler : IAiModeHandler
+    public partial class OffModeHandler : IAiModeHandler
     {
         private readonly ILogger<OffModeHandler> _logger;
 
@@ -156,7 +156,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Assist mode handler - scaffold generation, no runtime AI
     /// </summary>
-    public class AssistModeHandler : IAiModeHandler
+    public partial class AssistModeHandler : IAiModeHandler
     {
         private readonly ILogger<AssistModeHandler> _logger;
 
@@ -206,7 +206,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Hybrid mode handler - optional local AI processing
     /// </summary>
-    public class HybridModeHandler : IAiModeHandler
+    public partial class HybridModeHandler : IAiModeHandler
     {
         private readonly ILogger<HybridModeHandler> _logger;
 
@@ -251,7 +251,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Embedded mode handler - required cloud AI processing
     /// </summary>
-    public class EmbeddedModeHandler : IAiModeHandler
+    public partial class EmbeddedModeHandler : IAiModeHandler
     {
         private readonly ILogger<EmbeddedModeHandler> _logger;
 
@@ -296,7 +296,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Result of AI mode processing
     /// </summary>
-    public class AiModeResult
+    public partial class AiModeResult
     {
         public bool Success { get; set; }
         public string Output { get; set; } = string.Empty;

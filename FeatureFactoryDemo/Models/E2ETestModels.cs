@@ -4,7 +4,7 @@ using Nexo.Feature.Analysis.Models;
 
 namespace FeatureFactoryDemo.Models
 {
-    public class E2ETestSuite
+    public partial class E2ETestSuite
     {
         public string Platform { get; set; } = string.Empty;
         public string FeatureDescription { get; set; } = string.Empty;
@@ -19,7 +19,7 @@ namespace FeatureFactoryDemo.Models
         public List<E2ETest> LoadTests { get; set; } = new();
     }
 
-    public class E2ETest
+    public partial class E2ETest
     {
         public string TestName { get; set; } = string.Empty;
         public string TestType { get; set; } = string.Empty;
@@ -31,7 +31,7 @@ namespace FeatureFactoryDemo.Models
         public TimeSpan ExecutionTime { get; set; }
     }
 
-    public class E2ETestResult
+    public partial class E2ETestResult
     {
         public string Platform { get; set; } = string.Empty;
         public E2ETestSuite TestSuite { get; set; } = new();
@@ -43,7 +43,7 @@ namespace FeatureFactoryDemo.Models
         public DateTime ExecutedAt { get; set; }
     }
 
-    public class E2ETestHistory
+    public partial class E2ETestHistory
     {
         public int Id { get; set; }
         public string Platform { get; set; } = string.Empty;
@@ -58,7 +58,7 @@ namespace FeatureFactoryDemo.Models
         public string Tags { get; set; } = string.Empty;
     }
 
-    public class FeatureGenerationResult
+    public partial class FeatureGenerationResult
     {
         public string Description { get; set; } = string.Empty;
         public string Platform { get; set; } = string.Empty;

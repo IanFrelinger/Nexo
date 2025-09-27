@@ -171,7 +171,7 @@ namespace SchemaValidator
         }
     }
 
-    public class Options
+    public partial class Options
     {
         [Option('i', "input", Required = true, HelpText = "Input YAML file to validate")]
         public string InputFile { get; set; } = string.Empty;

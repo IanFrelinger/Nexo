@@ -1,6 +1,6 @@
-﻿namespace Nexo.Feature.API;
+namespace Nexo.Feature.API;
 
-public class Class1
+public partial class Class1
 {
 
 }

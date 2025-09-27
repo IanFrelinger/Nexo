@@ -10,7 +10,7 @@ namespace Nexo.Feature.Logging.Tests.Commands;
 /// <summary>
 /// Command for validating Logging interfaces with proper logging and timeouts.
 /// </summary>
-public class InterfaceValidationCommand
+public partial class InterfaceValidationCommand
 {
     private readonly ILogger<InterfaceValidationCommand> _logger;
 

@@ -10,7 +10,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// Test implementation of IRollbackStrategy for testing purposes.
     /// </summary>
     /// <typeparam name="TArtifact">The type of artifact to rollback</typeparam>
-    public class TestRollbackStrategy<TArtifact> : IRollbackStrategy<TArtifact>
+    public partial class TestRollbackStrategy<TArtifact> : IRollbackStrategy<TArtifact>
     {
         private readonly ILogger<TestRollbackStrategy<TArtifact>> _logger;
         private readonly bool _shouldSucceed;
@@ -50,7 +50,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// <summary>
     /// Test implementation that simulates rollback failure for testing error handling.
     /// </summary>
-    public class FailingRollbackStrategy<TArtifact> : IRollbackStrategy<TArtifact>
+    public partial class FailingRollbackStrategy<TArtifact> : IRollbackStrategy<TArtifact>
     {
         private readonly ILogger<FailingRollbackStrategy<TArtifact>> _logger;
         private int _callCount = 0;

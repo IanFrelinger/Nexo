@@ -9,7 +9,7 @@ namespace Nexo.CLI.Tests.Commands;
 /// <summary>
 /// Command for testing CLI pipeline functionality with proper logging and timeouts.
 /// </summary>
-public class PipelineCommandTests
+public partial class PipelineCommandTests
 {
     private readonly ILogger<PipelineCommandTests> _logger;
 

@@ -18,7 +18,7 @@ namespace Nexo.Feature.Pipeline.Tests.Runtime
     /// Cross-runtime tests for the Pipeline feature.
     /// Tests functionality across different runtime environments (.NET, Unity, Mono, etc.).
     /// </summary>
-    public class CrossRuntimePipelineTests : CrossRuntimeTestBase
+    public partial class CrossRuntimePipelineTests : CrossRuntimeTestBase
     {
         public CrossRuntimePipelineTests(ITestOutputHelper testOutput) : base(testOutput)
         {

@@ -10,7 +10,7 @@ namespace NexoDoomGame.Composition
     /// Orchestrates all domain logic components and manages their lifecycle
     /// Responsibilities: Component Registration, Dependency Injection, Lifecycle Management, Cross-Component Communication, Error Handling and Recovery
     /// </summary>
-    public class GameOrchestrator : BaseCompositionComponent
+    public partial class GameOrchestrator : BaseCompositionComponent
     {
         /// <summary>
         /// Orchestrate all registered components

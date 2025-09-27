@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that Off mode has no network egress and produces deterministic results
 /// </summary>
-public class Off_NoNetwork_And_Determinism
+public partial class Off_NoNetwork_And_Determinism
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task Off_Has_NoEgress_And_Is_Deterministic()

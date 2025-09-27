@@ -6,7 +6,7 @@ namespace Nexo.CLI.Commands
     /// <summary>
     /// Represents a command category
     /// </summary>
-    public class CommandCategory
+    public partial class CommandCategory
     {
         public string Name { get; set; }
         public string Description { get; set; }

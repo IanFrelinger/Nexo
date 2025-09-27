@@ -13,7 +13,7 @@ namespace Nexo.Observability.Tests;
 /// <summary>
 /// Tests for activity emission functionality.
 /// </summary>
-public class ActivityEmissionTests
+public partial class ActivityEmissionTests
 {
     [Fact]
     public void NexoActivitySources_ShouldCreateActivities()

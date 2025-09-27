@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Nexo.PluginHost.Tests
 {
-    public class PluginHostOpenTelemetryTests : IDisposable
+    public partial class PluginHostOpenTelemetryTests : IDisposable
     {
         private readonly ILogger<PluginHost> _logger;
         private readonly string _tempDirectory;

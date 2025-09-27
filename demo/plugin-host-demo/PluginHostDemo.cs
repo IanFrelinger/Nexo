@@ -9,7 +9,7 @@ namespace PluginHostDemo
     /// Standalone demonstration of the PluginHost system without external dependencies.
     /// This shows the conceptual structure and usage patterns.
     /// </summary>
-    public class Program
+    public partial class Program
     {
         public static void Main(string[] args)
         {

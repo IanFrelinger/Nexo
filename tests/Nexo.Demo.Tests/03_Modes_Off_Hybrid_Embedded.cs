@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that the same recipe runs across different AI modes
 /// </summary>
-public class Modes_Off_Hybrid_Embedded
+public partial class Modes_Off_Hybrid_Embedded
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task Same_Recipe_Runs_Across_Modes()

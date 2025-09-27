@@ -169,7 +169,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// Paginated result implementation
     /// </summary>
     /// <typeparam name="T">Result type</typeparam>
-    public class PagedResult<T> : IPagedResult<T>
+    public partial class PagedResult<T> : IPagedResult<T>
     {
         public IEnumerable<T> Items { get; set; } = new List<T>();
         public long TotalCount { get; set; }
@@ -183,7 +183,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Repository query options
     /// </summary>
-    public class RepositoryQueryOptions
+    public partial class RepositoryQueryOptions
     {
         /// <summary>
         /// Gets or sets whether to include related entities

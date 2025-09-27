@@ -10,7 +10,7 @@ namespace Nexo.Feature.Container.Tests;
 /// Pipeline-architecture test suite for Nexo.Feature.Container layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class ContainerPipelineTests
+public partial class ContainerPipelineTests
 {
     private readonly ILogger<ContainerPipelineTests> _logger;
 

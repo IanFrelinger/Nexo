@@ -18,7 +18,7 @@ namespace Nexo.Feature.AI.Tests;
 /// <summary>
 /// Tests for the IterationCodeGenerator service
 /// </summary>
-public class IterationCodeGeneratorTests : IDisposable
+public partial class IterationCodeGeneratorTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<IModelOrchestrator> _mockOrchestrator;

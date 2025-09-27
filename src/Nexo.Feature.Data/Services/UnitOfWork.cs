@@ -10,7 +10,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// Unit of Work implementation for managing transactions and repositories
     /// </summary>
-    public class UnitOfWork : IUnitOfWork
+    public partial class UnitOfWork : IUnitOfWork
     {
         private readonly DbContext _context;
         private readonly ILogger<UnitOfWork> _logger;
@@ -312,7 +312,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// Entity Framework change tracker wrapper
     /// </summary>
-    public class EntityFrameworkChangeTracker : IChangeTracker
+    public partial class EntityFrameworkChangeTracker : IChangeTracker
     {
         private readonly Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker _changeTracker;
         private readonly DbContext _context;
@@ -404,7 +404,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// Mock database transaction for in-memory databases
     /// </summary>
-    public class MockDbTransaction : IDbTransaction
+    public partial class MockDbTransaction : IDbTransaction
     {
         public IDbConnection Connection => null!;
         public IsolationLevel IsolationLevel => IsolationLevel.ReadCommitted;

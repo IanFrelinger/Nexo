@@ -11,7 +11,7 @@ namespace Nexo.Feature.API.Tests.Services;
 /// <summary>
 /// Tests for the Rate Limiter service
 /// </summary>
-public class RateLimiterTests
+public partial class RateLimiterTests
 {
     private readonly Mock<ILogger<RateLimiter>> _mockLogger;
     private readonly RateLimiter _rateLimiter;

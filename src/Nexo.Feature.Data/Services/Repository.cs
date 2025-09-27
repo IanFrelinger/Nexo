@@ -13,7 +13,7 @@ namespace Nexo.Feature.Data.Services
     /// </summary>
     /// <typeparam name="T">Entity type</typeparam>
     /// <typeparam name="TId">Entity ID type</typeparam>
-    public class Repository<T, TId> : IRepository<T, TId> where T : class
+    public partial class Repository<T, TId> : IRepository<T, TId> where T : class
     {
         private readonly IDatabaseProvider _databaseProvider;
         private readonly ICacheService _cacheService;

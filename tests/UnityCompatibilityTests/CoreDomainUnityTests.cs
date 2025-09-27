@@ -15,7 +15,7 @@ namespace UnityCompatibilityTests
     /// Tests to verify that core domain components are compatible with Unity Engine
     /// These tests simulate Unity's runtime environment and constraints
     /// </summary>
-    public class CoreDomainUnityTests
+    public partial class CoreDomainUnityTests
     {
         [Fact]
         public void TestEntityInstantiation_ShouldWorkInUnity()
@@ -167,7 +167,7 @@ namespace UnityCompatibilityTests
     }
 
     // Test classes that simulate Unity-compatible entities
-    public class TestEntity
+    public partial class TestEntity
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "Test Entity";
@@ -179,7 +179,7 @@ namespace UnityCompatibilityTests
         }
     }
 
-    public class TestValueObject
+    public partial class TestValueObject
     {
         public string Value { get; }
         

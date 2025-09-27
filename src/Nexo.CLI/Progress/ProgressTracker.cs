@@ -10,7 +10,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Advanced progress tracking with nested operations and real-time updates
     /// </summary>
-    public class ProgressTracker : IProgressTracker
+    public partial class ProgressTracker : IProgressTracker
     {
         private readonly Stack<ProgressOperation> _operationStack = new();
         private readonly Timer _updateTimer;
@@ -157,7 +157,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Represents an individual progress operation
     /// </summary>
-    public class ProgressOperation : IProgressOperation
+    public partial class ProgressOperation : IProgressOperation
     {
         private readonly ProgressTracker _tracker;
         private readonly Stack<ProgressOperation> _nestedOperations = new();

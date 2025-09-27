@@ -6,14 +6,14 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Contracts
 {
-    public class SimpleContractTests
+    public partial class SimpleContractTests
     {
         [Fact]
         public void GenerationResult_ShouldCreateWithCorrectValues()
         {
             // Arrange
-            var artifact = new GeneratedExtension("test-id", "TestExtension", "public class Test { }", null, DateTime.UtcNow);
-            var sourceCode = "public class Test { }";
+            var artifact = new GeneratedExtension("test-id", "TestExtension", "public partial class Test { }", null, DateTime.UtcNow);
+            var sourceCode = "public partial class Test { }";
             var notes = new List<string> { "Generated successfully" };
 
             // Act
@@ -77,7 +77,7 @@ namespace Nexo.Core.Tests.Contracts
         {
             // Arrange
             var generatedAt = DateTime.UtcNow;
-            var sourceCode = "public class Test { }";
+            var sourceCode = "public partial class Test { }";
             var compiledAssembly = new byte[] { 1, 2, 3, 4 };
 
             // Act

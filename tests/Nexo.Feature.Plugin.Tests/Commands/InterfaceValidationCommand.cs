@@ -8,7 +8,7 @@ namespace Nexo.Feature.Plugin.Tests.Commands;
 /// <summary>
 /// Command for validating Plugin interfaces with proper logging and timeouts.
 /// </summary>
-public class InterfaceValidationCommand
+public partial class InterfaceValidationCommand
 {
     private readonly ILogger<InterfaceValidationCommand> _logger;
 

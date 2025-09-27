@@ -14,7 +14,7 @@ namespace Nexo.CLI.Commands;
 /// <summary>
 /// CLI commands for managing specialized AI agents
 /// </summary>
-public class AgentManagementCommands
+public partial class AgentManagementCommands
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AgentManagementCommands> _logger;

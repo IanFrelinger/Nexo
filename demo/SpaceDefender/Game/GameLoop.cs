@@ -8,7 +8,7 @@ namespace SpaceDefender.Game
     /// Main game loop using Nexo's pipeline-first architecture
     /// Demonstrates universal composability and intelligent strategy selection
     /// </summary>
-    public class GameLoop
+    public partial class GameLoop
     {
         private readonly IIterationStrategySelector _strategySelector;
         private readonly GameState _gameState;
@@ -165,7 +165,7 @@ namespace SpaceDefender.Game
     /// Represents a single game frame
     /// Used with Nexo's iteration strategies for optimal performance
     /// </summary>
-    public class GameFrame
+    public partial class GameFrame
     {
         public double DeltaTime { get; set; }
         public GameState GameState { get; set; } = new();
@@ -176,7 +176,7 @@ namespace SpaceDefender.Game
     /// <summary>
     /// Current state of the game
     /// </summary>
-    public class GameState
+    public partial class GameState
     {
         public int Score { get; set; } = 0;
         public int Lives { get; set; } = 3;
@@ -201,7 +201,7 @@ namespace SpaceDefender.Game
     /// <summary>
     /// Base class for game objects
     /// </summary>
-    public class GameObject
+    public partial class GameObject
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public float X { get; set; }

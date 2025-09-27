@@ -11,7 +11,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Master controller that orchestrates the entire validation and improvement process
     /// </summary>
-    public class MasterValidationController : MonoBehaviour
+    public partial class MasterValidationController : MonoBehaviour
     {
         [Header("Component References")]
         [SerializeField] private NexoSelfValidator selfValidator;
@@ -442,7 +442,7 @@ namespace NexoDoomGame
     /// Validation cycle data
     /// </summary>
     [System.Serializable]
-    public class ValidationCycle
+    public partial class ValidationCycle
     {
         public int CycleNumber;
         public DateTime StartTime;

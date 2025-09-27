@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace StandaloneTestRunner
 {
-    public class DomainLogicOrchestratorTests
+    public partial class DomainLogicOrchestratorTests
     {
         private readonly bool _verbose;
 

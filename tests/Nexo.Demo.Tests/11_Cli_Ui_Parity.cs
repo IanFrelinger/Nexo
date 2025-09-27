@@ -8,7 +8,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that CLI and UI produce identical outputs for the same recipe
 /// </summary>
-public class Cli_Ui_Parity
+public partial class Cli_Ui_Parity
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task Ui_And_Cli_Produce_Identical_Outputs()

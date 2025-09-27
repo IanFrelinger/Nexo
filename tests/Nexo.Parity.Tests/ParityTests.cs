@@ -7,7 +7,7 @@ namespace Nexo.Parity.Tests
     /// <summary>
     /// Tests for cross-provider parity and semantic equivalence
     /// </summary>
-    public class ParityTests
+    public partial class ParityTests
     {
         [Fact]
         public async Task Local_vs_Cloud_Providers_Produce_Semantically_Equivalent_Outputs()

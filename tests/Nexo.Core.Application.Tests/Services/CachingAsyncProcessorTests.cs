@@ -9,7 +9,7 @@ using Nexo.Shared;
 
 namespace Nexo.Core.Application.Tests.Services
 {
-    public class CachingAsyncProcessorTests
+    public partial class CachingAsyncProcessorTests
     {
         public struct TestKey
         {
@@ -113,7 +113,7 @@ namespace Nexo.Core.Application.Tests.Services
         }
     }
 
-    public class CachingAsyncProcessor_SemanticKey_IntegrationTests
+    public partial class CachingAsyncProcessor_SemanticKey_IntegrationTests
     {
         [Fact]
         public async Task IdenticalSemanticKeys_ResultsAreCached()

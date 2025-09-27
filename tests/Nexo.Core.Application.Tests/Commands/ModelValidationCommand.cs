@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Tests.Commands;
 /// <summary>
 /// Command for validating Core.Application models with proper logging and timeouts.
 /// </summary>
-public class ModelValidationCommand
+public partial class ModelValidationCommand
 {
     private readonly ILogger<ModelValidationCommand> _logger;
 

@@ -1,10 +1,8 @@
 You are refactoring the following files into partials with an Orchestrator slice.
 FILES:
-FeatureFactoryDemo/Services/E2ETestGeneratorService.Platforms.cs
-FeatureFactoryDemo/Services/E2ETestGeneratorService.Types.cs
-FeatureFactoryDemo/Services/E2ETestGeneratorService.cs
-FeatureFactoryDemo/Services/FeatureFactoryDemoService.cs
-FeatureFactoryDemo/Services/FeatureGenerationService.cs
+Assets/Scripts/ConfigurableNexoAgent.Assets.cs
+Assets/Scripts/ConfigurableNexoAgent.Building.cs
+Assets/Scripts/ConfigurableNexoAgent.Core.cs
 
 Rules summary:
 - Add 'partial' to the main type; repeat full header (access + modifiers + partial + bases + constraints).

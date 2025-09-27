@@ -8,7 +8,7 @@ using Nexo.Feature.Analysis.Models;
 
 namespace FeatureFactoryDemo.Services
 {
-    public class ValidationService
+    public partial class ValidationService
     {
         private readonly ILogger<ValidationService> _logger;
         private readonly ICodingStandardAnalyzer _codeAnalyzer;
@@ -28,7 +28,7 @@ namespace FeatureFactoryDemo.Services
         {
             Console.WriteLine("\n--- Demo 1: Coding Standards Validation ---");
             
-            var code = @"public class UserService
+            var code = @"public partial class UserService
 {
     private readonly ILogger<UserService> _logger;
     
@@ -64,14 +64,14 @@ namespace FeatureFactoryDemo.Services
             
             var codeSamples = new[]
             {
-                ("Poor Quality Code", @"public class BadCode
+                ("Poor Quality Code", @"public partial class BadCode
 {
     public string GetData()
     {
         return ""data"";
     }
 }"),
-                ("Medium Quality Code", @"public class MediumCode
+                ("Medium Quality Code", @"public partial class MediumCode
 {
     private readonly ILogger<MediumCode> _logger;
     
@@ -86,7 +86,7 @@ namespace FeatureFactoryDemo.Services
         return ""data"";
     }
 }"),
-                ("High Quality Code", @"public class GoodCode
+                ("High Quality Code", @"public partial class GoodCode
 {
     private readonly ILogger<GoodCode> _logger;
     private readonly IDataRepository _repository;
@@ -133,7 +133,7 @@ namespace FeatureFactoryDemo.Services
         {
             Console.WriteLine("\n--- Demo 3: Iteration Improvement ---");
             
-            var initialCode = @"public class Service
+            var initialCode = @"public partial class Service
 {
     public string GetData()
     {

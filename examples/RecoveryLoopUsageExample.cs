@@ -16,7 +16,7 @@ namespace Nexo.Examples
     /// <summary>
     /// Example demonstrating how to use the recovery loop functionality in the pipeline.
     /// </summary>
-    public class RecoveryLoopUsageExample
+    public partial class RecoveryLoopUsageExample
     {
         public static async Task Main(string[] args)
         {
@@ -64,12 +64,12 @@ namespace Nexo.Examples
     /// <summary>
     /// Example generator implementation.
     /// </summary>
-    public class ExampleGenerator : IExtensionGenerator<string, string>
+    public partial class ExampleGenerator : IExtensionGenerator<string, string>
     {
         public Task<GenerationResult<string>> GenerateAsync(string request, CancellationToken cancellationToken = default)
         {
             var artifact = $"Generated artifact for: {request}";
-            var sourceCode = $"// Generated code for {request}\npublic class GeneratedClass {{ }}";
+            var sourceCode = $"// Generated code for {request}\npublic partial class GeneratedClass {{ }}";
             var notes = new List<string> { "Generated using example generator" };
 
             return Task.FromResult(new GenerationResult<string>(artifact, sourceCode, notes));
@@ -79,7 +79,7 @@ namespace Nexo.Examples
     /// <summary>
     /// Example compilation gate that sometimes fails.
     /// </summary>
-    public class ExampleCompilationGate : ICompilationGate
+    public partial class ExampleCompilationGate : ICompilationGate
     {
         private static int _callCount = 0;
 
@@ -98,7 +98,7 @@ namespace Nexo.Examples
     /// <summary>
     /// Example policy gate.
     /// </summary>
-    public class ExamplePolicyGate : IPolicyGate<string>
+    public partial class ExamplePolicyGate : IPolicyGate<string>
     {
         public Task<PolicyOutcome> EvaluateAsync(string artifact, CancellationToken cancellationToken = default)
         {
@@ -113,7 +113,7 @@ namespace Nexo.Examples
     /// <summary>
     /// Example artifact publisher.
     /// </summary>
-    public class ExampleArtifactPublisher : IArtifactPublisher<string>
+    public partial class ExampleArtifactPublisher : IArtifactPublisher<string>
     {
         public Task<PipelineReport> PublishAsync(string artifact, IReadOnlyList<ValidationResult> validationResults, PolicyOutcome policyOutcome, CancellationToken cancellationToken = default)
         {
@@ -131,7 +131,7 @@ namespace Nexo.Examples
     /// <summary>
     /// Example repair strategy that fixes compilation issues.
     /// </summary>
-    public class ExampleRepairStrategy : IRepairStrategy<string, string>
+    public partial class ExampleRepairStrategy : IRepairStrategy<string, string>
     {
         private readonly ILogger<ExampleRepairStrategy> _logger;
 
@@ -171,7 +171,7 @@ namespace Nexo.Examples
     /// <summary>
     /// Example canary deployer.
     /// </summary>
-    public class ExampleCanaryDeployer : ICanaryDeployer<string>
+    public partial class ExampleCanaryDeployer : ICanaryDeployer<string>
     {
         private readonly ILogger<ExampleCanaryDeployer> _logger;
 
@@ -197,7 +197,7 @@ namespace Nexo.Examples
     /// <summary>
     /// Example rollback strategy.
     /// </summary>
-    public class ExampleRollbackStrategy : IRollbackStrategy<string>
+    public partial class ExampleRollbackStrategy : IRollbackStrategy<string>
     {
         private readonly ILogger<ExampleRollbackStrategy> _logger;
 

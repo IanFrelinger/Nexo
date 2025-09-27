@@ -15,7 +15,7 @@ namespace Nexo.Feature.AI.Agents;
 /// <summary>
 /// AI agent specialized in iteration optimization and strategy selection
 /// </summary>
-    public class IterationOptimizationAgent : IAISpecializedAgent
+    public partial class IterationOptimizationAgent : IAISpecializedAgent
 {
     private readonly IIterationStrategySelector _strategySelector;
     private readonly IModelOrchestrator _modelOrchestrator;

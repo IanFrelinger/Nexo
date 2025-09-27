@@ -10,7 +10,7 @@ namespace Nexo.Feature.Pipeline.Tests.Commands;
 /// <summary>
 /// Command for validating Pipeline functionality with proper logging and timeouts.
 /// </summary>
-public class PipelineValidationCommand
+public partial class PipelineValidationCommand
 {
     private readonly ILogger<PipelineValidationCommand> _logger;
 

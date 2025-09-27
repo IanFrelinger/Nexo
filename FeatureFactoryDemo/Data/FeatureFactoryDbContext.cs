@@ -6,7 +6,7 @@ namespace FeatureFactoryDemo.Data
     /// <summary>
     /// Database context for Feature Factory demo data
     /// </summary>
-    public class FeatureFactoryDbContext : DbContext
+    public partial class FeatureFactoryDbContext : DbContext
     {
         public FeatureFactoryDbContext(DbContextOptions<FeatureFactoryDbContext> options) : base(options)
         {

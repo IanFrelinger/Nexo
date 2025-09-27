@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that run details include comprehensive audit information
 /// </summary>
-public class Audit_RunDetail_Schema
+public partial class Audit_RunDetail_Schema
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task RunDetail_Includes_Steps_Timings_Providers_Policies()

@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Integration functionality
 /// </summary>
-public class IntegrationTests
+public partial class IntegrationTests
 {
     private readonly bool _verbose;
 
@@ -161,7 +161,7 @@ public class IntegrationTests
 }
 
 // Mock AI Integration classes for testing
-public class AIIntegration
+public partial class AIIntegration
 {
     public bool TestIntegration()
     {
@@ -169,7 +169,7 @@ public class AIIntegration
     }
 }
 
-public class AIPerformance
+public partial class AIPerformance
 {
     public bool TestPerformance()
     {
@@ -177,7 +177,7 @@ public class AIPerformance
     }
 }
 
-public class AISecurity
+public partial class AISecurity
 {
     public bool TestSecurity()
     {

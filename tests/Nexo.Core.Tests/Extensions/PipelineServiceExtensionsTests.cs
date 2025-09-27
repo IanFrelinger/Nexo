@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Extensions
 {
-    public class PipelineServiceExtensionsTests
+    public partial class PipelineServiceExtensionsTests
     {
         [Fact]
         public void AddPipelineServices_ShouldRegisterGenericPipeline()
@@ -121,13 +121,13 @@ namespace Nexo.Core.Tests.Extensions
     }
 
     // Test types for the service extension tests
-    public class TestRequest
+    public partial class TestRequest
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
     }
 
-    public class TestArtifact
+    public partial class TestArtifact
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

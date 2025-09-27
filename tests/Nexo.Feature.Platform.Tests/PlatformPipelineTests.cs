@@ -10,7 +10,7 @@ namespace Nexo.Feature.Platform.Tests
     /// Pipeline-architecture test suite for Nexo.Feature.Platform layer.
     /// Uses command classes with proper timeouts and logging to prevent hanging tests.
     /// </summary>
-    public class PlatformPipelineTests
+    public partial class PlatformPipelineTests
     {
         private readonly ILogger<PlatformPipelineTests> _logger;
 

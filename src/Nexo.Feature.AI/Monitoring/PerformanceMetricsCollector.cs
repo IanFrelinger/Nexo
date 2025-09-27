@@ -9,7 +9,7 @@ namespace Nexo.Feature.AI.Monitoring;
 /// <summary>
 /// Collects and aggregates performance metrics for all agents
 /// </summary>
-public class PerformanceMetricsCollector : IPerformanceMetricsCollector
+public partial class PerformanceMetricsCollector : IPerformanceMetricsCollector
 {
     private readonly ILogger<PerformanceMetricsCollector> _logger;
     private readonly Dictionary<string, List<AgentPerformanceMetrics>> _agentMetrics = new();

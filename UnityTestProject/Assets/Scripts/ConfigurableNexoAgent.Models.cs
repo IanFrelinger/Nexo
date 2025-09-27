@@ -6,7 +6,7 @@ namespace NexoDoomGame
     /// Agent configuration for dynamic behavior using existing Nexo system
     /// </summary>
     [System.Serializable]
-    public class AgentConfiguration
+    public partial class AgentConfiguration
     {
         [Header("Nexo Agent Settings")]
         public string aiMode = "OFF"; // OFF, HYBRID, EMBEDDED
@@ -36,7 +36,7 @@ namespace NexoDoomGame
     /// Generated asset data structure
     /// </summary>
     [System.Serializable]
-    public class GeneratedAsset
+    public partial class GeneratedAsset
     {
         public AssetType Type;
         public string Name;
@@ -61,7 +61,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Game specification data structure
     /// </summary>
-    public class GameSpecification
+    public partial class GameSpecification
     {
         public string GameType { get; set; } = "";
         public string ArtStyle { get; set; } = "";

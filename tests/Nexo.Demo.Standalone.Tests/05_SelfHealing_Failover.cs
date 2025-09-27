@@ -8,7 +8,7 @@ namespace Nexo.Demo.Tests;
 /// Tests self-healing capabilities including retry, backoff, and failover
 /// </summary>
 [Collection("NetworkIsolation")]
-public class SelfHealing_Failover
+public partial class SelfHealing_Failover
 {
     public SelfHealing_Failover()
     {

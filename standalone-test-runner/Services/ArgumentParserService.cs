@@ -4,7 +4,7 @@ using StandaloneTestRunner.Models;
 
 namespace StandaloneTestRunner.Services
 {
-    public class ArgumentParserService
+    public partial class ArgumentParserService
     {
         public TestOptions ParseArguments(string[] args)
         {

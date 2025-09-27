@@ -37,7 +37,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents dashboard data
     /// </summary>
-    public class DashboardData
+    public partial class DashboardData
     {
         public PerformanceMetrics? PerformanceMetrics { get; set; }
         public AdaptationStatus? AdaptationStatus { get; set; }
@@ -49,7 +49,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents performance metrics
     /// </summary>
-    public class PerformanceMetrics
+    public partial class PerformanceMetrics
     {
         public double CpuUsage { get; set; }
         public long MemoryUsage { get; set; }
@@ -61,7 +61,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents adaptation status
     /// </summary>
-    public class AdaptationStatus
+    public partial class AdaptationStatus
     {
         public AdaptationEngineStatus EngineStatus { get; set; }
         public IEnumerable<ActiveAdaptation> ActiveAdaptations { get; set; } = new List<ActiveAdaptation>();
@@ -71,7 +71,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents project status
     /// </summary>
-    public class ProjectStatus
+    public partial class ProjectStatus
     {
         public string? CurrentProject { get; set; }
         public string? CurrentPlatform { get; set; }
@@ -83,7 +83,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents system health
     /// </summary>
-    public class SystemHealth
+    public partial class SystemHealth
     {
         public bool IsHealthy { get; set; }
         public IEnumerable<string> Issues { get; set; } = new List<string>();
@@ -93,7 +93,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents an active adaptation
     /// </summary>
-    public class ActiveAdaptation
+    public partial class ActiveAdaptation
     {
         public string Type { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -104,7 +104,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents a recent improvement
     /// </summary>
-    public class RecentImprovement
+    public partial class RecentImprovement
     {
         public string Type { get; set; } = string.Empty;
         public double ActualImprovement { get; set; }

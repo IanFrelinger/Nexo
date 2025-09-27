@@ -11,7 +11,7 @@ namespace StandaloneTestRunner
     /// Test suite for Feature Factory Application Logic services
     /// Uses smaller, focused test classes for better maintainability
     /// </summary>
-    public class FeatureFactoryApplicationTests
+    public partial class FeatureFactoryApplicationTests
     {
         private readonly bool _verbose;
         private readonly ApplicationLogicGeneratorTests _applicationLogicGeneratorTests;

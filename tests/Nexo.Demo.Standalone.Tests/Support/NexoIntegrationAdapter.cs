@@ -248,7 +248,7 @@ public static class NexoIntegrationAdapter
 /// <summary>
 /// Context for scenario execution
 /// </summary>
-public class ScenarioContext
+public partial class ScenarioContext
 {
     public string ScenarioPath { get; set; } = "";
     public string OutputDirectory { get; set; } = "";
@@ -260,7 +260,7 @@ public class ScenarioContext
 /// <summary>
 /// Result of scenario execution
 /// </summary>
-public class ScenarioExecutionResult
+public partial class ScenarioExecutionResult
 {
     public bool Success { get; set; }
     public IReadOnlyList<string> Logs { get; set; } = Array.Empty<string>();

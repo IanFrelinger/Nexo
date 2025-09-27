@@ -9,7 +9,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Multi-step progress display for complex operations
     /// </summary>
-    public class MultiStepProgressDisplay : IMultiStepProgressDisplay
+    public partial class MultiStepProgressDisplay : IMultiStepProgressDisplay
     {
         private readonly List<StepProgress> _steps = new();
         private readonly ILogger<MultiStepProgressDisplay> _logger;
@@ -127,7 +127,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Progress reporter for individual steps
     /// </summary>
-    public class StepProgressReporter : IProgressReporter
+    public partial class StepProgressReporter : IProgressReporter
     {
         private readonly StepProgress _step;
         

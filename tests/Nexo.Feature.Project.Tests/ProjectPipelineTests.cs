@@ -10,7 +10,7 @@ namespace Nexo.Feature.Project.Tests
     /// Pipeline-architecture test suite for Nexo.Feature.Project layer.
     /// Uses command classes with proper timeouts and logging to prevent hanging tests.
     /// </summary>
-    public class ProjectPipelineTests
+    public partial class ProjectPipelineTests
     {
         private readonly ILogger<ProjectPipelineTests> _logger;
 

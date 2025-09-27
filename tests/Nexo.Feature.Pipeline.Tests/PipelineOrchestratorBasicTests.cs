@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace Nexo.Feature.Pipeline.Tests
 {
-    public class PipelineOrchestratorBasicTests
+    public partial class PipelineOrchestratorBasicTests
     {
         private readonly ILogger<PipelineOrchestratorBasicTests> _logger;
         private readonly MockPipelineExecutionEngine _mockExecutionEngine;

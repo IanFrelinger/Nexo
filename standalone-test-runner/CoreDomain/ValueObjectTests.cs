@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test suite for Value Object functionality
     /// </summary>
-    public class ValueObjectTests
+    public partial class ValueObjectTests
     {
         private readonly bool _verbose;
 
@@ -308,7 +308,7 @@ namespace StandaloneTestRunner.CoreDomain
     /// <summary>
     /// Test value object for testing purposes
     /// </summary>
-    public class TestValueObject
+    public partial class TestValueObject
     {
         public string Name { get; }
         public int Value { get; }

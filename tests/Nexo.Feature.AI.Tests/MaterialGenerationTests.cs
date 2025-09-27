@@ -15,7 +15,7 @@ namespace Nexo.Feature.AI.Tests
     /// <summary>
     /// Orchestrator for Material Generation tests that delegates to specialized test classes.
     /// </summary>
-    public class MaterialGenerationTests
+    public partial class MaterialGenerationTests
     {
         private readonly ILogger<MaterialGenerationTests> _logger;
         private readonly AgentTests _agentTests;

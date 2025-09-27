@@ -8,7 +8,7 @@ namespace Nexo.Shared.Tests.Commands;
 /// <summary>
 /// Command for validating Shared models with proper logging and timeouts.
 /// </summary>
-public class ModelValidationCommand
+public partial class ModelValidationCommand
 {
     private readonly ILogger<ModelValidationCommand> _logger;
 

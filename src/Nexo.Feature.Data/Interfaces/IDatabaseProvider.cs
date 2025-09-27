@@ -110,7 +110,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Database health status
     /// </summary>
-    public class DatabaseHealthStatus
+    public partial class DatabaseHealthStatus
     {
         public bool IsHealthy { get; set; }
         public string Status { get; set; } = string.Empty;
@@ -123,7 +123,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Database statistics
     /// </summary>
-    public class DatabaseStatistics
+    public partial class DatabaseStatistics
     {
         public long TotalConnections { get; set; }
         public long ActiveConnections { get; set; }
@@ -151,7 +151,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Database maintenance result
     /// </summary>
-    public class DatabaseMaintenanceResult
+    public partial class DatabaseMaintenanceResult
     {
         public bool IsSuccessful { get; set; }
         public string Message { get; set; } = string.Empty;

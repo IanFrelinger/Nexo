@@ -10,7 +10,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Debugging and monitoring tools for Nexo Agent generation process
     /// </summary>
-    public class NexoDebugger : MonoBehaviour
+    public partial class NexoDebugger : MonoBehaviour
     {
         [Header("Debug UI")]
         [SerializeField] private TextMeshProUGUI debugLog;

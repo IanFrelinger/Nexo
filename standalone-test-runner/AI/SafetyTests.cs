@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Safety functionality
 /// </summary>
-public class SafetyTests
+public partial class SafetyTests
 {
     private readonly bool _verbose;
 
@@ -77,7 +77,7 @@ public class SafetyTests
 }
 
 // Mock AI Safety Validator class for testing
-public class AISafetyValidator
+public partial class AISafetyValidator
 {
     public bool ValidateRequest(string request)
     {

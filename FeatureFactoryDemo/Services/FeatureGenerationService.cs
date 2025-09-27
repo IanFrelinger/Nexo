@@ -8,7 +8,7 @@ using FeatureFactoryDemo.Models;
 
 namespace FeatureFactoryDemo.Services
 {
-    public class FeatureGenerationService
+    public partial class FeatureGenerationService
     {
         private readonly ILogger<FeatureGenerationService> _logger;
         private readonly ICodingStandardAnalyzer _codeAnalyzer;
@@ -158,7 +158,7 @@ using Microsoft.Extensions.Logging;
 
 namespace GeneratedFeature
 {{
-    public class {GetClassName(description)}
+    public partial class {GetClassName(description)}
     {{
         private readonly ILogger<{GetClassName(description)}> _logger;
 
@@ -185,7 +185,7 @@ namespace GeneratedFeature
             return $@"import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
-public class {GetClassName(description)} {{
+public partial class {GetClassName(description)} {{
     private static final Logger logger = Logger.getLogger({GetClassName(description)}.class.getName());
     
     public CompletableFuture<Boolean> execute() {{

@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests that Assist mode generates scaffold and runs without AI calls
 /// </summary>
-public class Assist_Scaffold_NoRuntimeAI
+public partial class Assist_Scaffold_NoRuntimeAI
 {
     public Assist_Scaffold_NoRuntimeAI()
     {

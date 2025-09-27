@@ -13,7 +13,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Pipeline.Tests
 {
-    public class PipelineOrchestratorMinimalTests
+    public partial class PipelineOrchestratorMinimalTests
     {
         private readonly ILogger<PipelineOrchestratorMinimalTests> _logger;
         private readonly MockPipelineExecutionEngine _mockExecutionEngine;

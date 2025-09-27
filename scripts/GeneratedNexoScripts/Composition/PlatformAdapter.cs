@@ -10,7 +10,7 @@ namespace NexoDoomGame.Composition
     /// Adapts domain logic to specific platforms and handles platform-specific concerns
     /// Responsibilities: Platform Detection, Implementation Selection, Interface Mapping, Platform-Specific Configuration, Performance Optimization
     /// </summary>
-    public class PlatformAdapter : BaseCompositionComponent
+    public partial class PlatformAdapter : BaseCompositionComponent
     {
         /// <summary>
         /// Orchestrate all registered components

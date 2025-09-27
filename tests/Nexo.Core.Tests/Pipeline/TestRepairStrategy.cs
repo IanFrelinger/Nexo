@@ -12,7 +12,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// </summary>
     /// <typeparam name="TRequest">The type of request for generation</typeparam>
     /// <typeparam name="TArtifact">The type of artifact generated</typeparam>
-    public class TestRepairStrategy<TRequest, TArtifact> : IRepairStrategy<TRequest, TArtifact>
+    public partial class TestRepairStrategy<TRequest, TArtifact> : IRepairStrategy<TRequest, TArtifact>
     {
         private readonly ILogger<TestRepairStrategy<TRequest, TArtifact>> _logger;
         private readonly bool _shouldSucceed;
@@ -57,7 +57,7 @@ namespace Nexo.Core.Tests.Pipeline
     /// <summary>
     /// Test implementation that simulates a failing gate that becomes passing after repair.
     /// </summary>
-    public class FailingGateRepairStrategy<TRequest, TArtifact> : IRepairStrategy<TRequest, TArtifact>
+    public partial class FailingGateRepairStrategy<TRequest, TArtifact> : IRepairStrategy<TRequest, TArtifact>
     {
         private readonly ILogger<FailingGateRepairStrategy<TRequest, TArtifact>> _logger;
         private int _callCount = 0;

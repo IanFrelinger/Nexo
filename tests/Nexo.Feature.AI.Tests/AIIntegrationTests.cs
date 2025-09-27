@@ -15,7 +15,7 @@ namespace Nexo.Feature.AI.Tests;
 /// <summary>
 /// Integration tests for AI services with the iteration system
 /// </summary>
-public class AIIntegrationTests : IDisposable
+public partial class AIIntegrationTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
 

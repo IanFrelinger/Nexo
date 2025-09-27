@@ -9,7 +9,7 @@ namespace Nexo.Feature.AI.Services;
 /// <summary>
 /// Registry for managing specialized AI agents
 /// </summary>
-public class SpecializedAgentRegistry : ISpecializedAgentRegistry
+public partial class SpecializedAgentRegistry : ISpecializedAgentRegistry
 {
     private readonly Dictionary<string, ISpecializedAgent> _agents = new();
     private readonly ILogger<SpecializedAgentRegistry> _logger;

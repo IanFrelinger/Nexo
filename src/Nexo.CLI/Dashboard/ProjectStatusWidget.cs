@@ -8,7 +8,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Project status widget showing current project information
     /// </summary>
-    public class ProjectStatusWidget : IDashboardWidget
+    public partial class ProjectStatusWidget : IDashboardWidget
     {
         public string Title => "Project Status";
         

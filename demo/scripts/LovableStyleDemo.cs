@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DemoScripts
 {
-    public class LovableStyleDemo
+    public partial class LovableStyleDemo
     {
         private readonly ILogger<LovableStyleDemo> _logger;
 

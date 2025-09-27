@@ -12,7 +12,7 @@ namespace Nexo.Feature.AudioGeneration.Services;
 /// <summary>
 /// Orchestrates audio generation across multiple providers
 /// </summary>
-public class AudioGenerationOrchestrator
+public partial class AudioGenerationOrchestrator
 {
     private readonly ILogger<AudioGenerationOrchestrator> _logger;
     private readonly IEnumerable<IAudioGenerationProvider> _providers;

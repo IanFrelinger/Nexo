@@ -5,7 +5,7 @@ namespace Nexo.Feature.Data.Models
     /// <summary>
     /// Database statistics and performance metrics
     /// </summary>
-    public class DatabaseStatistics
+    public partial class DatabaseStatistics
     {
         /// <summary>
         /// Database name
@@ -86,7 +86,7 @@ namespace Nexo.Feature.Data.Models
     /// <summary>
     /// Database performance metrics
     /// </summary>
-    public class PerformanceMetrics
+    public partial class PerformanceMetrics
     {
         /// <summary>
         /// Average query execution time in milliseconds
@@ -132,7 +132,7 @@ namespace Nexo.Feature.Data.Models
     /// <summary>
     /// Table statistics
     /// </summary>
-    public class TableStatistics
+    public partial class TableStatistics
     {
         /// <summary>
         /// Table name
@@ -168,7 +168,7 @@ namespace Nexo.Feature.Data.Models
     /// <summary>
     /// Index statistics
     /// </summary>
-    public class IndexStatistics
+    public partial class IndexStatistics
     {
         /// <summary>
         /// Index name

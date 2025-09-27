@@ -78,7 +78,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Represents a documentation search result
     /// </summary>
-    public class DocumentationResult
+    public partial class DocumentationResult
     {
         public string Title { get; set; } = string.Empty;
         public string Summary { get; set; } = string.Empty;
@@ -91,7 +91,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Represents a documentation topic
     /// </summary>
-    public class DocumentationTopic
+    public partial class DocumentationTopic
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -102,7 +102,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Represents a command example
     /// </summary>
-    public class CommandExample
+    public partial class CommandExample
     {
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

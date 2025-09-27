@@ -12,7 +12,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// PostgreSQL database provider implementation
     /// </summary>
-    public class PostgreSQLProvider : IDatabaseProvider
+    public partial class PostgreSQLProvider : IDatabaseProvider
     {
         private readonly ILogger<PostgreSQLProvider> _logger;
         private readonly string _connectionString;
@@ -306,7 +306,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// PostgreSQL transaction implementation
     /// </summary>
-    public class PostgreSQLTransaction : IDatabaseTransaction
+    public partial class PostgreSQLTransaction : IDatabaseTransaction
     {
         private readonly Npgsql.NpgsqlTransaction _transaction;
         private readonly Npgsql.NpgsqlConnection _connection;

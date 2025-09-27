@@ -11,7 +11,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Game specification parser for natural language processing
     /// </summary>
-    public class GameSpecificationParser
+    public partial class GameSpecificationParser
     {
         public async Task<GameSpecification> ParseSpecificationAsync(string specification)
         {
@@ -33,7 +33,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Asset generator for creating game assets
     /// </summary>
-    public class AssetGenerator
+    public partial class AssetGenerator
     {
         public async Task<Texture2D> GenerateTexture(string prompt)
         {
@@ -53,7 +53,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Game builder for assembling the final game
     /// </summary>
-    public class GameBuilder
+    public partial class GameBuilder
     {
         public async Task BuildLevel(GameSpecification spec)
         {
@@ -71,7 +71,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Game specification data structure
     /// </summary>
-    public class GameSpecification
+    public partial class GameSpecification
     {
         public string GameType { get; set; } = "";
         public string ArtStyle { get; set; } = "";

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.CLI.Services
 {
-    public class DependencyManagerService
+    public partial class DependencyManagerService
     {
         private readonly ILogger<DependencyManagerService> _logger;
 

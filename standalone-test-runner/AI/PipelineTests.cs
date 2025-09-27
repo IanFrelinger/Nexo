@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.AI;
 /// <summary>
 /// Tests for AI Pipeline functionality
 /// </summary>
-public class PipelineTests
+public partial class PipelineTests
 {
     private readonly bool _verbose;
 
@@ -245,7 +245,7 @@ public class PipelineTests
 }
 
 // Mock AI Pipeline class for testing
-public class AIPipeline
+public partial class AIPipeline
 {
     public string GenerateCode(string requirements)
     {

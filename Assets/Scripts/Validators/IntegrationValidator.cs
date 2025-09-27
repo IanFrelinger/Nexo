@@ -7,7 +7,7 @@ using Nexo.Agent.Contracts;
 
 namespace NexoDoomGame.Validators
 {
-    public class IntegrationValidator
+    public partial class IntegrationValidator
     {
         private readonly ITaskExecutionAgent _nexoAgent;
 
@@ -272,7 +272,7 @@ namespace NexoDoomGame.Validators
         }
     }
 
-    public class IntegrationCheck
+    public partial class IntegrationCheck
     {
         public string Name { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;

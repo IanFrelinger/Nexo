@@ -5,7 +5,7 @@ namespace FeatureFactoryDemo.Models
     /// <summary>
     /// Represents a successful command execution in the Feature Factory
     /// </summary>
-    public class CommandHistory
+    public partial class CommandHistory
     {
         [Key]
         public int Id { get; set; }
@@ -45,7 +45,7 @@ namespace FeatureFactoryDemo.Models
     /// <summary>
     /// Represents codebase context information used for code generation
     /// </summary>
-    public class CodebaseContext
+    public partial class CodebaseContext
     {
         [Key]
         public int Id { get; set; }
@@ -80,7 +80,7 @@ namespace FeatureFactoryDemo.Models
     /// <summary>
     /// Represents a code generation pattern learned from successful commands
     /// </summary>
-    public class CodePattern
+    public partial class CodePattern
     {
         [Key]
         public int Id { get; set; }

@@ -124,7 +124,7 @@ public static class AIServiceExtensions
 /// <summary>
 /// Configuration options for AI services
 /// </summary>
-public class AIServiceOptions
+public partial class AIServiceOptions
 {
     /// <summary>
     /// Whether to enable AI code generation
@@ -155,7 +155,7 @@ public class AIServiceOptions
 /// <summary>
 /// Configuration options for specialized AI agents
 /// </summary>
-public class SpecializedAgentOptions
+public partial class SpecializedAgentOptions
 {
     /// <summary>
     /// Whether to enable specialized agent coordination

@@ -10,7 +10,7 @@ namespace Nexo.CLI.Commands
     /// <summary>
     /// Guided tool generation command
     /// </summary>
-    public class GuidedGenerationCommand : ICommand
+    public partial class GuidedGenerationCommand : ICommand
     {
         private readonly IGuidedGenerationService _guidedService;
         private readonly ILogger<GuidedGenerationCommand> _logger;

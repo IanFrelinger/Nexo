@@ -7,7 +7,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests code generation and plugin loading capabilities
 /// </summary>
-public class Codegen_And_Plugin_Smoke
+public partial class Codegen_And_Plugin_Smoke
 {
     public Codegen_And_Plugin_Smoke()
     {
@@ -184,8 +184,8 @@ public class Codegen_And_Plugin_Smoke
         // Simulate generating code files
         var mainFile = Path.Combine(outputDir, "GeneratedRecipe.cs");
         var content = useRoslyn 
-            ? "using Microsoft.CodeAnalysis;\npublic interface IGeneratedRecipeExecutor { Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs); }\npublic class GeneratedRecipe : IGeneratedRecipeExecutor { public async Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs) { return new ExecutionResult { Success = true }; } }\npublic class ExecutionResult { public bool Success { get; set; } }"
-            : "public interface IGeneratedRecipeExecutor { Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs); }\npublic class GeneratedRecipe : IGeneratedRecipeExecutor { public async Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs) { return new ExecutionResult { Success = true }; } }\npublic class ExecutionResult { public bool Success { get; set; } }";
+            ? "using Microsoft.CodeAnalysis;\npublic interface IGeneratedRecipeExecutor { Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs); }\npublic partial class GeneratedRecipe : IGeneratedRecipeExecutor { public async Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs) { return new ExecutionResult { Success = true }; } }\npublic partial class ExecutionResult { public bool Success { get; set; } }"
+            : "public interface IGeneratedRecipeExecutor { Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs); }\npublic partial class GeneratedRecipe : IGeneratedRecipeExecutor { public async Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs) { return new ExecutionResult { Success = true }; } }\npublic partial class ExecutionResult { public bool Success { get; set; } }";
             
         await File.WriteAllTextAsync(mainFile, content);
         

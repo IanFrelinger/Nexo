@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Pipeline
 {
-    public class ExtensionPipelineTests
+    public partial class ExtensionPipelineTests
     {
         private readonly Mock<IExtensionGenerator<TestRequest, TestArtifact>> _mockGenerator;
         private readonly Mock<ICompilationGate> _mockCompilationGate;
@@ -35,7 +35,7 @@ namespace Nexo.Core.Tests.Pipeline
             // Arrange
             var request = new TestRequest { Id = "test-request", Name = "Test Extension" };
             var artifact = new TestArtifact { Id = "test-artifact", Name = "Test Extension" };
-            var sourceCode = "public class TestExtension { }";
+            var sourceCode = "public partial class TestExtension { }";
             var notes = new List<string> { "Generated successfully" };
 
             var generationResult = new GenerationResult<TestArtifact>(
@@ -89,7 +89,7 @@ namespace Nexo.Core.Tests.Pipeline
             // Arrange
             var request = new TestRequest { Id = "test-request", Name = "Test Extension" };
             var artifact = new TestArtifact { Id = "test-artifact", Name = "Test Extension" };
-            var sourceCode = "public class TestExtension { }";
+            var sourceCode = "public partial class TestExtension { }";
             var notes = new List<string> { "Generated successfully" };
 
             var generationResult = new GenerationResult<TestArtifact>(
@@ -138,7 +138,7 @@ namespace Nexo.Core.Tests.Pipeline
             // Arrange
             var request = new TestRequest { Id = "test-request", Name = "Test Extension" };
             var artifact = new TestArtifact { Id = "test-artifact", Name = "Test Extension" };
-            var sourceCode = "public class TestExtension { }";
+            var sourceCode = "public partial class TestExtension { }";
             var notes = new List<string> { "Generated successfully" };
 
             var generationResult = new GenerationResult<TestArtifact>(
@@ -191,7 +191,7 @@ namespace Nexo.Core.Tests.Pipeline
             // Arrange
             var request = new TestRequest { Id = "test-request", Name = "Test Extension" };
             var artifact = new TestArtifact { Id = "test-artifact", Name = "Test Extension" };
-            var sourceCode = "public class TestExtension { }";
+            var sourceCode = "public partial class TestExtension { }";
             var notes = new List<string> { "Generated successfully" };
 
             var generationResult = new GenerationResult<TestArtifact>(
@@ -356,13 +356,13 @@ namespace Nexo.Core.Tests.Pipeline
     }
 
     // Test types for the pipeline tests
-    public class TestRequest
+    public partial class TestRequest
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
     }
 
-    public class TestArtifact
+    public partial class TestArtifact
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

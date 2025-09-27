@@ -10,7 +10,7 @@ namespace Nexo.Feature.Plugin.Tests;
 /// Pipeline-architecture test suite for Nexo.Feature.Plugin layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class PluginPipelineTests
+public partial class PluginPipelineTests
 {
     private readonly ILogger<PluginPipelineTests> _logger;
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace StandaloneTestRunner
 {
-    public class ConfigurationLoggingTests
+    public partial class ConfigurationLoggingTests
     {
         private readonly bool _verbose;
 

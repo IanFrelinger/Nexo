@@ -5,7 +5,7 @@ namespace Nexo.Observability.Metrics;
 /// <summary>
 /// Metrics for pipeline operations.
 /// </summary>
-public class PipelineMetrics
+public partial class PipelineMetrics
 {
     private readonly Meter _meter;
     private readonly Counter<long> _generationDurationCounter;

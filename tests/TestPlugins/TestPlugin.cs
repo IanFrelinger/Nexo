@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace TestPlugins
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => "TestPlugin";
         public string Version => "1.0.0";

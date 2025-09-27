@@ -14,7 +14,7 @@ namespace Nexo.Feature.AudioGeneration.Providers;
 /// <summary>
 /// Offline audio generation provider using Ollama (simulated)
 /// </summary>
-public class OllamaAudioGenerationProvider : IAudioGenerationProvider
+public partial class OllamaAudioGenerationProvider : IAudioGenerationProvider
 {
     private readonly ILogger<OllamaAudioGenerationProvider> _logger;
     private readonly List<AudioGenerationModel> _availableModels = new();

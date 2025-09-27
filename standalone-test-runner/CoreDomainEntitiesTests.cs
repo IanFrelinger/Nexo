@@ -11,7 +11,7 @@ namespace StandaloneTestRunner
     /// Test suite for Core Domain Entities
     /// Uses smaller, focused test classes for better maintainability
     /// </summary>
-    public class CoreDomainEntitiesTests
+    public partial class CoreDomainEntitiesTests
     {
         private readonly bool _verbose;
         private readonly DomainEntityTests _domainEntityTests;

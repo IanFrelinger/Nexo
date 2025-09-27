@@ -13,7 +13,7 @@ namespace Nexo.Feature.Analysis.Tests.Services
     /// <summary>
     /// Tests for the Git change detector service.
     /// </summary>
-    public class GitChangeDetectorTests
+    public partial class GitChangeDetectorTests
     {
         private readonly Mock<ILogger<GitChangeDetector>> _mockLogger;
         private readonly GitChangeDetector _gitChangeDetector;

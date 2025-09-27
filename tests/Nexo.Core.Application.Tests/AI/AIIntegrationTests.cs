@@ -15,7 +15,7 @@ namespace Nexo.Core.Application.Tests.AI
     /// <summary>
     /// Tests for AI integration functionality
     /// </summary>
-    public class AIIntegrationTests
+    public partial class AIIntegrationTests
     {
         private readonly ServiceProvider _serviceProvider;
 
@@ -103,7 +103,7 @@ namespace Nexo.Core.Application.Tests.AI
             };
 
             var code = @"
-public class Calculator
+public partial class Calculator
 {
     public int Add(int a, int b)
     {

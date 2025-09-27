@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.CommandLine;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.CLI.WebOnly
 {
-    public class Program
+    public partial class Program
     {
         public static async Task<int> Main(string[] args)
         {

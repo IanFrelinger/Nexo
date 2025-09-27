@@ -9,7 +9,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test suite for Application Logic Generator functionality
     /// </summary>
-    public class ApplicationLogicGeneratorTests
+    public partial class ApplicationLogicGeneratorTests
     {
         private readonly bool _verbose;
 
@@ -292,7 +292,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test application logic generator for testing purposes
     /// </summary>
-    public class TestApplicationLogicGenerator
+    public partial class TestApplicationLogicGenerator
     {
         public bool IsInitialized { get; } = true;
 
@@ -334,7 +334,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test domain service for testing purposes
     /// </summary>
-    public class TestDomainService
+    public partial class TestDomainService
     {
         public string Name { get; }
         public string Description { get; }
@@ -349,7 +349,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test application logic for testing purposes
     /// </summary>
-    public class TestApplicationLogic
+    public partial class TestApplicationLogic
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -358,7 +358,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test controller for testing purposes
     /// </summary>
-    public class TestController
+    public partial class TestController
     {
         public string Name { get; set; } = string.Empty;
         public string[] Actions { get; set; } = Array.Empty<string>();
@@ -367,7 +367,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test service for testing purposes
     /// </summary>
-    public class TestService
+    public partial class TestService
     {
         public string Name { get; set; } = string.Empty;
         public string[] Methods { get; set; } = Array.Empty<string>();
@@ -376,7 +376,7 @@ namespace StandaloneTestRunner.FeatureFactory
     /// <summary>
     /// Test validation result for testing purposes
     /// </summary>
-    public class TestValidationResult
+    public partial class TestValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new();

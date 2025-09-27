@@ -8,7 +8,7 @@ namespace Nexo.Demo.Tests;
 /// Tests that Off mode has no network egress and produces deterministic results
 /// </summary>
 [Collection("NetworkIsolation")]
-public class Off_NoNetwork_And_Determinism
+public partial class Off_NoNetwork_And_Determinism
 {
     public Off_NoNetwork_And_Determinism()
     {

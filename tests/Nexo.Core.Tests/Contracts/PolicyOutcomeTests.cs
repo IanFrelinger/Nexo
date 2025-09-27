@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Nexo.Core.Tests.Contracts
 {
-    public class PolicyOutcomeTests
+    public partial class PolicyOutcomeTests
     {
         [Theory]
         [InlineData(true, "SafetyPolicy", new[] { "All checks passed" }, 0.95)]

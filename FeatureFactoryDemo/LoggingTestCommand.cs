@@ -9,7 +9,7 @@ namespace FeatureFactoryDemo.Commands
     /// <summary>
     /// Command to run comprehensive logging system tests
     /// </summary>
-    public class LoggingTestCommand : BaseCommand
+    public partial class LoggingTestCommand : BaseCommand
     {
         public override string Name => "test-logging";
         public override string Description => "Run comprehensive logging system validation tests";

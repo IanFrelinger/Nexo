@@ -13,7 +13,7 @@ namespace Nexo.Feature.Data.Tests.Services
     /// <summary>
     /// Tests for database provider functionality
     /// </summary>
-    public class DatabaseProviderTests
+    public partial class DatabaseProviderTests
     {
         private readonly Mock<ILogger<SqlServerProvider>> _mockLogger;
         private readonly string _connectionString;

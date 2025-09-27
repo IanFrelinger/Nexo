@@ -10,7 +10,7 @@ namespace Nexo.Feature.AI.Learning;
 /// <summary>
 /// Collects and records performance feedback for agent learning
 /// </summary>
-public class PerformanceFeedbackCollector : IPerformanceFeedbackCollector
+public partial class PerformanceFeedbackCollector : IPerformanceFeedbackCollector
 {
     private readonly ILogger<PerformanceFeedbackCollector> _logger;
     private readonly Dictionary<string, Stopwatch> _activeRequests = new();

@@ -18,7 +18,7 @@ namespace Nexo.Feature.Agent.Tests.Commands;
 /// <summary>
 /// Command for validating Agent functionality with proper logging and timeouts.
 /// </summary>
-public class AgentValidationCommand
+public partial class AgentValidationCommand
 {
     private readonly ILogger<AgentValidationCommand> _logger;
 

@@ -4,7 +4,7 @@ using Nexo.Feature.Analysis.Tests.Commands;
 
 namespace Nexo.Feature.Analysis.Tests;
 
-public class AnalysisInterfacesTests
+public partial class AnalysisInterfacesTests
 {
     [Fact(Timeout = 10000)]
     public void Analysis_Interfaces_WorkCorrectly()

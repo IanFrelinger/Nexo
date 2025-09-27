@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.CLI.Services
 {
-    public class ProjectScaffoldingService
+    public partial class ProjectScaffoldingService
     {
         private readonly ILogger<ProjectScaffoldingService> _logger;
 
@@ -404,7 +404,7 @@ crashlytics-build.properties
         }
     }
 
-    public class ProjectInfo
+    public partial class ProjectInfo
     {
         public string ProjectName { get; set; } = "";
         public string Platform { get; set; } = "";
@@ -413,7 +413,7 @@ crashlytics-build.properties
         public List<string> Files { get; set; } = new();
     }
 
-    public class ProjectAnalysis
+    public partial class ProjectAnalysis
     {
         public string Description { get; set; } = "";
         public string Platform { get; set; } = "";

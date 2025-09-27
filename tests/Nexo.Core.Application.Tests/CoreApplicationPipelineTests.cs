@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Tests;
 /// Pipeline-architecture test suite for Nexo.Core.Application layer.
 /// Uses command classes with proper timeouts and logging to prevent hanging tests.
 /// </summary>
-public class CoreApplicationPipelineTests
+public partial class CoreApplicationPipelineTests
 {
     private readonly ILogger<CoreApplicationPipelineTests> _logger;
 

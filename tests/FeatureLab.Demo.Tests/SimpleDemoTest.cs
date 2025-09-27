@@ -3,7 +3,7 @@ using Xunit;
 namespace FeatureLab.Demo.Tests;
 
 [Trait("Suite", "Demo")]
-public class SimpleDemoTest
+public partial class SimpleDemoTest
 {
     [Fact]
     public void Playground_Should_Build_Successfully()

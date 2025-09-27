@@ -19,7 +19,7 @@ namespace Nexo.Feature.Platform.Tests.Services
     /// Unit tests for the IOSCodeGenerator service.
     /// Part of Epic 6.1: Native Platform Code Generation, Story 6.1.1: iOS Native Implementation.
     /// </summary>
-    public class IOSCodeGeneratorTests
+    public partial class IOSCodeGeneratorTests
     {
         private readonly Mock<ILogger<IOSCodeGenerator>> _mockLogger;
         private readonly IIOSCodeGenerator _generator;

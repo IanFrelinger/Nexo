@@ -15,7 +15,7 @@ namespace Nexo.Feature.AI.Tests;
 /// <summary>
 /// Tests for the ModelOrchestrator service
 /// </summary>
-public class ModelOrchestratorTests : IDisposable
+public partial class ModelOrchestratorTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly Mock<IModelProvider> _mockProvider;

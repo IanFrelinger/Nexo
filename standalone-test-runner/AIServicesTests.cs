@@ -11,7 +11,7 @@ namespace StandaloneTestRunner
     /// Test suite for AI Services - orchestrates specialized test classes
     /// Tests AI Providers, Engines, Performance Monitor, Safety Validator, and other AI services
     /// </summary>
-    public class AIServicesTests
+    public partial class AIServicesTests
     {
         private readonly bool _verbose;
         private readonly ProviderTests _providerTests;

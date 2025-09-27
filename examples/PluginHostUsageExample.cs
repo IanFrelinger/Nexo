@@ -9,7 +9,7 @@ namespace Examples
     /// <summary>
     /// Example demonstrating how to use the hardened PluginHost system.
     /// </summary>
-    public class PluginHostUsageExample
+    public partial class PluginHostUsageExample
     {
         private readonly ILogger<PluginHost> _logger;
 

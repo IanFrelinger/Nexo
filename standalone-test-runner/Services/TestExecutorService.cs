@@ -5,7 +5,7 @@ using StandaloneTestRunner.Models;
 
 namespace StandaloneTestRunner.Services
 {
-    public class TestExecutorService
+    public partial class TestExecutorService
     {
         private readonly TestRunnerService _testRunner;
         private readonly TimeoutService _timeoutService;

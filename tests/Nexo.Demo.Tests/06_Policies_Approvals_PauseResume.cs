@@ -8,7 +8,7 @@ namespace Nexo.Demo.Tests;
 /// <summary>
 /// Tests policy enforcement, approval workflows, and pause/resume functionality
 /// </summary>
-public class Policies_Approvals_PauseResume
+public partial class Policies_Approvals_PauseResume
 {
     [Fact, Trait("Suite", "Demo")]
     public async Task Policy_Pauses_Run_And_Approval_Resumes()

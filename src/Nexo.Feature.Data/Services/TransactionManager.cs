@@ -10,7 +10,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// Transaction manager for coordinating database transactions across repositories
     /// </summary>
-    public class TransactionManager : ITransactionManager
+    public partial class TransactionManager : ITransactionManager
     {
         private readonly IDatabaseProvider _databaseProvider;
         private readonly ILogger<TransactionManager> _logger;

@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Nexo.Agent.Tools.Builtin.Tests;
 
-public class FileReadToolTests
+public partial class FileReadToolTests
 {
     private readonly Mock<ILogger> _mockLogger;
     private readonly Mock<IFileSystem> _mockFileSystem;

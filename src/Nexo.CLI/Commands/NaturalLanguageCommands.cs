@@ -9,7 +9,7 @@ namespace Nexo.CLI.Commands
     /// <summary>
     /// Orchestrator for natural-language driven CLI commands. Delegates to focused factories.
     /// </summary>
-    public class NaturalLanguageCommands
+    public partial class NaturalLanguageCommands
     {
         private readonly ILogger<NaturalLanguageCommands> _logger;
         private readonly BuildCommandFactory _buildFactory;

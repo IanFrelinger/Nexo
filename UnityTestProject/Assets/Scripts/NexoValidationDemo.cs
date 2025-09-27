@@ -7,7 +7,7 @@ namespace NexoDoomGame
     /// <summary>
     /// Simple demo script to test Nexo validation system
     /// </summary>
-    public class NexoValidationDemo : MonoBehaviour
+    public partial class NexoValidationDemo : MonoBehaviour
     {
         private void Start()
         {
