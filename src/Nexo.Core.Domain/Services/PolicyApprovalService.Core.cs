@@ -8,4 +8,7 @@ using Nexo.Core.Domain.Models.Policy;
 namespace Nexo.Core.Domain.Services
 {
     public interface IPolicyApprovalService
+    {
+        // Interface members will be added here
+    }
 }

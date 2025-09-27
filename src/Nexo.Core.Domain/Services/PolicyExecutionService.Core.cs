@@ -10,4 +10,7 @@ using Nexo.Core.Domain.Services;
 namespace Nexo.Core.Domain.Services
 {
     public interface IPolicyExecutionService
+    {
+        // Interface members will be added here
+    }
 }

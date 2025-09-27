@@ -8,4 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Nexo.Core.Domain.Services
 {
     public interface IParityService
+    {
+        // Interface members will be added here
+    }
 }
