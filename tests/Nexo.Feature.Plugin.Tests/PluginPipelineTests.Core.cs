@@ -1,9 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Feature.Plugin.Tests.Commands;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Feature.Plugin.Tests;
+namespace Nexo.Feature.Plugin.Tests
 {
+    public partial class PluginPipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Services.Platform.Integrators;
 /// <summary>
 /// Handles native API integration logic
 /// </summary>
-public class NativeApiIntegrator
+public partial class NativeApiIntegrator
 {
     private readonly ILogger<NativeApiIntegrator> _logger;
     private readonly IModelOrchestrator _modelOrchestrator;
@@ -170,7 +170,7 @@ using System.Runtime.InteropServices;
 
 namespace {GetNamespaceForPlatform(platform)}
 {{
-    public class {apiName}Integration
+    public partial class {apiName}Integration
     {{
         // Native API integration for {apiName} on {platform}
         public async Task<object> CallApiAsync(Dictionary<string, object> parameters)
@@ -241,7 +241,7 @@ using System.Threading.Tasks;
 
 namespace {GetNamespaceForPlatform(platform)}
 {{
-    public class {apiName}Wrapper : I{apiName}Wrapper
+    public partial class {apiName}Wrapper : I{apiName}Wrapper
     {{
         public async Task<object> CallApiAsync(Dictionary<string, object> parameters)
         {{

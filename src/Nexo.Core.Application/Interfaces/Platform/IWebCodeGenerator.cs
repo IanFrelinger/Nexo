@@ -121,7 +121,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Platform-specific models for Web code generation
-    public class WebGenerationOptions
+    public partial class WebGenerationOptions
     {
         public string ProjectName { get; set; } = string.Empty;
         public string TargetFramework { get; set; } = "net8.0";
@@ -137,7 +137,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public bool UseTest { get; set; } = true;
     }
 
-    public class WebGenerationResult
+    public partial class WebGenerationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -145,56 +145,56 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Errors { get; set; } = new();
     }
 
-    public class WebComponent
+    public partial class WebComponent
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class WebStateManagement
+    public partial class WebStateManagement
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class WebApiLayer
+    public partial class WebApiLayer
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class WebAssemblyModule
+    public partial class WebAssemblyModule
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class PWAConfiguration
+    public partial class PWAConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class ServiceWorker
+    public partial class ServiceWorker
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class WebBuildConfiguration
+    public partial class WebBuildConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class WebTest
+    public partial class WebTest
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
     // Additional Web models
-    public class WebStore
+    public partial class WebStore
     {
         public string StoreName { get; set; } = string.Empty;
         public string StoreType { get; set; } = string.Empty;
@@ -203,14 +203,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> State { get; set; } = new();
     }
 
-    public class WebAction
+    public partial class WebAction
     {
         public string ActionName { get; set; } = string.Empty;
         public string ActionType { get; set; } = string.Empty;
         public Dictionary<string, object> Payload { get; set; } = new();
     }
 
-    public class WebReducer
+    public partial class WebReducer
     {
         public string ReducerName { get; set; } = string.Empty;
         public string StateType { get; set; } = string.Empty;
@@ -218,7 +218,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public string ReducerFunction { get; set; } = string.Empty;
     }
 
-    public class WebApiService
+    public partial class WebApiService
     {
         public string ServiceName { get; set; } = string.Empty;
         public string BaseUrl { get; set; } = string.Empty;
@@ -226,7 +226,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, string> Headers { get; set; } = new();
     }
 
-    public class WebApiClient
+    public partial class WebApiClient
     {
         public string ClientName { get; set; } = string.Empty;
         public string BaseUrl { get; set; } = string.Empty;
@@ -234,14 +234,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, string> Configuration { get; set; } = new();
     }
 
-    public class WebApiType
+    public partial class WebApiType
     {
         public string TypeName { get; set; } = string.Empty;
         public string TypeDefinition { get; set; } = string.Empty;
         public List<string> Properties { get; set; } = new();
     }
 
-    public class PWAManifest
+    public partial class PWAManifest
     {
         public string AppName { get; set; } = string.Empty;
         public string ShortName { get; set; } = string.Empty;
@@ -252,7 +252,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<PWAIcon> Icons { get; set; } = new();
     }
 
-    public class PWAIcon
+    public partial class PWAIcon
     {
         public string Src { get; set; } = string.Empty;
         public string Sizes { get; set; } = string.Empty;
@@ -260,14 +260,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public string Purpose { get; set; } = string.Empty;
     }
 
-    public class PWASplashScreen
+    public partial class PWASplashScreen
     {
         public string Src { get; set; } = string.Empty;
         public string Sizes { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
     }
 
-    public class WebPackageJson
+    public partial class WebPackageJson
     {
         public string Name { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
@@ -277,7 +277,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, string> Scripts { get; set; } = new();
     }
 
-    public class WebWebpackConfig
+    public partial class WebWebpackConfig
     {
         public string ConfigName { get; set; } = string.Empty;
         public string Mode { get; set; } = string.Empty;
@@ -285,7 +285,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Plugins { get; set; } = new();
     }
 
-    public class WebTypeScriptConfig
+    public partial class WebTypeScriptConfig
     {
         public string ConfigName { get; set; } = string.Empty;
         public string Target { get; set; } = string.Empty;

@@ -39,7 +39,7 @@ public interface IAdaptationDashboard
 /// <summary>
 /// Real-time adaptation dashboard data
 /// </summary>
-public class AdaptationDashboardData
+public partial class AdaptationDashboardData
 {
     public AdaptationStatus AdaptationStatus { get; set; } = new();
     public PerformanceMetrics PerformanceMetrics { get; set; } = new();
@@ -54,7 +54,7 @@ public class AdaptationDashboardData
 /// <summary>
 /// Real-time adaptation event
 /// </summary>
-public class AdaptationEvent
+public partial class AdaptationEvent
 {
     public string EventId { get; set; } = Guid.NewGuid().ToString();
     public AdaptationEventType Type { get; set; }
@@ -67,7 +67,7 @@ public class AdaptationEvent
 /// <summary>
 /// Performance trend data
 /// </summary>
-public class PerformanceTrend
+public partial class PerformanceTrend
 {
     public DateTime Timestamp { get; set; }
     public double CpuUtilization { get; set; }
@@ -80,7 +80,7 @@ public class PerformanceTrend
 /// <summary>
 /// Learning dashboard data
 /// </summary>
-public class LearningDashboard
+public partial class LearningDashboard
 {
     public LearningEffectiveness LearningEffectiveness { get; set; } = new();
     public IEnumerable<LearningInsight> RecentInsights { get; set; } = Enumerable.Empty<LearningInsight>();
@@ -92,7 +92,7 @@ public class LearningDashboard
 /// <summary>
 /// Environment adaptation status
 /// </summary>
-public class EnvironmentAdaptationStatus
+public partial class EnvironmentAdaptationStatus
 {
     public DetectedEnvironment CurrentEnvironment { get; set; } = new();
     public IEnumerable<EnvironmentOptimization> ActiveOptimizations { get; set; } = Enumerable.Empty<EnvironmentOptimization>();
@@ -104,7 +104,7 @@ public class EnvironmentAdaptationStatus
 /// <summary>
 /// Adaptation effectiveness metrics
 /// </summary>
-public class AdaptationEffectiveness
+public partial class AdaptationEffectiveness
 {
     public double OverallEffectiveness { get; set; }
     public IEnumerable<AdaptationResult> AdaptationResults { get; set; } = Enumerable.Empty<AdaptationResult>();
@@ -118,7 +118,7 @@ public class AdaptationEffectiveness
 /// <summary>
 /// Adaptation result for effectiveness tracking
 /// </summary>
-public class AdaptationResult
+public partial class AdaptationResult
 {
     public string AdaptationId { get; set; } = string.Empty;
     public AdaptationType AdaptationType { get; set; }

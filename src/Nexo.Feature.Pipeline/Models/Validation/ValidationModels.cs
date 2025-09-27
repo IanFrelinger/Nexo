@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models;
 /// <summary>
 /// Validation issue.
 /// </summary>
-public class ValidationIssue
+public partial class ValidationIssue
 {
     public string Field { get; set; } = string.Empty;
     
@@ -20,7 +20,7 @@ public class ValidationIssue
 /// <summary>
 /// Optimization action.
 /// </summary>
-public class OptimizationAction
+public partial class OptimizationAction
 {
     public string ActionType { get; set; } = string.Empty;
     
@@ -36,7 +36,7 @@ public class OptimizationAction
 /// <summary>
 /// Template for pipeline configuration.
 /// </summary>
-public class PipelineTemplate
+public partial class PipelineTemplate
 {
     public string Name { get; set; } = string.Empty;
     
@@ -58,7 +58,7 @@ public class PipelineTemplate
 /// <summary>
 /// Optimization recommendation for pipeline performance.
 /// </summary>
-public class OptimizationRecommendation
+public partial class OptimizationRecommendation
 {
     /// <summary>
     /// Gets or sets the recommendation identifier.

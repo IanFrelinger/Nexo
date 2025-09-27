@@ -102,7 +102,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Represents the result of validating a coding standards configuration.
     /// </summary>
-    public class CodingStandardConfigurationValidationResult
+    public partial class CodingStandardConfigurationValidationResult
     {
         /// <summary>
         /// Gets or sets whether the configuration is valid.

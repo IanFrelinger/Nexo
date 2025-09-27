@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services
     /// </summary>
     /// <typeparam name="TRequest">The type of the request.</typeparam>
     /// <typeparam name="TResponse">The type of the response.</typeparam>
-    public class CachingAsyncProcessor<TRequest, TKey, TResponse> : IAsyncProcessor<TRequest, TResponse> where TKey : notnull
+    public partial class CachingAsyncProcessor<TRequest, TKey, TResponse> : IAsyncProcessor<TRequest, TResponse> where TKey : notnull
     {
         private readonly IAsyncProcessor<TRequest, TResponse> _innerProcessor;
         private readonly ICacheStrategy<TKey, TResponse> _cache;

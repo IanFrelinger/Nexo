@@ -5,7 +5,7 @@ namespace Nexo.Infrastructure.Tests.Services.Security
     /// <summary>
     /// Mock classes for testing
     /// </summary>
-    public class ApiKeyInfo
+    public partial class ApiKeyInfo
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Tests.Services.Security
         public DateTimeOffset CreatedAt { get; set; }
     }
 
-    public class ComplianceStatus
+    public partial class ComplianceStatus
     {
         public bool GDPRCompliance { get; set; }
         public bool HIPAACompliance { get; set; }

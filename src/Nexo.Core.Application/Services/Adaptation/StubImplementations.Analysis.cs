@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.Adaptation;
 
-public class UserExperienceAnalyzer : IUserExperienceAnalyzer
+public partial class UserExperienceAnalyzer : IUserExperienceAnalyzer
 {
     public Task<FeedbackAnalysis> AnalyzeFeedbackAsync(IEnumerable<UserFeedback> feedback)
     {
@@ -61,7 +61,7 @@ public class UserExperienceAnalyzer : IUserExperienceAnalyzer
     }
 }
 
-public class CodeGenerationOptimizer : ICodeGenerationOptimizer
+public partial class CodeGenerationOptimizer : ICodeGenerationOptimizer
 {
     public Task EnableEnhancedValidation()
     {

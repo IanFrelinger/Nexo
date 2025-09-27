@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.Adaptation.Strategies;
 /// <summary>
 /// Strategy for adapting system performance based on real-time metrics
 /// </summary>
-public class PerformanceAdaptationStrategy : IAdaptationStrategy
+public partial class PerformanceAdaptationStrategy : IAdaptationStrategy
 {
     public string StrategyId => "Performance.Dynamic";
     public AdaptationType SupportedAdaptationType => AdaptationType.PerformanceOptimization;

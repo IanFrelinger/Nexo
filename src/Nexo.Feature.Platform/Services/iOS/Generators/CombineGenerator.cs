@@ -10,7 +10,7 @@ using Nexo.Feature.Platform.Enums;
 
 namespace Nexo.Feature.Platform.Services.iOS.Generators
 {
-    public class CombineGenerator
+    public partial class CombineGenerator
     {
         private readonly ILogger<CombineGenerator> _logger;
 

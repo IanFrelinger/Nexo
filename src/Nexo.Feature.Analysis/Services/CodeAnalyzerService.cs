@@ -13,7 +13,7 @@ namespace Nexo.Feature.Analysis.Services
     /// <summary>
     /// Service for analyzing code quality and structure within the pipeline architecture.
     /// </summary>
-    public class CodeAnalyzerService : ICodeAnalyzer
+    public partial class CodeAnalyzerService : ICodeAnalyzer
     {
         private readonly ILogger<CodeAnalyzerService> _logger;
 

@@ -9,7 +9,7 @@ using Spectre.Console;
 
 namespace Nexo.Infrastructure.Commands.Model
 {
-    public class ModelPullHandler
+    public partial class ModelPullHandler
     {
         private readonly IModelOrchestrator _modelOrchestrator;
         private readonly ILogger _logger;

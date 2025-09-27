@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands.Adaptation.Commands
     /// <summary>
     /// Handles monitor command creation and execution
     /// </summary>
-    public class MonitorCommandHandler
+    public partial class MonitorCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

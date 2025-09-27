@@ -12,7 +12,7 @@ namespace Nexo.Feature.Analysis.Services.Configuration;
 /// <summary>
 /// Handles serialization and deserialization of coding standard configurations.
 /// </summary>
-public class ConfigurationSerializer
+public partial class ConfigurationSerializer
 {
     private readonly ILogger<ConfigurationSerializer> _logger;
     private readonly JsonSerializerOptions _jsonOptions;

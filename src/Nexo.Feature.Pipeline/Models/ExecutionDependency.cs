@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a dependency between pipeline components.
     /// </summary>
-    public class ExecutionDependency
+    public partial class ExecutionDependency
     {
         /// <summary>
         /// Gets or sets the ID of the dependent component.

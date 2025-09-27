@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Tests.Services.Extensions
     /// <summary>
     /// End-to-end tests for the complete AI extension generation pipeline
     /// </summary>
-    public class EndToEndExtensionGenerationTests
+    public partial class EndToEndExtensionGenerationTests
     {
         private readonly ServiceCollection _services;
         private readonly ServiceProvider _serviceProvider;
@@ -78,7 +78,7 @@ using Nexo.Core.Domain.Interfaces;
 
 namespace GeneratedPlugin
 {
-    public class GeneratedPlugin : IPlugin
+    public partial class GeneratedPlugin : IPlugin
     {
         public string Name => ""GeneratedPlugin"";
         public string Version => ""1.0.0"";
@@ -197,7 +197,7 @@ namespace GeneratedPlugin
         {
             // Arrange
             var generator = _serviceProvider.GetRequiredService<AIExtensionGenerator>();
-            var invalidCode = "public class InvalidPlugin { // Missing closing brace";
+            var invalidCode = "public partial class InvalidPlugin { // Missing closing brace";
             var request = new ExtensionRequest
             {
                 Name = "InvalidPlugin",

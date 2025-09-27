@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Environment-specific trend analysis.
     /// </summary>
-    public class EnvironmentTrends
+    public partial class EnvironmentTrends
     {
         /// <summary>
         /// Environment name.

@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Ada
 /// <summary>
 /// Adapter for MAUI framework code generation
 /// </summary>
-public class MauiAdapter
+public partial class MauiAdapter
 {
     private readonly ILogger<MauiAdapter> _logger;
     private readonly IAIRuntimeSelector _runtimeSelector;

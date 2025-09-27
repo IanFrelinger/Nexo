@@ -84,7 +84,7 @@ public interface IAdaptationRecommender
 /// <summary>
 /// Learning context for recommendations
 /// </summary>
-public class LearningContext
+public partial class LearningContext
 {
     public SystemState CurrentState { get; set; } = new();
     public IEnumerable<UserFeedback> RecentFeedback { get; set; } = Enumerable.Empty<UserFeedback>();
@@ -97,7 +97,7 @@ public class LearningContext
 /// <summary>
 /// Learning recommendations for a context
 /// </summary>
-public class LearningRecommendations
+public partial class LearningRecommendations
 {
     public IEnumerable<LearningRecommendation> Recommendations { get; set; } = Enumerable.Empty<LearningRecommendation>();
     public double OverallConfidence { get; set; }
@@ -115,7 +115,7 @@ public class LearningRecommendations
 /// <summary>
 /// Individual learning recommendation
 /// </summary>
-public class LearningRecommendation
+public partial class LearningRecommendation
 {
     public string Approach { get; set; } = string.Empty;
     public double Confidence { get; set; }
@@ -129,7 +129,7 @@ public class LearningRecommendation
 /// <summary>
 /// Learning insight derived from pattern analysis
 /// </summary>
-public class LearningInsight
+public partial class LearningInsight
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public InsightType Type { get; set; }
@@ -144,7 +144,7 @@ public class LearningInsight
 /// <summary>
 /// Identified pattern from data analysis
 /// </summary>
-public class IdentifiedPattern
+public partial class IdentifiedPattern
 {
     public string PatternId { get; set; } = Guid.NewGuid().ToString();
     public PatternType Type { get; set; }
@@ -164,7 +164,7 @@ public class IdentifiedPattern
 /// <summary>
 /// Historical context for pattern matching
 /// </summary>
-public class HistoricalContext
+public partial class HistoricalContext
 {
     public string ContextId { get; set; } = string.Empty;
     public SystemState SystemState { get; set; } = new();
@@ -178,7 +178,7 @@ public class HistoricalContext
 /// <summary>
 /// Performance data for learning
 /// </summary>
-public class PerformanceData
+public partial class PerformanceData
 {
     public string DataId { get; set; } = Guid.NewGuid().ToString();
     public PerformanceMetrics Metrics { get; set; } = new();
@@ -190,7 +190,7 @@ public class PerformanceData
 /// <summary>
 /// Correlation analysis results
 /// </summary>
-public class CorrelationAnalysis
+public partial class CorrelationAnalysis
 {
     public Dictionary<string, double> Correlations { get; set; } = new();
     public IEnumerable<StrongCorrelation> StrongCorrelations { get; set; } = Enumerable.Empty<StrongCorrelation>();
@@ -201,7 +201,7 @@ public class CorrelationAnalysis
 /// <summary>
 /// Strong correlation between factors
 /// </summary>
-public class StrongCorrelation
+public partial class StrongCorrelation
 {
     public string Factor1 { get; set; } = string.Empty;
     public string Factor2 { get; set; } = string.Empty;
@@ -212,7 +212,7 @@ public class StrongCorrelation
 /// <summary>
 /// Weak correlation between factors
 /// </summary>
-public class WeakCorrelation
+public partial class WeakCorrelation
 {
     public string Factor1 { get; set; } = string.Empty;
     public string Factor2 { get; set; } = string.Empty;
@@ -223,7 +223,7 @@ public class WeakCorrelation
 /// <summary>
 /// Adaptation recommendation
 /// </summary>
-public class AdaptationRecommendation
+public partial class AdaptationRecommendation
 {
     public string RecommendationId { get; set; } = Guid.NewGuid().ToString();
     public AdaptationType AdaptationType { get; set; }
@@ -239,7 +239,7 @@ public class AdaptationRecommendation
 /// <summary>
 /// Learning effectiveness metrics
 /// </summary>
-public class LearningEffectiveness
+public partial class LearningEffectiveness
 {
     public double OverallEffectiveness { get; set; }
     public int TotalInsightsGenerated { get; set; }

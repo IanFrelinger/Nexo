@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services
     /// </summary>
     /// <typeparam name="TRequest">The type of the request.</typeparam>
     /// <typeparam name="TResponse">The type of the response.</typeparam>
-    public class AsyncProcessor<TRequest, TResponse> : IAsyncProcessor<TRequest, TResponse>
+    public partial class AsyncProcessor<TRequest, TResponse> : IAsyncProcessor<TRequest, TResponse>
     {
         private readonly Func<TRequest, CancellationToken, Task<TResponse>> _handler;
 

@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands.Adaptation.Commands
     /// <summary>
     /// Handles learning command creation and execution
     /// </summary>
-    public class LearningCommandHandler
+    public partial class LearningCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.Adaptation;
 
-public class PerformanceMonitor : IPerformanceMonitor
+public partial class PerformanceMonitor : IPerformanceMonitor
 {
     public event EventHandler<PerformanceDegradationEventArgs>? OnPerformanceDegradation;
     
@@ -73,7 +73,7 @@ public class PerformanceMonitor : IPerformanceMonitor
     }
 }
 
-public class MetricsAggregator : IMetricsAggregator
+public partial class MetricsAggregator : IMetricsAggregator
 {
     public Task<Dictionary<string, double>> AggregateMetricsAsync(TimeSpan timeWindow)
     {

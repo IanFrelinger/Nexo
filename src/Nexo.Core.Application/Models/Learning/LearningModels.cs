@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents a feature pattern for learning.
     /// </summary>
-    public class FeaturePattern
+    public partial class FeaturePattern
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -26,7 +26,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents domain knowledge for accumulation.
     /// </summary>
-    public class DomainKnowledge
+    public partial class DomainKnowledge
     {
         public string Id { get; set; } = string.Empty;
         public string Domain { get; set; } = string.Empty;
@@ -44,7 +44,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents usage data for pattern analysis.
     /// </summary>
-    public class UsageData
+    public partial class UsageData
     {
         public string Id { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
@@ -62,7 +62,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents learning feedback for continuous improvement.
     /// </summary>
-    public class LearningFeedback
+    public partial class LearningFeedback
     {
         public string Id { get; set; } = string.Empty;
         public string FeatureId { get; set; } = string.Empty;
@@ -78,7 +78,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents learning context for insights.
     /// </summary>
-    public class LearningContext
+    public partial class LearningContext
     {
         public string UserId { get; set; } = string.Empty;
         public string Domain { get; set; } = string.Empty;
@@ -91,7 +91,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents learning data for model updates.
     /// </summary>
-    public class LearningData
+    public partial class LearningData
     {
         public string Id { get; set; } = string.Empty;
         public string DataType { get; set; } = string.Empty;
@@ -105,7 +105,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents validation data for learning effectiveness.
     /// </summary>
-    public class ValidationData
+    public partial class ValidationData
     {
         public string Id { get; set; } = string.Empty;
         public string ValidationType { get; set; } = string.Empty;
@@ -118,7 +118,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents learning data export options.
     /// </summary>
-    public class LearningDataExportOptions
+    public partial class LearningDataExportOptions
     {
         public string Format { get; set; } = "JSON";
         public DateTime StartDate { get; set; }
@@ -131,7 +131,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of learning from feature patterns.
     /// </summary>
-    public class LearningResult
+    public partial class LearningResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -145,7 +145,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of domain knowledge accumulation.
     /// </summary>
-    public class KnowledgeAccumulationResult
+    public partial class KnowledgeAccumulationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -159,7 +159,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of usage pattern analysis.
     /// </summary>
-    public class UsagePatternAnalysisResult
+    public partial class UsagePatternAnalysisResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -172,7 +172,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents a usage pattern.
     /// </summary>
-    public class UsagePattern
+    public partial class UsagePattern
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -186,7 +186,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents a recommendation.
     /// </summary>
-    public class Recommendation
+    public partial class Recommendation
     {
         public string Id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -200,7 +200,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of feedback processing.
     /// </summary>
-    public class FeedbackProcessingResult
+    public partial class FeedbackProcessingResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -213,7 +213,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents learning insights.
     /// </summary>
-    public class LearningInsights
+    public partial class LearningInsights
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -229,7 +229,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of model updates.
     /// </summary>
-    public class ModelUpdateResult
+    public partial class ModelUpdateResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -242,7 +242,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of learning validation.
     /// </summary>
-    public class LearningValidationResult
+    public partial class LearningValidationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -257,7 +257,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents learning data export.
     /// </summary>
-    public class LearningDataExport
+    public partial class LearningDataExport
     {
         public string Id { get; set; } = string.Empty;
         public string Format { get; set; } = string.Empty;

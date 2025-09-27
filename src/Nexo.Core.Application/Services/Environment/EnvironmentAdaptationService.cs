@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.Environment
     /// <summary>
     /// Orchestrator for environment adaptation that delegates to specialized adaptation services.
     /// </summary>
-    public class EnvironmentAdaptationService : IEnvironmentAdaptationService
+    public partial class EnvironmentAdaptationService : IEnvironmentAdaptationService
     {
         private readonly IEnvironmentDetector _environmentDetector;
         private readonly IConfigurationManager _configurationManager;

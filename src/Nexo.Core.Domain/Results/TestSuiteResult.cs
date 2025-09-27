@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Result of test suite operations
     /// </summary>
-    public class TestSuiteResult
+    public partial class TestSuiteResult
     {
         /// <summary>
         /// Whether the test suite was successful
@@ -146,7 +146,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Individual test result
     /// </summary>
-    public class TestResult
+    public partial class TestResult
     {
         /// <summary>
         /// Test name

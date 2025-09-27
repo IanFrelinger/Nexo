@@ -9,7 +9,7 @@ namespace Playground.Server.Services;
 /// <summary>
 /// Generates web application code based on requirements.
 /// </summary>
-public class WebAppCodeGenerator
+public partial class WebAppCodeGenerator
 {
     public string GenerateWebAppCode(string prompt, List<string> features)
     {

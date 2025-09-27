@@ -16,7 +16,7 @@ namespace Nexo.Feature.Analysis.UseCases
     /// Pipeline behavior for analysis-specific operations and validations.
     /// Integrates with the pipeline architecture to provide analysis behaviors.
     /// </summary>
-    public class AnalysisPipelineBehavior : IBehavior
+    public partial class AnalysisPipelineBehavior : IBehavior
     {
         private readonly ILogger<AnalysisPipelineBehavior> _logger;
         private readonly List<ICommand> _commands;

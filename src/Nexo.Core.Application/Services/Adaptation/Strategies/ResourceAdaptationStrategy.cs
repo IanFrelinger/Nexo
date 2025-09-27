@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.Adaptation.Strategies;
 /// <summary>
 /// Strategy for adapting system behavior based on resource constraints
 /// </summary>
-public class ResourceAdaptationStrategy : IAdaptationStrategy
+public partial class ResourceAdaptationStrategy : IAdaptationStrategy
 {
     public string StrategyId => "Resource.Dynamic";
     public AdaptationType SupportedAdaptationType => AdaptationType.ResourceOptimization;

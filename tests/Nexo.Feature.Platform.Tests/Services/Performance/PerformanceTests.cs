@@ -17,7 +17,7 @@ namespace Nexo.Feature.Platform.Tests.Services.Performance
     /// <summary>
     /// Tests for performance requirements in Platform Feature Detector
     /// </summary>
-    public class PerformanceTests
+    public partial class PerformanceTests
     {
         private readonly Mock<ILogger<PlatformFeatureDetector>> _mockLogger;
         private readonly PlatformFeatureDetector _detector;

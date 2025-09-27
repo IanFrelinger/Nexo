@@ -16,7 +16,7 @@ namespace Nexo.Feature.Platform.Services.Generators;
 /// <summary>
 /// Generates Progressive Web App features
 /// </summary>
-public class PWAGenerator
+public partial class PWAGenerator
 {
     private readonly ILogger<PWAGenerator> _logger;
 

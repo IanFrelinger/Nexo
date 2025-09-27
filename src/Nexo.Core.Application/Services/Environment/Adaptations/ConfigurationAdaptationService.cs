@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Enums.Environment;
 
 namespace Nexo.Core.Application.Services.Environment.Adaptations
 {
-    public class ConfigurationAdaptationService
+    public partial class ConfigurationAdaptationService
     {
         private readonly ILogger<ConfigurationAdaptationService> _logger;
         private readonly IConfigurationManager _configurationManager;

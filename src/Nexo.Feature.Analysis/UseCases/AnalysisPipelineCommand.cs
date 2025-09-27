@@ -17,7 +17,7 @@ namespace Nexo.Feature.Analysis.UseCases
     /// Pipeline command for performing comprehensive code analysis.
     /// Integrates with the pipeline architecture to execute analysis workflows.
     /// </summary>
-    public class AnalysisPipelineCommand : ICommand
+    public partial class AnalysisPipelineCommand : ICommand
     {
         private readonly ILogger<AnalysisPipelineCommand> _logger;
         private readonly ICodeAnalyzer _codeAnalyzer;

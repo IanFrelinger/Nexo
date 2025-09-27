@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a performance metric for pipeline execution.
     /// </summary>
-    public class ExecutionMetric
+    public partial class ExecutionMetric
     {
         /// <summary>
         /// Gets or sets the category of the metric (e.g., "Phase", "Aggregator", "Behavior").

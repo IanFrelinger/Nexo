@@ -9,7 +9,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Service for self-healing with retry, backoff, circuit breaker, and failover
     /// </summary>
-    public class SelfHealingService : ISelfHealingService
+    public partial class SelfHealingService : ISelfHealingService
     {
         private readonly ILogger<SelfHealingService> _logger;
         private readonly Dictionary<string, CircuitBreakerState> _circuitBreakers;
@@ -237,7 +237,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Self-healing options
     /// </summary>
-    public class SelfHealingOptions
+    public partial class SelfHealingOptions
     {
         public int MaxRetries { get; set; } = 3;
         public int BaseDelayMs { get; set; } = 1000;
@@ -259,7 +259,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Circuit breaker state
     /// </summary>
-    public class CircuitBreakerState
+    public partial class CircuitBreakerState
     {
         public CircuitBreakerStateType State { get; set; } = CircuitBreakerStateType.Closed;
         public int FailureCount { get; set; }
@@ -281,7 +281,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Retry state
     /// </summary>
-    public class RetryState
+    public partial class RetryState
     {
         public int Attempts { get; set; }
         public DateTime LastAttempt { get; set; }
@@ -301,7 +301,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Self-healing metrics
     /// </summary>
-    public class SelfHealingMetrics
+    public partial class SelfHealingMetrics
     {
         public string OperationId { get; set; } = string.Empty;
         public int TotalAttempts { get; set; }
@@ -316,7 +316,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Circuit breaker open exception
     /// </summary>
-    public class CircuitBreakerOpenException : Exception
+    public partial class CircuitBreakerOpenException : Exception
     {
         public CircuitBreakerOpenException(string message) : base(message) { }
     }
@@ -324,7 +324,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Failover exception
     /// </summary>
-    public class FailoverException : Exception
+    public partial class FailoverException : Exception
     {
         public Exception PrimaryException { get; }
         public Exception? FallbackException { get; }

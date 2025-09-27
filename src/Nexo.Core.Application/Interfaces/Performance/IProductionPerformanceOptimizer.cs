@@ -54,7 +54,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance optimization options.
     /// </summary>
-    public class PerformanceOptimizationOptions
+    public partial class PerformanceOptimizationOptions
     {
         public bool OptimizeCaching { get; set; } = true;
         public bool OptimizeMemory { get; set; } = true;
@@ -68,7 +68,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance benchmark options.
     /// </summary>
-    public class PerformanceBenchmarkOptions
+    public partial class PerformanceBenchmarkOptions
     {
         public string BenchmarkName { get; set; } = "Default";
         public int Iterations { get; set; } = 10;
@@ -84,7 +84,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance optimization result.
     /// </summary>
-    public class PerformanceOptimizationResult
+    public partial class PerformanceOptimizationResult
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
@@ -116,7 +116,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance benchmark result.
     /// </summary>
-    public class PerformanceBenchmarkResult
+    public partial class PerformanceBenchmarkResult
     {
         public PerformanceBenchmark Benchmark { get; set; } = new();
         public bool Success { get; set; }
@@ -126,7 +126,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance benchmark data.
     /// </summary>
-    public class PerformanceBenchmark
+    public partial class PerformanceBenchmark
     {
         public string Name { get; set; } = string.Empty;
         public DateTimeOffset StartTime { get; set; }
@@ -147,7 +147,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance recommendation.
     /// </summary>
-    public class PerformanceRecommendation
+    public partial class PerformanceRecommendation
     {
         public string Category { get; set; } = string.Empty;
         public PerformancePriority Priority { get; set; }
@@ -160,7 +160,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance trends over time.
     /// </summary>
-    public class PerformanceTrends
+    public partial class PerformanceTrends
     {
         public TimeSpan TimeWindow { get; set; }
         public DateTimeOffset StartTime { get; set; }
@@ -196,7 +196,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Cache optimization result.
     /// </summary>
-    public class CacheOptimizationResult
+    public partial class CacheOptimizationResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -207,7 +207,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Memory optimization result.
     /// </summary>
-    public class MemoryOptimizationResult
+    public partial class MemoryOptimizationResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -218,7 +218,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// AI optimization result.
     /// </summary>
-    public class AIOptimizationResult
+    public partial class AIOptimizationResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -229,7 +229,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Security optimization result.
     /// </summary>
-    public class SecurityOptimizationResult
+    public partial class SecurityOptimizationResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -240,7 +240,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Database optimization result.
     /// </summary>
-    public class DatabaseOptimizationResult
+    public partial class DatabaseOptimizationResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -251,7 +251,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Network optimization result.
     /// </summary>
-    public class NetworkOptimizationResult
+    public partial class NetworkOptimizationResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -266,7 +266,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// System resource metrics.
     /// </summary>
-    public class SystemResourceMetrics
+    public partial class SystemResourceMetrics
     {
         public double CPUUsagePercent { get; set; }
         public long MemoryUsageMB { get; set; }
@@ -279,7 +279,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// AI performance metrics.
     /// </summary>
-    public class AIPerformanceMetrics
+    public partial class AIPerformanceMetrics
     {
         public TimeSpan AverageResponseTime { get; set; }
         public double RequestsPerSecond { get; set; }
@@ -292,7 +292,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Security performance metrics.
     /// </summary>
-    public class SecurityPerformanceMetrics
+    public partial class SecurityPerformanceMetrics
     {
         public TimeSpan AverageSecurityCheckTime { get; set; }
         public TimeSpan EncryptionTime { get; set; }
@@ -304,7 +304,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Database performance metrics.
     /// </summary>
-    public class DatabasePerformanceMetrics
+    public partial class DatabasePerformanceMetrics
     {
         public TimeSpan AverageQueryTime { get; set; }
         public double ConnectionPoolUtilization { get; set; }
@@ -316,7 +316,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// End-to-end performance metrics.
     /// </summary>
-    public class EndToEndPerformanceMetrics
+    public partial class EndToEndPerformanceMetrics
     {
         public TimeSpan TotalWorkflowTime { get; set; }
         public double Throughput { get; set; }

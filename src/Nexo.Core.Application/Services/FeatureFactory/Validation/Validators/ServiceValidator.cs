@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation.Validators;
 /// <summary>
 /// Validates domain services
 /// </summary>
-public class ServiceValidator
+public partial class ServiceValidator
 {
     private readonly ILogger<ServiceValidator> _logger;
 

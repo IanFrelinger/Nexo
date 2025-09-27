@@ -6,7 +6,7 @@ namespace Nexo.Feature.AI.Models.RAG
     /// <summary>
     /// Metadata for documentation ingestion
     /// </summary>
-    public class DocumentationMetadata
+    public partial class DocumentationMetadata
     {
         public string Source { get; set; } = string.Empty;
         public string DocumentationType { get; set; } = string.Empty; // Language, Framework, API, Migration, etc.

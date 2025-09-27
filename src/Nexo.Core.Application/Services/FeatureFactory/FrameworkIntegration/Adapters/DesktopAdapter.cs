@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Ada
     /// <summary>
     /// Orchestrator for desktop framework code generation that delegates to specialized adapters.
     /// </summary>
-    public class DesktopAdapter
+    public partial class DesktopAdapter
     {
         private readonly ILogger<DesktopAdapter> _logger;
         private readonly IAIRuntimeSelector _runtimeSelector;

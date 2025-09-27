@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Services.Platform
     /// Desktop code generator for Phase 6 - orchestrates specialized generators
     /// Generates native desktop applications for Windows, Mac, and Linux.
     /// </summary>
-    public class DesktopCodeGenerator : IDesktopCodeGenerator
+    public partial class DesktopCodeGenerator : IDesktopCodeGenerator
     {
         private readonly ILogger<DesktopCodeGenerator> _logger;
         private readonly IModelOrchestrator _modelOrchestrator;

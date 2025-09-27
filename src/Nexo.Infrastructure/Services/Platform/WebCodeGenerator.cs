@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Services.Platform
     /// Web code generator.
     /// Uses smaller, focused generator classes for better maintainability.
     /// </summary>
-    public class WebCodeGenerator : IWebCodeGenerator
+    public partial class WebCodeGenerator : IWebCodeGenerator
     {
         private readonly ILogger<WebCodeGenerator> _logger;
         private readonly IModelOrchestrator _modelOrchestrator;

@@ -16,7 +16,7 @@ namespace Nexo.Feature.Agent.Services
     /// <summary>
     /// RAG-enhanced code generation agent that provides intelligent code generation and suggestions.
     /// </summary>
-    public class RAGEnhancedCodeGenerationAgent : BaseAiEnhancedAgent
+    public partial class RAGEnhancedCodeGenerationAgent : BaseAiEnhancedAgent
     {
         public RAGEnhancedCodeGenerationAgent(
             AgentId id,
@@ -120,7 +120,7 @@ namespace Nexo.Feature.Agent.Services
                 codeResult += "    // Define methods based on requirements\n";
                 codeResult += "}\n\n";
                 codeResult += "// Implementation\n";
-                codeResult += $"public class {SanitizeForClassName(featureDescription)} : I{SanitizeForClassName(featureDescription)}\n";
+                codeResult += $"public partial class {SanitizeForClassName(featureDescription)} : I{SanitizeForClassName(featureDescription)}\n";
                 codeResult += "{\n";
                 codeResult += "    // Implement methods\n";
                 codeResult += "}\n";
@@ -174,7 +174,7 @@ namespace Nexo.Feature.Agent.Services
                 testResult += "```csharp\n";
                 testResult += "using Xunit;\n";
                 testResult += "using Moq;\n\n";
-                testResult += $"public class {SanitizeForClassName(testTarget)}Tests\n";
+                testResult += $"public partial class {SanitizeForClassName(testTarget)}Tests\n";
                 testResult += "{\n";
                 testResult += "    [Fact]\n";
                 testResult += "    public void Should_ReturnExpectedResult_When_ValidInputProvided()\n";

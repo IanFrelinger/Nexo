@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Recommendation based on trend analysis.
     /// </summary>
-    public class TrendRecommendation
+    public partial class TrendRecommendation
     {
         /// <summary>
         /// Type of recommendation.

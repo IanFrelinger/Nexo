@@ -8,7 +8,7 @@ namespace Nexo.CLI.Commands.Adaptation.Commands
     /// <summary>
     /// Handles status command creation and execution
     /// </summary>
-    public class StatusCommandHandler
+    public partial class StatusCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

@@ -6,7 +6,7 @@ namespace Nexo.Shared.Services
     /// <summary>
     /// Service implementation of ISemanticCacheKeyGenerator that wraps the static SemanticCacheKeyGenerator.
     /// </summary>
-    public class SemanticCacheKeyGeneratorService : ISemanticCacheKeyGenerator
+    public partial class SemanticCacheKeyGeneratorService : ISemanticCacheKeyGenerator
     {
         /// <summary>
         /// Generates a semantic cache key from input and metadata.

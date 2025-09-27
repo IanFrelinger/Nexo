@@ -1,6 +1,6 @@
 namespace Playground.Console.Models;
 
-public class FeatureInfo
+public partial class FeatureInfo
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -10,7 +10,7 @@ public class FeatureInfo
     public bool IsEnabled { get; set; } = true;
 }
 
-public class RunResult
+public partial class RunResult
 {
     public string RunId { get; set; } = string.Empty;
     public string FeatureName { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ public class RunResult
     public DateTime? CompletedAt { get; set; }
 }
 
-public class StepEvent
+public partial class StepEvent
 {
     public string StepId { get; set; } = string.Empty;
     public string StepName { get; set; } = string.Empty;
@@ -32,14 +32,14 @@ public class StepEvent
     public DateTime Timestamp { get; set; }
 }
 
-public class ValidationResult
+public partial class ValidationResult
 {
     public bool IsValid { get; set; }
     public List<ValidationCheck> Checks { get; set; } = new();
     public string Message { get; set; } = string.Empty;
 }
 
-public class ValidationCheck
+public partial class ValidationCheck
 {
     public string Name { get; set; } = string.Empty;
     public bool Passed { get; set; }

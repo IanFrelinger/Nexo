@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Tests.Services.Security
     /// Tests for secure API key manager.
     /// Part of Phase 3.3 testing and validation.
     /// </summary>
-    public class SecureApiKeyManagerTests
+    public partial class SecureApiKeyManagerTests
     {
         private readonly SecureApiKeyManager _apiKeyManager;
 

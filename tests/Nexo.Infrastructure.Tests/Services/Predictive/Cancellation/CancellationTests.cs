@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Tests.Services.Predictive.Cancellation
     /// <summary>
     /// Tests for cancellation token behavior in Predictive Development Service
     /// </summary>
-    public class CancellationTests
+    public partial class CancellationTests
     {
         private readonly Mock<ILogger<PredictiveDevelopmentService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

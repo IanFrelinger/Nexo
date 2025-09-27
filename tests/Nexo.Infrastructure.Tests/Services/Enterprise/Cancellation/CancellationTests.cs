@@ -10,7 +10,7 @@ using Nexo.Infrastructure.Services.Enterprise;
 
 namespace Nexo.Infrastructure.Tests.Services.Enterprise.Cancellation
 {
-    public class CancellationTests
+    public partial class CancellationTests
     {
         private readonly Mock<ILogger<EnterpriseSecurityService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

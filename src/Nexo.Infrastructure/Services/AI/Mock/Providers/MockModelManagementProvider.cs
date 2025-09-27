@@ -9,7 +9,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.Mock.Providers
 {
-    public class MockModelManagementProvider
+    public partial class MockModelManagementProvider
     {
         private readonly ILogger<MockModelManagementProvider> _logger;
         private readonly Dictionary<string, ModelInfo> _mockModels;

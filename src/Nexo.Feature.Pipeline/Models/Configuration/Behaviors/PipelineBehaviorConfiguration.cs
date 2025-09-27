@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Behaviors
     /// <summary>
     /// Represents a pipeline behavior configuration.
     /// </summary>
-    public class PipelineBehaviorConfiguration
+    public partial class PipelineBehaviorConfiguration
     {
         /// <summary>
         /// Gets or sets the behavior ID.

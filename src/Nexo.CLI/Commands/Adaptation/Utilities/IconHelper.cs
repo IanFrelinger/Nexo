@@ -6,7 +6,7 @@ namespace Nexo.CLI.Commands.Adaptation.Utilities
     /// <summary>
     /// Handles icon display for various adaptation types and statuses
     /// </summary>
-    public class IconHelper
+    public partial class IconHelper
     {
         public string GetEventIcon(AdaptationEventType eventType)
         {

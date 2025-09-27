@@ -10,7 +10,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Service for checking parity between different providers and outputs
     /// </summary>
-    public class ParityService : IParityService
+    public partial class ParityService : IParityService
     {
         private readonly ILogger<ParityService> _logger;
         private readonly Dictionary<string, ParityThreshold> _thresholds;
@@ -214,7 +214,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Parity threshold configuration
     /// </summary>
-    public class ParityThreshold
+    public partial class ParityThreshold
     {
         public double MinSimilarity { get; set; } = 0.85;
         public double MaxDifference { get; set; } = 0.15;
@@ -223,7 +223,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Provider output
     /// </summary>
-    public class ProviderOutput
+    public partial class ProviderOutput
     {
         public string Provider { get; set; } = string.Empty;
         public string Output { get; set; } = string.Empty;
@@ -233,7 +233,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Parity comparison result
     /// </summary>
-    public class ParityResult
+    public partial class ParityResult
     {
         public string Output1 { get; set; } = string.Empty;
         public string Output2 { get; set; } = string.Empty;

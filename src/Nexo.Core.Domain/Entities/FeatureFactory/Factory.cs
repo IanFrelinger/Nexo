@@ -2,7 +2,7 @@ using System;
 
 namespace Nexo.Core.Domain.Entities.FeatureFactory
 {
-    public class Factory
+    public partial class Factory
     {
         public string Name { get; set; } = string.Empty;
         public string EntityType { get; set; } = string.Empty;

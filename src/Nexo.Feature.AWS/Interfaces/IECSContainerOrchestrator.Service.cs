@@ -87,7 +87,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Load balancer configuration
     /// </summary>
-    public class LoadBalancerConfig
+    public partial class LoadBalancerConfig
     {
         /// <summary>
         /// Load balancer ARN
@@ -113,7 +113,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS service result
     /// </summary>
-    public class ECSServiceResult
+    public partial class ECSServiceResult
     {
         /// <summary>
         /// Whether the operation was successful
@@ -149,7 +149,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS service information
     /// </summary>
-    public class ECSServiceInfo
+    public partial class ECSServiceInfo
     {
         /// <summary>
         /// Service name
@@ -210,7 +210,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS service list result
     /// </summary>
-    public class ECSServiceListResult
+    public partial class ECSServiceListResult
     {
         /// <summary>
         /// Whether the list operation was successful

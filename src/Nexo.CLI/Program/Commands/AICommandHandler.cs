@@ -18,7 +18,7 @@ namespace Nexo.CLI.Program.Commands
     /// <summary>
     /// Handles AI-related command creation and execution
     /// </summary>
-    public class AICommandHandler
+    public partial class AICommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

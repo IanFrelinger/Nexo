@@ -3,7 +3,7 @@ using System;
 
 namespace Nexo.Feature.AI.Services.EnhancedFeatureFactory.Processing
 {
-    public class ResponseExtractor
+    public partial class ResponseExtractor
     {
         private readonly ILogger _logger;
 

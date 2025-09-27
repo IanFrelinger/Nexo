@@ -14,7 +14,7 @@ namespace Nexo.Feature.Networking.Tools;
 /// <summary>
 /// Agent tool for networking configuration generation
 /// </summary>
-public class NetworkingTool : ITool
+public partial class NetworkingTool : ITool
 {
     private readonly ILogger<NetworkingTool> _logger;
     private readonly NetworkingOrchestrator _orchestrator;

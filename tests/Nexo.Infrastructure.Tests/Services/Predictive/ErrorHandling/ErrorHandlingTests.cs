@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Tests.Services.Predictive.ErrorHandling
     /// <summary>
     /// Tests for error handling scenarios in Predictive Development Service
     /// </summary>
-    public class ErrorHandlingTests
+    public partial class ErrorHandlingTests
     {
         private readonly Mock<ILogger<PredictiveDevelopmentService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

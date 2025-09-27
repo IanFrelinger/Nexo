@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform.Android.Generators
 {
-    public class RoomDatabaseGenerator
+    public partial class RoomDatabaseGenerator
     {
         private readonly ILogger<RoomDatabaseGenerator> _logger;
 

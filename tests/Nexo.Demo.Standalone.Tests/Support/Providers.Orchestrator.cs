@@ -1,8 +1,10 @@
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Demo.Tests.Support;
+namespace Nexo.Demo.Tests.Support
 {
-public interface ITextGenProvider
-{
-    // Orchestration methods will be added here
-}
+    public partial class Providers
+    {
+        // Orchestration methods will be added here
+    }
 }

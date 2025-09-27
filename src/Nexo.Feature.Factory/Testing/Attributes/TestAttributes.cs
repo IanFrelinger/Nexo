@@ -54,7 +54,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for AI connectivity tests.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class AiConnectivityTestAttribute : TestAttribute
+    public partial class AiConnectivityTestAttribute : TestAttribute
     {
         public AiConnectivityTestAttribute()
         {
@@ -69,7 +69,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for domain analysis tests.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class DomainAnalysisTestAttribute : TestAttribute
+    public partial class DomainAnalysisTestAttribute : TestAttribute
     {
         public DomainAnalysisTestAttribute()
         {
@@ -84,7 +84,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for code generation tests.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class CodeGenerationTestAttribute : TestAttribute
+    public partial class CodeGenerationTestAttribute : TestAttribute
     {
         public CodeGenerationTestAttribute()
         {
@@ -99,7 +99,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for end-to-end tests.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class EndToEndTestAttribute : TestAttribute
+    public partial class EndToEndTestAttribute : TestAttribute
     {
         public EndToEndTestAttribute()
         {
@@ -114,7 +114,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for performance tests.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class PerformanceTestAttribute : TestAttribute
+    public partial class PerformanceTestAttribute : TestAttribute
     {
         public PerformanceTestAttribute()
         {
@@ -129,7 +129,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for validation tests.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class ValidationTestAttribute : TestAttribute
+    public partial class ValidationTestAttribute : TestAttribute
     {
         public ValidationTestAttribute()
         {
@@ -144,7 +144,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for test classes.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class TestClassAttribute : Attribute
+    public partial class TestClassAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the display name of the test class.
@@ -176,7 +176,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for test setup methods.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class TestSetupAttribute : Attribute
+    public partial class TestSetupAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the timeout for the setup method in seconds.
@@ -188,7 +188,7 @@ namespace Nexo.Feature.Factory.Testing.Attributes
     /// Attribute for test cleanup methods.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class TestCleanupAttribute : Attribute
+    public partial class TestCleanupAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the timeout for the cleanup method in seconds.

@@ -6,7 +6,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents the result of a build operation.
     /// </summary>
-    public class BuildResult
+    public partial class BuildResult
     {
         public bool IsSuccess { get; set; }
         public string Output { get; set; } = string.Empty;

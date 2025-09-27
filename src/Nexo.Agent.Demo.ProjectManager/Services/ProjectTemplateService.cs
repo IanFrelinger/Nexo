@@ -6,7 +6,7 @@ namespace Nexo.Agent.Demo.ProjectManager.Services;
 /// <summary>
 /// Handles project templates and requirements management.
 /// </summary>
-public class ProjectTemplateService
+public partial class ProjectTemplateService
 {
     private readonly ILogger _logger;
 

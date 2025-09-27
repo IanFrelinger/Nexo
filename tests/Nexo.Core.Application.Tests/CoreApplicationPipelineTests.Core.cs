@@ -1,11 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Core.Application.Tests.Commands;
-using Nexo.Shared.Interfaces.Resource;
-using Nexo.Core.Application.Interfaces.Caching;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Core.Application.Tests;
+namespace Nexo.Core.Application.Tests
 {
+    public partial class CoreApplicationPipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

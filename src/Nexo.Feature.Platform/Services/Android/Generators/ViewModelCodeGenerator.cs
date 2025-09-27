@@ -7,7 +7,7 @@ using Nexo.Feature.Platform.Models;
 
 namespace Nexo.Feature.Platform.Services.Android.Generators
 {
-    public class ViewModelCodeGenerator
+    public partial class ViewModelCodeGenerator
     {
         private readonly ILogger<ViewModelCodeGenerator> _logger;
 

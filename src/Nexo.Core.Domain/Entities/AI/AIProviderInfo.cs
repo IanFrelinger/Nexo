@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Represents information about an AI provider
     /// </summary>
-    public class AIProviderInfo
+    public partial class AIProviderInfo
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

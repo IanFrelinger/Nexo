@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation.Validators;
 /// <summary>
 /// Validates business rules and their consistency
 /// </summary>
-public class BusinessRuleValidator
+public partial class BusinessRuleValidator
 {
     private readonly ILogger<BusinessRuleValidator> _logger;
 

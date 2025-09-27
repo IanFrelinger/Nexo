@@ -7,7 +7,7 @@ namespace Playground.Server.Services
     /// <summary>
     /// Orchestrator for code template generation that delegates to specialized template generators.
     /// </summary>
-    public class CodeTemplateService
+    public partial class CodeTemplateService
     {
         private readonly WebAppTemplateGenerator _webAppGenerator;
         private readonly MobileAppTemplateGenerator _mobileAppGenerator;

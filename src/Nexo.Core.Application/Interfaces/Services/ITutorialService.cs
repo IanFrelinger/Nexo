@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.Onboarding
         Task<List<string>> GetAvailableTutorialsAsync();
     }
 
-    public class TutorialStep
+    public partial class TutorialStep
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;

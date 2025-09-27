@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents optimization context for generating suggestions.
     /// </summary>
-    public class OptimizationContext
+    public partial class OptimizationContext
     {
         public string Id { get; set; } = string.Empty;
         public string FeatureId { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents performance data for analysis.
     /// </summary>
-    public class PerformanceData
+    public partial class PerformanceData
     {
         public string Id { get; set; } = string.Empty;
         public string FeatureId { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents optimization report options.
     /// </summary>
-    public class OptimizationReportOptions
+    public partial class OptimizationReportOptions
     {
         public string ReportType { get; set; } = "comprehensive";
         public DateTime StartDate { get; set; }
@@ -52,7 +52,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents an optimization recommendation.
     /// </summary>
-    public class OptimizationRecommendation
+    public partial class OptimizationRecommendation
     {
         public string Id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -71,7 +71,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of pattern analysis.
     /// </summary>
-    public class PatternAnalysisResult
+    public partial class PatternAnalysisResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -84,7 +84,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents a pattern insight.
     /// </summary>
-    public class PatternInsight
+    public partial class PatternInsight
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -98,7 +98,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents optimization suggestions.
     /// </summary>
-    public class OptimizationSuggestions
+    public partial class OptimizationSuggestions
     {
         public string Id { get; set; } = string.Empty;
         public string ContextId { get; set; } = string.Empty;
@@ -111,7 +111,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents performance recommendations.
     /// </summary>
-    public class PerformanceRecommendations
+    public partial class PerformanceRecommendations
     {
         public string Id { get; set; } = string.Empty;
         public string FeatureId { get; set; } = string.Empty;
@@ -123,7 +123,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents a performance recommendation.
     /// </summary>
-    public class PerformanceRecommendation
+    public partial class PerformanceRecommendation
     {
         public string Id { get; set; } = string.Empty;
         public string MetricType { get; set; } = string.Empty;
@@ -141,7 +141,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents an optimization report.
     /// </summary>
-    public class OptimizationReport
+    public partial class OptimizationReport
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -157,7 +157,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents feature optimization recommendations.
     /// </summary>
-    public class FeatureOptimizationRecommendations
+    public partial class FeatureOptimizationRecommendations
     {
         public string Id { get; set; } = string.Empty;
         public string FeatureId { get; set; } = string.Empty;
@@ -170,7 +170,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of optimization validation.
     /// </summary>
-    public class OptimizationValidationResult
+    public partial class OptimizationValidationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -185,7 +185,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of optimization application.
     /// </summary>
-    public class OptimizationApplicationResult
+    public partial class OptimizationApplicationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -200,7 +200,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents optimization metrics.
     /// </summary>
-    public class OptimizationMetrics
+    public partial class OptimizationMetrics
     {
         public int TotalRecommendations { get; set; }
         public int AppliedRecommendations { get; set; }

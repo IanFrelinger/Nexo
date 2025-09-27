@@ -5,7 +5,7 @@ namespace Nexo.Feature.API.Models;
 /// <summary>
 /// Represents an incoming request to the API Gateway
 /// </summary>
-public class APIGatewayRequest
+public partial class APIGatewayRequest
 {
     /// <summary>
     /// Unique identifier for the request

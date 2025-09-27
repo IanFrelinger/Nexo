@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unreal
     /// Target Framework: Unreal Engine 5
     /// Implementation Style: Actor-based with Component System
     /// </summary>
-    public class MovementLogicImplementation : MovementLogic
+    public partial class MovementLogicImplementation : MovementLogic
     {
         public MovementLogicImplementation(IIInputProvider iinputprovider, IIPhysicsProvider iphysicsprovider, IICollisionProvider icollisionprovider)
             : base(iinputprovider, iphysicsprovider, icollisionprovider)

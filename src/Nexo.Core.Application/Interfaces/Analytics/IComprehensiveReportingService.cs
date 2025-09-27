@@ -88,7 +88,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Comprehensive report model.
     /// </summary>
-    public class ComprehensiveReport
+    public partial class ComprehensiveReport
     {
         public DateTimeOffset GeneratedAt { get; set; }
         public DateTimeOffset StartTime { get; set; }
@@ -107,7 +107,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Report configuration model.
     /// </summary>
-    public class ReportConfiguration
+    public partial class ReportConfiguration
     {
         public bool IncludeUsageCharts { get; set; } = true;
         public bool IncludePerformanceCharts { get; set; } = true;
@@ -120,7 +120,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Executive summary model.
     /// </summary>
-    public class ExecutiveSummary
+    public partial class ExecutiveSummary
     {
         public int TotalEvents { get; set; }
         public int UniqueUsers { get; set; }
@@ -135,7 +135,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Usage report model.
     /// </summary>
-    public class UsageReport
+    public partial class UsageReport
     {
         public int TotalEvents { get; set; }
         public int UniqueUsers { get; set; }
@@ -150,7 +150,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Performance report model.
     /// </summary>
-    public class PerformanceReport
+    public partial class PerformanceReport
     {
         public int TotalMetrics { get; set; }
         public TimeSpan AverageLatency { get; set; }
@@ -165,7 +165,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Security report model.
     /// </summary>
-    public class SecurityReport
+    public partial class SecurityReport
     {
         public int TotalEvents { get; set; }
         public int FailedAttempts { get; set; }
@@ -177,7 +177,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Cost report model.
     /// </summary>
-    public class CostReport
+    public partial class CostReport
     {
         public decimal TotalCost { get; set; }
         public int TotalTokens { get; set; }
@@ -187,7 +187,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Report export model.
     /// </summary>
-    public class ReportExport
+    public partial class ReportExport
     {
         public ReportExportFormat Format { get; set; }
         public DateTimeOffset GeneratedAt { get; set; }
@@ -208,7 +208,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     }
 
     // Additional analytics models
-    public class AIAnalyticsReport
+    public partial class AIAnalyticsReport
     {
         public int TotalRequests { get; set; }
         public int SuccessfulRequests { get; set; }
@@ -218,7 +218,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
         public List<string> TopFeatures { get; set; } = new List<string>();
     }
 
-    public class CachePerformanceReport
+    public partial class CachePerformanceReport
     {
         public int TotalRequests { get; set; }
         public int CacheHits { get; set; }

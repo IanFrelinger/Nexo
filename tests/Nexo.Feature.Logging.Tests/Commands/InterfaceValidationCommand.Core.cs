@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Logging;
-using NexoLogger = Nexo.Core.Application.Interfaces.Logging.ILogger;
-using NexoLoggerFactory = Nexo.Core.Application.Interfaces.Logging.ILoggerFactory;
-using NexoLoggerProvider = Nexo.Core.Application.Interfaces.Logging.ILoggerProvider;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
-namespace Nexo.Feature.Logging.Tests.Commands;
+namespace Nexo.Feature.Logging.Tests.Commands
 {
+    public partial class InterfaceValidationCommand
+    {
+        // Core implementation will be added here
+    }
 }

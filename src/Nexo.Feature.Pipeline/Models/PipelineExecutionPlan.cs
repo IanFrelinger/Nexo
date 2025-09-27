@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a planned pipeline execution with phases and dependencies.
     /// </summary>
-    public class PipelineExecutionPlan
+    public partial class PipelineExecutionPlan
     {
         /// <summary>
         /// Gets or sets the unique identifier for this execution plan.

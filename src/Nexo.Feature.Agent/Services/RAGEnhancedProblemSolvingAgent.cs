@@ -15,7 +15,7 @@ namespace Nexo.Feature.Agent.Services
     /// <summary>
     /// RAG-enhanced problem-solving agent that provides intelligent problem analysis and solutions.
     /// </summary>
-    public class RAGEnhancedProblemSolvingAgent : BaseAiEnhancedAgent
+    public partial class RAGEnhancedProblemSolvingAgent : BaseAiEnhancedAgent
     {
         public RAGEnhancedProblemSolvingAgent(
             AgentId id,

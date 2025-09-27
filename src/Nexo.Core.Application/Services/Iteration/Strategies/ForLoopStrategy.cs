@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// Traditional for-loop iteration - maximum performance, requires IList
 /// </summary>
-public class ForLoopStrategy<T> : IIterationStrategy<T>
+public partial class ForLoopStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "ForLoop";
     

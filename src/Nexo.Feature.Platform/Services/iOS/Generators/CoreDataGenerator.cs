@@ -10,7 +10,7 @@ using Nexo.Feature.Platform.Enums;
 
 namespace Nexo.Feature.Platform.Services.iOS.Generators
 {
-    public class CoreDataGenerator
+    public partial class CoreDataGenerator
     {
         private readonly ILogger<CoreDataGenerator> _logger;
 
@@ -136,7 +136,7 @@ class PersistentContainer: NSPersistentContainer {{
 import CoreData
 
 extension {entity.Name} {{
-    @nonobjc public class func fetchRequest() -> NSFetchRequest<{entity.Name}> {{
+    @nonobjc public partial class func fetchRequest() -> NSFetchRequest<{entity.Name}> {{
         return NSFetchRequest<{entity.Name}>(entityName: ""{entity.Name}"")
     }}
     

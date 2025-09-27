@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Daily trend data point.
     /// </summary>
-    public class DailyTrendPoint
+    public partial class DailyTrendPoint
     {
         /// <summary>
         /// Date for this trend point.

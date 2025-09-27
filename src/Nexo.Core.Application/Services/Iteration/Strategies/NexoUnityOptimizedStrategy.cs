@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// Unity-optimized iteration strategy with game development specific optimizations
 /// </summary>
-public class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
+public partial class NexoUnityOptimizedStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "Nexo.UnityOptimized";
     

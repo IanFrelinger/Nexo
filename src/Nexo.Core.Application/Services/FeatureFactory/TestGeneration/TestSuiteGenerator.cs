@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Orchestrator for test suite generation that delegates to specialized generators.
     /// </summary>
-    public class TestSuiteGenerator : ITestSuiteGenerator
+    public partial class TestSuiteGenerator : ITestSuiteGenerator
     {
         private readonly ILogger<TestSuiteGenerator> _logger;
         private readonly UnitTestGenerator _unitTestGenerator;

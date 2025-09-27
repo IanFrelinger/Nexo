@@ -6,7 +6,7 @@ namespace Nexo.Feature.Data.Services.MigrationDeployment.Models
     /// <summary>
     /// Migration deployment options
     /// </summary>
-    public class MigrationDeploymentOptions
+    public partial class MigrationDeploymentOptions
     {
         /// <summary>
         /// Whether to create a database backup before deployment
@@ -42,7 +42,7 @@ namespace Nexo.Feature.Data.Services.MigrationDeployment.Models
     /// <summary>
     /// Migration deployment result
     /// </summary>
-    public class MigrationDeploymentResult
+    public partial class MigrationDeploymentResult
     {
         /// <summary>
         /// Whether the deployment was successful
@@ -123,7 +123,7 @@ namespace Nexo.Feature.Data.Services.MigrationDeployment.Models
     /// <summary>
     /// Migration test result
     /// </summary>
-    public class MigrationTestResult
+    public partial class MigrationTestResult
     {
         /// <summary>
         /// Whether the tests passed
@@ -144,7 +144,7 @@ namespace Nexo.Feature.Data.Services.MigrationDeployment.Models
     /// <summary>
     /// Database backup result
     /// </summary>
-    public class DatabaseBackupResult
+    public partial class DatabaseBackupResult
     {
         /// <summary>
         /// Whether the backup was successful

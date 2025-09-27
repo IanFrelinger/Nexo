@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Playground.Console.Services;
 
-public class FrontendGeneratorService
+public partial class FrontendGeneratorService
 {
     public async Task<FrontendGenerationResult> GenerateFrontendAsync(string description, FrontendType frontendType)
     {
@@ -320,7 +320,7 @@ public enum FrontendType
     Game
 }
 
-public class FrontendGenerationResult
+public partial class FrontendGenerationResult
 {
     public string Description { get; set; } = string.Empty;
     public FrontendType FrontendType { get; set; }
@@ -334,28 +334,28 @@ public class FrontendGenerationResult
     public GeneratedTests? GeneratedTests { get; set; }
 }
 
-public class AgentCoordinationResult
+public partial class AgentCoordinationResult
 {
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
     public List<string> AgentsInvolved { get; set; } = new();
 }
 
-public class DomainAnalysis
+public partial class DomainAnalysis
 {
     public List<string> Entities { get; set; } = new();
     public List<string> ValueObjects { get; set; } = new();
     public List<string> BusinessRules { get; set; } = new();
 }
 
-public class ArchitectureDecision
+public partial class ArchitectureDecision
 {
     public string ArchitectureType { get; set; } = string.Empty;
     public double ConfidenceScore { get; set; }
     public List<string> PlatformOptimizations { get; set; } = new();
 }
 
-public class GeneratedCode
+public partial class GeneratedCode
 {
     public List<GeneratedFile> Files { get; set; } = new();
     public string Platform { get; set; } = string.Empty;
@@ -363,13 +363,13 @@ public class GeneratedCode
     public string Framework { get; set; } = string.Empty;
 }
 
-public class GeneratedFile
+public partial class GeneratedFile
 {
     public string FileName { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
 }
 
-public class GeneratedTests
+public partial class GeneratedTests
 {
     public List<string> UnitTests { get; set; } = new();
     public List<string> IntegrationTests { get; set; } = new();

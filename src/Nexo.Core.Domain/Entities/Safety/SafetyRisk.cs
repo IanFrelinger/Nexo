@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Represents a safety risk identified during operation validation
     /// </summary>
-    public class SafetyRisk
+    public partial class SafetyRisk
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public RiskLevel Level { get; set; }
@@ -22,7 +22,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Represents a safety safeguard that can be applied to mitigate risks
     /// </summary>
-    public class SafetySafeguard
+    public partial class SafetySafeguard
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public SafeguardType Type { get; set; }
@@ -36,7 +36,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Result of safety validation for a user operation
     /// </summary>
-    public class SafetyCheckResult
+    public partial class SafetyCheckResult
     {
         public string OperationId { get; set; } = "";
         public List<SafetyRisk> Risks { get; set; } = new();
@@ -51,7 +51,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Represents a user operation that needs safety validation
     /// </summary>
-    public class UserOperation
+    public partial class UserOperation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public OperationType Type { get; set; }
@@ -67,7 +67,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Result of executing a safety safeguard
     /// </summary>
-    public class SafeguardResult
+    public partial class SafeguardResult
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public SafeguardType SafeguardType { get; set; }
@@ -81,7 +81,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Result of executing all safeguards for an operation
     /// </summary>
-    public class SafeguardExecutionResult
+    public partial class SafeguardExecutionResult
     {
         public string OperationId { get; set; } = "";
         public List<SafeguardResult> Results { get; set; } = new();
@@ -93,7 +93,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Represents a file change for dry-run preview
     /// </summary>
-    public class FileChange
+    public partial class FileChange
     {
         public string Path { get; set; } = "";
         public FileChangeType ChangeType { get; set; }
@@ -106,7 +106,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Result of dry-run execution
     /// </summary>
-    public class DryRunResult
+    public partial class DryRunResult
     {
         public string OperationId { get; set; } = "";
         public List<FileChange> Changes { get; set; } = new();
@@ -120,7 +120,7 @@ namespace Nexo.Core.Domain.Entities.Safety
     /// <summary>
     /// Result of operation rollback
     /// </summary>
-    public class RollbackResult
+    public partial class RollbackResult
     {
         public string OperationId { get; set; } = "";
         public string? BackupId { get; set; }

@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Message queue configuration
     /// </summary>
-    public class MessageQueueConfiguration
+    public partial class MessageQueueConfiguration
     {
         /// <summary>
         /// Queue ID

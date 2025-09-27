@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Statistics
     /// <summary>
     /// Collects distribution statistics for the distributed processor
     /// </summary>
-    public class StatisticsCollector
+    public partial class StatisticsCollector
     {
         private readonly ILogger _logger;
         private readonly NodeManager _nodeManager;

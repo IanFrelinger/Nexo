@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Trends analysis for test results over time.
     /// </summary>
-    public class TestResultTrends
+    public partial class TestResultTrends
     {
         /// <summary>
         /// Start date for the trend analysis.

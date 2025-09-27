@@ -19,7 +19,7 @@ namespace Nexo.Core.Application.Interfaces.Extensions
     /// <summary>
     /// Result of syntax fixing operation
     /// </summary>
-    public class SyntaxFixResult
+    public partial class SyntaxFixResult
     {
         /// <summary>
         /// Gets whether the syntax fixing was successful

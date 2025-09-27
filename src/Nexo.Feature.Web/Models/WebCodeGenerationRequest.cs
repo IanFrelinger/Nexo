@@ -6,7 +6,7 @@ namespace Nexo.Feature.Web.Models
     /// <summary>
     /// Request model for web code generation.
     /// </summary>
-    public class WebCodeGenerationRequest
+    public partial class WebCodeGenerationRequest
     {
         /// <summary>
         /// The target web framework for code generation.

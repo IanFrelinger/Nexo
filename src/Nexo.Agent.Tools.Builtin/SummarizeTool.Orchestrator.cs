@@ -1,11 +1,10 @@
-using System.Diagnostics;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using Nexo.Agent.Contracts;
-using Nexo.Agent.Models;
-using Nexo.Agent.Abstractions;
-        using var activity = new ActivitySource("Nexo.Tool").StartActivity("Summarize");
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Agent.Tools.Builtin;
+namespace Nexo.Agent.Tools.Builtin
 {
+    public partial class SummarizeTool
+    {
+        // Orchestration methods will be added here
+    }
 }

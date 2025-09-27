@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Nexo.Core.Application.Tests.Services.Extensions
 {
-    public class AIExtensionGeneratorTests
+    public partial class AIExtensionGeneratorTests
     {
         private readonly Mock<ILogger<AIExtensionGenerator>> _mockLogger;
         private readonly Mock<IAIEngine> _mockAIEngine;
@@ -46,19 +46,19 @@ namespace Nexo.Core.Application.Tests.Services.Extensions
 
             var mockCodeResult = new CodeGenerationResult
             {
-                GeneratedCode = "public class TestPlugin : IPlugin { }"
+                GeneratedCode = "public partial class TestPlugin : IPlugin { }"
             };
 
             var mockValidationResult = new ExtensionGenerationResult
             {
                 IsSuccess = true,
-                GeneratedCode = "public class TestPlugin : IPlugin { }"
+                GeneratedCode = "public partial class TestPlugin : IPlugin { }"
             };
 
             var mockCompilationResult = new ExtensionGenerationResult
             {
                 IsSuccess = true,
-                GeneratedCode = "public class TestPlugin : IPlugin { }",
+                GeneratedCode = "public partial class TestPlugin : IPlugin { }",
                 CompiledAssembly = new byte[] { 1, 2, 3, 4 }
             };
 
@@ -94,13 +94,13 @@ namespace Nexo.Core.Application.Tests.Services.Extensions
 
             var mockCodeResult = new CodeGenerationResult
             {
-                GeneratedCode = "public class TestPlugin : IPlugin { }"
+                GeneratedCode = "public partial class TestPlugin : IPlugin { }"
             };
 
             var mockValidationResult = new ExtensionGenerationResult
             {
                 IsSuccess = false,
-                GeneratedCode = "public class TestPlugin : IPlugin { }"
+                GeneratedCode = "public partial class TestPlugin : IPlugin { }"
             };
             mockValidationResult.AddCompilationError("Syntax error", 1, 1, "CS1001");
 
@@ -132,7 +132,7 @@ namespace Nexo.Core.Application.Tests.Services.Extensions
 
             var mockCodeResult = new CodeGenerationResult
             {
-                GeneratedCode = "public class TestPlugin : IPlugin { }"
+                GeneratedCode = "public partial class TestPlugin : IPlugin { }"
             };
 
             _mockAIEngine.Setup(x => x.GenerateCodeAsync(It.IsAny<CodeGenerationRequest>()))
@@ -142,14 +142,14 @@ namespace Nexo.Core.Application.Tests.Services.Extensions
             var result = await _generator.GenerateCodeAsync(request);
 
             // Assert
-            Assert.Equal("public class TestPlugin : IPlugin { }", result);
+            Assert.Equal("public partial class TestPlugin : IPlugin { }", result);
         }
 
         [Fact]
         public async Task ValidateCodeAsync_WithValidCode_ShouldReturnSuccess()
         {
             // Arrange
-            var code = "public class TestPlugin : IPlugin { }";
+            var code = "public partial class TestPlugin : IPlugin { }";
             var mockValidationResult = new ExtensionGenerationResult
             {
                 IsSuccess = true,
@@ -170,7 +170,7 @@ namespace Nexo.Core.Application.Tests.Services.Extensions
         public async Task CompileCodeAsync_WithValidCode_ShouldReturnCompilationResult()
         {
             // Arrange
-            var code = "public class TestPlugin : IPlugin { }";
+            var code = "public partial class TestPlugin : IPlugin { }";
             var request = new ExtensionRequest
             {
                 Name = "TestPlugin",

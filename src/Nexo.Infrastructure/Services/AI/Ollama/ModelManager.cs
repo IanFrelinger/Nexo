@@ -9,7 +9,7 @@ namespace Nexo.Infrastructure.Services.AI.Ollama;
 /// <summary>
 /// Manages Ollama model operations (load, unload, download, remove).
 /// </summary>
-public class ModelManager
+public partial class ModelManager
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ModelManager> _logger;

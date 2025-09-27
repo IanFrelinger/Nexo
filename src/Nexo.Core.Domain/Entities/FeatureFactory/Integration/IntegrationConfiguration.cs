@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Integration configuration
     /// </summary>
-    public class IntegrationConfiguration
+    public partial class IntegrationConfiguration
     {
         /// <summary>
         /// Configuration ID

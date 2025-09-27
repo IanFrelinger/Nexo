@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Services.Optimizers;
 /// <summary>
 /// Handles performance analysis and recommendations
 /// </summary>
-public class PerformanceAnalyzer
+public partial class PerformanceAnalyzer
 {
     private readonly ILogger<PerformanceAnalyzer> _logger;
 

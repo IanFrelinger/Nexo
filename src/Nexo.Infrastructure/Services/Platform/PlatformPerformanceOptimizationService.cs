@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Services.Platform
     /// Platform-specific performance optimization service.
     /// Uses smaller, focused optimizer classes for better maintainability.
     /// </summary>
-    public class PlatformPerformanceOptimizationService : IPlatformPerformanceOptimizationService
+    public partial class PlatformPerformanceOptimizationService : IPlatformPerformanceOptimizationService
     {
         private readonly ILogger<PlatformPerformanceOptimizationService> _logger;
         private readonly IModelOrchestrator _modelOrchestrator;
@@ -243,7 +243,7 @@ namespace Nexo.Infrastructure.Services.Platform
     /// <summary>
     /// Optimization recommendations for a platform
     /// </summary>
-    public class OptimizationRecommendations
+    public partial class OptimizationRecommendations
     {
         public string Platform { get; set; } = string.Empty;
         public List<OptimizationRecommendation> Recommendations { get; set; } = new();
@@ -252,7 +252,7 @@ namespace Nexo.Infrastructure.Services.Platform
     /// <summary>
     /// Individual optimization recommendation
     /// </summary>
-    public class OptimizationRecommendation
+    public partial class OptimizationRecommendation
     {
         public string Type { get; set; } = string.Empty;
         public OptimizationPriority Priority { get; set; }

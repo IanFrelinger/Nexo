@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services
     /// In-memory thread-safe processing queue implementation.
     /// </summary>
     /// <typeparam name="TItem">The type of item in the queue.</typeparam>
-    public class ProcessingQueue<TItem> : IProcessingQueue<TItem>
+    public partial class ProcessingQueue<TItem> : IProcessingQueue<TItem>
     {
         private readonly ConcurrentQueue<TItem> _queue = new ConcurrentQueue<TItem>();
         private readonly SemaphoreSlim _signal = new SemaphoreSlim(0);

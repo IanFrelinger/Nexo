@@ -36,7 +36,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Cache operation tracking model.
     /// </summary>
-    public class CacheOperation
+    public partial class CacheOperation
     {
         public string CacheName { get; set; } = string.Empty;
         public CacheOperationType OperationType { get; set; }
@@ -63,7 +63,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Cache performance report model.
     /// </summary>
-    public class CachePerformanceReport
+    public partial class CachePerformanceReport
     {
         public DateTimeOffset GeneratedAt { get; set; }
         public int TotalOperations { get; set; }
@@ -78,7 +78,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Cache performance metrics.
     /// </summary>
-    public class CachePerformanceMetrics
+    public partial class CachePerformanceMetrics
     {
         public int GetOperations { get; set; }
         public int SetOperations { get; set; }
@@ -94,7 +94,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Cache optimization recommendation.
     /// </summary>
-    public class CacheOptimizationRecommendation
+    public partial class CacheOptimizationRecommendation
     {
         public OptimizationType Type { get; set; }
         public RecommendationPriority Priority { get; set; }

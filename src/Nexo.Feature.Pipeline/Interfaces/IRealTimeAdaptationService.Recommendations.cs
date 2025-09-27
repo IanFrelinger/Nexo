@@ -14,7 +14,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Adaptation recommendation for system improvement.
     /// </summary>
-    public class AdaptationRecommendation
+    public partial class AdaptationRecommendation
     {
         /// <summary>
         /// Gets or sets the recommendation identifier.

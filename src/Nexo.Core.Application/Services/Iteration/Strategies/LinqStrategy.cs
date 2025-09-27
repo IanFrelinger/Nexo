@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// LINQ-based iteration - excellent for functional composition and readability
 /// </summary>
-public class LinqStrategy<T> : IIterationStrategy<T>
+public partial class LinqStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "Linq";
     

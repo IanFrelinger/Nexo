@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Tests.Services.Performance
     /// Tests for model loading optimization service.
     /// Part of Phase 3.3 testing and validation.
     /// </summary>
-    public class ModelLoadingOptimizationServiceTests
+    public partial class ModelLoadingOptimizationServiceTests
     {
         private readonly ModelLoadingOptimizationService _optimizationService;
 

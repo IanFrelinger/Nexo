@@ -77,7 +77,7 @@ public interface IAdaptationStrategyRegistry
 /// <summary>
 /// Implementation of the adaptation strategy registry
 /// </summary>
-public class AdaptationStrategyRegistry : IAdaptationStrategyRegistry
+public partial class AdaptationStrategyRegistry : IAdaptationStrategyRegistry
 {
     private readonly Dictionary<string, IAdaptationStrategy> _strategies = new();
     private readonly Dictionary<AdaptationType, List<IAdaptationStrategy>> _strategiesByType = new();

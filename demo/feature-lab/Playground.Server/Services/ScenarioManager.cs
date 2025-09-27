@@ -9,7 +9,7 @@ namespace Playground.Server.Services;
 /// <summary>
 /// Manages demo scenarios and their metadata.
 /// </summary>
-public class ScenarioManager
+public partial class ScenarioManager
 {
     private readonly List<DemoScenario> _scenarios = new()
     {

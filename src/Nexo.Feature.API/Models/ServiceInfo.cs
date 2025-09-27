@@ -3,7 +3,7 @@ namespace Nexo.Feature.API.Models;
 /// <summary>
 /// Represents information about a registered service
 /// </summary>
-public class ServiceInfo
+public partial class ServiceInfo
 {
     /// <summary>
     /// Unique identifier for the service
@@ -79,7 +79,7 @@ public class ServiceInfo
 /// <summary>
 /// Represents a service endpoint
 /// </summary>
-public class ServiceEndpoint
+public partial class ServiceEndpoint
 {
     /// <summary>
     /// Endpoint path
@@ -115,7 +115,7 @@ public class ServiceEndpoint
 /// <summary>
 /// Service configuration
 /// </summary>
-public class ServiceConfiguration
+public partial class ServiceConfiguration
 {
     /// <summary>
     /// Maximum concurrent requests
@@ -141,7 +141,7 @@ public class ServiceConfiguration
 /// <summary>
 /// Retry configuration
 /// </summary>
-public class RetryConfiguration
+public partial class RetryConfiguration
 {
     /// <summary>
     /// Maximum number of retries
@@ -162,7 +162,7 @@ public class RetryConfiguration
 /// <summary>
 /// Circuit breaker configuration
 /// </summary>
-public class CircuitBreakerConfiguration
+public partial class CircuitBreakerConfiguration
 {
     /// <summary>
     /// Failure threshold

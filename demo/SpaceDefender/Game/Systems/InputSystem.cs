@@ -6,7 +6,7 @@ namespace SpaceDefender.Game.Systems
     /// Input handling system demonstrating cross-platform compatibility
     /// Supports keyboard, mouse, touch, and gamepad input
     /// </summary>
-    public class InputSystem : IGameSystem
+    public partial class InputSystem : IGameSystem
     {
         public string Name => "Input System";
         public int Priority => 1; // Highest priority - input must be processed first

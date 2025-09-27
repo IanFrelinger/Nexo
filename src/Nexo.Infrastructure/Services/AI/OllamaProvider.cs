@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Services.AI
     /// <summary>
     /// Orchestrates Ollama provider operations using specialized services.
     /// </summary>
-    public class OllamaProvider : ILlamaProvider, Nexo.Core.Application.Interfaces.AI.IModelProvider, Nexo.Core.Application.Interfaces.AI.IAIProvider
+    public partial class OllamaProvider : ILlamaProvider, Nexo.Core.Application.Interfaces.AI.IModelProvider, Nexo.Core.Application.Interfaces.AI.IAIProvider
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<OllamaProvider> _logger;

@@ -61,7 +61,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Result of complete domain logic generation
     /// </summary>
-    public class DomainLogicGenerationResult
+    public partial class DomainLogicGenerationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -78,7 +78,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Result of domain logic validation
     /// </summary>
-    public class DomainLogicValidationResult
+    public partial class DomainLogicValidationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -90,7 +90,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Result of domain logic optimization
     /// </summary>
-    public class DomainLogicOptimizationResult
+    public partial class DomainLogicOptimizationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -102,7 +102,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Result of test suite generation
     /// </summary>
-    public class TestSuiteGenerationResult
+    public partial class TestSuiteGenerationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -114,7 +114,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Current generation progress
     /// </summary>
-    public class GenerationProgress
+    public partial class GenerationProgress
     {
         public string SessionId { get; set; } = string.Empty;
         public GenerationStatus Status { get; set; } = GenerationStatus.Pending;
@@ -130,7 +130,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Generation report for a session
     /// </summary>
-    public class GenerationReport
+    public partial class GenerationReport
     {
         public string SessionId { get; set; } = string.Empty;
         public GenerationStatus Status { get; set; } = GenerationStatus.Pending;
@@ -146,7 +146,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Generation session information
     /// </summary>
-    public class GenerationSession
+    public partial class GenerationSession
     {
         public string SessionId { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
@@ -161,7 +161,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Generation step information
     /// </summary>
-    public class GenerationStep
+    public partial class GenerationStep
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -177,7 +177,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Generation metrics
     /// </summary>
-    public class GenerationMetrics
+    public partial class GenerationMetrics
     {
         public int EntityCount { get; set; }
         public int ValueObjectCount { get; set; }

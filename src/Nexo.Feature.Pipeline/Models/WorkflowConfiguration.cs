@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Configuration for development workflows including setup, analyze, test, and deploy.
     /// </summary>
-    public class WorkflowConfiguration
+    public partial class WorkflowConfiguration
     {
         /// <summary>
         /// Unique identifier for the workflow configuration.
@@ -124,7 +124,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Individual step within a workflow.
     /// </summary>
-    public class WorkflowStep
+    public partial class WorkflowStep
     {
         /// <summary>
         /// Unique identifier for the step.
@@ -231,7 +231,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Condition that must be met for a step to execute.
     /// </summary>
-    public class StepCondition
+    public partial class StepCondition
     {
         /// <summary>
         /// Type of condition.
@@ -283,7 +283,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Configuration for retrying failed steps.
     /// </summary>
-    public class RetryConfiguration
+    public partial class RetryConfiguration
     {
         /// <summary>
         /// Maximum number of retry attempts.

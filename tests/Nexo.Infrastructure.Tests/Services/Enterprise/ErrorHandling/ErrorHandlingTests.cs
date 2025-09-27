@@ -10,7 +10,7 @@ using Nexo.Infrastructure.Services.Enterprise;
 
 namespace Nexo.Infrastructure.Tests.Services.Enterprise.ErrorHandling
 {
-    public class ErrorHandlingTests
+    public partial class ErrorHandlingTests
     {
         private readonly Mock<ILogger<EnterpriseSecurityService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

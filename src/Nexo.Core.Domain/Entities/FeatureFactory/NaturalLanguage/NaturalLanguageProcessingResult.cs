@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.NaturalLanguage
     /// <summary>
     /// Represents the result of natural language processing
     /// </summary>
-    public class NaturalLanguageProcessingResult
+    public partial class NaturalLanguageProcessingResult
     {
         public string Id { get; set; } = string.Empty;
         public string OriginalText { get; set; } = string.Empty;
@@ -24,7 +24,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.NaturalLanguage
     /// <summary>
     /// Represents an extracted entity from natural language
     /// </summary>
-    public class ExtractedEntity
+    public partial class ExtractedEntity
     {
         public string Text { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.NaturalLanguage
     /// <summary>
     /// Represents an extracted intent from natural language
     /// </summary>
-    public class ExtractedIntent
+    public partial class ExtractedIntent
     {
         public string Name { get; set; } = string.Empty;
         public double Confidence { get; set; }
@@ -48,7 +48,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.NaturalLanguage
     /// <summary>
     /// Represents an extracted keyword from natural language
     /// </summary>
-    public class ExtractedKeyword
+    public partial class ExtractedKeyword
     {
         public string Text { get; set; } = string.Empty;
         public double Score { get; set; }

@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Models.Extensions
     /// <summary>
     /// Represents generated code for an extension
     /// </summary>
-    public class GeneratedCode : BaseResult
+    public partial class GeneratedCode : BaseResult
     {
         /// <summary>
         /// The generated C# code

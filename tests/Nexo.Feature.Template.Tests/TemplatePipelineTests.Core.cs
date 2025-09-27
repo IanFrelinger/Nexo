@@ -1,9 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Feature.Template.Tests.Commands;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Feature.Template.Tests;
+namespace Nexo.Feature.Template.Tests
 {
+    public partial class TemplatePipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

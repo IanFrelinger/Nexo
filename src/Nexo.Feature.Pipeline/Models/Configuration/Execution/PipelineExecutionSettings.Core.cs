@@ -1,0 +1,5 @@
+using System.Text.Json.Serialization;
+
+namespace Nexo.Feature.Pipeline.Models.Configuration.Execution
+{
+}

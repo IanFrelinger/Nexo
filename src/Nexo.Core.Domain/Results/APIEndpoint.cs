@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// API endpoint configuration
     /// </summary>
-    public class APIEndpoint
+    public partial class APIEndpoint
     {
         /// <summary>
         /// Endpoint ID

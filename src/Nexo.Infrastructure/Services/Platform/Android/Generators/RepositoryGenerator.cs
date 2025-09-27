@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform.Android.Generators
 {
-    public class RepositoryGenerator
+    public partial class RepositoryGenerator
     {
         private readonly ILogger<RepositoryGenerator> _logger;
 

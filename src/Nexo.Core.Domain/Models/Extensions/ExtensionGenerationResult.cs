@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Models.Extensions
     /// <summary>
     /// Represents the result of an AI-generated extension compilation.
     /// </summary>
-    public class ExtensionGenerationResult : BaseResult
+    public partial class ExtensionGenerationResult : BaseResult
     {
         public string RequestId { get; set; } = string.Empty;
         public string GeneratedCode { get; set; } = string.Empty;

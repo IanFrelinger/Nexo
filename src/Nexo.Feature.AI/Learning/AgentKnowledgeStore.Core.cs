@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
-namespace Nexo.Feature.AI.Learning;
+namespace Nexo.Feature.AI.Learning
 {
+    public partial class AgentKnowledgeStore
+    {
+        // Core implementation will be added here
+    }
 }

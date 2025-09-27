@@ -6,7 +6,7 @@ namespace Nexo.Feature.AI.Models.RAG
     /// <summary>
     /// Represents a chunk of documentation for RAG processing
     /// </summary>
-    public class DocumentationChunk
+    public partial class DocumentationChunk
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -25,7 +25,7 @@ namespace Nexo.Feature.AI.Models.RAG
     /// <summary>
     /// Represents a RAG query
     /// </summary>
-    public class RAGQuery
+    public partial class RAGQuery
     {
         public string Query { get; set; } = string.Empty;
         public int MaxResults { get; set; } = 10;
@@ -37,7 +37,7 @@ namespace Nexo.Feature.AI.Models.RAG
     /// <summary>
     /// Represents a RAG response
     /// </summary>
-    public class RAGResponse
+    public partial class RAGResponse
     {
         public string Query { get; set; } = string.Empty;
         public string Context { get; set; } = string.Empty;
@@ -67,7 +67,7 @@ namespace Nexo.Feature.AI.Models.RAG
     /// <summary>
     /// Filter for documentation search
     /// </summary>
-    public class DocumentationFilter
+    public partial class DocumentationFilter
     {
         public string Field { get; set; } = string.Empty; // Version, Runtime, Type, etc.
         public string Value { get; set; } = string.Empty;

@@ -6,7 +6,7 @@ namespace SpaceDefender.Game.Systems
     /// AI system demonstrating Nexo's AI integration capabilities
     /// Generates intelligent enemy behavior patterns using AI
     /// </summary>
-    public class AISystem : IGameSystem
+    public partial class AISystem : IGameSystem
     {
         public string Name => "AI System";
         public int Priority => 3; // After input and physics
@@ -269,7 +269,7 @@ namespace SpaceDefender.Game.Systems
     /// <summary>
     /// Represents an AI-generated enemy behavior pattern
     /// </summary>
-    public class EnemyBehavior
+    public partial class EnemyBehavior
     {
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";

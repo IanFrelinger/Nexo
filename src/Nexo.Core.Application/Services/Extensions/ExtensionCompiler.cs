@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Extensions
 {
-    public class ExtensionCompiler : IExtensionCompiler
+    public partial class ExtensionCompiler : IExtensionCompiler
     {
         private readonly ILogger<ExtensionCompiler> _logger;
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.CLI.Commands.NL
 {
-    public class TemplatesCommandFactory
+    public partial class TemplatesCommandFactory
     {
         private readonly ILogger _logger;
         public TemplatesCommandFactory(ILogger logger) { _logger = logger; }

@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Nexo.Infrastructure.Tests.Services.AI
 {
-    public class ModelOrchestratorIntegrationTests
+    public partial class ModelOrchestratorIntegrationTests
     {
         [Fact]
         public async Task Registers_And_Lists_Providers()

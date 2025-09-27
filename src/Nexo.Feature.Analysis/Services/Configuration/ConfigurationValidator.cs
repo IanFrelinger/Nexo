@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Services.Configuration;
 /// <summary>
 /// Validates coding standard configurations.
 /// </summary>
-public class ConfigurationValidator
+public partial class ConfigurationValidator
 {
     private readonly ILogger<ConfigurationValidator> _logger;
 

@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Services.Performance
     /// <summary>
     /// Model loading optimization service for Phase 3.3 performance optimization.
     /// </summary>
-    public class ModelLoadingOptimizationService : IModelLoadingOptimizationService
+    public partial class ModelLoadingOptimizationService : IModelLoadingOptimizationService
     {
         /// <summary>
         /// Optimizes model loading based on usage patterns and resource availability.

@@ -96,7 +96,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Options for distributed cache entries.
     /// </summary>
-    public class DistributedCacheEntryOptions
+    public partial class DistributedCacheEntryOptions
     {
         /// <summary>
         /// Gets or sets the absolute expiration time.
@@ -148,7 +148,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Statistics about the cache.
     /// </summary>
-    public class CacheStatistics
+    public partial class CacheStatistics
     {
         /// <summary>
         /// Gets or sets the total number of items in the cache.
@@ -235,7 +235,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Represents a cache item.
     /// </summary>
-    public class CacheItem
+    public partial class CacheItem
     {
         /// <summary>
         /// Gets or sets the cache key.

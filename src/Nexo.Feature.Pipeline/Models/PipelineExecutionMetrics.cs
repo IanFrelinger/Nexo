@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Metrics for pipeline execution.
     /// </summary>
-    public class PipelineExecutionMetrics
+    public partial class PipelineExecutionMetrics
     {
         /// <summary>
         /// Total execution time in milliseconds.

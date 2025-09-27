@@ -5,7 +5,7 @@ namespace Nexo.Feature.Monitoring.Services;
 /// <summary>
 /// Real-time adaptation dashboard service
 /// </summary>
-public class AdaptationDashboard : IAdaptationDashboard
+public partial class AdaptationDashboard : IAdaptationDashboard
 {
     private readonly IAdaptationEngine _adaptationEngine;
     private readonly IPerformanceMonitor _performanceMonitor;
@@ -409,7 +409,7 @@ public interface IMetricsAggregator
 /// <summary>
 /// Metric data point
 /// </summary>
-public class MetricDataPoint
+public partial class MetricDataPoint
 {
     public DateTime Timestamp { get; set; }
     public string MetricName { get; set; } = string.Empty;

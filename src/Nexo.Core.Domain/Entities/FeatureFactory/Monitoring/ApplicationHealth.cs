@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents the health status of an application
     /// </summary>
-    public class ApplicationHealth
+    public partial class ApplicationHealth
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ApplicationId { get; set; } = string.Empty;
@@ -23,7 +23,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a health check
     /// </summary>
-    public class HealthCheck
+    public partial class HealthCheck
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -38,7 +38,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a health metric
     /// </summary>
-    public class HealthMetric
+    public partial class HealthMetric
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -52,7 +52,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents performance metrics for an application
     /// </summary>
-    public class PerformanceMetrics
+    public partial class PerformanceMetrics
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ApplicationId { get; set; } = string.Empty;
@@ -66,7 +66,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a performance metric
     /// </summary>
-    public class PerformanceMetric
+    public partial class PerformanceMetric
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -80,7 +80,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a performance counter
     /// </summary>
-    public class PerformanceCounter
+    public partial class PerformanceCounter
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -94,7 +94,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a performance gauge
     /// </summary>
-    public class PerformanceGauge
+    public partial class PerformanceGauge
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -108,7 +108,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents an alert configuration
     /// </summary>
-    public class AlertConfiguration
+    public partial class AlertConfiguration
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -125,7 +125,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents an alert condition
     /// </summary>
-    public class AlertCondition
+    public partial class AlertCondition
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -139,7 +139,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents an alert action
     /// </summary>
-    public class AlertAction
+    public partial class AlertAction
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -152,7 +152,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a logging configuration
     /// </summary>
-    public class LoggingConfiguration
+    public partial class LoggingConfiguration
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -168,7 +168,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a log target
     /// </summary>
-    public class LogTarget
+    public partial class LogTarget
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -181,7 +181,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a log filter
     /// </summary>
-    public class LogFilter
+    public partial class LogFilter
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -193,7 +193,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a dashboard configuration
     /// </summary>
-    public class DashboardConfiguration
+    public partial class DashboardConfiguration
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -208,7 +208,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a dashboard widget
     /// </summary>
-    public class DashboardWidget
+    public partial class DashboardWidget
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -221,7 +221,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a dashboard layout
     /// </summary>
-    public class DashboardLayout
+    public partial class DashboardLayout
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -234,7 +234,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Monitoring
     /// <summary>
     /// Represents a layout item
     /// </summary>
-    public class LayoutItem
+    public partial class LayoutItem
     {
         public string WidgetName { get; set; } = string.Empty;
         public int Row { get; set; }

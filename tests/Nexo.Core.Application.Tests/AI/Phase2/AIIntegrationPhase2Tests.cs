@@ -22,7 +22,7 @@ namespace Nexo.Core.Application.Tests.AI.Phase2
     /// <summary>
     /// Phase 2 AI Integration Tests - WebAssembly and Native LLama Integration
     /// </summary>
-    public class AIIntegrationPhase2Tests : IDisposable
+    public partial class AIIntegrationPhase2Tests : IDisposable
     {
         private readonly IHost _host;
         private readonly ILogger<AIIntegrationPhase2Tests> _logger;

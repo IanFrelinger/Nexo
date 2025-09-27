@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.Adaptation;
 
-public class ConfigurationManager : IConfigurationManager
+public partial class ConfigurationManager : IConfigurationManager
 {
     private readonly Dictionary<string, object> _configurations = new();
     

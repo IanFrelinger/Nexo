@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Event arguments for when a command is registered.
     /// </summary>
-    public class CommandRegisteredEventArgs : EventArgs
+    public partial class CommandRegisteredEventArgs : EventArgs
     {
         /// <summary>
         /// The command that was registered.

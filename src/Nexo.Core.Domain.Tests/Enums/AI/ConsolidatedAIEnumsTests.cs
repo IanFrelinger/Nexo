@@ -8,7 +8,7 @@ namespace Nexo.Core.Domain.Tests.Enums.AI
     /// <summary>
     /// Tests for consolidated AI enums following hexagonal architecture
     /// </summary>
-    public class ConsolidatedAIEnumsTests
+    public partial class ConsolidatedAIEnumsTests
     {
         [Fact]
         public void AIEngineType_ShouldHaveCorrectValues()

@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unity
     /// Target Framework: Unity 2022.3 LTS
     /// Implementation Style: MonoBehaviour-based with Component System
     /// </summary>
-    public class AudioLogicImplementation : AudioLogic
+    public partial class AudioLogicImplementation : AudioLogic
     {
         public AudioLogicImplementation(IIResourceProvider iresourceprovider, IISpatialProvider ispatialprovider, IIVolumeProvider ivolumeprovider)
             : base(iresourceprovider, ispatialprovider, ivolumeprovider)

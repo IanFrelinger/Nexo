@@ -5,7 +5,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Distribution statistics
     /// </summary>
-    public class DistributionStatistics
+    public partial class DistributionStatistics
     {
         public int TotalNodes { get; set; }
         public int AvailableNodes { get; set; }

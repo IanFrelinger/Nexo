@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Models.CodeQuality
     /// <summary>
     /// Represents a comprehensive quality score for generated code
     /// </summary>
-    public class QualityScore
+    public partial class QualityScore
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ToolName { get; set; } = "";
@@ -77,7 +77,7 @@ namespace Nexo.Core.Domain.Models.CodeQuality
     /// <summary>
     /// Represents a quality improvement recommendation
     /// </summary>
-    public class QualityRecommendation
+    public partial class QualityRecommendation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public RecommendationType Type { get; set; }

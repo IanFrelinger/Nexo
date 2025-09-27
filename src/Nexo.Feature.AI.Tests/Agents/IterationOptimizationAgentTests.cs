@@ -15,7 +15,7 @@ namespace Nexo.Feature.AI.Tests.Agents;
 /// <summary>
 /// Tests for the iteration optimization AI agent
 /// </summary>
-public class IterationOptimizationAgentTests
+public partial class IterationOptimizationAgentTests
 {
     private readonly Mock<IIterationStrategySelector> _mockStrategySelector;
     private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

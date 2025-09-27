@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Services.Monitoring
     /// <summary>
     /// Orchestrator for production monitoring that delegates to specialized monitoring components.
     /// </summary>
-    public class ProductionMonitoringService : IProductionMonitoringService
+    public partial class ProductionMonitoringService : IProductionMonitoringService
     {
         private readonly ILogger<ProductionMonitoringService> _logger;
         private readonly IMetricsCollector _metricsCollector;

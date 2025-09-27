@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Services.Iteration.Components
     /// <summary>
     /// Handles strategy scoring for iteration strategies.
     /// </summary>
-    public class StrategyScorer
+    public partial class StrategyScorer
     {
         private readonly ILogger _logger;
 
@@ -230,7 +230,7 @@ namespace Nexo.Core.Application.Services.Iteration.Components
     /// <summary>
     /// Represents a scored strategy.
     /// </summary>
-    public class ScoredStrategy<T>
+    public partial class ScoredStrategy<T>
     {
         public IIterationStrategy<T> Strategy { get; set; }
         public double Score { get; set; }

@@ -1,9 +1,10 @@
-using Microsoft.Extensions.Logging;
-using Nexo.Core.Domain.Entities;
-using Nexo.Core.Domain.ValueObjects;
-using Nexo.Core.Domain.Enums;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Core.Domain.Tests.Commands;
+namespace Nexo.Core.Domain.Tests.Commands
 {
+    public partial class EntityValidationCommand
+    {
+        // Orchestration methods will be added here
+    }
 }

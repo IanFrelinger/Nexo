@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.WebGL
     /// Target Framework: WebAssembly
     /// Implementation Style: Component-based with Web APIs
     /// </summary>
-    public class MovementLogicImplementation : MovementLogic
+    public partial class MovementLogicImplementation : MovementLogic
     {
         public MovementLogicImplementation(IIInputProvider iinputprovider, IIPhysicsProvider iphysicsprovider, IICollisionProvider icollisionprovider)
             : base(iinputprovider, iphysicsprovider, icollisionprovider)

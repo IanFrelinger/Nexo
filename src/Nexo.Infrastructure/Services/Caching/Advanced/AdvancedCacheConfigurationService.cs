@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// Advanced cache configuration service with intelligent eviction policies,
     /// performance monitoring, and optimization features for Phase 3.3.
     /// </summary>
-    public class AdvancedCacheConfigurationService : CacheConfigurationService
+    public partial class AdvancedCacheConfigurationService : CacheConfigurationService
     {
         private readonly ICachePerformanceMonitor _performanceMonitor;
         private readonly IResponseDeduplicationService _deduplicationService;
@@ -167,7 +167,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Cache optimization result.
     /// </summary>
-    public class CacheOptimizationResult
+    public partial class CacheOptimizationResult
     {
         public double CurrentHitRate { get; set; }
         public double CurrentErrorRate { get; set; }

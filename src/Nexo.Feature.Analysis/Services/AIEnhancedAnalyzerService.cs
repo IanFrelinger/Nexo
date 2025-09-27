@@ -13,7 +13,7 @@ namespace Nexo.Feature.Analysis.Services
     /// <summary>
     /// AI-enhanced analyzer service that provides intelligent code analysis and suggestions.
     /// </summary>
-    public class AIEnhancedAnalyzerService : IAIEnhancedAnalyzerService
+    public partial class AIEnhancedAnalyzerService : IAIEnhancedAnalyzerService
     {
         private readonly ILogger<AIEnhancedAnalyzerService> _logger;
         private readonly IModelOrchestrator _modelOrchestrator;

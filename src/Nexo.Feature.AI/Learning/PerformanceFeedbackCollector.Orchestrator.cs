@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Nexo.Feature.AI.Agents.Specialized;
-            using var process = Process.GetCurrentProcess();
-            using var process = Process.GetCurrentProcess();
 
-namespace Nexo.Feature.AI.Learning;
+namespace Nexo.Feature.AI.Learning
 {
+    public partial class PerformanceFeedbackCollector
+    {
+        // Orchestration methods will be added here
+    }
 }

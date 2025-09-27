@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration.Generators
 {
-    public class IntegrationTestGenerator
+    public partial class IntegrationTestGenerator
     {
         private readonly ILogger<IntegrationTestGenerator> _logger;
 
@@ -54,7 +54,7 @@ using {GetNamespaceForService(serviceName)};
 
 namespace Tests.Integration
 {{
-    public class {serviceName}IntegrationTests
+    public partial class {serviceName}IntegrationTests
     {{
         [Fact]
         public void {serviceName}_Integration_Should_Work()
@@ -72,7 +72,7 @@ namespace Tests.Integration
         }
     }
 
-    public class IntegrationTest
+    public partial class IntegrationTest
     {
         public string ServiceName { get; set; } = string.Empty;
         public string TestName { get; set; } = string.Empty;

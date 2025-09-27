@@ -6,7 +6,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.LlamaNative.Providers
 {
-    public class CodeGenerationProvider
+    public partial class CodeGenerationProvider
     {
         private readonly ILogger<CodeGenerationProvider> _logger;
 
@@ -71,7 +71,7 @@ namespace {request.Namespace ?? "GeneratedCode"}
     /// <summary>
     /// {request.Description}
     /// </summary>
-    public class {request.ClassName ?? "GeneratedClass"}
+    public partial class {request.ClassName ?? "GeneratedClass"}
     {{
         private readonly ILogger<{request.ClassName ?? "GeneratedClass"}> _logger;
 
@@ -177,7 +177,7 @@ module.exports = {request.ClassName ?? "GeneratedClass"};";
             return $@"import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
-public class {request.ClassName ?? "GeneratedClass"} {{
+public partial class {request.ClassName ?? "GeneratedClass"} {{
     private static final Logger logger = Logger.getLogger({request.ClassName ?? "GeneratedClass"}.class.getName());
     
     public CompletableFuture<{request.ReturnType ?? "String"}> {request.MethodName ?? "execute"}() {{

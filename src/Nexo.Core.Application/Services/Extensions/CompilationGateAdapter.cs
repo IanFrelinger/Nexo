@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.Extensions
     /// <summary>
     /// Adapter that implements the new ICompilationGate interface using the existing CSharpSyntaxValidator.
     /// </summary>
-    public class CompilationGateAdapter : ICompilationGate
+    public partial class CompilationGateAdapter : ICompilationGate
     {
         private readonly ILogger<CompilationGateAdapter> _logger;
         private readonly ICSharpSyntaxValidator _syntaxValidator;

@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.Iteration;
 /// <summary>
 /// Orchestrator for iteration strategy selection that delegates to specialized strategy selection components.
 /// </summary>
-public class IterationStrategySelector : IIterationStrategySelector
+public partial class IterationStrategySelector : IIterationStrategySelector
 {
     private readonly List<IIterationStrategy<object>> _strategies = new();
     private RuntimeEnvironmentProfile _environmentProfile = new(); // Default profile

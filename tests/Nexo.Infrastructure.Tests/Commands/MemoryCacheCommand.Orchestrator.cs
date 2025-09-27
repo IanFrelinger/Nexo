@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Logging;
-using Nexo.Infrastructure.Services.Caching;
-using Nexo.Core.Application.Interfaces.Caching;
 using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace Nexo.Infrastructure.Tests.Commands;
+namespace Nexo.Infrastructure.Tests.Commands
 {
+    public partial class MemoryCacheCommand
+    {
+        // Orchestration methods will be added here
+    }
 }

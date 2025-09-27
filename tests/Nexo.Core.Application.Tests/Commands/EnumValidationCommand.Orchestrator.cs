@@ -1,8 +1,10 @@
-using Microsoft.Extensions.Logging;
-using Nexo.Shared.Interfaces.Resource;
-using Nexo.Core.Application.Interfaces.Caching;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Core.Application.Tests.Commands;
+namespace Nexo.Core.Application.Tests.Commands
 {
+    public partial class EnumValidationCommand
+    {
+        // Orchestration methods will be added here
+    }
 }

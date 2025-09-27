@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.Iteration.Components
     /// <summary>
     /// Handles strategy registration and management for iteration strategies.
     /// </summary>
-    public class StrategyRegistry
+    public partial class StrategyRegistry
     {
         private readonly ILogger _logger;
 

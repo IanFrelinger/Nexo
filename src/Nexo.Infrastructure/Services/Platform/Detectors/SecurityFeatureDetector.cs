@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
-    public class SecurityFeatureDetector : ISecurityFeatureDetector
+    public partial class SecurityFeatureDetector : ISecurityFeatureDetector
     {
         private readonly ILogger<SecurityFeatureDetector> _logger;
         public SecurityFeatureDetector(ILogger<SecurityFeatureDetector> logger) { _logger = logger; }

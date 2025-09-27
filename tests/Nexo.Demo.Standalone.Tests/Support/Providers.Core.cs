@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Demo.Tests.Support;
+namespace Nexo.Demo.Tests.Support
 {
-public interface ITextGenProvider
+    public partial class Providers
+    {
+        // Core implementation will be added here
+    }
 }

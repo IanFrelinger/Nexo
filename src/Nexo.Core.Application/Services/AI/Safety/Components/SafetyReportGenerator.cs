@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Safety.Components
 {
-    public class SafetyReportGenerator
+    public partial class SafetyReportGenerator
     {
         private readonly ILogger _logger;
 
@@ -340,7 +340,7 @@ namespace Nexo.Core.Application.Services.AI.Safety.Components
         }
     }
 
-    public class SafetyReport
+    public partial class SafetyReport
     {
         public string ReportId { get; set; } = string.Empty;
         public DateTime GeneratedAt { get; set; }

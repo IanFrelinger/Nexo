@@ -14,7 +14,7 @@ namespace Nexo.Feature.Data.Services.MigrationDeployment.Core
     /// <summary>
     /// Automated migration deployment service with validation and testing
     /// </summary>
-    public class MigrationDeploymentService
+    public partial class MigrationDeploymentService
     {
         private readonly IMigrationService _migrationService;
         private readonly IDatabaseProvider _databaseProvider;

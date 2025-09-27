@@ -6,7 +6,7 @@ using Nexo.Core.Domain.Models.CodeQuality;
 
 namespace Nexo.Infrastructure.Quality.Analyzers
 {
-    public class SecurityAnalyzer
+    public partial class SecurityAnalyzer
     {
         private readonly ILogger<SecurityAnalyzer> _logger;
 

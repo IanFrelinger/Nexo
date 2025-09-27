@@ -69,7 +69,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Result of workflow configuration validation.
     /// </summary>
-    public class WorkflowValidationResult
+    public partial class WorkflowValidationResult
     {
         /// <summary>
         /// Whether the configuration is valid.

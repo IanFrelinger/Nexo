@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Models.GuidedGeneration
     /// <summary>
     /// Represents a guided tool generation session
     /// </summary>
-    public class GenerationSession
+    public partial class GenerationSession
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -88,7 +88,7 @@ namespace Nexo.Core.Domain.Models.GuidedGeneration
     /// <summary>
     /// Represents a single step in the guided generation process
     /// </summary>
-    public class GenerationStep
+    public partial class GenerationStep
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public int Order { get; set; }
@@ -108,7 +108,7 @@ namespace Nexo.Core.Domain.Models.GuidedGeneration
     /// <summary>
     /// Validation rule for step input
     /// </summary>
-    public class ValidationRule
+    public partial class ValidationRule
     {
         public ValidationType Type { get; set; }
         public string? Pattern { get; set; }
@@ -178,7 +178,7 @@ namespace Nexo.Core.Domain.Models.GuidedGeneration
     /// <summary>
     /// Validation result
     /// </summary>
-    public class ValidationResult
+    public partial class ValidationResult
     {
         public bool IsValid { get; set; }
         public string? ErrorMessage { get; set; }

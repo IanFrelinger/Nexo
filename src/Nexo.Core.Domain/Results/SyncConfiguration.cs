@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Synchronization configuration
     /// </summary>
-    public class SyncConfiguration
+    public partial class SyncConfiguration
     {
         /// <summary>
         /// Configuration ID

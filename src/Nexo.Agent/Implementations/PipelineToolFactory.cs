@@ -8,7 +8,7 @@ namespace Nexo.Agent.Implementations;
 /// <summary>
 /// Tool factory that uses the existing ExtensionPipeline to create new tools.
 /// </summary>
-public class PipelineToolFactory : IToolFactory
+public partial class PipelineToolFactory : IToolFactory
 {
     private readonly ILogger<PipelineToolFactory> _logger;
     // private readonly IExtensionGenerator _extensionGenerator;

@@ -10,7 +10,7 @@ using Nexo.Infrastructure.Services.Platform;
 
 namespace Nexo.Infrastructure.Tests.Services.Platform.Cancellation
 {
-    public class CancellationTests
+    public partial class CancellationTests
     {
         private readonly Mock<ILogger<iOSCodeGenerator>> _mockIOSLogger = new();
         private readonly Mock<ILogger<AndroidCodeGenerator>> _mockAndroidLogger = new();

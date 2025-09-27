@@ -2,7 +2,7 @@ using Playground.Maui.Models;
 
 namespace Playground.Maui.Services;
 
-public class FeatureService
+public partial class FeatureService
 {
     public async Task<RunResult> RunFeatureAsync(string featureName, string mode, string provider)
     {

@@ -44,7 +44,7 @@ namespace Nexo.Feature.Web.Interfaces
     /// <summary>
     /// Result of WebAssembly optimization.
     /// </summary>
-    public class WebAssemblyOptimizationResult
+    public partial class WebAssemblyOptimizationResult
     {
         public bool Success { get; set; }
         public string OptimizedCode { get; set; } = string.Empty;
@@ -56,7 +56,7 @@ namespace Nexo.Feature.Web.Interfaces
     /// <summary>
     /// Performance analysis result for WebAssembly code.
     /// </summary>
-    public class WebAssemblyPerformanceAnalysis
+    public partial class WebAssemblyPerformanceAnalysis
     {
         public Dictionary<string, double> PerformanceMetrics { get; set; } = new Dictionary<string, double>();
         public List<string> PerformanceRecommendations { get; set; } = new List<string>();
@@ -66,7 +66,7 @@ namespace Nexo.Feature.Web.Interfaces
     /// <summary>
     /// Bundle analysis result for WebAssembly code.
     /// </summary>
-    public class WebAssemblyBundleAnalysis
+    public partial class WebAssemblyBundleAnalysis
     {
         public Dictionary<string, long> BundleSizes { get; set; } = new Dictionary<string, long>();
         public Dictionary<string, double> CompressionRatios { get; set; } = new Dictionary<string, double>();

@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Learning;
 /// <summary>
 /// Collects and processes user feedback for learning and adaptation
 /// </summary>
-public class UserFeedbackCollector : IUserFeedbackCollector
+public partial class UserFeedbackCollector : IUserFeedbackCollector
 {
     private readonly IFeedbackStore _feedbackStore;
     private readonly IFeedbackAnalyzer _feedbackAnalyzer;
@@ -285,7 +285,7 @@ public class UserFeedbackCollector : IUserFeedbackCollector
 /// <summary>
 /// Feedback insights from analysis
 /// </summary>
-public class FeedbackInsights
+public partial class FeedbackInsights
 {
     public double SatisfactionTrend { get; set; }
     public Dictionary<string, int> CommonComplaints { get; set; } = new();
@@ -320,7 +320,7 @@ public interface IFeedbackAnalyzer
 /// <summary>
 /// Result of feedback analysis
 /// </summary>
-public class FeedbackAnalysisResult
+public partial class FeedbackAnalysisResult
 {
     public bool RequiresImmediateAction { get; set; }
     public SystemState? Context { get; set; }

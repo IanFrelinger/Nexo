@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents an aggregator in an execution plan.
     /// </summary>
-    public class PlannedAggregator
+    public partial class PlannedAggregator
     {
         /// <summary>
         /// Gets or sets the aggregator ID.

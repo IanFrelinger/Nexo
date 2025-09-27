@@ -9,7 +9,7 @@ namespace Playground.Server.Services;
 /// <summary>
 /// Generates API server code based on requirements.
 /// </summary>
-public class ApiCodeGenerator
+public partial class ApiCodeGenerator
 {
     public string GenerateApiCode(string prompt, List<string> features)
     {
@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 
 namespace GeneratedApiServer
 {
-    public class Startup
+    public partial class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -68,7 +68,7 @@ namespace GeneratedApiServer
 
     [ApiController]
     [Route(""api/[controller]"")]
-    public class ValuesController : ControllerBase
+    public partial class ValuesController : ControllerBase
     {
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
@@ -193,7 +193,7 @@ namespace GeneratedApiServer
             controllers.Add(@"
     [ApiController]
     [Route(""api/[controller]"")]
-    public class AuthController : ControllerBase
+    public partial class AuthController : ControllerBase
     {
         [HttpPost(""login"")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -216,7 +216,7 @@ namespace GeneratedApiServer
             controllers.Add(@"
     [ApiController]
     [Route(""api/[controller]"")]
-    public class ProductsController : ControllerBase
+    public partial class ProductsController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
@@ -259,13 +259,13 @@ namespace GeneratedApiServer
         if (features.Contains("Authentication"))
         {
             models.Add(@"
-    public class LoginRequest
+    public partial class LoginRequest
     {
         public string Username { get; set; }
         public string Password { get; set; }
     }
 
-    public class RegisterRequest
+    public partial class RegisterRequest
     {
         public string Username { get; set; }
         public string Email { get; set; }
@@ -276,7 +276,7 @@ namespace GeneratedApiServer
         if (features.Contains("Database"))
         {
             models.Add(@"
-    public class Product
+    public partial class Product
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -285,7 +285,7 @@ namespace GeneratedApiServer
         public DateTime CreatedAt { get; set; }
     }
 
-    public class User
+    public partial class User
     {
         public int Id { get; set; }
         public string Username { get; set; }
@@ -310,7 +310,7 @@ namespace GeneratedApiServer
         Task<bool> ValidateUserAsync(string username, string password);
     }
 
-    public class AuthService : IAuthService
+    public partial class AuthService : IAuthService
     {
         public async Task<string> GenerateTokenAsync(string username)
         {
@@ -340,7 +340,7 @@ namespace GeneratedApiServer
         Task<bool> DeleteProductAsync(int id);
     }
 
-    public class ProductService : IProductService
+    public partial class ProductService : IProductService
     {
         private readonly ApplicationDbContext _context;
 

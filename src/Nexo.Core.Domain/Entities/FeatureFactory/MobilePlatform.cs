@@ -2,7 +2,7 @@ using System;
 
 namespace Nexo.Core.Domain.Entities.FeatureFactory
 {
-    public class MobilePlatform
+    public partial class MobilePlatform
     {
         public string Name { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;

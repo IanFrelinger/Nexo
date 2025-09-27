@@ -7,7 +7,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.LlamaNative.Providers
 {
-    public class ChatProvider
+    public partial class ChatProvider
     {
         private readonly ILogger<ChatProvider> _logger;
 

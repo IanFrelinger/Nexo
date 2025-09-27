@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Core
     /// <summary>
     /// Distributed AI processing service for multi-device coordination
     /// </summary>
-    public class AIDistributedProcessor
+    public partial class AIDistributedProcessor
     {
         private readonly ILogger<AIDistributedProcessor> _logger;
         private readonly NodeManager _nodeManager;

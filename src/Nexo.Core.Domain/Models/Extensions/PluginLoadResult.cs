@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Models.Extensions
 {
-    public class PluginLoadResult : BaseResult
+    public partial class PluginLoadResult : BaseResult
     {
         public IPlugin? Plugin { get; set; }
         public string PluginName { get; set; } = string.Empty;
@@ -47,7 +47,7 @@ namespace Nexo.Core.Domain.Models.Extensions
         }
     }
 
-    public class PluginLoadError
+    public partial class PluginLoadError
     {
         public string Id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
@@ -55,7 +55,7 @@ namespace Nexo.Core.Domain.Models.Extensions
         public DateTime Timestamp { get; set; }
     }
 
-    public class PluginLoadWarning
+    public partial class PluginLoadWarning
     {
         public string Id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;

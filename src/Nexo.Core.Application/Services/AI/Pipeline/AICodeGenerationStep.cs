@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     /// <summary>
     /// Pipeline step for AI-powered code generation
     /// </summary>
-    public class AICodeGenerationStep : IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>
+    public partial class AICodeGenerationStep : IPipelineStep<Nexo.Core.Domain.Entities.AI.CodeGenerationRequest>
     {
         private readonly IAIRuntimeSelector _runtimeSelector;
         private readonly ILogger<AICodeGenerationStep> _logger;

@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Models
     /// <summary>
     /// Fine-tuning request
     /// </summary>
-    public class FineTuningRequest
+    public partial class FineTuningRequest
     {
         public string BaseModelId { get; set; } = string.Empty;
         public FineTuningData Data { get; set; } = new();
@@ -20,7 +20,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Models
     /// <summary>
     /// Fine-tuning data
     /// </summary>
-    public class FineTuningData
+    public partial class FineTuningData
     {
         public List<FineTuningSample> Samples { get; set; } = new();
         public string DataFormat { get; set; } = "jsonl";
@@ -30,7 +30,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Models
     /// <summary>
     /// Fine-tuning sample
     /// </summary>
-    public class FineTuningSample
+    public partial class FineTuningSample
     {
         public string Input { get; set; } = string.Empty;
         public string Output { get; set; } = string.Empty;
@@ -40,7 +40,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Models
     /// <summary>
     /// Fine-tuning session
     /// </summary>
-    public class FineTuningSession
+    public partial class FineTuningSession
     {
         public string SessionId { get; set; } = string.Empty;
         public FineTuningRequest Request { get; set; } = new();
@@ -56,7 +56,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Models
     /// <summary>
     /// Fine-tuning metrics
     /// </summary>
-    public class FineTuningMetrics
+    public partial class FineTuningMetrics
     {
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
@@ -87,7 +87,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Models
     /// <summary>
     /// Fine-tuning validation result
     /// </summary>
-    public class FineTuningValidationResult
+    public partial class FineTuningValidationResult
     {
         public bool IsValid { get; set; }
         public DateTime ValidationTime { get; set; }
@@ -98,7 +98,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Models
     /// <summary>
     /// Validation issue
     /// </summary>
-    public class ValidationIssue
+    public partial class ValidationIssue
     {
         public ValidationIssueType Type { get; set; }
         public ValidationSeverity Severity { get; set; }

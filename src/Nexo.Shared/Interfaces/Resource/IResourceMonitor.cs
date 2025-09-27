@@ -33,7 +33,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents memory usage information.
     /// </summary>
-    public class MemoryInfo
+    public partial class MemoryInfo
     {
         public long TotalBytes { get; set; }
         public long AvailableBytes { get; set; }
@@ -44,7 +44,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents disk usage information.
     /// </summary>
-    public class DiskInfo
+    public partial class DiskInfo
     {
         public long TotalBytes { get; set; }
         public long AvailableBytes { get; set; }
@@ -56,7 +56,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents comprehensive system resource usage information.
     /// </summary>
-    public class SystemResourceUsage
+    public partial class SystemResourceUsage
     {
         public double CpuUsagePercentage { get; set; }
         public MemoryInfo Memory { get; set; } = new MemoryInfo();

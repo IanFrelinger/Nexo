@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.CLI.Commands.Project.Handlers
 {
-    public class ProjectBuildHandler
+    public partial class ProjectBuildHandler
     {
         private readonly ILogger _logger;
 

@@ -8,7 +8,7 @@ namespace Nexo.Agent.Implementations;
 /// <summary>
 /// In-memory tool registry implementation.
 /// </summary>
-public class ToolRegistry : IToolRegistry
+public partial class ToolRegistry : IToolRegistry
 {
     private readonly ILogger<ToolRegistry> _logger;
     private readonly Dictionary<string, ITool> _tools;

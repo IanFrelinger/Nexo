@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Nexo.Core.Application.Tests.Services.Extensions
 {
-    public class ExtensionCompilerTests
+    public partial class ExtensionCompilerTests
     {
         private readonly Mock<ILogger<ExtensionCompiler>> _mockLogger;
         private readonly ExtensionCompiler _compiler;
@@ -31,7 +31,7 @@ using Nexo.Core.Domain.Interfaces;
 
 namespace TestPlugin
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => ""TestPlugin"";
         public string Version => ""1.0.0"";
@@ -72,7 +72,7 @@ using Nexo.Core.Domain.Interfaces;
 
 namespace TestPlugin
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => ""TestPlugin"";
         public string Version => ""1.0.0"";
@@ -109,7 +109,7 @@ namespace TestPlugin
             var code = @"
 namespace TestPlugin
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => ""TestPlugin"";
         public string Version => ""1.0.0"";

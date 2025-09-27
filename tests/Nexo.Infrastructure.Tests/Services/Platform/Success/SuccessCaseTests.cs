@@ -11,7 +11,7 @@ using Nexo.Infrastructure.Services.Platform;
 
 namespace Nexo.Infrastructure.Tests.Services.Platform.Success
 {
-    public class SuccessCaseTests
+    public partial class SuccessCaseTests
     {
         private readonly Mock<ILogger<iOSCodeGenerator>> _mockIOSLogger = new();
         private readonly Mock<ILogger<AndroidCodeGenerator>> _mockAndroidLogger = new();

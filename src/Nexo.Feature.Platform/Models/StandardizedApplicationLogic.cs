@@ -7,7 +7,7 @@ namespace Nexo.Feature.Platform.Models
     /// Framework-agnostic application logic container that can be transformed into platform-specific implementations.
     /// Part of Epic 5.3: Application Logic Standardization.
     /// </summary>
-    public class StandardizedApplicationLogic
+    public partial class StandardizedApplicationLogic
     {
         /// <summary>
         /// Application patterns (Repository, UnitOfWork, Command, Query, Mediator)
@@ -43,7 +43,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Application pattern definition
     /// </summary>
-    public class ApplicationPattern
+    public partial class ApplicationPattern
     {
         public string Name { get; set; } = string.Empty;
         public PatternType Type { get; set; }
@@ -53,7 +53,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Security pattern definition
     /// </summary>
-    public class SecurityPattern
+    public partial class SecurityPattern
     {
         public string Name { get; set; } = string.Empty;
         public SecurityPatternType Type { get; set; }
@@ -63,7 +63,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// State management pattern definition
     /// </summary>
-    public class StateManagementPattern
+    public partial class StateManagementPattern
     {
         public string Name { get; set; } = string.Empty;
         public StateManagementType Type { get; set; }
@@ -73,7 +73,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// API contract definition
     /// </summary>
-    public class ApiContract
+    public partial class ApiContract
     {
         public string Name { get; set; } = string.Empty;
         public string Endpoint { get; set; } = string.Empty;
@@ -85,7 +85,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// API parameter definition
     /// </summary>
-    public class ApiParameter
+    public partial class ApiParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -95,7 +95,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// API response definition
     /// </summary>
-    public class ApiResponse
+    public partial class ApiResponse
     {
         public string Type { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -104,7 +104,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Data flow pattern definition
     /// </summary>
-    public class DataFlowPattern
+    public partial class DataFlowPattern
     {
         public string Name { get; set; } = string.Empty;
         public DataFlowType Type { get; set; }
@@ -114,7 +114,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Caching strategy definition
     /// </summary>
-    public class CachingStrategy
+    public partial class CachingStrategy
     {
         public string Name { get; set; } = string.Empty;
         public CachingStrategyType Type { get; set; }

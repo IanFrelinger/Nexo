@@ -12,7 +12,7 @@ namespace Nexo.Feature.Web.UseCases
     /// <summary>
     /// Use case for generating web code with React/Vue support and WebAssembly optimization.
     /// </summary>
-    public class GenerateWebCodeUseCase
+    public partial class GenerateWebCodeUseCase
     {
         private readonly ILogger<GenerateWebCodeUseCase> _logger;
         private readonly IWebCodeGenerator _codeGenerator;

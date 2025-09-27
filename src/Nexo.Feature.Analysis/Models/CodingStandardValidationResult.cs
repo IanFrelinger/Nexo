@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents the result of validating code against coding standards.
     /// </summary>
-    public class CodingStandardValidationResult
+    public partial class CodingStandardValidationResult
     {
         /// <summary>
         /// Gets or sets whether the validation passed.
@@ -74,7 +74,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents a violation of a coding standard rule.
     /// </summary>
-    public class CodingStandardViolation
+    public partial class CodingStandardViolation
     {
         /// <summary>
         /// Gets or sets the unique identifier of the violation.
@@ -140,7 +140,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents a suggestion for improving code quality.
     /// </summary>
-    public class CodingStandardSuggestion
+    public partial class CodingStandardSuggestion
     {
         /// <summary>
         /// Gets or sets the unique identifier of the suggestion.

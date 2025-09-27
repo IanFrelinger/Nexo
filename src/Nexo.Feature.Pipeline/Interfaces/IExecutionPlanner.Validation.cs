@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Execution plan validation result.
     /// </summary>
-    public class ExecutionPlanValidationResult
+    public partial class ExecutionPlanValidationResult
     {
         /// <summary>
         /// Gets or sets the validation identifier.
@@ -42,7 +42,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Validation error for execution plan.
     /// </summary>
-    public class ValidationError
+    public partial class ValidationError
     {
         /// <summary>
         /// Gets or sets the error identifier.
@@ -73,7 +73,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Validation warning for execution plan.
     /// </summary>
-    public class ValidationWarning
+    public partial class ValidationWarning
     {
         /// <summary>
         /// Gets or sets the warning identifier.

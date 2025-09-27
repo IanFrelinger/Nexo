@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unity
     /// Target Framework: Unity 2022.3 LTS
     /// Implementation Style: MonoBehaviour-based with Component System
     /// </summary>
-    public class CombatLogicImplementation : CombatLogic
+    public partial class CombatLogicImplementation : CombatLogic
     {
         public CombatLogicImplementation(IIHealthProvider ihealthprovider, IIAudioProvider iaudioprovider, IIAnimationProvider ianimationprovider, IIProjectileProvider iprojectileprovider)
             : base(ihealthprovider, iaudioprovider, ianimationprovider, iprojectileprovider)

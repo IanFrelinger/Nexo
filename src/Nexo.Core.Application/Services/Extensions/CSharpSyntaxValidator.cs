@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Extensions
 {
-    public class CSharpSyntaxValidator : ICSharpSyntaxValidator
+    public partial class CSharpSyntaxValidator : ICSharpSyntaxValidator
     {
         private readonly ILogger<CSharpSyntaxValidator> _logger;
 

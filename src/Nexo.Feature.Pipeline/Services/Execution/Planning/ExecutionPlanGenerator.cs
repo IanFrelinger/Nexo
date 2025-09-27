@@ -13,7 +13,7 @@ namespace Nexo.Feature.Pipeline.Services.Execution.Planning
     /// <summary>
     /// Handles execution plan generation for pipeline aggregators
     /// </summary>
-    public class ExecutionPlanGenerator
+    public partial class ExecutionPlanGenerator
     {
         private readonly ILogger<PipelineExecutionEngine> _logger;
         private readonly ConcurrentDictionary<string, IAggregator> _aggregators = new ConcurrentDictionary<string, IAggregator>();

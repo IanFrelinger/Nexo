@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Services.Optimizers;
 /// <summary>
 /// Handles battery optimization strategies
 /// </summary>
-public class BatteryOptimizer
+public partial class BatteryOptimizer
 {
     private readonly ILogger<BatteryOptimizer> _logger;
     private readonly Dictionary<string, BatteryOptimizationStrategy> _batteryStrategies;

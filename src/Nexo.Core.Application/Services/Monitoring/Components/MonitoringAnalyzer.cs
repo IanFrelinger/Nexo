@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Monitoring.Components
 {
-    public class MonitoringAnalyzer
+    public partial class MonitoringAnalyzer
     {
         private readonly ILogger _logger;
         private readonly IAnalyticsService _analyticsService;

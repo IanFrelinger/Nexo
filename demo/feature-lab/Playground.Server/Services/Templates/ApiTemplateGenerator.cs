@@ -2,7 +2,7 @@ using System;
 
 namespace Playground.Server.Services.Templates
 {
-    public class ApiTemplateGenerator
+    public partial class ApiTemplateGenerator
     {
         public static string GenerateApiServerCode()
         {
@@ -15,7 +15,7 @@ using Microsoft.OpenApi.Models;
 
 namespace ApiServer
 {
-    public class Startup
+    public partial class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -64,7 +64,7 @@ namespace ApiServer
 
     [ApiController]
     [Route(""api/[controller]"")]
-    public class UsersController : ControllerBase
+    public partial class UsersController : ControllerBase
     {
         private static List<User> users = new List<User>
         {
@@ -124,20 +124,20 @@ namespace ApiServer
         }
     }
 
-    public class User
+    public partial class User
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
     }
 
-    public class CreateUserRequest
+    public partial class CreateUserRequest
     {
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
     }
 
-    public class UpdateUserRequest
+    public partial class UpdateUserRequest
     {
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;

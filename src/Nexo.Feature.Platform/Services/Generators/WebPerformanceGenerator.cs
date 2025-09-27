@@ -16,7 +16,7 @@ namespace Nexo.Feature.Platform.Services.Generators;
 /// <summary>
 /// Generates web performance optimizations
 /// </summary>
-public class WebPerformanceGenerator
+public partial class WebPerformanceGenerator
 {
     private readonly ILogger<WebPerformanceGenerator> _logger;
 

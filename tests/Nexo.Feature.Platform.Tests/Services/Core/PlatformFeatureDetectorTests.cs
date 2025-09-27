@@ -23,7 +23,7 @@ namespace Nexo.Feature.Platform.Tests.Services.Core
     /// Core test orchestrator for Platform Feature Detector tests.
     /// Delegates to specialized test classes for different test categories.
     /// </summary>
-    public class PlatformFeatureDetectorTests
+    public partial class PlatformFeatureDetectorTests
     {
         private readonly Mock<ILogger<PlatformFeatureDetector>> _mockLogger;
         private readonly PlatformFeatureDetector _detector;

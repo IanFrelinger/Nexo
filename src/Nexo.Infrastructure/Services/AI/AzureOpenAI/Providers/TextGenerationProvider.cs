@@ -6,7 +6,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.AzureOpenAI.Providers
 {
-    public class TextGenerationProvider
+    public partial class TextGenerationProvider
     {
         private readonly ILogger<TextGenerationProvider> _logger;
 

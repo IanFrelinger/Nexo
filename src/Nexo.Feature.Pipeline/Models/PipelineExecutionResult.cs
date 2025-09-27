@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents the result of a pipeline execution.
     /// </summary>
-    public class PipelineExecutionResult
+    public partial class PipelineExecutionResult
     {
         /// <summary>
         /// Gets or sets the unique identifier for this execution.

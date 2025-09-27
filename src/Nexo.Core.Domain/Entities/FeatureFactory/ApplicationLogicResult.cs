@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory
     /// <summary>
     /// Represents the result of application logic generation
     /// </summary>
-    public class ApplicationLogicResult
+    public partial class ApplicationLogicResult
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

@@ -17,7 +17,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of framework code generation
     /// </summary>
-    public class FrameworkResult
+    public partial class FrameworkResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -33,7 +33,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of Web API code generation
     /// </summary>
-    public class WebApiResult
+    public partial class WebApiResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -49,7 +49,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of Blazor Server code generation
     /// </summary>
-    public class BlazorServerResult
+    public partial class BlazorServerResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -65,7 +65,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of Blazor WebAssembly code generation
     /// </summary>
-    public class BlazorWebAssemblyResult
+    public partial class BlazorWebAssemblyResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -81,7 +81,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of MAUI code generation
     /// </summary>
-    public class MauiResult
+    public partial class MauiResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -97,7 +97,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of console application code generation
     /// </summary>
-    public class ConsoleResult
+    public partial class ConsoleResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -112,7 +112,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of WPF application code generation
     /// </summary>
-    public class WpfResult
+    public partial class WpfResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -128,7 +128,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of WinForms application code generation
     /// </summary>
-    public class WinFormsResult
+    public partial class WinFormsResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -144,7 +144,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Result of Xamarin application code generation
     /// </summary>
-    public class XamarinResult
+    public partial class XamarinResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;

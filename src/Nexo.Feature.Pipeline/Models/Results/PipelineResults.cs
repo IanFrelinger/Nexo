@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models;
 /// <summary>
 /// Result of a complete application development pipeline execution.
 /// </summary>
-public class PipelineOrchestrationResult
+public partial class PipelineOrchestrationResult
 {
     public string ExecutionId { get; set; } = string.Empty;
     
@@ -40,7 +40,7 @@ public class PipelineOrchestrationResult
 /// <summary>
 /// Result of an analysis pipeline execution.
 /// </summary>
-public class AnalysisPipelineResult
+public partial class AnalysisPipelineResult
 {
     public string ExecutionId { get; set; } = string.Empty;
     
@@ -74,7 +74,7 @@ public class AnalysisPipelineResult
 /// <summary>
 /// Result of a performance optimization pipeline execution.
 /// </summary>
-public class PerformanceOptimizationResult
+public partial class PerformanceOptimizationResult
 {
     public string ExecutionId { get; set; } = string.Empty;
     
@@ -108,7 +108,7 @@ public class PerformanceOptimizationResult
 /// <summary>
 /// Result of a platform integration pipeline execution.
 /// </summary>
-public class PlatformIntegrationResult
+public partial class PlatformIntegrationResult
 {
     public string ExecutionId { get; set; } = string.Empty;
     

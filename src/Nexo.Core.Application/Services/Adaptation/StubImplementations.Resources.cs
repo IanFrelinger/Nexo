@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.Adaptation;
 
-public class ResourceManager : IResourceManager
+public partial class ResourceManager : IResourceManager
 {
     public Task SetCpuIntensiveOperationsLimit(double limit)
     {
@@ -152,7 +152,7 @@ public class ResourceManager : IResourceManager
 /// <summary>
 /// Simple implementation of IResourceAllocation for stub purposes
 /// </summary>
-public class SimpleResourceAllocation : IResourceAllocation
+public partial class SimpleResourceAllocation : IResourceAllocation
 {
     public string Id { get; set; } = string.Empty;
     public ResourceRequirements AllocatedResources { get; set; } = new();

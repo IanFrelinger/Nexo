@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// AI provider selection result
     /// </summary>
-    public class AIProviderSelection
+    public partial class AIProviderSelection
     {
         /// <summary>
         /// Selected provider ID
@@ -62,7 +62,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Alternative provider considered during selection
     /// </summary>
-    public class AlternativeProvider
+    public partial class AlternativeProvider
     {
         /// <summary>
         /// Provider ID

@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents an execution plan for a behavior.
     /// </summary>
-    public class BehaviorExecutionPlan
+    public partial class BehaviorExecutionPlan
 {
     /// <summary>
     /// The behavior this plan is for.
@@ -54,7 +54,7 @@ namespace Nexo.Feature.Pipeline.Models
 /// <summary>
 /// Represents a phase of command execution.
 /// </summary>
-public class ExecutionPhase
+public partial class ExecutionPhase
 {
     /// <summary>
     /// Phase number (order of execution).
@@ -90,7 +90,7 @@ public class ExecutionPhase
 /// <summary>
 /// Represents a command in an execution plan.
 /// </summary>
-public class PlannedCommand
+public partial class PlannedCommand
 {
     /// <summary>
     /// Command ID.

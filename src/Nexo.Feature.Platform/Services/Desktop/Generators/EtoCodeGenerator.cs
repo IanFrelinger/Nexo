@@ -6,7 +6,7 @@ using Nexo.Feature.Platform.Models;
 
 namespace Nexo.Feature.Platform.Services.Desktop.Generators
 {
-    public class EtoCodeGenerator
+    public partial class EtoCodeGenerator
     {
         private readonly ILogger<EtoCodeGenerator> _logger;
 
@@ -67,7 +67,7 @@ using Eto.Drawing;
 
 namespace {request.ApplicationType}
 {{
-    public class MainForm : Form
+    public partial class MainForm : Form
     {{
         public MainForm()
         {{

@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators
     /// <summary>
     /// Generates Progressive Web App (PWA) features for web applications
     /// </summary>
-    public class PWAGenerator
+    public partial class PWAGenerator
     {
         private readonly ILogger<PWAGenerator> _logger;
 
@@ -256,7 +256,7 @@ export default InstallPrompt;";
     /// <summary>
     /// Result of PWA generation
     /// </summary>
-    public class PWAGenerationResult
+    public partial class PWAGenerationResult
     {
         public bool Success { get; set; }
         public List<GeneratedPWAFile> PWAFiles { get; set; } = new();
@@ -266,7 +266,7 @@ export default InstallPrompt;";
     /// <summary>
     /// Generated PWA file
     /// </summary>
-    public class GeneratedPWAFile
+    public partial class GeneratedPWAFile
     {
         public string Name { get; set; } = string.Empty;
         public PWAFileType Type { get; set; }

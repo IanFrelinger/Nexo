@@ -8,7 +8,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Comprehensive test result aggregation with historical data and analytics.
     /// </summary>
-    public class TestResultAggregation
+    public partial class TestResultAggregation
     {
         /// <summary>
         /// Unique identifier for this test run.

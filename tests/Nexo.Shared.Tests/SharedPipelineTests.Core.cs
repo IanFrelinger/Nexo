@@ -1,10 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Shared.Tests.Commands;
-using Nexo.Core.Application.Enums;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Shared.Tests;
+namespace Nexo.Shared.Tests
 {
+    public partial class SharedPipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

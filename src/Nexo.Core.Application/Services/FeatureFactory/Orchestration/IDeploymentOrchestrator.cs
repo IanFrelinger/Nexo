@@ -48,7 +48,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Result of deployment orchestration
     /// </summary>
-    public class DeploymentOrchestrationResult
+    public partial class DeploymentOrchestrationResult
     {
         public Guid SessionId { get; set; } = Guid.NewGuid();
         public bool Success { get; set; }
@@ -69,7 +69,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Orchestration status information
     /// </summary>
-    public class OrchestrationStatus
+    public partial class OrchestrationStatus
     {
         public Guid SessionId { get; set; } = Guid.NewGuid();
         public OrchestrationState State { get; set; } = OrchestrationState.Pending;
@@ -84,7 +84,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Orchestration step information
     /// </summary>
-    public class OrchestrationStep
+    public partial class OrchestrationStep
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -98,7 +98,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Pipeline metrics
     /// </summary>
-    public class PipelineMetrics
+    public partial class PipelineMetrics
     {
         public TimeSpan TotalDuration { get; set; }
         public TimeSpan NaturalLanguageProcessingDuration { get; set; }
@@ -116,7 +116,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Result of cancellation operations
     /// </summary>
-    public class CancellationResult
+    public partial class CancellationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -131,7 +131,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Natural language result
     /// </summary>
-    public class NaturalLanguageResult
+    public partial class NaturalLanguageResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -145,7 +145,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Domain logic result
     /// </summary>
-    public class DomainLogicResult
+    public partial class DomainLogicResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -160,7 +160,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Deployment result
     /// </summary>
-    public class DeploymentResult
+    public partial class DeploymentResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -175,7 +175,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Integration result
     /// </summary>
-    public class IntegrationResult
+    public partial class IntegrationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -189,7 +189,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Monitoring result
     /// </summary>
-    public class MonitoringResult
+    public partial class MonitoringResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -202,7 +202,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
 
     // Supporting model classes
 
-    public class UserStory
+    public partial class UserStory
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Description { get; set; } = string.Empty;
@@ -211,7 +211,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class BusinessTerm
+    public partial class BusinessTerm
     {
         public string Name { get; set; } = string.Empty;
         public string Definition { get; set; } = string.Empty;
@@ -219,7 +219,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class TechnicalRequirement
+    public partial class TechnicalRequirement
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -227,7 +227,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class DomainEntity
+    public partial class DomainEntity
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -235,7 +235,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class EntityProperty
+    public partial class EntityProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -244,7 +244,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ValueObject
+    public partial class ValueObject
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -252,7 +252,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ValueObjectProperty
+    public partial class ValueObjectProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -261,7 +261,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class BusinessRule
+    public partial class BusinessRule
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -271,7 +271,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class DomainService
+    public partial class DomainService
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -279,7 +279,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ServiceMethod
+    public partial class ServiceMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -289,7 +289,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class MethodParameter
+    public partial class MethodParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

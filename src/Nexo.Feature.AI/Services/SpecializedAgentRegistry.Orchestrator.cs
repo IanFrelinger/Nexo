@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Extensions.Logging;
-using Nexo.Feature.AI.Agents.Specialized;
 
-namespace Nexo.Feature.AI.Services;
+namespace Nexo.Feature.AI.Services
 {
+    public partial class SpecializedAgentRegistry
+    {
+        // Orchestration methods will be added here
+    }
 }

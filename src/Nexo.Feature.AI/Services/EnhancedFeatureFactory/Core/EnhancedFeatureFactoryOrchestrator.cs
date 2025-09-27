@@ -14,7 +14,7 @@ namespace Nexo.Feature.AI.Services.EnhancedFeatureFactory.Core
     /// <summary>
     /// Orchestrator delegating enhanced feature generation to specialized components
     /// </summary>
-    public class EnhancedFeatureFactoryOrchestrator : IEnhancedFeatureFactoryOrchestrator
+    public partial class EnhancedFeatureFactoryOrchestrator : IEnhancedFeatureFactoryOrchestrator
     {
         private readonly ILogger<EnhancedFeatureFactoryOrchestrator> _logger;
         private readonly RequestAnalyzer _analyzer;

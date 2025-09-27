@@ -9,7 +9,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Metadata about a command for discovery and documentation.
     /// </summary>
-    public class CommandMetadata
+    public partial class CommandMetadata
 {
     /// <summary>
     /// Unique identifier for this command.
@@ -127,7 +127,7 @@ namespace Nexo.Feature.Pipeline.Models
 /// <summary>
 /// Represents a parameter that a command accepts.
 /// </summary>
-public class CommandParameter
+public partial class CommandParameter
 {
     /// <summary>
     /// Name of the parameter.

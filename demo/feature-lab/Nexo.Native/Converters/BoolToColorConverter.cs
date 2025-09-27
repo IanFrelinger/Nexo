@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Nexo.Native.Converters;
 
-public class BoolToColorConverter : IValueConverter
+public partial class BoolToColorConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {

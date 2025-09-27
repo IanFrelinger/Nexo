@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Tests.Services.Caching.Advanced
     /// Tests for intelligent cache eviction policy.
     /// Part of Phase 3.3 testing and validation.
     /// </summary>
-    public class IntelligentCacheStrategyTests
+    public partial class IntelligentCacheStrategyTests
     {
         private readonly Mock<ICacheEvictionStrategy> _mockStrategy1;
         private readonly Mock<ICacheEvictionStrategy> _mockStrategy2;
@@ -186,7 +186,7 @@ namespace Nexo.Infrastructure.Tests.Services.Caching.Advanced
     /// <summary>
     /// Tests for LRU eviction strategy.
     /// </summary>
-    public class LruEvictionStrategyTests
+    public partial class LruEvictionStrategyTests
     {
         [Fact]
         public void FilterCandidates_WithValidInput_ReturnsOrderedCandidates()
@@ -251,7 +251,7 @@ namespace Nexo.Infrastructure.Tests.Services.Caching.Advanced
     /// <summary>
     /// Tests for LFU eviction strategy.
     /// </summary>
-    public class LfuEvictionStrategyTests
+    public partial class LfuEvictionStrategyTests
     {
         [Fact]
         public void FilterCandidates_WithValidInput_ReturnsOrderedCandidates()
@@ -294,7 +294,7 @@ namespace Nexo.Infrastructure.Tests.Services.Caching.Advanced
     /// <summary>
     /// Tests for size-based eviction strategy.
     /// </summary>
-    public class SizeBasedEvictionStrategyTests
+    public partial class SizeBasedEvictionStrategyTests
     {
         [Fact]
         public void FilterCandidates_WithValidInput_ReturnsOrderedCandidates()
@@ -334,7 +334,7 @@ namespace Nexo.Infrastructure.Tests.Services.Caching.Advanced
     /// <summary>
     /// Tests for priority-based eviction strategy.
     /// </summary>
-    public class PriorityBasedEvictionStrategyTests
+    public partial class PriorityBasedEvictionStrategyTests
     {
         [Fact]
         public void FilterCandidates_WithValidInput_ReturnsOrderedCandidates()

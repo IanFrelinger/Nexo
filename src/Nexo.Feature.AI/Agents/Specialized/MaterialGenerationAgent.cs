@@ -10,7 +10,7 @@ namespace Nexo.Feature.AI.Agents.Specialized
     /// <summary>
     /// Specialized agent for generating and optimizing materials for game objects
     /// </summary>
-    public class MaterialGenerationAgent : ISpecializedAgent
+    public partial class MaterialGenerationAgent : ISpecializedAgent
     {
         private readonly ILogger<MaterialGenerationAgent> _logger;
         private readonly IMaterialContextAnalyzer _contextAnalyzer;

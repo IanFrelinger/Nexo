@@ -5,7 +5,7 @@ namespace Nexo.Feature.API.Models;
 /// <summary>
 /// Rate limit request information
 /// </summary>
-public class RateLimitRequest
+public partial class RateLimitRequest
 {
     /// <summary>
     /// Rate limit identifier (user ID, service ID, IP address, etc.)
@@ -36,7 +36,7 @@ public class RateLimitRequest
 /// <summary>
 /// Rate limit check result
 /// </summary>
-public class RateLimitResult
+public partial class RateLimitResult
 {
     /// <summary>
     /// Whether the request is allowed
@@ -82,7 +82,7 @@ public class RateLimitResult
 /// <summary>
 /// Rate limit recording result
 /// </summary>
-public class RateLimitRecordingResult
+public partial class RateLimitRecordingResult
 {
     /// <summary>
     /// Whether recording was successful
@@ -113,7 +113,7 @@ public class RateLimitRecordingResult
 /// <summary>
 /// Rate limit status
 /// </summary>
-public class RateLimitStatus
+public partial class RateLimitStatus
 {
     /// <summary>
     /// Rate limit identifier
@@ -164,7 +164,7 @@ public class RateLimitStatus
 /// <summary>
 /// Rate limit reset result
 /// </summary>
-public class RateLimitResetResult
+public partial class RateLimitResetResult
 {
     /// <summary>
     /// Whether reset was successful
@@ -195,7 +195,7 @@ public class RateLimitResetResult
 /// <summary>
 /// Rate limiting configuration
 /// </summary>
-public class RateLimitConfiguration
+public partial class RateLimitConfiguration
 {
     /// <summary>
     /// Rate limit identifier
@@ -236,7 +236,7 @@ public class RateLimitConfiguration
 /// <summary>
 /// Rate limit configuration result
 /// </summary>
-public class RateLimitConfigurationResult
+public partial class RateLimitConfigurationResult
 {
     /// <summary>
     /// Whether configuration was successful
@@ -262,7 +262,7 @@ public class RateLimitConfigurationResult
 /// <summary>
 /// Rate limiting statistics
 /// </summary>
-public class RateLimitStatistics
+public partial class RateLimitStatistics
 {
     /// <summary>
     /// Total rate limit checks

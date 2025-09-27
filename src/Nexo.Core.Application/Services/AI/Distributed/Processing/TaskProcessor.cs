@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Processing
     /// <summary>
     /// Processes distributed tasks for AI processing
     /// </summary>
-    public class TaskProcessor
+    public partial class TaskProcessor
     {
         private readonly ILogger _logger;
         private readonly NodeManager _nodeManager;

@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Services.Platform.Integrators;
 /// <summary>
 /// Validates native API integrations
 /// </summary>
-public class IntegrationValidator
+public partial class IntegrationValidator
 {
     private readonly ILogger<IntegrationValidator> _logger;
     private readonly IModelOrchestrator _modelOrchestrator;

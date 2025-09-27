@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a single execution step in the pipeline.
     /// </summary>
-    public class PipelineExecutionStep
+    public partial class PipelineExecutionStep
     {
         /// <summary>
         /// Unique identifier for this execution step.

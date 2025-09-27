@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
     /// <summary>
     /// Tests for RoslynCompilationService
     /// </summary>
-    public class RoslynCompilationServiceTests
+    public partial class RoslynCompilationServiceTests
     {
         private readonly Mock<IModelProvider> _mockAiProvider;
         private readonly Mock<ILogger<RoslynCompilationService>> _mockLogger;
@@ -38,7 +38,7 @@ using System.Threading.Tasks;
 using Nexo.Core.Domain.Interfaces;
 using Nexo.Core.Domain.Models;
 
-public class TestPlugin : IPlugin
+public partial class TestPlugin : IPlugin
 {
     public string Name => ""TestPlugin"";
     public string Version => ""1.0"";
@@ -78,7 +78,7 @@ public class TestPlugin : IPlugin
         {
             // Arrange
             var invalidCode = @"
-public class TestPlugin : IPlugin
+public partial class TestPlugin : IPlugin
 {
     // Missing using statements and incomplete implementation
     public string Name => ""TestPlugin"";
@@ -100,7 +100,7 @@ public class TestPlugin : IPlugin
         {
             // Arrange
             var brokenCode = @"
-public class TestPlugin : IPlugin
+public partial class TestPlugin : IPlugin
 {
     public string Name => ""TestPlugin"";
     // Missing other required properties
@@ -114,7 +114,7 @@ using System.Threading.Tasks;
 using Nexo.Core.Domain.Interfaces;
 using Nexo.Core.Domain.Models;
 
-public class TestPlugin : IPlugin
+public partial class TestPlugin : IPlugin
 {
     public string Name => ""TestPlugin"";
     public string Version => ""1.0"";

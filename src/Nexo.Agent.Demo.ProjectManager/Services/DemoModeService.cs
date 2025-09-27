@@ -6,7 +6,7 @@ namespace Nexo.Agent.Demo.ProjectManager.Services;
 /// <summary>
 /// Handles demo mode execution and sample data generation.
 /// </summary>
-public class DemoModeService
+public partial class DemoModeService
 {
     private readonly ILogger _logger;
     private readonly ProjectTaskManager _taskManager;

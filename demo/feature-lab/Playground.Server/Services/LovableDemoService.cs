@@ -9,7 +9,7 @@ namespace Playground.Server.Services;
 /// <summary>
 /// Main service that orchestrates demo scenarios and app generation.
 /// </summary>
-public class LovableDemoService
+public partial class LovableDemoService
 {
     private readonly ScenarioManager _scenarioManager;
     private readonly WebAppCodeGenerator _webAppGenerator;
@@ -75,7 +75,7 @@ using System.Collections.Generic;
 
 namespace GeneratedApp
 {{
-    public class Program
+    public partial class Program
     {{
         public static void Main(string[] args)
         {{

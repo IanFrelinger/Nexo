@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models
     /// <summary>
     /// Result of plugin execution
     /// </summary>
-    public class PluginResult
+    public partial class PluginResult
     {
         /// <summary>
         /// Whether the execution was successful

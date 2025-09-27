@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.Domain
     /// <summary>
     /// Represents a method parameter
     /// </summary>
-    public class MethodParameter
+    public partial class MethodParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

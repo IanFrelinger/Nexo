@@ -8,7 +8,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.Mock.Providers
 {
-    public class MockCodeGenerationProvider
+    public partial class MockCodeGenerationProvider
     {
         private readonly ILogger<MockCodeGenerationProvider> _logger;
 
@@ -83,7 +83,7 @@ using System.Threading.Tasks;
 
 namespace GeneratedCode
 {{
-    public class {GetClassName(prompt)}
+    public partial class {GetClassName(prompt)}
     {{
         public async Task<string> ProcessAsync()
         {{
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         {
             return $@"import java.util.concurrent.CompletableFuture;
 
-public class {GetClassName(prompt)} {{
+public partial class {GetClassName(prompt)} {{
     public CompletableFuture<String> processAsync() {{
         return CompletableFuture.supplyAsync(() -> {{
             // Generated code for: {prompt}

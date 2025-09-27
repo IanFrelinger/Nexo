@@ -1,9 +1,9 @@
-﻿using ObjCRuntime;
+using ObjCRuntime;
 using UIKit;
 
 namespace Nexo.Native;
 
-public class Program
+public partial class Program
 {
 	// This is the main entry point of the application.
 	static void Main(string[] args)

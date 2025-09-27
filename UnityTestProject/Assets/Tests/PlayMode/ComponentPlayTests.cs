@@ -10,7 +10,7 @@ namespace NexoDoomGame.Tests
     /// <summary>
     /// Play mode tests for component behavior and integration
     /// </summary>
-    public class ComponentPlayTests
+    public partial class ComponentPlayTests
     {
         private GameObject testPlayer;
         private GameObject testEnemy;

@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.Onboarding
         Task TrackEventAsync(string eventName, Dictionary<string, object> properties);
     }
 
-    public class ProgressInfo
+    public partial class ProgressInfo
     {
         public string UserId { get; set; } = string.Empty;
         public string ActivityId { get; set; } = string.Empty;

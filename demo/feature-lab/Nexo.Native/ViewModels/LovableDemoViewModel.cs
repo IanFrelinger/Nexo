@@ -8,7 +8,7 @@ using Microsoft.Maui.Controls;
 
 namespace Nexo.Native.ViewModels
 {
-    public class LovableDemoViewModel : INotifyPropertyChanged
+    public partial class LovableDemoViewModel : INotifyPropertyChanged
     {
         private string _userPrompt = "";
         private AppTypeInfo? _selectedAppType;
@@ -395,7 +395,7 @@ namespace Nexo.Native.ViewModels
         }
     }
 
-    public class AppTypeInfo
+    public partial class AppTypeInfo
     {
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
@@ -404,7 +404,7 @@ namespace Nexo.Native.ViewModels
         public bool IsSelected { get; set; } = false;
     }
 
-    public class QuickExample
+    public partial class QuickExample
     {
         public string Title { get; set; } = "";
         public string Description { get; set; } = "";

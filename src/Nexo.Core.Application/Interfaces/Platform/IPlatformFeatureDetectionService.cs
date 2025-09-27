@@ -59,7 +59,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Platform-specific models for Platform Feature Detection
-    public class PlatformCapabilities
+    public partial class PlatformCapabilities
     {
         public string Platform { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
@@ -67,14 +67,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class FeatureAvailabilityMap
+    public partial class FeatureAvailabilityMap
     {
         public string FeatureName { get; set; } = string.Empty;
         public Dictionary<string, bool> PlatformSupport { get; set; } = new();
         public List<string> SupportedPlatforms { get; set; } = new();
     }
 
-    public class FeatureCompatibilityReport
+    public partial class FeatureCompatibilityReport
     {
         public bool IsCompatible { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -83,7 +83,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Recommendations { get; set; } = new();
     }
 
-    public class PlatformRecommendations
+    public partial class PlatformRecommendations
     {
         public string Platform { get; set; } = string.Empty;
         public List<string> RecommendedFeatures { get; set; } = new();
@@ -92,7 +92,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Additional Platform Feature Detection models
-    public class UICapabilities
+    public partial class UICapabilities
     {
         public string Platform { get; set; } = string.Empty;
         public List<string> SupportedUI { get; set; } = new();
@@ -100,7 +100,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> SupportedThemes { get; set; } = new();
     }
 
-    public class DataCapabilities
+    public partial class DataCapabilities
     {
         public string Platform { get; set; } = string.Empty;
         public List<string> SupportedDatabases { get; set; } = new();
@@ -108,7 +108,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> SupportedCaching { get; set; } = new();
     }
 
-    public class NetworkCapabilities
+    public partial class NetworkCapabilities
     {
         public string Platform { get; set; } = string.Empty;
         public List<string> SupportedProtocols { get; set; } = new();
@@ -116,7 +116,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> SupportedAPIs { get; set; } = new();
     }
 
-    public class HardwareCapabilities
+    public partial class HardwareCapabilities
     {
         public string Platform { get; set; } = string.Empty;
         public List<string> SupportedProcessors { get; set; } = new();
@@ -124,7 +124,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> SupportedStorage { get; set; } = new();
     }
 
-    public class SecurityCapabilities
+    public partial class SecurityCapabilities
     {
         public string Platform { get; set; } = string.Empty;
         public List<string> SupportedEncryption { get; set; } = new();
@@ -132,7 +132,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> SupportedSecurity { get; set; } = new();
     }
 
-    public class PerformanceCapabilities
+    public partial class PerformanceCapabilities
     {
         public string Platform { get; set; } = string.Empty;
         public List<string> SupportedOptimizations { get; set; } = new();
@@ -140,7 +140,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> SupportedMonitoring { get; set; } = new();
     }
 
-    public class FeatureAvailability
+    public partial class FeatureAvailability
     {
         public string FeatureName { get; set; } = string.Empty;
         public bool IsAvailable { get; set; }
@@ -148,7 +148,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Requirements { get; set; } = new();
     }
 
-    public class FeatureRecommendation
+    public partial class FeatureRecommendation
     {
         public string FeatureName { get; set; } = string.Empty;
         public string Recommendation { get; set; } = string.Empty;
@@ -156,7 +156,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Alternatives { get; set; } = new();
     }
 
-    public class CompatibilityIssue
+    public partial class CompatibilityIssue
     {
         public string IssueType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

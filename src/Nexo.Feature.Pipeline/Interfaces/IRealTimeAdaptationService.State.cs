@@ -14,7 +14,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Current adaptation state of the system.
     /// </summary>
-    public class AdaptationState
+    public partial class AdaptationState
     {
         /// <summary>
         /// Gets or sets the state identifier.
@@ -91,7 +91,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Adaptation action to be applied to the system.
     /// </summary>
-    public class AdaptationAction
+    public partial class AdaptationAction
     {
         /// <summary>
         /// Gets or sets the adaptation type.

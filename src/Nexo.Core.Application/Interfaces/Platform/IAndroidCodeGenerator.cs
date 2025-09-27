@@ -121,7 +121,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Platform-specific models for Android code generation
-    public class AndroidGenerationOptions
+    public partial class AndroidGenerationOptions
     {
         public string ProjectName { get; set; } = string.Empty;
         public string PackageName { get; set; } = string.Empty;
@@ -140,7 +140,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public bool UseAppConfiguration { get; set; } = true;
     }
 
-    public class AndroidGenerationResult
+    public partial class AndroidGenerationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -148,56 +148,56 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Errors { get; set; } = new();
     }
 
-    public class ComposeScreen
+    public partial class ComposeScreen
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class RoomDatabase
+    public partial class RoomDatabase
     {
         public string Name { get; set; } = string.Empty;
         public List<string> Entities { get; set; } = new();
     }
 
-    public class AndroidViewModel
+    public partial class AndroidViewModel
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class AndroidRepository
+    public partial class AndroidRepository
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class AndroidService
+    public partial class AndroidService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class DependencyInjectionConfig
+    public partial class DependencyInjectionConfig
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class AndroidAppConfiguration
+    public partial class AndroidAppConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class AndroidTest
+    public partial class AndroidTest
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
     // Additional Android models
-    public class RoomEntity
+    public partial class RoomEntity
     {
         public string EntityName { get; set; } = string.Empty;
         public string TableName { get; set; } = string.Empty;
@@ -206,7 +206,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Constraints { get; set; } = new();
     }
 
-    public class EntityField
+    public partial class EntityField
     {
         public string FieldName { get; set; } = string.Empty;
         public string FieldType { get; set; } = string.Empty;
@@ -215,7 +215,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public string DefaultValue { get; set; } = string.Empty;
     }
 
-    public class RoomDAO
+    public partial class RoomDAO
     {
         public string DaoName { get; set; } = string.Empty;
         public string EntityName { get; set; } = string.Empty;
@@ -225,7 +225,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> DeleteMethods { get; set; } = new();
     }
 
-    public class HiltModule
+    public partial class HiltModule
     {
         public string ModuleName { get; set; } = string.Empty;
         public List<string> Provides { get; set; } = new();

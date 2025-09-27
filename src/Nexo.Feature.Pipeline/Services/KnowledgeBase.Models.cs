@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Services
     /// <summary>
     /// Execution pattern for learning and analysis.
     /// </summary>
-    public class ExecutionPattern
+    public partial class ExecutionPattern
     {
         /// <summary>
         /// Gets or sets the execution identifier.

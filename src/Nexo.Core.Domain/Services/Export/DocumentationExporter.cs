@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Models.Export;
 
 namespace Nexo.Core.Domain.Services.Export
 {
-    public class DocumentationExporter
+    public partial class DocumentationExporter
     {
         private readonly ILogger _logger;
 

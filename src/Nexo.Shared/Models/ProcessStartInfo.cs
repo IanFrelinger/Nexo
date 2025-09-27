@@ -1,6 +1,6 @@
 namespace Nexo.Shared.Models
 {
-    public class ProcessStartInfo {
+    public partial class ProcessStartInfo {
         public string FileName { get; set; } = string.Empty;
         public string Arguments { get; set; } = string.Empty;
         public ProcessStartInfo() {}

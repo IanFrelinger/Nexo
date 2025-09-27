@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents the configuration for coding standards enforcement.
     /// </summary>
-    public class CodingStandardConfiguration
+    public partial class CodingStandardConfiguration
     {
         /// <summary>
         /// Gets or sets the unique identifier of the configuration.
@@ -62,7 +62,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents global settings for coding standards enforcement.
     /// </summary>
-    public class CodingStandardGlobalSettings
+    public partial class CodingStandardGlobalSettings
     {
         /// <summary>
         /// Gets or sets whether to fail on critical violations.
@@ -118,7 +118,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents agent-specific settings for coding standards enforcement.
     /// </summary>
-    public class CodingStandardAgentSettings
+    public partial class CodingStandardAgentSettings
     {
         /// <summary>
         /// Gets or sets the agent identifier.
@@ -159,7 +159,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents file type specific settings for coding standards enforcement.
     /// </summary>
-    public class CodingStandardFileTypeSettings
+    public partial class CodingStandardFileTypeSettings
     {
         /// <summary>
         /// Gets or sets the file extension or pattern.

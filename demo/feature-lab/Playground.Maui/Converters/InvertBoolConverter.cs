@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Playground.Maui;
 
-public class InvertBoolConverter : IValueConverter
+public partial class InvertBoolConverter : IValueConverter
 {
     public static readonly InvertBoolConverter Instance = new();
 

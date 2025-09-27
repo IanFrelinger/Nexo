@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents a deployment target for application deployment
     /// </summary>
-    public class DeploymentTarget
+    public partial class DeploymentTarget
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -28,7 +28,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents a resource in the deployment target
     /// </summary>
-    public class TargetResource
+    public partial class TargetResource
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -41,7 +41,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents target configuration
     /// </summary>
-    public class TargetConfiguration
+    public partial class TargetConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -54,7 +54,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents target credentials
     /// </summary>
-    public class TargetCredentials
+    public partial class TargetCredentials
     {
         public string Provider { get; set; } = string.Empty;
         public string AccessKey { get; set; } = string.Empty;
@@ -68,7 +68,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents network configuration
     /// </summary>
-    public class NetworkConfiguration
+    public partial class NetworkConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -80,7 +80,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents security configuration
     /// </summary>
-    public class SecurityConfiguration
+    public partial class SecurityConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -92,7 +92,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents scaling configuration
     /// </summary>
-    public class ScalingConfiguration
+    public partial class ScalingConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

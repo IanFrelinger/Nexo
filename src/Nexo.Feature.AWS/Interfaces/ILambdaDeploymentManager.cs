@@ -16,7 +16,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Lambda deployment result
     /// </summary>
-    public class LambdaDeploymentResult
+    public partial class LambdaDeploymentResult
     {
         /// <summary>
         /// Whether the operation was successful
@@ -57,7 +57,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Lambda invocation result
     /// </summary>
-    public class LambdaInvocationResult
+    public partial class LambdaInvocationResult
     {
         /// <summary>
         /// Whether the invocation was successful
@@ -113,7 +113,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Lambda function information
     /// </summary>
-    public class LambdaFunctionInfo
+    public partial class LambdaFunctionInfo
     {
         /// <summary>
         /// Function name
@@ -194,7 +194,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Lambda list result
     /// </summary>
-    public class LambdaListResult
+    public partial class LambdaListResult
     {
         /// <summary>
         /// Whether the list operation was successful
@@ -225,7 +225,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Lambda logs result
     /// </summary>
-    public class LambdaLogsResult
+    public partial class LambdaLogsResult
     {
         /// <summary>
         /// Whether the logs retrieval was successful
@@ -261,7 +261,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Lambda log entry
     /// </summary>
-    public class LambdaLogEntry
+    public partial class LambdaLogEntry
     {
         /// <summary>
         /// Log timestamp
@@ -302,7 +302,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Lambda package result
     /// </summary>
-    public class LambdaPackageResult
+    public partial class LambdaPackageResult
     {
         /// <summary>
         /// Whether the package creation was successful

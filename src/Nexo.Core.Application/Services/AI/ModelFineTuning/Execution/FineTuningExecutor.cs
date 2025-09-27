@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Execution
     /// <summary>
     /// Executes fine-tuning operations
     /// </summary>
-    public class FineTuningExecutor
+    public partial class FineTuningExecutor
     {
         private readonly ILogger _logger;
 

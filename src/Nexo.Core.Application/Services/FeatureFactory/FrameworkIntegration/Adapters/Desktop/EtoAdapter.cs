@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Adapters.Desktop
 {
-    public class EtoAdapter
+    public partial class EtoAdapter
     {
         private readonly ILogger<EtoAdapter> _logger;
         private readonly IAIRuntimeSelector _runtimeSelector;
@@ -133,7 +133,7 @@ using Eto.Forms;
 
 namespace GeneratedEto
 {{
-    public class {controller.Name}Form : Form
+    public partial class {controller.Name}Form : Form
     {{
         public {controller.Name}Form()
         {{
@@ -159,7 +159,7 @@ using Eto.Forms;
 
 namespace GeneratedEto
 {{
-    public class {controller.Name}Control : Panel
+    public partial class {controller.Name}Control : Panel
     {{
         public {controller.Name}Control()
         {{

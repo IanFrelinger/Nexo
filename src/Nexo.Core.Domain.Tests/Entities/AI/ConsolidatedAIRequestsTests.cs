@@ -10,7 +10,7 @@ namespace Nexo.Core.Domain.Tests.Entities.AI
     /// <summary>
     /// Tests for consolidated AI requests following hexagonal architecture
     /// </summary>
-    public class ConsolidatedAIRequestsTests
+    public partial class ConsolidatedAIRequestsTests
     {
         [Fact]
         public void ConsolidatedCodeGenerationRequest_Constructor_ShouldInitializeCorrectly()

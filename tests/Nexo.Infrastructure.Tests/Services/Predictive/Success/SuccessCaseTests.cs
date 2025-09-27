@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Tests.Services.Predictive.Success
     /// <summary>
     /// Tests for successful execution of Predictive Development Service methods
     /// </summary>
-    public class SuccessCaseTests
+    public partial class SuccessCaseTests
     {
         private readonly Mock<ILogger<PredictiveDevelopmentService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

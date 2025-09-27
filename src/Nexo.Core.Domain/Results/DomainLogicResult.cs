@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Result of domain logic operations
     /// </summary>
-    public class DomainLogicResult
+    public partial class DomainLogicResult
     {
         /// <summary>
         /// Whether the operation was successful

@@ -47,7 +47,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Options for test execution.
     /// </summary>
-    public class TestExecutionOptions
+    public partial class TestExecutionOptions
     {
         /// <summary>
         /// Execution timeout.
@@ -98,7 +98,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Validation result for test execution.
     /// </summary>
-    public class TestExecutionValidation
+    public partial class TestExecutionValidation
     {
         /// <summary>
         /// Whether the test file is valid for execution.
@@ -129,7 +129,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Metadata about a test file.
     /// </summary>
-    public class TestMetadata
+    public partial class TestMetadata
     {
         /// <summary>
         /// Test file path.

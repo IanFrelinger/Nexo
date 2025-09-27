@@ -15,7 +15,7 @@ namespace Nexo.Feature.Pipeline.Behaviors.Iteration;
 /// Pipeline behavior that automatically optimizes iteration operations
 /// </summary>
 [Behavior("iteration.optimization")]
-public class IterationOptimizationBehavior : IPipelineBehavior
+public partial class IterationOptimizationBehavior : IPipelineBehavior
 {
     private readonly IIterationStrategySelector _strategySelector;
     private readonly ILogger<IterationOptimizationBehavior> _logger;

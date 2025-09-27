@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands.Adaptation.Handlers
     /// <summary>
     /// Handles learning insights functionality
     /// </summary>
-    public class LearningHandler
+    public partial class LearningHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

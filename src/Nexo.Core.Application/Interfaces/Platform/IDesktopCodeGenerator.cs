@@ -121,7 +121,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Platform-specific models for Desktop code generation
-    public class DesktopGenerationOptions
+    public partial class DesktopGenerationOptions
     {
         public string ProjectName { get; set; } = string.Empty;
         public string TargetFramework { get; set; } = "net8.0";
@@ -135,7 +135,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public bool UseTest { get; set; } = true;
     }
 
-    public class DesktopGenerationResult
+    public partial class DesktopGenerationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -143,56 +143,56 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Errors { get; set; } = new();
     }
 
-    public class DesktopUIComponent
+    public partial class DesktopUIComponent
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class DesktopViewModel
+    public partial class DesktopViewModel
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class DesktopService
+    public partial class DesktopService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class DesktopDataAccess
+    public partial class DesktopDataAccess
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class DesktopConfiguration
+    public partial class DesktopConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class PlatformSpecificCode
+    public partial class PlatformSpecificCode
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class DesktopBuildConfiguration
+    public partial class DesktopBuildConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class DesktopTest
+    public partial class DesktopTest
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
     // Additional Desktop models
-    public class DesktopEntity
+    public partial class DesktopEntity
     {
         public string EntityName { get; set; } = string.Empty;
         public string TableName { get; set; } = string.Empty;
@@ -201,7 +201,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Constraints { get; set; } = new();
     }
 
-    public class DesktopEntityField
+    public partial class DesktopEntityField
     {
         public string FieldName { get; set; } = string.Empty;
         public string FieldType { get; set; } = string.Empty;
@@ -210,7 +210,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public string DefaultValue { get; set; } = string.Empty;
     }
 
-    public class DesktopRepository
+    public partial class DesktopRepository
     {
         public string RepositoryName { get; set; } = string.Empty;
         public string EntityName { get; set; } = string.Empty;
@@ -220,7 +220,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> DeleteMethods { get; set; } = new();
     }
 
-    public class DesktopDatabaseContext
+    public partial class DesktopDatabaseContext
     {
         public string ContextName { get; set; } = string.Empty;
         public List<string> DbSets { get; set; } = new();
@@ -228,14 +228,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public string ConnectionString { get; set; } = string.Empty;
     }
 
-    public class DesktopAppSettings
+    public partial class DesktopAppSettings
     {
         public string AppName { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
         public Dictionary<string, string> Settings { get; set; } = new();
     }
 
-    public class DesktopDependencyInjection
+    public partial class DesktopDependencyInjection
     {
         public string ServiceName { get; set; } = string.Empty;
         public string ServiceType { get; set; } = string.Empty;
@@ -243,14 +243,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public string Lifetime { get; set; } = string.Empty;
     }
 
-    public class DesktopLoggingConfiguration
+    public partial class DesktopLoggingConfiguration
     {
         public string LogLevel { get; set; } = string.Empty;
         public List<string> LogProviders { get; set; } = new();
         public Dictionary<string, string> LogSettings { get; set; } = new();
     }
 
-    public class DesktopProjectFile
+    public partial class DesktopProjectFile
     {
         public string ProjectName { get; set; } = string.Empty;
         public string TargetFramework { get; set; } = string.Empty;
@@ -258,14 +258,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> ProjectReferences { get; set; } = new();
     }
 
-    public class DesktopSolutionFile
+    public partial class DesktopSolutionFile
     {
         public string SolutionName { get; set; } = string.Empty;
         public List<string> Projects { get; set; } = new();
         public List<string> Configurations { get; set; } = new();
     }
 
-    public class DesktopBuildScript
+    public partial class DesktopBuildScript
     {
         public string ScriptName { get; set; } = string.Empty;
         public string ScriptType { get; set; } = string.Empty;

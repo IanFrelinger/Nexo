@@ -7,7 +7,7 @@ namespace Nexo.Agent.Demo.ProjectManager.Services;
 /// <summary>
 /// Handles command decomposition and analysis for project requirements.
 /// </summary>
-public class CommandDecompositionService
+public partial class CommandDecompositionService
 {
     private readonly ILogger _logger;
     private readonly ITaskExecutionAgent _agent;
@@ -124,7 +124,7 @@ public class CommandDecompositionService
                 DocumentationUrl = "https://nexo.dev/docs/agent/integration",
                 Section = "Agent Integration",
                 RelatedTopics = new[] { "nexo", "agent", "integration" },
-                CodeExamples = new[] { "public class MyTool : INexoTool" }
+                CodeExamples = new[] { "public partial class MyTool : INexoTool" }
             }
         };
 

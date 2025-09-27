@@ -12,7 +12,7 @@ namespace Nexo.Feature.Pipeline.Services.Execution.Validation
     /// <summary>
     /// Handles dependency validation for pipeline execution plans
     /// </summary>
-    public class DependencyValidator
+    public partial class DependencyValidator
     {
         private readonly ILogger<PipelineExecutionEngine> _logger;
         private readonly ConcurrentDictionary<string, IAggregator> _aggregators = new ConcurrentDictionary<string, IAggregator>();

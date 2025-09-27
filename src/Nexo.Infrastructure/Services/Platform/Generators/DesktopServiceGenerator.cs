@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators;
 /// <summary>
 /// Generates desktop services, data access, and configuration
 /// </summary>
-public class DesktopServiceGenerator
+public partial class DesktopServiceGenerator
 {
     private readonly ILogger<DesktopServiceGenerator> _logger;
     private readonly IModelOrchestrator _modelOrchestrator;

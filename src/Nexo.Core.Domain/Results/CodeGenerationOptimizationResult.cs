@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Code generation optimization result
     /// </summary>
-    public class CodeGenerationOptimizationResult
+    public partial class CodeGenerationOptimizationResult
     {
         /// <summary>
         /// Whether the optimization was successful

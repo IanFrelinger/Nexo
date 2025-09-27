@@ -125,7 +125,7 @@ public enum AlertSeverity
 /// <summary>
 /// Performance degradation event arguments
 /// </summary>
-public class PerformanceDegradationEventArgs : EventArgs
+public partial class PerformanceDegradationEventArgs : EventArgs
 {
     /// <summary>
     /// Performance metrics at time of degradation

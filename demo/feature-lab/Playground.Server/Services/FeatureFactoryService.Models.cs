@@ -6,14 +6,14 @@ namespace Playground.Server.Services
     /// <summary>
     /// Data models for FeatureFactoryService.
     /// </summary>
-    public class FeatureGenerationRequest
+    public partial class FeatureGenerationRequest
     {
         public string Description { get; set; } = string.Empty;
         public string Platform { get; set; } = ".NET";
         public List<string> Requirements { get; set; } = new();
     }
 
-    public class FeatureGenerationResult
+    public partial class FeatureGenerationResult
     {
         public string RequestId { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -29,7 +29,7 @@ namespace Playground.Server.Services
         public GeneratedTests? GeneratedTests { get; set; }
     }
 
-    public class FeatureGenerationStep
+    public partial class FeatureGenerationStep
     {
         public string StepName { get; set; } = string.Empty;
         public string Status { get; set; } = "Pending";
@@ -39,7 +39,7 @@ namespace Playground.Server.Services
         public DateTime? CompletedAt { get; set; }
     }
 
-    public class DomainAnalysis
+    public partial class DomainAnalysis
     {
         public List<DomainEntity> Entities { get; set; } = new();
         public List<ValueObject> ValueObjects { get; set; } = new();
@@ -47,31 +47,31 @@ namespace Playground.Server.Services
         public List<BusinessRule> BusinessRules { get; set; } = new();
     }
 
-    public class DomainEntity
+    public partial class DomainEntity
     {
         public string Name { get; set; } = string.Empty;
         public List<string> Properties { get; set; } = new();
     }
 
-    public class ValueObject
+    public partial class ValueObject
     {
         public string Name { get; set; } = string.Empty;
         public List<string> Properties { get; set; } = new();
     }
 
-    public class DomainService
+    public partial class DomainService
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
     }
 
-    public class BusinessRule
+    public partial class BusinessRule
     {
         public string Id { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
     }
 
-    public class ArchitectureDecision
+    public partial class ArchitectureDecision
     {
         public string Strategy { get; set; } = string.Empty;
         public double ConfidenceScore { get; set; }
@@ -80,20 +80,20 @@ namespace Playground.Server.Services
         public List<string> SecurityConsiderations { get; set; } = new();
     }
 
-    public class GeneratedCode
+    public partial class GeneratedCode
     {
         public List<string> Platforms { get; set; } = new();
         public List<GeneratedFile> Files { get; set; } = new();
     }
 
-    public class GeneratedFile
+    public partial class GeneratedFile
     {
         public string Path { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
     }
 
-    public class GeneratedTests
+    public partial class GeneratedTests
     {
         public List<string> UnitTests { get; set; } = new();
         public List<string> IntegrationTests { get; set; } = new();

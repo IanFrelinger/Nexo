@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
     /// <summary>
     /// Tests for ToolGenerationOrchestrator
     /// </summary>
-    public class ToolGenerationOrchestratorTests
+    public partial class ToolGenerationOrchestratorTests
     {
         private readonly Mock<IModelProvider> _mockAiProvider;
         private readonly Mock<ICodeGenerator> _mockCodeGenerator;
@@ -51,7 +51,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             var description = "Create a JSON formatter";
             var generatedCode = new GeneratedCode
             {
-                SourceCode = "public class JsonFormatter : IPlugin { /* implementation */ }",
+                SourceCode = "public partial class JsonFormatter : IPlugin { /* implementation */ }",
                 ToolName = "JsonFormatter",
                 Description = "Formats JSON data",
                 IsWrappedInPlugin = true
@@ -149,7 +149,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             var description = "Create a JSON formatter";
             var generatedCode = new GeneratedCode
             {
-                SourceCode = "public class JsonFormatter : IPlugin { /* implementation */ }",
+                SourceCode = "public partial class JsonFormatter : IPlugin { /* implementation */ }",
                 ToolName = "JsonFormatter",
                 Description = "Formats JSON data"
             };

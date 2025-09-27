@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Integration mapping configuration
     /// </summary>
-    public class IntegrationMapping
+    public partial class IntegrationMapping
     {
         /// <summary>
         /// Mapping ID

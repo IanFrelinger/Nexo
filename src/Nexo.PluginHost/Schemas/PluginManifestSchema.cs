@@ -8,7 +8,7 @@ namespace Nexo.PluginHost.Schemas
     /// <summary>
     /// Enhanced plugin manifest schema with validation attributes.
     /// </summary>
-    public class PluginManifestSchema
+    public partial class PluginManifestSchema
     {
         /// <summary>
         /// Gets or sets the plugin name. Must be unique and follow naming conventions.
@@ -125,7 +125,7 @@ namespace Nexo.PluginHost.Schemas
     /// <summary>
     /// Represents a plugin dependency.
     /// </summary>
-    public class PluginDependency
+    public partial class PluginDependency
     {
         /// <summary>
         /// Gets or sets the dependency name.
@@ -157,7 +157,7 @@ namespace Nexo.PluginHost.Schemas
     /// <summary>
     /// Represents plugin configuration schema.
     /// </summary>
-    public class PluginConfigurationSchema
+    public partial class PluginConfigurationSchema
     {
         /// <summary>
         /// Gets or sets the configuration properties.
@@ -175,7 +175,7 @@ namespace Nexo.PluginHost.Schemas
     /// <summary>
     /// Represents a configuration property.
     /// </summary>
-    public class ConfigurationProperty
+    public partial class ConfigurationProperty
     {
         /// <summary>
         /// Gets or sets the property type.
@@ -211,7 +211,7 @@ namespace Nexo.PluginHost.Schemas
     /// <summary>
     /// Represents plugin security requirements.
     /// </summary>
-    public class PluginSecurityRequirements
+    public partial class PluginSecurityRequirements
     {
         /// <summary>
         /// Gets or sets the required permissions.

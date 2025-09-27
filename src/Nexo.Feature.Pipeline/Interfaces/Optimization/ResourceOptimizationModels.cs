@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Optimization
     /// <summary>
     /// Resource optimization recommendation.
     /// </summary>
-    public class ResourceOptimizationRecommendation
+    public partial class ResourceOptimizationRecommendation
     {
         /// <summary>
         /// Gets or sets the recommendation identifier.

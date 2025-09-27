@@ -6,7 +6,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// iOS UI pattern configuration.
     /// </summary>
-    public class IOSUIPattern
+    public partial class IOSUIPattern
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -19,7 +19,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// iOS UI component.
     /// </summary>
-    public class IOSUIComponent
+    public partial class IOSUIComponent
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -31,7 +31,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// iOS performance optimization.
     /// </summary>
-    public class IOSPerformanceOptimization
+    public partial class IOSPerformanceOptimization
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

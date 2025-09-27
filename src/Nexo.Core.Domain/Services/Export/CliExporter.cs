@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Models.Export;
 
 namespace Nexo.Core.Domain.Services.Export
 {
-    public class CliExporter
+    public partial class CliExporter
     {
         private readonly ILogger _logger;
 
@@ -207,13 +207,13 @@ See `dependencies/` folder for required packages.
         }
     }
 
-    public class DependencyInfo
+    public partial class DependencyInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
 
-    public class RecipeInfo
+    public partial class RecipeInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;

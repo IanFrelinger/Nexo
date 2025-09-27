@@ -11,7 +11,7 @@ using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.AI.Providers
 {
-    public class LlamaNativeProvider : IAIProvider, ILlamaProvider
+    public partial class LlamaNativeProvider : IAIProvider, ILlamaProvider
     {
         public AIProviderType ProviderType => AIProviderType.LlamaNative;
         public string Name => "Llama Native Provider";

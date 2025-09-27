@@ -15,7 +15,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Environment context for adaptation.
     /// </summary>
-    public class EnvironmentContext
+    public partial class EnvironmentContext
     {
         /// <summary>
         /// Gets or sets the environment type.
@@ -82,7 +82,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Resource constraints for environment adaptation.
     /// </summary>
-    public class ResourceConstraints
+    public partial class ResourceConstraints
     {
         /// <summary>
         /// Gets or sets the maximum CPU usage percentage.

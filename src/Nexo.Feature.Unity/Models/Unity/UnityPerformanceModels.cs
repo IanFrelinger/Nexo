@@ -6,7 +6,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a performance recommendation
     /// </summary>
-    public class PerformanceRecommendation
+    public partial class PerformanceRecommendation
     {
         public string Category { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents an iteration optimization opportunity
     /// </summary>
-    public class IterationOptimizationOpportunity
+    public partial class IterationOptimizationOpportunity
     {
         public string Type { get; set; } = string.Empty;
         public string Location { get; set; } = string.Empty;
@@ -49,7 +49,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity performance metrics
     /// </summary>
-    public class UnityPerformanceMetrics
+    public partial class UnityPerformanceMetrics
     {
         public float FrameRate { get; set; }
         public float FrameTime { get; set; }
@@ -71,7 +71,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity performance analysis
     /// </summary>
-    public class UnityPerformanceAnalysis
+    public partial class UnityPerformanceAnalysis
     {
         public UnityPerformanceMetrics Metrics { get; set; } = new();
         public IEnumerable<PerformanceBottleneck> Bottlenecks { get; set; } = new List<PerformanceBottleneck>();
@@ -87,7 +87,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a performance bottleneck
     /// </summary>
-    public class PerformanceBottleneck
+    public partial class PerformanceBottleneck
     {
         public string Type { get; set; } = string.Empty;
         public string Location { get; set; } = string.Empty;
@@ -107,7 +107,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a performance profile
     /// </summary>
-    public class PerformanceProfile
+    public partial class PerformanceProfile
     {
         public string ProfileName { get; set; } = string.Empty;
         public string TargetPlatform { get; set; } = string.Empty;
@@ -128,7 +128,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity optimization settings
     /// </summary>
-    public class UnityOptimizationSettings
+    public partial class UnityOptimizationSettings
     {
         public bool EnableBatching { get; set; }
         public bool EnableInstancing { get; set; }
@@ -149,7 +149,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity profiling data
     /// </summary>
-    public class UnityProfilingData
+    public partial class UnityProfilingData
     {
         public string SessionName { get; set; } = string.Empty;
         public DateTime StartTime { get; set; }
@@ -168,7 +168,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a profiling frame
     /// </summary>
-    public class ProfilingFrame
+    public partial class ProfilingFrame
     {
         public int FrameNumber { get; set; }
         public float FrameTime { get; set; }
@@ -189,7 +189,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents profiling summary
     /// </summary>
-    public class ProfilingSummary
+    public partial class ProfilingSummary
     {
         public float AverageFrameTime { get; set; }
         public float MinFrameTime { get; set; }
@@ -210,7 +210,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a profiling marker
     /// </summary>
-    public class ProfilingMarker
+    public partial class ProfilingMarker
     {
         public string Name { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;

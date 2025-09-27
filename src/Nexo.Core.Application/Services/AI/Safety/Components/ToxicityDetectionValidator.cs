@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Safety.Components
 {
-    public class ToxicityDetectionValidator
+    public partial class ToxicityDetectionValidator
     {
         private readonly ILogger _logger;
 
@@ -183,7 +183,7 @@ namespace Nexo.Core.Application.Services.AI.Safety.Components
         }
     }
 
-    public class ToxicityDetectionResult
+    public partial class ToxicityDetectionResult
     {
         public double ToxicityScore { get; set; }
         public List<string> ToxicityTypes { get; set; } = new();

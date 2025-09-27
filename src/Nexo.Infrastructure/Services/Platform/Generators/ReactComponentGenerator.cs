@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators
     /// <summary>
     /// Generates React components for web applications
     /// </summary>
-    public class ReactComponentGenerator
+    public partial class ReactComponentGenerator
     {
         private readonly ILogger<ReactComponentGenerator> _logger;
 
@@ -202,7 +202,7 @@ export default {componentName};";
     /// <summary>
     /// Result of React component generation
     /// </summary>
-    public class ReactGenerationResult
+    public partial class ReactGenerationResult
     {
         public bool Success { get; set; }
         public List<GeneratedComponent> Components { get; set; } = new();
@@ -212,7 +212,7 @@ export default {componentName};";
     /// <summary>
     /// Generated React component
     /// </summary>
-    public class GeneratedComponent
+    public partial class GeneratedComponent
     {
         public string Name { get; set; } = string.Empty;
         public ComponentType Type { get; set; }

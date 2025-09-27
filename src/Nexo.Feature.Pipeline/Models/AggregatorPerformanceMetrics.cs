@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Performance metrics for an aggregator.
     /// </summary>
-    public class AggregatorPerformanceMetrics
+    public partial class AggregatorPerformanceMetrics
     {
         /// <summary>
         /// Total execution time in milliseconds.

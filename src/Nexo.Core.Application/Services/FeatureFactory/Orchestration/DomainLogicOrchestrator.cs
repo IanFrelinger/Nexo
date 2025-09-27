@@ -17,7 +17,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Orchestrator for domain logic generation workflow that delegates to specialized orchestration components.
     /// </summary>
-    public class DomainLogicOrchestrator : IDomainLogicOrchestrator
+    public partial class DomainLogicOrchestrator : IDomainLogicOrchestrator
     {
         private readonly ILogger<DomainLogicOrchestrator> _logger;
         private readonly IDomainLogicGenerator _domainLogicGenerator;

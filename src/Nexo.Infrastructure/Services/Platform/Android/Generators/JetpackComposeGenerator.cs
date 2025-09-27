@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform.Android.Generators
 {
-    public class JetpackComposeGenerator
+    public partial class JetpackComposeGenerator
     {
         private readonly ILogger<JetpackComposeGenerator> _logger;
 
@@ -143,7 +143,7 @@ fun {entityName}Card(
         }
     }
 
-    public class GeneratedFile
+    public partial class GeneratedFile
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;

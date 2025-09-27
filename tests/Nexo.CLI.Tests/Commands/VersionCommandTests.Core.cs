@@ -1,8 +1,10 @@
-using Microsoft.Extensions.Logging;
-using System.CommandLine;
-using System.CommandLine.IO;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.CLI.Tests.Commands;
+namespace Nexo.CLI.Tests.Commands
 {
+    public partial class VersionCommandTests
+    {
+        // Core implementation will be added here
+    }
 }

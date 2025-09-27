@@ -17,7 +17,7 @@ namespace Nexo.Feature.Platform.Tests.Services.ErrorHandling
     /// <summary>
     /// Tests for error handling scenarios in Platform Feature Detector
     /// </summary>
-    public class ErrorHandlingTests
+    public partial class ErrorHandlingTests
     {
         private readonly Mock<ILogger<PlatformFeatureDetector>> _mockLogger;
         private readonly PlatformFeatureDetector _detector;

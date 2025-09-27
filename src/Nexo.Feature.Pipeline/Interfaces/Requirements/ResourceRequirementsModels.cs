@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Requirements
     /// <summary>
     /// Resource requirements for pipeline execution.
     /// </summary>
-    public class ResourceRequirements
+    public partial class ResourceRequirements
     {
         /// <summary>
         /// Gets or sets the requirements identifier.
@@ -46,7 +46,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Requirements
     /// <summary>
     /// CPU resource requirements.
     /// </summary>
-    public class CpuRequirements
+    public partial class CpuRequirements
     {
         /// <summary>
         /// Gets or sets the minimum CPU cores required.
@@ -72,7 +72,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Requirements
     /// <summary>
     /// Memory resource requirements.
     /// </summary>
-    public class MemoryRequirements
+    public partial class MemoryRequirements
     {
         /// <summary>
         /// Gets or sets the minimum memory required in MB.
@@ -98,7 +98,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Requirements
     /// <summary>
     /// Disk resource requirements.
     /// </summary>
-    public class DiskRequirements
+    public partial class DiskRequirements
     {
         /// <summary>
         /// Gets or sets the minimum disk space required in MB.
@@ -124,7 +124,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Requirements
     /// <summary>
     /// Network resource requirements.
     /// </summary>
-    public class NetworkRequirements
+    public partial class NetworkRequirements
     {
         /// <summary>
         /// Gets or sets the minimum bandwidth required in Mbps.

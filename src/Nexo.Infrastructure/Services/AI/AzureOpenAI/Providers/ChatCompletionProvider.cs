@@ -7,7 +7,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.AzureOpenAI.Providers
 {
-    public class ChatCompletionProvider
+    public partial class ChatCompletionProvider
     {
         private readonly ILogger<ChatCompletionProvider> _logger;
 

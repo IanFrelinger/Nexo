@@ -10,7 +10,7 @@ using Nexo.Feature.Platform.Enums;
 
 namespace Nexo.Feature.Platform.Services.iOS.Generators
 {
-    public class SwiftUIGenerator
+    public partial class SwiftUIGenerator
     {
         private readonly ILogger<SwiftUIGenerator> _logger;
 

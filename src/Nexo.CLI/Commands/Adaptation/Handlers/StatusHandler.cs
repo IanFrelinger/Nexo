@@ -6,7 +6,7 @@ namespace Nexo.CLI.Commands.Adaptation.Handlers
     /// <summary>
     /// Handles status display functionality
     /// </summary>
-    public class StatusHandler
+    public partial class StatusHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

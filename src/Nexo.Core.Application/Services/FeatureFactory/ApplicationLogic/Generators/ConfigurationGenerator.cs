@@ -7,7 +7,7 @@ using Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic.Generators
 {
-    public class ConfigurationGenerator
+    public partial class ConfigurationGenerator
     {
         private readonly ILogger<ConfigurationGenerator> _logger;
 
@@ -81,7 +81,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Application
 {{
-    public class Startup
+    public partial class Startup
     {{
         public Startup(IConfiguration configuration)
         {{
@@ -116,7 +116,7 @@ namespace Application
         }
     }
 
-    public class Configuration
+    public partial class Configuration
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

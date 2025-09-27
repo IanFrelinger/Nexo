@@ -7,7 +7,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a complete Unity project analysis
     /// </summary>
-    public class UnityProjectAnalysis
+    public partial class UnityProjectAnalysis
     {
         public string ProjectPath { get; set; } = string.Empty;
         public DateTime AnalysisTimestamp { get; set; }
@@ -23,7 +23,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity project structure analysis
     /// </summary>
-    public class UnityProjectStructure
+    public partial class UnityProjectStructure
     {
         public string UnityVersion { get; set; } = string.Empty;
         public string ProjectName { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity project settings
     /// </summary>
-    public class ProjectSettings
+    public partial class ProjectSettings
     {
         public string CompanyName { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
@@ -65,7 +65,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity gameplay data
     /// </summary>
-    public class GameplayData
+    public partial class GameplayData
     {
         public string GameplayType { get; set; } = string.Empty;
         public string GameplayMechanics { get; set; } = string.Empty;

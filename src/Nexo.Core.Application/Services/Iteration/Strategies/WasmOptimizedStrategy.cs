@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// WebAssembly-optimized iteration strategy - memory-conscious for WASM constraints
 /// </summary>
-public class WasmOptimizedStrategy<T> : IIterationStrategy<T>
+public partial class WasmOptimizedStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "WasmOptimized";
     

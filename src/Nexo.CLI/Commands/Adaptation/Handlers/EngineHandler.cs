@@ -6,7 +6,7 @@ namespace Nexo.CLI.Commands.Adaptation.Handlers
     /// <summary>
     /// Handles engine control functionality
     /// </summary>
-    public class EngineHandler
+    public partial class EngineHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

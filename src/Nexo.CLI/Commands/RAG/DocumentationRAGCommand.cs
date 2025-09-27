@@ -12,7 +12,7 @@ namespace Nexo.CLI.Commands.RAG
     /// <summary>
     /// CLI command for managing RAG documentation system
     /// </summary>
-    public class DocumentationRAGCommand
+    public partial class DocumentationRAGCommand
     {
         private readonly ILogger<DocumentationRAGCommand> _logger;
         private readonly IDocumentationRAGService _ragService;

@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.AI
     /// <summary>
     /// Orchestrator for Azure OpenAI model provider that delegates to specialized providers.
     /// </summary>
-    public class AzureOpenAiModelProvider : IModelProvider
+    public partial class AzureOpenAiModelProvider : IModelProvider
     {
         private readonly ILogger<AzureOpenAiModelProvider> _logger;
         private readonly TextGenerationProvider _textGenerationProvider;

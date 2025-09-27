@@ -1,7 +1,10 @@
-using Xunit;
+using System;
 using System.Collections.Generic;
-using Nexo.Feature.Analysis.Models;
 
-namespace Nexo.Feature.Analysis.Tests;
+namespace Nexo.Feature.Analysis.Tests
 {
+    public partial class AnalysisModelsTests
+    {
+        // Orchestration methods will be added here
+    }
 }

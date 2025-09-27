@@ -67,7 +67,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Platform-specific models for Native API integration
-    public class NativeApiIntegrationResult
+    public partial class NativeApiIntegrationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -76,7 +76,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class PermissionHandlingResult
+    public partial class PermissionHandlingResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -84,14 +84,14 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> DeniedPermissions { get; set; } = new();
     }
 
-    public class NativeApiWrapper
+    public partial class NativeApiWrapper
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string Platform { get; set; } = string.Empty;
     }
 
-    public class NativeApiValidationResult
+    public partial class NativeApiValidationResult
     {
         public bool IsValid { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -100,7 +100,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Additional Native API Integration models
-    public class ApiAvailability
+    public partial class ApiAvailability
     {
         public string ApiName { get; set; } = string.Empty;
         public bool IsAvailable { get; set; }
@@ -108,7 +108,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Requirements { get; set; } = new();
     }
 
-    public class PermissionResult
+    public partial class PermissionResult
     {
         public string PermissionName { get; set; } = string.Empty;
         public bool IsGranted { get; set; }
@@ -116,7 +116,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> RequiredActions { get; set; } = new();
     }
 
-    public class PermissionStatus
+    public partial class PermissionStatus
     {
         public string PermissionName { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
@@ -124,7 +124,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Dependencies { get; set; } = new();
     }
 
-    public class ApiAvailabilityValidation
+    public partial class ApiAvailabilityValidation
     {
         public string ApiName { get; set; } = string.Empty;
         public bool IsValid { get; set; }
@@ -132,7 +132,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Recommendations { get; set; } = new();
     }
 
-    public class PermissionValidation
+    public partial class PermissionValidation
     {
         public string PermissionName { get; set; } = string.Empty;
         public bool IsValid { get; set; }
@@ -140,7 +140,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> RequiredPermissions { get; set; } = new();
     }
 
-    public class ParameterValidation
+    public partial class ParameterValidation
     {
         public string ParameterName { get; set; } = string.Empty;
         public bool IsValid { get; set; }
@@ -148,7 +148,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> ValidationErrors { get; set; } = new();
     }
 
-    public class ErrorHandlingValidation
+    public partial class ErrorHandlingValidation
     {
         public string ErrorType { get; set; } = string.Empty;
         public bool IsHandled { get; set; }

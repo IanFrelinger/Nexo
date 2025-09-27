@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Tests.Services.Models
     /// <summary>
     /// Tests for data models and interface implementation in Platform Feature Detector
     /// </summary>
-    public class ModelTests
+    public partial class ModelTests
     {
         private readonly Mock<ILogger<PlatformFeatureDetector>> _mockLogger;
         private readonly PlatformFeatureDetector _detector;

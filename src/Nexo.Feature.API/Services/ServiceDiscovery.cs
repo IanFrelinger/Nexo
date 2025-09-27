@@ -8,7 +8,7 @@ namespace Nexo.Feature.API.Services;
 /// <summary>
 /// Service discovery implementation for dynamic service registration and discovery
 /// </summary>
-public class ServiceDiscovery : IServiceDiscovery
+public partial class ServiceDiscovery : IServiceDiscovery
 {
     private readonly ILogger<ServiceDiscovery> _logger;
     private readonly ConcurrentDictionary<string, ServiceInfo> _services = new();

@@ -11,7 +11,7 @@ namespace Nexo.Feature.AI.Agents.Coordination;
 /// <summary>
 /// Coordinates multiple specialized agents for complex tasks
 /// </summary>
-public class AgentCoordinator : IAgentCoordinator
+public partial class AgentCoordinator : IAgentCoordinator
 {
     private readonly IEnumerable<ISpecializedAgent> _agents;
     private readonly IAgentWorkflowPlanner _workflowPlanner;

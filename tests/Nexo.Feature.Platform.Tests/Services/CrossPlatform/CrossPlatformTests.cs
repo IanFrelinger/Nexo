@@ -17,7 +17,7 @@ namespace Nexo.Feature.Platform.Tests.Services.CrossPlatform
     /// <summary>
     /// Tests for cross-platform scenarios in Platform Feature Detector
     /// </summary>
-    public class CrossPlatformTests
+    public partial class CrossPlatformTests
     {
         private readonly Mock<ILogger<PlatformFeatureDetector>> _mockLogger;
         private readonly PlatformFeatureDetector _detector;

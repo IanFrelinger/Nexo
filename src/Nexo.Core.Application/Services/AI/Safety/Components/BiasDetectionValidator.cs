@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Safety.Components
 {
-    public class BiasDetectionValidator
+    public partial class BiasDetectionValidator
     {
         private readonly ILogger _logger;
 
@@ -184,7 +184,7 @@ namespace Nexo.Core.Application.Services.AI.Safety.Components
         }
     }
 
-    public class BiasDetectionResult
+    public partial class BiasDetectionResult
     {
         public double BiasScore { get; set; }
         public List<string> BiasTypes { get; set; } = new();

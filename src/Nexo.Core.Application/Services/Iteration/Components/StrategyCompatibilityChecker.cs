@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Services.Iteration.Components
     /// <summary>
     /// Handles strategy compatibility checking for iteration strategies.
     /// </summary>
-    public class StrategyCompatibilityChecker
+    public partial class StrategyCompatibilityChecker
     {
         private readonly ILogger _logger;
 

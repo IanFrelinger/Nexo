@@ -68,7 +68,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Task override configuration
     /// </summary>
-    public class TaskOverride
+    public partial class TaskOverride
     {
         /// <summary>
         /// Container overrides
@@ -89,7 +89,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Container override configuration
     /// </summary>
-    public class ContainerOverride
+    public partial class ContainerOverride
     {
         /// <summary>
         /// Container name
@@ -120,7 +120,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS task result
     /// </summary>
-    public class ECSTaskResult
+    public partial class ECSTaskResult
     {
         /// <summary>
         /// Whether the operation was successful
@@ -151,7 +151,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS task information
     /// </summary>
-    public class ECSTaskInfo
+    public partial class ECSTaskInfo
     {
         /// <summary>
         /// Task ARN
@@ -212,7 +212,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Container information
     /// </summary>
-    public class ContainerInfo
+    public partial class ContainerInfo
     {
         /// <summary>
         /// Container name
@@ -253,7 +253,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS task list result
     /// </summary>
-    public class ECSTaskListResult
+    public partial class ECSTaskListResult
     {
         /// <summary>
         /// Whether the list operation was successful

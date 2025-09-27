@@ -1,8 +1,10 @@
-using Nexo.Demo.Tests.Support;
-using FluentAssertions;
-using Xunit;
-using Nexo.Demo.Tests.Support;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Demo.Tests;
+namespace Nexo.Demo.Tests
 {
+    public partial class 11_Cli_Ui_Parity
+    {
+        // Core implementation will be added here
+    }
 }

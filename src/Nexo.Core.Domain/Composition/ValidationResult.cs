@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Composition
     /// <summary>
     /// Represents the result of a validation operation, containing any errors, warnings, and overall validation status.
     /// </summary>
-    public class ValidationResult
+    public partial class ValidationResult
     {
         private readonly List<ValidationError> _errors = new();
         private readonly List<ValidationWarning> _warnings = new();

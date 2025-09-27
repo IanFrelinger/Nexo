@@ -1,11 +1,10 @@
-using Microsoft.Extensions.Logging;
-using System.CommandLine;
-using System.CommandLine.IO;
 using System;
-using System.Threading.Tasks;
-using Xunit;
-using Moq;
+using System.Collections.Generic;
 
-namespace Nexo.CLI.Tests.Commands;
+namespace Nexo.CLI.Tests.Commands
 {
+    public partial class AICommandTests
+    {
+        // Core implementation will be added here
+    }
 }

@@ -254,7 +254,7 @@ public record ResourceConstraints
 /// <summary>
 /// Event arguments for environment changes
 /// </summary>
-public class EnvironmentChangeEventArgs : EventArgs
+public partial class EnvironmentChangeEventArgs : EventArgs
 {
     /// <summary>
     /// The environment change that occurred

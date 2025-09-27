@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.Extensions
     /// <summary>
     /// Adapter that implements the new IExtensionGenerator interface using the existing AIExtensionGenerator.
     /// </summary>
-    public class ExtensionGeneratorAdapter : IExtensionGenerator<ExtensionRequest, GeneratedExtension>
+    public partial class ExtensionGeneratorAdapter : IExtensionGenerator<ExtensionRequest, GeneratedExtension>
     {
         private readonly ILogger<ExtensionGeneratorAdapter> _logger;
         private readonly IExtensionGenerator _innerGenerator;

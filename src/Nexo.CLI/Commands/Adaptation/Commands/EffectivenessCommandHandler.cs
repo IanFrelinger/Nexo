@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands.Adaptation.Commands
     /// <summary>
     /// Handles effectiveness command creation and execution
     /// </summary>
-    public class EffectivenessCommandHandler
+    public partial class EffectivenessCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

@@ -16,7 +16,7 @@ namespace Nexo.CLI.Tests.Commands.AI
     /// Tests for AI operations commands.
     /// Part of Phase 3.3 testing and validation.
     /// </summary>
-    public class AIOperationsCommandsTests
+    public partial class AIOperationsCommandsTests
     {
         private readonly Mock<IServiceProvider> _mockServiceProvider;
         private readonly Mock<ILogger<AIOperationsCommands>> _mockLogger;
@@ -197,7 +197,7 @@ namespace Nexo.CLI.Tests.Commands.AI
     /// <summary>
     /// Tests for AI chat commands.
     /// </summary>
-    public class AIChatCommandsTests
+    public partial class AIChatCommandsTests
     {
         private readonly Mock<IServiceProvider> _mockServiceProvider;
         private readonly Mock<ILogger<AIChatCommands>> _mockLogger;
@@ -296,7 +296,7 @@ namespace Nexo.CLI.Tests.Commands.AI
     /// <summary>
     /// Tests for AI documentation commands.
     /// </summary>
-    public class AIDocumentationCommandsTests
+    public partial class AIDocumentationCommandsTests
     {
         private readonly Mock<IServiceProvider> _mockServiceProvider;
         private readonly Mock<ILogger<AIDocumentationCommands>> _mockLogger;

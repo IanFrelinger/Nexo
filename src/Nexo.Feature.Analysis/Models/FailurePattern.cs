@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Pattern of test failures.
     /// </summary>
-    public class FailurePattern
+    public partial class FailurePattern
     {
         /// <summary>
         /// Name of the failure pattern.

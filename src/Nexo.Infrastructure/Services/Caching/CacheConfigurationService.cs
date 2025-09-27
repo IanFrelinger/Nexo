@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Services.Caching
     /// Implementation of the cache configuration service, extending core application functionality
     /// with support for Redis and other configurable backend caching mechanisms.
     /// </summary>
-    public class CacheConfigurationService : Nexo.Core.Application.Services.CacheConfigurationService
+    public partial class CacheConfigurationService : Nexo.Core.Application.Services.CacheConfigurationService
     {
         /// <summary>
         /// Provides an implementation of a cache configuration service supporting

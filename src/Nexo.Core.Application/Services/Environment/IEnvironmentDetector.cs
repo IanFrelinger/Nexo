@@ -48,7 +48,7 @@ public interface IEnvironmentDetector
 /// <summary>
 /// Detected environment information
 /// </summary>
-public class DetectedEnvironment
+public partial class DetectedEnvironment
 {
     public string EnvironmentId { get; set; } = Guid.NewGuid().ToString();
     public Nexo.Core.Domain.Entities.Infrastructure.EnvironmentContext Context { get; set; } = new();
@@ -64,7 +64,7 @@ public class DetectedEnvironment
 /// <summary>
 /// Environment resources information
 /// </summary>
-public class EnvironmentResources
+public partial class EnvironmentResources
 {
     public int CpuCores { get; set; }
     public long TotalMemoryMB { get; set; }
@@ -80,7 +80,7 @@ public class EnvironmentResources
 /// <summary>
 /// Security profile for environment
 /// </summary>
-public class SecurityProfile
+public partial class SecurityProfile
 {
     public SecurityLevel SecurityLevel { get; set; }
     public bool IsSecureConnection { get; set; }
@@ -93,7 +93,7 @@ public class SecurityProfile
 /// <summary>
 /// Environment optimization configuration
 /// </summary>
-public class EnvironmentOptimization
+public partial class EnvironmentOptimization
 {
     public string OptimizationId { get; set; } = Guid.NewGuid().ToString();
     public string Type { get; set; } = string.Empty;
@@ -107,7 +107,7 @@ public class EnvironmentOptimization
 /// <summary>
 /// Environment change record
 /// </summary>
-public class EnvironmentChange
+public partial class EnvironmentChange
 {
     public string ChangeId { get; set; } = Guid.NewGuid().ToString();
     public string ChangeType { get; set; } = string.Empty;
@@ -121,7 +121,7 @@ public class EnvironmentChange
 /// <summary>
 /// Environment validation result
 /// </summary>
-public class EnvironmentValidationResult
+public partial class EnvironmentValidationResult
 {
     public bool IsValid { get; set; }
     public IEnumerable<string> ValidationErrors { get; set; } = Enumerable.Empty<string>();

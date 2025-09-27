@@ -16,7 +16,7 @@ namespace Nexo.Feature.Platform.Services.Generators;
 /// <summary>
 /// Generates WebAssembly code and optimizations
 /// </summary>
-public class WebAssemblyGenerator
+public partial class WebAssemblyGenerator
 {
     private readonly ILogger<WebAssemblyGenerator> _logger;
 

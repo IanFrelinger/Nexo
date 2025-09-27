@@ -7,7 +7,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.AzureOpenAI.Providers
 {
-    public class ModelManagementProvider
+    public partial class ModelManagementProvider
     {
         private readonly ILogger<ModelManagementProvider> _logger;
 

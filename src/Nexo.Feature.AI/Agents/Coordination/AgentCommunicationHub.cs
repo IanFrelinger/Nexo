@@ -10,7 +10,7 @@ namespace Nexo.Feature.AI.Agents.Coordination;
 /// <summary>
 /// Facilitates communication between specialized agents
 /// </summary>
-public class AgentCommunicationHub : IAgentCommunicationHub
+public partial class AgentCommunicationHub : IAgentCommunicationHub
 {
     private readonly ILogger<AgentCommunicationHub> _logger;
     

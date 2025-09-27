@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models
     /// <summary>
     /// Represents a saved tool in the repository
     /// </summary>
-    public class SavedTool
+    public partial class SavedTool
     {
         /// <summary>
         /// Unique identifier for the tool

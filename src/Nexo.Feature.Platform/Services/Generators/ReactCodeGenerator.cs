@@ -16,7 +16,7 @@ namespace Nexo.Feature.Platform.Services.Generators;
 /// <summary>
 /// Generates React code for web applications
 /// </summary>
-public class ReactCodeGenerator
+public partial class ReactCodeGenerator
 {
     private readonly ILogger<ReactCodeGenerator> _logger;
 

@@ -11,7 +11,7 @@ namespace Nexo.Agent.Demo.ProjectManager.Services;
 /// <summary>
 /// Handles application bootstrap and service configuration.
 /// </summary>
-public class ApplicationBootstrap
+public partial class ApplicationBootstrap
 {
     /// <summary>
     /// Creates and configures the host with all required services.

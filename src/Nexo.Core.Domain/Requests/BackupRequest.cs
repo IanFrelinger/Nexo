@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Requests
     /// <summary>
     /// Request for creating a backup
     /// </summary>
-    public class BackupRequest
+    public partial class BackupRequest
     {
         /// <summary>
         /// Request ID

@@ -1,6 +1,6 @@
 namespace Playground.Maui.Models;
 
-public class RunResult
+public partial class RunResult
 {
     public string RunId { get; set; } = string.Empty;
     public string FeatureName { get; set; } = string.Empty;
@@ -29,7 +29,7 @@ public record ApprovalEvent(
     DateTime Timestamp
 );
 
-public class FeatureTemplate
+public partial class FeatureTemplate
 {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
@@ -37,7 +37,7 @@ public class FeatureTemplate
     public List<string> Capabilities { get; set; } = new();
 }
 
-public class ValidationResult
+public partial class ValidationResult
 {
     public bool IsValid { get; set; }
     public List<string> Messages { get; set; } = new();

@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Quality
     /// <summary>
     /// Orchestrator for code quality analysis that delegates to specialized analyzers.
     /// </summary>
-    public class CodeQualityAnalyzer : ICodeQualityAnalyzer
+    public partial class CodeQualityAnalyzer : ICodeQualityAnalyzer
     {
         private readonly ILogger<CodeQualityAnalyzer> _logger;
         private readonly SecurityAnalyzer _securityAnalyzer;

@@ -6,7 +6,7 @@ namespace Nexo.CLI.Commands.Adaptation.Handlers
     /// <summary>
     /// Handles adaptation triggering functionality
     /// </summary>
-    public class TriggerHandler
+    public partial class TriggerHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

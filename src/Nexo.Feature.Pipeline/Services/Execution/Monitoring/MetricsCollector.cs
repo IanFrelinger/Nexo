@@ -9,7 +9,7 @@ namespace Nexo.Feature.Pipeline.Services.Execution.Monitoring
     /// <summary>
     /// Handles execution metrics collection and management
     /// </summary>
-    public class MetricsCollector
+    public partial class MetricsCollector
     {
         private readonly ILogger<PipelineExecutionEngine> _logger;
         private readonly List<ExecutionMetric> _executionMetrics = new List<ExecutionMetric>();

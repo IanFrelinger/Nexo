@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// High-performance for-loop iteration strategy optimized for various platforms
 /// </summary>
-public class NexoForLoopStrategy<T> : IIterationStrategy<T>
+public partial class NexoForLoopStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "Nexo.ForLoop";
     

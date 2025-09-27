@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Execution plan for pipeline processing.
     /// </summary>
-    public class ExecutionPlan
+    public partial class ExecutionPlan
     {
         /// <summary>
         /// Gets or sets the plan identifier.
@@ -52,7 +52,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Execution step within a pipeline.
     /// </summary>
-    public class ExecutionStep
+    public partial class ExecutionStep
     {
         /// <summary>
         /// Gets or sets the step identifier.
@@ -113,7 +113,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Retry policy for execution steps.
     /// </summary>
-    public class RetryPolicy
+    public partial class RetryPolicy
     {
         /// <summary>
         /// Gets or sets the maximum number of retry attempts.

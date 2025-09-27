@@ -2,7 +2,7 @@ using System;
 
 namespace Nexo.Core.Domain.Entities.FeatureFactory
 {
-    public class HealthStatus
+    public partial class HealthStatus
     {
         public bool IsHealthy { get; set; }
         public string Status { get; set; } = string.Empty;

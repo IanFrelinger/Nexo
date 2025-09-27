@@ -1,9 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Feature.Validation.Tests.Commands;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Feature.Validation.Tests;
+namespace Nexo.Feature.Validation.Tests
 {
+    public partial class ValidationPipelineTests
+    {
+        // Orchestration methods will be added here
+    }
 }

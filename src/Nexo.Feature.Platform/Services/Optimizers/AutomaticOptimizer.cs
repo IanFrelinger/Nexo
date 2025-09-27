@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Services.Optimizers;
 /// <summary>
 /// Handles automatic performance optimizations
 /// </summary>
-public class AutomaticOptimizer
+public partial class AutomaticOptimizer
 {
     private readonly ILogger<AutomaticOptimizer> _logger;
 

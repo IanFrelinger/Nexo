@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Represents an extracted requirement from natural language
     /// </summary>
-    public class ExtractedRequirement
+    public partial class ExtractedRequirement
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;

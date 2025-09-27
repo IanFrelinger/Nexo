@@ -14,7 +14,7 @@ namespace Nexo.Feature.Analysis.Services
     /// <summary>
     /// Service for analyzing code architecture and design patterns within the pipeline architecture.
     /// </summary>
-    public class ArchitectureAnalyzerService : IArchitectureAnalyzer
+    public partial class ArchitectureAnalyzerService : IArchitectureAnalyzer
     {
         private readonly ILogger<ArchitectureAnalyzerService> _logger;
 
@@ -93,7 +93,7 @@ namespace Nexo.Feature.Analysis.Services
         /// <returns>Number of classes</returns>
         private int CountClasses(string code)
         {
-            var classKeywords = new[] { "class ", "public class ", "private class ", "internal class ", "protected class " };
+            var classKeywords = new[] { "class ", "public partial class ", "private class ", "internal class ", "protected class " };
             return classKeywords.Sum(keyword => CountOccurrences(code, keyword));
         }
 

@@ -8,7 +8,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.Mock.Providers
 {
-    public class MockEmbeddingProvider
+    public partial class MockEmbeddingProvider
     {
         private readonly ILogger<MockEmbeddingProvider> _logger;
 

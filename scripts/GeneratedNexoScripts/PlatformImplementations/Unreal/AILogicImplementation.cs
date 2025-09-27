@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unreal
     /// Target Framework: Unreal Engine 5
     /// Implementation Style: Actor-based with Component System
     /// </summary>
-    public class AILogicImplementation : AILogic
+    public partial class AILogicImplementation : AILogic
     {
         public AILogicImplementation(IIWorldProvider iworldprovider, IIStateProvider istateprovider, IIEventProvider ieventprovider, IINavigationProvider inavigationprovider)
             : base(iworldprovider, istateprovider, ieventprovider, inavigationprovider)

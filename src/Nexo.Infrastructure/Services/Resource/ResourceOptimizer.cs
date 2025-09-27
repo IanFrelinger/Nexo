@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Services.Resource
     /// <summary>
     /// Resource optimizer for adaptive performance tuning and resource management.
     /// </summary>
-    public class ResourceOptimizer : IResourceOptimizer
+    public partial class ResourceOptimizer : IResourceOptimizer
     {
         private readonly ILogger<ResourceOptimizer> _logger;
         private readonly IResourceMonitor _resourceMonitor;

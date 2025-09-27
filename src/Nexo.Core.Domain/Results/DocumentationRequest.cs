@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Documentation request
     /// </summary>
-    public class DocumentationRequest
+    public partial class DocumentationRequest
     {
         /// <summary>
         /// Request ID

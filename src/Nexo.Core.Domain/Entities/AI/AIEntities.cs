@@ -9,7 +9,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Information about an AI engine
     /// </summary>
-    public class AIEngineInfo
+    public partial class AIEngineInfo
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
@@ -33,7 +33,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Information about an AI model
     /// </summary>
-    public class ModelInfo
+    public partial class ModelInfo
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ModelId { get; set; } = "";
@@ -70,7 +70,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// AI provider capabilities
     /// </summary>
-    public class AIProviderCapabilities
+    public partial class AIProviderCapabilities
     {
         public AIProviderType ProviderType { get; set; }
         public List<Nexo.Core.Domain.Enums.PlatformType> SupportedPlatforms { get; set; } = new();
@@ -88,7 +88,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Context for AI operations
     /// </summary>
-    public class AIOperationContext
+    public partial class AIOperationContext
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public AIOperationType OperationType { get; set; }
@@ -107,7 +107,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// AI operation requirements
     /// </summary>
-    public class AIRequirements
+    public partial class AIRequirements
     {
         public AIPriority Priority { get; set; } = AIPriority.Balanced;
         public SafetyLevel SafetyLevel { get; set; } = SafetyLevel.Standard;
@@ -125,7 +125,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Available AI resources
     /// </summary>
-    public class AIResources
+    public partial class AIResources
     {
         public long AvailableMemory { get; set; }
         public int CpuCores { get; set; }
@@ -139,7 +139,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// AI operation response
     /// </summary>
-    public class AIResponse
+    public partial class AIResponse
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string OperationId { get; set; } = "";
@@ -159,7 +159,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// AI code generation request
     /// </summary>
-    public class CodeGenerationRequest
+    public partial class CodeGenerationRequest
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Prompt { get; set; } = "";
@@ -187,7 +187,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// AI code generation result
     /// </summary>
-    public class CodeGenerationResult
+    public partial class CodeGenerationResult
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string RequestId { get; set; } = "";
@@ -205,7 +205,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Code issue found during review
     /// </summary>
-    public class CodeIssue
+    public partial class CodeIssue
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Type { get; set; } = "";
@@ -223,7 +223,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Code suggestion from AI
     /// </summary>
-    public class CodeSuggestion
+    public partial class CodeSuggestion
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Type { get; set; } = "";
@@ -237,7 +237,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Model variant for different platforms
     /// </summary>
-    public class ModelVariant
+    public partial class ModelVariant
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ModelId { get; set; } = "";
@@ -260,7 +260,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// AI code optimization result
     /// </summary>
-    public class CodeOptimizationResult
+    public partial class CodeOptimizationResult
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string OptimizedCode { get; set; } = "";
@@ -277,7 +277,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// AI operation configuration
     /// </summary>
-    public class AIOperationConfiguration
+    public partial class AIOperationConfiguration
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public AIOperationType OperationType { get; set; }

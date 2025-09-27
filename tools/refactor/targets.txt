@@ -1,8 +1,3 @@
-Assets/Scripts/ConfigurableNexoAgent.Assets.cs
-Assets/Scripts/ConfigurableNexoAgent.Building.cs
-Assets/Scripts/ConfigurableNexoAgent.Core.cs
-Assets/Scripts/ConfigurableNexoAgent.Assets.cs
-Assets/Scripts/ConfigurableNexoAgent.Building.cs
 Assets/Scripts/ConfigurableNexoAgent.Core.cs
 Assets/Scripts/ConfigurableNexoAgent.Generation.cs
 Assets/Scripts/ConfigurableNexoAgent.Models.cs

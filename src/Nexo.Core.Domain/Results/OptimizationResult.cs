@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Result of optimization operations
     /// </summary>
-    public class OptimizationResult
+    public partial class OptimizationResult
     {
         /// <summary>
         /// Whether the optimization was successful

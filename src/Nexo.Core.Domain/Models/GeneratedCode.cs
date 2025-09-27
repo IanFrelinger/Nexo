@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models
     /// <summary>
     /// Represents generated code with metadata
     /// </summary>
-    public class GeneratedCode
+    public partial class GeneratedCode
     {
         /// <summary>
         /// The generated source code

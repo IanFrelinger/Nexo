@@ -15,7 +15,7 @@ namespace Nexo.Feature.Pipeline.Commands.Iteration;
 /// Pipeline command for selecting optimal iteration strategies
 /// </summary>
 [Command("iteration.select-strategy")]
-public class SelectIterationStrategyCommand : ICommand<SelectIterationStrategyRequest, SelectIterationStrategyResponse>
+public partial class SelectIterationStrategyCommand : ICommand<SelectIterationStrategyRequest, SelectIterationStrategyResponse>
 {
     private readonly IIterationStrategySelector _strategySelector;
     private readonly ILogger<SelectIterationStrategyCommand> _logger;

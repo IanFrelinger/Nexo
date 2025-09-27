@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.Domain
     /// <summary>
     /// Represents a business rule
     /// </summary>
-    public class BusinessRule
+    public partial class BusinessRule
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;

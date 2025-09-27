@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Handles GPU optimization for different platforms
     /// </summary>
-    public class GPUOptimizer
+    public partial class GPUOptimizer
     {
         private readonly ILogger<GPUOptimizer> _logger;
 
@@ -165,7 +165,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Result of GPU optimization
     /// </summary>
-    public class GPUOptimizationResult
+    public partial class GPUOptimizationResult
     {
         public string Platform { get; set; } = string.Empty;
         public bool Success { get; set; }

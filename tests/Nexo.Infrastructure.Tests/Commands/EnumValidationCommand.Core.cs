@@ -1,7 +1,10 @@
-using Microsoft.Extensions.Logging;
-using Nexo.Infrastructure.Enums;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Infrastructure.Tests.Commands;
+namespace Nexo.Infrastructure.Tests.Commands
 {
+    public partial class EnumValidationCommand
+    {
+        // Core implementation will be added here
+    }
 }

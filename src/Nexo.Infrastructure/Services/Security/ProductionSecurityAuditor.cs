@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Services.Security
     /// <summary>
     /// Orchestrator for production security auditing that delegates to specialized auditors.
     /// </summary>
-    public class ProductionSecurityAuditor : IProductionSecurityAuditor
+    public partial class ProductionSecurityAuditor : IProductionSecurityAuditor
     {
         private readonly ILogger<ProductionSecurityAuditor> _logger;
         private readonly ApiKeySecurityAuditor _apiKeyAuditor;

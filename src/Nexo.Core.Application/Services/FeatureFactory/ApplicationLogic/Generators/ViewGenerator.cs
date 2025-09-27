@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic.Generators
 {
-    public class ViewGenerator
+    public partial class ViewGenerator
     {
         private readonly ILogger<ViewGenerator> _logger;
 
@@ -73,7 +73,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic.Generat
         }
     }
 
-    public class View
+    public partial class View
     {
         public string Name { get; set; } = string.Empty;
         public string Entity { get; set; } = string.Empty;

@@ -16,7 +16,7 @@ namespace Nexo.Feature.Platform.Services.Generators;
 /// <summary>
 /// Generates Vue.js code for web applications
 /// </summary>
-public class VueCodeGenerator
+public partial class VueCodeGenerator
 {
     private readonly ILogger<VueCodeGenerator> _logger;
 

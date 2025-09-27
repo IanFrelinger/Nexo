@@ -7,7 +7,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents the result of a file synchronization operation.
     /// </summary>
-    public class SynchronizationResult
+    public partial class SynchronizationResult
     {
         public bool IsSuccess { get; set; }
         public int FilesSynchronized { get; set; }

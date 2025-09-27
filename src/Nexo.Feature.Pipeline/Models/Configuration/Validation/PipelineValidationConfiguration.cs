@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Validation
     /// <summary>
     /// Represents pipeline validation configuration.
     /// </summary>
-    public class PipelineValidationConfiguration
+    public partial class PipelineValidationConfiguration
     {
         /// <summary>
         /// Gets or sets the validation rules.
@@ -30,7 +30,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Validation
     /// <summary>
     /// Represents a validation rule configuration.
     /// </summary>
-    public class ValidationRuleConfiguration
+    public partial class ValidationRuleConfiguration
     {
         /// <summary>
         /// Gets or sets the rule name.

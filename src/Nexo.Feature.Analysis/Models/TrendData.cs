@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Trend analysis data.
     /// </summary>
-    public class TrendData
+    public partial class TrendData
     {
         /// <summary>
         /// Data points in the trend.

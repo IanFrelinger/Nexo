@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// API endpoint configuration
     /// </summary>
-    public class APIEndpoint
+    public partial class APIEndpoint
     {
         /// <summary>
         /// Endpoint ID

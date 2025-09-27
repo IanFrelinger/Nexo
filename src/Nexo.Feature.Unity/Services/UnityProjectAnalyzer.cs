@@ -12,7 +12,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Analyzes Unity projects for optimization opportunities and best practices
     /// </summary>
-    public class UnityProjectAnalyzer : IUnityProjectAnalyzer
+    public partial class UnityProjectAnalyzer : IUnityProjectAnalyzer
     {
         private readonly IFileSystemService _fileSystem;
         private readonly IUnityAssetAnalyzer _assetAnalyzer;
@@ -333,7 +333,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// File system service implementation
     /// </summary>
-    public class FileSystemService : IFileSystemService
+    public partial class FileSystemService : IFileSystemService
     {
         public Task<bool> FileExistsAsync(string path)
     {

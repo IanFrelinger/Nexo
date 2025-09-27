@@ -13,7 +13,7 @@ namespace Nexo.Feature.Analysis.Services
     /// <summary>
     /// Service for intelligent test selection based on code changes and impact analysis.
     /// </summary>
-    public class SmartTestSelector : ISmartTestSelector
+    public partial class SmartTestSelector : ISmartTestSelector
     {
         private readonly ILogger<SmartTestSelector> _logger;
         private readonly IGitChangeDetector _gitChangeDetector;

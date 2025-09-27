@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration.Components
 {
-    public class DomainLogicWorkflowExecutor
+    public partial class DomainLogicWorkflowExecutor
     {
         private readonly ILogger _logger;
         private readonly IDomainLogicGenerator _domainLogicGenerator;

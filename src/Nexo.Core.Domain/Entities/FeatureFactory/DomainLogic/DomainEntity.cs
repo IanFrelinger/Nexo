@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a domain entity in the generated domain logic
     /// </summary>
-    public class DomainEntity
+    public partial class DomainEntity
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -26,7 +26,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a property of a domain entity
     /// </summary>
-    public class EntityProperty
+    public partial class EntityProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -42,7 +42,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a method of a domain entity
     /// </summary>
-    public class EntityMethod
+    public partial class EntityMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -59,7 +59,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a method parameter
     /// </summary>
-    public class MethodParameter
+    public partial class MethodParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

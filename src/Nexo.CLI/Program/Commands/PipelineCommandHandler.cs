@@ -15,7 +15,7 @@ namespace Nexo.CLI.Program.Commands
     /// <summary>
     /// Handles pipeline-related command creation and execution
     /// </summary>
-    public class PipelineCommandHandler
+    public partial class PipelineCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

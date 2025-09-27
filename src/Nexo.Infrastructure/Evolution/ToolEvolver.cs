@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Evolution
     /// <summary>
     /// Evolves and modifies existing tools using AI
     /// </summary>
-    public class ToolEvolver : IToolEvolver
+    public partial class ToolEvolver : IToolEvolver
     {
         private readonly ICodeGenerator _codeGenerator;
         private readonly ICompilationService _compiler;

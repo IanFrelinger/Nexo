@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// Foreach iteration strategy with good readability and moderate performance
 /// </summary>
-public class NexoForeachStrategy<T> : IIterationStrategy<T>
+public partial class NexoForeachStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "Nexo.Foreach";
     

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Entities.FeatureFactory
 {
-    public class ValidatedRequirements
+    public partial class ValidatedRequirements
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

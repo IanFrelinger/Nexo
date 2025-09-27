@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Persistence
     /// <summary>
     /// Persists and manages generated tools
     /// </summary>
-    public class ToolRepository : IToolRepository
+    public partial class ToolRepository : IToolRepository
     {
         private readonly string _toolsPath;
         private readonly ILogger<ToolRepository> _logger;

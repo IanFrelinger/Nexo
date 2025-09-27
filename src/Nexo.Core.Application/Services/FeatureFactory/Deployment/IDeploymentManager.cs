@@ -69,7 +69,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Result of deployment operations
     /// </summary>
-    public class DeploymentResult
+    public partial class DeploymentResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -86,7 +86,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Result of validation operations
     /// </summary>
-    public class ValidationResult
+    public partial class ValidationResult
     {
         public bool IsValid { get; set; }
         public List<ValidationError> Errors { get; set; } = new();
@@ -97,7 +97,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Result of rollback operations
     /// </summary>
-    public class RollbackResult
+    public partial class RollbackResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -110,7 +110,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Deployment status information
     /// </summary>
-    public class DeploymentStatus
+    public partial class DeploymentStatus
     {
         public string Id { get; set; } = string.Empty;
         public DeploymentState State { get; set; } = DeploymentState.Pending;
@@ -125,7 +125,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Deployment log entry
     /// </summary>
-    public class DeploymentLog
+    public partial class DeploymentLog
     {
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         public LogLevel Level { get; set; } = LogLevel.Information;
@@ -137,7 +137,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Deployment step information
     /// </summary>
-    public class DeploymentStep
+    public partial class DeploymentStep
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -151,7 +151,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Validation error information
     /// </summary>
-    public class ValidationError
+    public partial class ValidationError
     {
         public string Code { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
@@ -163,7 +163,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Validation warning information
     /// </summary>
-    public class ValidationWarning
+    public partial class ValidationWarning
     {
         public string Code { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;

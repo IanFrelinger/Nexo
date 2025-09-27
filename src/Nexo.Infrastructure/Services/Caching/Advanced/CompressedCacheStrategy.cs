@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// Cache strategy that compresses values to reduce memory usage.
     /// Part of Phase 3.3 advanced caching features.
     /// </summary>
-    public class CompressedCacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue> where TKey : notnull
+    public partial class CompressedCacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue> where TKey : notnull
     {
         private readonly ICacheStrategy<TKey, byte[]> _innerStrategy;
         private readonly CompressionConfiguration _configuration;
@@ -193,7 +193,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Configuration for compression settings.
     /// </summary>
-    public class CompressionConfiguration
+    public partial class CompressionConfiguration
     {
         public int MinCompressionSize { get; set; } = 1024; // 1KB
         public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.Optimal;

@@ -13,7 +13,7 @@ namespace Nexo.Feature.AI.Services.RAG
     /// <summary>
     /// RAG service for retrieving and augmenting C#/.NET documentation
     /// </summary>
-    public class DocumentationRAGService : IDocumentationRAGService
+    public partial class DocumentationRAGService : IDocumentationRAGService
     {
         private readonly ILogger<DocumentationRAGService> _logger;
         private readonly IDocumentationVectorStore _vectorStore;

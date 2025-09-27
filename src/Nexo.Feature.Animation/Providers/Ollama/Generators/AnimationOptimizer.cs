@@ -8,7 +8,7 @@ using Nexo.Feature.Animation.Models;
 
 namespace Nexo.Feature.Animation.Providers.Ollama.Generators
 {
-    public class AnimationOptimizer
+    public partial class AnimationOptimizer
     {
         private readonly ILogger<AnimationOptimizer> _logger;
 

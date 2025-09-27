@@ -1,10 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Core.Domain.Tests.Commands;
-using Nexo.Core.Domain.Enums;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Core.Domain.Tests;
+namespace Nexo.Core.Domain.Tests
 {
+    public partial class CoreDomainPipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

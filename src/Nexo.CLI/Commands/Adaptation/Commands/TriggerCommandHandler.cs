@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands.Adaptation.Commands
     /// <summary>
     /// Handles trigger command creation and execution
     /// </summary>
-    public class TriggerCommandHandler
+    public partial class TriggerCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

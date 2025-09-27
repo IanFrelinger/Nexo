@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Services.Platform
     /// Native API integration service for Phase 6 - orchestrates specialized integrators
     /// Provides framework for integrating with native platform APIs and handling permissions.
     /// </summary>
-    public class NativeApiIntegrationService : INativeApiIntegrationService
+    public partial class NativeApiIntegrationService : INativeApiIntegrationService
     {
         private readonly ILogger<NativeApiIntegrationService> _logger;
         private readonly IModelOrchestrator _modelOrchestrator;

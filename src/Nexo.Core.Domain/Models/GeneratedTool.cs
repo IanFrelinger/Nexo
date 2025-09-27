@@ -8,7 +8,7 @@ namespace Nexo.Core.Domain.Models
     /// <summary>
     /// Represents a generated tool that can be executed
     /// </summary>
-    public class GeneratedTool
+    public partial class GeneratedTool
     {
         /// <summary>
         /// The plugin instance

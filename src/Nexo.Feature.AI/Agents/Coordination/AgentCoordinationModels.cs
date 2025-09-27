@@ -125,7 +125,7 @@ public record CoordinatedResponse
 /// <summary>
 /// Execution context for workflow coordination
 /// </summary>
-public class ExecutionContext
+public partial class ExecutionContext
 {
     public Dictionary<string, object> Variables { get; } = new();
     public List<string> CompletedSteps { get; } = new();

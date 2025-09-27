@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.AI.Models
     /// <summary>
     /// Service for managing AI models across platforms
     /// </summary>
-    public class ModelManagementService : IModelManagementService
+    public partial class ModelManagementService : IModelManagementService
     {
         private readonly ILogger<ModelManagementService> _logger;
         private readonly string _modelCachePath;

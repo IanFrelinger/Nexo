@@ -8,7 +8,7 @@ namespace Nexo.Agent.Implementations;
 /// <summary>
 /// Default implementation of the file system abstraction.
 /// </summary>
-public class DefaultFileSystem : IFileSystem
+public partial class DefaultFileSystem : IFileSystem
 {
     public bool FileExists(string path)
     {

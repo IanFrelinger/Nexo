@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation.Validators;
 /// <summary>
 /// Analyzes and suggests optimizations for domain logic
 /// </summary>
-public class OptimizationAnalyzer
+public partial class OptimizationAnalyzer
 {
     private readonly ILogger<OptimizationAnalyzer> _logger;
 

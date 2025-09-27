@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Tests.Configuration;
 /// <summary>
 /// Tests for iteration configuration
 /// </summary>
-public class IterationConfigurationTests
+public partial class IterationConfigurationTests
 {
     [Fact]
     public void IterationConfiguration_ShouldHaveDefaultValues()

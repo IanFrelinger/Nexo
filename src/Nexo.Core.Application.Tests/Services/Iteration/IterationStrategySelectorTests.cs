@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Tests.Services.Iteration;
 /// <summary>
 /// Tests for the iteration strategy selector
 /// </summary>
-public class IterationStrategySelectorTests
+public partial class IterationStrategySelectorTests
 {
     private readonly Mock<ILogger<NexoIterationStrategySelector>> _mockLogger;
     private readonly List<IIterationStrategy<object>> _strategies;

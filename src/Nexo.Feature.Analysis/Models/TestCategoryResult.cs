@@ -3,7 +3,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Aggregated results for a test category.
     /// </summary>
-    public class TestCategoryResult
+    public partial class TestCategoryResult
     {
         /// <summary>
         /// Name of the test category.

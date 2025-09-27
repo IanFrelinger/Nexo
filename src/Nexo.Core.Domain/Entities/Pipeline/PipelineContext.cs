@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.Pipeline
     /// <summary>
     /// Pipeline execution context
     /// </summary>
-    public class PipelineContext
+    public partial class PipelineContext
     {
         /// <summary>
         /// Pipeline ID
@@ -136,7 +136,7 @@ namespace Nexo.Core.Domain.Entities.Pipeline
     /// <summary>
     /// Pipeline step
     /// </summary>
-    public class PipelineStep
+    public partial class PipelineStep
     {
         /// <summary>
         /// Step ID

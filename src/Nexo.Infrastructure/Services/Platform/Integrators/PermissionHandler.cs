@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Services.Platform.Integrators;
 /// <summary>
 /// Handles permission management for native APIs
 /// </summary>
-public class PermissionHandler
+public partial class PermissionHandler
 {
     private readonly ILogger<PermissionHandler> _logger;
     private readonly IModelOrchestrator _modelOrchestrator;
@@ -136,7 +136,7 @@ using System.Threading.Tasks;
 
 namespace {GetNamespaceForPlatform(platform)}
 {{
-    public class {apiName}PermissionRequest
+    public partial class {apiName}PermissionRequest
     {{
         public async Task<bool> RequestPermissionsAsync()
         {{
@@ -183,7 +183,7 @@ using System.Threading.Tasks;
 
 namespace {GetNamespaceForPlatform(platform)}
 {{
-    public class {apiName}PermissionCheck
+    public partial class {apiName}PermissionCheck
     {{
         public async Task<PermissionStatus> CheckPermissionsAsync()
         {{
@@ -239,7 +239,7 @@ using System.Threading.Tasks;
 
 namespace {GetNamespaceForPlatform(platform)}
 {{
-    public class {apiName}PermissionHandler
+    public partial class {apiName}PermissionHandler
     {{
         public async Task<bool> HandlePermissionsAsync()
         {{

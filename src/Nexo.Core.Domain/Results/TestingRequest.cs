@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Testing request
     /// </summary>
-    public class TestingRequest
+    public partial class TestingRequest
     {
         /// <summary>
         /// Request ID

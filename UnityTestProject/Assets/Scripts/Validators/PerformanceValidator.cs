@@ -7,7 +7,7 @@ using Nexo.Agent.Contracts;
 
 namespace NexoDoomGame.Validators
 {
-    public class PerformanceValidator
+    public partial class PerformanceValidator
     {
         private readonly ITaskExecutionAgent _nexoAgent;
 
@@ -208,7 +208,7 @@ namespace NexoDoomGame.Validators
         }
     }
 
-    public class PerformanceMetric
+    public partial class PerformanceMetric
     {
         public string Name { get; set; } = string.Empty;
         public float Value { get; set; }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic.Generators
 {
-    public class ControllerGenerator
+    public partial class ControllerGenerator
     {
         private readonly ILogger<ControllerGenerator> _logger;
 
@@ -54,7 +54,7 @@ namespace Controllers
 {{
     [ApiController]
     [Route(""api/[controller]"")]
-    public class {entityName}Controller : ControllerBase
+    public partial class {entityName}Controller : ControllerBase
     {{
         [HttpGet]
         public IActionResult Get()
@@ -84,7 +84,7 @@ namespace Controllers
         }
     }
 
-    public class Controller
+    public partial class Controller
     {
         public string Name { get; set; } = string.Empty;
         public string Entity { get; set; } = string.Empty;

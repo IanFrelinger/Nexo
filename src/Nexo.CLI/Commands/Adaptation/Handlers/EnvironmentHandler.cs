@@ -5,7 +5,7 @@ namespace Nexo.CLI.Commands.Adaptation.Handlers
     /// <summary>
     /// Handles environment status functionality
     /// </summary>
-    public class EnvironmentHandler
+    public partial class EnvironmentHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

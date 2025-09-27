@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Database configuration
     /// </summary>
-    public class DatabaseConfiguration
+    public partial class DatabaseConfiguration
     {
         /// <summary>
         /// Database ID

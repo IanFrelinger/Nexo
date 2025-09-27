@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
-    public class PerformanceFeatureDetector : IPerformanceFeatureDetector
+    public partial class PerformanceFeatureDetector : IPerformanceFeatureDetector
     {
         private readonly ILogger<PerformanceFeatureDetector> _logger;
         public PerformanceFeatureDetector(ILogger<PerformanceFeatureDetector> logger) { _logger = logger; }

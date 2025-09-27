@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands.Adaptation.Commands
     /// <summary>
     /// Handles environment command creation and execution
     /// </summary>
-    public class EnvironmentCommandHandler
+    public partial class EnvironmentCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models;
 /// <summary>
 /// Request for executing a complete application development pipeline.
 /// </summary>
-public class ApplicationPipelineRequest
+public partial class ApplicationPipelineRequest
 {
     [Required]
     public string ApplicationName { get; set; } = string.Empty;
@@ -33,7 +33,7 @@ public class ApplicationPipelineRequest
 /// <summary>
 /// Request for executing an analysis pipeline on existing code.
 /// </summary>
-public class AnalysisPipelineRequest
+public partial class AnalysisPipelineRequest
 {
     [Required]
     public string SourceCode { get; set; } = string.Empty;
@@ -54,7 +54,7 @@ public class AnalysisPipelineRequest
 /// <summary>
 /// Request for executing a performance optimization pipeline.
 /// </summary>
-public class PerformancePipelineRequest
+public partial class PerformancePipelineRequest
 {
     [Required]
     public string ApplicationName { get; set; } = string.Empty;
@@ -75,7 +75,7 @@ public class PerformancePipelineRequest
 /// <summary>
 /// Request for executing a platform integration pipeline.
 /// </summary>
-public class PlatformPipelineRequest
+public partial class PlatformPipelineRequest
 {
     [Required]
     public string PlatformName { get; set; } = string.Empty;

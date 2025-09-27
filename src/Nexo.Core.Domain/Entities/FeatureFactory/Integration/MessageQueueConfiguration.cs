@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Message queue configuration
     /// </summary>
-    public class MessageQueueConfiguration
+    public partial class MessageQueueConfiguration
     {
         /// <summary>
         /// Queue ID

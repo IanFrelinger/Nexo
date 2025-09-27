@@ -57,7 +57,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Monitoring
     /// <summary>
     /// Result of monitoring operations
     /// </summary>
-    public class MonitoringResult
+    public partial class MonitoringResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -73,7 +73,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Monitoring
     /// <summary>
     /// Monitoring status information
     /// </summary>
-    public class MonitoringStatus
+    public partial class MonitoringStatus
     {
         public string Id { get; set; } = string.Empty;
         public MonitoringState State { get; set; } = MonitoringState.Pending;
@@ -88,7 +88,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Monitoring
     /// <summary>
     /// Monitoring step information
     /// </summary>
-    public class MonitoringStep
+    public partial class MonitoringStep
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -102,7 +102,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Monitoring
     /// <summary>
     /// Monitoring configuration
     /// </summary>
-    public class MonitoringConfiguration
+    public partial class MonitoringConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -115,7 +115,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Monitoring
     /// <summary>
     /// Monitoring alert
     /// </summary>
-    public class MonitoringAlert
+    public partial class MonitoringAlert
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ApplicationId { get; set; } = string.Empty;

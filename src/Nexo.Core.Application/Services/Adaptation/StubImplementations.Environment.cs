@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.Adaptation;
 
-public class EnvironmentDetector : IEnvironmentDetector
+public partial class EnvironmentDetector : IEnvironmentDetector
 {
     public event EventHandler<EnvironmentChangeEventArgs>? OnEnvironmentChange;
     

@@ -13,7 +13,7 @@ namespace Nexo.Feature.Pipeline.Services
     /// <summary>
     /// Smart workflow optimizer that provides intelligent pipeline orchestration.
     /// </summary>
-    public class SmartWorkflowOptimizer : IIntelligentPipelineOrchestrator
+    public partial class SmartWorkflowOptimizer : IIntelligentPipelineOrchestrator
     {
         private readonly ILogger<SmartWorkflowOptimizer> _logger;
 

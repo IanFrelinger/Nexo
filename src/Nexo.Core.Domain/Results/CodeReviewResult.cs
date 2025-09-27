@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Code review result
     /// </summary>
-    public class CodeReviewResult
+    public partial class CodeReviewResult
     {
         /// <summary>
         /// Whether the review was successful
@@ -132,7 +132,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Review comment
     /// </summary>
-    public class ReviewComment
+    public partial class ReviewComment
     {
         /// <summary>
         /// Comment text

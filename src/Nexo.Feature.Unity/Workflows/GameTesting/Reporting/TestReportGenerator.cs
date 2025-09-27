@@ -5,7 +5,7 @@ using Nexo.Feature.Unity.Models;
 
 namespace Nexo.Feature.Unity.Workflows.GameTesting.Reporting
 {
-    public class TestReportGenerator
+    public partial class TestReportGenerator
     {
         private readonly ILogger _logger;
 

@@ -11,7 +11,7 @@ namespace Nexo.PluginHost.Implementations
     /// <summary>
     /// Default implementation of INexoProcessRunner that wraps System.Diagnostics.Process operations.
     /// </summary>
-    public class DefaultProcessRunner : INexoProcessRunner
+    public partial class DefaultProcessRunner : INexoProcessRunner
     {
         public async Task<INexoProcess> StartProcessAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
         {
@@ -94,7 +94,7 @@ namespace Nexo.PluginHost.Implementations
     /// <summary>
     /// Default implementation of INexoProcess that wraps System.Diagnostics.Process.
     /// </summary>
-    public class DefaultProcess : INexoProcess
+    public partial class DefaultProcess : INexoProcess
     {
         private readonly Process _process;
         private bool _disposed;

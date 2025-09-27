@@ -9,7 +9,7 @@ namespace Nexo.Agent.Implementations;
 /// <summary>
 /// Simple rule-based planner that creates plans without LLM dependency.
 /// </summary>
-public class SimplePlanner : IAgentPlanner
+public partial class SimplePlanner : IAgentPlanner
 {
     private readonly ILogger<SimplePlanner> _logger;
     private readonly ActivitySource _activitySource;
@@ -346,7 +346,7 @@ public class SimplePlanner : IAgentPlanner
                     DocumentationUrl = "https://nexo.dev/docs/agent/integration",
                     Section = "Agent Integration",
                     RelatedTopics = new[] { "nexo", "agent", "integration" },
-                    CodeExamples = new[] { "public class MyTool : INexoTool" }
+                    CodeExamples = new[] { "public partial class MyTool : INexoTool" }
                 }
             };
 

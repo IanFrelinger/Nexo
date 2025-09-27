@@ -3,7 +3,7 @@ using Nexo.Core.Domain.Composition;
 
 namespace Nexo.Core.Domain.Models.Extensions
 {
-    public class CompilationResult : BaseResult
+    public partial class CompilationResult : BaseResult
     {
         public byte[]? AssemblyBytes { get; set; }
         public List<CompilationError> Errors { get; set; } = new();
@@ -30,7 +30,7 @@ namespace Nexo.Core.Domain.Models.Extensions
         }
     }
 
-    public class CompilationError
+    public partial class CompilationError
     {
         public string Id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
@@ -40,7 +40,7 @@ namespace Nexo.Core.Domain.Models.Extensions
         public string Severity { get; set; } = string.Empty;
     }
 
-    public class CompilationWarning
+    public partial class CompilationWarning
     {
         public string Id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;

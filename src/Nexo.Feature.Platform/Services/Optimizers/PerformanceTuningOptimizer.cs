@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Services.Optimizers;
 /// <summary>
 /// Handles performance tuning optimization
 /// </summary>
-public class PerformanceTuningOptimizer
+public partial class PerformanceTuningOptimizer
 {
     private readonly ILogger<PerformanceTuningOptimizer> _logger;
     private readonly Dictionary<string, PerformanceTuningProfile> _tuningProfiles;

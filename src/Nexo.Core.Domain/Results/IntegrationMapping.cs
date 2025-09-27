@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Represents mapping between different system data formats
     /// </summary>
-    public class IntegrationMapping
+    public partial class IntegrationMapping
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -19,7 +19,7 @@ namespace Nexo.Core.Domain.Results
         public DateTime UpdatedAt { get; set; }
     }
 
-    public class FieldMapping
+    public partial class FieldMapping
     {
         public string SourceField { get; set; } = string.Empty;
         public string TargetField { get; set; } = string.Empty;
@@ -28,7 +28,7 @@ namespace Nexo.Core.Domain.Results
         public string DefaultValue { get; set; } = string.Empty;
     }
 
-    public class TransformationRule
+    public partial class TransformationRule
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

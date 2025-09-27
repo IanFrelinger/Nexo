@@ -17,7 +17,7 @@ namespace Nexo.Feature.Platform.Tests.Services.Functionality
     /// <summary>
     /// Tests for core service functionality in Platform Feature Detector
     /// </summary>
-    public class FunctionalityTests
+    public partial class FunctionalityTests
     {
         private readonly Mock<ILogger<PlatformFeatureDetector>> _mockLogger;
         private readonly PlatformFeatureDetector _detector;

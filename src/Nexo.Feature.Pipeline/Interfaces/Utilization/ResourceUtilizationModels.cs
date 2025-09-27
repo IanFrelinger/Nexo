@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Utilization
     /// <summary>
     /// Resource utilization information.
     /// </summary>
-    public class ResourceUtilization
+    public partial class ResourceUtilization
     {
         /// <summary>
         /// Gets or sets the utilization identifier.
@@ -41,7 +41,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Utilization
     /// <summary>
     /// CPU utilization information.
     /// </summary>
-    public class CpuUtilization
+    public partial class CpuUtilization
     {
         /// <summary>
         /// Gets or sets the current CPU usage percentage.
@@ -67,7 +67,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Utilization
     /// <summary>
     /// Memory utilization information.
     /// </summary>
-    public class MemoryUtilization
+    public partial class MemoryUtilization
     {
         /// <summary>
         /// Gets or sets the current memory usage in MB.
@@ -93,7 +93,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Utilization
     /// <summary>
     /// Disk utilization information.
     /// </summary>
-    public class DiskUtilization
+    public partial class DiskUtilization
     {
         /// <summary>
         /// Gets or sets the current disk usage in MB.
@@ -119,7 +119,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Utilization
     /// <summary>
     /// Network utilization information.
     /// </summary>
-    public class NetworkUtilization
+    public partial class NetworkUtilization
     {
         /// <summary>
         /// Gets or sets the current bandwidth usage in Mbps.

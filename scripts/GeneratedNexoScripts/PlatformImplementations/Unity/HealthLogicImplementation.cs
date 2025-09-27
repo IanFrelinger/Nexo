@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unity
     /// Target Framework: Unity 2022.3 LTS
     /// Implementation Style: MonoBehaviour-based with Component System
     /// </summary>
-    public class HealthLogicImplementation : HealthLogic
+    public partial class HealthLogicImplementation : HealthLogic
     {
         public HealthLogicImplementation(IIEventProvider ieventprovider, IIStateProvider istateprovider, IINotificationProvider inotificationprovider)
             : base(ieventprovider, istateprovider, inotificationprovider)

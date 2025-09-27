@@ -9,7 +9,7 @@ namespace Playground.Server.Services;
 /// <summary>
 /// Generates mobile application code based on requirements.
 /// </summary>
-public class MobileAppCodeGenerator
+public partial class MobileAppCodeGenerator
 {
     public string GenerateMobileAppCode(string prompt, List<string> features)
     {

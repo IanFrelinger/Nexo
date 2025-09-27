@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Represents a complete policy definition loaded from YAML
     /// </summary>
-    public class PolicyDefinition
+    public partial class PolicyDefinition
     {
         /// <summary>
         /// Policy metadata
@@ -36,7 +36,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Policy metadata
     /// </summary>
-    public class PolicyMetadata
+    public partial class PolicyMetadata
     {
         public string Id { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
@@ -48,7 +48,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Safety policy configuration
     /// </summary>
-    public class SafetyPolicy
+    public partial class SafetyPolicy
     {
         public SandboxConfiguration Sandbox { get; set; } = new SandboxConfiguration();
         public List<SafetyRule> Rules { get; set; } = new List<SafetyRule>();
@@ -57,7 +57,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Quality policy configuration
     /// </summary>
-    public class QualityPolicy
+    public partial class QualityPolicy
     {
         public QualityGates Gates { get; set; } = new QualityGates();
         public QualityScoring Scoring { get; set; } = new QualityScoring();
@@ -67,7 +67,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Sandbox configuration for safety policies
     /// </summary>
-    public class SandboxConfiguration
+    public partial class SandboxConfiguration
     {
         public FilesystemSandbox Filesystem { get; set; } = new FilesystemSandbox();
         public ProcessSandbox Process { get; set; } = new ProcessSandbox();
@@ -78,7 +78,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Filesystem sandbox configuration
     /// </summary>
-    public class FilesystemSandbox
+    public partial class FilesystemSandbox
     {
         public List<string> WriteRoots { get; set; } = new List<string>();
         public List<string> ReadOnlyGlobs { get; set; } = new List<string>();
@@ -88,7 +88,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Process sandbox configuration
     /// </summary>
-    public class ProcessSandbox
+    public partial class ProcessSandbox
     {
         public List<string> AllowExec { get; set; } = new List<string>();
         public List<string> DenyExec { get; set; } = new List<string>();
@@ -97,7 +97,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Network sandbox configuration
     /// </summary>
-    public class NetworkSandbox
+    public partial class NetworkSandbox
     {
         public string Default { get; set; } = "deny";
         public string? AllowlistRef { get; set; }
@@ -109,7 +109,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Environment sandbox configuration
     /// </summary>
-    public class EnvironmentSandbox
+    public partial class EnvironmentSandbox
     {
         public List<string> AllowedPrefixes { get; set; } = new List<string>();
         public List<string> Deny { get; set; } = new List<string>();
@@ -118,7 +118,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Quality gates configuration
     /// </summary>
-    public class QualityGates
+    public partial class QualityGates
     {
         public CompileGate Compile { get; set; } = new CompileGate();
         public TestGate Tests { get; set; } = new TestGate();
@@ -131,7 +131,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Compile gate configuration
     /// </summary>
-    public class CompileGate
+    public partial class CompileGate
     {
         public bool MustSucceed { get; set; } = true;
     }
@@ -139,7 +139,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Test gate configuration
     /// </summary>
-    public class TestGate
+    public partial class TestGate
     {
         public bool MustPass { get; set; } = true;
         public double MinCoverage { get; set; } = 0.75;
@@ -148,7 +148,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Style gate configuration
     /// </summary>
-    public class StyleGate
+    public partial class StyleGate
     {
         public int MaxWarnings { get; set; } = 50;
         public bool TreatAnalyzersAsErrors { get; set; } = true;
@@ -157,7 +157,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Complexity gate configuration
     /// </summary>
-    public class ComplexityGate
+    public partial class ComplexityGate
     {
         public int MaxCyclomaticAverage { get; set; } = 12;
         public int MaxCyclomaticPerMethod { get; set; } = 20;
@@ -166,7 +166,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Dependency gate configuration
     /// </summary>
-    public class DependencyGate
+    public partial class DependencyGate
     {
         public bool DisallowPrerelease { get; set; } = true;
         public DependencyAudit Audit { get; set; } = new DependencyAudit();
@@ -175,7 +175,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Dependency audit configuration
     /// </summary>
-    public class DependencyAudit
+    public partial class DependencyAudit
     {
         public string SeverityFailAt { get; set; } = "high";
     }
@@ -183,7 +183,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Commit gate configuration
     /// </summary>
-    public class CommitGate
+    public partial class CommitGate
     {
         public bool ConventionalCommits { get; set; } = true;
     }
@@ -191,7 +191,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Quality scoring configuration
     /// </summary>
-    public class QualityScoring
+    public partial class QualityScoring
     {
         public Dictionary<string, double> Weights { get; set; } = new Dictionary<string, double>();
         public double PassThreshold { get; set; } = 0.80;
@@ -200,7 +200,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Language-specific overrides
     /// </summary>
-    public class LanguageOverride
+    public partial class LanguageOverride
     {
         public string? AnalyzerRuleset { get; set; }
         public RoslynConfiguration? Roslyn { get; set; }
@@ -209,7 +209,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Roslyn configuration
     /// </summary>
-    public class RoslynConfiguration
+    public partial class RoslynConfiguration
     {
         public bool TreatWarningsAsErrors { get; set; } = true;
         public List<string> RequiredDiagnostics { get; set; } = new List<string>();
@@ -219,7 +219,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Policy rule
     /// </summary>
-    public class PolicyRule
+    public partial class PolicyRule
     {
         public string Id { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -233,7 +233,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Safety rule
     /// </summary>
-    public class SafetyRule : PolicyRule
+    public partial class SafetyRule : PolicyRule
     {
         // Inherits from PolicyRule
     }
@@ -241,7 +241,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Policy output configuration
     /// </summary>
-    public class PolicyOutputs
+    public partial class PolicyOutputs
     {
         public string ReportDir { get; set; } = "./test-reports";
         public List<string> Formats { get; set; } = new List<string> { "json", "md" };

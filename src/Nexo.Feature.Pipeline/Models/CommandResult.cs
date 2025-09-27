@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents the result of a command execution.
     /// </summary>
-    public class CommandResult
+    public partial class CommandResult
 {
     /// <summary>
     /// Whether the command execution was successful.

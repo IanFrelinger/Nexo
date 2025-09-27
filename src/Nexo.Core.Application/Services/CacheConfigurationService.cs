@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Services
     /// <summary>
     /// Service for managing cache configuration and creating cache strategies.
     /// </summary>
-    public class CacheConfigurationService
+    public partial class CacheConfigurationService
     {
         private readonly CacheSettings _settings;
 

@@ -11,7 +11,7 @@ namespace Nexo.Feature.Unity.Workflows.GameTesting.Core
     /// <summary>
     /// Orchestrator for automated game testing workflow delegating to specialized phases
     /// </summary>
-    public class GameTestingWorkflow : IWorkflow
+    public partial class GameTestingWorkflow : IWorkflow
     {
         private readonly ILogger<GameTestingWorkflow> _logger;
         private readonly UnitTestingRunner _unitTestingRunner;

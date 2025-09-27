@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Event arguments for when a command is unregistered.
     /// </summary>
-    public class CommandUnregisteredEventArgs : EventArgs
+    public partial class CommandUnregisteredEventArgs : EventArgs
     {
         /// <summary>
         /// The ID of the command that was unregistered.

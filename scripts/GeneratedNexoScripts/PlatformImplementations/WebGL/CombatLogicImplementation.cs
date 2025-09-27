@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.WebGL
     /// Target Framework: WebAssembly
     /// Implementation Style: Component-based with Web APIs
     /// </summary>
-    public class CombatLogicImplementation : CombatLogic
+    public partial class CombatLogicImplementation : CombatLogic
     {
         public CombatLogicImplementation(IIHealthProvider ihealthprovider, IIAudioProvider iaudioprovider, IIAnimationProvider ianimationprovider, IIProjectileProvider iprojectileprovider)
             : base(ihealthprovider, iaudioprovider, ianimationprovider, iprojectileprovider)

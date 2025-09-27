@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unreal
     /// Target Framework: Unreal Engine 5
     /// Implementation Style: Actor-based with Component System
     /// </summary>
-    public class AudioLogicImplementation : AudioLogic
+    public partial class AudioLogicImplementation : AudioLogic
     {
         public AudioLogicImplementation(IIResourceProvider iresourceprovider, IISpatialProvider ispatialprovider, IIVolumeProvider ivolumeprovider)
             : base(iresourceprovider, ispatialprovider, ivolumeprovider)

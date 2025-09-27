@@ -17,7 +17,7 @@ namespace Nexo.Feature.Platform.Services
     /// Service for platform-specific performance optimization - orchestrates specialized optimizers
     /// Part of Epic 6.2: Platform-Specific Feature Integration, Story 6.2.3: Performance Optimization.
     /// </summary>
-    public class PerformanceOptimization : IPerformanceOptimization
+    public partial class PerformanceOptimization : IPerformanceOptimization
     {
         private readonly ILogger<PerformanceOptimization> _logger;
         private readonly PerformanceTuningOptimizer _tuningOptimizer;

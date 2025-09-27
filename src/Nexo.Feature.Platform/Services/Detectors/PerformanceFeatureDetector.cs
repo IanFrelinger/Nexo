@@ -11,7 +11,7 @@ using Nexo.Core.Application.Enums;
 
 namespace Nexo.Feature.Platform.Services.Detectors
 {
-    public class PerformanceFeatureDetector
+    public partial class PerformanceFeatureDetector
     {
         private readonly ILogger<PerformanceFeatureDetector> _logger;
 

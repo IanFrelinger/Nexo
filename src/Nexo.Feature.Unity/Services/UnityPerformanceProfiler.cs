@@ -12,7 +12,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Real-time Unity performance profiling and monitoring
     /// </summary>
-    public class UnityPerformanceProfiler : IUnityPerformanceProfiler
+    public partial class UnityPerformanceProfiler : IUnityPerformanceProfiler
     {
         private readonly IUnityProfilerAPI _profilerAPI;
         private readonly IPerformanceDataCollector _dataCollector;
@@ -380,7 +380,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Performance spike analysis
     /// </summary>
-    public class PerformanceSpikeAnalysis
+    public partial class PerformanceSpikeAnalysis
     {
         public double FrameTime { get; set; }
         public double CpuTime { get; set; }

@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Nexo.Core.Application.Tests.Services.Extensions
 {
-    public class PluginLoaderTests
+    public partial class PluginLoaderTests
     {
         private readonly Mock<ILogger<PluginLoader>> _mockLogger;
         private readonly PluginLoader _pluginLoader;

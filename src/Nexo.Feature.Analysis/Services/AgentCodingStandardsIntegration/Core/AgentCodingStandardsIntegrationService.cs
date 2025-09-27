@@ -14,7 +14,7 @@ namespace Nexo.Feature.Analysis.Services.AgentCodingStandardsIntegration.Core
     /// Orchestrator that integrates coding standards enforcement with code generation agents.
     /// Delegates to specialized operation services.
     /// </summary>
-    public class AgentCodingStandardsIntegrationService
+    public partial class AgentCodingStandardsIntegrationService
     {
         private readonly ILogger<AgentCodingStandardsIntegrationService> _logger;
         private readonly CodeValidationOperations _validation;

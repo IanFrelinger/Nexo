@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Represents a sample for fine-tuning AI models
     /// </summary>
-    public class FineTuningSample
+    public partial class FineTuningSample
     {
         public string Id { get; set; } = string.Empty;
         public string Input { get; set; } = string.Empty;

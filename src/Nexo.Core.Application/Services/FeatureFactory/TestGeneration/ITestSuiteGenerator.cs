@@ -52,7 +52,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Result of test suite generation
     /// </summary>
-    public class TestSuiteResult
+    public partial class TestSuiteResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -69,7 +69,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Result of unit test generation
     /// </summary>
-    public class UnitTestResult
+    public partial class UnitTestResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -82,7 +82,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Result of integration test generation
     /// </summary>
-    public class IntegrationTestResult
+    public partial class IntegrationTestResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -95,7 +95,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Result of domain test generation
     /// </summary>
-    public class DomainTestResult
+    public partial class DomainTestResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -108,7 +108,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Result of test data generation
     /// </summary>
-    public class TestDataResult
+    public partial class TestDataResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -121,7 +121,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Result of test fixture generation
     /// </summary>
-    public class TestFixtureResult
+    public partial class TestFixtureResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -134,7 +134,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Result of test coverage generation
     /// </summary>
-    public class TestCoverageResult
+    public partial class TestCoverageResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -146,7 +146,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents a unit test
     /// </summary>
-    public class UnitTest
+    public partial class UnitTest
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -165,7 +165,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents an integration test
     /// </summary>
-    public class IntegrationTest
+    public partial class IntegrationTest
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -184,7 +184,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents a domain test
     /// </summary>
-    public class DomainTest
+    public partial class DomainTest
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -202,7 +202,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents a test step
     /// </summary>
-    public class TestStep
+    public partial class TestStep
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -215,7 +215,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents a test assertion
     /// </summary>
-    public class TestAssertion
+    public partial class TestAssertion
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -229,7 +229,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents test data
     /// </summary>
-    public class TestData
+    public partial class TestData
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -244,7 +244,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents a test fixture
     /// </summary>
-    public class TestFixture
+    public partial class TestFixture
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -260,7 +260,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents test setup
     /// </summary>
-    public class TestSetup
+    public partial class TestSetup
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -273,7 +273,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents test teardown
     /// </summary>
-    public class TestTeardown
+    public partial class TestTeardown
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -286,7 +286,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Represents test coverage
     /// </summary>
-    public class TestCoverage
+    public partial class TestCoverage
     {
         public double LineCoverage { get; set; }
         public double BranchCoverage { get; set; }

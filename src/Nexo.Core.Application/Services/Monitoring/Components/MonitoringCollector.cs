@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Monitoring.Components
 {
-    public class MonitoringCollector
+    public partial class MonitoringCollector
     {
         private readonly ILogger _logger;
         private readonly IMetricsCollector _metricsCollector;

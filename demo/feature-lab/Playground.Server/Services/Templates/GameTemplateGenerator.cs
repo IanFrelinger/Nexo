@@ -2,7 +2,7 @@ using System;
 
 namespace Playground.Server.Services.Templates
 {
-    public class GameTemplateGenerator
+    public partial class GameTemplateGenerator
     {
         public static string GenerateGameCode()
         {

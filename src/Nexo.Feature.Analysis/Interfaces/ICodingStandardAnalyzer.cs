@@ -110,7 +110,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Represents statistics about the coding standards analyzer.
     /// </summary>
-    public class CodingStandardAnalyzerStatistics
+    public partial class CodingStandardAnalyzerStatistics
     {
         /// <summary>
         /// Gets or sets the total number of configured standards.

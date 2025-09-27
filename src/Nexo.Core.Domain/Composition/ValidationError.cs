@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Composition
     /// <summary>
     /// Represents a validation error with detailed information about what went wrong.
     /// </summary>
-    public class ValidationError
+    public partial class ValidationError
     {
         /// <summary>
         /// Gets the error message describing what went wrong.

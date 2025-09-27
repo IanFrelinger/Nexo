@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Documentation result
     /// </summary>
-    public class DocumentationResult
+    public partial class DocumentationResult
     {
         /// <summary>
         /// Whether the documentation was successful

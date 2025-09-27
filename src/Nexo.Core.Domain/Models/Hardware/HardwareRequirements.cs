@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Models.Hardware
     /// <summary>
     /// Represents hardware requirements for Nexo
     /// </summary>
-    public class HardwareRequirements
+    public partial class HardwareRequirements
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -51,7 +51,7 @@ namespace Nexo.Core.Domain.Models.Hardware
     /// <summary>
     /// Represents a performance tier
     /// </summary>
-    public class PerformanceTier
+    public partial class PerformanceTier
     {
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
@@ -65,7 +65,7 @@ namespace Nexo.Core.Domain.Models.Hardware
     /// <summary>
     /// Represents a cloud fallback option
     /// </summary>
-    public class CloudFallbackOption
+    public partial class CloudFallbackOption
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
@@ -82,7 +82,7 @@ namespace Nexo.Core.Domain.Models.Hardware
     /// <summary>
     /// Represents pricing model for cloud services
     /// </summary>
-    public class PricingModel
+    public partial class PricingModel
     {
         public double HourlyRate { get; set; }
         public double MonthlyRate { get; set; }
@@ -95,7 +95,7 @@ namespace Nexo.Core.Domain.Models.Hardware
     /// <summary>
     /// Represents current system capabilities
     /// </summary>
-    public class SystemCapabilities
+    public partial class SystemCapabilities
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTime CheckedAt { get; set; } = DateTime.UtcNow;
@@ -126,7 +126,7 @@ namespace Nexo.Core.Domain.Models.Hardware
     /// <summary>
     /// Represents a capability issue
     /// </summary>
-    public class CapabilityIssue
+    public partial class CapabilityIssue
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public IssueType Type { get; set; }
@@ -141,7 +141,7 @@ namespace Nexo.Core.Domain.Models.Hardware
     /// <summary>
     /// Represents a capability recommendation
     /// </summary>
-    public class CapabilityRecommendation
+    public partial class CapabilityRecommendation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public RecommendationType Type { get; set; }

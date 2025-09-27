@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Aggregators
     /// <summary>
     /// Represents a pipeline aggregator configuration.
     /// </summary>
-    public class PipelineAggregatorConfiguration
+    public partial class PipelineAggregatorConfiguration
     {
         /// <summary>
         /// Gets or sets the aggregator ID.
@@ -54,7 +54,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Aggregators
     /// <summary>
     /// Represents resource requirements configuration.
     /// </summary>
-    public class ResourceRequirementsConfiguration
+    public partial class ResourceRequirementsConfiguration
     {
         /// <summary>
         /// Gets or sets the minimum memory in bytes.

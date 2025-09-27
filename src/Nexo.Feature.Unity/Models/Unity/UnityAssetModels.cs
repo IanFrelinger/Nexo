@@ -6,7 +6,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity asset analysis
     /// </summary>
-    public class UnityAssetAnalysis
+    public partial class UnityAssetAnalysis
     {
         public IEnumerable<UnityAsset> Assets { get; set; } = new List<UnityAsset>();
         public IEnumerable<TextureAsset> Textures { get; set; } = new List<TextureAsset>();
@@ -25,7 +25,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity asset
     /// </summary>
-    public class UnityAsset
+    public partial class UnityAsset
     {
         public string Path { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -47,7 +47,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a texture asset
     /// </summary>
-    public class TextureAsset : UnityAsset
+    public partial class TextureAsset : UnityAsset
     {
         public int Width { get; set; }
         public int Height { get; set; }
@@ -69,7 +69,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a 3D model asset
     /// </summary>
-    public class ModelAsset : UnityAsset
+    public partial class ModelAsset : UnityAsset
     {
         public int VertexCount { get; set; }
         public int TriangleCount { get; set; }
@@ -92,7 +92,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents an audio asset
     /// </summary>
-    public class AudioAsset : UnityAsset
+    public partial class AudioAsset : UnityAsset
     {
         public float Duration { get; set; }
         public int SampleRate { get; set; }
@@ -113,7 +113,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a material asset
     /// </summary>
-    public class MaterialAsset : UnityAsset
+    public partial class MaterialAsset : UnityAsset
     {
         public string ShaderName { get; set; } = string.Empty;
         public IEnumerable<string> TextureProperties { get; set; } = new List<string>();
@@ -134,7 +134,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a shader asset
     /// </summary>
-    public class ShaderAsset : UnityAsset
+    public partial class ShaderAsset : UnityAsset
     {
         public string ShaderType { get; set; } = string.Empty;
         public IEnumerable<string> ShaderVariants { get; set; } = new List<string>();
@@ -155,7 +155,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents an animation asset
     /// </summary>
-    public class AnimationAsset : UnityAsset
+    public partial class AnimationAsset : UnityAsset
     {
         public float Duration { get; set; }
         public int FrameRate { get; set; }
@@ -176,7 +176,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a prefab asset
     /// </summary>
-    public class PrefabAsset : UnityAsset
+    public partial class PrefabAsset : UnityAsset
     {
         public int ComponentCount { get; set; }
         public int ChildCount { get; set; }
@@ -197,7 +197,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a font asset
     /// </summary>
-    public class FontAsset : UnityAsset
+    public partial class FontAsset : UnityAsset
     {
         public string FontType { get; set; } = string.Empty;
         public int FontSize { get; set; }
@@ -218,7 +218,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a ScriptableObject asset
     /// </summary>
-    public class ScriptableObjectAsset : UnityAsset
+    public partial class ScriptableObjectAsset : UnityAsset
     {
         public string ScriptType { get; set; } = string.Empty;
         public IEnumerable<string> SerializedFields { get; set; } = new List<string>();
@@ -238,7 +238,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents asset usage analysis
     /// </summary>
-    public class AssetUsageAnalysis
+    public partial class AssetUsageAnalysis
     {
         public IEnumerable<string> UnusedAssets { get; set; } = new List<string>();
         public IEnumerable<string> DuplicateAssets { get; set; } = new List<string>();
@@ -259,7 +259,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents asset optimization analysis
     /// </summary>
-    public class AssetOptimizationAnalysis
+    public partial class AssetOptimizationAnalysis
     {
         public IEnumerable<string> OptimizationOpportunities { get; set; } = new List<string>();
         public IEnumerable<string> CompressionRecommendations { get; set; } = new List<string>();

@@ -6,7 +6,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents a validation warning.
     /// </summary>
-    public class ValidationWarning
+    public partial class ValidationWarning
     {
         public string Message { get; set; }
         public string? Field { get; set; }

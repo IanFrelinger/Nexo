@@ -11,7 +11,7 @@ namespace Nexo.Feature.Animation.Providers
     /// <summary>
     /// Orchestrator for Ollama animation generation that delegates to specialized generators.
     /// </summary>
-    public class OllamaAnimationProvider : IAnimationProvider
+    public partial class OllamaAnimationProvider : IAnimationProvider
     {
         private readonly ILogger<OllamaAnimationProvider> _logger;
         private readonly AnimationDataGenerator _dataGenerator;

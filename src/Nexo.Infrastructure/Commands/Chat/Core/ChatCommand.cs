@@ -12,7 +12,7 @@ namespace Nexo.Infrastructure.Commands.Chat.Core
     /// <summary>
     /// Main orchestrator for chat command functionality
     /// </summary>
-    public class ChatCommand
+    public partial class ChatCommand
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ChatCommand> _logger;

@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application service in the generated application logic
     /// </summary>
-    public class ApplicationService
+    public partial class ApplicationService
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a service method
     /// </summary>
-    public class ServiceMethod
+    public partial class ServiceMethod
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -45,7 +45,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a service property
     /// </summary>
-    public class ServiceProperty
+    public partial class ServiceProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -61,7 +61,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a method parameter
     /// </summary>
-    public class MethodParameter
+    public partial class MethodParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -75,7 +75,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a method attribute
     /// </summary>
-    public class MethodAttribute
+    public partial class MethodAttribute
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

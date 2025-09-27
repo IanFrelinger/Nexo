@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Detailed result for an individual test.
     /// </summary>
-    public class DetailedTestResult
+    public partial class DetailedTestResult
     {
         /// <summary>
         /// Unique identifier for this test.

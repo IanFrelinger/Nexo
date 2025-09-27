@@ -126,7 +126,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Learning insight extracted from patterns and historical data.
     /// </summary>
-    public class LearningInsight
+    public partial class LearningInsight
     {
         /// <summary>
         /// Gets or sets the insight identifier.

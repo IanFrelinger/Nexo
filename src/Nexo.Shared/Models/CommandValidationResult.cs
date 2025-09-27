@@ -8,7 +8,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents the result of command validation.
     /// </summary>
-    public class CommandValidationResult
+    public partial class CommandValidationResult
     {
         public bool IsValid { get; set; }
         public List<ValidationError> Errors { get; set; } = new List<ValidationError>();

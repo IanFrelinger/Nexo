@@ -6,7 +6,7 @@ using Nexo.Feature.Unity.Models;
 
 namespace Nexo.Feature.Unity.Workflows.GameTesting.Phases
 {
-    public class PerformanceTestingRunner
+    public partial class PerformanceTestingRunner
     {
         private readonly IPerformanceTester _performanceTester;
         private readonly ILogger _logger;
@@ -40,7 +40,7 @@ using Nexo.Feature.Unity.Models;
 
 namespace Nexo.Feature.Unity.Workflows.GameTesting.Phases
 {
-    public class PerformanceTestingRunner
+    public partial class PerformanceTestingRunner
     {
         private readonly IPerformanceTester _performanceTester;
         private readonly ILogger _logger;

@@ -9,7 +9,7 @@ namespace Nexo.Feature.Platform.Tests.Services.NativeAPIIntegration
     /// <summary>
     /// Tests for Native API Integration models.
     /// </summary>
-    public class ModelTests
+    public partial class ModelTests
     {
         [Fact]
         public void NativeAPIInitializationResult_WithEmptyValues_InitializesCorrectly()

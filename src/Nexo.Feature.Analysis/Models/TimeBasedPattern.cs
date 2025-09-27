@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Time-based pattern in test failures.
     /// </summary>
-    public class TimeBasedPattern
+    public partial class TimeBasedPattern
     {
         /// <summary>
         /// Description of the pattern.

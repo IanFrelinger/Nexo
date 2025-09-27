@@ -8,7 +8,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Game monitoring configuration
     /// </summary>
-    public class GameMonitoringConfiguration
+    public partial class GameMonitoringConfiguration
     {
         public string GameName { get; set; } = string.Empty;
         public TimeSpan MonitoringInterval { get; set; } = TimeSpan.FromSeconds(1);
@@ -24,7 +24,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Game performance snapshot
     /// </summary>
-    public class GamePerformanceSnapshot
+    public partial class GamePerformanceSnapshot
     {
         public DateTime Timestamp { get; set; }
         public double FrameRate { get; set; }
@@ -44,7 +44,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Game performance report
     /// </summary>
-    public class GamePerformanceReport
+    public partial class GamePerformanceReport
     {
         public TimeSpan TimeRange { get; set; }
         public int SnapshotCount { get; set; }
@@ -63,7 +63,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Unity profiler data
     /// </summary>
-    public class UnityProfilerData
+    public partial class UnityProfilerData
     {
         public double FrameRate { get; set; }
         public double FrameTime { get; set; }
@@ -82,7 +82,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Performance analysis
     /// </summary>
-    public class PerformanceAnalysis
+    public partial class PerformanceAnalysis
     {
         public string PrimaryIssue { get; set; } = string.Empty;
         public PerformanceIssueSeverity Severity { get; set; }
@@ -93,7 +93,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Performance threshold
     /// </summary>
-    public class PerformanceThreshold
+    public partial class PerformanceThreshold
     {
         public string MetricName { get; set; } = string.Empty;
         public double ThresholdValue { get; set; }
@@ -116,7 +116,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Performance trend
     /// </summary>
-    public class PerformanceTrend
+    public partial class PerformanceTrend
     {
         public string MetricName { get; set; } = string.Empty;
         public TrendDirection Direction { get; set; }
@@ -128,7 +128,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Critical performance event
     /// </summary>
-    public class CriticalPerformanceEvent
+    public partial class CriticalPerformanceEvent
     {
         public DateTime Timestamp { get; set; }
         public string EventType { get; set; } = string.Empty;
@@ -140,7 +140,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Optimization opportunity
     /// </summary>
-    public class OptimizationOpportunity
+    public partial class OptimizationOpportunity
     {
         public string Type { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -152,7 +152,7 @@ namespace Nexo.Feature.Unity.Monitoring
     /// <summary>
     /// Platform insight
     /// </summary>
-    public class PlatformInsight
+    public partial class PlatformInsight
     {
         public string Platform { get; set; } = string.Empty;
         public string InsightType { get; set; } = string.Empty;

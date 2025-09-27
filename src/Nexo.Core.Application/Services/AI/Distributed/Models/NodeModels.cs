@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Node registration request
     /// </summary>
-    public class NodeRegistrationRequest
+    public partial class NodeRegistrationRequest
     {
         public string NodeId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -18,7 +18,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Processing node
     /// </summary>
-    public class ProcessingNode
+    public partial class ProcessingNode
     {
         public string NodeId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -32,7 +32,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Node resource information
     /// </summary>
-    public class NodeResourceInfo
+    public partial class NodeResourceInfo
     {
         public double CpuUsage { get; set; }
         public double MemoryUsage { get; set; }
@@ -45,7 +45,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Node location
     /// </summary>
-    public class NodeLocation
+    public partial class NodeLocation
     {
         public string Region { get; set; } = string.Empty;
         public string Zone { get; set; } = string.Empty;
@@ -56,7 +56,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Geographic location
     /// </summary>
-    public class GeoLocation
+    public partial class GeoLocation
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }

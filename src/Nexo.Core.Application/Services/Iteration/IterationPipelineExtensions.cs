@@ -78,7 +78,7 @@ public interface IPipelineBuilder<TRequest, TResponse>
 /// <summary>
 /// Pipeline context for middleware
 /// </summary>
-public class PipelineContext<TRequest, TResponse>
+public partial class PipelineContext<TRequest, TResponse>
 {
     public TRequest Request { get; set; } = default!;
     public IServiceProvider ServiceProvider { get; set; } = default!;

@@ -13,7 +13,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Orchestrator for export operations that delegates to specialized export services.
     /// </summary>
-    public class ExportService : IExportService
+    public partial class ExportService : IExportService
     {
         private readonly ILogger<ExportService> _logger;
         private readonly CliExporter _cliExporter;

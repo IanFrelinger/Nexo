@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.Onboarding
     /// Service for managing beta user onboarding experience
     /// Provides guided setup and validation for new beta testers
     /// </summary>
-    public class BetaOnboardingService : IBetaOnboardingService
+    public partial class BetaOnboardingService : IBetaOnboardingService
     {
         public Task<string> StartOnboardingAsync(string userId) => Task.FromResult("onboarding-id");
         public Task<bool> CompleteStepAsync(string userId, string stepId) => Task.FromResult(true);

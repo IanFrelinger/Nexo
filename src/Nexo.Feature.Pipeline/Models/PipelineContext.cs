@@ -14,7 +14,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Default implementation of IPipelineContext for universal state management.
     /// </summary>
-    public class PipelineContext : IPipelineContext, IIterationPipelineContext
+    public partial class PipelineContext : IPipelineContext, IIterationPipelineContext
     {
         public string ExecutionId { get; }
         public DateTime StartTime { get; }
@@ -126,7 +126,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Execution context for pipeline processing.
     /// </summary>
-    public class ExecutionContext
+    public partial class ExecutionContext
     {
         /// <summary>
         /// Gets or sets the correlation identifier.

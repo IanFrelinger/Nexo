@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration.Generators
 {
-    public class SecurityTestGenerator
+    public partial class SecurityTestGenerator
     {
         private readonly ILogger<SecurityTestGenerator> _logger;
 
@@ -49,7 +49,7 @@ using Xunit;
 
 namespace Tests.Security
 {
-    public class DomainLogicSecurityTests
+    public partial class DomainLogicSecurityTests
     {
         [Fact]
         public void DomainLogic_Should_Be_Secure()
@@ -62,7 +62,7 @@ namespace Tests.Security
         }
     }
 
-    public class SecurityTest
+    public partial class SecurityTest
     {
         public string TestName { get; set; } = string.Empty;
         public string TestCode { get; set; } = string.Empty;

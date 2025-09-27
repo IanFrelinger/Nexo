@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application controller in the generated application logic
     /// </summary>
-    public class ApplicationController
+    public partial class ApplicationController
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a controller action
     /// </summary>
-    public class ControllerAction
+    public partial class ControllerAction
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -47,7 +47,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a controller action parameter
     /// </summary>
-    public class ActionParameter
+    public partial class ActionParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -62,7 +62,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a controller attribute
     /// </summary>
-    public class ControllerAttribute
+    public partial class ControllerAttribute
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -73,7 +73,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an action attribute
     /// </summary>
-    public class ActionAttribute
+    public partial class ActionAttribute
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

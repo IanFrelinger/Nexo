@@ -5,7 +5,7 @@ namespace Nexo.Feature.Azure.Models;
 /// <summary>
 /// Azure connectivity test result
 /// </summary>
-public class AzureConnectivityResult
+public partial class AzureConnectivityResult
 {
     /// <summary>
     /// Whether the connection was successful

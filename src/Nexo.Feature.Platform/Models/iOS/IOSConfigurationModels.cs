@@ -6,7 +6,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// iOS app configuration.
     /// </summary>
-    public class IOSAppConfiguration
+    public partial class IOSAppConfiguration
     {
         public string AppName { get; set; } = string.Empty;
         public string BundleIdentifier { get; set; } = string.Empty;
@@ -21,7 +21,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// iOS deployment target configuration.
     /// </summary>
-    public class IOSDeploymentTarget
+    public partial class IOSDeploymentTarget
     {
         public string MinimumVersion { get; set; } = "15.0";
         public string TargetVersion { get; set; } = "17.0";
@@ -32,7 +32,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// iOS capability configuration.
     /// </summary>
-    public class IOSCapability
+    public partial class IOSCapability
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -43,7 +43,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// iOS permission configuration.
     /// </summary>
-    public class IOSPermission
+    public partial class IOSPermission
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

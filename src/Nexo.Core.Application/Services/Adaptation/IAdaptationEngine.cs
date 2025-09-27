@@ -43,7 +43,7 @@ public interface IAdaptationEngine
 /// <summary>
 /// Context for triggering adaptations
 /// </summary>
-public class AdaptationContext
+public partial class AdaptationContext
 {
     public AdaptationTrigger Trigger { get; set; }
     public AdaptationPriority Priority { get; set; }
@@ -56,7 +56,7 @@ public class AdaptationContext
 /// <summary>
 /// Current system state for adaptation decisions
 /// </summary>
-public class SystemState
+public partial class SystemState
 {
     public PerformanceMetrics PerformanceMetrics { get; set; } = new();
     public EnvironmentProfile EnvironmentProfile { get; set; } = new();
@@ -71,7 +71,7 @@ public class SystemState
 /// <summary>
 /// Resource utilization information
 /// </summary>
-public class ResourceUtilization
+public partial class ResourceUtilization
 {
     public double CpuUsage { get; set; }
     public double MemoryUsage { get; set; }
@@ -84,7 +84,7 @@ public class ResourceUtilization
 /// <summary>
 /// Active workload information
 /// </summary>
-public class ActiveWorkload
+public partial class ActiveWorkload
 {
     public string WorkloadId { get; set; } = string.Empty;
     public string WorkloadType { get; set; } = string.Empty;
@@ -96,7 +96,7 @@ public class ActiveWorkload
 /// <summary>
 /// Network profile information
 /// </summary>
-public class NetworkProfile
+public partial class NetworkProfile
 {
     public double Bandwidth { get; set; }
     public double Latency { get; set; }
@@ -109,7 +109,7 @@ public class NetworkProfile
 /// <summary>
 /// Adaptation status information
 /// </summary>
-public class AdaptationStatus
+public partial class AdaptationStatus
 {
     public AdaptationEngineStatus EngineStatus { get; set; }
     public IEnumerable<AppliedAdaptation> ActiveAdaptations { get; set; } = Enumerable.Empty<AppliedAdaptation>();
@@ -124,7 +124,7 @@ public class AdaptationStatus
 /// <summary>
 /// Adaptation need identified by the engine
 /// </summary>
-public class AdaptationNeed
+public partial class AdaptationNeed
 {
     public AdaptationType Type { get; set; }
     public AdaptationTrigger Trigger { get; set; }
@@ -137,7 +137,7 @@ public class AdaptationNeed
 /// <summary>
 /// Result of an adaptation execution
 /// </summary>
-public class AdaptationResult
+public partial class AdaptationResult
 {
     public bool IsSuccessful { get; set; }
     public IEnumerable<AppliedAdaptation> AppliedAdaptations { get; set; } = Enumerable.Empty<AppliedAdaptation>();

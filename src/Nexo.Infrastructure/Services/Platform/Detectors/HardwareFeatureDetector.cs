@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
-    public class HardwareFeatureDetector : IHardwareFeatureDetector
+    public partial class HardwareFeatureDetector : IHardwareFeatureDetector
     {
         private readonly ILogger<HardwareFeatureDetector> _logger;
         public HardwareFeatureDetector(ILogger<HardwareFeatureDetector> logger) { _logger = logger; }

@@ -1,6 +1,6 @@
 namespace Nexo.Feature.Analysis.Models
 {
-    public class AnalysisIssue
+    public partial class AnalysisIssue
     {
         public string Description { get; set; } = string.Empty;
         public string Severity { get; set; } = string.Empty;

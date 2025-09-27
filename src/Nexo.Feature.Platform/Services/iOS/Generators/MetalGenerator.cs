@@ -10,7 +10,7 @@ using Nexo.Feature.Platform.Enums;
 
 namespace Nexo.Feature.Platform.Services.iOS.Generators
 {
-    public class MetalGenerator
+    public partial class MetalGenerator
     {
         private readonly ILogger<MetalGenerator> _logger;
 

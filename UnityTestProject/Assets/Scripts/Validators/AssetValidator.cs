@@ -7,7 +7,7 @@ using Nexo.Agent.Contracts;
 
 namespace NexoDoomGame.Validators
 {
-    public class AssetValidator
+    public partial class AssetValidator
     {
         private readonly ITaskExecutionAgent _nexoAgent;
 

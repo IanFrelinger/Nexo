@@ -21,7 +21,7 @@ public interface ICommand<in TRequest, TResponse>
 /// Command attribute for marking command classes
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class CommandAttribute : Attribute
+public partial class CommandAttribute : Attribute
 {
     public string Name { get; }
     
@@ -35,7 +35,7 @@ public class CommandAttribute : Attribute
 /// Behavior attribute for marking behavior classes
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public class BehaviorAttribute : Attribute
+public partial class BehaviorAttribute : Attribute
 {
     public string Name { get; }
     

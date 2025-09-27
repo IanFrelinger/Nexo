@@ -120,7 +120,7 @@ namespace Nexo.Core.Application.Extensions
     /// <summary>
     /// Configuration options for AI services
     /// </summary>
-    public class AIServiceOptions
+    public partial class AIServiceOptions
     {
         public bool EnableMockProvider { get; set; } = true;
         public bool EnableWasmProvider { get; set; } = false;

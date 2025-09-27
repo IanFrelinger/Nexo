@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Metadata about a behavior for discovery and documentation.
     /// </summary>
-    public class BehaviorMetadata
+    public partial class BehaviorMetadata
     {
         /// <summary>
         /// Unique identifier for this behavior.

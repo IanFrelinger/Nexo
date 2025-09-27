@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a dependency between behaviors.
     /// </summary>
-    public class BehaviorDependency
+    public partial class BehaviorDependency
     {
         /// <summary>
         /// ID of the behavior that this behavior depends on.

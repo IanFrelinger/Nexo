@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services
     /// <summary>
     /// Performance monitoring service for tracking application metrics.
     /// </summary>
-    public class PerformanceMonitor : IDisposable
+    public partial class PerformanceMonitor : IDisposable
     {
         private readonly ILogger<PerformanceMonitor> _logger;
         private readonly ConcurrentDictionary<string, PerformanceMetric> _metrics;
@@ -167,7 +167,7 @@ namespace Nexo.Core.Application.Services
     /// <summary>
     /// Represents a performance metric.
     /// </summary>
-    public class PerformanceMetric
+    public partial class PerformanceMetric
     {
         public string Name { get; }
         public string Category { get; }
@@ -213,7 +213,7 @@ namespace Nexo.Core.Application.Services
     /// <summary>
     /// Represents a performance summary.
     /// </summary>
-    public class PerformanceSummary
+    public partial class PerformanceSummary
     {
         public int TotalMetrics { get; set; }
         public int Categories { get; set; }

@@ -10,7 +10,7 @@ namespace Nexo.PluginHost.Implementations
     /// <summary>
     /// Default implementation of INexoFileSystem that wraps System.IO operations.
     /// </summary>
-    public class DefaultFileSystem : INexoFileSystem
+    public partial class DefaultFileSystem : INexoFileSystem
     {
         public bool FileExists(string path)
         {

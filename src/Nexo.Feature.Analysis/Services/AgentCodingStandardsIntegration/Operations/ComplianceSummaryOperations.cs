@@ -8,7 +8,7 @@ using Nexo.Feature.Analysis.Models;
 
 namespace Nexo.Feature.Analysis.Services.AgentCodingStandardsIntegration.Operations
 {
-    public class ComplianceSummaryOperations
+    public partial class ComplianceSummaryOperations
     {
         private readonly ICodingStandardAnalyzer _analyzer;
         private readonly ILogger _logger;

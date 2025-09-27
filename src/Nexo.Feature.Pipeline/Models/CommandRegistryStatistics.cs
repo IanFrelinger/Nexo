@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Statistics about the command registry.
     /// </summary>
-    public class CommandRegistryStatistics
+    public partial class CommandRegistryStatistics
 {
     /// <summary>
     /// Total number of registered commands.

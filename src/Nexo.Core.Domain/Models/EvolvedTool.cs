@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models
     /// <summary>
     /// Represents an evolved tool
     /// </summary>
-    public class EvolvedTool
+    public partial class EvolvedTool
     {
         /// <summary>
         /// Name of the evolved tool

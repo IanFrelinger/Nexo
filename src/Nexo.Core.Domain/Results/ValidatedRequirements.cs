@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Represents validated requirements for a feature
     /// </summary>
-    public class ValidatedRequirements
+    public partial class ValidatedRequirements
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

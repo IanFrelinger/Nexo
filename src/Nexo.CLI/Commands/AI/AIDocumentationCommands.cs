@@ -11,7 +11,7 @@ namespace Nexo.CLI.Commands.AI
     /// AI documentation generation commands for Phase 3.3 developer tools.
     /// Provides intelligent documentation generation and management capabilities.
     /// </summary>
-    public class AIDocumentationCommands
+    public partial class AIDocumentationCommands
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<AIDocumentationCommands> _logger;

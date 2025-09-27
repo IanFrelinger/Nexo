@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators;
 /// <summary>
 /// Generates desktop tests
 /// </summary>
-public class DesktopTestGenerator
+public partial class DesktopTestGenerator
 {
     private readonly ILogger<DesktopTestGenerator> _logger;
     private readonly IModelOrchestrator _modelOrchestrator;

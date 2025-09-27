@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
     /// <summary>
     /// Tests for CodeGenerator
     /// </summary>
-    public class CodeGeneratorTests
+    public partial class CodeGeneratorTests
     {
         private readonly Mock<IModelProvider> _mockAiProvider;
         private readonly Mock<ILogger<CodeGenerator>> _mockLogger;
@@ -36,7 +36,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             var aiResponse = new ModelResponse
             {
                 Response = @"```csharp
-public class JsonFormatter : IPlugin
+public partial class JsonFormatter : IPlugin
 {
     public string Name => ""JsonFormatter"";
     public string Version => ""1.0"";
@@ -73,7 +73,7 @@ public class JsonFormatter : IPlugin
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("public class JsonFormatter", result.SourceCode);
+            Assert.Contains("public partial class JsonFormatter", result.SourceCode);
             Assert.Contains("IPlugin", result.SourceCode);
             Assert.Contains("ExecuteAsync", result.SourceCode);
             Assert.True(result.IsWrappedInPlugin);
@@ -133,7 +133,7 @@ public class JsonFormatter : IPlugin
             var aiResponse = new ModelResponse
             {
                 Response = @"```csharp
-public class Calculator : IPlugin
+public partial class Calculator : IPlugin
 {
     public string Name => ""Calculator"";
     public string Version => ""1.0"";
@@ -167,7 +167,7 @@ public class Calculator : IPlugin
 
             // Assert
             Assert.NotNull(result);
-            Assert.Contains("public class Calculator", result.SourceCode);
+            Assert.Contains("public partial class Calculator", result.SourceCode);
             Assert.True(result.IsWrappedInPlugin);
             Assert.Equal("Calculator", result.ToolName);
         }
@@ -182,7 +182,7 @@ public class Calculator : IPlugin
             var aiResponse = new ModelResponse
             {
                 Response = $@"```csharp
-public class {expectedName} : IPlugin
+public partial class {expectedName} : IPlugin
 {{
     public string Name => ""{expectedName}"";
     // ... rest of implementation

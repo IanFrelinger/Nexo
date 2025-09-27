@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Services.Optimizers;
 /// <summary>
 /// Handles performance monitoring and metrics collection
 /// </summary>
-public class PerformanceMonitor
+public partial class PerformanceMonitor
 {
     private readonly ILogger<PerformanceMonitor> _logger;
     private readonly List<PerformanceMetricsResult> _metricsHistory;

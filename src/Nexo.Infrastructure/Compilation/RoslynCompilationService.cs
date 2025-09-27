@@ -19,7 +19,7 @@ namespace Nexo.Infrastructure.Compilation
     /// <summary>
     /// Compiles C# code to assemblies using Roslyn
     /// </summary>
-    public class RoslynCompilationService : ICompilationService
+    public partial class RoslynCompilationService : ICompilationService
     {
         private readonly IModelProvider _aiProvider;
         private readonly ILogger<RoslynCompilationService> _logger;

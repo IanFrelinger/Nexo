@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Nexo.Infrastructure.Tests.Services.Resource
 {
-    public class SystemResourceMonitorTests
+    public partial class SystemResourceMonitorTests
     {
         private readonly Mock<ILogger<SystemResourceMonitor>> _loggerMock;
         private readonly SystemResourceMonitor _monitor;

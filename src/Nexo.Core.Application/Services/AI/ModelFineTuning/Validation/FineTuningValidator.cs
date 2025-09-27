@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Validation
     /// <summary>
     /// Validates fine-tuning data for quality and compatibility
     /// </summary>
-    public class FineTuningValidator
+    public partial class FineTuningValidator
     {
         private readonly ILogger _logger;
 

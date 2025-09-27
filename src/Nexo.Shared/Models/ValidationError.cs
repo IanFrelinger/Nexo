@@ -7,7 +7,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents a validation error.
     /// </summary>
-    public class ValidationError
+    public partial class ValidationError
     {
         public string Message { get; set; }
         public ValidationSeverity Severity { get; set; }

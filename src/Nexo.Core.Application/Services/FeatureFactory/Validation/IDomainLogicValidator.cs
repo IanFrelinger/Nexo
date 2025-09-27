@@ -56,7 +56,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Result of domain logic validation
     /// </summary>
-    public class DomainValidationResult
+    public partial class DomainValidationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -71,7 +71,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Result of business rule validation
     /// </summary>
-    public class BusinessRuleValidationResult
+    public partial class BusinessRuleValidationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -86,7 +86,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Result of consistency check
     /// </summary>
-    public class ConsistencyCheckResult
+    public partial class ConsistencyCheckResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -101,7 +101,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Result of domain logic optimization
     /// </summary>
-    public class OptimizationResult
+    public partial class OptimizationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -115,7 +115,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Result of entity validation
     /// </summary>
-    public class EntityValidationResult
+    public partial class EntityValidationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -130,7 +130,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Result of value object validation
     /// </summary>
-    public class ValueObjectValidationResult
+    public partial class ValueObjectValidationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -145,7 +145,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Result of service validation
     /// </summary>
-    public class ServiceValidationResult
+    public partial class ServiceValidationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -160,7 +160,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Validation report for domain logic
     /// </summary>
-    public class ValidationReport
+    public partial class ValidationReport
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Title { get; set; } = string.Empty;
@@ -177,7 +177,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
 
     // Validation issue classes
 
-    public class ValidationIssue
+    public partial class ValidationIssue
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Type { get; set; } = string.Empty;
@@ -189,7 +189,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    public class ValidationWarning
+    public partial class ValidationWarning
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Type { get; set; } = string.Empty;
@@ -200,7 +200,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    public class ValidationSuggestion
+    public partial class ValidationSuggestion
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Type { get; set; } = string.Empty;
@@ -213,32 +213,32 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
 
     // Specific validation issue classes
 
-    public class BusinessRuleIssue : ValidationIssue { }
-    public class BusinessRuleWarning : ValidationWarning { }
-    public class BusinessRuleSuggestion : ValidationSuggestion { }
+    public partial class BusinessRuleIssue : ValidationIssue { }
+    public partial class BusinessRuleWarning : ValidationWarning { }
+    public partial class BusinessRuleSuggestion : ValidationSuggestion { }
 
-    public class ConsistencyIssue : ValidationIssue { }
-    public class ConsistencyWarning : ValidationWarning { }
-    public class ConsistencySuggestion : ValidationSuggestion { }
+    public partial class ConsistencyIssue : ValidationIssue { }
+    public partial class ConsistencyWarning : ValidationWarning { }
+    public partial class ConsistencySuggestion : ValidationSuggestion { }
 
-    public class OptimizationSuggestion : ValidationSuggestion { }
-    public class OptimizationImprovement : ValidationSuggestion { }
+    public partial class OptimizationSuggestion : ValidationSuggestion { }
+    public partial class OptimizationImprovement : ValidationSuggestion { }
 
-    public class EntityIssue : ValidationIssue { }
-    public class EntityWarning : ValidationWarning { }
-    public class EntitySuggestion : ValidationSuggestion { }
+    public partial class EntityIssue : ValidationIssue { }
+    public partial class EntityWarning : ValidationWarning { }
+    public partial class EntitySuggestion : ValidationSuggestion { }
 
-    public class ValueObjectIssue : ValidationIssue { }
-    public class ValueObjectWarning : ValidationWarning { }
-    public class ValueObjectSuggestion : ValidationSuggestion { }
+    public partial class ValueObjectIssue : ValidationIssue { }
+    public partial class ValueObjectWarning : ValidationWarning { }
+    public partial class ValueObjectSuggestion : ValidationSuggestion { }
 
-    public class ServiceIssue : ValidationIssue { }
-    public class ServiceWarning : ValidationWarning { }
-    public class ServiceSuggestion : ValidationSuggestion { }
+    public partial class ServiceIssue : ValidationIssue { }
+    public partial class ServiceWarning : ValidationWarning { }
+    public partial class ServiceSuggestion : ValidationSuggestion { }
 
     // Score classes
 
-    public class ValidationScore
+    public partial class ValidationScore
     {
         public double Overall { get; set; }
         public double Correctness { get; set; }
@@ -248,14 +248,14 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         public DateTime CalculatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    public class BusinessRuleScore : ValidationScore { }
-    public class ConsistencyScore : ValidationScore { }
-    public class OptimizationScore : ValidationScore { }
-    public class EntityScore : ValidationScore { }
-    public class ValueObjectScore : ValidationScore { }
-    public class ServiceScore : ValidationScore { }
+    public partial class BusinessRuleScore : ValidationScore { }
+    public partial class ConsistencyScore : ValidationScore { }
+    public partial class OptimizationScore : ValidationScore { }
+    public partial class EntityScore : ValidationScore { }
+    public partial class ValueObjectScore : ValidationScore { }
+    public partial class ServiceScore : ValidationScore { }
 
-    public class OverallScore
+    public partial class OverallScore
     {
         public double Overall { get; set; }
         public double DomainLogic { get; set; }
@@ -268,7 +268,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
         public DateTime CalculatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    public class ValidationRecommendation
+    public partial class ValidationRecommendation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Title { get; set; } = string.Empty;

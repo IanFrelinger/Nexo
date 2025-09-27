@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.CLI.Commands.NL
 {
-    public class BuildCommandFactory
+    public partial class BuildCommandFactory
     {
         private readonly ILogger _logger;
         public BuildCommandFactory(ILogger logger) { _logger = logger; }

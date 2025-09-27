@@ -11,7 +11,7 @@ using Nexo.Infrastructure.Services.Enterprise;
 
 namespace Nexo.Infrastructure.Tests.Services.Enterprise.Success
 {
-    public class SuccessCaseTests
+    public partial class SuccessCaseTests
     {
         private readonly Mock<ILogger<EnterpriseSecurityService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

@@ -83,7 +83,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Adaptation strategy for system optimization.
     /// </summary>
-    public class AdaptationStrategy
+    public partial class AdaptationStrategy
     {
         /// <summary>
         /// Gets or sets the strategy identifier.
@@ -134,7 +134,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Result of adaptation validation.
     /// </summary>
-    public class AdaptationValidationResult
+    public partial class AdaptationValidationResult
     {
         /// <summary>
         /// Gets or sets whether the adaptation is valid.

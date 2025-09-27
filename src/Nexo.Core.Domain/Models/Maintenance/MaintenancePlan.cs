@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Models.Maintenance
     /// <summary>
     /// Represents a maintenance plan for a tool
     /// </summary>
-    public class MaintenancePlan
+    public partial class MaintenancePlan
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ToolName { get; set; } = "";
@@ -43,7 +43,7 @@ namespace Nexo.Core.Domain.Models.Maintenance
     /// <summary>
     /// Represents a maintenance item
     /// </summary>
-    public class MaintenanceItem
+    public partial class MaintenanceItem
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public MaintenanceItemType Type { get; set; }
@@ -62,7 +62,7 @@ namespace Nexo.Core.Domain.Models.Maintenance
     /// <summary>
     /// Represents a dependency update
     /// </summary>
-    public class DependencyUpdate
+    public partial class DependencyUpdate
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string PackageName { get; set; } = "";
@@ -79,7 +79,7 @@ namespace Nexo.Core.Domain.Models.Maintenance
     /// <summary>
     /// Represents a security update
     /// </summary>
-    public class SecurityUpdate
+    public partial class SecurityUpdate
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string VulnerabilityId { get; set; } = "";
@@ -97,7 +97,7 @@ namespace Nexo.Core.Domain.Models.Maintenance
     /// <summary>
     /// Represents a performance optimization
     /// </summary>
-    public class PerformanceOptimization
+    public partial class PerformanceOptimization
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Title { get; set; } = "";
@@ -114,7 +114,7 @@ namespace Nexo.Core.Domain.Models.Maintenance
     /// <summary>
     /// Represents a deprecation recommendation
     /// </summary>
-    public class DeprecationRecommendation
+    public partial class DeprecationRecommendation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Title { get; set; } = "";

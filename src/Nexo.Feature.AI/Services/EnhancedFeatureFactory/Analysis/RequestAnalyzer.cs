@@ -5,7 +5,7 @@ using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Feature.AI.Services.EnhancedFeatureFactory.Analysis
 {
-    public class RequestAnalyzer
+    public partial class RequestAnalyzer
     {
         private readonly IModelOrchestrator _modelOrchestrator;
         private readonly ILogger _logger;

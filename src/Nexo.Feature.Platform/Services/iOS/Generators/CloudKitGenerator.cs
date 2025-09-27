@@ -10,7 +10,7 @@ using Nexo.Feature.Platform.Enums;
 
 namespace Nexo.Feature.Platform.Services.iOS.Generators
 {
-    public class CloudKitGenerator
+    public partial class CloudKitGenerator
     {
         private readonly ILogger<CloudKitGenerator> _logger;
 

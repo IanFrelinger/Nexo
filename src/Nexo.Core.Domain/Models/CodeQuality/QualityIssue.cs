@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models.CodeQuality
     /// <summary>
     /// Represents a quality issue found during code analysis
     /// </summary>
-    public class QualityIssue
+    public partial class QualityIssue
     {
         /// <summary>
         /// Type of quality issue

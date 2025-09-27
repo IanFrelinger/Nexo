@@ -16,7 +16,7 @@ namespace Nexo.Feature.Platform.Services
     /// <summary>
     /// Orchestrator for iOS code generation that delegates to specialized generators.
     /// </summary>
-    public class IOSCodeGenerator : IIOSCodeGenerator
+    public partial class IOSCodeGenerator : IIOSCodeGenerator
     {
         private readonly ILogger<IOSCodeGenerator> _logger;
         private readonly SwiftUIGenerator _swiftUIGenerator;

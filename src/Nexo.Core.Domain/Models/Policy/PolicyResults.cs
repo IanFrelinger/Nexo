@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Result of policy validation
     /// </summary>
-    public class PolicyValidationResult
+    public partial class PolicyValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new List<string>();
@@ -15,7 +15,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Result of safety policy application
     /// </summary>
-    public class SafetyPolicyResult
+    public partial class SafetyPolicyResult
     {
         public bool Passed { get; set; }
         public List<SafetyViolation> Violations { get; set; } = new List<SafetyViolation>();
@@ -26,7 +26,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Result of quality policy application
     /// </summary>
-    public class QualityPolicyResult
+    public partial class QualityPolicyResult
     {
         public bool Passed { get; set; }
         public List<QualityViolation> Violations { get; set; } = new List<QualityViolation>();
@@ -38,7 +38,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Result of policy execution
     /// </summary>
-    public class PolicyExecutionResult
+    public partial class PolicyExecutionResult
     {
         public bool Passed { get; set; }
         public SafetyPolicyResult? SafetyResult { get; set; }
@@ -56,7 +56,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Safety violation
     /// </summary>
-    public class SafetyViolation
+    public partial class SafetyViolation
     {
         public string RuleId { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -71,7 +71,7 @@ namespace Nexo.Core.Domain.Models.Policy
     /// <summary>
     /// Quality violation
     /// </summary>
-    public class QualityViolation
+    public partial class QualityViolation
     {
         public string RuleId { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

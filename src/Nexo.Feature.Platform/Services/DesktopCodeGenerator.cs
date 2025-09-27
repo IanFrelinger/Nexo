@@ -10,7 +10,7 @@ namespace Nexo.Feature.Platform.Services
     /// <summary>
     /// Orchestrator for desktop code generation that delegates to specialized generators.
     /// </summary>
-    public class DesktopCodeGenerator : IDesktopCodeGenerator
+    public partial class DesktopCodeGenerator : IDesktopCodeGenerator
     {
         private readonly ILogger<DesktopCodeGenerator> _logger;
         private readonly WPFCodeGenerator _wpfGenerator;

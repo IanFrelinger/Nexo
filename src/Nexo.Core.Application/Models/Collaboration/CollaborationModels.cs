@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents team configuration for team-based development.
     /// </summary>
-    public class TeamConfiguration
+    public partial class TeamConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -23,7 +23,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents workflow configuration for collaboration workflows.
     /// </summary>
-    public class WorkflowConfiguration
+    public partial class WorkflowConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -39,7 +39,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents analytics configuration for team analytics.
     /// </summary>
-    public class AnalyticsConfiguration
+    public partial class AnalyticsConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -55,7 +55,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents optimization configuration for team optimization.
     /// </summary>
-    public class OptimizationConfiguration
+    public partial class OptimizationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -71,7 +71,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents dashboard configuration for team performance dashboard.
     /// </summary>
-    public class DashboardConfiguration
+    public partial class DashboardConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -87,7 +87,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents communication configuration for team communication.
     /// </summary>
-    public class CommunicationConfiguration
+    public partial class CommunicationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -103,7 +103,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents knowledge configuration for team knowledge sharing.
     /// </summary>
-    public class KnowledgeConfiguration
+    public partial class KnowledgeConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -119,7 +119,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents the result of team development implementation.
     /// </summary>
-    public class TeamDevelopmentResult
+    public partial class TeamDevelopmentResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -132,7 +132,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents the result of workflow creation.
     /// </summary>
-    public class WorkflowCreationResult
+    public partial class WorkflowCreationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -145,7 +145,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents the result of analytics implementation.
     /// </summary>
-    public class AnalyticsImplementationResult
+    public partial class AnalyticsImplementationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -158,7 +158,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents the result of optimization implementation.
     /// </summary>
-    public class OptimizationImplementationResult
+    public partial class OptimizationImplementationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -171,7 +171,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents collaboration metrics.
     /// </summary>
-    public class CollaborationMetrics
+    public partial class CollaborationMetrics
     {
         public int TotalTeams { get; set; }
         public int ActiveTeams { get; set; }
@@ -187,7 +187,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents the result of dashboard creation.
     /// </summary>
-    public class DashboardCreationResult
+    public partial class DashboardCreationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -200,7 +200,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents the result of communication implementation.
     /// </summary>
-    public class CommunicationImplementationResult
+    public partial class CommunicationImplementationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -213,7 +213,7 @@ namespace Nexo.Core.Application.Models.Collaboration
     /// <summary>
     /// Represents the result of knowledge sharing creation.
     /// </summary>
-    public class KnowledgeSharingResult
+    public partial class KnowledgeSharingResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

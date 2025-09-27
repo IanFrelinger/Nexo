@@ -7,7 +7,7 @@ using Nexo.Core.Domain.Models.CodeQuality;
 
 namespace Nexo.Infrastructure.Quality.Analyzers
 {
-    public class TestabilityAnalyzer
+    public partial class TestabilityAnalyzer
     {
         private readonly ILogger<TestabilityAnalyzer> _logger;
 

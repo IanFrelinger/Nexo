@@ -11,7 +11,7 @@ namespace Nexo.Feature.Template.Services
     /// <summary>
     /// Base template service implementation that provides template management capabilities.
     /// </summary>
-    public class TemplateService : ITemplateService
+    public partial class TemplateService : ITemplateService
     {
         private readonly ILogger<TemplateService> _logger;
         private readonly string _templateDirectory;

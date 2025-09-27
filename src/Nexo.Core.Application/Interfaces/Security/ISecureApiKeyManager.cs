@@ -73,7 +73,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// API key information model.
     /// </summary>
-    public class ApiKeyInfo
+    public partial class ApiKeyInfo
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -91,7 +91,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// API key validation result.
     /// </summary>
-    public class ApiKeyValidationResult
+    public partial class ApiKeyValidationResult
     {
         public bool IsValid { get; set; }
         public string? ErrorMessage { get; set; }
@@ -101,7 +101,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// API key usage statistics.
     /// </summary>
-    public class ApiKeyUsageStatistics
+    public partial class ApiKeyUsageStatistics
     {
         public int TotalKeys { get; set; }
         public int ActiveKeys { get; set; }

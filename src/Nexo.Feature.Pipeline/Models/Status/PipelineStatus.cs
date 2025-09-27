@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models;
 /// <summary>
 /// Result of pipeline configuration validation.
 /// </summary>
-public class PipelineValidationResult
+public partial class PipelineValidationResult
 {
     public bool IsValid { get; set; }
     
@@ -20,7 +20,7 @@ public class PipelineValidationResult
 /// <summary>
 /// Health status of the pipeline system.
 /// </summary>
-public class PipelineHealthStatus
+public partial class PipelineHealthStatus
 {
     public DateTime LastHealthCheck { get; set; } = DateTime.UtcNow;
     
@@ -38,7 +38,7 @@ public class PipelineHealthStatus
 /// <summary>
 /// Metrics for pipeline execution.
 /// </summary>
-public class PipelineOrchestrationMetrics
+public partial class PipelineOrchestrationMetrics
 {
     public string ExecutionId { get; set; } = string.Empty;
     
@@ -62,7 +62,7 @@ public class PipelineOrchestrationMetrics
 /// <summary>
 /// Component health information.
 /// </summary>
-public class ComponentHealth
+public partial class ComponentHealth
 {
     public bool IsHealthy { get; set; }
     

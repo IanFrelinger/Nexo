@@ -7,7 +7,7 @@ namespace Nexo.Agent.Demo.ProjectManager.Services;
 /// <summary>
 /// Manages project tasks including creation, assignment, and tracking.
 /// </summary>
-public class ProjectTaskManager
+public partial class ProjectTaskManager
 {
     private readonly ILogger _logger;
     private readonly List<ProjectTask> _projectTasks = new();

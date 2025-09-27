@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Performance metrics for test execution.
     /// </summary>
-    public class TestPerformanceMetrics
+    public partial class TestPerformanceMetrics
     {
         /// <summary>
         /// Memory usage at the start of test execution.

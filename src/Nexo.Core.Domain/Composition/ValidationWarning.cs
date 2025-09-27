@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Composition
     /// <summary>
     /// Represents a validation warning with detailed information about potential issues.
     /// </summary>
-    public class ValidationWarning
+    public partial class ValidationWarning
     {
         /// <summary>
         /// Gets the warning message describing the potential issue.

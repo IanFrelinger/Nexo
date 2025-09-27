@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents NLP configuration for advanced natural language processing.
     /// </summary>
-    public class NLPConfiguration
+    public partial class NLPConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents context configuration for context-aware processing.
     /// </summary>
-    public class ContextConfiguration
+    public partial class ContextConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -38,7 +38,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents language configuration for multi-language support.
     /// </summary>
-    public class LanguageConfiguration
+    public partial class LanguageConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -54,7 +54,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents analysis configuration for advanced requirement analysis.
     /// </summary>
-    public class AnalysisConfiguration
+    public partial class AnalysisConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -70,7 +70,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents code generation configuration for intelligent code generation.
     /// </summary>
-    public class CodeGenerationConfiguration
+    public partial class CodeGenerationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -86,7 +86,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents code optimization configuration for intelligent code optimization.
     /// </summary>
-    public class CodeOptimizationConfiguration
+    public partial class CodeOptimizationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -102,7 +102,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents quality configuration for code quality enhancement.
     /// </summary>
-    public class QualityConfiguration
+    public partial class QualityConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -118,7 +118,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents testing configuration for advanced testing strategies.
     /// </summary>
-    public class TestingConfiguration
+    public partial class TestingConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -134,7 +134,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of NLP implementation.
     /// </summary>
-    public class NLPImplementationResult
+    public partial class NLPImplementationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -147,7 +147,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of context processing.
     /// </summary>
-    public class ContextProcessingResult
+    public partial class ContextProcessingResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -160,7 +160,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of language support.
     /// </summary>
-    public class LanguageSupportResult
+    public partial class LanguageSupportResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -173,7 +173,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of analysis implementation.
     /// </summary>
-    public class AnalysisImplementationResult
+    public partial class AnalysisImplementationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -186,7 +186,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of code generation.
     /// </summary>
-    public class CodeGenerationResult
+    public partial class CodeGenerationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -199,7 +199,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of code optimization.
     /// </summary>
-    public class CodeOptimizationResult
+    public partial class CodeOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -212,7 +212,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of quality enhancement.
     /// </summary>
-    public class QualityEnhancementResult
+    public partial class QualityEnhancementResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -225,7 +225,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents the result of testing strategy creation.
     /// </summary>
-    public class TestingStrategyResult
+    public partial class TestingStrategyResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -238,7 +238,7 @@ namespace Nexo.Core.Application.Models.AI
     /// <summary>
     /// Represents advanced AI metrics.
     /// </summary>
-    public class AdvancedAIMetrics
+    public partial class AdvancedAIMetrics
     {
         public double NLPAccuracy { get; set; }
         public double CodeGenerationQuality { get; set; }

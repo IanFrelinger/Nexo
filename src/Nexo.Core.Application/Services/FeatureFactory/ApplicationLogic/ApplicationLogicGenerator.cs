@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Orchestrator for application logic generation that delegates to specialized generators.
     /// </summary>
-    public class ApplicationLogicGenerator : IApplicationLogicGenerator
+    public partial class ApplicationLogicGenerator : IApplicationLogicGenerator
     {
         private readonly ILogger<ApplicationLogicGenerator> _logger;
         private readonly ControllerGenerator _controllerGenerator;

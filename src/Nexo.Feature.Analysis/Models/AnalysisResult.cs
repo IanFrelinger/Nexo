@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Analysis.Models
 {
-    public class AnalysisResult
+    public partial class AnalysisResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

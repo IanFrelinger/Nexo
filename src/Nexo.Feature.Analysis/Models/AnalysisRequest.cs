@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Analysis.Models
 {
-    public class AnalysisRequest
+    public partial class AnalysisRequest
     {
         public string Code { get; set; } = string.Empty;
         public string TargetPath { get; set; } = string.Empty;

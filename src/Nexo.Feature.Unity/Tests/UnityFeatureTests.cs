@@ -13,7 +13,7 @@ using Nexo.Feature.Unity.Monitoring;
 
 namespace Nexo.Feature.Unity.Tests
 {
-    public class UnityFeatureTests
+    public partial class UnityFeatureTests
     {
         private readonly IHost _host;
 

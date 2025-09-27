@@ -9,7 +9,7 @@ namespace Nexo.CLI.Commands.Adaptation.Core
     /// Main orchestrator for adaptation command functionality
     /// </summary>
     [Command("adaptation")]
-    public class AdaptationCommands
+    public partial class AdaptationCommands
     {
         private readonly IServiceProvider _serviceProvider;
         

@@ -15,7 +15,7 @@ namespace Nexo.Core.Application.Services.Safety
         Task<bool> ArchiveAuditLogAsync(string userId, DateTime before);
     }
 
-    public class AuditEntry
+    public partial class AuditEntry
     {
         public string Id { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;

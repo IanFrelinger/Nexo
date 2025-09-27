@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents feature knowledge for sharing.
     /// </summary>
-    public class FeatureKnowledge
+    public partial class FeatureKnowledge
     {
         public string Id { get; set; } = string.Empty;
         public string FeatureId { get; set; } = string.Empty;
@@ -25,7 +25,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents project data for cross-project learning.
     /// </summary>
-    public class ProjectData
+    public partial class ProjectData
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -43,7 +43,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents an industry pattern.
     /// </summary>
-    public class IndustryPattern
+    public partial class IndustryPattern
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -62,7 +62,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents intelligence data for database storage.
     /// </summary>
-    public class IntelligenceData
+    public partial class IntelligenceData
     {
         public string Id { get; set; } = string.Empty;
         public string DataType { get; set; } = string.Empty;
@@ -77,7 +77,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents an intelligence search query.
     /// </summary>
-    public class IntelligenceSearchQuery
+    public partial class IntelligenceSearchQuery
     {
         public string Query { get; set; } = string.Empty;
         public List<string> Categories { get; set; } = new List<string>();
@@ -92,7 +92,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents intelligence export options.
     /// </summary>
-    public class IntelligenceExportOptions
+    public partial class IntelligenceExportOptions
     {
         public string Format { get; set; } = "JSON";
         public List<string> DataTypes { get; set; } = new List<string>();
@@ -106,7 +106,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents intelligence import data.
     /// </summary>
-    public class IntelligenceImportData
+    public partial class IntelligenceImportData
     {
         public string Id { get; set; } = string.Empty;
         public string Format { get; set; } = string.Empty;
@@ -119,7 +119,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of knowledge sharing.
     /// </summary>
-    public class KnowledgeSharingResult
+    public partial class KnowledgeSharingResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -133,7 +133,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of cross-project learning.
     /// </summary>
-    public class CrossProjectLearningResult
+    public partial class CrossProjectLearningResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -147,7 +147,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of pattern recognition.
     /// </summary>
-    public class PatternRecognitionResult
+    public partial class PatternRecognitionResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -162,7 +162,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of database creation.
     /// </summary>
-    public class DatabaseCreationResult
+    public partial class DatabaseCreationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -175,7 +175,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents intelligence search results.
     /// </summary>
-    public class IntelligenceSearchResult
+    public partial class IntelligenceSearchResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -190,7 +190,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents an intelligence item.
     /// </summary>
-    public class IntelligenceItem
+    public partial class IntelligenceItem
     {
         public string Id { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
@@ -205,7 +205,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents intelligence statistics.
     /// </summary>
-    public class IntelligenceStatistics
+    public partial class IntelligenceStatistics
     {
         public int TotalItems { get; set; }
         public int TotalProjects { get; set; }
@@ -219,7 +219,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents intelligence export.
     /// </summary>
-    public class IntelligenceExport
+    public partial class IntelligenceExport
     {
         public string Id { get; set; } = string.Empty;
         public string Format { get; set; } = string.Empty;
@@ -233,7 +233,7 @@ namespace Nexo.Core.Application.Models.Learning
     /// <summary>
     /// Represents the result of intelligence import.
     /// </summary>
-    public class IntelligenceImportResult
+    public partial class IntelligenceImportResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

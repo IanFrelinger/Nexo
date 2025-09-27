@@ -7,7 +7,7 @@ namespace Nexo.Feature.Agent.Models
     /// <summary>
     /// Represents a potential agent for selection or collaboration.
     /// </summary>
-    public class AgentCandidate
+    public partial class AgentCandidate
     {
         /// <summary>
         /// Represents an individual or entity authorized to perform specific actions on behalf of others or within a system.
@@ -23,7 +23,7 @@ namespace Nexo.Feature.Agent.Models
     /// <summary>
     /// Represents a profile describing an agent's capabilities, role, and areas of focus.
     /// </summary>
-    public class AgentCapabilityProfile
+    public partial class AgentCapabilityProfile
     {
         /// <summary>
         /// Represents the unique identifier of an agent.
@@ -59,7 +59,7 @@ namespace Nexo.Feature.Agent.Models
     /// <summary>
     /// Contextual information for agent communication.
     /// </summary>
-    public class AgentCommunicationContext
+    public partial class AgentCommunicationContext
     {
         /// <summary>
         /// Unique identifier for the communication session between agents.
@@ -123,7 +123,7 @@ namespace Nexo.Feature.Agent.Models
     /// <summary>
     /// Represents a collaboration pattern between agents.
     /// </summary>
-    public class AgentCollaborationPattern
+    public partial class AgentCollaborationPattern
     {
         /// <summary>
         /// Identifies the unique identifier associated with a specific agent.
@@ -144,7 +144,7 @@ namespace Nexo.Feature.Agent.Models
     /// <summary>
     /// Represents performance metrics for a session.
     /// </summary>
-    public class SessionPerformanceMetrics
+    public partial class SessionPerformanceMetrics
     {
         /// <summary>
         /// Indicates the average duration of a user session.
@@ -165,7 +165,7 @@ namespace Nexo.Feature.Agent.Models
     /// <summary>
     /// Represents a recommendation for collaboration between entities based on certain criteria or analysis.
     /// </summary>
-    public class CollaborationRecommendation
+    public partial class CollaborationRecommendation
     {
         /// <summary>
         /// Represents a classification or category of an object or entity.

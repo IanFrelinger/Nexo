@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Safety.Components
 {
-    public class ComplianceValidator
+    public partial class ComplianceValidator
     {
         private readonly ILogger _logger;
 
@@ -245,7 +245,7 @@ namespace Nexo.Core.Application.Services.AI.Safety.Components
         }
     }
 
-    public class ComplianceValidationResult
+    public partial class ComplianceValidationResult
     {
         public double ComplianceScore { get; set; }
         public List<string> ComplianceIssues { get; set; } = new();

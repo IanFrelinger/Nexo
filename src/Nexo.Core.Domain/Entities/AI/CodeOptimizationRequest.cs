@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Code optimization request
     /// </summary>
-    public class CodeOptimizationRequest
+    public partial class CodeOptimizationRequest
     {
         /// <summary>
         /// Request ID

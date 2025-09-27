@@ -5,7 +5,7 @@ namespace Nexo.Feature.Agent.Models
     /// <summary>
     /// Represents a request made to the agent, containing details about the type of request, context, and content.
     /// </summary>
-    public class AgentRequest
+    public partial class AgentRequest
     {
         /// <summary>
         /// Gets or sets the type of the agent request.

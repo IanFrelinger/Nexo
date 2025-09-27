@@ -9,7 +9,7 @@ namespace Nexo.Core.Domain.Models.Extensions
     /// <summary>
     /// Represents a request to generate a new extension/plugin using AI.
     /// </summary>
-    public class ExtensionRequest
+    public partial class ExtensionRequest
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;

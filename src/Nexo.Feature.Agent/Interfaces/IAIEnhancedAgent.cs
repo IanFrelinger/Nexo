@@ -51,7 +51,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// <summary>
     /// AI capabilities for an agent.
     /// </summary>
-    public class AiAgentCapabilities
+    public partial class AiAgentCapabilities
     {
         /// <summary>
         /// Gets or sets whether the agent can perform code analysis.
@@ -113,7 +113,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// <summary>
     /// AI-enhanced agent request.
     /// </summary>
-    public class AiEnhancedAgentRequest : AgentRequest
+    public partial class AiEnhancedAgentRequest : AgentRequest
     {
         /// <summary>
         /// Gets or sets whether to use AI processing.
@@ -139,7 +139,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// <summary>
     /// AI-enhanced agent response.
     /// </summary>
-    public class AiEnhancedAgentResponse : AgentResponse
+    public partial class AiEnhancedAgentResponse : AgentResponse
     {
         /// <summary>
         /// Gets or sets whether AI was used in processing.
@@ -170,7 +170,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// <summary>
     /// AI task analysis result.
     /// </summary>
-    public class AiTaskAnalysisResult
+    public partial class AiTaskAnalysisResult
     {
         /// <summary>
         /// Gets or sets the analysis summary.
@@ -206,7 +206,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// <summary>
     /// AI suggestions result.
     /// </summary>
-    public class AiSuggestionsResult
+    public partial class AiSuggestionsResult
     {
         /// <summary>
         /// Gets or sets the improvement suggestions.

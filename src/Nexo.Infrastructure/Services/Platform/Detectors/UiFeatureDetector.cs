@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform
 {
-    public class UiFeatureDetector : IUiFeatureDetector
+    public partial class UiFeatureDetector : IUiFeatureDetector
     {
         private readonly ILogger<UiFeatureDetector> _logger;
         public UiFeatureDetector(ILogger<UiFeatureDetector> logger) { _logger = logger; }

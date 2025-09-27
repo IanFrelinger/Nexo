@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Analytics request
     /// </summary>
-    public class AnalyticsRequest
+    public partial class AnalyticsRequest
     {
         public TimeSpan? TimeRange { get; set; }
         public string? UserId { get; set; }
@@ -17,7 +17,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Advanced analytics result
     /// </summary>
-    public class AdvancedAnalyticsResult
+    public partial class AdvancedAnalyticsResult
     {
         public AnalyticsRequest Request { get; set; } = new();
         public DateTime GeneratedAt { get; set; }
@@ -33,7 +33,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Analytics insight
     /// </summary>
-    public class AnalyticsInsight
+    public partial class AnalyticsInsight
     {
         public InsightType Type { get; set; }
         public InsightSeverity Severity { get; set; }
@@ -47,7 +47,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Analytics prediction
     /// </summary>
-    public class AnalyticsPrediction
+    public partial class AnalyticsPrediction
     {
         public PredictionType Type { get; set; }
         public TimeSpan TimeHorizon { get; set; }
@@ -60,7 +60,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Analytics recommendation
     /// </summary>
-    public class AnalyticsRecommendation
+    public partial class AnalyticsRecommendation
     {
         public RecommendationType Type { get; set; }
         public RecommendationPriority Priority { get; set; }
@@ -74,7 +74,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Performance metrics
     /// </summary>
-    public class PerformanceMetrics
+    public partial class PerformanceMetrics
     {
         public double SuccessRate { get; set; }
         public TimeSpan AverageOperationDuration { get; set; }
@@ -89,7 +89,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Usage pattern
     /// </summary>
-    public class UsagePattern
+    public partial class UsagePattern
     {
         public PatternType Type { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -102,7 +102,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Anomaly detection
     /// </summary>
-    public class AnomalyDetection
+    public partial class AnomalyDetection
     {
         public AnomalyType Type { get; set; }
         public AnomalySeverity Severity { get; set; }
@@ -116,7 +116,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Trend analysis
     /// </summary>
-    public class TrendAnalysis
+    public partial class TrendAnalysis
     {
         public TrendDirection UsageTrend { get; set; }
         public TrendDirection PerformanceTrend { get; set; }
@@ -128,7 +128,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Analytics model
     /// </summary>
-    public class AnalyticsModel
+    public partial class AnalyticsModel
     {
         public string ModelId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -144,7 +144,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Model training request
     /// </summary>
-    public class ModelTrainingRequest
+    public partial class ModelTrainingRequest
     {
         public string ModelName { get; set; } = string.Empty;
         public ModelType ModelType { get; set; }
@@ -155,7 +155,7 @@ namespace Nexo.Core.Application.Services.AI.Analytics
     /// <summary>
     /// Model training result
     /// </summary>
-    public class ModelTrainingResult
+    public partial class ModelTrainingResult
     {
         public string ModelId { get; set; } = string.Empty;
         public bool Success { get; set; }

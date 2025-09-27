@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unity
     /// Target Framework: Unity 2022.3 LTS
     /// Implementation Style: MonoBehaviour-based with Component System
     /// </summary>
-    public class AILogicImplementation : AILogic
+    public partial class AILogicImplementation : AILogic
     {
         public AILogicImplementation(IIWorldProvider iworldprovider, IIStateProvider istateprovider, IIEventProvider ieventprovider, IINavigationProvider inavigationprovider)
             : base(iworldprovider, istateprovider, ieventprovider, inavigationprovider)

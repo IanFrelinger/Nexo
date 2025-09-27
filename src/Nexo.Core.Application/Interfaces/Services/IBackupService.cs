@@ -25,7 +25,7 @@ namespace Nexo.Core.Application.Services.Safety
         Differential
     }
 
-    public class BackupInfo
+    public partial class BackupInfo
     {
         public string Id { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
@@ -35,7 +35,7 @@ namespace Nexo.Core.Application.Services.Safety
         public bool IsEncrypted { get; set; }
     }
 
-    public class BackupSchedule
+    public partial class BackupSchedule
     {
         public string Id { get; set; } = string.Empty;
         public BackupType Type { get; set; }

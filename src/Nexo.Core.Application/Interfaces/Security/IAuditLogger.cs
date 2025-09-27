@@ -101,7 +101,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// General audit event.
     /// </summary>
-    public class AuditEvent : BaseAuditEvent
+    public partial class AuditEvent : BaseAuditEvent
     {
         public AuditEventType EventType { get; set; }
         public string Description { get; set; } = string.Empty;
@@ -111,7 +111,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security-specific audit event.
     /// </summary>
-    public class SecurityEvent : BaseAuditEvent
+    public partial class SecurityEvent : BaseAuditEvent
     {
         public SecurityEventType EventType { get; set; }
         public string Description { get; set; } = string.Empty;
@@ -123,7 +123,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Compliance-specific audit event.
     /// </summary>
-    public class ComplianceEvent : BaseAuditEvent
+    public partial class ComplianceEvent : BaseAuditEvent
     {
         public ComplianceEventType EventType { get; set; }
         public string Description { get; set; } = string.Empty;
@@ -233,7 +233,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Audit report model.
     /// </summary>
-    public class AuditReport
+    public partial class AuditReport
     {
         public DateTimeOffset GeneratedAt { get; set; }
         public DateTimeOffset StartTime { get; set; }

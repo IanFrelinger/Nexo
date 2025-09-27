@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models;
 /// <summary>
 /// Insight from code analysis.
 /// </summary>
-public class AnalysisInsight
+public partial class AnalysisInsight
 {
     public string Type { get; set; } = string.Empty;
     
@@ -24,7 +24,7 @@ public class AnalysisInsight
 /// <summary>
 /// Code quality metric.
 /// </summary>
-public class CodeQualityMetric
+public partial class CodeQualityMetric
 {
     public string MetricName { get; set; } = string.Empty;
     
@@ -40,7 +40,7 @@ public class CodeQualityMetric
 /// <summary>
 /// Security vulnerability.
 /// </summary>
-public class SecurityVulnerability
+public partial class SecurityVulnerability
 {
     public string VulnerabilityType { get; set; } = string.Empty;
     
@@ -58,7 +58,7 @@ public class SecurityVulnerability
 /// <summary>
 /// Performance recommendation.
 /// </summary>
-public class PerformanceRecommendation
+public partial class PerformanceRecommendation
 {
     public string Category { get; set; } = string.Empty;
     
@@ -74,7 +74,7 @@ public class PerformanceRecommendation
 /// <summary>
 /// Test recommendation.
 /// </summary>
-public class TestRecommendation
+public partial class TestRecommendation
 {
     public string TestType { get; set; } = string.Empty;
     

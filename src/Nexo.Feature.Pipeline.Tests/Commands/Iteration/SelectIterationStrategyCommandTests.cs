@@ -13,7 +13,7 @@ namespace Nexo.Feature.Pipeline.Tests.Commands.Iteration;
 /// <summary>
 /// Tests for the select iteration strategy command
 /// </summary>
-public class SelectIterationStrategyCommandTests
+public partial class SelectIterationStrategyCommandTests
 {
     private readonly Mock<IIterationStrategySelector> _mockStrategySelector;
     private readonly Mock<ILogger<SelectIterationStrategyCommand>> _mockLogger;

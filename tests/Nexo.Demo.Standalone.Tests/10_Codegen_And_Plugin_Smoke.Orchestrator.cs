@@ -1,11 +1,10 @@
-using Nexo.Demo.Tests.Support;
-using FluentAssertions;
-using Xunit;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Demo.Tests;
+namespace Nexo.Demo.Tests
 {
-            ? "using Microsoft.CodeAnalysis;\npublic interface IGeneratedRecipeExecutor { Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs); }\npublic partial class GeneratedRecipe : IGeneratedRecipeExecutor { public async Task<ExecutionResult> ExecuteAsync(Dictionary<string, string> inputs) { return new ExecutionResult { Success = true }; } }\npublic partial class ExecutionResult { public bool Success { get; set; } }"
-{
-    // Orchestration methods will be added here
-}
+    public partial class 10_Codegen_And_Plugin_Smoke
+    {
+        // Orchestration methods will be added here
+    }
 }

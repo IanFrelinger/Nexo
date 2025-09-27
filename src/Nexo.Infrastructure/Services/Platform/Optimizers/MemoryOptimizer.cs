@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Handles memory optimization for different platforms
     /// </summary>
-    public class MemoryOptimizer
+    public partial class MemoryOptimizer
     {
         private readonly ILogger<MemoryOptimizer> _logger;
 
@@ -165,7 +165,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Result of memory optimization
     /// </summary>
-    public class MemoryOptimizationResult
+    public partial class MemoryOptimizationResult
     {
         public string Platform { get; set; } = string.Empty;
         public bool Success { get; set; }

@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Result of validation operations
     /// </summary>
-    public class ValidationReport
+    public partial class ValidationReport
     {
         /// <summary>
         /// Whether the validation was successful
@@ -99,7 +99,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Validation error
     /// </summary>
-    public class ValidationError
+    public partial class ValidationError
     {
         /// <summary>
         /// Error message
@@ -130,7 +130,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Validation warning
     /// </summary>
-    public class ValidationWarning
+    public partial class ValidationWarning
     {
         /// <summary>
         /// Warning message

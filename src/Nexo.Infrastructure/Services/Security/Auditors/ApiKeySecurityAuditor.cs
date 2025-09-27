@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Security.Auditors
 {
-    public class ApiKeySecurityAuditor
+    public partial class ApiKeySecurityAuditor
     {
         private readonly ILogger<ApiKeySecurityAuditor> _logger;
 
@@ -82,7 +82,7 @@ namespace Nexo.Infrastructure.Services.Security.Auditors
         }
     }
 
-    public class ApiKeyAuditResult
+    public partial class ApiKeyAuditResult
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }

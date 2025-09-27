@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Entities.Infrastructure
 {
-    public class RuntimeEnvironmentProfile
+    public partial class RuntimeEnvironmentProfile
     {
         public string Name { get; set; } = string.Empty;
         public PlatformType Platform { get; set; }

@@ -2,7 +2,7 @@ using System;
 
 namespace Playground.Server.Services.Templates
 {
-    public class MobileAppTemplateGenerator
+    public partial class MobileAppTemplateGenerator
     {
         public static string GenerateMobileFitnessCode()
         {

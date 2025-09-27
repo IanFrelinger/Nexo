@@ -63,7 +63,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of application logic generation
     /// </summary>
-    public class ApplicationLogicResult
+    public partial class ApplicationLogicResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -83,7 +83,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of controller generation
     /// </summary>
-    public class ControllerResult
+    public partial class ControllerResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -96,7 +96,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of service generation
     /// </summary>
-    public class ServiceResult
+    public partial class ServiceResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -109,7 +109,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of model generation
     /// </summary>
-    public class ModelResult
+    public partial class ModelResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -122,7 +122,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of view generation
     /// </summary>
-    public class ViewResult
+    public partial class ViewResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -135,7 +135,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of configuration generation
     /// </summary>
-    public class ConfigurationResult
+    public partial class ConfigurationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -148,7 +148,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of middleware generation
     /// </summary>
-    public class MiddlewareResult
+    public partial class MiddlewareResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -161,7 +161,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of filter generation
     /// </summary>
-    public class FilterResult
+    public partial class FilterResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -174,7 +174,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Result of validator generation
     /// </summary>
-    public class ValidatorResult
+    public partial class ValidatorResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -187,7 +187,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application view
     /// </summary>
-    public class ApplicationView
+    public partial class ApplicationView
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -204,7 +204,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application configuration
     /// </summary>
-    public class ApplicationConfiguration
+    public partial class ApplicationConfiguration
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -220,7 +220,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application middleware
     /// </summary>
-    public class ApplicationMiddleware
+    public partial class ApplicationMiddleware
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -236,7 +236,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application filter
     /// </summary>
-    public class ApplicationFilter
+    public partial class ApplicationFilter
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -252,7 +252,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application validator
     /// </summary>
-    public class ApplicationValidator
+    public partial class ApplicationValidator
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -267,7 +267,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
 
     // Supporting classes for views, configurations, middleware, filters, and validators
 
-    public class ViewProperty
+    public partial class ViewProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -277,7 +277,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ViewMethod
+    public partial class ViewMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -287,7 +287,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ConfigurationProperty
+    public partial class ConfigurationProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -297,7 +297,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class MiddlewareProperty
+    public partial class MiddlewareProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -306,7 +306,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class FilterProperty
+    public partial class FilterProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -315,7 +315,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ValidatorProperty
+    public partial class ValidatorProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

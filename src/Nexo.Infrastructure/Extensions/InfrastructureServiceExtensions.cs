@@ -98,7 +98,7 @@ namespace Nexo.Infrastructure.Extensions
     /// <summary>
     /// Configuration options for Infrastructure services
     /// </summary>
-    public class InfrastructureServiceOptions
+    public partial class InfrastructureServiceOptions
     {
         public bool EnableOllamaProvider { get; set; } = true;
         public bool EnableNativeProvider { get; set; } = true;

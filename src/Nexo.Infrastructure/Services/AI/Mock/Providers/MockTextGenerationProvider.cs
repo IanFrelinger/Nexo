@@ -8,7 +8,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.Mock.Providers
 {
-    public class MockTextGenerationProvider
+    public partial class MockTextGenerationProvider
     {
         private readonly ILogger<MockTextGenerationProvider> _logger;
 

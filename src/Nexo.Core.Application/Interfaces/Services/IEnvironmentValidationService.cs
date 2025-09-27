@@ -15,14 +15,14 @@ namespace Nexo.Core.Application.Services.Onboarding
         Task<Dictionary<string, object>> GetEnvironmentInfoAsync();
     }
 
-    public class ValidationResult
+    public partial class ValidationResult
     {
         public bool IsValid { get; set; }
         public List<ValidationIssue> Issues { get; set; } = new();
         public DateTime ValidatedAt { get; set; }
     }
 
-    public class ValidationIssue
+    public partial class ValidationIssue
     {
         public string Id { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

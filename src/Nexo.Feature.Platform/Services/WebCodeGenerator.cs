@@ -18,7 +18,7 @@ namespace Nexo.Feature.Platform.Services
     /// Implementation of web code generator for modern framework optimizations - orchestrates specialized generators
     /// Part of Epic 6.1: Native Platform Code Generation, Story 6.1.3: Web Implementation.
     /// </summary>
-    public class WebCodeGenerator : IWebCodeGenerator
+    public partial class WebCodeGenerator : IWebCodeGenerator
     {
         private readonly ILogger<WebCodeGenerator> _logger;
         private readonly ReactCodeGenerator _reactGenerator;

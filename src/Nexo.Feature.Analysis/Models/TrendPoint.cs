@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// A single data point in a trend.
     /// </summary>
-    public class TrendPoint
+    public partial class TrendPoint
     {
         /// <summary>
         /// Timestamp for this data point.

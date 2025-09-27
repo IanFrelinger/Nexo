@@ -7,7 +7,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Performance regression analysis.
     /// </summary>
-    public class PerformanceRegression
+    public partial class PerformanceRegression
     {
         /// <summary>
         /// Metric that regressed.

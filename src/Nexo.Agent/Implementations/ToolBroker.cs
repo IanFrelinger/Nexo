@@ -8,7 +8,7 @@ namespace Nexo.Agent.Implementations;
 /// <summary>
 /// Tool broker that executes tools with proper permissions and observability.
 /// </summary>
-public class ToolBroker : IToolBroker
+public partial class ToolBroker : IToolBroker
 {
     private readonly ILogger<ToolBroker> _logger;
     private readonly IToolRegistry _toolRegistry;

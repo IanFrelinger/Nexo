@@ -8,7 +8,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.LlamaNative.Providers
 {
-    public class ModelManager
+    public partial class ModelManager
     {
         private readonly ILogger<ModelManager> _logger;
         private readonly Dictionary<string, object> _loadedModels = new();

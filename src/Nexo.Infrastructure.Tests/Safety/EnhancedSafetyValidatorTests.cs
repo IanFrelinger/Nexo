@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Tests.Safety
     /// <summary>
     /// Comprehensive tests for EnhancedSafetyValidator including rule hits and false-positive regression tests
     /// </summary>
-    public class EnhancedSafetyValidatorTests
+    public partial class EnhancedSafetyValidatorTests
     {
         private readonly EnhancedSafetyValidator _validator;
         private readonly ILogger<EnhancedSafetyValidator> _logger;

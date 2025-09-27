@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// Parallel LINQ - optimal for CPU-intensive operations on multi-core systems
 /// </summary>
-public class ParallelLinqStrategy<T> : IIterationStrategy<T>
+public partial class ParallelLinqStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "ParallelLinq";
     

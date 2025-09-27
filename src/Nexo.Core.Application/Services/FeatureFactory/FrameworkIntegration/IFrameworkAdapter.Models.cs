@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
         // Framework-specific model classes are defined here
     }
 
-    public class FrameworkFile
+    public partial class FrameworkFile
     {
         public string Name { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;
@@ -23,7 +23,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class FrameworkDependency
+    public partial class FrameworkDependency
     {
         public string Name { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
@@ -31,7 +31,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class FrameworkConfiguration
+    public partial class FrameworkConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -39,28 +39,28 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     }
 
     // Web API specific models
-    public class WebApiController
+    public partial class WebApiController
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WebApiModel
+    public partial class WebApiModel
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WebApiService
+    public partial class WebApiService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WebApiConfiguration
+    public partial class WebApiConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -68,28 +68,28 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     }
 
     // Blazor specific models
-    public class BlazorComponent
+    public partial class BlazorComponent
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class BlazorPage
+    public partial class BlazorPage
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class BlazorService
+    public partial class BlazorService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class BlazorConfiguration
+    public partial class BlazorConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -97,28 +97,28 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     }
 
     // MAUI specific models
-    public class MauiPage
+    public partial class MauiPage
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class MauiView
+    public partial class MauiView
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class MauiService
+    public partial class MauiService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class MauiConfiguration
+    public partial class MauiConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -126,21 +126,21 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     }
 
     // Console specific models
-    public class ConsoleCommand
+    public partial class ConsoleCommand
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ConsoleService
+    public partial class ConsoleService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class ConsoleConfiguration
+    public partial class ConsoleConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -148,28 +148,28 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     }
 
     // WPF specific models
-    public class WpfWindow
+    public partial class WpfWindow
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WpfUserControl
+    public partial class WpfUserControl
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WpfViewModel
+    public partial class WpfViewModel
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WpfConfiguration
+    public partial class WpfConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -177,28 +177,28 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     }
 
     // WinForms specific models
-    public class WinFormsForm
+    public partial class WinFormsForm
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WinFormsControl
+    public partial class WinFormsControl
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WinFormsService
+    public partial class WinFormsService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class WinFormsConfiguration
+    public partial class WinFormsConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -206,28 +206,28 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     }
 
     // Xamarin specific models
-    public class XamarinPage
+    public partial class XamarinPage
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class XamarinView
+    public partial class XamarinView
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class XamarinService
+    public partial class XamarinService
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public Dictionary<string, object> Metadata { get; set; } = new();
     }
 
-    public class XamarinConfiguration
+    public partial class XamarinConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();

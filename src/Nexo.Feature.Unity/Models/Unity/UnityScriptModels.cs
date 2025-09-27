@@ -6,7 +6,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity script analysis
     /// </summary>
-    public class UnityScriptAnalysis
+    public partial class UnityScriptAnalysis
     {
         public IEnumerable<UnityScript> Scripts { get; set; } = new List<UnityScript>();
         public IEnumerable<PerformanceIssue> PerformanceIssues { get; set; } = new List<PerformanceIssue>();
@@ -17,7 +17,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity script
     /// </summary>
-    public class UnityScript
+    public partial class UnityScript
     {
         public string Path { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -39,7 +39,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity script method
     /// </summary>
-    public class UnityScriptMethod
+    public partial class UnityScriptMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -59,7 +59,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity script field
     /// </summary>
-    public class UnityScriptField
+    public partial class UnityScriptField
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -81,7 +81,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity script property
     /// </summary>
-    public class UnityScriptProperty
+    public partial class UnityScriptProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -103,7 +103,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a performance issue in Unity scripts
     /// </summary>
-    public class PerformanceIssue
+    public partial class PerformanceIssue
     {
         public string ScriptPath { get; set; } = string.Empty;
         public string IssueType { get; set; } = string.Empty;
@@ -120,7 +120,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a code quality issue in Unity scripts
     /// </summary>
-    public class CodeQualityIssue
+    public partial class CodeQualityIssue
     {
         public string ScriptPath { get; set; } = string.Empty;
         public string IssueType { get; set; } = string.Empty;
@@ -137,7 +137,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents an iteration pattern in Unity scripts
     /// </summary>
-    public class IterationPattern
+    public partial class IterationPattern
     {
         public string ScriptPath { get; set; } = string.Empty;
         public string PatternType { get; set; } = string.Empty;

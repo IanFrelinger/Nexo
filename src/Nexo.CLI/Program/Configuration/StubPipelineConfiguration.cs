@@ -8,7 +8,7 @@ namespace Nexo.CLI.Program.Configuration
     /// <summary>
     /// Stub implementation of IPipelineConfiguration for CLI usage
     /// </summary>
-    public class StubPipelineConfiguration : IPipelineConfiguration
+    public partial class StubPipelineConfiguration : IPipelineConfiguration
     {
         public int MaxParallelExecutions => Constants.Limits.DefaultMaxParallelExecutions;
         public int CommandTimeoutMs => Constants.Timeouts.DefaultCommandTimeoutMs;

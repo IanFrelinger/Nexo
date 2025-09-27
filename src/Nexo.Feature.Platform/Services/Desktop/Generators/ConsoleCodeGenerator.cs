@@ -6,7 +6,7 @@ using Nexo.Feature.Platform.Models;
 
 namespace Nexo.Feature.Platform.Services.Desktop.Generators
 {
-    public class ConsoleCodeGenerator
+    public partial class ConsoleCodeGenerator
     {
         private readonly ILogger<ConsoleCodeGenerator> _logger;
 
@@ -92,7 +92,7 @@ using System.Threading.Tasks;
 
 namespace {request.ApplicationType}
 {{
-    public class ApplicationService
+    public partial class ApplicationService
     {{
         public async Task RunAsync()
         {{

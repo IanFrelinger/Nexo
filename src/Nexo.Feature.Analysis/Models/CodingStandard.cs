@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents a coding standard that can be applied to code generation.
     /// </summary>
-    public class CodingStandard
+    public partial class CodingStandard
     {
         /// <summary>
         /// Gets or sets the unique identifier of the coding standard.
@@ -62,7 +62,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Represents a rule within a coding standard.
     /// </summary>
-    public class CodingStandardRule
+    public partial class CodingStandardRule
     {
         /// <summary>
         /// Gets or sets the unique identifier of the rule.

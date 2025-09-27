@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// Service for intelligent response deduplication and similarity matching.
     /// Part of Phase 3.3 advanced caching features.
     /// </summary>
-    public class ResponseDeduplicationService : IResponseDeduplicationService
+    public partial class ResponseDeduplicationService : IResponseDeduplicationService
     {
         private readonly ICacheStrategy<string, CachedResponse> _cache;
         private readonly ISimilarityCalculator _similarityCalculator;
@@ -156,7 +156,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Jaccard similarity calculator for text content.
     /// </summary>
-    public class JaccardSimilarityCalculator : ISimilarityCalculator
+    public partial class JaccardSimilarityCalculator : ISimilarityCalculator
     {
         public async Task<double> ComputeSimilarityAsync(string content1, string content2, CancellationToken cancellationToken = default)
         {
@@ -183,7 +183,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Cosine similarity calculator for text content.
     /// </summary>
-    public class CosineSimilarityCalculator : ISimilarityCalculator
+    public partial class CosineSimilarityCalculator : ISimilarityCalculator
     {
         public async Task<double> ComputeSimilarityAsync(string content1, string content2, CancellationToken cancellationToken = default)
         {
@@ -215,7 +215,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Cached response model.
     /// </summary>
-    public class CachedResponse
+    public partial class CachedResponse
     {
         public string RequestHash { get; set; } = string.Empty;
         public string RequestContent { get; set; } = string.Empty;
@@ -230,7 +230,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Deduplication statistics.
     /// </summary>
-    public class DeduplicationStatistics
+    public partial class DeduplicationStatistics
     {
         public int TotalCachedResponses { get; set; }
         public int DuplicateResponses { get; set; }
@@ -242,7 +242,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Configuration for response deduplication.
     /// </summary>
-    public class DeduplicationConfiguration
+    public partial class DeduplicationConfiguration
     {
         public bool EnableSimilarityMatching { get; set; } = true;
         public double SimilarityThreshold { get; set; } = 0.8;

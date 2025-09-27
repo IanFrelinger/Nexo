@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models.Safety
     /// <summary>
     /// Result of safety validation for generated code
     /// </summary>
-    public class SafetyValidationResult
+    public partial class SafetyValidationResult
     {
         /// <summary>
         /// Whether the code passed safety validation

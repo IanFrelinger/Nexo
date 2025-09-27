@@ -25,7 +25,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             // First create a tool
             var plugin = new MockPlugin("TestPlugin", "1.0", "Test plugin");
             var assembly = new byte[] { 1, 2, 3, 4, 5 };
-            var sourceCode = "public class TestPlugin : IPlugin { /* implementation */ }";
+            var sourceCode = "public partial class TestPlugin : IPlugin { /* implementation */ }";
             
             await toolRepo.SaveToolAsync(plugin, assembly, sourceCode);
 
@@ -46,7 +46,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             var toolRepo = _host.Services.GetRequiredService<IToolRepository>();
             var plugin = new MockPlugin("CRUDTest", "1.0", "CRUD test plugin");
             var assembly = new byte[] { 1, 2, 3, 4, 5 };
-            var sourceCode = "public class CRUDTest : IPlugin { /* implementation */ }";
+            var sourceCode = "public partial class CRUDTest : IPlugin { /* implementation */ }";
 
             // Act & Assert - Create
             var savedTool = await toolRepo.SaveToolAsync(plugin, assembly, sourceCode);
@@ -160,7 +160,7 @@ using System.Threading.Tasks;
 using Nexo.Core.Domain.Interfaces;
 using Nexo.Core.Domain.Models;
 
-public class {toolName} : IPlugin
+public partial class {toolName} : IPlugin
 {{
     public string Name => ""{toolName}"";
     public string Version => ""1.0"";

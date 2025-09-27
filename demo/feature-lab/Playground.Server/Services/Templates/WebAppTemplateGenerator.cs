@@ -2,7 +2,7 @@ using System;
 
 namespace Playground.Server.Services.Templates
 {
-    public class WebAppTemplateGenerator
+    public partial class WebAppTemplateGenerator
     {
         public static string GenerateTodoAppCode()
         {

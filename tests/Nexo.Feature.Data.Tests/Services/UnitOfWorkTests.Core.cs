@@ -1,11 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Nexo.Feature.Data.Interfaces;
-using Nexo.Feature.Data.Services;
-using Xunit;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Feature.Data.Tests.Services;
+namespace Nexo.Feature.Data.Tests.Services
 {
+    public partial class UnitOfWorkTests
+    {
+        // Core implementation will be added here
+    }
 }

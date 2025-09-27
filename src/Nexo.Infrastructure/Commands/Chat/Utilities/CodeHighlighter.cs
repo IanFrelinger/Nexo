@@ -7,7 +7,7 @@ namespace Nexo.Infrastructure.Commands.Chat.Utilities
     /// <summary>
     /// Handles code highlighting functionality
     /// </summary>
-    public class CodeHighlighter
+    public partial class CodeHighlighter
     {
         /// <summary>
         /// Highlights code blocks in the response

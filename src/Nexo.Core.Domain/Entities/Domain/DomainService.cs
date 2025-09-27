@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.Domain
     /// <summary>
     /// Represents a domain service
     /// </summary>
-    public class DomainService
+    public partial class DomainService
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -25,7 +25,7 @@ namespace Nexo.Core.Domain.Entities.Domain
     /// <summary>
     /// Represents a method in a domain service
     /// </summary>
-    public class ServiceMethod
+    public partial class ServiceMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;

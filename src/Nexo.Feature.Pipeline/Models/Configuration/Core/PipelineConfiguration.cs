@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Core
     /// <summary>
     /// Represents a complete pipeline configuration that can be loaded from files or command line.
     /// </summary>
-    public class PipelineConfiguration : IPipelineConfiguration
+    public partial class PipelineConfiguration : IPipelineConfiguration
     {
         /// <summary>
         /// Gets or sets the pipeline name.

@@ -57,7 +57,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Capacity provider strategy item
     /// </summary>
-    public class CapacityProviderStrategyItem
+    public partial class CapacityProviderStrategyItem
     {
         /// <summary>
         /// Capacity provider name
@@ -78,7 +78,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS cluster result
     /// </summary>
-    public class ECSClusterResult
+    public partial class ECSClusterResult
     {
         /// <summary>
         /// Whether the operation was successful
@@ -114,7 +114,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS cluster information
     /// </summary>
-    public class ECSClusterInfo
+    public partial class ECSClusterInfo
     {
         /// <summary>
         /// Cluster name
@@ -170,7 +170,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// ECS cluster list result
     /// </summary>
-    public class ECSClusterListResult
+    public partial class ECSClusterListResult
     {
         /// <summary>
         /// Whether the list operation was successful

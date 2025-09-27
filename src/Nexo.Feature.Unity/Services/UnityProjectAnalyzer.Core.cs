@@ -1,0 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Nexo.Feature.Unity.Interfaces;
+using Nexo.Feature.Unity.Models;
+
+namespace Nexo.Feature.Unity.Services
+{
+    public interface IFileSystemService
+}

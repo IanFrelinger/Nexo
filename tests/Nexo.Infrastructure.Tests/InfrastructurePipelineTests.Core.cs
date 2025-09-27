@@ -1,14 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Infrastructure.Tests.Commands;
 using System;
-using System.Threading.Tasks;
-        using var command = new MemoryCacheCommand(NullLogger<MemoryCacheCommand>.Instance);
-        using var command = new MemoryCacheCommand(NullLogger<MemoryCacheCommand>.Instance);
-        using var command = new MemoryCacheCommand(NullLogger<MemoryCacheCommand>.Instance);
-        using var command = new MemoryCacheCommand(NullLogger<MemoryCacheCommand>.Instance);
+using System.Collections.Generic;
 
-namespace Nexo.Infrastructure.Tests;
+namespace Nexo.Infrastructure.Tests
 {
+    public partial class InfrastructurePipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

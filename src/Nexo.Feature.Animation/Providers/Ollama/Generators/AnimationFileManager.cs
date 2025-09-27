@@ -8,7 +8,7 @@ using Nexo.Feature.Animation.Models;
 
 namespace Nexo.Feature.Animation.Providers.Ollama.Generators
 {
-    public class AnimationFileManager
+    public partial class AnimationFileManager
     {
         private readonly ILogger<AnimationFileManager> _logger;
 

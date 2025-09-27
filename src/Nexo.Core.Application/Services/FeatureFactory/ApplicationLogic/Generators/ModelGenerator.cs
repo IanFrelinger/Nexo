@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic.Generators
 {
-    public class ModelGenerator
+    public partial class ModelGenerator
     {
         private readonly ILogger<ModelGenerator> _logger;
 
@@ -53,7 +53,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Models
 {{
-    public class {entityName}Model
+    public partial class {entityName}Model
     {{
         public int Id {{ get; set; }}
         
@@ -70,7 +70,7 @@ namespace Models
         }
     }
 
-    public class Model
+    public partial class Model
     {
         public string Name { get; set; } = string.Empty;
         public string Entity { get; set; } = string.Empty;

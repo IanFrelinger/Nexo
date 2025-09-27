@@ -5,7 +5,7 @@ namespace Nexo.Feature.Azure.Models;
 /// <summary>
 /// Azure validation result
 /// </summary>
-public class AzureValidationResult
+public partial class AzureValidationResult
 {
     /// <summary>
     /// Whether the validation was successful

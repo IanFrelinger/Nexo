@@ -3,7 +3,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents the result of a command execution.
     /// </summary>
-    public class CommandResult
+    public partial class CommandResult
     {
         /// <summary>
         /// Gets or sets whether the command execution was successful.

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
 {
-    public class DomainLogicGenerator : IDomainLogicGenerator
+    public partial class DomainLogicGenerator : IDomainLogicGenerator
     {
         private readonly ILogger<DomainLogicGenerator> _logger;
         private readonly IAIRuntimeSelector _runtimeSelector;

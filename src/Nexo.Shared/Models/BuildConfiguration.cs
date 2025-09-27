@@ -3,7 +3,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Configuration for build execution.
     /// </summary>
-    public class BuildConfiguration
+    public partial class BuildConfiguration
     {
         public string Configuration { get; set; } = string.Empty;
         public string TargetFramework { get; set; } = string.Empty;

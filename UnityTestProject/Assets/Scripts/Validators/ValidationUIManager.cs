@@ -7,7 +7,7 @@ using TMPro;
 
 namespace NexoDoomGame.Validators
 {
-    public class ValidationUIManager
+    public partial class ValidationUIManager
     {
         private readonly TextMeshProUGUI _statusText;
         private readonly Slider _progressBar;

@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Services.AI
 /// <summary>
 /// Model orchestrator implementation that manages multiple AI model providers.
 /// </summary>
-public class ModelOrchestrator : IModelOrchestrator
+public partial class ModelOrchestrator : IModelOrchestrator
 {
     private readonly ILogger<ModelOrchestrator> _logger;
     private readonly Dictionary<string, IModelProvider> _providers;

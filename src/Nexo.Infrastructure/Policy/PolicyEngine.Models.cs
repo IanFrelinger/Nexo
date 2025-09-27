@@ -6,7 +6,7 @@ namespace Nexo.Infrastructure.Policy
     /// <summary>
     /// Policy manifest structure
     /// </summary>
-    public class PolicyManifest
+    public partial class PolicyManifest
     {
         public string Name { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;

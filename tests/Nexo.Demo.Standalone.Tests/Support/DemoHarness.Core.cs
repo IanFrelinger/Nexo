@@ -1,13 +1,10 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Http;
-using Microsoft.Extensions.Configuration;
-using Xunit;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Demo.Tests.Support;
+namespace Nexo.Demo.Tests.Support
 {
-public interface IMockAiModeService { }
+    public partial class DemoHarness
+    {
+        // Core implementation will be added here
+    }
 }

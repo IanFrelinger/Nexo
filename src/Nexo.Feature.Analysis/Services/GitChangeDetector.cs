@@ -14,7 +14,7 @@ namespace Nexo.Feature.Analysis.Services
     /// <summary>
     /// Service for detecting Git changes to enable intelligent test selection.
     /// </summary>
-    public class GitChangeDetector : IGitChangeDetector
+    public partial class GitChangeDetector : IGitChangeDetector
     {
         private readonly ILogger<GitChangeDetector> _logger;
 

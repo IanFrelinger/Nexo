@@ -12,7 +12,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Service for executing policies with pause/resume and approval workflows
     /// </summary>
-    public class PolicyExecutionService : IPolicyExecutionService
+    public partial class PolicyExecutionService : IPolicyExecutionService
     {
         private readonly ILogger<PolicyExecutionService> _logger;
         private readonly IPolicyEngine _policyEngine;
@@ -219,7 +219,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Policy execution state
     /// </summary>
-    public class PolicyExecutionState
+    public partial class PolicyExecutionState
     {
         public string ExecutionId { get; set; } = string.Empty;
         public PolicyExecutionStatus Status { get; set; }

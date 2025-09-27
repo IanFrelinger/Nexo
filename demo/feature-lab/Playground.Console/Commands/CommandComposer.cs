@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Playground.Console.Commands;
 
-public class CommandComposer
+public partial class CommandComposer
 {
     private readonly List<Command> _commands = new();
     private readonly Dictionary<string, object> _context = new();

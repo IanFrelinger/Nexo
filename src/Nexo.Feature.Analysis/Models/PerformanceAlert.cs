@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Performance alert for test execution.
     /// </summary>
-    public class PerformanceAlert
+    public partial class PerformanceAlert
     {
         /// <summary>
         /// Unique identifier for this alert.

@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
     /// <summary>
     /// Performance metrics for AI operations.
     /// </summary>
-    public class PerformanceMetrics
+    public partial class PerformanceMetrics
     {
         public string OperationId { get; set; } = string.Empty;
         public AIOperationType OperationType { get; set; }
@@ -30,7 +30,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
     /// <summary>
     /// Performance statistics for AI operations.
     /// </summary>
-    public class PerformanceStatistics
+    public partial class PerformanceStatistics
     {
         public int TotalOperations { get; set; }
         public int SuccessfulOperations { get; set; }
@@ -49,7 +49,7 @@ namespace Nexo.Core.Application.Services.AI.Performance
     /// <summary>
     /// Performance recommendation for AI operations.
     /// </summary>
-    public class PerformanceRecommendation
+    public partial class PerformanceRecommendation
     {
         public string Type { get; set; } = string.Empty;
         public string Priority { get; set; } = string.Empty;

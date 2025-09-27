@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// Cache strategy that monitors performance and records metrics.
     /// Part of Phase 3.3 advanced caching features.
     /// </summary>
-    public class MonitoredCacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue> where TKey : notnull
+    public partial class MonitoredCacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue> where TKey : notnull
     {
         private readonly ICacheStrategy<TKey, TValue> _innerStrategy;
         private readonly ICachePerformanceMonitor _performanceMonitor;

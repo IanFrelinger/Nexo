@@ -70,7 +70,7 @@ public static class AdaptationServiceRegistration
 /// <summary>
 /// Adaptation settings configuration
 /// </summary>
-public class AdaptationSettings
+public partial class AdaptationSettings
 {
     public TimeSpan AdaptationInterval { get; set; } = TimeSpan.FromSeconds(30);
     public TimeSpan LearningCycleInterval { get; set; } = TimeSpan.FromHours(1);

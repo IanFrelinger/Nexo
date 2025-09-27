@@ -12,7 +12,7 @@ namespace Nexo.Feature.Pipeline.Services
     /// Orchestrates pipeline execution across all feature services.
     /// This is the central coordinator that ties together all pipeline functionality.
     /// </summary>
-    public class PipelineOrchestrator : IPipelineOrchestrator
+    public partial class PipelineOrchestrator : IPipelineOrchestrator
     {
         private readonly ILogger<PipelineOrchestrator> _logger;
         private readonly IPipelineExecutionEngine _executionEngine;

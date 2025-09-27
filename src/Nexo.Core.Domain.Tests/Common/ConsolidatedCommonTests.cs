@@ -9,7 +9,7 @@ namespace Nexo.Core.Domain.Tests.Common
     /// <summary>
     /// Tests for consolidated common classes following hexagonal architecture
     /// </summary>
-    public class ConsolidatedCommonTests
+    public partial class ConsolidatedCommonTests
     {
         [Fact]
         public void BaseEntity_Constructor_ShouldInitializeCorrectly()
@@ -247,21 +247,21 @@ namespace Nexo.Core.Domain.Tests.Common
     /// <summary>
     /// Test implementation of BaseEntity for testing purposes
     /// </summary>
-    public class TestEntity : BaseEntity
+    public partial class TestEntity : BaseEntity
     {
     }
 
     /// <summary>
     /// Test implementation of BaseRequest for testing purposes
     /// </summary>
-    public class TestRequest : BaseRequest
+    public partial class TestRequest : BaseRequest
     {
     }
 
     /// <summary>
     /// Test implementation of BaseResult for testing purposes
     /// </summary>
-    public class TestResult : BaseResult
+    public partial class TestResult : BaseResult
     {
     }
 }

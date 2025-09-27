@@ -3,6 +3,8 @@ FILES:
 Assets/Scripts/ConfigurableNexoAgent.Assets.cs
 Assets/Scripts/ConfigurableNexoAgent.Building.cs
 Assets/Scripts/ConfigurableNexoAgent.Core.cs
+Assets/Scripts/ConfigurableNexoAgent.Assets.cs
+Assets/Scripts/ConfigurableNexoAgent.Building.cs
 
 Rules summary:
 - Add 'partial' to the main type; repeat full header (access + modifiers + partial + bases + constraints).

@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Project-specific trend analysis.
     /// </summary>
-    public class ProjectTrends
+    public partial class ProjectTrends
     {
         /// <summary>
         /// Project name.

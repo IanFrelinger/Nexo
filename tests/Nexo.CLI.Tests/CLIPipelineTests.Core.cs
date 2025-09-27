@@ -1,9 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.CLI.Tests.Commands;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.CLI.Tests;
+namespace Nexo.CLI.Tests
 {
+    public partial class CLIPipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

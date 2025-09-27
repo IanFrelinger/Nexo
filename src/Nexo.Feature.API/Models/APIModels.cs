@@ -8,7 +8,7 @@ namespace Nexo.Feature.API.Models
     /// <summary>
     /// Represents an incoming API request.
     /// </summary>
-    public class APIRequest
+    public partial class APIRequest
     {
         /// <summary>
         /// Unique identifier for the request.
@@ -69,7 +69,7 @@ namespace Nexo.Feature.API.Models
     /// <summary>
     /// Represents an API response.
     /// </summary>
-    public class APIResponse
+    public partial class APIResponse
     {
         /// <summary>
         /// HTTP status code.
@@ -119,7 +119,7 @@ namespace Nexo.Feature.API.Models
     /// <summary>
     /// Represents the health status of the API Gateway.
     /// </summary>
-    public class GatewayHealthStatus
+    public partial class GatewayHealthStatus
     {
         /// <summary>
         /// Overall health status.
@@ -160,7 +160,7 @@ namespace Nexo.Feature.API.Models
     /// <summary>
     /// Represents API Gateway metrics and statistics.
     /// </summary>
-    public class GatewayMetrics
+    public partial class GatewayMetrics
     {
         /// <summary>
         /// Total number of requests processed.
@@ -206,7 +206,7 @@ namespace Nexo.Feature.API.Models
     /// <summary>
     /// Represents metrics for a specific service.
     /// </summary>
-    public class ServiceMetrics
+    public partial class ServiceMetrics
     {
         /// <summary>
         /// Service name.

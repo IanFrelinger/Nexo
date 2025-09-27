@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Commands
     /// <summary>
     /// Represents a pipeline command configuration.
     /// </summary>
-    public class PipelineCommandConfiguration
+    public partial class PipelineCommandConfiguration
     {
         /// <summary>
         /// Gets or sets the command ID.
@@ -78,7 +78,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Commands
     /// <summary>
     /// Represents command retry configuration.
     /// </summary>
-    public class CommandRetryConfiguration
+    public partial class CommandRetryConfiguration
     {
         /// <summary>
         /// Gets or sets the maximum retries.

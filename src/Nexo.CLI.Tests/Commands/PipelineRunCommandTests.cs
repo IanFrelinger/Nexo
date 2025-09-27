@@ -12,7 +12,7 @@ using Nexo.Feature.Pipeline.Models;
 
 namespace Nexo.CLI.Tests.Commands
 {
-    public class PipelineRunCommandTests
+    public partial class PipelineRunCommandTests
     {
         private readonly Mock<IServiceProvider> _mockServiceProvider;
         private readonly Mock<IServiceScope> _mockServiceScope;

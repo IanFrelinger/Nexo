@@ -1,8 +1,10 @@
-using Microsoft.Extensions.Logging;
-using Nexo.Shared.Models;
 using System;
 using System.Collections.Generic;
 
-namespace Nexo.Shared.Tests.Commands;
+namespace Nexo.Shared.Tests.Commands
 {
+    public partial class ModelValidationCommand
+    {
+        // Orchestration methods will be added here
+    }
 }

@@ -6,7 +6,7 @@ namespace Nexo.CLI.Commands.Adaptation.Handlers
     /// <summary>
     /// Handles dashboard display functionality
     /// </summary>
-    public class DashboardHandler
+    public partial class DashboardHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

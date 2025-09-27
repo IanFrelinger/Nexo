@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation.Validators;
 /// <summary>
 /// Validates value objects and their properties
 /// </summary>
-public class ValueObjectValidator
+public partial class ValueObjectValidator
 {
     private readonly ILogger<ValueObjectValidator> _logger;
 

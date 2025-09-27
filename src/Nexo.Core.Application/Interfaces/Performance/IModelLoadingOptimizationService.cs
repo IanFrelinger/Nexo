@@ -59,7 +59,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Model loading context.
     /// </summary>
-    public class ModelLoadingContext
+    public partial class ModelLoadingContext
     {
         public LoadingPriority Priority { get; set; } = LoadingPriority.Normal;
         public int ExpectedUsage { get; set; }
@@ -70,7 +70,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Preloading context.
     /// </summary>
-    public class PreloadingContext
+    public partial class PreloadingContext
     {
         public int MaxConcurrentPreloads { get; set; } = 5;
         public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(10);
@@ -81,7 +81,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Resource constraints.
     /// </summary>
-    public class ResourceConstraints
+    public partial class ResourceConstraints
     {
         public int MemoryLimit { get; set; } = 2048; // MB
         public int CpuLimit { get; set; } = 80; // Percentage
@@ -92,7 +92,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Model loading optimization result.
     /// </summary>
-    public class ModelLoadingOptimization
+    public partial class ModelLoadingOptimization
     {
         public string ModelName { get; set; } = string.Empty;
         public DateTimeOffset OptimizedAt { get; set; }
@@ -105,7 +105,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Preloading result.
     /// </summary>
-    public class PreloadingResult
+    public partial class PreloadingResult
     {
         public int TotalModels { get; set; }
         public int SuccessfullyPreloaded { get; set; }
@@ -118,7 +118,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Model preloading result.
     /// </summary>
-    public class ModelPreloadingResult
+    public partial class ModelPreloadingResult
     {
         public string ModelName { get; set; } = string.Empty;
         public bool Success { get; set; }
@@ -131,7 +131,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Model performance report.
     /// </summary>
-    public class ModelPerformanceReport
+    public partial class ModelPerformanceReport
     {
         public string ModelName { get; set; } = string.Empty;
         public DateTimeOffset MonitoringStartTime { get; set; }
@@ -151,7 +151,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Model optimization recommendation.
     /// </summary>
-    public class ModelOptimizationRecommendation
+    public partial class ModelOptimizationRecommendation
     {
         public OptimizationType Type { get; set; }
         public RecommendationPriority Priority { get; set; }
@@ -164,7 +164,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Preloading recommendation.
     /// </summary>
-    public class PreloadingRecommendation
+    public partial class PreloadingRecommendation
     {
         public string ModelName { get; set; } = string.Empty;
         public PreloadingPriority Priority { get; set; }
@@ -176,7 +176,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Resource allocation.
     /// </summary>
-    public class ResourceAllocation
+    public partial class ResourceAllocation
     {
         public int MemoryAllocation { get; set; }
         public int CpuAllocation { get; set; }
@@ -187,7 +187,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Performance prediction.
     /// </summary>
-    public class PerformancePrediction
+    public partial class PerformancePrediction
     {
         public TimeSpan EstimatedLoadingTime { get; set; }
         public double EstimatedMemoryUsage { get; set; }
@@ -199,7 +199,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// <summary>
     /// Resource cost.
     /// </summary>
-    public class ResourceCost
+    public partial class ResourceCost
     {
         public double MemoryCost { get; set; }
         public double CpuCost { get; set; }

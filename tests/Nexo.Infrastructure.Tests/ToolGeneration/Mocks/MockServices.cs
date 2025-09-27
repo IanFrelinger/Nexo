@@ -20,7 +20,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration.Mocks
             {
                 Name = "Calculator",
                 Description = description,
-                SourceCode = "public class Calculator { public int Add(int a,int b)=>a+b; }"
+                SourceCode = "public partial class Calculator { public int Add(int a,int b)=>a+b; }"
             };
         }
 
@@ -31,7 +31,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration.Mocks
             {
                 Name = "EvolvedCalculator",
                 Description = prompt,
-                SourceCode = "public class Calculator { public int Add(int a,int b)=>a+b; public int Sub(int a,int b)=>a-b; }"
+                SourceCode = "public partial class Calculator { public int Add(int a,int b)=>a+b; public int Sub(int a,int b)=>a-b; }"
             };
         }
     }

@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Nexo.Core.Application.Tests.Services.Extensions
 {
-    public class CSharpSyntaxValidatorTests
+    public partial class CSharpSyntaxValidatorTests
     {
         private readonly Mock<ILogger<CSharpSyntaxValidator>> _mockLogger;
         private readonly CSharpSyntaxValidator _validator;
@@ -29,7 +29,7 @@ using Nexo.Core.Domain.Interfaces;
 
 namespace TestPlugin
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => ""TestPlugin"";
         public string Version => ""1.0.0"";
@@ -63,7 +63,7 @@ namespace TestPlugin
         public async Task ValidateSyntaxAsync_WithSyntaxErrors_ShouldReturnErrors()
         {
             // Arrange
-            var code = "public class TestPlugin { // Missing closing brace";
+            var code = "public partial class TestPlugin { // Missing closing brace";
             var assemblyName = "TestPlugin";
 
             // Act
@@ -85,7 +85,7 @@ using Nexo.Core.Domain.Interfaces;
 
 namespace TestPlugin
 {
-    public class TestPlugin : IPlugin
+    public partial class TestPlugin : IPlugin
     {
         public string Name => ""TestPlugin"";
         public string Version => ""1.0.0"";

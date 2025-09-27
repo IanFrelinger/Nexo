@@ -2,7 +2,7 @@ using Playground.Console.Models;
 
 namespace Playground.Console.Services;
 
-public class FeatureService
+public partial class FeatureService
 {
     private readonly List<FeatureInfo> _features = new()
     {

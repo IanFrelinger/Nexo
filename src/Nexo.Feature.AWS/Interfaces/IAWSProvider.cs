@@ -54,7 +54,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// AWS connectivity test result
     /// </summary>
-    public class AWSConnectivityResult
+    public partial class AWSConnectivityResult
     {
         /// <summary>
         /// Whether the connection was successful
@@ -85,7 +85,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// AWS account information
     /// </summary>
-    public class AWSAccountInfo
+    public partial class AWSAccountInfo
     {
         /// <summary>
         /// AWS account ID
@@ -121,7 +121,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// AWS service health status
     /// </summary>
-    public class AWSServiceHealthStatus
+    public partial class AWSServiceHealthStatus
     {
         /// <summary>
         /// Overall health status
@@ -147,7 +147,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// AWS cost and usage information
     /// </summary>
-    public class AWSCostInfo
+    public partial class AWSCostInfo
     {
         /// <summary>
         /// Total cost for the period

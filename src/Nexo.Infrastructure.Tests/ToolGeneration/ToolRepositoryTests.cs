@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
     /// <summary>
     /// Tests for ToolRepository
     /// </summary>
-    public class ToolRepositoryTests : IDisposable
+    public partial class ToolRepositoryTests : IDisposable
     {
         private readonly Mock<ILogger<ToolRepository>> _mockLogger;
         private readonly string _testToolsPath;
@@ -35,7 +35,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             // Arrange
             var plugin = new MockPlugin("TestPlugin", "1.0", "Test plugin");
             var assembly = new byte[] { 1, 2, 3, 4, 5 };
-            var sourceCode = "public class TestPlugin : IPlugin { /* implementation */ }";
+            var sourceCode = "public partial class TestPlugin : IPlugin { /* implementation */ }";
 
             // Act
             var result = await _toolRepository.SaveToolAsync(plugin, assembly, sourceCode);
@@ -76,7 +76,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             var plugin1 = new MockPlugin("Plugin1", "1.0", "First plugin");
             var plugin2 = new MockPlugin("Plugin2", "1.0", "Second plugin");
             var assembly = new byte[] { 1, 2, 3, 4, 5 };
-            var sourceCode = "public class TestPlugin : IPlugin { /* implementation */ }";
+            var sourceCode = "public partial class TestPlugin : IPlugin { /* implementation */ }";
 
             await _toolRepository.SaveToolAsync(plugin1, assembly, sourceCode);
             await _toolRepository.SaveToolAsync(plugin2, assembly, sourceCode);
@@ -99,7 +99,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             // Arrange
             var plugin = new MockPlugin("TestPlugin", "1.0", "Test plugin");
             var assembly = new byte[] { 1, 2, 3, 4, 5 };
-            var sourceCode = "public class TestPlugin : IPlugin { /* implementation */ }";
+            var sourceCode = "public partial class TestPlugin : IPlugin { /* implementation */ }";
 
             await _toolRepository.SaveToolAsync(plugin, assembly, sourceCode);
 
@@ -128,7 +128,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             // Arrange
             var plugin = new MockPlugin("TestPlugin", "1.0", "Test plugin");
             var assembly = new byte[] { 1, 2, 3, 4, 5 };
-            var sourceCode = "public class TestPlugin : IPlugin { /* implementation */ }";
+            var sourceCode = "public partial class TestPlugin : IPlugin { /* implementation */ }";
 
             await _toolRepository.SaveToolAsync(plugin, assembly, sourceCode);
 
@@ -156,8 +156,8 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             // Arrange
             var plugin = new MockPlugin("TestPlugin", "1.0", "Test plugin");
             var assembly = new byte[] { 1, 2, 3, 4, 5 };
-            var sourceCode = "public class TestPlugin : IPlugin { /* implementation */ }";
-            var newSourceCode = "public class TestPlugin : IPlugin { /* updated implementation */ }";
+            var sourceCode = "public partial class TestPlugin : IPlugin { /* implementation */ }";
+            var newSourceCode = "public partial class TestPlugin : IPlugin { /* updated implementation */ }";
 
             await _toolRepository.SaveToolAsync(plugin, assembly, sourceCode);
 
@@ -173,7 +173,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
         public async Task SaveVersionAsync_NonExistentTool_ThrowsException()
         {
             // Arrange
-            var newSourceCode = "public class TestPlugin : IPlugin { /* updated implementation */ }";
+            var newSourceCode = "public partial class TestPlugin : IPlugin { /* updated implementation */ }";
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => 

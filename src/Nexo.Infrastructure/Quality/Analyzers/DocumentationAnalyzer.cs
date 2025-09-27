@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Quality.Analyzers
 {
-    public class DocumentationAnalyzer
+    public partial class DocumentationAnalyzer
     {
         private readonly ILogger<DocumentationAnalyzer> _logger;
 

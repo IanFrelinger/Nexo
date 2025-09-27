@@ -8,7 +8,7 @@ using Nexo.Feature.Animation.Models;
 
 namespace Nexo.Feature.Animation.Providers.Ollama.Generators
 {
-    public class AnimationValidator
+    public partial class AnimationValidator
     {
         private readonly ILogger<AnimationValidator> _logger;
 
@@ -221,7 +221,7 @@ namespace Nexo.Feature.Animation.Providers.Ollama.Generators
         }
     }
 
-    public class ValidationResult
+    public partial class ValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new();

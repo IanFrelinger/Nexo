@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Handles CPU optimization for different platforms
     /// </summary>
-    public class CPUOptimizer
+    public partial class CPUOptimizer
     {
         private readonly ILogger<CPUOptimizer> _logger;
 
@@ -165,7 +165,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Result of CPU optimization
     /// </summary>
-    public class CPUOptimizationResult
+    public partial class CPUOptimizationResult
     {
         public string Platform { get; set; } = string.Empty;
         public bool Success { get; set; }

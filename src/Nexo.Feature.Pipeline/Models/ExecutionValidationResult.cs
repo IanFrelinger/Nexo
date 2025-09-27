@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents the result of dependency validation.
     /// </summary>
-    public class ExecutionValidationResult
+    public partial class ExecutionValidationResult
     {
         /// <summary>
         /// Gets or sets whether the validation was successful.

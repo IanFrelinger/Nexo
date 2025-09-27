@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Represents configuration for system integration
     /// </summary>
-    public class IntegrationConfiguration
+    public partial class IntegrationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators
     /// <summary>
     /// Generates WebAssembly code for web applications
     /// </summary>
-    public class WebAssemblyGenerator
+    public partial class WebAssemblyGenerator
     {
         private readonly ILogger<WebAssemblyGenerator> _logger;
 
@@ -185,7 +185,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators
     /// <summary>
     /// Result of WebAssembly module generation
     /// </summary>
-    public class WebAssemblyGenerationResult
+    public partial class WebAssemblyGenerationResult
     {
         public bool Success { get; set; }
         public List<GeneratedWebAssemblyModule> Modules { get; set; } = new();
@@ -195,7 +195,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators
     /// <summary>
     /// Generated WebAssembly module
     /// </summary>
-    public class GeneratedWebAssemblyModule
+    public partial class GeneratedWebAssemblyModule
     {
         public string Name { get; set; } = string.Empty;
         public WebAssemblyModuleType Type { get; set; }

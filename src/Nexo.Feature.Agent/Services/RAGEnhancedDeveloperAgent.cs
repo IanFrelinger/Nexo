@@ -15,7 +15,7 @@ namespace Nexo.Feature.Agent.Services
     /// <summary>
     /// RAG-enhanced developer agent that provides intelligent code analysis and suggestions.
     /// </summary>
-    public class RAGEnhancedDeveloperAgent : BaseAiEnhancedAgent
+    public partial class RAGEnhancedDeveloperAgent : BaseAiEnhancedAgent
     {
         public RAGEnhancedDeveloperAgent(
             AgentId id,

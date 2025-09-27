@@ -1,14 +1,10 @@
 using System;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Nexo.Agent.Contracts;
-using Nexo.Agent.Models;
-using Nexo.Feature.AudioGeneration.Interfaces;
-using Nexo.Feature.AudioGeneration.Models;
-using Nexo.Feature.AudioGeneration.Services;
+using System.Collections.Generic;
 
-namespace Nexo.Feature.AudioGeneration.Tools;
+namespace Nexo.Feature.AudioGeneration.Tools
 {
+    public partial class AudioGenerationTool
+    {
+        // Core implementation will be added here
+    }
 }

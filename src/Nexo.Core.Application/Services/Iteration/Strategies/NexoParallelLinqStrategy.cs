@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Iteration.Strategies;
 /// <summary>
 /// Parallel LINQ iteration strategy for CPU-intensive operations and large datasets
 /// </summary>
-public class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
+public partial class NexoParallelLinqStrategy<T> : IIterationStrategy<T>
 {
     public string StrategyId => "Nexo.ParallelLinq";
     

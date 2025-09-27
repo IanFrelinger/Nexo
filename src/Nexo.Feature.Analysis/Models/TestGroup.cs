@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Group of related tests.
     /// </summary>
-    public class TestGroup
+    public partial class TestGroup
     {
         /// <summary>
         /// Name of the test group.

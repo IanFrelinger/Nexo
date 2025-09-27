@@ -8,7 +8,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents a specification for implementing a feature.
     /// </summary>
-    public class FeatureSpecification
+    public partial class FeatureSpecification
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

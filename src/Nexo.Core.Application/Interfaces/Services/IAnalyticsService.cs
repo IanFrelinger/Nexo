@@ -30,7 +30,7 @@ namespace Nexo.Core.Application.Interfaces.Services
     /// <summary>
     /// Represents an analytics event
     /// </summary>
-    public class AnalyticsEvent
+    public partial class AnalyticsEvent
     {
         public string Id { get; set; } = string.Empty;
         public string EventName { get; set; } = string.Empty;

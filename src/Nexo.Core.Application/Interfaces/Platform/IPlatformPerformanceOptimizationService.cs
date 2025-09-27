@@ -108,7 +108,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Platform-specific models for Platform Performance Optimization
-    public class PerformanceOptimizationOptions
+    public partial class PerformanceOptimizationOptions
     {
         public string Platform { get; set; } = string.Empty;
         public bool OptimizeMemory { get; set; } = true;
@@ -121,7 +121,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> CustomOptions { get; set; } = new();
     }
 
-    public class PlatformPerformanceOptimizationResult
+    public partial class PlatformPerformanceOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -130,7 +130,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Metrics { get; set; } = new();
     }
 
-    public class MemoryOptimizationResult
+    public partial class MemoryOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -138,7 +138,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Optimizations { get; set; } = new();
     }
 
-    public class CPUOptimizationResult
+    public partial class CPUOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -146,7 +146,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Optimizations { get; set; } = new();
     }
 
-    public class GPUOptimizationResult
+    public partial class GPUOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -154,7 +154,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Optimizations { get; set; } = new();
     }
 
-    public class NetworkOptimizationResult
+    public partial class NetworkOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -162,7 +162,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Optimizations { get; set; } = new();
     }
 
-    public class BatteryOptimizationResult
+    public partial class BatteryOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -170,7 +170,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Optimizations { get; set; } = new();
     }
 
-    public class StorageOptimizationResult
+    public partial class StorageOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -178,7 +178,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public List<string> Optimizations { get; set; } = new();
     }
 
-    public class ConsistencyOptimizationResult
+    public partial class ConsistencyOptimizationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -187,7 +187,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     }
 
     // Additional Platform Performance Optimization models
-    public class MemoryOptimizationStrategy
+    public partial class MemoryOptimizationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -195,7 +195,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Parameters { get; set; } = new();
     }
 
-    public class CPUOptimizationStrategy
+    public partial class CPUOptimizationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -203,7 +203,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Parameters { get; set; } = new();
     }
 
-    public class GPUOptimizationStrategy
+    public partial class GPUOptimizationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -211,7 +211,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Parameters { get; set; } = new();
     }
 
-    public class NetworkOptimizationStrategy
+    public partial class NetworkOptimizationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -219,7 +219,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Parameters { get; set; } = new();
     }
 
-    public class BatteryOptimizationStrategy
+    public partial class BatteryOptimizationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -227,7 +227,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Parameters { get; set; } = new();
     }
 
-    public class StorageOptimizationStrategy
+    public partial class StorageOptimizationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -235,7 +235,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
         public Dictionary<string, object> Parameters { get; set; } = new();
     }
 
-    public class ConsistencyOptimizationStrategy
+    public partial class ConsistencyOptimizationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

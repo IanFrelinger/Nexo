@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Quality.Analyzers
 {
-    public class ReadabilityAnalyzer
+    public partial class ReadabilityAnalyzer
     {
         private readonly ILogger<ReadabilityAnalyzer> _logger;
 

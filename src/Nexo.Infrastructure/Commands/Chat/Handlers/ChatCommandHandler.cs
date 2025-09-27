@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Commands.Chat.Handlers
     /// <summary>
     /// Handles chat commands (commands starting with /)
     /// </summary>
-    public class ChatCommandHandler
+    public partial class ChatCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ChatCommand> _logger;

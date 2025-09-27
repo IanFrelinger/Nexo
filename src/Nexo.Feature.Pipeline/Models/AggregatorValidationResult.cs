@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents the result of aggregator validation.
     /// </summary>
-    public class AggregatorValidationResult
+    public partial class AggregatorValidationResult
 {
     /// <summary>
     /// Whether the aggregator validation was successful.

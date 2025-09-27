@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
-namespace Nexo.Feature.AI.Monitoring;
+namespace Nexo.Feature.AI.Monitoring
 {
+    public partial class PerformanceMetricsCollector
+    {
+        // Core implementation will be added here
+    }
 }

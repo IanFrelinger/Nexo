@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Enterprise system configuration
     /// </summary>
-    public class EnterpriseSystem
+    public partial class EnterpriseSystem
     {
         /// <summary>
         /// System ID

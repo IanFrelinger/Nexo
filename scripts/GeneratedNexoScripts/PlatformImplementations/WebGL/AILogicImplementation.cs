@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.WebGL
     /// Target Framework: WebAssembly
     /// Implementation Style: Component-based with Web APIs
     /// </summary>
-    public class AILogicImplementation : AILogic
+    public partial class AILogicImplementation : AILogic
     {
         public AILogicImplementation(IIWorldProvider iworldprovider, IIStateProvider istateprovider, IIEventProvider ieventprovider, IINavigationProvider inavigationprovider)
             : base(iworldprovider, istateprovider, ieventprovider, inavigationprovider)

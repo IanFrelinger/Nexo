@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.Adaptation.Strategies;
 /// <summary>
 /// Strategy for adapting system behavior based on user feedback and experience metrics
 /// </summary>
-public class UserExperienceAdaptationStrategy : IAdaptationStrategy
+public partial class UserExperienceAdaptationStrategy : IAdaptationStrategy
 {
     public string StrategyId => "UserExperience.Dynamic";
     public AdaptationType SupportedAdaptationType => AdaptationType.UserExperienceOptimization;
@@ -335,7 +335,7 @@ public class UserExperienceAdaptationStrategy : IAdaptationStrategy
 /// <summary>
 /// Analysis of user feedback patterns
 /// </summary>
-public class FeedbackAnalysis
+public partial class FeedbackAnalysis
 {
     public Dictionary<FeedbackType, int> FeedbackTypes { get; set; } = new();
     public Dictionary<FeedbackSeverity, int> SeverityDistribution { get; set; } = new();

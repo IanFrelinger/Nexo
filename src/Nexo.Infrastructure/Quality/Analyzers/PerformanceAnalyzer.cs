@@ -7,7 +7,7 @@ using Nexo.Core.Domain.Models.CodeQuality;
 
 namespace Nexo.Infrastructure.Quality.Analyzers
 {
-    public class PerformanceAnalyzer
+    public partial class PerformanceAnalyzer
     {
         private readonly ILogger<PerformanceAnalyzer> _logger;
 

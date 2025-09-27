@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.Domain
     /// <summary>
     /// Represents a domain event
     /// </summary>
-    public class DomainEvent
+    public partial class DomainEvent
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;

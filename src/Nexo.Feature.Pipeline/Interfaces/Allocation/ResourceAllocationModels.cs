@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Allocation
     /// <summary>
     /// Resource allocation result.
     /// </summary>
-    public class ResourceAllocation
+    public partial class ResourceAllocation
     {
         /// <summary>
         /// Gets or sets the allocation identifier.
@@ -61,7 +61,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Allocation
     /// <summary>
     /// Allocated CPU resources.
     /// </summary>
-    public class AllocatedCpuResources
+    public partial class AllocatedCpuResources
     {
         /// <summary>
         /// Gets or sets the allocated CPU cores.
@@ -82,7 +82,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Allocation
     /// <summary>
     /// Allocated memory resources.
     /// </summary>
-    public class AllocatedMemoryResources
+    public partial class AllocatedMemoryResources
     {
         /// <summary>
         /// Gets or sets the allocated memory in MB.
@@ -103,7 +103,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Allocation
     /// <summary>
     /// Allocated disk resources.
     /// </summary>
-    public class AllocatedDiskResources
+    public partial class AllocatedDiskResources
     {
         /// <summary>
         /// Gets or sets the allocated disk space in MB.
@@ -124,7 +124,7 @@ namespace Nexo.Feature.Pipeline.Interfaces.Allocation
     /// <summary>
     /// Allocated network resources.
     /// </summary>
-    public class AllocatedNetworkResources
+    public partial class AllocatedNetworkResources
     {
         /// <summary>
         /// Gets or sets the allocated bandwidth in Mbps.

@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.WebGL
     /// Target Framework: WebAssembly
     /// Implementation Style: Component-based with Web APIs
     /// </summary>
-    public class HealthLogicImplementation : HealthLogic
+    public partial class HealthLogicImplementation : HealthLogic
     {
         public HealthLogicImplementation(IIEventProvider ieventprovider, IIStateProvider istateprovider, IINotificationProvider inotificationprovider)
             : base(ieventprovider, istateprovider, inotificationprovider)

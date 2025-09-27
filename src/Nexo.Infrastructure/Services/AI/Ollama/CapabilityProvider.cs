@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Services.AI.Ollama;
 /// <summary>
 /// Provides Ollama capabilities and compatibility information.
 /// </summary>
-public class CapabilityProvider
+public partial class CapabilityProvider
 {
     public string ProviderId => "ollama";
     public string DisplayName => "Ollama";

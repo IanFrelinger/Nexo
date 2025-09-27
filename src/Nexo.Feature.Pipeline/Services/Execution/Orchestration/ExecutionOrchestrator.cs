@@ -15,7 +15,7 @@ namespace Nexo.Feature.Pipeline.Services.Execution.Orchestration
     /// <summary>
     /// Handles the orchestration of pipeline execution phases and aggregators
     /// </summary>
-    public class ExecutionOrchestrator
+    public partial class ExecutionOrchestrator
     {
         private readonly ILogger<PipelineExecutionEngine> _logger;
         private readonly IResourceMonitor _resourceMonitor;

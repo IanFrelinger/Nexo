@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation.Validators;
 /// <summary>
 /// Generates validation reports for domain logic
 /// </summary>
-public class ValidationReportGenerator
+public partial class ValidationReportGenerator
 {
     private readonly ILogger<ValidationReportGenerator> _logger;
 

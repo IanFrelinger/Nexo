@@ -1,7 +1,10 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Demo.Tests.Support;
+namespace Nexo.Demo.Tests.Support
 {
+    public partial class NexoIntegrationAdapter
+    {
+        // Orchestration methods will be added here
+    }
 }

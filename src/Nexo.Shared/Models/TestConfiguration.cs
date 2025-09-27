@@ -6,7 +6,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Configuration for test execution.
     /// </summary>
-    public class TestConfiguration
+    public partial class TestConfiguration
     {
         public string Framework { get; set; } = string.Empty;
         public string Filter { get; set; } = string.Empty;

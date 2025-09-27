@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models.Safety
     /// <summary>
     /// Represents a safety issue found during code validation
     /// </summary>
-    public class SafetyIssue
+    public partial class SafetyIssue
     {
         /// <summary>
         /// Type of safety issue

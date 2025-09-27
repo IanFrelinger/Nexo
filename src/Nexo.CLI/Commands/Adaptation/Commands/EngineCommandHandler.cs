@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands.Adaptation.Commands
     /// <summary>
     /// Handles engine command creation and execution
     /// </summary>
-    public class EngineCommandHandler
+    public partial class EngineCommandHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

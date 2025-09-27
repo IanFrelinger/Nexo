@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Processing
     /// <summary>
     /// Manages processing nodes for distributed AI processing
     /// </summary>
-    public class NodeManager
+    public partial class NodeManager
     {
         private readonly ILogger _logger;
         private readonly Dictionary<string, ProcessingNode> _nodes;

@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents a deployment package for application deployment
     /// </summary>
-    public class DeploymentPackage
+    public partial class DeploymentPackage
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents a file in the deployment package
     /// </summary>
-    public class DeploymentFile
+    public partial class DeploymentFile
     {
         public string Name { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;
@@ -42,7 +42,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents a dependency in the deployment package
     /// </summary>
-    public class DeploymentDependency
+    public partial class DeploymentDependency
     {
         public string Name { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;
@@ -55,7 +55,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents deployment configuration
     /// </summary>
-    public class DeploymentConfiguration
+    public partial class DeploymentConfiguration
     {
         public string Name { get; set; } = string.Empty;
         public Dictionary<string, object> Settings { get; set; } = new();
@@ -67,7 +67,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents an environment variable
     /// </summary>
-    public class EnvironmentVariable
+    public partial class EnvironmentVariable
     {
         public string Name { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
@@ -79,7 +79,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Deployment
     /// <summary>
     /// Represents a configuration file
     /// </summary>
-    public class ConfigurationFile
+    public partial class ConfigurationFile
     {
         public string Name { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;

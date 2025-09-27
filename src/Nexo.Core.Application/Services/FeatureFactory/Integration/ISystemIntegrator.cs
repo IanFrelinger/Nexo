@@ -57,7 +57,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Result of integration operations
     /// </summary>
-    public class IntegrationResult
+    public partial class IntegrationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -74,7 +74,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Result of validation operations
     /// </summary>
-    public class ValidationResult
+    public partial class ValidationResult
     {
         public bool IsValid { get; set; }
         public List<ValidationError> Errors { get; set; } = new();
@@ -85,7 +85,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Result of connectivity tests
     /// </summary>
-    public class ConnectivityTestResult
+    public partial class ConnectivityTestResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -99,7 +99,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Integration status information
     /// </summary>
-    public class IntegrationStatus
+    public partial class IntegrationStatus
     {
         public string Id { get; set; } = string.Empty;
         public IntegrationState State { get; set; } = IntegrationState.Pending;
@@ -114,7 +114,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Integration log entry
     /// </summary>
-    public class IntegrationLog
+    public partial class IntegrationLog
     {
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         public LogLevel Level { get; set; } = LogLevel.Information;
@@ -126,7 +126,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Integration step information
     /// </summary>
-    public class IntegrationStep
+    public partial class IntegrationStep
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -140,7 +140,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Validation error information
     /// </summary>
-    public class ValidationError
+    public partial class ValidationError
     {
         public string Code { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
@@ -152,7 +152,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Validation warning information
     /// </summary>
-    public class ValidationWarning
+    public partial class ValidationWarning
     {
         public string Code { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;

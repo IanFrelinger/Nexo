@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Result of test impact analysis.
     /// </summary>
-    public class TestImpactAnalysis
+    public partial class TestImpactAnalysis
     {
         /// <summary>
         /// List of test files that should be run based on changes.
@@ -42,7 +42,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Metadata about the test impact analysis.
     /// </summary>
-    public class TestImpactMetadata
+    public partial class TestImpactMetadata
     {
         /// <summary>
         /// Analysis strategy used.
@@ -78,7 +78,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Mapping between a source file and its related tests.
     /// </summary>
-    public class SourceTestMapping
+    public partial class SourceTestMapping
     {
         /// <summary>
         /// Source file path.
@@ -104,7 +104,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Test dependency graph for analyzing test relationships.
     /// </summary>
-    public class TestDependencyGraph
+    public partial class TestDependencyGraph
     {
         /// <summary>
         /// Nodes in the dependency graph (test files).
@@ -156,7 +156,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Node in the test dependency graph.
     /// </summary>
-    public class TestNode
+    public partial class TestNode
     {
         /// <summary>
         /// Test file path.
@@ -192,7 +192,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Edge in the test dependency graph.
     /// </summary>
-    public class TestEdge
+    public partial class TestEdge
     {
         /// <summary>
         /// Source test file path.

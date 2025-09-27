@@ -7,7 +7,7 @@ using Nexo.Feature.Platform.Models;
 
 namespace Nexo.Feature.Platform.Services.Android.Generators
 {
-    public class JetpackComposeCodeGenerator
+    public partial class JetpackComposeCodeGenerator
     {
         private readonly ILogger<JetpackComposeCodeGenerator> _logger;
 

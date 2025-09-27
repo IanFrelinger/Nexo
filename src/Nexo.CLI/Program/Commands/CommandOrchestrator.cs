@@ -11,7 +11,7 @@ namespace Nexo.CLI.Program.Commands
     /// <summary>
     /// Orchestrates the creation and configuration of all CLI commands
     /// </summary>
-    public class CommandOrchestrator
+    public partial class CommandOrchestrator
     {
         private readonly IServiceProvider _serviceProvider;
 

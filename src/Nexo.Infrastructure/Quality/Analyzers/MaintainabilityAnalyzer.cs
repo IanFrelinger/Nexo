@@ -7,7 +7,7 @@ using Nexo.Core.Domain.Models.CodeQuality;
 
 namespace Nexo.Infrastructure.Quality.Analyzers
 {
-    public class MaintainabilityAnalyzer
+    public partial class MaintainabilityAnalyzer
     {
         private readonly ILogger<MaintainabilityAnalyzer> _logger;
 

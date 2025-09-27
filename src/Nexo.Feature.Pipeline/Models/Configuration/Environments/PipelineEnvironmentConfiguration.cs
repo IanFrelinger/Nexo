@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Environments
     /// <summary>
     /// Represents a pipeline environment configuration.
     /// </summary>
-    public class PipelineEnvironmentConfiguration
+    public partial class PipelineEnvironmentConfiguration
     {
         /// <summary>
         /// Gets or sets the environment variables.

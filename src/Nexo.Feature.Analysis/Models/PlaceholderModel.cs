@@ -1,4 +1,4 @@
 namespace Nexo.Feature.Analysis.Models
 {
-    public class PlaceholderModel { }
+    public partial class PlaceholderModel { }
 } 

@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a business rule in the generated domain logic
     /// </summary>
-    public class BusinessRule
+    public partial class BusinessRule
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -26,7 +26,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a domain service in the generated domain logic
     /// </summary>
-    public class DomainService
+    public partial class DomainService
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -43,7 +43,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a method of a domain service
     /// </summary>
-    public class ServiceMethod
+    public partial class ServiceMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -59,7 +59,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents an aggregate root in the generated domain logic
     /// </summary>
-    public class AggregateRoot
+    public partial class AggregateRoot
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -78,7 +78,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a domain event
     /// </summary>
-    public class DomainEvent
+    public partial class DomainEvent
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -92,7 +92,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a property of a domain event
     /// </summary>
-    public class EventProperty
+    public partial class EventProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

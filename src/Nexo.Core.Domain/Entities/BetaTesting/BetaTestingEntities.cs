@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Represents a beta testing program
     /// </summary>
-    public class BetaProgram
+    public partial class BetaProgram
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
@@ -22,7 +22,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Configuration for a beta testing program
     /// </summary>
-    public class BetaProgramConfiguration
+    public partial class BetaProgramConfiguration
     {
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
@@ -35,7 +35,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Configuration for a user segment in the beta program
     /// </summary>
-    public class BetaUserSegmentConfiguration
+    public partial class BetaUserSegmentConfiguration
     {
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
@@ -48,7 +48,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// User segment within a beta program
     /// </summary>
-    public class BetaUserSegment
+    public partial class BetaUserSegment
     {
         public string Id { get; set; } = "";
         public string ProgramId { get; set; } = "";
@@ -65,7 +65,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Beta testing user
     /// </summary>
-    public class BetaUser
+    public partial class BetaUser
     {
         public string Id { get; set; } = "";
         public string ProgramId { get; set; } = "";
@@ -83,7 +83,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Feedback from beta users
     /// </summary>
-    public class BetaFeedback
+    public partial class BetaFeedback
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string ProgramId { get; set; } = "";
@@ -102,7 +102,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Result of beta program operations
     /// </summary>
-    public class BetaProgramResult
+    public partial class BetaProgramResult
     {
         public string ProgramId { get; set; } = "";
         public bool Success { get; set; }
@@ -115,7 +115,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Result of user recruitment
     /// </summary>
-    public class RecruitmentResult
+    public partial class RecruitmentResult
     {
         public string ProgramId { get; set; } = "";
         public List<BetaUser> RecruitedUsers { get; set; } = new();
@@ -128,7 +128,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Request for user recruitment
     /// </summary>
-    public class RecruitmentRequest
+    public partial class RecruitmentRequest
     {
         public List<string> SegmentIds { get; set; } = new();
         public RecruitmentCriteria RecruitmentCriteria { get; set; } = new();
@@ -138,7 +138,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Criteria for recruiting users
     /// </summary>
-    public class RecruitmentCriteria
+    public partial class RecruitmentCriteria
     {
         public List<string> RequiredSkills { get; set; } = new();
         public List<string> PreferredExperience { get; set; } = new();
@@ -150,7 +150,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Result of feedback collection
     /// </summary>
-    public class FeedbackCollectionResult
+    public partial class FeedbackCollectionResult
     {
         public string ProgramId { get; set; } = "";
         public List<BetaFeedback> CollectedFeedback { get; set; } = new();
@@ -164,7 +164,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Request for feedback collection
     /// </summary>
-    public class FeedbackCollectionRequest
+    public partial class FeedbackCollectionRequest
     {
         public bool IncludeInAppFeedback { get; set; } = true;
         public bool IncludeSurveyFeedback { get; set; } = true;
@@ -176,7 +176,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Analysis of collected feedback
     /// </summary>
-    public class FeedbackAnalysis
+    public partial class FeedbackAnalysis
     {
         public int TotalFeedback { get; set; }
         public double PositiveSentiment { get; set; }
@@ -192,7 +192,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Analytics report for beta program
     /// </summary>
-    public class BetaAnalyticsReport
+    public partial class BetaAnalyticsReport
     {
         public string ProgramId { get; set; } = "";
         public DateTime GeneratedAt { get; set; }
@@ -207,7 +207,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Request for analytics report
     /// </summary>
-    public class AnalyticsReportRequest
+    public partial class AnalyticsReportRequest
     {
         public DateRange DateRange { get; set; } = new();
         public List<string> Metrics { get; set; } = new();
@@ -218,7 +218,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Date range for analytics
     /// </summary>
-    public class DateRange
+    public partial class DateRange
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -227,7 +227,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// User metrics for analytics
     /// </summary>
-    public class UserMetrics
+    public partial class UserMetrics
     {
         public int TotalUsers { get; set; }
         public int ActiveUsers { get; set; }
@@ -240,7 +240,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Engagement metrics for analytics
     /// </summary>
-    public class EngagementMetrics
+    public partial class EngagementMetrics
     {
         public int TotalSessions { get; set; }
         public TimeSpan AverageSessionDuration { get; set; }
@@ -253,7 +253,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Feedback metrics for analytics
     /// </summary>
-    public class FeedbackMetrics
+    public partial class FeedbackMetrics
     {
         public int TotalFeedback { get; set; }
         public double ResponseRate { get; set; }
@@ -266,7 +266,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Performance metrics for analytics
     /// </summary>
-    public class PerformanceMetrics
+    public partial class PerformanceMetrics
     {
         public double AverageResponseTime { get; set; }
         public double ErrorRate { get; set; }
@@ -279,7 +279,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Recommendation for improving the beta program
     /// </summary>
-    public class Recommendation
+    public partial class Recommendation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public RecommendationType Type { get; set; }
@@ -294,7 +294,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Program health report
     /// </summary>
-    public class ProgramHealthReport
+    public partial class ProgramHealthReport
     {
         public string ProgramId { get; set; } = "";
         public ProgramHealth OverallHealth { get; set; }
@@ -306,7 +306,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Result of a health check
     /// </summary>
-    public class HealthCheckResult
+    public partial class HealthCheckResult
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public HealthCheckType CheckType { get; set; }
@@ -320,7 +320,7 @@ namespace Nexo.Core.Domain.Entities.BetaTesting
     /// <summary>
     /// Analytics event for tracking
     /// </summary>
-    public class BetaAnalyticsEvent
+    public partial class BetaAnalyticsEvent
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public BetaAnalyticsEventType EventType { get; set; }

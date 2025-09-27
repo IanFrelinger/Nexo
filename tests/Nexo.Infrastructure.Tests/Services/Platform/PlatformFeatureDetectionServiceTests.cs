@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Tests.Services.Platform
     /// <summary>
     /// Tests for platform feature detection service.
     /// </summary>
-    public class PlatformFeatureDetectionServiceTests
+    public partial class PlatformFeatureDetectionServiceTests
     {
         private readonly Mock<ILogger<PlatformFeatureDetectionService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

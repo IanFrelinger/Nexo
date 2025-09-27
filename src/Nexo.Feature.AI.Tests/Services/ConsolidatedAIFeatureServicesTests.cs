@@ -15,7 +15,7 @@ namespace Nexo.Feature.AI.Tests.Services
     /// <summary>
     /// Tests for consolidated AI feature services following hexagonal architecture
     /// </summary>
-    public class ConsolidatedAIFeatureServicesTests
+    public partial class ConsolidatedAIFeatureServicesTests
     {
         private readonly Mock<ILogger<CodeGenerationService>> _mockLogger;
         private readonly Mock<IAIEngine> _mockAIEngine;

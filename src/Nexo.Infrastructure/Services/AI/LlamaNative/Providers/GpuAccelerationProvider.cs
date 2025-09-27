@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.AI.LlamaNative.Providers
 {
-    public class GpuAccelerationProvider
+    public partial class GpuAccelerationProvider
     {
         private readonly ILogger<GpuAccelerationProvider> _logger;
         private bool _isInitialized = false;

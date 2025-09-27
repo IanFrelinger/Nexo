@@ -67,7 +67,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of domain logic generation
     /// </summary>
-    public class DomainLogicResult
+    public partial class DomainLogicResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -88,7 +88,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of business entity generation
     /// </summary>
-    public class BusinessEntityResult
+    public partial class BusinessEntityResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -101,7 +101,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of value object generation
     /// </summary>
-    public class ValueObjectResult
+    public partial class ValueObjectResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -114,7 +114,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of business rule generation
     /// </summary>
-    public class BusinessRuleResult
+    public partial class BusinessRuleResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -127,7 +127,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of domain service generation
     /// </summary>
-    public class DomainServiceResult
+    public partial class DomainServiceResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -140,7 +140,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of aggregate root generation
     /// </summary>
-    public class AggregateRootResult
+    public partial class AggregateRootResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -153,7 +153,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of domain event generation
     /// </summary>
-    public class DomainEventResult
+    public partial class DomainEventResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -166,7 +166,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of repository generation
     /// </summary>
-    public class RepositoryResult
+    public partial class RepositoryResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -179,7 +179,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of factory generation
     /// </summary>
-    public class FactoryResult
+    public partial class FactoryResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -192,7 +192,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Result of specification generation
     /// </summary>
-    public class SpecificationResult
+    public partial class SpecificationResult
     {
         public bool Success { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
@@ -205,7 +205,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Repository for domain entities
     /// </summary>
-    public class Repository
+    public partial class Repository
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -221,7 +221,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Method of a repository
     /// </summary>
-    public class RepositoryMethod
+    public partial class RepositoryMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -236,7 +236,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Factory for domain entities
     /// </summary>
-    public class Factory
+    public partial class Factory
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -252,7 +252,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Method of a factory
     /// </summary>
-    public class FactoryMethod
+    public partial class FactoryMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -267,7 +267,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Specification for domain entities
     /// </summary>
-    public class Specification
+    public partial class Specification
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -283,7 +283,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Method of a specification
     /// </summary>
-    public class SpecificationMethod
+    public partial class SpecificationMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;

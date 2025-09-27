@@ -17,7 +17,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration
     /// <summary>
     /// Service for adapting application logic to different frameworks using AI - orchestrates specialized adapters
     /// </summary>
-    public class FrameworkAdapter : IFrameworkAdapter
+    public partial class FrameworkAdapter : IFrameworkAdapter
     {
         private readonly ILogger<FrameworkAdapter> _logger;
         private readonly IAIRuntimeSelector _runtimeSelector;

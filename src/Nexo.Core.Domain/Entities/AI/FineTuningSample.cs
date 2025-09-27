@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Represents a fine-tuning sample for AI model training
     /// </summary>
-    public class FineTuningSample
+    public partial class FineTuningSample
     {
         public string Id { get; set; } = string.Empty;
         public string ModelId { get; set; } = string.Empty;

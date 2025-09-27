@@ -114,7 +114,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 upload result
     /// </summary>
-    public class S3UploadResult
+    public partial class S3UploadResult
     {
         /// <summary>
         /// Whether the upload was successful
@@ -155,7 +155,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 download result
     /// </summary>
-    public class S3DownloadResult
+    public partial class S3DownloadResult
     {
         /// <summary>
         /// Whether the download was successful
@@ -201,7 +201,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 list result
     /// </summary>
-    public class S3ListResult
+    public partial class S3ListResult
     {
         /// <summary>
         /// Whether the list operation was successful
@@ -247,7 +247,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 object information
     /// </summary>
-    public class S3ObjectInfo
+    public partial class S3ObjectInfo
     {
         /// <summary>
         /// Object key
@@ -283,7 +283,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 delete result
     /// </summary>
-    public class S3DeleteResult
+    public partial class S3DeleteResult
     {
         /// <summary>
         /// Whether the delete was successful
@@ -309,7 +309,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 object metadata
     /// </summary>
-    public class S3ObjectMetadata
+    public partial class S3ObjectMetadata
     {
         /// <summary>
         /// Object key
@@ -355,7 +355,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 bucket operation result
     /// </summary>
-    public class S3BucketResult
+    public partial class S3BucketResult
     {
         /// <summary>
         /// Whether the operation was successful

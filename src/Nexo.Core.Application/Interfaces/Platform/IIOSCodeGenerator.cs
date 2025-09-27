@@ -111,7 +111,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// iOS generation options.
     /// </summary>
-    public class iOSGenerationOptions
+    public partial class iOSGenerationOptions
     {
         public bool GenerateViews { get; set; } = true;
         public bool GenerateDataModels { get; set; } = true;
@@ -134,7 +134,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// iOS generation result.
     /// </summary>
-    public class iOSGenerationResult
+    public partial class iOSGenerationResult
     {
         public string ApplicationName { get; set; } = string.Empty;
         public DateTimeOffset StartTime { get; set; }
@@ -156,7 +156,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Swift UI view.
     /// </summary>
-    public class SwiftUIView
+    public partial class SwiftUIView
     {
         public string Name { get; set; } = string.Empty;
         public string FeatureName { get; set; } = string.Empty;
@@ -170,7 +170,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Core Data model.
     /// </summary>
-    public class CoreDataModel
+    public partial class CoreDataModel
     {
         public string Name { get; set; } = string.Empty;
         public string EntityName { get; set; } = string.Empty;
@@ -184,7 +184,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Swift ViewModel.
     /// </summary>
-    public class SwiftViewModel
+    public partial class SwiftViewModel
     {
         public string Name { get; set; } = string.Empty;
         public string FeatureName { get; set; } = string.Empty;
@@ -198,7 +198,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Swift service.
     /// </summary>
-    public class SwiftService
+    public partial class SwiftService
     {
         public string Name { get; set; } = string.Empty;
         public string ServiceName { get; set; } = string.Empty;
@@ -212,7 +212,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Metal shader.
     /// </summary>
-    public class MetalShader
+    public partial class MetalShader
     {
         public string Name { get; set; } = string.Empty;
         public string FeatureName { get; set; } = string.Empty;
@@ -226,7 +226,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// iOS app configuration.
     /// </summary>
-    public class iOSAppConfiguration
+    public partial class iOSAppConfiguration
     {
         public string AppName { get; set; } = string.Empty;
         public string BundleIdentifier { get; set; } = string.Empty;
@@ -243,7 +243,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Swift test.
     /// </summary>
-    public class SwiftTest
+    public partial class SwiftTest
     {
         public string Name { get; set; } = string.Empty;
         public string FeatureName { get; set; } = string.Empty;
@@ -258,7 +258,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Application logic model.
     /// </summary>
-    public class ApplicationLogic
+    public partial class ApplicationLogic
     {
         public string ApplicationName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -271,7 +271,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Feature model.
     /// </summary>
-    public class Feature
+    public partial class Feature
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -288,7 +288,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Entity model.
     /// </summary>
-    public class Entity
+    public partial class Entity
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -298,7 +298,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Property model.
     /// </summary>
-    public class Property
+    public partial class Property
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -309,7 +309,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Service model.
     /// </summary>
-    public class Service
+    public partial class Service
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -319,7 +319,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Method model.
     /// </summary>
-    public class Method
+    public partial class Method
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -329,7 +329,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Parameter model.
     /// </summary>
-    public class Parameter
+    public partial class Parameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -338,7 +338,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// <summary>
     /// Business rule model.
     /// </summary>
-    public class BusinessRule
+    public partial class BusinessRule
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

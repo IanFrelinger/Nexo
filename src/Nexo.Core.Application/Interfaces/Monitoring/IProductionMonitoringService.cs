@@ -78,7 +78,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Monitoring configuration.
     /// </summary>
-    public class MonitoringConfiguration
+    public partial class MonitoringConfiguration
     {
         public string Name { get; set; } = "Default";
         public bool MonitorPerformance { get; set; } = true;
@@ -99,7 +99,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Monitoring result.
     /// </summary>
-    public class MonitoringResult
+    public partial class MonitoringResult
     {
         public MonitoringConfiguration Configuration { get; set; } = new();
         public DateTimeOffset StartTime { get; set; }
@@ -117,7 +117,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Monitoring status.
     /// </summary>
-    public class MonitoringStatus
+    public partial class MonitoringStatus
     {
         public DateTimeOffset CheckTime { get; set; }
         public bool IsHealthy { get; set; }
@@ -132,7 +132,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Performance status.
     /// </summary>
-    public class PerformanceStatus
+    public partial class PerformanceStatus
     {
         public PerformanceTrend OverallTrend { get; set; } = new();
         public PerformanceTrend CacheHitRateTrend { get; set; } = new();
@@ -143,7 +143,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Security status.
     /// </summary>
-    public class SecurityStatus
+    public partial class SecurityStatus
     {
         public bool IsCompliant { get; set; }
         public double ComplianceScore { get; set; }
@@ -153,7 +153,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// System health.
     /// </summary>
-    public class SystemHealth
+    public partial class SystemHealth
     {
         public DateTimeOffset CheckTime { get; set; }
         public bool IsHealthy { get; set; }
@@ -169,7 +169,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Monitoring alert.
     /// </summary>
-    public class MonitoringAlert
+    public partial class MonitoringAlert
     {
         public string Id { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
@@ -190,7 +190,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Alert filter.
     /// </summary>
-    public class AlertFilter
+    public partial class AlertFilter
     {
         public AlertSeverity? Severity { get; set; }
         public string? Category { get; set; }
@@ -203,7 +203,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Monitoring metrics.
     /// </summary>
-    public class MonitoringMetrics
+    public partial class MonitoringMetrics
     {
         public TimeSpan TimeWindow { get; set; }
         public DateTimeOffset StartTime { get; set; }
@@ -217,7 +217,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Performance metrics.
     /// </summary>
-    public class PerformanceMetrics
+    public partial class PerformanceMetrics
     {
         public PerformanceTrend OverallTrend { get; set; } = new();
         public PerformanceTrend CacheHitRateTrend { get; set; } = new();
@@ -228,7 +228,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Security metrics.
     /// </summary>
-    public class SecurityMetrics
+    public partial class SecurityMetrics
     {
         public double ComplianceScore { get; set; }
         public bool IsCompliant { get; set; }
@@ -238,7 +238,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// System metrics.
     /// </summary>
-    public class SystemMetrics
+    public partial class SystemMetrics
     {
         public double CPUUsagePercent { get; set; }
         public long MemoryUsageMB { get; set; }
@@ -250,7 +250,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Alert metrics.
     /// </summary>
-    public class AlertMetrics
+    public partial class AlertMetrics
     {
         public int TotalAlerts { get; set; }
         public int CriticalAlerts { get; set; }
@@ -275,7 +275,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// <summary>
     /// Performance trend model.
     /// </summary>
-    public class PerformanceTrend
+    public partial class PerformanceTrend
     {
         public string MetricName { get; set; } = string.Empty;
         public List<double> Values { get; set; } = new();

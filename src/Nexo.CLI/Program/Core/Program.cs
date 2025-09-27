@@ -13,7 +13,7 @@ namespace Nexo.CLI.Program.Core
     /// <summary>
     /// Main entry point for the Nexo CLI application.
     /// </summary>
-    public class Program
+    public partial class Program
     {
         /// <summary>
         /// Main entry point for the application.

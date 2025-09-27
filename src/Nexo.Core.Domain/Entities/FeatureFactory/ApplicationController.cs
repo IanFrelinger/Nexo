@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Entities.FeatureFactory
 {
-    public class ApplicationController
+    public partial class ApplicationController
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;

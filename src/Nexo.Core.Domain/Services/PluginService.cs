@@ -12,7 +12,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Service for loading and managing external plugins
     /// </summary>
-    public class PluginService : IPluginService
+    public partial class PluginService : IPluginService
     {
         private readonly ILogger<PluginService> _logger;
         private readonly Dictionary<string, IPlugin> _loadedPlugins;
@@ -291,7 +291,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Block input definition
     /// </summary>
-    public class BlockInput
+    public partial class BlockInput
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -303,7 +303,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Block output definition
     /// </summary>
-    public class BlockOutput
+    public partial class BlockOutput
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -313,7 +313,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Block execution result
     /// </summary>
-    public class BlockExecutionResult
+    public partial class BlockExecutionResult
     {
         public bool Success { get; set; }
         public Dictionary<string, object> Outputs { get; set; } = new();
@@ -325,7 +325,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Plugin information
     /// </summary>
-    public class PluginInfo
+    public partial class PluginInfo
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

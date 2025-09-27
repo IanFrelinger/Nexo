@@ -5,7 +5,7 @@ namespace Nexo.Infrastructure.Commands.Chat.Utilities
     /// <summary>
     /// Handles help display functionality
     /// </summary>
-    public class HelpHandler
+    public partial class HelpHandler
     {
         /// <summary>
         /// Shows chat help information

@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents predictive analytics configuration.
     /// </summary>
-    public class PredictiveAnalyticsConfiguration
+    public partial class PredictiveAnalyticsConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents complexity configuration for feature complexity prediction.
     /// </summary>
-    public class ComplexityConfiguration
+    public partial class ComplexityConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -38,7 +38,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents estimation configuration for development time estimation.
     /// </summary>
-    public class EstimationConfiguration
+    public partial class EstimationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -54,7 +54,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents risk configuration for risk assessment.
     /// </summary>
-    public class RiskConfiguration
+    public partial class RiskConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -70,7 +70,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents predictive dashboard configuration.
     /// </summary>
-    public class PredictiveDashboardConfiguration
+    public partial class PredictiveDashboardConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -86,7 +86,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents recommendation configuration for predictive recommendations.
     /// </summary>
-    public class RecommendationConfiguration
+    public partial class RecommendationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -102,7 +102,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents report configuration for predictive development reports.
     /// </summary>
-    public class ReportConfiguration
+    public partial class ReportConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -118,7 +118,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents the result of predictive analytics implementation.
     /// </summary>
-    public class PredictiveAnalyticsResult
+    public partial class PredictiveAnalyticsResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -131,7 +131,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents the result of complexity prediction.
     /// </summary>
-    public class ComplexityPredictionResult
+    public partial class ComplexityPredictionResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -146,7 +146,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents the result of time estimation.
     /// </summary>
-    public class TimeEstimationResult
+    public partial class TimeEstimationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -161,7 +161,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents the result of risk assessment.
     /// </summary>
-    public class RiskAssessmentResult
+    public partial class RiskAssessmentResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -177,7 +177,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents predictive development metrics.
     /// </summary>
-    public class PredictiveDevelopmentMetrics
+    public partial class PredictiveDevelopmentMetrics
     {
         public double PredictionAccuracy { get; set; }
         public double ComplexityPredictionAccuracy { get; set; }
@@ -193,7 +193,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents the result of predictive dashboard creation.
     /// </summary>
-    public class PredictiveDashboardResult
+    public partial class PredictiveDashboardResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -206,7 +206,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents the result of recommendation implementation.
     /// </summary>
-    public class RecommendationImplementationResult
+    public partial class RecommendationImplementationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -219,7 +219,7 @@ namespace Nexo.Core.Application.Models.Predictive
     /// <summary>
     /// Represents the result of report creation.
     /// </summary>
-    public class ReportCreationResult
+    public partial class ReportCreationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

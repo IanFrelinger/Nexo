@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Handles battery optimization for different platforms
     /// </summary>
-    public class BatteryOptimizer
+    public partial class BatteryOptimizer
     {
         private readonly ILogger<BatteryOptimizer> _logger;
 
@@ -165,7 +165,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Result of battery optimization
     /// </summary>
-    public class BatteryOptimizationResult
+    public partial class BatteryOptimizationResult
     {
         public string Platform { get; set; } = string.Empty;
         public bool Success { get; set; }

@@ -6,7 +6,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Core Data entity.
     /// </summary>
-    public class CoreDataEntity
+    public partial class CoreDataEntity
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -18,7 +18,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Core Data attribute.
     /// </summary>
-    public class CoreDataAttribute
+    public partial class CoreDataAttribute
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -30,7 +30,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Core Data relationship.
     /// </summary>
-    public class CoreDataRelationship
+    public partial class CoreDataRelationship
     {
         public string Name { get; set; } = string.Empty;
         public string DestinationEntity { get; set; } = string.Empty;

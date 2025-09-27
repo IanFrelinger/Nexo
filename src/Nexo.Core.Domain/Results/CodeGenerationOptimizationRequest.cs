@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Code generation optimization request
     /// </summary>
-    public class CodeGenerationOptimizationRequest
+    public partial class CodeGenerationOptimizationRequest
     {
         /// <summary>
         /// Request ID

@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Represents an integration endpoint for system integration
     /// </summary>
-    public class IntegrationEndpoint
+    public partial class IntegrationEndpoint
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -28,7 +28,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Represents an endpoint header
     /// </summary>
-    public class EndpointHeader
+    public partial class EndpointHeader
     {
         public string Name { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
@@ -39,7 +39,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Represents an endpoint parameter
     /// </summary>
-    public class EndpointParameter
+    public partial class EndpointParameter
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -53,7 +53,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Represents endpoint authentication
     /// </summary>
-    public class EndpointAuthentication
+    public partial class EndpointAuthentication
     {
         public AuthenticationType Type { get; set; } = AuthenticationType.None;
         public string Username { get; set; } = string.Empty;
@@ -69,7 +69,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.Integration
     /// <summary>
     /// Represents endpoint configuration
     /// </summary>
-    public class EndpointConfiguration
+    public partial class EndpointConfiguration
     {
         public int TimeoutSeconds { get; set; } = 30;
         public int RetryCount { get; set; } = 3;

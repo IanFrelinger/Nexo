@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace Nexo.Infrastructure.Commands.Model
 {
-    public class ModelHealthHandler
+    public partial class ModelHealthHandler
     {
         private readonly IModelOrchestrator _modelOrchestrator;
         private readonly IEnumerable<IAIProvider> _providers;

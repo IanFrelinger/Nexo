@@ -13,7 +13,7 @@ namespace Nexo.Feature.Analysis.Services
     /// <summary>
     /// Orchestrates coding standards configuration management using specialized services.
     /// </summary>
-    public class CodingStandardConfigurationService : ICodingStandardConfigurationService
+    public partial class CodingStandardConfigurationService : ICodingStandardConfigurationService
     {
         private readonly ILogger<CodingStandardConfigurationService> _logger;
         private readonly ConfigurationValidator _validator;

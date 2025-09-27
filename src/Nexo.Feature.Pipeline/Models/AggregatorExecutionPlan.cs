@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents an execution plan for an aggregator.
     /// </summary>
-    public class AggregatorExecutionPlan
+    public partial class AggregatorExecutionPlan
 {
     /// <summary>
     /// The aggregator this plan is for.
@@ -54,7 +54,7 @@ namespace Nexo.Feature.Pipeline.Models
 /// <summary>
 /// Represents a phase of aggregator execution.
 /// </summary>
-public class AggregatorExecutionPhase
+public partial class AggregatorExecutionPhase
 {
     /// <summary>
     /// Phase number (order of execution).
@@ -95,7 +95,7 @@ public class AggregatorExecutionPhase
 /// <summary>
 /// Represents a behavior in an aggregator execution plan.
 /// </summary>
-public class PlannedBehavior
+public partial class PlannedBehavior
 {
     /// <summary>
     /// Behavior ID.

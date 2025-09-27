@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Handles network optimization for different platforms
     /// </summary>
-    public class NetworkOptimizer
+    public partial class NetworkOptimizer
     {
         private readonly ILogger<NetworkOptimizer> _logger;
 
@@ -165,7 +165,7 @@ namespace Nexo.Infrastructure.Services.Platform.Optimizers
     /// <summary>
     /// Result of network optimization
     /// </summary>
-    public class NetworkOptimizationResult
+    public partial class NetworkOptimizationResult
     {
         public string Platform { get; set; } = string.Empty;
         public bool Success { get; set; }

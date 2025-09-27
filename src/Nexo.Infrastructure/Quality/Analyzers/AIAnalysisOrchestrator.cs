@@ -6,7 +6,7 @@ using Nexo.Core.Domain.Models.CodeQuality;
 
 namespace Nexo.Infrastructure.Quality.Analyzers
 {
-    public class AIAnalysisOrchestrator
+    public partial class AIAnalysisOrchestrator
     {
         private readonly ILogger<AIAnalysisOrchestrator> _logger;
 

@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Application.Services.AI.Providers
 {
-    public class LlamaWebAssemblyProvider : IAIProvider
+    public partial class LlamaWebAssemblyProvider : IAIProvider
     {
         public AIProviderType ProviderType => AIProviderType.LlamaWebAssembly;
         public int Priority => 0;

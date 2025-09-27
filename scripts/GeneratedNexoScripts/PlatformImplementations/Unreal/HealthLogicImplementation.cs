@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unreal
     /// Target Framework: Unreal Engine 5
     /// Implementation Style: Actor-based with Component System
     /// </summary>
-    public class HealthLogicImplementation : HealthLogic
+    public partial class HealthLogicImplementation : HealthLogic
     {
         public HealthLogicImplementation(IIEventProvider ieventprovider, IIStateProvider istateprovider, IINotificationProvider inotificationprovider)
             : base(ieventprovider, istateprovider, inotificationprovider)

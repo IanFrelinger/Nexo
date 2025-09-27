@@ -11,7 +11,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Unity build optimization service for cross-platform game deployment
     /// </summary>
-    public class UnityBuildOptimizer : IUnityBuildOptimizer
+    public partial class UnityBuildOptimizer : IUnityBuildOptimizer
     {
         private readonly IUnityBuildPipeline _buildPipeline;
         private readonly IPlatformOptimizer _platformOptimizer;
@@ -369,7 +369,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Unity build result
     /// </summary>
-    public class UnityBuildResult
+    public partial class UnityBuildResult
     {
         public bool Success { get; set; }
         public string OutputPath { get; set; } = string.Empty;
@@ -382,7 +382,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Platform optimization result
     /// </summary>
-    public class PlatformOptimizationResult
+    public partial class PlatformOptimizationResult
     {
         public UnityBuildTarget Platform { get; set; }
         public bool Success { get; set; }

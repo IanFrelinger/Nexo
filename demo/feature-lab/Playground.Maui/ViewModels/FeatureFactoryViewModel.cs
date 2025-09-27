@@ -4,7 +4,7 @@ using Playground.Maui.Models;
 
 namespace Playground.Maui.ViewModels;
 
-public class FeatureFactoryViewModel : BaseViewModel
+public partial class FeatureFactoryViewModel : BaseViewModel
 {
     private string _featureDescription = string.Empty;
     private string _selectedPlatform = ".NET";
@@ -119,14 +119,14 @@ public class FeatureFactoryViewModel : BaseViewModel
 }
 
 // Data models for Feature Factory
-public class FeatureGenerationResult
+public partial class FeatureGenerationResult
 {
     public string Status { get; set; } = string.Empty;
     public double Duration { get; set; }
     public List<FeatureGenerationStep> Steps { get; set; } = new();
 }
 
-public class FeatureGenerationStep
+public partial class FeatureGenerationStep
 {
     public string StepName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;

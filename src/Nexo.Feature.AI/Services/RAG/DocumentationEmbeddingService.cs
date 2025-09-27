@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Services.RAG
     /// In a production system, this would use a proper embedding model like OpenAI's text-embedding-ada-002
     /// or a local model like sentence-transformers
     /// </summary>
-    public class DocumentationEmbeddingService : IDocumentationEmbeddingService
+    public partial class DocumentationEmbeddingService : IDocumentationEmbeddingService
     {
         private readonly ILogger<DocumentationEmbeddingService> _logger;
         private readonly Dictionary<string, float[]> _embeddingCache;

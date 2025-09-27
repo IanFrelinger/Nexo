@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.Adaptation;
 
-public class PatternRecognitionEngine : IPatternRecognitionEngine
+public partial class PatternRecognitionEngine : IPatternRecognitionEngine
 {
     public Task<IEnumerable<IdentifiedPattern>> IdentifyPatternsAsync(IEnumerable<UserFeedback> feedback, IEnumerable<PerformanceData> performanceData)
     {
@@ -53,7 +53,7 @@ public class PatternRecognitionEngine : IPatternRecognitionEngine
     }
 }
 
-public class AdaptationRecommender : IAdaptationRecommender
+public partial class AdaptationRecommender : IAdaptationRecommender
 {
     public Task<IEnumerable<AdaptationRecommendation>> GenerateRecommendationsAsync(IEnumerable<LearningInsight> insights)
     {
@@ -71,7 +71,7 @@ public class AdaptationRecommender : IAdaptationRecommender
     }
 }
 
-public class FeedbackAnalyzer : IFeedbackAnalyzer
+public partial class FeedbackAnalyzer : IFeedbackAnalyzer
 {
     public Task<FeedbackAnalysisResult> AnalyzeFeedbackAsync(UserFeedback feedback)
     {

@@ -12,7 +12,7 @@ namespace Nexo.Infrastructure.Services.Security
     /// <summary>
     /// Secure API key management service for Phase 3.3 security features.
     /// </summary>
-    public class SecureApiKeyManager : ISecureApiKeyManager
+    public partial class SecureApiKeyManager : ISecureApiKeyManager
     {
         private readonly Dictionary<string, ApiKeyInfo> _apiKeys;
         private readonly object _lock = new object();

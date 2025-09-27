@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Platform.Android.Generators
 {
-    public class ViewModelGenerator
+    public partial class ViewModelGenerator
     {
         private readonly ILogger<ViewModelGenerator> _logger;
 

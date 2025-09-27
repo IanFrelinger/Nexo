@@ -12,7 +12,7 @@ namespace Nexo.Infrastructure.Commands.Chat.Utilities
     /// <summary>
     /// Handles model selection logic
     /// </summary>
-    public class ModelSelector
+    public partial class ModelSelector
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ChatCommand> _logger;

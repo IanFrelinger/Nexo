@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Services.RAG
     /// <summary>
     /// Parser for Markdown documentation files
     /// </summary>
-    public class MarkdownDocumentationParser : IDocumentationParser
+    public partial class MarkdownDocumentationParser : IDocumentationParser
     {
         private readonly ILogger<MarkdownDocumentationParser> _logger;
 

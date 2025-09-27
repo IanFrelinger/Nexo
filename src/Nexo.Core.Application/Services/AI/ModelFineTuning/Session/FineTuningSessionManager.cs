@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Session
     /// <summary>
     /// Manages fine-tuning sessions
     /// </summary>
-    public class FineTuningSessionManager
+    public partial class FineTuningSessionManager
     {
         private readonly ILogger _logger;
         private readonly Dictionary<string, FineTuningSession> _activeSessions;

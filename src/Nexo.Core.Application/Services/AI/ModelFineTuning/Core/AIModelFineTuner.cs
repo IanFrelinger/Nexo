@@ -14,7 +14,7 @@ namespace Nexo.Core.Application.Services.AI.ModelFineTuning.Core
     /// <summary>
     /// AI model fine-tuning service for customizing and optimizing AI models
     /// </summary>
-    public class AIModelFineTuner
+    public partial class AIModelFineTuner
     {
         private readonly ILogger<AIModelFineTuner> _logger;
         private readonly FineTuningSessionManager _sessionManager;

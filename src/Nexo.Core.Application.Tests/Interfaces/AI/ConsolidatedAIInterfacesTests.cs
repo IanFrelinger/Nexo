@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Tests.Interfaces.AI
     /// <summary>
     /// Tests for consolidated AI interfaces following hexagonal architecture
     /// </summary>
-    public class ConsolidatedAIInterfacesTests
+    public partial class ConsolidatedAIInterfacesTests
     {
         [Fact]
         public void IAIEngine_ShouldHaveCorrectProperties()

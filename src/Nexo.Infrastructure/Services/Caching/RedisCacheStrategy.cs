@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Services.Caching
     /// <summary>
     /// Redis implementation of ICacheStrategy for distributed caching.
     /// </summary>
-    public class RedisCacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue>
+    public partial class RedisCacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue>
     {
         private readonly IDatabase _database;
         private readonly string _keyPrefix;

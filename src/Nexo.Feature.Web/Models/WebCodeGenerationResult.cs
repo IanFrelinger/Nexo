@@ -6,7 +6,7 @@ namespace Nexo.Feature.Web.Models
     /// <summary>
     /// Result model for web code generation.
     /// </summary>
-    public class WebCodeGenerationResult
+    public partial class WebCodeGenerationResult
     {
         /// <summary>
         /// Whether the code generation was successful.

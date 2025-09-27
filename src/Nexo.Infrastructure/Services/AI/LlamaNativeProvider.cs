@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Services.AI
     /// <summary>
     /// Orchestrator for Llama native provider that delegates to specialized providers.
     /// </summary>
-    public class LlamaNativeProvider : ILlamaProvider, IModelProvider, IAIProvider
+    public partial class LlamaNativeProvider : ILlamaProvider, IModelProvider, IAIProvider
     {
         private readonly ILogger<LlamaNativeProvider> _logger;
         private readonly ModelManager _modelManager;

@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Ada
 /// <summary>
 /// Adapter for Blazor framework code generation
 /// </summary>
-public class BlazorAdapter
+public partial class BlazorAdapter
 {
     private readonly ILogger<BlazorAdapter> _logger;
     private readonly IAIRuntimeSelector _runtimeSelector;

@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Audit execution
     /// </summary>
-    public class AuditExecution
+    public partial class AuditExecution
     {
         public string Id { get; set; } = string.Empty;
         public string OperationType { get; set; } = string.Empty;
@@ -23,7 +23,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Audit step
     /// </summary>
-    public class AuditStep
+    public partial class AuditStep
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -39,7 +39,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Audit event
     /// </summary>
-    public class AuditEvent
+    public partial class AuditEvent
     {
         public string Id { get; set; } = string.Empty;
         public string ExecutionId { get; set; } = string.Empty;
@@ -82,7 +82,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Audit summary
     /// </summary>
-    public class AuditSummary
+    public partial class AuditSummary
     {
         public string ExecutionId { get; set; } = string.Empty;
         public string OperationType { get; set; } = string.Empty;

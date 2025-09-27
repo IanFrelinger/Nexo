@@ -54,7 +54,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Options for smart test selection.
     /// </summary>
-    public class SmartTestSelectionOptions
+    public partial class SmartTestSelectionOptions
     {
         /// <summary>
         /// Minimum confidence level required for smart selection (0.0 to 1.0).
@@ -110,7 +110,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Result of smart test selection.
     /// </summary>
-    public class SmartTestSelectionResult
+    public partial class SmartTestSelectionResult
     {
         /// <summary>
         /// Selected test files to run.
@@ -161,7 +161,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Performance metrics for smart test selection.
     /// </summary>
-    public class SmartTestSelectionMetrics
+    public partial class SmartTestSelectionMetrics
     {
         /// <summary>
         /// Total time taken for selection in milliseconds.
@@ -202,7 +202,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Validation result for smart test selection options.
     /// </summary>
-    public class SmartTestSelectionValidation
+    public partial class SmartTestSelectionValidation
     {
         /// <summary>
         /// Whether the options are valid.

@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Advanced cache performance monitoring service for Phase 3.3.
     /// </summary>
-    public class CachePerformanceMonitor : ICachePerformanceMonitor
+    public partial class CachePerformanceMonitor : ICachePerformanceMonitor
     {
         private readonly ConcurrentQueue<CacheOperation> _operations;
         private readonly object _lock = new object();

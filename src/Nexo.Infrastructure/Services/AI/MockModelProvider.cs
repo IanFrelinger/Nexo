@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Services.AI
     /// <summary>
     /// Orchestrates mock AI model operations using specialized providers.
     /// </summary>
-    public class MockModelProvider : IModelProvider
+    public partial class MockModelProvider : IModelProvider
     {
         private readonly ILogger<MockModelProvider> _logger;
         private readonly MockTextGenerationProvider _textGenerationProvider;

@@ -10,7 +10,7 @@ using Nexo.Core.Domain.Enums.Code;
 
 namespace Nexo.Core.Application.Services.AI.Engines
 {
-    public class LlamaNativeEngine : IAIEngine
+    public partial class LlamaNativeEngine : IAIEngine
     {
         private bool _initialized;
         private AIOperationStatus _status = AIOperationStatus.Pending;

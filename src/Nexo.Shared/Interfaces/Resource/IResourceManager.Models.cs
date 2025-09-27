@@ -17,7 +17,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource allocation request.
     /// </summary>
-    public class ResourceAllocationRequest
+    public partial class ResourceAllocationRequest
     {
         /// <summary>
         /// Gets or sets the resource type.
@@ -53,7 +53,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource allocation result.
     /// </summary>
-    public class ResourceAllocationResult
+    public partial class ResourceAllocationResult
     {
         /// <summary>
         /// Gets or sets whether the allocation was successful.
@@ -99,7 +99,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource usage information.
     /// </summary>
-    public class ResourceUsage
+    public partial class ResourceUsage
     {
         /// <summary>
         /// Gets or sets the total allocated resources by type.
@@ -130,7 +130,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource limits information.
     /// </summary>
-    public class ResourceLimits
+    public partial class ResourceLimits
     {
         /// <summary>
         /// Gets or sets the maximum resources by type.
@@ -156,7 +156,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource monitoring information.
     /// </summary>
-    public class ResourceMonitoringInfo
+    public partial class ResourceMonitoringInfo
     {
         /// <summary>
         /// Gets or sets the current alerts.
@@ -177,7 +177,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource optimization result.
     /// </summary>
-    public class ResourceOptimizationResult
+    public partial class ResourceOptimizationResult
     {
         /// <summary>
         /// Gets or sets whether optimization was successful.
@@ -198,7 +198,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource availability information.
     /// </summary>
-    public class ResourceAvailability
+    public partial class ResourceAvailability
     {
         /// <summary>
         /// Gets or sets the available resources by type.
@@ -224,7 +224,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Active resource allocation.
     /// </summary>
-    public class ResourceAllocation
+    public partial class ResourceAllocation
     {
         /// <summary>
         /// Gets or sets the allocation ID.
@@ -265,7 +265,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource alert.
     /// </summary>
-    public class ResourceAlert
+    public partial class ResourceAlert
     {
         /// <summary>
         /// Gets or sets the alert ID.
@@ -301,7 +301,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource metrics.
     /// </summary>
-    public class ResourceMetrics
+    public partial class ResourceMetrics
     {
         /// <summary>
         /// Gets or sets the average utilization.
@@ -332,7 +332,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource health status.
     /// </summary>
-    public class ResourceHealthStatus
+    public partial class ResourceHealthStatus
     {
         /// <summary>
         /// Gets or sets the overall health status.
@@ -353,7 +353,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource optimization recommendation.
     /// </summary>
-    public class ResourceOptimizationRecommendation
+    public partial class ResourceOptimizationRecommendation
     {
         /// <summary>
         /// Gets or sets the recommendation type.
@@ -379,7 +379,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Resource allocation policy.
     /// </summary>
-    public class ResourceAllocationPolicy
+    public partial class ResourceAllocationPolicy
     {
         /// <summary>
         /// Gets or sets the maximum allocation per request.

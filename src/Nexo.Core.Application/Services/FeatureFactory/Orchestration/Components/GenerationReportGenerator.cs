@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration.Components
 {
-    public class GenerationReportGenerator
+    public partial class GenerationReportGenerator
     {
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, GenerationReport> _completedSessions;
@@ -252,7 +252,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration.Components
         }
     }
 
-    public class GenerationReportSummary
+    public partial class GenerationReportSummary
     {
         public int TotalReports { get; set; }
         public int CompletedReports { get; set; }

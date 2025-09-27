@@ -9,7 +9,7 @@ namespace Nexo.Infrastructure.Services.AI.Ollama;
 /// <summary>
 /// Processes Ollama requests and responses.
 /// </summary>
-public class RequestProcessor
+public partial class RequestProcessor
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<RequestProcessor> _logger;

@@ -11,7 +11,7 @@ namespace Nexo.Feature.Data.Services.MigrationDeployment.Testing
     /// <summary>
     /// Runs migration-related tests
     /// </summary>
-    public class MigrationTestRunner
+    public partial class MigrationTestRunner
     {
         private readonly IDatabaseProvider _databaseProvider;
         private readonly IMigrationService _migrationService;

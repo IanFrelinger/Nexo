@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services
     /// </summary>
     /// <typeparam name="TKey">The type of the cache key.</typeparam>
     /// <typeparam name="TValue">The type of the cached value.</typeparam>
-    public class CacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue> where TKey : notnull
+    public partial class CacheStrategy<TKey, TValue> : ICacheStrategy<TKey, TValue> where TKey : notnull
     {
         private class CacheEntry
         {

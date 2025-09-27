@@ -11,7 +11,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// Intelligent cache eviction policy that uses multiple strategies for optimal cache management.
     /// Implements Phase 3.3 advanced caching requirements.
     /// </summary>
-    public class IntelligentEvictionPolicy : ICacheEvictionPolicy
+    public partial class IntelligentEvictionPolicy : ICacheEvictionPolicy
     {
         private readonly IList<ICacheEvictionStrategy> _strategies;
         private readonly CacheEvictionConfiguration _configuration;
@@ -95,7 +95,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// LRU (Least Recently Used) eviction strategy.
     /// </summary>
-    public class LruEvictionStrategy : ICacheEvictionStrategy
+    public partial class LruEvictionStrategy : ICacheEvictionStrategy
     {
         public int Priority => 1;
         public string Name => "LRU";
@@ -111,7 +111,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// LFU (Least Frequently Used) eviction strategy.
     /// </summary>
-    public class LfuEvictionStrategy : ICacheEvictionStrategy
+    public partial class LfuEvictionStrategy : ICacheEvictionStrategy
     {
         public int Priority => 2;
         public string Name => "LFU";
@@ -128,7 +128,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Size-based eviction strategy (evict largest items first).
     /// </summary>
-    public class SizeBasedEvictionStrategy : ICacheEvictionStrategy
+    public partial class SizeBasedEvictionStrategy : ICacheEvictionStrategy
     {
         public int Priority => 3;
         public string Name => "Size-Based";
@@ -144,7 +144,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Priority-based eviction strategy.
     /// </summary>
-    public class PriorityBasedEvictionStrategy : ICacheEvictionStrategy
+    public partial class PriorityBasedEvictionStrategy : ICacheEvictionStrategy
     {
         public int Priority => 4;
         public string Name => "Priority-Based";
@@ -161,7 +161,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Configuration for cache eviction policies.
     /// </summary>
-    public class CacheEvictionConfiguration
+    public partial class CacheEvictionConfiguration
     {
         public double AgeWeight { get; set; } = 1.0;
         public double AccessWeight { get; set; } = 2.0;

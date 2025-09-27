@@ -7,7 +7,7 @@ using Nexo.Feature.Template.Interfaces;
 
 namespace Nexo.CLI.Commands.Project.Handlers
 {
-    public class ProjectInitHandler
+    public partial class ProjectInitHandler
     {
         private readonly ITemplateService _templateService;
         private readonly IIntelligentTemplateService _intelligentTemplateService;

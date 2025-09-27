@@ -6,7 +6,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Unity scene analysis
     /// </summary>
-    public class UnitySceneAnalysis
+    public partial class UnitySceneAnalysis
     {
         public IEnumerable<UnityScene> Scenes { get; set; } = new List<UnityScene>();
         public IEnumerable<GameObjectAnalysis> GameObjectAnalyses { get; set; } = new List<GameObjectAnalysis>();
@@ -18,7 +18,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity scene
     /// </summary>
-    public class UnityScene
+    public partial class UnityScene
     {
         public string Path { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -42,7 +42,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity GameObject
     /// </summary>
-    public class UnityGameObject
+    public partial class UnityGameObject
     {
         public string Name { get; set; } = string.Empty;
         public string Tag { get; set; } = string.Empty;
@@ -65,7 +65,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity Component
     /// </summary>
-    public class UnityComponent
+    public partial class UnityComponent
     {
         public string Type { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -86,7 +86,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity Transform
     /// </summary>
-    public class UnityTransform
+    public partial class UnityTransform
     {
         public Vector3 Position { get; set; } = new();
         public Vector3 Rotation { get; set; } = new();
@@ -105,7 +105,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity Light
     /// </summary>
-    public class UnityLight
+    public partial class UnityLight
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -127,7 +127,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity Camera
     /// </summary>
-    public class UnityCamera
+    public partial class UnityCamera
     {
         public string Name { get; set; } = string.Empty;
         public string ClearFlags { get; set; } = string.Empty;
@@ -150,7 +150,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Unity Renderer
     /// </summary>
-    public class UnityRenderer
+    public partial class UnityRenderer
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -173,7 +173,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents scene settings
     /// </summary>
-    public class SceneSettings
+    public partial class SceneSettings
     {
         public string LightingSettings { get; set; } = string.Empty;
         public string RenderSettings { get; set; } = string.Empty;
@@ -194,7 +194,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents GameObject analysis
     /// </summary>
-    public class GameObjectAnalysis
+    public partial class GameObjectAnalysis
     {
         public string GameObjectName { get; set; } = string.Empty;
         public IEnumerable<string> OptimizationOpportunities { get; set; } = new List<string>();
@@ -214,7 +214,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents Component analysis
     /// </summary>
-    public class ComponentAnalysis
+    public partial class ComponentAnalysis
     {
         public string ComponentType { get; set; } = string.Empty;
         public string GameObjectName { get; set; } = string.Empty;
@@ -233,7 +233,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents scene optimization analysis
     /// </summary>
-    public class SceneOptimizationAnalysis
+    public partial class SceneOptimizationAnalysis
     {
         public IEnumerable<string> OptimizationOpportunities { get; set; } = new List<string>();
         public IEnumerable<string> DrawCallOptimizations { get; set; } = new List<string>();
@@ -253,7 +253,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents scene performance analysis
     /// </summary>
-    public class ScenePerformanceAnalysis
+    public partial class ScenePerformanceAnalysis
     {
         public int DrawCallCount { get; set; }
         public int BatchCount { get; set; }
@@ -275,7 +275,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Vector3
     /// </summary>
-    public class Vector3
+    public partial class Vector3
     {
         public float X { get; set; }
         public float Y { get; set; }
@@ -285,7 +285,7 @@ namespace Nexo.Feature.Unity.Models.Unity
     /// <summary>
     /// Represents a Color
     /// </summary>
-    public class Color
+    public partial class Color
     {
         public float R { get; set; }
         public float G { get; set; }

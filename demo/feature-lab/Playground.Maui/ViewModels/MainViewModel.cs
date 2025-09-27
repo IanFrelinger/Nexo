@@ -5,7 +5,7 @@ using System.Windows.Input;
 
 namespace Playground.Maui.ViewModels;
 
-public class MainViewModel : BaseViewModel
+public partial class MainViewModel : BaseViewModel
 {
     private readonly FeatureService _featureService;
     private string _selectedFeature = string.Empty;

@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Orchestration
     /// <summary>
     /// Orchestrates the complete tool generation pipeline
     /// </summary>
-    public class ToolGenerationOrchestrator
+    public partial class ToolGenerationOrchestrator
     {
         private readonly IModelProvider _aiProvider;
         private readonly ICodeGenerator _codeGenerator;

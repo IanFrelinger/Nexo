@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unreal
     /// Target Framework: Unreal Engine 5
     /// Implementation Style: Actor-based with Component System
     /// </summary>
-    public class CombatLogicImplementation : CombatLogic
+    public partial class CombatLogicImplementation : CombatLogic
     {
         public CombatLogicImplementation(IIHealthProvider ihealthprovider, IIAudioProvider iaudioprovider, IIAnimationProvider ianimationprovider, IIProjectileProvider iprojectileprovider)
             : base(ihealthprovider, iaudioprovider, ianimationprovider, iprojectileprovider)

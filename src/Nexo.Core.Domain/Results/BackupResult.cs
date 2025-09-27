@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Result of backup operations
     /// </summary>
-    public class BackupResult
+    public partial class BackupResult
     {
         /// <summary>
         /// Unique identifier for the backup result

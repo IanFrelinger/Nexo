@@ -14,7 +14,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// User feedback for system improvement.
     /// </summary>
-    public class UserFeedback
+    public partial class UserFeedback
     {
         /// <summary>
         /// Gets or sets the feedback identifier.

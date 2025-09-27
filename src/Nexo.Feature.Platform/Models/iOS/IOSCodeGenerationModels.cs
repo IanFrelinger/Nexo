@@ -7,7 +7,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Result of iOS code generation process.
     /// </summary>
-    public class IOSCodeGenerationResult
+    public partial class IOSCodeGenerationResult
     {
         public bool IsSuccess { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -22,7 +22,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Generated iOS code components.
     /// </summary>
-    public class IOSGeneratedCode
+    public partial class IOSGeneratedCode
     {
         public List<SwiftFile> SwiftFiles { get; set; } = new List<SwiftFile>();
         public List<SwiftUIFile> SwiftUIFiles { get; set; } = new List<SwiftUIFile>();

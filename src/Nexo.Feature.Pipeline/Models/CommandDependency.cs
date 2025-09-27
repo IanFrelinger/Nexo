@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a dependency between commands.
     /// </summary>
-    public class CommandDependency
+    public partial class CommandDependency
 {
     /// <summary>
     /// ID of the command that this command depends on.

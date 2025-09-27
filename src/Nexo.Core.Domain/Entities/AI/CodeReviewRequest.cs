@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Code review request
     /// </summary>
-    public class CodeReviewRequest
+    public partial class CodeReviewRequest
     {
         /// <summary>
         /// Request ID

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic.Generators
 {
-    public class ServiceGenerator
+    public partial class ServiceGenerator
     {
         private readonly ILogger<ServiceGenerator> _logger;
 
@@ -53,7 +53,7 @@ using System.Threading.Tasks;
 
 namespace Services
 {{
-    public class {serviceName}Service
+    public partial class {serviceName}Service
     {{
         public async Task<bool> ProcessAsync()
         {{
@@ -73,7 +73,7 @@ namespace Services
         }
     }
 
-    public class Service
+    public partial class Service
     {
         public string Name { get; set; } = string.Empty;
         public string DomainService { get; set; } = string.Empty;

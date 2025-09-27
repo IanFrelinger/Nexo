@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Commands.Chat.Handlers
     /// <summary>
     /// Handles quick chat processing
     /// </summary>
-    public class QuickChatHandler
+    public partial class QuickChatHandler
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ChatCommand> _logger;

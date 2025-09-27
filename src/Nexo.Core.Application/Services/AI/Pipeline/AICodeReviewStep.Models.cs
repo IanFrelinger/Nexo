@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     /// <summary>
     /// AI requirements for code review operations
     /// </summary>
-    public class AIRequirements
+    public partial class AIRequirements
     {
         public int QualityThreshold { get; set; } = 80;
         public SafetyLevel SafetyLevel { get; set; } = SafetyLevel.Medium;

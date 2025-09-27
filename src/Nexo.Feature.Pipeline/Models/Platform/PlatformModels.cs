@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Models;
 /// <summary>
 /// Platform feature.
 /// </summary>
-public class PlatformFeature
+public partial class PlatformFeature
 {
     public string Name { get; set; } = string.Empty;
     
@@ -21,7 +21,7 @@ public class PlatformFeature
 /// <summary>
 /// Platform capability.
 /// </summary>
-public class PlatformCapability
+public partial class PlatformCapability
 {
     public string Name { get; set; } = string.Empty;
     
@@ -37,7 +37,7 @@ public class PlatformCapability
 /// <summary>
 /// Native API.
 /// </summary>
-public class NativeAPI
+public partial class NativeAPI
 {
     public string Name { get; set; } = string.Empty;
     

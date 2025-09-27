@@ -17,7 +17,7 @@ namespace Nexo.Infrastructure.Commands.Chat.Handlers
     /// <summary>
     /// Handles interactive chat session logic
     /// </summary>
-    public class InteractiveChatHandler
+    public partial class InteractiveChatHandler
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ChatCommand> _logger;

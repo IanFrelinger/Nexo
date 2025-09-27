@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Nexo.Infrastructure.Tests.ToolGeneration.Cancellation
 {
-    public class CancellationTests
+    public partial class CancellationTests
     {
         private readonly IHost _host;
 

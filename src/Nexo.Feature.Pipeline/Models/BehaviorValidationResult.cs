@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents the result of behavior validation.
     /// </summary>
-    public class BehaviorValidationResult
+    public partial class BehaviorValidationResult
     {
         /// <summary>
         /// Whether the behavior validation was successful.

@@ -12,7 +12,7 @@ namespace Nexo.Feature.Networking.Services;
 /// <summary>
 /// Orchestrates networking configuration across multiple providers
 /// </summary>
-public class NetworkingOrchestrator
+public partial class NetworkingOrchestrator
 {
     private readonly ILogger<NetworkingOrchestrator> _logger;
     private readonly IEnumerable<INetworkingProvider> _providers;

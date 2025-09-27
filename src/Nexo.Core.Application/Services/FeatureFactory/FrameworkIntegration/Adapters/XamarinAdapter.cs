@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Ada
 /// <summary>
 /// Adapter for Xamarin framework code generation
 /// </summary>
-public class XamarinAdapter
+public partial class XamarinAdapter
 {
     private readonly ILogger<XamarinAdapter> _logger;
     private readonly IAIRuntimeSelector _runtimeSelector;

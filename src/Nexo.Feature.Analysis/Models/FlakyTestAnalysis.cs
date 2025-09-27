@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Analysis of flaky test behavior.
     /// </summary>
-    public class FlakyTestAnalysis
+    public partial class FlakyTestAnalysis
     {
         /// <summary>
         /// Name of the flaky test.

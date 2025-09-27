@@ -8,7 +8,7 @@ namespace Nexo.Core.Application.Services.Learning;
 /// <summary>
 /// Continuous learning system that improves system behavior over time
 /// </summary>
-public class ContinuousLearningSystem : IContinuousLearningSystem
+public partial class ContinuousLearningSystem : IContinuousLearningSystem
 {
     private readonly IUserFeedbackCollector _feedbackCollector;
     private readonly Nexo.Core.Application.Services.Adaptation.IPerformanceDataStore _performanceStore;

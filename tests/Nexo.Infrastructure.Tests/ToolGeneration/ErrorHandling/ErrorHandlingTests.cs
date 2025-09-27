@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Nexo.Infrastructure.Tests.ToolGeneration.ErrorHandling
 {
-    public class ErrorHandlingTests
+    public partial class ErrorHandlingTests
     {
         private readonly IHost _host;
 

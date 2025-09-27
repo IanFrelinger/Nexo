@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Represents an onboarding session for a beta user
     /// </summary>
-    public class OnboardingSession
+    public partial class OnboardingSession
     {
         public string Id { get; set; } = "";
         public string UserId { get; set; } = "";
@@ -20,7 +20,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// User preferences for onboarding experience
     /// </summary>
-    public class OnboardingPreferences
+    public partial class OnboardingPreferences
     {
         public bool IncludeTutorial { get; set; } = true;
         public bool IncludeAdvancedFeatures { get; set; } = false;
@@ -33,7 +33,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Individual step in the onboarding process
     /// </summary>
-    public class OnboardingStep
+    public partial class OnboardingStep
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
@@ -52,7 +52,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Result of executing an onboarding step
     /// </summary>
-    public class OnboardingStepResult
+    public partial class OnboardingStepResult
     {
         public string StepId { get; set; } = "";
         public bool Success { get; set; }
@@ -65,7 +65,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Result of completing the entire onboarding process
     /// </summary>
-    public class OnboardingCompletionResult
+    public partial class OnboardingCompletionResult
     {
         public string SessionId { get; set; } = "";
         public bool Success { get; set; }
@@ -79,7 +79,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Current progress of an onboarding session
     /// </summary>
-    public class OnboardingProgress
+    public partial class OnboardingProgress
     {
         public string SessionId { get; set; } = "";
         public string UserId { get; set; } = "";
@@ -94,7 +94,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Event tracked during onboarding process
     /// </summary>
-    public class OnboardingEvent
+    public partial class OnboardingEvent
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string UserId { get; set; } = "";
@@ -108,7 +108,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Result of environment validation
     /// </summary>
-    public class EnvironmentValidationResult
+    public partial class EnvironmentValidationResult
     {
         public bool IsValid { get; set; }
         public List<ValidationIssue> Issues { get; set; } = new();
@@ -120,7 +120,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Validation issue found during environment check
     /// </summary>
-    public class ValidationIssue
+    public partial class ValidationIssue
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public ValidationIssueType Type { get; set; }
@@ -133,7 +133,7 @@ namespace Nexo.Core.Domain.Entities.Onboarding
     /// <summary>
     /// Recommendation for improving the environment
     /// </summary>
-    public class ValidationRecommendation
+    public partial class ValidationRecommendation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Title { get; set; } = "";

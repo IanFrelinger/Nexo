@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Seasonal pattern analysis.
     /// </summary>
-    public class SeasonalPattern
+    public partial class SeasonalPattern
     {
         /// <summary>
         /// Type of seasonal pattern.

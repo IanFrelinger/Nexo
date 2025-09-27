@@ -1,6 +1,6 @@
 namespace Playground.Server.Models;
 
-public class RunResult
+public partial class RunResult
 {
     public string RunId { get; set; } = Guid.NewGuid().ToString();
     public string FeatureName { get; set; } = string.Empty;
@@ -29,14 +29,14 @@ public record ApprovalEvent(
     DateTime Timestamp
 );
 
-public class ValidationResult
+public partial class ValidationResult
 {
     public bool IsSuccess { get; set; }
     public string Message { get; set; } = string.Empty;
     public List<ValidationCheck> Checks { get; set; } = new();
 }
 
-public class ValidationCheck
+public partial class ValidationCheck
 {
     public string Name { get; set; } = string.Empty;
     public bool Passed { get; set; }

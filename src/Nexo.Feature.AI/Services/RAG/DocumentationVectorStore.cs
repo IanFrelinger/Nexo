@@ -12,7 +12,7 @@ namespace Nexo.Feature.AI.Services.RAG
     /// In-memory vector store for documentation chunks
     /// In a production system, this would use a proper vector database like Pinecone, Weaviate, or FAISS
     /// </summary>
-    public class DocumentationVectorStore : IDocumentationVectorStore
+    public partial class DocumentationVectorStore : IDocumentationVectorStore
     {
         private readonly ILogger<DocumentationVectorStore> _logger;
         private readonly Dictionary<string, (DocumentationChunk Chunk, float[] Embedding)> _vectorStore;

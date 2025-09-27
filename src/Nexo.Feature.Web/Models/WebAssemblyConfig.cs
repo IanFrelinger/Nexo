@@ -6,7 +6,7 @@ namespace Nexo.Feature.Web.Models
     /// <summary>
     /// Configuration model for WebAssembly optimization settings.
     /// </summary>
-    public class WebAssemblyConfig
+    public partial class WebAssemblyConfig
     {
         /// <summary>
         /// The optimization strategy to apply.
@@ -62,7 +62,7 @@ namespace Nexo.Feature.Web.Models
     /// <summary>
     /// Memory configuration for WebAssembly.
     /// </summary>
-    public class WebAssemblyMemoryConfig
+    public partial class WebAssemblyMemoryConfig
     {
         /// <summary>
         /// Initial memory size in pages (64KB each).
@@ -83,7 +83,7 @@ namespace Nexo.Feature.Web.Models
     /// <summary>
     /// Threading configuration for WebAssembly.
     /// </summary>
-    public class WebAssemblyThreadingConfig
+    public partial class WebAssemblyThreadingConfig
     {
         /// <summary>
         /// Whether to enable threading support.
@@ -104,7 +104,7 @@ namespace Nexo.Feature.Web.Models
     /// <summary>
     /// SIMD configuration for WebAssembly.
     /// </summary>
-    public class WebAssemblySimdConfig
+    public partial class WebAssemblySimdConfig
     {
         /// <summary>
         /// Whether to enable SIMD instructions.

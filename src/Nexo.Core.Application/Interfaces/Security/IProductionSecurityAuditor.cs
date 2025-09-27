@@ -51,7 +51,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security audit options.
     /// </summary>
-    public class SecurityAuditOptions
+    public partial class SecurityAuditOptions
     {
         public bool AuditApiKeys { get; set; } = true;
         public bool AuditAuthentication { get; set; } = true;
@@ -67,7 +67,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Penetration test options.
     /// </summary>
-    public class PenetrationTestOptions
+    public partial class PenetrationTestOptions
     {
         public string TestName { get; set; } = "Default";
         public bool TestAuthenticationBypass { get; set; } = true;
@@ -82,7 +82,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security audit result.
     /// </summary>
-    public class SecurityAuditResult
+    public partial class SecurityAuditResult
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
@@ -105,7 +105,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Penetration test result.
     /// </summary>
-    public class PenetrationTestResult
+    public partial class PenetrationTestResult
     {
         public string TestName { get; set; } = string.Empty;
         public DateTimeOffset StartTime { get; set; }
@@ -128,7 +128,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security recommendation.
     /// </summary>
-    public class SecurityRecommendation
+    public partial class SecurityRecommendation
     {
         public string Category { get; set; } = string.Empty;
         public SecurityPriority Priority { get; set; }
@@ -141,7 +141,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security compliance status.
     /// </summary>
-    public class SecurityComplianceStatus
+    public partial class SecurityComplianceStatus
     {
         public DateTimeOffset CheckTime { get; set; }
         public double OverallComplianceScore { get; set; }
@@ -182,7 +182,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// API key security audit.
     /// </summary>
-    public class ApiKeySecurityAudit
+    public partial class ApiKeySecurityAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -195,7 +195,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Authentication security audit.
     /// </summary>
-    public class AuthenticationSecurityAudit
+    public partial class AuthenticationSecurityAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -210,7 +210,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Authorization security audit.
     /// </summary>
-    public class AuthorizationSecurityAudit
+    public partial class AuthorizationSecurityAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -224,7 +224,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Data encryption audit.
     /// </summary>
-    public class DataEncryptionAudit
+    public partial class DataEncryptionAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -238,7 +238,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Audit logging security audit.
     /// </summary>
-    public class AuditLoggingSecurityAudit
+    public partial class AuditLoggingSecurityAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -252,7 +252,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Network security audit.
     /// </summary>
-    public class NetworkSecurityAudit
+    public partial class NetworkSecurityAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -266,7 +266,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Compliance audit.
     /// </summary>
-    public class ComplianceAudit
+    public partial class ComplianceAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -280,7 +280,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Performance security audit.
     /// </summary>
-    public class PerformanceSecurityAudit
+    public partial class PerformanceSecurityAudit
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -297,7 +297,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Authentication bypass test result.
     /// </summary>
-    public class AuthenticationBypassTestResult
+    public partial class AuthenticationBypassTestResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -311,7 +311,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Authorization escalation test result.
     /// </summary>
-    public class AuthorizationEscalationTestResult
+    public partial class AuthorizationEscalationTestResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -324,7 +324,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// API key security test result.
     /// </summary>
-    public class ApiKeySecurityTestResult
+    public partial class ApiKeySecurityTestResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -337,7 +337,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Data injection test result.
     /// </summary>
-    public class DataInjectionTestResult
+    public partial class DataInjectionTestResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -351,7 +351,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Session management test result.
     /// </summary>
-    public class SessionManagementTestResult
+    public partial class SessionManagementTestResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -364,7 +364,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Input validation test result.
     /// </summary>
-    public class InputValidationTestResult
+    public partial class InputValidationTestResult
     {
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -381,7 +381,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Compliance check result.
     /// </summary>
-    public class ComplianceCheckResult
+    public partial class ComplianceCheckResult
     {
         public string Standard { get; set; } = string.Empty;
         public bool IsCompliant { get; set; }

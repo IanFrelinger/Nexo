@@ -105,7 +105,7 @@ namespace Nexo.Core.Domain.Interfaces
     /// <summary>
     /// Maintenance result
     /// </summary>
-    public class MaintenanceResult
+    public partial class MaintenanceResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = "";
@@ -118,7 +118,7 @@ namespace Nexo.Core.Domain.Interfaces
     /// <summary>
     /// Maintenance statistics
     /// </summary>
-    public class MaintenanceStatistics
+    public partial class MaintenanceStatistics
     {
         public int TotalTools { get; set; }
         public int ToolsRequiringMaintenance { get; set; }

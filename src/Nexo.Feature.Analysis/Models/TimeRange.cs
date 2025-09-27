@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Time range for seasonal patterns.
     /// </summary>
-    public class TimeRange
+    public partial class TimeRange
     {
         /// <summary>
         /// Start time of the range.

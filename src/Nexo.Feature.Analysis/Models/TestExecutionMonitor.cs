@@ -7,7 +7,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Monitors test execution in real-time.
     /// </summary>
-    public class TestExecutionMonitor
+    public partial class TestExecutionMonitor
     {
         /// <summary>
         /// Unique identifier for this monitoring session.

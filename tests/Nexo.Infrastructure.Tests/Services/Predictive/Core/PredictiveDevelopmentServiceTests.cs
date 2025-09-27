@@ -18,7 +18,7 @@ namespace Nexo.Infrastructure.Tests.Services.Predictive.Core
     /// Core test orchestrator for Predictive Development Service tests.
     /// Delegates to specialized test classes for different test categories.
     /// </summary>
-    public class PredictiveDevelopmentServiceTests : IDisposable
+    public partial class PredictiveDevelopmentServiceTests : IDisposable
     {
         private readonly Mock<ILogger<PredictiveDevelopmentService>> _mockLogger;
         private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;

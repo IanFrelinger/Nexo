@@ -26,7 +26,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Gameplay balance analysis
     /// </summary>
-    public class GameplayBalanceAnalysis
+    public partial class GameplayBalanceAnalysis
     {
         public string GameType { get; set; } = string.Empty;
         public int PlayerCount { get; set; }
@@ -42,7 +42,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Balance issue
     /// </summary>
-    public class BalanceIssue
+    public partial class BalanceIssue
     {
         public string Description { get; set; } = string.Empty;
         public BalanceIssueSeverity Severity { get; set; }
@@ -53,7 +53,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Balance recommendations
     /// </summary>
-    public class BalanceRecommendations
+    public partial class BalanceRecommendations
     {
         public string OverallStrategy { get; set; } = string.Empty;
         public IEnumerable<BalanceChange> Changes { get; set; } = new List<BalanceChange>();
@@ -62,7 +62,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Balance change
     /// </summary>
-    public class BalanceChange
+    public partial class BalanceChange
     {
         public BalanceChangeType Type { get; set; }
         public string Description { get; set; } = string.Empty;
@@ -72,7 +72,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Balanced game mechanics
     /// </summary>
-    public class BalancedGameMechanics
+    public partial class BalancedGameMechanics
     {
         public BalanceRecommendations Recommendations { get; set; } = new();
         public ImplementationGuidance ImplementationGuidance { get; set; } = new();
@@ -82,7 +82,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Implementation guidance
     /// </summary>
-    public class ImplementationGuidance
+    public partial class ImplementationGuidance
     {
         public IEnumerable<string> Steps { get; set; } = new List<string>();
         public IEnumerable<string> CodeExamples { get; set; } = new List<string>();
@@ -92,7 +92,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Testing strategy
     /// </summary>
-    public class TestingStrategy
+    public partial class TestingStrategy
     {
         public string Approach { get; set; } = string.Empty;
         public IEnumerable<string> Metrics { get; set; } = new List<string>();
@@ -102,7 +102,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Gameplay context
     /// </summary>
-    public class GameplayContext
+    public partial class GameplayContext
     {
         public string GameType { get; set; } = string.Empty;
         public GameplayData? Data { get; set; }

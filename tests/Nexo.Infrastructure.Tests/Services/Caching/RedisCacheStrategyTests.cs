@@ -6,7 +6,7 @@ using StackExchange.Redis;
 
 namespace Nexo.Infrastructure.Tests.Services.Caching
 {
-    public class RedisCacheStrategyTests
+    public partial class RedisCacheStrategyTests
     {
         [Fact]
         public async Task SetAsync_And_GetAsync_WithTTL_WorksCorrectly()

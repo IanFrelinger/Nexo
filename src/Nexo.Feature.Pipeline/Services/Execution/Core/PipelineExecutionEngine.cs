@@ -18,7 +18,7 @@ namespace Nexo.Feature.Pipeline.Services.Execution.Core
     /// Core pipeline execution engine that orchestrates the execution of aggregators and behaviors
     /// with support for parallel processing, dependency resolution, and performance monitoring.
     /// </summary>
-    public class PipelineExecutionEngine : IPipelineExecutionEngine
+    public partial class PipelineExecutionEngine : IPipelineExecutionEngine
     {
         private readonly ILogger<PipelineExecutionEngine> _logger;
         private readonly IResourceMonitor _resourceMonitor;

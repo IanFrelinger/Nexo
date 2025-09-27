@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Services.Security
     /// Audit logger implementation for security and compliance logging.
     /// Part of Phase 3.3 security and compliance features.
     /// </summary>
-    public class AuditLogger : IAuditLogger
+    public partial class AuditLogger : IAuditLogger
     {
         private readonly string _logDirectory;
         private readonly object _lock = new object();

@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Tests.Services.Iteration;
 /// <summary>
 /// Tests for the runtime environment detector
 /// </summary>
-public class RuntimeEnvironmentDetectorTests
+public partial class RuntimeEnvironmentDetectorTests
 {
     [Fact]
     public void DetectCurrent_ShouldReturnValidProfile()

@@ -7,7 +7,7 @@ using Nexo.Feature.Platform.Models;
 
 namespace Nexo.Feature.Platform.Services.Android.Generators
 {
-    public class RepositoryCodeGenerator
+    public partial class RepositoryCodeGenerator
     {
         private readonly ILogger<RepositoryCodeGenerator> _logger;
 

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Services.Security.Auditors
 {
-    public class NetworkSecurityAuditor
+    public partial class NetworkSecurityAuditor
     {
         private readonly ILogger<NetworkSecurityAuditor> _logger;
 
@@ -82,7 +82,7 @@ namespace Nexo.Infrastructure.Services.Security.Auditors
         }
     }
 
-    public class NetworkSecurityAuditResult
+    public partial class NetworkSecurityAuditResult
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }

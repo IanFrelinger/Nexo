@@ -15,7 +15,7 @@ namespace Nexo.Core.Application.Services.AI.Providers
     /// <summary>
     /// Mock AI provider for development and testing
     /// </summary>
-    public class MockAIProvider : IAIProvider
+    public partial class MockAIProvider : IAIProvider
     {
         private readonly ILogger<MockAIProvider> _logger;
         private readonly ILoggerFactory _loggerFactory;

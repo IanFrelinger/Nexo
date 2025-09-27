@@ -5,7 +5,7 @@ namespace Nexo.Feature.Azure.Models;
 /// <summary>
 /// Azure operation result
 /// </summary>
-public class AzureOperationResult
+public partial class AzureOperationResult
 {
     /// <summary>
     /// Whether the operation was successful

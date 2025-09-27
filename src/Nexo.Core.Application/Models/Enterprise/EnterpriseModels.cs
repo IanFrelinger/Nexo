@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents security configuration for enterprise integration.
     /// </summary>
-    public class SecurityConfiguration
+    public partial class SecurityConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -23,7 +23,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents compliance requirements for automation.
     /// </summary>
-    public class ComplianceRequirements
+    public partial class ComplianceRequirements
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -40,7 +40,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents governance configuration for enterprise features.
     /// </summary>
-    public class GovernanceConfiguration
+    public partial class GovernanceConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -57,7 +57,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents reporting configuration for enterprise reporting.
     /// </summary>
-    public class ReportingConfiguration
+    public partial class ReportingConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -74,7 +74,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents security validation configuration.
     /// </summary>
-    public class SecurityValidationConfiguration
+    public partial class SecurityValidationConfiguration
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -88,7 +88,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents security export options.
     /// </summary>
-    public class SecurityExportOptions
+    public partial class SecurityExportOptions
     {
         public string Format { get; set; } = "JSON";
         public List<string> DataTypes { get; set; } = new List<string>();
@@ -101,7 +101,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents security import data.
     /// </summary>
-    public class SecurityImportData
+    public partial class SecurityImportData
     {
         public string Id { get; set; } = string.Empty;
         public string Format { get; set; } = string.Empty;
@@ -114,7 +114,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents the result of security integration.
     /// </summary>
-    public class SecurityIntegrationResult
+    public partial class SecurityIntegrationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -127,7 +127,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents the result of compliance automation.
     /// </summary>
-    public class ComplianceAutomationResult
+    public partial class ComplianceAutomationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -140,7 +140,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents the result of governance implementation.
     /// </summary>
-    public class GovernanceImplementationResult
+    public partial class GovernanceImplementationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -153,7 +153,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents the result of reporting system creation.
     /// </summary>
-    public class ReportingSystemResult
+    public partial class ReportingSystemResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -166,7 +166,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents the result of security validation.
     /// </summary>
-    public class SecurityValidationResult
+    public partial class SecurityValidationResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
@@ -182,7 +182,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents security metrics.
     /// </summary>
-    public class SecurityMetrics
+    public partial class SecurityMetrics
     {
         public int TotalSecurityEvents { get; set; }
         public int CriticalSecurityEvents { get; set; }
@@ -197,7 +197,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents security data export.
     /// </summary>
-    public class SecurityDataExport
+    public partial class SecurityDataExport
     {
         public string Id { get; set; } = string.Empty;
         public string Format { get; set; } = string.Empty;
@@ -211,7 +211,7 @@ namespace Nexo.Core.Application.Models.Enterprise
     /// <summary>
     /// Represents the result of security data import.
     /// </summary>
-    public class SecurityDataImportResult
+    public partial class SecurityDataImportResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

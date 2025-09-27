@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Performance estimate for operations
     /// </summary>
-    public class PerformanceEstimate
+    public partial class PerformanceEstimate
     {
         /// <summary>
         /// Estimated execution time

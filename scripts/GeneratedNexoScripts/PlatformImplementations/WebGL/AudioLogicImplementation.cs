@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.WebGL
     /// Target Framework: WebAssembly
     /// Implementation Style: Component-based with Web APIs
     /// </summary>
-    public class AudioLogicImplementation : AudioLogic
+    public partial class AudioLogicImplementation : AudioLogic
     {
         public AudioLogicImplementation(IIResourceProvider iresourceprovider, IISpatialProvider ispatialprovider, IIVolumeProvider ivolumeprovider)
             : base(iresourceprovider, ispatialprovider, ivolumeprovider)

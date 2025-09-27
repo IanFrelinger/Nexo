@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation.Validators;
 /// <summary>
 /// Validates domain entities and their relationships
 /// </summary>
-public class EntityValidator
+public partial class EntityValidator
 {
     private readonly ILogger<EntityValidator> _logger;
 

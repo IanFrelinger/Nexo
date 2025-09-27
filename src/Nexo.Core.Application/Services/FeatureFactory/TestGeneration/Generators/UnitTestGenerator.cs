@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration.Generators
 {
-    public class UnitTestGenerator
+    public partial class UnitTestGenerator
     {
         private readonly ILogger<UnitTestGenerator> _logger;
 
@@ -54,7 +54,7 @@ using {GetNamespaceForEntity(entityName)};
 
 namespace Tests.Unit
 {{
-    public class {entityName}Tests
+    public partial class {entityName}Tests
     {{
         [Fact]
         public void {entityName}_Should_Work()
@@ -72,7 +72,7 @@ namespace Tests.Unit
         }
     }
 
-    public class UnitTest
+    public partial class UnitTest
     {
         public string EntityName { get; set; } = string.Empty;
         public string TestName { get; set; } = string.Empty;

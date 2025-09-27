@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators;
 /// <summary>
 /// Generates platform-specific code and build configurations
 /// </summary>
-public class DesktopPlatformGenerator
+public partial class DesktopPlatformGenerator
 {
     private readonly ILogger<DesktopPlatformGenerator> _logger;
     private readonly IModelOrchestrator _modelOrchestrator;

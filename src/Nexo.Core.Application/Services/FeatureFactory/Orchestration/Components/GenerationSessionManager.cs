@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration.Components
 {
-    public class GenerationSessionManager
+    public partial class GenerationSessionManager
     {
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, GenerationProgress> _activeSessions;

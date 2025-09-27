@@ -44,7 +44,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Validation result for test dependencies.
     /// </summary>
-    public class TestDependencyValidation
+    public partial class TestDependencyValidation
     {
         /// <summary>
         /// Whether the dependencies are valid.

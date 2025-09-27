@@ -79,7 +79,7 @@ public record UserFeedback
 /// <summary>
 /// Negative feedback event arguments
 /// </summary>
-public class NegativeFeedbackEventArgs : EventArgs
+public partial class NegativeFeedbackEventArgs : EventArgs
 {
     /// <summary>
     /// User feedback

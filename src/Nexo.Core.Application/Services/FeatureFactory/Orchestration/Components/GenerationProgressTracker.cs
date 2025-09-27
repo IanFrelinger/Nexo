@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration.Components
 {
-    public class GenerationProgressTracker
+    public partial class GenerationProgressTracker
     {
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, GenerationProgress> _activeSessions;

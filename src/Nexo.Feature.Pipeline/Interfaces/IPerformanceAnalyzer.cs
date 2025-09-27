@@ -42,7 +42,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Performance analysis results.
     /// </summary>
-    public class PerformanceAnalysis
+    public partial class PerformanceAnalysis
     {
         /// <summary>
         /// Gets or sets the analysis identifier.
@@ -83,7 +83,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Performance bottleneck identified during analysis.
     /// </summary>
-    public class PerformanceBottleneck
+    public partial class PerformanceBottleneck
     {
         /// <summary>
         /// Gets or sets the bottleneck identifier.
@@ -181,7 +181,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Performance strength identified during analysis.
     /// </summary>
-    public class PerformanceStrength
+    public partial class PerformanceStrength
     {
         /// <summary>
         /// Gets or sets the strength identifier.
@@ -248,7 +248,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Optimization opportunity identified during analysis.
     /// </summary>
-    public class OptimizationOpportunity
+    public partial class OptimizationOpportunity
     {
         /// <summary>
         /// Gets or sets the opportunity identifier.
@@ -284,7 +284,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Performance trend analysis over time.
     /// </summary>
-    public class PerformanceTrendAnalysis
+    public partial class PerformanceTrendAnalysis
     {
         /// <summary>
         /// Gets or sets the analysis identifier.
@@ -320,7 +320,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Time range for analysis.
     /// </summary>
-    public class TimeRange
+    public partial class TimeRange
     {
         /// <summary>
         /// Gets or sets the start time.

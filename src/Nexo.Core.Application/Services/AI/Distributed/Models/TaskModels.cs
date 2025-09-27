@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Distributed task request
     /// </summary>
-    public class DistributedTaskRequest
+    public partial class DistributedTaskRequest
     {
         public string TaskType { get; set; } = string.Empty;
         public List<SubTaskRequest> SubTasks { get; set; } = new();
@@ -17,7 +17,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Sub-task request
     /// </summary>
-    public class SubTaskRequest
+    public partial class SubTaskRequest
     {
         public string OperationType { get; set; } = string.Empty;
         public string RequiredCapability { get; set; } = string.Empty;
@@ -28,7 +28,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Distributed task
     /// </summary>
-    public class DistributedTask
+    public partial class DistributedTask
     {
         public string TaskId { get; set; } = string.Empty;
         public DistributedTaskRequest Request { get; set; } = new();
@@ -45,7 +45,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Sub-task
     /// </summary>
-    public class SubTask
+    public partial class SubTask
     {
         public string SubTaskId { get; set; } = string.Empty;
         public string ParentTaskId { get; set; } = string.Empty;
@@ -63,7 +63,7 @@ namespace Nexo.Core.Application.Services.AI.Distributed.Models
     /// <summary>
     /// Task result
     /// </summary>
-    public class TaskResult
+    public partial class TaskResult
     {
         public string ResultId { get; set; } = string.Empty;
         public string SubTaskId { get; set; } = string.Empty;

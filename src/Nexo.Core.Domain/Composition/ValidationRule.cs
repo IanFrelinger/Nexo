@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Composition
     /// <summary>
     /// Represents a validation rule that can be applied to objects and composed with other validation rules.
     /// </summary>
-    public class ValidationRule : IComposable<ValidationRule>
+    public partial class ValidationRule : IComposable<ValidationRule>
     {
         private readonly string _name;
         private readonly string _description;

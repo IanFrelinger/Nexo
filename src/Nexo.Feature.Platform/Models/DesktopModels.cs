@@ -7,7 +7,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Request model for desktop code generation.
     /// </summary>
-    public class DesktopCodeGenerationRequest
+    public partial class DesktopCodeGenerationRequest
     {
         /// <summary>
         /// The target desktop platform (Windows, macOS, Linux).
@@ -78,7 +78,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Result model for desktop code generation.
     /// </summary>
-    public class DesktopCodeGenerationResult
+    public partial class DesktopCodeGenerationResult
     {
         /// <summary>
         /// Whether the code generation was successful.
@@ -154,7 +154,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Result model for desktop code validation.
     /// </summary>
-    public class DesktopCodeValidationResult
+    public partial class DesktopCodeValidationResult
     {
         /// <summary>
         /// Whether the code is valid.
@@ -190,7 +190,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Configuration model for desktop deployment.
     /// </summary>
-    public class DesktopDeploymentConfig
+    public partial class DesktopDeploymentConfig
     {
         /// <summary>
         /// The deployment type (MSI, DMG, AppImage, etc.).
@@ -226,7 +226,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Request model for desktop deployment configuration.
     /// </summary>
-    public class DesktopDeploymentRequest
+    public partial class DesktopDeploymentRequest
     {
         /// <summary>
         /// The deployment type.
@@ -262,7 +262,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Analysis model for desktop performance.
     /// </summary>
-    public class DesktopPerformanceAnalysis
+    public partial class DesktopPerformanceAnalysis
     {
         /// <summary>
         /// The estimated startup time in milliseconds.

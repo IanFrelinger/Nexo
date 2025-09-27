@@ -5,7 +5,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Test coverage information.
     /// </summary>
-    public class TestCoverageInfo
+    public partial class TestCoverageInfo
     {
         /// <summary>
         /// Overall code coverage percentage.

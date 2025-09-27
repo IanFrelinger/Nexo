@@ -6,7 +6,7 @@ namespace Nexo.CLI.Commands.Adaptation.Handlers
     /// <summary>
     /// Handles effectiveness analysis functionality
     /// </summary>
-    public class EffectivenessHandler
+    public partial class EffectivenessHandler
     {
         private readonly IServiceProvider _serviceProvider;
 

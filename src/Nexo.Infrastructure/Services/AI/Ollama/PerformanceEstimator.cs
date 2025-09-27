@@ -8,7 +8,7 @@ namespace Nexo.Infrastructure.Services.AI.Ollama;
 /// <summary>
 /// Provides performance estimation for Ollama operations.
 /// </summary>
-public class PerformanceEstimator
+public partial class PerformanceEstimator
 {
     public async Task<PerformanceEstimate> EstimatePerformanceAsync(AIOperationContext context)
     {

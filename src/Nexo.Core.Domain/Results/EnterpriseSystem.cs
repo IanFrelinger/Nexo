@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Enterprise system configuration
     /// </summary>
-    public class EnterpriseSystem
+    public partial class EnterpriseSystem
     {
         /// <summary>
         /// System ID

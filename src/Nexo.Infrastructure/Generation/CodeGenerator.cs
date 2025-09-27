@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Generation
     /// <summary>
     /// Generates code using AI with proper prompts for tool creation
     /// </summary>
-    public class CodeGenerator : ICodeGenerator
+    public partial class CodeGenerator : ICodeGenerator
     {
         private readonly IModelProvider _aiProvider;
         private readonly ILogger<CodeGenerator> _logger;
@@ -124,7 +124,7 @@ public interface IPlugin
 
 PluginResult class:
 ```csharp
-public class PluginResult
+public partial class PluginResult
 {{
     public bool Success {{ get; set; }}
     public string Message {{ get; set; }} = string.Empty;

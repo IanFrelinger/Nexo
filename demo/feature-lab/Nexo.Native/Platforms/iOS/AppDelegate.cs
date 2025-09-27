@@ -1,9 +1,9 @@
-﻿using Foundation;
+using Foundation;
 
 namespace Nexo.Native;
 
 [Register("AppDelegate")]
-public class AppDelegate : MauiUIApplicationDelegate
+public partial class AppDelegate : MauiUIApplicationDelegate
 {
 	protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
 }

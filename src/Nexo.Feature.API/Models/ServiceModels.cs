@@ -5,7 +5,7 @@ namespace Nexo.Feature.API.Models;
 /// <summary>
 /// Service registration information
 /// </summary>
-public class ServiceRegistration
+public partial class ServiceRegistration
 {
     /// <summary>
     /// Service information
@@ -26,7 +26,7 @@ public class ServiceRegistration
 /// <summary>
 /// Service registration result
 /// </summary>
-public class ServiceRegistrationResult
+public partial class ServiceRegistrationResult
 {
     /// <summary>
     /// Whether registration was successful
@@ -52,7 +52,7 @@ public class ServiceRegistrationResult
 /// <summary>
 /// Service unregistration result
 /// </summary>
-public class ServiceUnregistrationResult
+public partial class ServiceUnregistrationResult
 {
     /// <summary>
     /// Whether unregistration was successful
@@ -78,7 +78,7 @@ public class ServiceUnregistrationResult
 /// <summary>
 /// Service health status
 /// </summary>
-public class ServiceHealthStatus
+public partial class ServiceHealthStatus
 {
     /// <summary>
     /// Service identifier
@@ -114,7 +114,7 @@ public class ServiceHealthStatus
 /// <summary>
 /// Service health update result
 /// </summary>
-public class ServiceHealthUpdateResult
+public partial class ServiceHealthUpdateResult
 {
     /// <summary>
     /// Whether update was successful
@@ -150,7 +150,7 @@ public class ServiceHealthUpdateResult
 /// <summary>
 /// Service discovery criteria
 /// </summary>
-public class ServiceDiscoveryCriteria
+public partial class ServiceDiscoveryCriteria
 {
     /// <summary>
     /// Service tags to match
@@ -181,7 +181,7 @@ public class ServiceDiscoveryCriteria
 /// <summary>
 /// Request validation result
 /// </summary>
-public class RequestValidationResult
+public partial class RequestValidationResult
 {
     /// <summary>
     /// Whether validation was successful
@@ -212,7 +212,7 @@ public class RequestValidationResult
 /// <summary>
 /// API Gateway statistics
 /// </summary>
-public class APIGatewayStatistics
+public partial class APIGatewayStatistics
 {
     /// <summary>
     /// Total requests processed

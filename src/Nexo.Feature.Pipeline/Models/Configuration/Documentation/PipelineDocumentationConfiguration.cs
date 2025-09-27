@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Documentation
     /// <summary>
     /// Represents pipeline documentation configuration.
     /// </summary>
-    public class PipelineDocumentationConfiguration
+    public partial class PipelineDocumentationConfiguration
     {
         /// <summary>
         /// Gets or sets the documentation summary.

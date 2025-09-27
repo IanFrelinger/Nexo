@@ -1,10 +1,10 @@
-﻿using Android.App;
+using Android.App;
 using Android.Runtime;
 
 namespace Playground.Maui;
 
 [Application]
-public class MainApplication : MauiApplication
+public partial class MainApplication : MauiApplication
 {
 	public MainApplication(IntPtr handle, JniHandleOwnership ownership)
 		: base(handle, ownership)

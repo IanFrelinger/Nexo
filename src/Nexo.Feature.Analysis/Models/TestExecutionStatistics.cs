@@ -6,7 +6,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Real-time statistics for test execution.
     /// </summary>
-    public class TestExecutionStatistics
+    public partial class TestExecutionStatistics
     {
         /// <summary>
         /// Timestamp when these statistics were generated.
@@ -107,7 +107,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Memory usage statistics.
     /// </summary>
-    public class MemoryStatistics
+    public partial class MemoryStatistics
     {
         /// <summary>
         /// Current memory usage in bytes.
@@ -133,7 +133,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// CPU usage statistics.
     /// </summary>
-    public class CpuStatistics
+    public partial class CpuStatistics
     {
         /// <summary>
         /// Current CPU usage percentage.
@@ -159,7 +159,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Test execution trend.
     /// </summary>
-    public class TestTrend
+    public partial class TestTrend
     {
         /// <summary>
         /// Trend type.
@@ -203,7 +203,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Environment-specific statistics.
     /// </summary>
-    public class EnvironmentStatistics
+    public partial class EnvironmentStatistics
     {
         /// <summary>
         /// Environment name.
@@ -234,7 +234,7 @@ namespace Nexo.Feature.Analysis.Models
     /// <summary>
     /// Project-specific statistics.
     /// </summary>
-    public class ProjectStatistics
+    public partial class ProjectStatistics
     {
         /// <summary>
         /// Project name.

@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Playground.Maui;
 
-public class BoolToColorConverter : IValueConverter
+public partial class BoolToColorConverter : IValueConverter
 {
     public static readonly BoolToColorConverter Instance = new();
 

@@ -12,7 +12,7 @@ namespace Nexo.Infrastructure.Services.Resource
     /// <summary>
     /// System resource monitor implementation for CPU, memory, and I/O tracking.
     /// </summary>
-    public class SystemResourceMonitor : IResourceMonitor
+    public partial class SystemResourceMonitor : IResourceMonitor
     {
         private readonly ILogger<SystemResourceMonitor> _logger;
         private readonly PerformanceCounter? _cpuCounter;

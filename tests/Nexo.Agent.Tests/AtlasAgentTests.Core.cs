@@ -1,11 +1,10 @@
-using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Nexo.Agent.Contracts;
-using Nexo.Agent.Implementations;
-using Nexo.Agent.Models;
-using Xunit;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Agent.Tests;
+namespace Nexo.Agent.Tests
 {
+    public partial class AtlasAgentTests
+    {
+        // Core implementation will be added here
+    }
 }

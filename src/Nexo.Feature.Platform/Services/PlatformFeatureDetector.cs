@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Services
     /// <summary>
     /// Orchestrator for platform feature detection that delegates to specialized detectors.
     /// </summary>
-    public class PlatformFeatureDetector : IPlatformFeatureDetector
+    public partial class PlatformFeatureDetector : IPlatformFeatureDetector
     {
         private readonly ILogger<PlatformFeatureDetector> _logger;
         private readonly Dictionary<string, PlatformFeature> _featureCache;

@@ -5,7 +5,7 @@ using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Feature.AI.Services.EnhancedFeatureFactory.Generation
 {
-    public class StandardGenerator
+    public partial class StandardGenerator
     {
         private readonly IModelOrchestrator _modelOrchestrator;
         private readonly ILogger _logger;

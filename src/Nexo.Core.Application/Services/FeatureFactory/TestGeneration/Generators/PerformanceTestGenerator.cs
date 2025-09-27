@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration.Generators
 {
-    public class PerformanceTestGenerator
+    public partial class PerformanceTestGenerator
     {
         private readonly ILogger<PerformanceTestGenerator> _logger;
 
@@ -50,7 +50,7 @@ using System.Diagnostics;
 
 namespace Tests.Performance
 {
-    public class DomainLogicPerformanceTests
+    public partial class DomainLogicPerformanceTests
     {
         [Fact]
         public void DomainLogic_Should_Perform_Within_Time_Limit()
@@ -68,7 +68,7 @@ namespace Tests.Performance
         }
     }
 
-    public class PerformanceTest
+    public partial class PerformanceTest
     {
         public string TestName { get; set; } = string.Empty;
         public string TestCode { get; set; } = string.Empty;

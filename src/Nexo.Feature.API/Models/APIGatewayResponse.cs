@@ -3,7 +3,7 @@ namespace Nexo.Feature.API.Models;
 /// <summary>
 /// Represents the API Gateway's response to a request
 /// </summary>
-public class APIGatewayResponse
+public partial class APIGatewayResponse
 {
     /// <summary>
     /// Unique identifier for the request that generated this response
@@ -119,7 +119,7 @@ public class APIGatewayResponse
 /// <summary>
 /// Rate limiting information included in responses
 /// </summary>
-public class RateLimitInfo
+public partial class RateLimitInfo
 {
     /// <summary>
     /// Current request count

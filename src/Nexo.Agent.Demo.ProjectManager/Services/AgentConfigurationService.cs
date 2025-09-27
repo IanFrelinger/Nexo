@@ -6,7 +6,7 @@ namespace Nexo.Agent.Demo.ProjectManager.Services;
 /// <summary>
 /// Handles agent configuration and settings management.
 /// </summary>
-public class AgentConfigurationService
+public partial class AgentConfigurationService
 {
     private readonly ILogger _logger;
 

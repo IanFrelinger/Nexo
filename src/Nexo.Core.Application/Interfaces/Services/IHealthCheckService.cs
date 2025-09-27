@@ -29,7 +29,7 @@ namespace Nexo.Core.Application.Services.Monitoring
         Unknown
     }
 
-    public class HealthCheckResult
+    public partial class HealthCheckResult
     {
         public string Name { get; set; } = string.Empty;
         public HealthStatus Status { get; set; }

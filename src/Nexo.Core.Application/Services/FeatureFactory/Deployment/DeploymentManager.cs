@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
 {
-    public class DeploymentManager : IDeploymentManager
+    public partial class DeploymentManager : IDeploymentManager
     {
         private readonly ILogger<DeploymentManager> _logger;
         private readonly IAIRuntimeSelector _runtimeSelector;

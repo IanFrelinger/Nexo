@@ -6,7 +6,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Statistics about model storage usage
     /// </summary>
-    public class ModelStorageStatistics
+    public partial class ModelStorageStatistics
     {
         public long TotalSizeBytes { get; set; }
         public int TotalModels { get; set; }
@@ -33,7 +33,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Storage statistics for a specific platform
     /// </summary>
-    public class PlatformStorageStats
+    public partial class PlatformStorageStats
     {
         public PlatformType Platform { get; set; }
         public long SizeBytes { get; set; }
@@ -45,7 +45,7 @@ namespace Nexo.Core.Domain.Entities.AI
     /// <summary>
     /// Storage statistics for a specific precision level
     /// </summary>
-    public class PrecisionStorageStats
+    public partial class PrecisionStorageStats
     {
         public ModelPrecision Precision { get; set; }
         public long SizeBytes { get; set; }

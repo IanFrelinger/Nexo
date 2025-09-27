@@ -1,7 +1,10 @@
-using Nexo.Demo.Tests.Support;
-using FluentAssertions;
-using Xunit;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Demo.Tests;
+namespace Nexo.Demo.Tests
 {
+    public partial class 07_Audit_RunDetail_Schema
+    {
+        // Orchestration methods will be added here
+    }
 }

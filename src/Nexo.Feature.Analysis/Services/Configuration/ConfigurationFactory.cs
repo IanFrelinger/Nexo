@@ -7,7 +7,7 @@ namespace Nexo.Feature.Analysis.Services.Configuration;
 /// <summary>
 /// Creates predefined coding standard configurations.
 /// </summary>
-public class ConfigurationFactory
+public partial class ConfigurationFactory
 {
     public CodingStandardConfiguration GetDefaultConfiguration()
     {

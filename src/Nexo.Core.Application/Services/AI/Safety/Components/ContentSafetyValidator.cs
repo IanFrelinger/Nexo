@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.AI.Safety.Components
 {
-    public class ContentSafetyValidator
+    public partial class ContentSafetyValidator
     {
         private readonly ILogger _logger;
         private readonly List<SafetyRule> _safetyRules;

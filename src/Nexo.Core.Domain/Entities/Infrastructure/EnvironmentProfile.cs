@@ -4,7 +4,7 @@ using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace Nexo.Core.Domain.Entities.Infrastructure
 {
-    public class EnvironmentProfile
+    public partial class EnvironmentProfile
     {
         public string EnvironmentId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;

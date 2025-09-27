@@ -11,7 +11,7 @@ namespace NexoDoomGame.PlatformImplementations.Unity
     /// Target Framework: Unity 2022.3 LTS
     /// Implementation Style: MonoBehaviour-based with Component System
     /// </summary>
-    public class MovementLogicImplementation : MovementLogic
+    public partial class MovementLogicImplementation : MovementLogic
     {
         public MovementLogicImplementation(IIInputProvider iinputprovider, IIPhysicsProvider iphysicsprovider, IICollisionProvider icollisionprovider)
             : base(iinputprovider, iphysicsprovider, icollisionprovider)

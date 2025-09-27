@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents an application model in the generated application logic
     /// </summary>
-    public class ApplicationModel
+    public partial class ApplicationModel
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -26,7 +26,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a model property
     /// </summary>
-    public class ModelProperty
+    public partial class ModelProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -43,7 +43,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a model method
     /// </summary>
-    public class ModelMethod
+    public partial class ModelMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -61,7 +61,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a model attribute
     /// </summary>
-    public class ModelAttribute
+    public partial class ModelAttribute
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -72,7 +72,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Represents a property attribute
     /// </summary>
-    public class PropertyAttribute
+    public partial class PropertyAttribute
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

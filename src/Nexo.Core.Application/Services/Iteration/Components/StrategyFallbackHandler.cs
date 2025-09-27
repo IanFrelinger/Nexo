@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.Iteration.Components
     /// <summary>
     /// Handles fallback strategy selection for iteration strategies.
     /// </summary>
-    public class StrategyFallbackHandler
+    public partial class StrategyFallbackHandler
     {
         private readonly ILogger _logger;
 

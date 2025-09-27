@@ -1,9 +1,10 @@
-using Microsoft.Extensions.Logging;
-using System.CommandLine;
-using System.CommandLine.IO;
 using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace Nexo.CLI.Tests.Commands;
+namespace Nexo.CLI.Tests.Commands
 {
+    public partial class PipelineCommandTests
+    {
+        // Core implementation will be added here
+    }
 }

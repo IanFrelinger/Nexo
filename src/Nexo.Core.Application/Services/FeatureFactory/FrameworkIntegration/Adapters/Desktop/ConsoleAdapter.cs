@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Adapters.Desktop
 {
-    public class ConsoleAdapter
+    public partial class ConsoleAdapter
     {
         private readonly ILogger<ConsoleAdapter> _logger;
         private readonly IAIRuntimeSelector _runtimeSelector;

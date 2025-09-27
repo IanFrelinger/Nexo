@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models
     /// <summary>
     /// Information about an available tool
     /// </summary>
-    public class ToolInfo
+    public partial class ToolInfo
     {
         /// <summary>
         /// Name of the tool

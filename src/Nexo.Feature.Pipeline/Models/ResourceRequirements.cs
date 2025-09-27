@@ -6,7 +6,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Defines resource requirements for aggregators.
     /// </summary>
-    public class ResourceRequirements
+    public partial class ResourceRequirements
     {
         /// <summary>
         /// Minimum memory requirement in bytes.

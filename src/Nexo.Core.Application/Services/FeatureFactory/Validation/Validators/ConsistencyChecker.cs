@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation.Validators;
 /// <summary>
 /// Checks consistency across domain logic
 /// </summary>
-public class ConsistencyChecker
+public partial class ConsistencyChecker
 {
     private readonly ILogger<ConsistencyChecker> _logger;
 

@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Models.Export;
 
 namespace Nexo.Core.Domain.Services.Export
 {
-    public class PackageExporter
+    public partial class PackageExporter
     {
         private readonly ILogger _logger;
 
@@ -257,7 +257,7 @@ pause";
         }
     }
 
-    public class PackageFileInfo
+    public partial class PackageFileInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;

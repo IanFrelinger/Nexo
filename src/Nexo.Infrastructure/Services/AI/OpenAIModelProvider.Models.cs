@@ -17,7 +17,7 @@ namespace Nexo.Infrastructure.Services.AI
 /// <summary>
 /// OpenAI model implementation
 /// </summary>
-public class OpenAiModel : IModel
+public partial class OpenAiModel : IModel
 {
     private readonly string _modelName;
     private readonly HttpClient _httpClient;
@@ -112,7 +112,7 @@ public class OpenAiModel : IModel
 /// <summary>
 /// OpenAI response models
 /// </summary>
-public class OpenAiResponse
+public partial class OpenAiResponse
 {
     public string Id { get; set; }
     public string Object { get; set; }
@@ -131,7 +131,7 @@ public class OpenAiResponse
     }
 }
 
-public class OpenAiChoice
+public partial class OpenAiChoice
 {
     public int Index { get; set; }
     public OpenAiMessage Message { get; set; }
@@ -144,7 +144,7 @@ public class OpenAiChoice
     }
 }
 
-public class OpenAiMessage
+public partial class OpenAiMessage
 {
     public string Role { get; set; }
     public string Content { get; set; }
@@ -155,7 +155,7 @@ public class OpenAiMessage
     }
 }
 
-public class OpenAiUsage
+public partial class OpenAiUsage
 {
     public int PromptTokens { get; set; }
     public int CompletionTokens { get; set; }
@@ -168,7 +168,7 @@ public class OpenAiUsage
     }
 }
 
-public class OpenAiModelsResponse
+public partial class OpenAiModelsResponse
 {
     public List<OpenAiModelData> Data { get; set; }
     public OpenAiModelsResponse()
@@ -177,7 +177,7 @@ public class OpenAiModelsResponse
     }
 }
 
-public class OpenAiModelData
+public partial class OpenAiModelData
 {
     public string Id { get; set; }
     public string OwnedBy { get; set; }

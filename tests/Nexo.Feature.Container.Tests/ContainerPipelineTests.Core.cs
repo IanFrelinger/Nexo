@@ -1,9 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Feature.Container.Tests.Commands;
 using System;
+using System.Collections.Generic;
 
-namespace Nexo.Feature.Container.Tests;
+namespace Nexo.Feature.Container.Tests
 {
+    public partial class ContainerPipelineTests
+    {
+        // Core implementation will be added here
+    }
 }

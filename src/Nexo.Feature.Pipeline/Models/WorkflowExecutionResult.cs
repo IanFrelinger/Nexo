@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Result of a workflow execution.
     /// </summary>
-    public class WorkflowExecutionResult
+    public partial class WorkflowExecutionResult
     {
         /// <summary>
         /// Type of workflow that was executed.
@@ -134,7 +134,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Result of a workflow step execution.
     /// </summary>
-    public class WorkflowStepResult
+    public partial class WorkflowStepResult
     {
         /// <summary>
         /// Name of the step that was executed.

@@ -8,7 +8,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.Mock.Providers
 {
-    public class MockChatCompletionProvider
+    public partial class MockChatCompletionProvider
     {
         private readonly ILogger<MockChatCompletionProvider> _logger;
 
@@ -85,7 +85,7 @@ namespace Nexo.Infrastructure.Services.AI.Mock.Providers
             }
             else if (lastMessage.Contains("code") || lastMessage.Contains("programming"))
             {
-                return "I'd be happy to help with coding! Here's a mock code example:\n\n```csharp\npublic class Example\n{\n    public void DoSomething()\n    {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}\n```";
+                return "I'd be happy to help with coding! Here's a mock code example:\n\n```csharp\npublic partial class Example\n{\n    public void DoSomething()\n    {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}\n```";
             }
             else if (lastMessage.Contains("explain") || lastMessage.Contains("what is"))
             {

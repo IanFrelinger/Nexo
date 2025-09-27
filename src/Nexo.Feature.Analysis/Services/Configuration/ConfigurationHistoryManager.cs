@@ -10,7 +10,7 @@ namespace Nexo.Feature.Analysis.Services.Configuration;
 /// <summary>
 /// Manages configuration history and restoration.
 /// </summary>
-public class ConfigurationHistoryManager
+public partial class ConfigurationHistoryManager
 {
     private readonly ILogger<ConfigurationHistoryManager> _logger;
     private readonly List<CodingStandardConfiguration> _configurationHistory;

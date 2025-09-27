@@ -7,7 +7,7 @@ using Nexo.Feature.Platform.Models;
 
 namespace Nexo.Feature.Platform.Services.Android.Generators
 {
-    public class RoomDatabaseCodeGenerator
+    public partial class RoomDatabaseCodeGenerator
     {
         private readonly ILogger<RoomDatabaseCodeGenerator> _logger;
 

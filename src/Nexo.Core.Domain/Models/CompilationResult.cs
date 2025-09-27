@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Models
     /// <summary>
     /// Represents the result of a compilation operation
     /// </summary>
-    public class CompilationResult
+    public partial class CompilationResult
     {
         /// <summary>
         /// Whether the compilation was successful

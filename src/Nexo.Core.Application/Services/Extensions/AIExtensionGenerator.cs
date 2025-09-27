@@ -17,7 +17,7 @@ namespace Nexo.Core.Application.Services.Extensions
     /// <summary>
     /// AI-powered extension generator that creates plugins using local Ollama.
     /// </summary>
-    public class AIExtensionGenerator : IExtensionGenerator
+    public partial class AIExtensionGenerator : IExtensionGenerator
     {
         private readonly ILogger<AIExtensionGenerator> _logger;
         private readonly IAIEngine _aiEngine;

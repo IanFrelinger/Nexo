@@ -13,7 +13,7 @@ namespace Nexo.Feature.Web.Services
     /// <summary>
     /// Service for generating web code with React/Vue support and WebAssembly optimization.
     /// </summary>
-    public class WebCodeGenerator : IWebCodeGenerator
+    public partial class WebCodeGenerator : IWebCodeGenerator
     {
         private readonly ILogger<WebCodeGenerator> _logger;
         private readonly IFrameworkTemplateProvider _templateProvider;

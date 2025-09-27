@@ -5,7 +5,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents the status of a development environment.
     /// </summary>
-    public class EnvironmentStatus
+    public partial class EnvironmentStatus
     {
         public bool IsReady { get; set; }
         public string Name { get; set; } = string.Empty;

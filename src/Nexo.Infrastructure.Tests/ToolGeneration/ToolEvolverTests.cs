@@ -14,7 +14,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
     /// <summary>
     /// Tests for ToolEvolver
     /// </summary>
-    public class ToolEvolverTests
+    public partial class ToolEvolverTests
     {
         private readonly Mock<ICodeGenerator> _mockCodeGenerator;
         private readonly Mock<ICompilationService> _mockCompiler;
@@ -46,7 +46,7 @@ namespace Nexo.Infrastructure.Tests.ToolGeneration
             var toolName = "TestPlugin";
             var modification = "add XML formatting support";
             var existingCode = @"
-public class TestPlugin : IPlugin
+public partial class TestPlugin : IPlugin
 {
     public string Name => ""TestPlugin"";
     public string Version => ""1.0"";
@@ -168,7 +168,7 @@ public class TestPlugin : IPlugin
             // Arrange
             var toolName = "TestPlugin";
             var modification = "add new feature";
-            var existingCode = "public class TestPlugin : IPlugin { }";
+            var existingCode = "public partial class TestPlugin : IPlugin { }";
 
             var evolvedCode = new GeneratedCode
             {
@@ -215,11 +215,11 @@ public class TestPlugin : IPlugin
             // Arrange
             var toolName = "TestPlugin";
             var modification = "add new feature";
-            var existingCode = "public class TestPlugin : IPlugin { }";
+            var existingCode = "public partial class TestPlugin : IPlugin { }";
 
             var evolvedCode = new GeneratedCode
             {
-                SourceCode = "public class TestPlugin : IPlugin { /* valid code */ }",
+                SourceCode = "public partial class TestPlugin : IPlugin { /* valid code */ }",
                 ToolName = toolName,
                 Description = "Test plugin"
             };

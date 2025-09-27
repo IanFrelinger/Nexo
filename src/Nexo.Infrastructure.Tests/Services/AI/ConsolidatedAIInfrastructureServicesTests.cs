@@ -15,7 +15,7 @@ namespace Nexo.Infrastructure.Tests.Services.AI
     /// <summary>
     /// Tests for consolidated AI infrastructure services following hexagonal architecture
     /// </summary>
-    public class ConsolidatedAIInfrastructureServicesTests
+    public partial class ConsolidatedAIInfrastructureServicesTests
     {
         private readonly Mock<ILogger<LlamaAIEngine>> _mockLogger;
 

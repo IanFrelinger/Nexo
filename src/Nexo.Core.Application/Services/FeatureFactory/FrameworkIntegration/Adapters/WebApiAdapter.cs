@@ -16,7 +16,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Ada
 /// <summary>
 /// Adapter for Web API framework code generation
 /// </summary>
-public class WebApiAdapter
+public partial class WebApiAdapter
 {
     private readonly ILogger<WebApiAdapter> _logger;
     private readonly IAIRuntimeSelector _runtimeSelector;

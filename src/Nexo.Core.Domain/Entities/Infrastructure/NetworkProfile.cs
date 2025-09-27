@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Entities.Infrastructure
 {
-    public class NetworkProfile
+    public partial class NetworkProfile
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

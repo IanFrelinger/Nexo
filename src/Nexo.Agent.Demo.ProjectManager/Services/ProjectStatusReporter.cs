@@ -6,7 +6,7 @@ namespace Nexo.Agent.Demo.ProjectManager.Services;
 /// <summary>
 /// Handles project status reporting and analytics.
 /// </summary>
-public class ProjectStatusReporter
+public partial class ProjectStatusReporter
 {
     private readonly ILogger _logger;
     private readonly List<ProjectValidation> _validations = new();

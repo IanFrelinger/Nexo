@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
-namespace StandaloneTestRunner.AI;
+namespace StandaloneTestRunner.AI
 {
+    public partial class ModelTests
+    {
+        // Orchestration methods will be added here
+    }
 }

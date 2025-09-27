@@ -16,7 +16,7 @@ namespace Nexo.Infrastructure.Commands
     /// <summary>
     /// Orchestrator for model management commands that delegates to specialized command handlers.
     /// </summary>
-    public class ModelCommand
+    public partial class ModelCommand
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<ModelCommand> _logger;

@@ -10,7 +10,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Service for handling policy approvals and pause/resume workflows
     /// </summary>
-    public class PolicyApprovalService : IPolicyApprovalService
+    public partial class PolicyApprovalService : IPolicyApprovalService
     {
         private readonly ILogger<PolicyApprovalService> _logger;
         private readonly Dictionary<string, PolicyApprovalRequest> _pendingApprovals;
@@ -187,7 +187,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Policy approval request
     /// </summary>
-    public class PolicyApprovalRequest
+    public partial class PolicyApprovalRequest
     {
         public string Id { get; set; } = string.Empty;
         public string ExecutionId { get; set; } = string.Empty;
@@ -204,7 +204,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Policy approval
     /// </summary>
-    public class PolicyApproval
+    public partial class PolicyApproval
     {
         public string Id { get; set; } = string.Empty;
         public string RequestId { get; set; } = string.Empty;
@@ -227,7 +227,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Policy approval result
     /// </summary>
-    public class PolicyApprovalResult
+    public partial class PolicyApprovalResult
     {
         public bool Success { get; set; }
         public PolicyApproval? Approval { get; set; }

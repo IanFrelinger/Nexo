@@ -6,7 +6,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.AzureOpenAI.Providers
 {
-    public class CodeGenerationProvider
+    public partial class CodeGenerationProvider
     {
         private readonly ILogger<CodeGenerationProvider> _logger;
 
@@ -64,7 +64,7 @@ namespace Nexo.Infrastructure.Services.AI.AzureOpenAI.Providers
 
 namespace {request.Namespace ?? "GeneratedCode"}
 {{
-    public class {request.ClassName ?? "GeneratedClass"}
+    public partial class {request.ClassName ?? "GeneratedClass"}
     {{
         public void {request.MethodName ?? "Execute"}()
         {{
@@ -95,7 +95,7 @@ namespace {request.Namespace ?? "GeneratedCode"}
 
         private string GenerateJavaCode(CodeGenerationRequest request)
         {
-            return $@"public class {request.ClassName ?? "GeneratedClass"} {{
+            return $@"public partial class {request.ClassName ?? "GeneratedClass"} {{
     public void {request.MethodName ?? "execute"}() {{
         // {request.Description}
         System.out.println(""Hello from generated Java code!"");

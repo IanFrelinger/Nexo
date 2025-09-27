@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a dependency between aggregators.
     /// </summary>
-    public class AggregatorDependency
+    public partial class AggregatorDependency
     {
         /// <summary>
         /// ID of the aggregator that this aggregator depends on.

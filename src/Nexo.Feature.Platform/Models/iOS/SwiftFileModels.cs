@@ -7,7 +7,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Swift source code file.
     /// </summary>
-    public class SwiftFile
+    public partial class SwiftFile
     {
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
@@ -20,7 +20,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// SwiftUI view file.
     /// </summary>
-    public class SwiftUIFile
+    public partial class SwiftUIFile
     {
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
@@ -33,7 +33,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Core Data model file.
     /// </summary>
-    public class CoreDataFile
+    public partial class CoreDataFile
     {
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
@@ -46,7 +46,7 @@ namespace Nexo.Feature.Platform.Models
     /// <summary>
     /// Metal shader file.
     /// </summary>
-    public class MetalFile
+    public partial class MetalFile
     {
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;

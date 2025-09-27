@@ -11,7 +11,7 @@ namespace Nexo.Feature.Platform.Services
     /// <summary>
     /// Orchestrator for Android code generation that delegates to specialized generators.
     /// </summary>
-    public class AndroidCodeGenerator : IAndroidCodeGenerator
+    public partial class AndroidCodeGenerator : IAndroidCodeGenerator
     {
         private readonly ILogger<AndroidCodeGenerator> _logger;
         private readonly JetpackComposeCodeGenerator _composeGenerator;

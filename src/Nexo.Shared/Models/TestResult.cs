@@ -3,7 +3,7 @@ namespace Nexo.Shared.Models
     /// <summary>
     /// Represents the result of test execution.
     /// </summary>
-    public class TestResult
+    public partial class TestResult
     {
         /// <summary>
         /// Gets or sets whether all tests passed.

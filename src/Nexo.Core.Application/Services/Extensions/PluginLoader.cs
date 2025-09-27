@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Extensions
 {
-    public class PluginLoader : IPluginLoader
+    public partial class PluginLoader : IPluginLoader
     {
         private readonly ILogger<PluginLoader> _logger;
         private readonly ConcurrentDictionary<string, IPlugin> _loadedPlugins;

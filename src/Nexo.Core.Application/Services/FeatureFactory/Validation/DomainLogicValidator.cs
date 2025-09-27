@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Service for validating generated domain logic - orchestrates specialized validators
     /// </summary>
-    public class DomainLogicValidator : IDomainLogicValidator
+    public partial class DomainLogicValidator : IDomainLogicValidator
     {
         private readonly ILogger<DomainLogicValidator> _logger;
         private readonly EntityValidator _entityValidator;

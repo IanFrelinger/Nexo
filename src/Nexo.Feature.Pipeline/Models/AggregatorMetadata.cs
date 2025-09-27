@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Metadata about an aggregator for discovery and documentation.
     /// </summary>
-    public class AggregatorMetadata
+    public partial class AggregatorMetadata
     {
         /// <summary>
         /// Unique identifier for this aggregator.

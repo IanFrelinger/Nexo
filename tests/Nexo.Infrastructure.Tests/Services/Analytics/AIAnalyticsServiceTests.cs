@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Tests.Services.Analytics
     /// Tests for AI analytics service.
     /// Part of Phase 3.3 testing and validation.
     /// </summary>
-    public class AIAnalyticsServiceTests
+    public partial class AIAnalyticsServiceTests
     {
         private readonly AIAnalyticsService _analyticsService;
 

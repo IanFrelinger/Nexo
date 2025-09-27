@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Nexo.Infrastructure.Tests.ToolGeneration.Success
 {
-    public class SuccessCaseTests
+    public partial class SuccessCaseTests
     {
         private readonly IHost _host;
 

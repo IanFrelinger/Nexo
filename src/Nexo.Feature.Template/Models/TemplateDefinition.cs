@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Template.Models
 {
-    public class TemplateDefinition
+    public partial class TemplateDefinition
     {
         public string Name { get; set; } = string.Empty;
         public string Version { get; set; } = string.Empty;

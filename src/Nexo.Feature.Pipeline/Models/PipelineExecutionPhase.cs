@@ -7,7 +7,7 @@ namespace Nexo.Feature.Pipeline.Models
     /// <summary>
     /// Represents a phase of pipeline execution that groups related aggregators.
     /// </summary>
-    public class PipelineExecutionPhase
+    public partial class PipelineExecutionPhase
     {
         /// <summary>
         /// Gets or sets the phase number (order of execution).

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.CLI.Commands.NL
 {
-    public class QuickCommandsFactory
+    public partial class QuickCommandsFactory
     {
         private readonly ILogger _logger;
         public QuickCommandsFactory(ILogger logger) { _logger = logger; }

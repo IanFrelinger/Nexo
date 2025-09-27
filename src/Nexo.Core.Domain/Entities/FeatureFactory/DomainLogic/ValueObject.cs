@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a value object in the generated domain logic
     /// </summary>
-    public class ValueObject
+    public partial class ValueObject
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = string.Empty;
@@ -24,7 +24,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a property of a value object
     /// </summary>
-    public class ValueObjectProperty
+    public partial class ValueObjectProperty
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
@@ -39,7 +39,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a method of a value object
     /// </summary>
-    public class ValueObjectMethod
+    public partial class ValueObjectMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;
@@ -56,7 +56,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory.DomainLogic
     /// <summary>
     /// Represents a validation rule for a value object
     /// </summary>
-    public class ValidationRule
+    public partial class ValidationRule
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

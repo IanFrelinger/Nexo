@@ -14,7 +14,7 @@ namespace Nexo.Feature.Platform.Tests.Services.NativeAPIIntegration
     /// <summary>
     /// Tests for Native API Integration initialization.
     /// </summary>
-    public class InitializationTests
+    public partial class InitializationTests
     {
         private readonly NativeAPIIntegration _integration;
         private readonly Mock<ILogger<NativeAPIIntegration>> _mockLogger;

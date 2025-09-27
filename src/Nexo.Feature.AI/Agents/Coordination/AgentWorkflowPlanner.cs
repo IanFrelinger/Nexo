@@ -11,7 +11,7 @@ namespace Nexo.Feature.AI.Agents.Coordination;
 /// <summary>
 /// Plans and optimizes agent workflows for complex tasks
 /// </summary>
-public class AgentWorkflowPlanner : IAgentWorkflowPlanner
+public partial class AgentWorkflowPlanner : IAgentWorkflowPlanner
 {
     private readonly IModelOrchestrator _modelOrchestrator;
     private readonly ILogger<AgentWorkflowPlanner> _logger;

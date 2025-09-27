@@ -5,7 +5,7 @@ namespace Nexo.Feature.Pipeline.Models.Configuration.Execution
     /// <summary>
     /// Represents pipeline execution settings.
     /// </summary>
-    public class PipelineExecutionSettings
+    public partial class PipelineExecutionSettings
     {
         /// <summary>
         /// Gets or sets the maximum parallel executions.

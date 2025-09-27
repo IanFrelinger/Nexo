@@ -14,7 +14,7 @@ namespace Nexo.CLI.Tests.Commands;
 /// <summary>
 /// Tests for iteration CLI commands
 /// </summary>
-public class IterationCommandsTests
+public partial class IterationCommandsTests
 {
     private readonly Mock<IServiceProvider> _mockServiceProvider;
     private readonly Mock<ILogger<IterationCommands>> _mockLogger;

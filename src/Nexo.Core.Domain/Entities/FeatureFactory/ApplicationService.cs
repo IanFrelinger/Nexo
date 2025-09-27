@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Entities.FeatureFactory
 {
-    public class ApplicationService
+    public partial class ApplicationService
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
@@ -17,7 +17,7 @@ namespace Nexo.Core.Domain.Entities.FeatureFactory
         public List<ServiceMethod> ServiceMethods { get; set; } = new();
     }
 
-    public class ServiceMethod
+    public partial class ServiceMethod
     {
         public string Name { get; set; } = string.Empty;
         public string ReturnType { get; set; } = string.Empty;

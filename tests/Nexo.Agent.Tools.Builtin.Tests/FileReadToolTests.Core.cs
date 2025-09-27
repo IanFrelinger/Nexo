@@ -1,12 +1,10 @@
-using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Nexo.Agent.Contracts;
-using Nexo.Agent.Models;
-using Nexo.Agent.Tools.Builtin;
-using Nexo.Agent.Abstractions;
-using Xunit;
+using System;
+using System.Collections.Generic;
 
-namespace Nexo.Agent.Tools.Builtin.Tests;
+namespace Nexo.Agent.Tools.Builtin.Tests
 {
+    public partial class FileReadToolTests
+    {
+        // Core implementation will be added here
+    }
 }

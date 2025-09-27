@@ -9,7 +9,7 @@ namespace Nexo.Feature.Data.Services.MigrationDeployment.Execution
     /// <summary>
     /// Orchestrates migration execution operations
     /// </summary>
-    public class MigrationExecutionOrchestrator
+    public partial class MigrationExecutionOrchestrator
     {
         private readonly IMigrationService _migrationService;
         private readonly ILogger _logger;

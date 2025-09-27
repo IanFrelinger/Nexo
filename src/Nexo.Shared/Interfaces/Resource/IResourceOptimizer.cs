@@ -41,7 +41,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents an optimization rule.
     /// </summary>
-    public class OptimizationRule
+    public partial class OptimizationRule
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -52,7 +52,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents an optimization recommendation.
     /// </summary>
-    public class OptimizationRecommendation
+    public partial class OptimizationRecommendation
     {
         public string Type { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
@@ -64,7 +64,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents an optimization result.
     /// </summary>
-    public class OptimizationResult
+    public partial class OptimizationResult
     {
         public DateTime Timestamp { get; set; }
         public List<OptimizationRecommendation> Recommendations { get; set; } = new List<OptimizationRecommendation>();
@@ -73,7 +73,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents optimization history.
     /// </summary>
-    public class OptimizationHistory
+    public partial class OptimizationHistory
     {
         public DateTime Timestamp { get; set; }
         public ResourceUsage ResourceUsage { get; set; } = new ResourceUsage();
@@ -83,7 +83,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents a pipeline execution request.
     /// </summary>
-    public class PipelineExecutionRequest
+    public partial class PipelineExecutionRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public int EstimatedCpuUsage { get; set; }
@@ -95,7 +95,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Represents a throttling result.
     /// </summary>
-    public class ThrottlingResult
+    public partial class ThrottlingResult
     {
         public bool ShouldThrottle { get; set; }
         public ThrottlingLevel ThrottlingLevel { get; set; }

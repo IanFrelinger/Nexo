@@ -86,7 +86,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// AI usage event model.
     /// </summary>
-    public class AIUsageEvent
+    public partial class AIUsageEvent
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
@@ -105,7 +105,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// AI performance metric model.
     /// </summary>
-    public class AIPerformanceMetric
+    public partial class AIPerformanceMetric
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
@@ -125,7 +125,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// AI usage analytics model.
     /// </summary>
-    public class AIUsageAnalytics
+    public partial class AIUsageAnalytics
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
@@ -145,7 +145,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// AI performance analytics model.
     /// </summary>
-    public class AIPerformanceAnalytics
+    public partial class AIPerformanceAnalytics
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
@@ -162,7 +162,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Comprehensive analytics model.
     /// </summary>
-    public class ComprehensiveAnalytics
+    public partial class ComprehensiveAnalytics
     {
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
@@ -175,7 +175,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Real-time analytics model.
     /// </summary>
-    public class RealTimeAnalytics
+    public partial class RealTimeAnalytics
     {
         public DateTimeOffset Timestamp { get; set; }
         public int EventsLastHour { get; set; }
@@ -189,7 +189,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Resource utilization model.
     /// </summary>
-    public class ResourceUtilization
+    public partial class ResourceUtilization
     {
         public double CpuUsage { get; set; }
         public double MemoryUsage { get; set; }
@@ -200,7 +200,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Performance trend model.
     /// </summary>
-    public class PerformanceTrend
+    public partial class PerformanceTrend
     {
         public DateTime Timestamp { get; set; }
         public TimeSpan Latency { get; set; }
@@ -211,7 +211,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Performance bottleneck model.
     /// </summary>
-    public class PerformanceBottleneck
+    public partial class PerformanceBottleneck
     {
         public BottleneckType Type { get; set; }
         public BottleneckSeverity Severity { get; set; }
@@ -223,7 +223,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Analytics insight model.
     /// </summary>
-    public class AnalyticsInsight
+    public partial class AnalyticsInsight
     {
         public InsightType Type { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -235,7 +235,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Analytics recommendation model.
     /// </summary>
-    public class AnalyticsRecommendation
+    public partial class AnalyticsRecommendation
     {
         public RecommendationType Type { get; set; }
         public RecommendationPriority Priority { get; set; }
@@ -247,7 +247,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// System health model.
     /// </summary>
-    public class SystemHealth
+    public partial class SystemHealth
     {
         public int Score { get; set; }
         public HealthStatus Status { get; set; }
@@ -257,7 +257,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// <summary>
     /// Analytics export model.
     /// </summary>
-    public class AnalyticsExport
+    public partial class AnalyticsExport
     {
         public AnalyticsExportFormat Format { get; set; }
         public string Data { get; set; } = string.Empty;

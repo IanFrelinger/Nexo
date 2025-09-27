@@ -15,7 +15,7 @@ namespace Nexo.Core.Application.Services.AI.Safety
     /// <summary>
     /// Orchestrator for AI safety validation that delegates to specialized safety validation components.
     /// </summary>
-    public class AISafetyValidator
+    public partial class AISafetyValidator
     {
         private readonly ILogger<AISafetyValidator> _logger;
         private readonly List<SafetyRule> _safetyRules;

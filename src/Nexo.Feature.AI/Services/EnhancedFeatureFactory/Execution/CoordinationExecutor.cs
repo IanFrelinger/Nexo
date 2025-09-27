@@ -7,7 +7,7 @@ using Nexo.Feature.AI.Interfaces;
 
 namespace Nexo.Feature.AI.Services.EnhancedFeatureFactory.Execution
 {
-    public class CoordinationExecutor
+    public partial class CoordinationExecutor
     {
         private readonly IAgentCoordinator _agentCoordinator;
         private readonly ISpecializedAgentRegistry _agentRegistry;

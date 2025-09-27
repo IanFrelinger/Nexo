@@ -87,7 +87,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Result of custom step validation.
     /// </summary>
-    public class CustomStepValidationResult
+    public partial class CustomStepValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new List<string>();
@@ -98,7 +98,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Result of custom step execution.
     /// </summary>
-    public class CustomStepExecutionResult
+    public partial class CustomStepExecutionResult
     {
         public bool IsSuccess { get; set; }
         public string StepId { get; set; } = string.Empty;
@@ -114,7 +114,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Result of custom step cleanup.
     /// </summary>
-    public class CustomStepCleanupResult
+    public partial class CustomStepCleanupResult
     {
         public bool IsSuccess { get; set; }
         public List<string> CleanedUpResources { get; set; } = new List<string>();

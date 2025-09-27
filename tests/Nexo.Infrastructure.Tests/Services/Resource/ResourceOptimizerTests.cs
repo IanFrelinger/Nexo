@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Nexo.Infrastructure.Tests.Services.Resource
 {
-    public class ResourceOptimizerTests
+    public partial class ResourceOptimizerTests
     {
         private readonly Mock<ILogger<ResourceOptimizer>> _loggerMock;
         private readonly Mock<IResourceMonitor> _resourceMonitorMock;

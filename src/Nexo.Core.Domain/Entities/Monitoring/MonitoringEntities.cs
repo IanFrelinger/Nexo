@@ -5,7 +5,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Represents a monitoring metric
     /// </summary>
-    public class Metric
+    public partial class Metric
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
@@ -19,7 +19,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Represents a health check
     /// </summary>
-    public class HealthCheck
+    public partial class HealthCheck
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
@@ -33,7 +33,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Result of health checks
     /// </summary>
-    public class HealthCheckResult
+    public partial class HealthCheckResult
     {
         public HealthStatus OverallHealth { get; set; }
         public List<HealthCheck> HealthChecks { get; set; } = new();
@@ -45,7 +45,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Represents an alert
     /// </summary>
-    public class Alert
+    public partial class Alert
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public AlertType Type { get; set; }
@@ -60,7 +60,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Configuration for monitoring system
     /// </summary>
-    public class MonitoringConfiguration
+    public partial class MonitoringConfiguration
     {
         public MetricsConfiguration MetricsConfig { get; set; } = new();
         public AlertingConfiguration AlertingConfig { get; set; } = new();
@@ -71,7 +71,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Configuration for metrics collection
     /// </summary>
-    public class MetricsConfiguration
+    public partial class MetricsConfiguration
     {
         public int CollectionIntervalSeconds { get; set; } = 30;
         public int RetentionDays { get; set; } = 30;
@@ -82,7 +82,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Configuration for alerting
     /// </summary>
-    public class AlertingConfiguration
+    public partial class AlertingConfiguration
     {
         public List<AlertRule> Rules { get; set; } = new();
         public List<AlertChannel> Channels { get; set; } = new();
@@ -92,7 +92,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Alert rule definition
     /// </summary>
-    public class AlertRule
+    public partial class AlertRule
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
@@ -107,7 +107,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Alert channel configuration
     /// </summary>
-    public class AlertChannel
+    public partial class AlertChannel
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
@@ -119,7 +119,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Escalation policy for alerts
     /// </summary>
-    public class EscalationPolicy
+    public partial class EscalationPolicy
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Name { get; set; } = "";
@@ -130,7 +130,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Escalation level
     /// </summary>
-    public class EscalationLevel
+    public partial class EscalationLevel
     {
         public int Level { get; set; }
         public TimeSpan Delay { get; set; }
@@ -141,7 +141,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Configuration for analytics
     /// </summary>
-    public class AnalyticsConfiguration
+    public partial class AnalyticsConfiguration
     {
         public bool Enabled { get; set; } = true;
         public int RetentionDays { get; set; } = 90;
@@ -152,7 +152,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Configuration for health checks
     /// </summary>
-    public class HealthCheckConfiguration
+    public partial class HealthCheckConfiguration
     {
         public int CheckIntervalSeconds { get; set; } = 300;
         public int TimeoutSeconds { get; set; } = 30;
@@ -163,7 +163,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Result of monitoring initialization
     /// </summary>
-    public class MonitoringInitializationResult
+    public partial class MonitoringInitializationResult
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
@@ -175,7 +175,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Result of metrics collection
     /// </summary>
-    public class MetricsCollectionResult
+    public partial class MetricsCollectionResult
     {
         public bool Success { get; set; }
         public string? Error { get; set; }
@@ -187,7 +187,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Result of alerting configuration
     /// </summary>
-    public class AlertingConfigurationResult
+    public partial class AlertingConfigurationResult
     {
         public bool Success { get; set; }
         public string? Message { get; set; }
@@ -198,7 +198,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Request for monitoring report
     /// </summary>
-    public class MonitoringReportRequest
+    public partial class MonitoringReportRequest
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -211,7 +211,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Comprehensive monitoring report
     /// </summary>
-    public class MonitoringReport
+    public partial class MonitoringReport
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTime GeneratedAt { get; set; }
@@ -227,7 +227,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Date range for reports
     /// </summary>
-    public class DateRange
+    public partial class DateRange
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -236,7 +236,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Analytics data
     /// </summary>
-    public class AnalyticsData
+    public partial class AnalyticsData
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
@@ -250,7 +250,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Insight from monitoring data
     /// </summary>
-    public class Insight
+    public partial class Insight
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public InsightType Type { get; set; }
@@ -264,7 +264,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Recommendation based on monitoring data
     /// </summary>
-    public class Recommendation
+    public partial class Recommendation
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public RecommendationType Type { get; set; }
@@ -278,7 +278,7 @@ namespace Nexo.Core.Domain.Entities.Monitoring
     /// <summary>
     /// Summary of monitoring data
     /// </summary>
-    public class MonitoringSummary
+    public partial class MonitoringSummary
     {
         public HealthStatus OverallHealth { get; set; }
         public int TotalMetrics { get; set; }

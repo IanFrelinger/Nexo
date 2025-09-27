@@ -15,7 +15,7 @@ namespace Nexo.Feature.Platform.Services.Optimizers;
 /// <summary>
 /// Handles memory optimization strategies
 /// </summary>
-public class MemoryOptimizer
+public partial class MemoryOptimizer
 {
     private readonly ILogger<MemoryOptimizer> _logger;
     private readonly Dictionary<string, MemoryOptimizationStrategy> _memoryStrategies;

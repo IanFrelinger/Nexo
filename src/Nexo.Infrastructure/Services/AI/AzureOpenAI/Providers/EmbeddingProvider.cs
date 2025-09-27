@@ -7,7 +7,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Services.AI.AzureOpenAI.Providers
 {
-    public class EmbeddingProvider
+    public partial class EmbeddingProvider
     {
         private readonly ILogger<EmbeddingProvider> _logger;
 

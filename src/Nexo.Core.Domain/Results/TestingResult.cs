@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Results
     /// <summary>
     /// Testing result
     /// </summary>
-    public class TestingResult
+    public partial class TestingResult
     {
         /// <summary>
         /// Whether the testing was successful

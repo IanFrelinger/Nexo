@@ -84,7 +84,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security compliance report model.
     /// </summary>
-    public class SecurityComplianceReport
+    public partial class SecurityComplianceReport
     {
         public DateTimeOffset GeneratedAt { get; set; }
         public DateTimeOffset StartTime { get; set; }
@@ -102,7 +102,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security metrics model.
     /// </summary>
-    public class SecurityMetrics
+    public partial class SecurityMetrics
     {
         public int TotalApiKeys { get; set; }
         public int ActiveApiKeys { get; set; }
@@ -118,7 +118,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Compliance metrics model.
     /// </summary>
-    public class ComplianceMetrics
+    public partial class ComplianceMetrics
     {
         public int TotalComplianceEvents { get; set; }
         public int DataRetentionEvents { get; set; }
@@ -155,7 +155,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Security health check model.
     /// </summary>
-    public class SecurityHealthCheck
+    public partial class SecurityHealthCheck
     {
         public DateTimeOffset Timestamp { get; set; }
         public int OverallScore { get; set; }
@@ -167,7 +167,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// <summary>
     /// Compliance violation model.
     /// </summary>
-    public class ComplianceViolation
+    public partial class ComplianceViolation
     {
         public ComplianceViolationType Type { get; set; }
         public ComplianceViolationSeverity Severity { get; set; }
