@@ -1,8 +1,3 @@
-FeatureFactoryDemo/Commands/GenerateWithE2ECommand.E2ETesting.cs
-FeatureFactoryDemo/Commands/GenerateWithE2ECommand.Execution.cs
-FeatureFactoryDemo/Commands/GenerateWithE2ECommand.IterativeImprovement.cs
-FeatureFactoryDemo/Commands/GenerateWithE2ECommand.ServiceProvider.cs
-FeatureFactoryDemo/Commands/GenerateWithE2ECommand.cs
 FeatureFactoryDemo/Commands/HelpCommand.cs
 FeatureFactoryDemo/Commands/StatsCommand.cs
 FeatureFactoryDemo/Commands/ValidateCommand.cs

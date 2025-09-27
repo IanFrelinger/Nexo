@@ -1,10 +1,10 @@
 You are refactoring the following files into partials with an Orchestrator slice.
 FILES:
-FeatureFactoryDemo/Commands/AnalyzeCommand.cs
-FeatureFactoryDemo/Commands/CommandManager.cs
-FeatureFactoryDemo/Commands/GenerateCommand.cs
-FeatureFactoryDemo/Commands/GenerateWithE2ECommand.ArgumentParsing.cs
-FeatureFactoryDemo/Commands/GenerateWithE2ECommand.CodeGeneration.cs
+FeatureFactoryDemo/Commands/GenerateWithE2ECommand.E2ETesting.cs
+FeatureFactoryDemo/Commands/GenerateWithE2ECommand.Execution.cs
+FeatureFactoryDemo/Commands/GenerateWithE2ECommand.IterativeImprovement.cs
+FeatureFactoryDemo/Commands/GenerateWithE2ECommand.ServiceProvider.cs
+FeatureFactoryDemo/Commands/GenerateWithE2ECommand.cs
 
 Rules summary:
 - Add 'partial' to the main type; repeat full header (access + modifiers + partial + bases + constraints).
