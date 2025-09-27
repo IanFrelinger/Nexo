@@ -1,71 +1,19 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Interfaces.Extensions;
-using Nexo.Core.Domain.Interfaces;
-using Nexo.Core.Domain.Models;
-using Nexo.Feature.AI.Interfaces;
-using Nexo.Feature.AI.Models;
-using Nexo.Infrastructure.Orchestration;
-using Xunit;
+// This file has been refactored into specialized test classes and mocks:
+// - ToolGeneration/Success/SuccessCaseTests.cs - E2E success flows
+// - ToolGeneration/ErrorHandling/ErrorHandlingTests.cs - Error paths
+// - ToolGeneration/Cancellation/CancellationTests.cs - Cancellation behavior
+// - ToolGeneration/Mocks/MockServices.cs - Test doubles for services
+
+// Re-export for backward compatibility
+using Nexo.Infrastructure.Tests.ToolGeneration.Success;
+using Nexo.Infrastructure.Tests.ToolGeneration.ErrorHandling;
+using Nexo.Infrastructure.Tests.ToolGeneration.Cancellation;
+using Nexo.Infrastructure.Tests.ToolGeneration.Mocks;
 
 namespace Nexo.Infrastructure.Tests.ToolGeneration
 {
-    /// <summary>
-    /// End-to-end integration tests for the complete tool generation pipeline
-    /// </summary>
-    public class EndToEndIntegrationTests : IDisposable
-    {
-        private readonly IHost _host;
-        private readonly string _testToolsPath;
-
-        public EndToEndIntegrationTests()
-        {
-            _testToolsPath = Path.Combine(Path.GetTempPath(), "nexo_integration_test", Guid.NewGuid().ToString());
-            
-            _host = Host.CreateDefaultBuilder()
-                .ConfigureServices(services =>
-                {
-                    // Add logging
-                    services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Warning));
-                    
-                    // Add tool generation services
-                    services.AddTransient<ICodeGenerator, MockCodeGenerator>();
-                    services.AddTransient<ICompilationService, MockCompilationService>();
-                    services.AddTransient<IToolRepository, MockToolRepository>();
-                    services.AddTransient<IToolEvolver, MockToolEvolver>();
-                    services.AddTransient<IPluginLoader, MockPluginLoader>();
-                    services.AddTransient<ToolGenerationOrchestrator>();
-                })
-                .Build();
-        }
-
-        [Fact]
-        public async Task CompleteToolGenerationPipeline_ValidDescription_GeneratesWorkingTool()
-        {
-            // Arrange
-            var orchestrator = _host.Services.GetRequiredService<ToolGenerationOrchestrator>();
-            var description = "Create a simple calculator that can add and subtract numbers";
-
-            // Act
-            var result = await orchestrator.GenerateToolAsync(description);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal("Calculator", result.Name);
-            Assert.Contains("calculator", result.Description.ToLower());
-            Assert.True(result.IsReady);
-            Assert.NotNull(result.Plugin);
-
-            // Test execution
-            var executionResult = await result.ExecuteAsync(new[] { "add", "5", "3" });
-            Assert.True(executionResult.Success);
-            Assert.Contains("8", executionResult.Message);
-        }
+    // Tests have moved to specialized classes under the namespaces referenced above.
+}
 
         [Fact]
         public async Task ToolEvolutionPipeline_ExistingTool_EvolutionSucceeds()

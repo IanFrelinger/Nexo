@@ -10,8 +10,9 @@ namespace Nexo.Core.Application.Services.AI.Rollback
 {
     /// <summary>
     /// AI operation rollback service for recovery and rollback capabilities
+    /// This class acts as an orchestrator, delegating specific functionalities to partial class implementations.
     /// </summary>
-    public class AIOperationRollback
+    public partial class AIOperationRollback
     {
         private readonly ILogger<AIOperationRollback> _logger;
         private readonly Dictionary<string, OperationSnapshot> _snapshots;
@@ -350,144 +351,6 @@ namespace Nexo.Core.Application.Services.AI.Rollback
                 _logger.LogError(ex, "Failed to cleanup old snapshots and sessions");
                 throw;
             }
-        }
-
-        private async Task<Checkpoint> CreateCheckpointAsync(DependencyInfo dependency)
-        {
-            // Simulate checkpoint creation
-            await Task.Delay(100);
-
-            return new Checkpoint
-            {
-                CheckpointId = Guid.NewGuid().ToString(),
-                DependencyId = dependency.DependencyId,
-                Type = dependency.Type,
-                State = dependency.State,
-                CreatedAt = DateTime.UtcNow,
-                Metadata = dependency.Metadata
-            };
-        }
-
-        private async Task ExecuteRollbackAsync(RollbackSession session)
-        {
-            try
-            {
-                _logger.LogInformation("Executing rollback for session {SessionId}", session.SessionId);
-
-                // Get snapshot
-                OperationSnapshot? snapshot;
-                lock (_lockObject)
-                {
-                    _snapshots.TryGetValue(session.SnapshotId, out snapshot);
-                }
-
-                if (snapshot == null)
-                {
-                    session.Status = RollbackStatus.Failed;
-                    session.ErrorMessage = "Snapshot not found";
-                    session.CompletedAt = DateTime.UtcNow;
-                    return;
-                }
-
-                // Execute rollback steps
-                foreach (var checkpoint in snapshot.Checkpoints)
-                {
-                    var step = new RollbackStep
-                    {
-                        StepId = Guid.NewGuid().ToString(),
-                        CheckpointId = checkpoint.CheckpointId,
-                        Status = RollbackStepStatus.Pending,
-                        StartedAt = DateTime.UtcNow
-                    };
-
-                    session.Steps.Add(step);
-
-                    try
-                    {
-                        await ExecuteRollbackStepAsync(step, checkpoint);
-                        step.Status = RollbackStepStatus.Completed;
-                        step.CompletedAt = DateTime.UtcNow;
-                    }
-                    catch (Exception ex)
-                    {
-                        step.Status = RollbackStepStatus.Failed;
-                        step.ErrorMessage = ex.Message;
-                        step.CompletedAt = DateTime.UtcNow;
-                        _logger.LogError(ex, "Rollback step {StepId} failed", step.StepId);
-                    }
-                }
-
-                // Determine overall status
-                var failedSteps = session.Steps.Count(s => s.Status == RollbackStepStatus.Failed);
-                if (failedSteps == 0)
-                {
-                    session.Status = RollbackStatus.Completed;
-                }
-                else if (failedSteps < session.Steps.Count)
-                {
-                    session.Status = RollbackStatus.PartiallyCompleted;
-                }
-                else
-                {
-                    session.Status = RollbackStatus.Failed;
-                }
-
-                session.CompletedAt = DateTime.UtcNow;
-                session.Duration = session.CompletedAt.Value - session.StartedAt;
-
-                _logger.LogInformation("Rollback session {SessionId} completed with status {Status}", 
-                    session.SessionId, session.Status);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Rollback session {SessionId} failed", session.SessionId);
-                session.Status = RollbackStatus.Failed;
-                session.ErrorMessage = ex.Message;
-                session.CompletedAt = DateTime.UtcNow;
-            }
-        }
-
-        private async Task ExecuteRollbackStepAsync(RollbackStep step, Checkpoint checkpoint)
-        {
-            // Simulate rollback step execution
-            var executionTime = Random.Shared.Next(500, 2000); // 0.5-2 seconds
-            await Task.Delay(executionTime);
-
-            // Simulate occasional failures
-            if (Random.Shared.NextDouble() < 0.1) // 10% failure rate
-            {
-                throw new Exception("Simulated rollback step failure");
-            }
-
-            step.Result = $"Rolled back {checkpoint.Type} dependency {checkpoint.DependencyId}";
-        }
-
-        private bool IsCheckpointValid(Checkpoint checkpoint)
-        {
-            // Simulate checkpoint validation
-            return DateTime.UtcNow - checkpoint.CreatedAt < TimeSpan.FromHours(24);
-        }
-
-        private List<string> GenerateValidationRecommendations(List<ValidationIssue> issues)
-        {
-            var recommendations = new List<string>();
-
-            if (issues.Any(i => i.Type == ValidationIssueType.SnapshotAge))
-            {
-                recommendations.Add("Consider creating a fresh snapshot for better rollback reliability");
-            }
-
-            if (issues.Any(i => i.Type == ValidationIssueType.DependencyInvalid))
-            {
-                recommendations.Add("Review and update dependencies before attempting rollback");
-            }
-
-            if (issues.Any(i => i.Severity == ValidationSeverity.Critical))
-            {
-                recommendations.Add("Address critical issues before proceeding with rollback");
-            }
-
-            return recommendations;
         }
     }
 

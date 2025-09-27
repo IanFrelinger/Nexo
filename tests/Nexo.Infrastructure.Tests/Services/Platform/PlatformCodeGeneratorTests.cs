@@ -1,70 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Nexo.Core.Application.Interfaces.AI;
-using Nexo.Core.Application.Models.Platform;
-using Nexo.Infrastructure.Services.Platform;
-using Xunit;
+// This file has been refactored into specialized test classes:
+// - Success/SuccessCaseTests.cs - Successful scenarios for all generators
+// - ErrorHandling/ErrorHandlingTests.cs - Error handling scenarios
+// - Cancellation/CancellationTests.cs - Cancellation behavior
+
+// Re-export for backward compatibility
+using Nexo.Infrastructure.Tests.Services.Platform.Success;
+using Nexo.Infrastructure.Tests.Services.Platform.ErrorHandling;
+using Nexo.Infrastructure.Tests.Services.Platform.Cancellation;
 
 namespace Nexo.Infrastructure.Tests.Services.Platform
 {
-    /// <summary>
-    /// Tests for platform code generators.
-    /// </summary>
-    public class PlatformCodeGeneratorTests
-    {
-        private readonly Mock<ILogger<iOSCodeGenerator>> _mockIOSLogger;
-        private readonly Mock<ILogger<AndroidCodeGenerator>> _mockAndroidLogger;
-        private readonly Mock<ILogger<WebCodeGenerator>> _mockWebLogger;
-        private readonly Mock<ILogger<DesktopCodeGenerator>> _mockDesktopLogger;
-        private readonly Mock<IModelOrchestrator> _mockModelOrchestrator;
-
-        public PlatformCodeGeneratorTests()
-        {
-            _mockIOSLogger = new Mock<ILogger<iOSCodeGenerator>>();
-            _mockAndroidLogger = new Mock<ILogger<AndroidCodeGenerator>>();
-            _mockWebLogger = new Mock<ILogger<WebCodeGenerator>>();
-            _mockDesktopLogger = new Mock<ILogger<DesktopCodeGenerator>>();
-            _mockModelOrchestrator = new Mock<IModelOrchestrator>();
-        }
-
-        [Fact]
-        public async Task iOSCodeGenerator_GenerateCodeAsync_ShouldReturnSuccessResult()
-        {
-            // Arrange
-            var generator = new iOSCodeGenerator(_mockIOSLogger.Object, _mockModelOrchestrator.Object);
-            var applicationLogic = CreateSampleApplicationLogic();
-            var options = new iOSGenerationOptions
-            {
-                GenerateSwiftUI = true,
-                GenerateCoreData = true,
-                GenerateMetalGraphics = true,
-                GenerateViewModels = true,
-                GenerateServices = true,
-                GenerateTests = true
-            };
-
-            _mockModelOrchestrator
-                .Setup(x => x.GenerateResponseAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new AIResponse { Content = "Generated iOS code" });
-
-            // Act
-            var result = await generator.GenerateCodeAsync(applicationLogic, options);
-
-            // Assert
-            Assert.True(result.Success);
-            Assert.Equal(applicationLogic.ApplicationName, result.ApplicationName);
-            Assert.NotNull(result.SwiftUI);
-            Assert.NotNull(result.CoreData);
-            Assert.NotNull(result.MetalGraphics);
-            Assert.NotNull(result.ViewModels);
-            Assert.NotNull(result.Services);
-            Assert.NotNull(result.Tests);
-        }
+    // Tests are organized into specialized classes under the namespaces above.
+}
 
         [Fact]
         public async Task AndroidCodeGenerator_GenerateCodeAsync_ShouldReturnSuccessResult()

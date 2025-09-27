@@ -18,8 +18,9 @@ namespace Nexo.PluginHost
 {
     /// <summary>
     /// A hardened plugin host that uses collectible AssemblyLoadContext for safe plugin loading and unloading.
+    /// This class acts as an orchestrator, delegating specific functionalities to partial class implementations.
     /// </summary>
-    public class PluginHost : IDisposable
+    public partial class PluginHost : IDisposable
     {
         private readonly ILogger<PluginHost> _logger;
         private readonly Dictionary<string, PluginContext> _loadedPlugins;
@@ -177,50 +178,6 @@ namespace Nexo.PluginHost
         }
 
         /// <summary>
-        /// Validates that plugin constructors only request allowed interfaces.
-        /// </summary>
-        private bool ValidateConstructorDependencies(List<Type> capabilityTypes)
-        {
-            var allowedInterfaces = new HashSet<Type>
-            {
-                typeof(INexoFileSystem),
-                typeof(INexoProcessRunner),
-                typeof(ILogger<>)
-            };
-
-            foreach (var type in capabilityTypes)
-            {
-                var constructors = type.GetConstructors();
-                foreach (var constructor in constructors)
-                {
-                    var parameters = constructor.GetParameters();
-                    foreach (var parameter in parameters)
-                    {
-                        var parameterType = parameter.ParameterType;
-                        
-                        // Check if it's a generic type (like ILogger<T>)
-                        if (parameterType.IsGenericType)
-                        {
-                            var genericTypeDefinition = parameterType.GetGenericTypeDefinition();
-                            if (!allowedInterfaces.Contains(genericTypeDefinition))
-                            {
-                                _logger.LogWarning("Constructor parameter {ParameterType} is not in allowed interfaces", parameterType.Name);
-                                return false;
-                            }
-                        }
-                        else if (!allowedInterfaces.Contains(parameterType))
-                        {
-                            _logger.LogWarning("Constructor parameter {ParameterType} is not in allowed interfaces", parameterType.Name);
-                            return false;
-                        }
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
         /// Unloads a plugin by name.
         /// </summary>
         /// <param name="pluginName">Name of the plugin to unload</param>
@@ -322,80 +279,6 @@ namespace Nexo.PluginHost
             return context;
         }
 
-        private async Task<PluginManifest> LoadPluginManifestAsync(string manifestPath, CancellationToken cancellationToken)
-        {
-            try
-            {
-                if (!_fileSystem.FileExists(manifestPath))
-                {
-                    _logger.LogWarning("Plugin manifest not found: {ManifestPath}", manifestPath);
-                    return null;
-                }
-
-                var manifestJson = await _fileSystem.ReadAllTextAsync(manifestPath, cancellationToken);
-                var manifest = JsonSerializer.Deserialize<PluginManifest>(manifestJson);
-                
-                if (manifest == null || string.IsNullOrEmpty(manifest.Name))
-                {
-                    _logger.LogError("Invalid plugin manifest: {ManifestPath}", manifestPath);
-                    return null;
-                }
-
-                return manifest;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to load plugin manifest: {ManifestPath}", manifestPath);
-                return null;
-            }
-        }
-
-        private List<Type> ValidatePluginCapabilities(Assembly assembly, PluginManifest manifest)
-        {
-            var capabilityTypes = new List<Type>();
-            var capabilityInterfaces = new[]
-            {
-                typeof(ISense),
-                typeof(IDecide),
-                typeof(IAct),
-                typeof(IGuard)
-            };
-
-            var allTypes = assembly.GetTypes()
-                .Where(t => !t.IsInterface && !t.IsAbstract && t.IsClass)
-                .ToList();
-
-            foreach (var type in allTypes)
-            {
-                var implementedCapabilities = capabilityInterfaces
-                    .Where(ci => ci.IsAssignableFrom(type))
-                    .ToList();
-
-                if (implementedCapabilities.Count > 0)
-                {
-                    // Verify that the declared capabilities match the implemented ones
-                    var declaredCapabilities = manifest.Capabilities.ToHashSet();
-                    var implementedCapabilityNames = implementedCapabilities
-                        .Select(ci => ci.Name)
-                        .ToHashSet();
-
-                    if (declaredCapabilities.SetEquals(implementedCapabilityNames))
-                    {
-                        capabilityTypes.Add(type);
-                        _logger.LogInformation("Validated capability implementation: {TypeName} implements {Capabilities}", 
-                            type.Name, string.Join(", ", implementedCapabilityNames));
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Capability mismatch for type {TypeName}. Declared: [{Declared}], Implemented: [{Implemented}]", 
-                            type.Name, string.Join(", ", declaredCapabilities), string.Join(", ", implementedCapabilityNames));
-                    }
-                }
-            }
-
-            return capabilityTypes;
-        }
-
         public void Dispose()
         {
             if (_disposed)
@@ -419,6 +302,8 @@ namespace Nexo.PluginHost
 
             _loadedPlugins.Clear();
         }
+        // This class acts as an orchestrator for various plugin host functionalities,
+        // with specific categories defined in partial classes.
     }
 
     /// <summary>
