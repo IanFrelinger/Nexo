@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Factory.Interfaces
 {
-    public partial class IFeatureFactoryValidator
+    public partial interface IFeatureFactoryValidator
     {
-        // Core implementation will be added here
+        // Interface members will be added here
     }
 }

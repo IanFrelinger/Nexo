@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure
 {
-    public partial class IFeedbackAnalyzer
+    public partial interface IFeedbackAnalyzer
     {
-        // Orchestration methods will be added here
+        // Interface orchestration methods will be added here
         // This file contains orchestration and coordination logic
     }
 }

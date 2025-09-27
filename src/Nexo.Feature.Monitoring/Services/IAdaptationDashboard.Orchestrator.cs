@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Monitoring.Services
 {
-    public partial class IAdaptationDashboard
+    public partial interface IAdaptationDashboard
     {
-        // Orchestration methods will be added here
+        // Interface orchestration methods will be added here
     }
 }

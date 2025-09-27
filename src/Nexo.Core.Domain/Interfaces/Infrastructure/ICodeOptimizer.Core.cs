@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure
 {
-    public partial class ICodeOptimizer
+    public partial interface ICodeOptimizer
     {
-        // Core implementation will be added here
-        // This file contains the main class definition and core functionality
+        // Interface members will be added here
+        // This file contains the interface definition and core functionality
     }
 }

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure
 {
-    public partial class IContinuousLearningSystem
+    public partial interface IContinuousLearningSystem
     {
-        // Orchestration methods will be added here
+        // Interface orchestration methods will be added here
         // This file contains orchestration and coordination logic
     }
 }

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.MultiCloud.Interfaces
 {
-    public partial class IMultiCloudOrchestrator
+    public partial interface IMultiCloudOrchestrator
     {
-        // Core implementation will be added here
+        // Interface members will be added here
     }
 }

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Application.Services.Adaptation.Strategies
 {
-    public partial class IAdaptationStrategy
+    public partial interface IAdaptationStrategy
     {
-        // Core implementation will be added here
+        // Interface members will be added here
     }
 }

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.MultiCloud.Interfaces
 {
-    public partial class ICloudProviderFactory
+    public partial interface ICloudProviderFactory
     {
-        // Core implementation will be added here
-        // This file contains the main class definition and core functionality
+        // Interface members will be added here
+        // This file contains the interface definition and core functionality
     }
 }

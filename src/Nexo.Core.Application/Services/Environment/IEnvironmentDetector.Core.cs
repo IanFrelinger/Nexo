@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Application.Services.Environment
 {
-    public partial class IEnvironmentDetector
+    public partial interface IEnvironmentDetector
     {
-        // Core implementation will be added here
+        // Interface members will be added here
     }
 }

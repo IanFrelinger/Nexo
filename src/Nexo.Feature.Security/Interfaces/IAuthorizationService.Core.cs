@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Security.Interfaces
 {
-    public partial class IAuthorizationService
+    public partial interface IAuthorizationService
     {
-        // Core implementation will be added here
+        // Interface members will be added here
     }
 }

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Application.Services.Learning
 {
-    public partial class IContinuousLearningSystem
+    public partial interface IContinuousLearningSystem
     {
-        // Orchestration methods will be added here
+        // Interface orchestration methods will be added here
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure
 {
-    public partial class ICodeGenerationOptimizer
+    public partial interface ICodeGenerationOptimizer
     {
         // Orchestration methods will be added here
         // This file contains orchestration and coordination logic

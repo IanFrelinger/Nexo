@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Factory.Interfaces
 {
-    public partial class IFeatureFactoryPipeline
+    public partial interface IFeatureFactoryPipeline
     {
-        // Orchestration methods will be added here
+        // Interface orchestration methods will be added here
         // This file contains orchestration and coordination logic
     }
 }

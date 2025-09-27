@@ -3,8 +3,8 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Application.Services.Adaptation.Strategies
 {
-    public partial class IAdaptationStrategy
+    public partial interface IAdaptationStrategy
     {
-        // Orchestration methods will be added here
+        // Interface orchestration methods will be added here
     }
 }

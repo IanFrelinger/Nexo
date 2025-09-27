@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.Factory.Interfaces
 {
-    public partial class IFeatureFactoryPipeline
+    public partial interface IFeatureFactoryPipeline
     {
-        // Core implementation will be added here
-        // This file contains the main class definition and core functionality
+        // Interface members will be added here
+        // This file contains the interface definition and core functionality
     }
 }

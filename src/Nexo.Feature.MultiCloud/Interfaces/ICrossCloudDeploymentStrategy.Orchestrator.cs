@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace Nexo.Feature.MultiCloud.Interfaces
 {
-    public partial class ICrossCloudDeploymentStrategy
+    public partial interface ICrossCloudDeploymentStrategy
     {
-        // Orchestration methods will be added here
+        // Interface orchestration methods will be added here
         // This file contains orchestration and coordination logic
     }
 }
