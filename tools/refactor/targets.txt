@@ -1,8 +1,3 @@
-FeatureFactoryDemo/LoggingSystemValidation.cs
-FeatureFactoryDemo/LoggingTestCommand.cs
-FeatureFactoryDemo/Models/CommandHistory.cs
-FeatureFactoryDemo/Models/E2ETestModels.cs
-FeatureFactoryDemo/Program.cs
 FeatureFactoryDemo/Services/CodebaseAnalysisService.cs
 FeatureFactoryDemo/Services/CommandHistoryService.cs
 FeatureFactoryDemo/Services/DemoDataService.cs

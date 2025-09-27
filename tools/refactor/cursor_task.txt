@@ -1,10 +1,10 @@
 You are refactoring the following files into partials with an Orchestrator slice.
 FILES:
-FeatureFactoryDemo/LoggingSystemValidation.DependencyInjection.cs
-FeatureFactoryDemo/LoggingSystemValidation.Logging.cs
-FeatureFactoryDemo/LoggingSystemValidation.Performance.cs
-FeatureFactoryDemo/LoggingSystemValidation.TestInfrastructure.cs
-FeatureFactoryDemo/LoggingSystemValidation.TestServices.cs
+FeatureFactoryDemo/LoggingSystemValidation.cs
+FeatureFactoryDemo/LoggingTestCommand.cs
+FeatureFactoryDemo/Models/CommandHistory.cs
+FeatureFactoryDemo/Models/E2ETestModels.cs
+FeatureFactoryDemo/Program.cs
 
 Rules summary:
 - Add 'partial' to the main type; repeat full header (access + modifiers + partial + bases + constraints).
