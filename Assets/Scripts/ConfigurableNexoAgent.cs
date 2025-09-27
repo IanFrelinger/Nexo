@@ -8,8 +8,7 @@ using TMPro;
 namespace NexoDoomGame
 {
     /// <summary>
-    /// Configurable Nexo Agent that uses existing Nexo Agent system for code generation.
-    /// This class acts as an orchestrator, delegating specific functionalities to partial class implementations.
+    /// Core functionality for ConfigurableNexoAgent.
     /// </summary>
     public partial class ConfigurableNexoAgent : MonoBehaviour
     {
@@ -41,7 +40,5 @@ namespace NexoDoomGame
                 GenerateGameAsync();
             }
         }
-        // This class acts as an orchestrator for various configurable Nexo agent functionalities,
-        // with specific categories defined in partial classes.
     }
 }

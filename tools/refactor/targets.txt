@@ -1,8 +1,3 @@
-Assets/Scripts/NexoValidationTestRunner.cs
-Assets/Scripts/QualityImprovementEngine.cs
-Assets/Scripts/TestRunner.cs
-Assets/Scripts/Validators/AssetValidator.cs
-Assets/Scripts/Validators/IntegrationValidator.cs
 Assets/Scripts/Validators/PerformanceValidator.cs
 Assets/Scripts/Validators/ScriptValidator.cs
 Assets/Scripts/Validators/ValidationUIManager.cs
