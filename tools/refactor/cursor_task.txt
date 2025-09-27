@@ -1,10 +1,10 @@
 You are refactoring the following files into partials with an Orchestrator slice.
 FILES:
-Assets/Scripts/NexoCompositionSystem.Testing.cs
-Assets/Scripts/NexoCompositionSystem.cs
-Assets/Scripts/NexoDebugger.cs
-Assets/Scripts/NexoFrameworkTest.cs
-Assets/Scripts/NexoGameAgent.AssetGeneration.cs
+Assets/Scripts/NexoGameAgent.Core.cs
+Assets/Scripts/NexoGameAgent.EnemyImplementation.cs
+Assets/Scripts/NexoGameAgent.HelperClasses.cs
+Assets/Scripts/NexoGameAgent.LevelBuilding.cs
+Assets/Scripts/NexoGameAgent.MaterialGeneration.cs
 
 Rules summary:
 - Add 'partial' to the main type; repeat full header (access + modifiers + partial + bases + constraints).
