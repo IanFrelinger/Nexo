@@ -9,6 +9,7 @@ namespace Nexo.Core.Domain.Interfaces
     /// <summary>
     /// Base interface for all plugins in the Nexo system.
     /// </summary>
+    // Merged from IPluginManager
     public interface IPlugin
     {
         string Name { get; }

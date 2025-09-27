@@ -9,6 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Logging
     /// Represents a logger that can be used to log messages at different levels.
     /// This interface abstracts logging functionality to allow for different logging implementations.
     /// </summary>
+    // Merged from ILoggerFactory
     public interface ILogger
     {
         void Log(LogLevel level, string message, params object[] args);

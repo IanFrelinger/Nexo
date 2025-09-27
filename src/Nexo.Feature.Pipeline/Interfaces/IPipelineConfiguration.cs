@@ -6,6 +6,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Configuration interface for pipeline execution.
     /// </summary>
+    // Merged from IPipelineConfigurationService
     public interface IPipelineConfiguration
     {
         /// <summary>

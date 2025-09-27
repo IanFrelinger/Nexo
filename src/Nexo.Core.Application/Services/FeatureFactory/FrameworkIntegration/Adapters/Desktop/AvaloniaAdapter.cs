@@ -9,6 +9,14 @@ using Nexo.Core.Domain.Entities.FeatureFactory.ApplicationLogic;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.FrameworkIntegration.Adapters.Desktop
 {
+    public AvaloniaCodeGenerator(ILogger<AvaloniaCodeGenerator> logger)
+    public async Task<DesktopCodeGenerationResult> GenerateAvaloniaCodeAsync(DesktopCodeGenerationRequest request)
+    public MainWindow()
+    // Merged from AvaloniaCodeGenerator
+    public WPFAdapter(ILogger<WPFAdapter> logger, IAIRuntimeSelector runtimeSelector)
+    public async Task<WPFResult> GenerateWPFCodeAsync(ApplicationLogicResult applicationLogic, CancellationToken cancellationToken)
+    public {controller.Name}View()
+    // Merged from WPFAdapter
     public class AvaloniaAdapter
     {
         private readonly ILogger<AvaloniaAdapter> _logger;
