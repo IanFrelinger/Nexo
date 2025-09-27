@@ -8,7 +8,7 @@ using TMPro;
 namespace NexoDoomGame
 {
     /// <summary>
-    /// Embedded Nexo Agent for natural language game development
+    /// Core functionality for NexoGameAgent.
     /// </summary>
     public partial class NexoGameAgent : MonoBehaviour
     {
@@ -33,4 +33,10 @@ namespace NexoDoomGame
         private GameBuilder _gameBuilder;
         private bool _isGenerating = false;
         
+        private void Start()
+        {
+            InitializeNexoAgent();
+            LoadGameSpecification();
+        }
+    }
 }
