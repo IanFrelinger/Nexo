@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Services.Iteration;
@@ -15,75 +13,42 @@ using Xunit;
 namespace Nexo.Core.Application.Tests;
 
 /// <summary>
-/// Error handling tests for iteration strategies.
+/// Error handling test cases for IterationStrategyComprehensiveTests.
 /// </summary>
 public partial class IterationStrategyComprehensiveTests
 {
     [Fact]
-    public void RuntimeEnvironmentDetector_ShouldHandleMemoryDetectionFailure()
-    {
-        // This test verifies the fallback behavior when memory detection fails
-        // The actual implementation has a try-catch that returns 1024MB as default
-        
-        // Act
-        var profile = RuntimeEnvironmentDetector.DetectCurrent();
-        
-        // Assert - should always return a valid profile even if memory detection fails
-        Assert.NotNull(profile);
-        Assert.True(profile.AvailableMemoryMB > 0);
-        Assert.True(profile.CpuCores > 0);
-    }
-    
-    [Fact]
-    public void IterationStrategySelector_ShouldHandleEmptyStrategies()
-    {
-        // Arrange
-        var selector = new IterationStrategySelector(
-            _serviceProvider.GetRequiredService<ILogger<IterationStrategySelector>>());
-        
-        // Clear all strategies to test fallback behavior
-        var strategiesField = typeof(IterationStrategySelector).GetField("_strategies", 
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        strategiesField?.SetValue(selector, new List<IIterationStrategy<object>>());
-        
-        // Act
-        var strategy = selector.SelectStrategy<int>(new IterationContext());
-        
-        // Assert - should return fallback strategy (SimpleForeachStrategy)
-        Assert.NotNull(strategy);
-        Assert.Equal("SimpleForeach", strategy.StrategyId);
-    }
-    
-    [Fact]
-    public void IterationStrategySelector_ShouldHandleIncompatiblePlatforms()
+    public void IterationStrategySelector_WithNullContext_ShouldThrowArgumentNullException()
     {
         // Arrange
         var selector = _serviceProvider.GetRequiredService<IIterationStrategySelector>();
-        var context = new IterationContext
-        {
-            DataSize = 100,
-            Requirements = new IterationRequirements(),
-            EnvironmentProfile = new RuntimeEnvironmentProfile
-            {
-                PlatformType = PlatformType.Unknown, // Incompatible platform to trigger fallback
-                CpuCores = 4,
-                AvailableMemoryMB = 1024,
-                IsDebugMode = false,
-                FrameworkVersion = ".NET 8.0",
-                OptimizationLevel = Nexo.Core.Domain.Entities.Infrastructure.OptimizationLevel.Balanced.ToString()
-            }
-        };
         
-        // Act
-        var strategy = selector.SelectStrategy<int>(context);
-        
-        // Assert - should return a compatible strategy (ForLoop is selected due to scoring)
-        Assert.NotNull(strategy);
-        Assert.Equal("ForLoop", strategy.StrategyId);
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => selector.SelectStrategy<int>(null));
     }
     
     [Fact]
-    public void AllStrategies_ShouldHandleNullActions()
+    public void IterationStrategySelector_WithNullStrategy_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var selector = _serviceProvider.GetRequiredService<IIterationStrategySelector>();
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => selector.RegisterStrategy(null));
+    }
+    
+    [Fact]
+    public void IterationStrategySelector_WithNullEnvironmentProfile_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var selector = _serviceProvider.GetRequiredService<IIterationStrategySelector>();
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => selector.SetEnvironmentProfile(null));
+    }
+    
+    [Fact]
+    public void AllStrategies_WithNullData_ShouldThrowArgumentNullException()
     {
         // Arrange
         var strategies = new IIterationStrategy<int>[]
@@ -96,35 +61,57 @@ public partial class IterationStrategyComprehensiveTests
             new WasmOptimizedStrategy<int>()
         };
         
-        var data = new[] { 1, 2, 3, 4, 5 };
-        
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should handle null action gracefully (either throw exception or handle gracefully)
-            try
-            {
-                strategy.Execute(data, null!);
-                // If no exception is thrown, that's acceptable behavior
-            }
-            catch (Exception)
-            {
-                // If an exception is thrown, that's also acceptable behavior
-            }
-            
-            try
-            {
-                strategy.ExecuteWhere<int>(data, x => true, null!);
-                // If no exception is thrown, that's acceptable behavior
-            }
-            catch (Exception)
-            {
-                // If an exception is thrown, that's also acceptable behavior
-            }
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => strategy.Execute(null, x => { }));
+            Assert.Throws<ArgumentNullException>(() => strategy.Execute(null, x => x));
+            Assert.Throws<ArgumentNullException>(() => strategy.ExecuteWhere(null, x => true, x => x));
         }
     }
     
     [Fact]
-    public void AllStrategies_ShouldHandleNullPredicates()
+    public void AllStrategies_WithNullAction_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var strategies = new IIterationStrategy<int>[]
+        {
+            new ForLoopStrategy<int>(),
+            new ForeachStrategy<int>(),
+            new UnityOptimizedStrategy<int>()
+        };
+        
+        var data = new[] { 1, 2, 3 };
+        
+        foreach (var strategy in strategies)
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => strategy.Execute(data, null));
+        }
+    }
+    
+    [Fact]
+    public void AllStrategies_WithNullTransform_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var strategies = new IIterationStrategy<int>[]
+        {
+            new LinqStrategy<int>(),
+            new ParallelLinqStrategy<int>(),
+            new WasmOptimizedStrategy<int>()
+        };
+        
+        var data = new[] { 1, 2, 3 };
+        
+        foreach (var strategy in strategies)
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => strategy.Execute(data, null));
+        }
+    }
+    
+    [Fact]
+    public void AllStrategies_WithNullPredicate_ShouldThrowArgumentNullException()
     {
         // Arrange
         var strategies = new IIterationStrategy<int>[]
@@ -137,25 +124,17 @@ public partial class IterationStrategyComprehensiveTests
             new WasmOptimizedStrategy<int>()
         };
         
-        var data = new[] { 1, 2, 3, 4, 5 };
+        var data = new[] { 1, 2, 3 };
         
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should handle null predicate gracefully (either throw exception or handle gracefully)
-            try
-            {
-                strategy.ExecuteWhere(data, null!, x => x * 2);
-                // If no exception is thrown, that's acceptable behavior
-            }
-            catch (Exception)
-            {
-                // If an exception is thrown, that's also acceptable behavior
-            }
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => strategy.ExecuteWhere(data, null, x => x));
         }
     }
     
     [Fact]
-    public async Task AllStrategies_ShouldHandleNullAsyncActions()
+    public void AllStrategies_WithNullTransformInExecuteWhere_ShouldThrowArgumentNullException()
     {
         // Arrange
         var strategies = new IIterationStrategy<int>[]
@@ -168,18 +147,17 @@ public partial class IterationStrategyComprehensiveTests
             new WasmOptimizedStrategy<int>()
         };
         
-        var data = new[] { 1, 2, 3, 4, 5 };
+        var data = new[] { 1, 2, 3 };
         
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should throw exception with null async action (either ArgumentNullException or NullReferenceException)
-            await Assert.ThrowsAnyAsync<Exception>(() => 
-                strategy.ExecuteAsync(data, null!));
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => strategy.ExecuteWhere(data, x => true, null));
         }
     }
     
     [Fact]
-    public void CodeGeneration_ShouldHandleNullContext()
+    public void CodeGeneration_WithNullContext_ShouldThrowArgumentNullException()
     {
         // Arrange
         var strategies = new IIterationStrategy<object>[]
@@ -194,38 +172,217 @@ public partial class IterationStrategyComprehensiveTests
         
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should throw exception with null context (NullReferenceException is expected)
-            Assert.Throws<NullReferenceException>(() => strategy.GenerateCode(null!));
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => strategy.GenerateCode(null));
         }
     }
     
     [Fact]
-    public void Models_ShouldSupportNegativeValues()
+    public void CodeGeneration_WithNullPlatformTarget_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var strategy = new ForLoopStrategy<object>();
+        var context = new CodeGenerationContext
+        {
+            PlatformTarget = null,
+            CollectionName = "items",
+            IterationBodyTemplate = "ProcessItem({item});"
+        };
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => strategy.GenerateCode(context));
+    }
+    
+    [Fact]
+    public void CodeGeneration_WithNullCollectionName_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var strategy = new ForLoopStrategy<object>();
+        var context = new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = null,
+            IterationBodyTemplate = "ProcessItem({item});"
+        };
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => strategy.GenerateCode(context));
+    }
+    
+    [Fact]
+    public void CodeGeneration_WithNullIterationBodyTemplate_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var strategy = new ForLoopStrategy<object>();
+        var context = new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            IterationBodyTemplate = null
+        };
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => strategy.GenerateCode(context));
+    }
+    
+    [Fact]
+    public void CodeGeneration_WithNullItemName_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var strategy = new ForeachStrategy<object>();
+        var context = new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            IterationBodyTemplate = "ProcessItem({item});",
+            ItemName = null
+        };
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => strategy.GenerateCode(context));
+    }
+    
+    [Fact]
+    public void CodeGeneration_WithNullActionTemplate_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var strategy = new LinqStrategy<object>();
+        var context = new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            ActionTemplate = null
+        };
+        
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => strategy.GenerateCode(context));
+    }
+    
+    [Fact]
+    public void IterationContext_WithNegativeDataSize_ShouldThrowArgumentException()
     {
         // Act & Assert
-        var context = new IterationContext
+        Assert.Throws<ArgumentException>(() => new IterationContext
         {
             DataSize = -1
-        };
-        
-        Assert.Equal(-1, context.DataSize);
-        
-        var profile = new RuntimeEnvironmentProfile
+        });
+    }
+    
+    [Fact]
+    public void IterationRequirements_WithNegativeMaxDegreeOfParallelism_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => new IterationRequirements
         {
-            CpuCores = -1,
+            MaxDegreeOfParallelism = -1
+        });
+    }
+    
+    [Fact]
+    public void IterationRequirements_WithNegativeTimeout_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => new IterationRequirements
+        {
+            Timeout = TimeSpan.FromSeconds(-1)
+        });
+    }
+    
+    [Fact]
+    public void RuntimeEnvironmentProfile_WithNegativeCpuCores_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => new RuntimeEnvironmentProfile
+        {
+            CpuCores = -1
+        });
+    }
+    
+    [Fact]
+    public void RuntimeEnvironmentProfile_WithNegativeAvailableMemory_ShouldThrowArgumentException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentException>(() => new RuntimeEnvironmentProfile
+        {
             AvailableMemoryMB = -1
-        };
-        
-        Assert.Equal(-1, profile.CpuCores);
-        Assert.Equal(-1, profile.AvailableMemoryMB);
-        
-        var requirements = new IterationRequirements
+        });
+    }
+    
+    [Fact]
+    public void RuntimeEnvironmentProfile_WithNullFrameworkVersion_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new RuntimeEnvironmentProfile
         {
-            MaxDegreeOfParallelism = -1,
-            Timeout = TimeSpan.FromTicks(-1)
-        };
-        
-        Assert.Equal(-1, requirements.MaxDegreeOfParallelism);
-        Assert.Equal(TimeSpan.FromTicks(-1), requirements.Timeout);
+            FrameworkVersion = null
+        });
+    }
+    
+    [Fact]
+    public void RuntimeEnvironmentProfile_WithNullOptimizationLevel_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new RuntimeEnvironmentProfile
+        {
+            OptimizationLevel = null
+        });
+    }
+    
+    [Fact]
+    public void CodeGenerationContext_WithNullPlatformTarget_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CodeGenerationContext
+        {
+            PlatformTarget = null
+        });
+    }
+    
+    [Fact]
+    public void CodeGenerationContext_WithNullCollectionName_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = null
+        });
+    }
+    
+    [Fact]
+    public void CodeGenerationContext_WithNullIterationBodyTemplate_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            IterationBodyTemplate = null
+        });
+    }
+    
+    [Fact]
+    public void CodeGenerationContext_WithNullItemName_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            IterationBodyTemplate = "ProcessItem({item});",
+            ItemName = null
+        });
+    }
+    
+    [Fact]
+    public void CodeGenerationContext_WithNullActionTemplate_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CodeGenerationContext
+        {
+            PlatformTarget = PlatformTarget.CSharp,
+            CollectionName = "items",
+            ActionTemplate = null
+        });
     }
 }

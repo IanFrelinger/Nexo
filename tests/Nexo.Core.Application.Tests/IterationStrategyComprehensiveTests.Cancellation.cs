@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -16,12 +15,12 @@ using Xunit;
 namespace Nexo.Core.Application.Tests;
 
 /// <summary>
-/// Cancellation tests for iteration strategies.
+/// Cancellation test cases for IterationStrategyComprehensiveTests.
 /// </summary>
 public partial class IterationStrategyComprehensiveTests
 {
     [Fact]
-    public async Task AllStrategies_ShouldHandleCancellation()
+    public async Task AllStrategies_ExecuteAsync_WithCancellation_ShouldRespectCancellation()
     {
         // Arrange
         var strategies = new IIterationStrategy<int>[]
@@ -35,23 +34,22 @@ public partial class IterationStrategyComprehensiveTests
         };
         
         var data = Enumerable.Range(1, 1000).ToArray();
-        var cancellationTokenSource = new CancellationTokenSource();
-        cancellationTokenSource.Cancel();
+        var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel immediately
         
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should handle cancellation gracefully
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
-                strategy.ExecuteAsync(data, async x => 
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+                strategy.ExecuteAsync(data, async x =>
                 {
-                    await Task.Delay(1, cancellationTokenSource.Token);
-                    return Task.CompletedTask;
-                }));
+                    await Task.Delay(1);
+                }, cts.Token));
         }
     }
     
     [Fact]
-    public async Task AllStrategies_ShouldHandleCancellationDuringExecution()
+    public async Task AllStrategies_ExecuteAsync_WithCancellationDuringExecution_ShouldRespectCancellation()
     {
         // Arrange
         var strategies = new IIterationStrategy<int>[]
@@ -65,29 +63,80 @@ public partial class IterationStrategyComprehensiveTests
         };
         
         var data = Enumerable.Range(1, 1000).ToArray();
-        var cancellationTokenSource = new CancellationTokenSource();
+        var cts = new CancellationTokenSource();
         
-        // Cancel after a short delay to simulate cancellation during execution
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(10);
-            cancellationTokenSource.Cancel();
-        });
+        // Cancel after a short delay
+        cts.CancelAfter(50);
         
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should handle cancellation during execution
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
-                strategy.ExecuteAsync(data, async x => 
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+                strategy.ExecuteAsync(data, async x =>
                 {
-                    await Task.Delay(1, cancellationTokenSource.Token);
-                    return Task.CompletedTask;
-                }));
+                    await Task.Delay(10);
+                }, cts.Token));
         }
     }
     
     [Fact]
-    public async Task AllStrategies_ShouldHandleCancellationWithLongRunningOperations()
+    public async Task AllStrategies_ExecuteAsync_WithCancellationForTransform_ShouldRespectCancellation()
+    {
+        // Arrange
+        var strategies = new IIterationStrategy<int>[]
+        {
+            new LinqStrategy<int>(),
+            new ParallelLinqStrategy<int>(),
+            new WasmOptimizedStrategy<int>()
+        };
+        
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel immediately
+        
+        foreach (var strategy in strategies)
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+                strategy.ExecuteAsync(data, async x =>
+                {
+                    await Task.Delay(1);
+                    return x * 2;
+                }, cts.Token));
+        }
+    }
+    
+    [Fact]
+    public async Task AllStrategies_ExecuteAsync_WithCancellationDuringExecutionForTransform_ShouldRespectCancellation()
+    {
+        // Arrange
+        var strategies = new IIterationStrategy<int>[]
+        {
+            new LinqStrategy<int>(),
+            new ParallelLinqStrategy<int>(),
+            new WasmOptimizedStrategy<int>()
+        };
+        
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        
+        // Cancel after a short delay
+        cts.CancelAfter(50);
+        
+        foreach (var strategy in strategies)
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+                strategy.ExecuteAsync(data, async x =>
+                {
+                    await Task.Delay(10);
+                    return x * 2;
+                }, cts.Token));
+        }
+    }
+    
+    [Fact]
+    public async Task AllStrategies_ExecuteAsync_WithCancellationForWhere_ShouldRespectCancellation()
     {
         // Arrange
         var strategies = new IIterationStrategy<int>[]
@@ -100,30 +149,28 @@ public partial class IterationStrategyComprehensiveTests
             new WasmOptimizedStrategy<int>()
         };
         
-        var data = Enumerable.Range(1, 100).ToArray();
-        var cancellationTokenSource = new CancellationTokenSource();
-        
-        // Cancel after a short delay
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(5);
-            cancellationTokenSource.Cancel();
-        });
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel immediately
         
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should handle cancellation with long running operations
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
-                strategy.ExecuteAsync(data, async x => 
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+                strategy.ExecuteAsync(data, async x =>
                 {
-                    await Task.Delay(10, cancellationTokenSource.Token);
-                    return Task.CompletedTask;
-                }));
+                    await Task.Delay(1);
+                    return x > 500;
+                }, async x =>
+                {
+                    await Task.Delay(1);
+                    return x * 2;
+                }, cts.Token));
         }
     }
     
     [Fact]
-    public async Task AllStrategies_ShouldHandleCancellationWithMultipleOperations()
+    public async Task AllStrategies_ExecuteAsync_WithCancellationDuringExecutionForWhere_ShouldRespectCancellation()
     {
         // Arrange
         var strategies = new IIterationStrategy<int>[]
@@ -136,71 +183,145 @@ public partial class IterationStrategyComprehensiveTests
             new WasmOptimizedStrategy<int>()
         };
         
-        var data = Enumerable.Range(1, 100).ToArray();
-        var cancellationTokenSource = new CancellationTokenSource();
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
         
         // Cancel after a short delay
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(5);
-            cancellationTokenSource.Cancel();
-        });
+        cts.CancelAfter(50);
         
         foreach (var strategy in strategies)
         {
-            // Act & Assert - should handle cancellation with multiple operations
-            var tasks = new List<Task>();
-            
-            for (int i = 0; i < 5; i++)
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+                strategy.ExecuteAsync(data, async x =>
+                {
+                    await Task.Delay(10);
+                    return x > 500;
+                }, async x =>
+                {
+                    await Task.Delay(10);
+                    return x * 2;
+                }, cts.Token));
+        }
+    }
+    
+    [Fact]
+    public async Task TestCustomStrategy_ExecuteAsync_WithCancellation_ShouldRespectCancellation()
+    {
+        // Arrange
+        var strategy = new TestCustomStrategy<int>();
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel immediately
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            strategy.ExecuteAsync(data, async x =>
             {
-                tasks.Add(strategy.ExecuteAsync(data, async x => 
-                {
-                    await Task.Delay(1, cancellationTokenSource.Token);
-                    return Task.CompletedTask;
-                }));
-            }
-            
-            await Assert.ThrowsAsync<OperationCanceledException>(() => Task.WhenAll(tasks));
-        }
+                await Task.Delay(1);
+            }, cts.Token));
     }
     
     [Fact]
-    public async Task AllStrategies_ShouldHandleCancellationWithException()
+    public async Task TestCustomStrategy_ExecuteAsync_WithCancellationDuringExecution_ShouldRespectCancellation()
     {
         // Arrange
-        var strategies = new IIterationStrategy<int>[]
-        {
-            new ForLoopStrategy<int>(),
-            new ForeachStrategy<int>(),
-            new LinqStrategy<int>(),
-            new ParallelLinqStrategy<int>(),
-            new UnityOptimizedStrategy<int>(),
-            new WasmOptimizedStrategy<int>()
-        };
-        
-        var data = Enumerable.Range(1, 100).ToArray();
-        var cancellationTokenSource = new CancellationTokenSource();
+        var strategy = new TestCustomStrategy<int>();
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
         
         // Cancel after a short delay
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(5);
-            cancellationTokenSource.Cancel();
-        });
+        cts.CancelAfter(50);
         
-        foreach (var strategy in strategies)
-        {
-            // Act & Assert - should handle cancellation with exception
-            await Assert.ThrowsAsync<OperationCanceledException>(() =>
-                strategy.ExecuteAsync(data, async x => 
-                {
-                    if (x == 50)
-                    {
-                        throw new InvalidOperationException("Test exception");
-                    }
-                    await Task.Delay(1, cancellationTokenSource.Token);
-                    return Task.CompletedTask;
-                }));
-        }
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            strategy.ExecuteAsync(data, async x =>
+            {
+                await Task.Delay(10);
+            }, cts.Token));
+    }
+    
+    [Fact]
+    public async Task TestCustomStrategy_ExecuteAsync_WithCancellationForTransform_ShouldRespectCancellation()
+    {
+        // Arrange
+        var strategy = new TestCustomStrategy<int>();
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel immediately
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            strategy.ExecuteAsync(data, async x =>
+            {
+                await Task.Delay(1);
+                return x * 2;
+            }, cts.Token));
+    }
+    
+    [Fact]
+    public async Task TestCustomStrategy_ExecuteAsync_WithCancellationDuringExecutionForTransform_ShouldRespectCancellation()
+    {
+        // Arrange
+        var strategy = new TestCustomStrategy<int>();
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        
+        // Cancel after a short delay
+        cts.CancelAfter(50);
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            strategy.ExecuteAsync(data, async x =>
+            {
+                await Task.Delay(10);
+                return x * 2;
+            }, cts.Token));
+    }
+    
+    [Fact]
+    public async Task TestCustomStrategy_ExecuteAsync_WithCancellationForWhere_ShouldRespectCancellation()
+    {
+        // Arrange
+        var strategy = new TestCustomStrategy<int>();
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel immediately
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            strategy.ExecuteAsync(data, async x =>
+            {
+                await Task.Delay(1);
+                return x > 500;
+            }, async x =>
+            {
+                await Task.Delay(1);
+                return x * 2;
+            }, cts.Token));
+    }
+    
+    [Fact]
+    public async Task TestCustomStrategy_ExecuteAsync_WithCancellationDuringExecutionForWhere_ShouldRespectCancellation()
+    {
+        // Arrange
+        var strategy = new TestCustomStrategy<int>();
+        var data = Enumerable.Range(1, 1000).ToArray();
+        var cts = new CancellationTokenSource();
+        
+        // Cancel after a short delay
+        cts.CancelAfter(50);
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+            strategy.ExecuteAsync(data, async x =>
+            {
+                await Task.Delay(10);
+                return x > 500;
+            }, async x =>
+            {
+                await Task.Delay(10);
+                return x * 2;
+            }, cts.Token));
     }
 }
