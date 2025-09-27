@@ -8,7 +8,7 @@ using Nexo.Feature.Unity.Models;
 
 namespace Nexo.Feature.Unity.Services
 {
-    public interface IUnityBuildPipeline
+    public partial interface IUnityBuildPipeline
 {
     // Orchestration methods will be added here
 }

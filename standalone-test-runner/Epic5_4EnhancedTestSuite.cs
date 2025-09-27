@@ -53,9 +53,9 @@ namespace StandaloneTestRunner
         }
     }
 
-    public interface IEpic54Phase1RealImplementationTests { List<TestInfo> GetTests(); }
-    public interface IEpic54Phase2DomainValidationTests { List<TestInfo> GetTests(); }
-    public interface IEpic54Phase3ErrorHandlingTests { List<TestInfo> GetTests(); }
-    public interface IEpic54Phase4SecurityTests { List<TestInfo> GetTests(); }
-    public interface IEpic54Phase5PerformanceTests { List<TestInfo> GetTests(); }
+    public partial interface IEpic54Phase1RealImplementationTests { List<TestInfo> GetTests(); }
+    public partial interface IEpic54Phase2DomainValidationTests { List<TestInfo> GetTests(); }
+    public partial interface IEpic54Phase3ErrorHandlingTests { List<TestInfo> GetTests(); }
+    public partial interface IEpic54Phase4SecurityTests { List<TestInfo> GetTests(); }
+    public partial interface IEpic54Phase5PerformanceTests { List<TestInfo> GetTests(); }
 }

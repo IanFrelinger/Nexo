@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Onboarding
 {
-    public interface IEnvironmentValidationService
+    public partial interface IEnvironmentValidationService
 {
     // Orchestration methods will be added here
 }

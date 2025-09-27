@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
-    public interface IDesktopCodeGenerator
+    public partial interface IDesktopCodeGenerator
 {
     // Orchestration methods will be added here
 }

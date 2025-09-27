@@ -36,7 +36,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Interface for platform material optimization
     /// </summary>
-    public interface IPlatformMaterialOptimizer
+    public partial interface IPlatformMaterialOptimizer
     {
         Task<Material> OptimizeMaterialAsync(Material material, PlatformType targetPlatform);
         Task<Material> OptimizeMaterialAsync(Material material, PerformanceRequirements requirements);

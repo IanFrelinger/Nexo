@@ -7,5 +7,5 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Feature.AI.Services
 {
-    public interface IMaterialContextAnalyzer
+    public partial interface IMaterialContextAnalyzer
 }

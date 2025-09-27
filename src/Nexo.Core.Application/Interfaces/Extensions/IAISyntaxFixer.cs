@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Interfaces.Extensions
     /// <summary>
     /// Interface for AI-powered syntax fixing of generated extension code
     /// </summary>
-    public interface IAISyntaxFixer
+    public partial interface IAISyntaxFixer
     {
         /// <summary>
         /// Attempts to fix syntax errors in the provided C# code

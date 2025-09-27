@@ -5,7 +5,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Interface for interactive help system with searchable documentation and examples
     /// </summary>
-    public interface IInteractiveHelpSystem
+    public partial interface IInteractiveHelpSystem
     {
         /// <summary>
         /// Shows interactive help for a specific topic or general help
@@ -36,7 +36,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Interface for documentation generation
     /// </summary>
-    public interface IDocumentationGenerator
+    public partial interface IDocumentationGenerator
     {
         /// <summary>
         /// Generates comprehensive documentation for a command
@@ -57,7 +57,7 @@ namespace Nexo.CLI.Help
     /// <summary>
     /// Interface for example repository
     /// </summary>
-    public interface IExampleRepository
+    public partial interface IExampleRepository
     {
         /// <summary>
         /// Gets examples by category

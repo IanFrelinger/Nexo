@@ -9,5 +9,5 @@ using Nexo.Shared;
 
 namespace Nexo.Core.Application.Tests.Services
 {
-        public struct TestKey
+        public partial struct TestKey
 }

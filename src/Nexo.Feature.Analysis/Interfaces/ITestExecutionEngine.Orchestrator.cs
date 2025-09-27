@@ -6,7 +6,7 @@ using System.Collections.ObjectModel;
 
 namespace Nexo.Feature.Analysis.Interfaces
 {
-    public interface ITestExecutionEngine
+    public partial interface ITestExecutionEngine
 {
     // Orchestration methods will be added here
 }

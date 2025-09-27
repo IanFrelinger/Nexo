@@ -10,7 +10,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// Defines the contract for a configurable coding standards analyzer that can enforce
     /// specific coding standards on code generation agents.
     /// </summary>
-    public interface ICodingStandardAnalyzer
+    public partial interface ICodingStandardAnalyzer
     {
         /// <summary>
         /// Validates code against the configured coding standards.

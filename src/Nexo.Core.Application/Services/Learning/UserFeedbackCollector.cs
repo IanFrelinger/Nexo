@@ -298,7 +298,7 @@ public partial class FeedbackInsights
 /// <summary>
 /// Interface for feedback storage
 /// </summary>
-public interface IFeedbackStore
+public partial interface IFeedbackStore
 {
     Task StoreFeedbackAsync(UserFeedback feedback);
     Task<IEnumerable<UserFeedback>> GetFeedbackSinceAsync(DateTime since);
@@ -310,7 +310,7 @@ public interface IFeedbackStore
 /// <summary>
 /// Interface for feedback analysis
 /// </summary>
-public interface IFeedbackAnalyzer
+public partial interface IFeedbackAnalyzer
 {
     Task<FeedbackAnalysisResult> AnalyzeFeedbackAsync(UserFeedback feedback);
     Task<FeedbackAnalysisResult> AnalyzeFeedbackBatchAsync(IEnumerable<UserFeedback> feedback);

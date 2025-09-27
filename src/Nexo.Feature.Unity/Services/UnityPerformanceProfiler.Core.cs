@@ -9,5 +9,5 @@ using Nexo.Core.Application.Services.Adaptation;
 
 namespace Nexo.Feature.Unity.Services
 {
-    public interface IUnityProfilerAPI
+    public partial interface IUnityProfilerAPI
 }

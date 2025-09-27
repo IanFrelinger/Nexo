@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Feature.Data.Interfaces
 {
-    public interface IRepository<T, TId> where T : class
+    public partial interface IRepository<T, TId> where T : class
 }

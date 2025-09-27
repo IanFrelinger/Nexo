@@ -322,7 +322,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// File system service interface
     /// </summary>
-    public interface IFileSystemService
+    public partial interface IFileSystemService
     {
         Task<bool> FileExistsAsync(string path);
         Task<bool> DirectoryExistsAsync(string path);

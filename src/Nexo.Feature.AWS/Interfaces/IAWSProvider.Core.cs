@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Feature.AWS.Interfaces
 {
-    public interface IAWSProvider
+    public partial interface IAWSProvider
 }

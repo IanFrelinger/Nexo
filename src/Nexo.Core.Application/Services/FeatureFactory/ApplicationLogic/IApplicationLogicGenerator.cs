@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
     /// <summary>
     /// Interface for generating application logic from domain logic
     /// </summary>
-    public interface IApplicationLogicGenerator
+    public partial interface IApplicationLogicGenerator
     {
         /// <summary>
         /// Generates complete application logic from domain logic

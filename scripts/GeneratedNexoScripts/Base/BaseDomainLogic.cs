@@ -45,7 +45,7 @@ namespace NexoDoomGame.DomainLogic.Base
     /// <summary>
     /// Base interface for domain logic providers
     /// </summary>
-    public interface IBaseDomainLogicProvider
+    public partial interface IBaseDomainLogicProvider
     {
         Task<BaseDomainLogic> CreateAsync();
         Task<bool> ValidateAsync();
@@ -55,7 +55,7 @@ namespace NexoDoomGame.DomainLogic.Base
     /// <summary>
     /// Base interface for domain logic validation
     /// </summary>
-    public interface IBaseDomainLogicValidator
+    public partial interface IBaseDomainLogicValidator
     {
         Task<bool> ValidateAsync(BaseDomainLogic component);
         Task<string[]> GetValidationErrorsAsync(BaseDomainLogic component);

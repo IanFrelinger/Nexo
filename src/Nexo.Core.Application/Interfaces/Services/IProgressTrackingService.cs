@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Onboarding
     /// <summary>
     /// Interface for progress tracking services
     /// </summary>
-    public interface IProgressTrackingService
+    public partial interface IProgressTrackingService
     {
         Task<bool> TrackProgressAsync(string userId, string activityId, double progress);
         Task<ProgressInfo> GetProgressAsync(string userId, string activityId);

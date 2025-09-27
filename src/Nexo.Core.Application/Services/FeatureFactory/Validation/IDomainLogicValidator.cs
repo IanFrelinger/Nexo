@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Validation
     /// <summary>
     /// Interface for validating generated domain logic
     /// </summary>
-    public interface IDomainLogicValidator
+    public partial interface IDomainLogicValidator
     {
         /// <summary>
         /// Validates complete domain logic

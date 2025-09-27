@@ -9,7 +9,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// S3 storage adapter interface for file operations
     /// </summary>
-    public interface IS3StorageAdapter
+    public partial interface IS3StorageAdapter
     {
         /// <summary>
         /// Uploads a file to S3

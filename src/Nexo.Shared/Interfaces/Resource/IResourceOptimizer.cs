@@ -8,7 +8,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Interface for resource optimization and adaptive performance tuning.
     /// </summary>
-    public interface IResourceOptimizer
+    public partial interface IResourceOptimizer
     {
         /// <summary>
         /// Performs adaptive performance tuning based on current resource usage.

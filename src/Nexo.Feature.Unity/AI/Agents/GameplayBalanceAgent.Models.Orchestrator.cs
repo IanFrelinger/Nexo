@@ -6,7 +6,7 @@ using Nexo.Feature.Unity.Models;
 
 namespace Nexo.Feature.Unity.AI.Agents
 {
-    public interface IGameplayAnalyzer
+    public partial interface IGameplayAnalyzer
 {
     // Orchestration methods will be added here
 }

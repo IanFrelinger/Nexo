@@ -91,7 +91,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Interface for text generation providers
     /// </summary>
-    public interface ITextGenProvider
+    public partial interface ITextGenProvider
     {
         Task<string> CompleteAsync(string prompt, CancellationToken ct);
     }

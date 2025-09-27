@@ -4,5 +4,8 @@ using System.Threading.Tasks;
 
 namespace Nexo.Shared.Interfaces.Resource
 {
-    public interface IResourceMonitor
+    public partial interface IResourceMonitor
+    {
+        // Interface members will be added here
+    }
 }

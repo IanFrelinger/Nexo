@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Safety
     /// <summary>
     /// Interface for audit services
     /// </summary>
-    public interface IAuditService
+    public partial interface IAuditService
     {
         Task<bool> LogActionAsync(string userId, string action, Dictionary<string, object> metadata);
         Task<List<AuditEntry>> GetAuditLogAsync(string userId, DateTime from, DateTime to);

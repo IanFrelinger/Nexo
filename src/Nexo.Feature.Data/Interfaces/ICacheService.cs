@@ -7,7 +7,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Cache service interface for repository caching strategies
     /// </summary>
-    public interface ICacheService
+    public partial interface ICacheService
     {
         /// <summary>
         /// Gets a value from cache

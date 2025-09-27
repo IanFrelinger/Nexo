@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
     /// <summary>
     /// Interface for generating test suites for domain logic
     /// </summary>
-    public interface ITestSuiteGenerator
+    public partial interface ITestSuiteGenerator
     {
         /// <summary>
         /// Generates complete test suite for domain logic

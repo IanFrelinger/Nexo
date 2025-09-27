@@ -7,7 +7,7 @@ using Nexo.Feature.Pipeline.Enums;
 
 namespace Nexo.Feature.Pipeline.Interfaces
 {
-    public interface ICustomPipelineStep
+    public partial interface ICustomPipelineStep
 {
     // Orchestration methods will be added here
 }

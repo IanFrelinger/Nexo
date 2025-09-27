@@ -53,7 +53,7 @@ AVAILABLE SERVICES FOR DEPENDENCY INJECTION:
 
 PLUGIN INTERFACE DEFINITION:
 ```csharp
-public interface IPlugin
+public partial interface IPlugin
 {{
     string Name {{ get; }}
     string Version {{ get; }}

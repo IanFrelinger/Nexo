@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Monitoring
     /// <summary>
     /// Interface for health check services
     /// </summary>
-    public interface IHealthCheckService
+    public partial interface IHealthCheckService
     {
         Task<HealthStatus> CheckHealthAsync();
         Task<Dictionary<string, HealthStatus>> CheckDependenciesAsync();

@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Onboarding
     /// <summary>
     /// Interface for environment validation services
     /// </summary>
-    public interface IEnvironmentValidationService
+    public partial interface IEnvironmentValidationService
     {
         Task<ValidationResult> ValidateEnvironmentAsync();
         Task<List<ValidationIssue>> GetValidationIssuesAsync();

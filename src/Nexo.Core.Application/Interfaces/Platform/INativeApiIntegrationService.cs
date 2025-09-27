@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// Interface for native API integration service.
     /// Provides framework for integrating with native platform APIs and handling permissions.
     /// </summary>
-    public interface INativeApiIntegrationService
+    public partial interface INativeApiIntegrationService
     {
         /// <summary>
         /// Integrates with native platform APIs.

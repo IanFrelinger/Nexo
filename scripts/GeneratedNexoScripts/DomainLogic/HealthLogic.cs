@@ -42,7 +42,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for HealthLogic providers
     /// </summary>
-    public interface IHealthLogicProvider : IBaseDomainLogicProvider
+    public partial interface IHealthLogicProvider : IBaseDomainLogicProvider
     {
         new Task<HealthLogic> CreateAsync();
     }
@@ -50,7 +50,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for HealthLogic validation
     /// </summary>
-    public interface IHealthLogicValidator : IBaseDomainLogicValidator
+    public partial interface IHealthLogicValidator : IBaseDomainLogicValidator
     {
         Task<bool> ValidateAsync(HealthLogic component);
     }

@@ -8,7 +8,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// Interface for comprehensive reporting service.
     /// Part of Phase 3.3 analytics and reporting features.
     /// </summary>
-    public interface IComprehensiveReportingService
+    public partial interface IComprehensiveReportingService
     {
         /// <summary>
         /// Generates a comprehensive analytics report.

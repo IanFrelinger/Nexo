@@ -7,7 +7,7 @@ using Nexo.Feature.Factory.Domain.Models;
 
 namespace Nexo.Feature.Factory.Application.Interfaces
 {
-    public interface IAgentCoordinator
+    public partial interface IAgentCoordinator
 {
     // Orchestration methods will be added here
 }

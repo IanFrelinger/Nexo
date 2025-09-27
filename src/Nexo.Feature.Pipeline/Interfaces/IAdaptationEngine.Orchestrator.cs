@@ -6,7 +6,7 @@ using Nexo.Feature.Pipeline.Models;
 
 namespace Nexo.Feature.Pipeline.Interfaces
 {
-    public interface IAdaptationEngine
+    public partial interface IAdaptationEngine
 {
     // Orchestration methods will be added here
 }

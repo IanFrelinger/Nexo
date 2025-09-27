@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// Interface for production-ready security auditing and penetration testing.
     /// Part of Phase 3.4 production readiness features.
     /// </summary>
-    public interface IProductionSecurityAuditor
+    public partial interface IProductionSecurityAuditor
     {
         /// <summary>
         /// Runs comprehensive security audit across all systems.

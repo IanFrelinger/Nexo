@@ -8,5 +8,5 @@ using Nexo.Feature.Pipeline.Models;
 
 namespace Nexo.Feature.Pipeline.Interfaces
 {
-public interface ICommand<in TRequest, TResponse>
+public partial interface ICommand<in TRequest, TResponse>
 }

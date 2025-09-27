@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Security
 {
-    public interface ISecureApiKeyManager
+    public partial interface ISecureApiKeyManager
 {
     // Orchestration methods will be added here
 }

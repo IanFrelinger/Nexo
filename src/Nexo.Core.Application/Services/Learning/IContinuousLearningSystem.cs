@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Services.Learning;
 /// <summary>
 /// Interface for continuous learning system that improves over time
 /// </summary>
-public interface IContinuousLearningSystem
+public partial interface IContinuousLearningSystem
 {
     /// <summary>
     /// Process a learning cycle to identify patterns and improve system behavior
@@ -37,7 +37,7 @@ public interface IContinuousLearningSystem
 /// <summary>
 /// Interface for pattern recognition in learning data
 /// </summary>
-public interface IPatternRecognitionEngine
+public partial interface IPatternRecognitionEngine
 {
     /// <summary>
     /// Identify patterns in feedback and performance data
@@ -62,7 +62,7 @@ public interface IPatternRecognitionEngine
 /// <summary>
 /// Interface for adaptation recommendation engine
 /// </summary>
-public interface IAdaptationRecommender
+public partial interface IAdaptationRecommender
 {
     /// <summary>
     /// Generate recommendations based on learning insights

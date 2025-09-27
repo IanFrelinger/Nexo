@@ -12,7 +12,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
 /// <summary>
 /// Generic command interface for typed commands
 /// </summary>
-public interface ICommand<in TRequest, TResponse>
+public partial interface ICommand<in TRequest, TResponse>
 {
     Task<TResponse> ExecuteAsync(TRequest request, CancellationToken cancellationToken = default);
 }
@@ -49,7 +49,7 @@ public partial class BehaviorAttribute : Attribute
 /// Represents an atomic operation in the pipeline architecture.
 /// Commands are the fundamental building blocks that can be composed into behaviors.
 /// </summary>
-public interface ICommand
+public partial interface ICommand
 {
     /// <summary>
     /// Unique identifier for this command.

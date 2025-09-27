@@ -3,5 +3,5 @@ using Nexo.Verify.Models;
 
 namespace Nexo.Verify.Tests
 {
-    public interface IBrick<TInput, TOutput>
+    public partial interface IBrick<TInput, TOutput>
 }

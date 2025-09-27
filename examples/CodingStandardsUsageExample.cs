@@ -111,7 +111,7 @@ public partial class User
                 ["IUserRepository.cs"] = @"
 using System;
 
-public interface UserRepository
+public partial interface UserRepository
 {
     User GetById(int id);
     void Save(User user);

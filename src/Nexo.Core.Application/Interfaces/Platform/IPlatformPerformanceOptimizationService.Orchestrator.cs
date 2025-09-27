@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
-    public interface IPlatformPerformanceOptimizationService
+    public partial interface IPlatformPerformanceOptimizationService
 {
     // Orchestration methods will be added here
 }

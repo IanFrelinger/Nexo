@@ -42,7 +42,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for MovementLogic providers
     /// </summary>
-    public interface IMovementLogicProvider : IBaseDomainLogicProvider
+    public partial interface IMovementLogicProvider : IBaseDomainLogicProvider
     {
         new Task<MovementLogic> CreateAsync();
     }
@@ -50,7 +50,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for MovementLogic validation
     /// </summary>
-    public interface IMovementLogicValidator : IBaseDomainLogicValidator
+    public partial interface IMovementLogicValidator : IBaseDomainLogicValidator
     {
         Task<bool> ValidateAsync(MovementLogic component);
     }

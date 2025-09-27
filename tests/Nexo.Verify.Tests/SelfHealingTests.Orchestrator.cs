@@ -5,7 +5,7 @@ using System.Net.Http;
 
 namespace Nexo.Verify.Tests
 {
-    public interface ITextGenProvider
+    public partial interface ITextGenProvider
 {
     // Orchestration methods will be added here
 }

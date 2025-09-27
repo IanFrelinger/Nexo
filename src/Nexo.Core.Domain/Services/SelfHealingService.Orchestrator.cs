@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Domain.Services
 {
-    public interface IProvider
+    public partial interface IProvider
 {
     // Orchestration methods will be added here
 }

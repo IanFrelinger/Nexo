@@ -34,7 +34,7 @@ namespace Nexo.Core.Application.Services.AI.Runtime
     /// <summary>
     /// Exception thrown when no AI provider is available
     /// </summary>
-    public class NoAIProviderAvailableException : Exception
+    public partial class NoAIProviderAvailableException : Exception
     {
         public NoAIProviderAvailableException(string message) : base(message) { }
         public NoAIProviderAvailableException(string message, Exception innerException) : base(message, innerException) { }

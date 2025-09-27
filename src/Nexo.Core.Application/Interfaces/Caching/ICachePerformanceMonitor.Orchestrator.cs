@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Caching
 {
-    public interface ICachePerformanceMonitor : IDisposable
+    public partial interface ICachePerformanceMonitor : IDisposable
 {
     // Orchestration methods will be added here
 }

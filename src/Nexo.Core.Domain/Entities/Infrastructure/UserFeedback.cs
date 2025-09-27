@@ -18,7 +18,7 @@ public enum FeedbackType
 /// <summary>
 /// User feedback
 /// </summary>
-public record UserFeedback
+public partial record UserFeedback
 {
     /// <summary>
     /// Unique identifier

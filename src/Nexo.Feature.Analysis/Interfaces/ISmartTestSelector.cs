@@ -8,7 +8,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Interface for intelligent test selection based on code changes and impact analysis.
     /// </summary>
-    public interface ISmartTestSelector
+    public partial interface ISmartTestSelector
     {
         /// <summary>
         /// Selects tests to run based on intelligent analysis of changes.

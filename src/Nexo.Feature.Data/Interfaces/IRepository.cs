@@ -11,7 +11,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// </summary>
     /// <typeparam name="T">Entity type</typeparam>
     /// <typeparam name="TId">Entity ID type</typeparam>
-    public interface IRepository<T, TId> where T : class
+    public partial interface IRepository<T, TId> where T : class
     {
         /// <summary>
         /// Gets an entity by its ID
@@ -127,7 +127,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// Paginated result interface
     /// </summary>
     /// <typeparam name="T">Result type</typeparam>
-    public interface IPagedResult<T>
+    public partial interface IPagedResult<T>
     {
         /// <summary>
         /// Gets the items in the current page

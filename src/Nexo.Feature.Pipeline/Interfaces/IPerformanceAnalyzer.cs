@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Interface for analyzing pipeline performance and generating insights.
     /// </summary>
-    public interface IPerformanceAnalyzer
+    public partial interface IPerformanceAnalyzer
     {
         /// <summary>
         /// Analyzes the performance of a pipeline execution result.

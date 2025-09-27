@@ -7,7 +7,7 @@ using Nexo.Core.Application.Interfaces.Caching;
 
 namespace Nexo.Infrastructure.Services.Caching.Advanced
 {
-    public interface ICacheEvictionStrategy
+    public partial interface ICacheEvictionStrategy
 {
     // Orchestration methods will be added here
 }

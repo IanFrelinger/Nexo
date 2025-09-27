@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Analytics
 {
-    public interface IComprehensiveReportingService
+    public partial interface IComprehensiveReportingService
 {
     // Orchestration methods will be added here
 }

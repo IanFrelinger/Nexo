@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// Interface for Desktop code generation.
     /// Generates native desktop applications for Windows, Mac, and Linux.
     /// </summary>
-    public interface IDesktopCodeGenerator
+    public partial interface IDesktopCodeGenerator
     {
         /// <summary>
         /// Generates desktop application code from application logic.

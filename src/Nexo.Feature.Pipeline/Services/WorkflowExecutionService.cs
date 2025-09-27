@@ -15,7 +15,7 @@ namespace Nexo.Feature.Pipeline.Services
     /// <summary>
     /// Simple stub configuration for pipeline context creation.
     /// </summary>
-    public class StubPipelineConfiguration : IPipelineConfiguration
+    public partial class StubPipelineConfiguration : IPipelineConfiguration
     {
         public string Name => "Stub Configuration";
         public string Version => "1.0.0";

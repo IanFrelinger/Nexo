@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Entities.Infrastructure
 {
-    public partial class UserFeedback
+    public partial record UserFeedback
     {
         // Orchestration methods will be added here
     }

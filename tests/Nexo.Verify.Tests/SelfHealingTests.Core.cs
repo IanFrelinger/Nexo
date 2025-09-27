@@ -5,5 +5,5 @@ using System.Net.Http;
 
 namespace Nexo.Verify.Tests
 {
-    public interface ITextGenProvider
+    public partial interface ITextGenProvider
 }

@@ -5,5 +5,5 @@ using Nexo.Feature.Analysis.Models;
 
 namespace Nexo.Feature.Analysis.Interfaces
 {
-    public interface ISmartTestSelector
+    public partial interface ISmartTestSelector
 }

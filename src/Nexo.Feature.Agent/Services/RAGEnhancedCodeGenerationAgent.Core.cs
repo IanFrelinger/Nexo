@@ -13,5 +13,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Feature.Agent.Services
 {
-                codeResult += $"public interface I{SanitizeForClassName(featureDescription)}\n";
+                codeResult += $"public partial interface I{SanitizeForClassName(featureDescription)}\n";
 }

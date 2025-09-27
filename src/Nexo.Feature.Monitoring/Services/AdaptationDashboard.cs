@@ -399,7 +399,7 @@ public partial class AdaptationDashboard : IAdaptationDashboard
 /// <summary>
 /// Interface for metrics aggregation
 /// </summary>
-public interface IMetricsAggregator
+public partial interface IMetricsAggregator
 {
     Task<Dictionary<string, double>> AggregateMetricsAsync(TimeSpan timeWindow);
     Task<double> CalculateTrendAsync(string metricName, TimeSpan timeWindow);

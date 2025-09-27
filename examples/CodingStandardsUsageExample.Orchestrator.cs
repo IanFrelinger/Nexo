@@ -16,7 +16,7 @@ using System;
 
 namespace Examples
 {
-public interface UserRepository
+public partial interface UserRepository
 {
     // Orchestration methods will be added here
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Feature.AWS.Interfaces
 {
-    public interface IS3StorageAdapter
+    public partial interface IS3StorageAdapter
 {
     // Orchestration methods will be added here
 }

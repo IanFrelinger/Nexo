@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Onboarding
     /// <summary>
     /// Interface for tutorial services
     /// </summary>
-    public interface ITutorialService
+    public partial interface ITutorialService
     {
         Task<string> CreateTutorialAsync(string userId, string topic);
         Task<bool> CompleteTutorialStepAsync(string userId, string tutorialId, string stepId);

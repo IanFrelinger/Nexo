@@ -97,7 +97,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Interface for AI mode handlers
     /// </summary>
-    public interface IAiModeHandler
+    public partial interface IAiModeHandler
     {
         Task<AiModeResult> ProcessRequestAsync(
             string request,
@@ -313,7 +313,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Interface for AI mode service
     /// </summary>
-    public interface IAiModeService
+    public partial interface IAiModeService
     {
         Task<AiMode> GetCurrentModeAsync(CancellationToken cancellationToken = default);
         Task<bool> SetModeAsync(AiMode mode, CancellationToken cancellationToken = default);

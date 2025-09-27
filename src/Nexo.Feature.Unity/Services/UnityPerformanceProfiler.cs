@@ -361,7 +361,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Unity profiler API interface
     /// </summary>
-    public interface IUnityProfilerAPI
+    public partial interface IUnityProfilerAPI
     {
         Task StartProfilingAsync(UnityProfilingConfiguration configuration);
         Task StopProfilingAsync();
@@ -371,7 +371,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Performance data collector interface
     /// </summary>
-    public interface IPerformanceDataCollector
+    public partial interface IPerformanceDataCollector
     {
         Task CollectFrameDataAsync(UnityFrameData frameData);
         Task<IEnumerable<UnityFrameData>> GetHistoricalDataAsync(TimeSpan timeRange);

@@ -161,15 +161,15 @@ namespace Nexo.Demo.Tests.Support
 
     // Mock service interfaces and implementations would go here
     // These are placeholders for the actual mock services
-    public interface IMockAiModeService { }
-    public interface IMockPolicyService { }
-    public interface IMockSelfHealingService { }
-    public interface IMockParityService { }
-    public interface IMockAuditService { }
-    public interface IMockPluginService { }
-    public interface IMockCodeGenService { }
-    public interface IMockExportService { }
-    public interface IPipelineOrchestrator { }
+    public partial interface IMockAiModeService { }
+    public partial interface IMockPolicyService { }
+    public partial interface IMockSelfHealingService { }
+    public partial interface IMockParityService { }
+    public partial interface IMockAuditService { }
+    public partial interface IMockPluginService { }
+    public partial interface IMockCodeGenService { }
+    public partial interface IMockExportService { }
+    public partial interface IPipelineOrchestrator { }
 
     public partial class MockAiModeService : IMockAiModeService { }
     public partial class MockPolicyService : IMockPolicyService { }

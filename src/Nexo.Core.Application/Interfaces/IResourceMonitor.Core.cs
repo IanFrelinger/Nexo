@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces
 {
-    public interface IResourceMonitor
+    public partial interface IResourceMonitor
 }

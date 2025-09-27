@@ -6,7 +6,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Interface for real-time terminal dashboard with live performance metrics and status
     /// </summary>
-    public interface IRealTimeDashboard
+    public partial interface IRealTimeDashboard
     {
         /// <summary>
         /// Shows the real-time dashboard with live updates
@@ -27,7 +27,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Interface for dashboard widgets
     /// </summary>
-    public interface IDashboardWidget
+    public partial interface IDashboardWidget
     {
         string Title { get; }
         Task RenderAsync(Rectangle area);
@@ -125,7 +125,7 @@ namespace Nexo.CLI.Dashboard
     /// <summary>
     /// Represents a rectangle area for rendering
     /// </summary>
-    public struct Rectangle
+    public partial struct Rectangle
     {
         public int X { get; set; }
         public int Y { get; set; }

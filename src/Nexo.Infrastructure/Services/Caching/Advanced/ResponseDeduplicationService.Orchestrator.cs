@@ -12,7 +12,7 @@ using Nexo.Core.Application.Interfaces.Caching;
 
 namespace Nexo.Infrastructure.Services.Caching.Advanced
 {
-    public interface IResponseDeduplicationService
+    public partial interface IResponseDeduplicationService
 {
     // Orchestration methods will be added here
 }

@@ -304,7 +304,7 @@ namespace GeneratedApiServer
         if (features.Contains("Authentication"))
         {
             services.Add(@"
-    public interface IAuthService
+    public partial interface IAuthService
     {
         Task<string> GenerateTokenAsync(string username);
         Task<bool> ValidateUserAsync(string username, string password);
@@ -331,7 +331,7 @@ namespace GeneratedApiServer
         if (features.Contains("Database"))
         {
             services.Add(@"
-    public interface IProductService
+    public partial interface IProductService
     {
         Task<IEnumerable<Product>> GetAllProductsAsync();
         Task<Product> GetProductByIdAsync(int id);

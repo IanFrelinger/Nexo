@@ -248,7 +248,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Interface for policy execution service
     /// </summary>
-    public interface IPolicyExecutionService
+    public partial interface IPolicyExecutionService
     {
         Task<PolicyExecutionResult> ExecutePolicyAsync(
             string executionId,

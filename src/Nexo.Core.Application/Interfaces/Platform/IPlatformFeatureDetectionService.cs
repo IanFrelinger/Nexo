@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// Interface for platform feature detection service.
     /// Detects platform capabilities and maps feature availability.
     /// </summary>
-    public interface IPlatformFeatureDetectionService
+    public partial interface IPlatformFeatureDetectionService
     {
         /// <summary>
         /// Detects platform capabilities for a given platform.

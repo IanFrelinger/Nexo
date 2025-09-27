@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Performance
 {
-    public interface IModelLoadingOptimizationService
+    public partial interface IModelLoadingOptimizationService
 }

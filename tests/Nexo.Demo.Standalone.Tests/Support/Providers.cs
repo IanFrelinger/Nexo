@@ -3,7 +3,7 @@ namespace Nexo.Demo.Tests.Support;
 /// <summary>
 /// Interface for text generation providers
 /// </summary>
-public interface ITextGenProvider
+public partial interface ITextGenProvider
 {
     Task<string> CompleteAsync(string prompt, CancellationToken cancellationToken);
 }

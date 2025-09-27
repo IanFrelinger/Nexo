@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Feature.Factory.Testing.Timeout
 {
-    public interface ITimeoutManager
+    public partial interface ITimeoutManager
 {
     // Orchestration methods will be added here
 }

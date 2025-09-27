@@ -115,7 +115,7 @@ namespace Nexo.Feature.Agent.Services
                 codeResult += "Generated Code Structure:\n";
                 codeResult += "```csharp\n";
                 codeResult += "// Interface definition\n";
-                codeResult += $"public interface I{SanitizeForClassName(featureDescription)}\n";
+                codeResult += $"public partial interface I{SanitizeForClassName(featureDescription)}\n";
                 codeResult += "{\n";
                 codeResult += "    // Define methods based on requirements\n";
                 codeResult += "}\n\n";

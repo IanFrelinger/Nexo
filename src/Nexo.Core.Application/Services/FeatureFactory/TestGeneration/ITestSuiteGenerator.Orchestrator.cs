@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
 {
-    public interface ITestSuiteGenerator
+    public partial interface ITestSuiteGenerator
 {
     // Orchestration methods will be added here
 }

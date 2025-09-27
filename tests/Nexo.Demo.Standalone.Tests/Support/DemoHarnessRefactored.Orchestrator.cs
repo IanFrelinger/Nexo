@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Nexo.Demo.Tests.Support
 {
-    public interface IMockAiModeService { }
+    public partial interface IMockAiModeService { }
 {
     // Orchestration methods will be added here
 }

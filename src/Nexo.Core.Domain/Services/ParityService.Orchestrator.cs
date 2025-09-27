@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Domain.Services
 {
-    public interface IParityService
+    public partial interface IParityService
 {
     // Orchestration methods will be added here
 }

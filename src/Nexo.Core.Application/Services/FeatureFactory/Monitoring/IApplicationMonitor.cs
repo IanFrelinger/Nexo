@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Monitoring
     /// <summary>
     /// Interface for monitoring deployed applications
     /// </summary>
-    public interface IApplicationMonitor
+    public partial interface IApplicationMonitor
     {
         /// <summary>
         /// Sets up health monitoring for an application

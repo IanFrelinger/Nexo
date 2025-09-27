@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// Interface for model loading optimization service.
     /// Part of Phase 3.3 performance optimization features.
     /// </summary>
-    public interface IModelLoadingOptimizationService
+    public partial interface IModelLoadingOptimizationService
     {
         /// <summary>
         /// Optimizes model loading based on usage patterns and resource availability.

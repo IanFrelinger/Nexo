@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// Interface for Web code generation.
     /// Generates web applications with React/Vue, WebAssembly, and PWA features.
     /// </summary>
-    public interface IWebCodeGenerator
+    public partial interface IWebCodeGenerator
     {
         /// <summary>
         /// Generates web application code from application logic.

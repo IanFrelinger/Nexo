@@ -50,7 +50,7 @@ namespace StandaloneTestRunner
         }
     }
 
-    public class SmokeTestResult
+    public partial class SmokeTestResult
     {
         public string TestName { get; }
         public bool Passed { get; }

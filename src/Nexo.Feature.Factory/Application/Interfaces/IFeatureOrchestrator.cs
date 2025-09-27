@@ -11,7 +11,7 @@ namespace Nexo.Feature.Factory.Application.Interfaces
     /// Orchestrates the entire feature generation process from natural language to production-ready code.
     /// This is the main entry point for the AI-native feature factory.
     /// </summary>
-    public interface IFeatureOrchestrator
+    public partial interface IFeatureOrchestrator
     {
         /// <summary>
         /// Generates a complete feature from a natural language description.

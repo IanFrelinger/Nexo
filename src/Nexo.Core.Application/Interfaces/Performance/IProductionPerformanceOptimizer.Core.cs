@@ -6,5 +6,5 @@ using Nexo.Core.Application.Interfaces.Caching;
 
 namespace Nexo.Core.Application.Interfaces.Performance
 {
-    public interface IProductionPerformanceOptimizer
+    public partial interface IProductionPerformanceOptimizer
 }

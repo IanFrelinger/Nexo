@@ -109,7 +109,7 @@ Requirements:
 
 IPlugin interface to implement:
 ```csharp
-public interface IPlugin
+public partial interface IPlugin
 {{
     string Name {{ get; }}
     string Version {{ get; }}

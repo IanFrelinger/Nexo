@@ -6,5 +6,5 @@ using Nexo.Feature.Analysis.Models;
 
 namespace Nexo.Feature.Analysis.Interfaces
 {
-    public interface ICodingStandardAnalyzer
+    public partial interface ICodingStandardAnalyzer
 }

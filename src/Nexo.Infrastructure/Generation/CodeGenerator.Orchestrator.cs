@@ -11,7 +11,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Generation
 {
-public interface IPlugin
+public partial interface IPlugin
 {
     // Orchestration methods will be added here
 }

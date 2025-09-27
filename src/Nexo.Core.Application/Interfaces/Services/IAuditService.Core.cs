@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Safety
 {
-    public interface IAuditService
+    public partial interface IAuditService
 }

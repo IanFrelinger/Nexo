@@ -10,5 +10,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
 {
-    public interface IDeploymentManager
+    public partial interface IDeploymentManager
 }

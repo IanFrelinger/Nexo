@@ -7,5 +7,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
 {
-    public interface IDomainLogicOrchestrator
+    public partial interface IDomainLogicOrchestrator
 }

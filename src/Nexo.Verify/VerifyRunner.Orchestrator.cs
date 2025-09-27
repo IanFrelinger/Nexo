@@ -8,7 +8,7 @@ using Nexo.Verify.Asserts;
 
 namespace Nexo.Verify
 {
-    public interface IConsole
+    public partial interface IConsole
 {
     // Orchestration methods will be added here
 }

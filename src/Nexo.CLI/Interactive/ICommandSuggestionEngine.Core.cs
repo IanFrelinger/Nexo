@@ -3,5 +3,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.CLI.Interactive
 {
-    public interface ICommandSuggestionEngine
+    public partial interface ICommandSuggestionEngine
 }

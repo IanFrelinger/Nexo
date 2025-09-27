@@ -5,5 +5,5 @@ using Nexo.Feature.Pipeline.Models;
 
 namespace Nexo.Feature.Pipeline.Interfaces
 {
-    public interface IWorkflowConfigurationService
+    public partial interface IWorkflowConfigurationService
 }

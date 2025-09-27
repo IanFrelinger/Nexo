@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.ApplicationLogic
 {
-    public interface IApplicationLogicGenerator
+    public partial interface IApplicationLogicGenerator
 {
     // Orchestration methods will be added here
 }

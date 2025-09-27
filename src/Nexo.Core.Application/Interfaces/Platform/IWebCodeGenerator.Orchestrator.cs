@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
-    public interface IWebCodeGenerator
+    public partial interface IWebCodeGenerator
 {
     // Orchestration methods will be added here
 }

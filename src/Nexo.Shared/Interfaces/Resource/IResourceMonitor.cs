@@ -7,7 +7,7 @@ namespace Nexo.Shared.Interfaces.Resource
     /// <summary>
     /// Defines the contract for monitoring system resources.
     /// </summary>
-    public interface IResourceMonitor
+    public partial interface IResourceMonitor
     {
         /// <summary>
         /// Gets the current CPU usage percentage.

@@ -9,5 +9,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
 {
-    public interface IDeploymentOrchestrator
+    public partial interface IDeploymentOrchestrator
 }

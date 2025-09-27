@@ -8,7 +8,7 @@ namespace Nexo.Feature.AWS.Interfaces
     /// <summary>
     /// Main AWS provider interface for comprehensive AWS services integration
     /// </summary>
-    public interface IAWSProvider
+    public partial interface IAWSProvider
     {
         /// <summary>
         /// Gets the AWS region

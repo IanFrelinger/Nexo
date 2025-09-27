@@ -278,7 +278,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Interface for material context analysis
     /// </summary>
-    public interface IMaterialContextAnalyzer
+    public partial interface IMaterialContextAnalyzer
     {
         Task<MaterialContext> AnalyzeAsync(MaterialRequest request);
     }
@@ -286,7 +286,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Interface for color palette analysis
     /// </summary>
-    public interface IColorPaletteAnalyzer
+    public partial interface IColorPaletteAnalyzer
     {
         Task<ColorPalette> AnalyzeColorPaletteAsync(string description, string visualStyle);
     }
@@ -294,7 +294,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Interface for surface type detection
     /// </summary>
-    public interface ISurfaceTypeDetector
+    public partial interface ISurfaceTypeDetector
     {
         Task<SurfaceType> DetectSurfaceTypeAsync(string description);
     }
@@ -302,7 +302,7 @@ namespace Nexo.Feature.AI.Services
     /// <summary>
     /// Interface for performance analysis
     /// </summary>
-    public interface IPerformanceAnalyzer
+    public partial interface IPerformanceAnalyzer
     {
         Task<PerformanceConstraints> AnalyzeConstraintsAsync(PlatformType platform, MaterialType materialType);
     }

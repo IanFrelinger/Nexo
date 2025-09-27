@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// Interface for security compliance service that integrates API key management,
     /// audit logging, and compliance reporting for Phase 3.3.
     /// </summary>
-    public interface ISecurityComplianceService
+    public partial interface ISecurityComplianceService
     {
         /// <summary>
         /// Validates API key and logs the access attempt.

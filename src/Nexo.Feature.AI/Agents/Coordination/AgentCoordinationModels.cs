@@ -193,7 +193,7 @@ public record SecurityValidation
 /// <summary>
 /// Agent coordinator interface
 /// </summary>
-public interface IAgentCoordinator
+public partial interface IAgentCoordinator
 {
     Task<AgentResponse> CoordinateComplexTaskAsync(ComplexAgentRequest request);
     Task<IEnumerable<ISpecializedAgent>> SelectOptimalAgentsAsync(
@@ -207,7 +207,7 @@ public interface IAgentCoordinator
 /// <summary>
 /// Agent workflow planner interface
 /// </summary>
-public interface IAgentWorkflowPlanner
+public partial interface IAgentWorkflowPlanner
 {
     Task<AgentWorkflow> CreateWorkflowAsync(
         IEnumerable<ISpecializedAgent> agents, 
@@ -218,7 +218,7 @@ public interface IAgentWorkflowPlanner
 /// <summary>
 /// Agent communication hub interface
 /// </summary>
-public interface IAgentCommunicationHub
+public partial interface IAgentCommunicationHub
 {
     Task BroadcastMessageAsync(string message, IEnumerable<ISpecializedAgent> agents);
     Task<T> RequestFromAgentAsync<T>(ISpecializedAgent agent, string request);

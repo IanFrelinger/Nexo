@@ -291,7 +291,7 @@ public partial class RealTimeAdaptationService : IHostedService
 /// <summary>
 /// Interface for performance metrics collection
 /// </summary>
-public interface IPerformanceMetricsCollector
+public partial interface IPerformanceMetricsCollector
 {
     Task<IEnumerable<AgentPerformanceMetrics>> GetCurrentMetricsAsync();
     Task<AgentPerformanceMetrics> GetAgentMetricsAsync(string agentId);

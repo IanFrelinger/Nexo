@@ -7,7 +7,7 @@ using Nexo.Feature.Data.Interfaces;
 
 namespace Nexo.Feature.Data.Services
 {
-    public interface ITransactionManager : IDisposable
+    public partial interface ITransactionManager : IDisposable
 {
     // Orchestration methods will be added here
 }

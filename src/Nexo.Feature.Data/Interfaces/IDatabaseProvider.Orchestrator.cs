@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Feature.Data.Interfaces
 {
-    public interface IDatabaseProvider
+    public partial interface IDatabaseProvider
 {
     // Orchestration methods will be added here
 }

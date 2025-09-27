@@ -10,7 +10,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Interface for knowledge base operations that store and retrieve learning insights.
     /// </summary>
-    public interface IKnowledgeBase
+    public partial interface IKnowledgeBase
     {
         /// <summary>
         /// Updates the knowledge base with execution results and patterns.

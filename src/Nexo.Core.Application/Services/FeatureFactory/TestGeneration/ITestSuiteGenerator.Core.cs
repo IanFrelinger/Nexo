@@ -8,5 +8,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.TestGeneration
 {
-    public interface ITestSuiteGenerator
+    public partial interface ITestSuiteGenerator
 }

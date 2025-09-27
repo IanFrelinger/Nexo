@@ -2,5 +2,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.CLI.Help
 {
-    public interface IInteractiveHelpSystem
+    public partial interface IInteractiveHelpSystem
 }

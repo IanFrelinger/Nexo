@@ -9,7 +9,7 @@ namespace Nexo.Core.Domain.Interfaces
     /// <summary>
     /// Interface for tool maintenance service
     /// </summary>
-    public interface IToolMaintenanceService
+    public partial interface IToolMaintenanceService
     {
         /// <summary>
         /// Creates a maintenance plan for a tool

@@ -85,7 +85,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Interface for cache eviction strategies.
     /// </summary>
-    public interface ICacheEvictionStrategy
+    public partial interface ICacheEvictionStrategy
     {
         int Priority { get; }
         string Name { get; }

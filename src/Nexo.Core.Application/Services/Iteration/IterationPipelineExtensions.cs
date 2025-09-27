@@ -62,7 +62,7 @@ public static class IterationPipelineExtensions
 /// <summary>
 /// Marker interface for requests that need iteration strategy selection
 /// </summary>
-public interface IIterationRequest
+public partial interface IIterationRequest
 {
     IterationContext IterationContext { get; }
 }
@@ -70,7 +70,7 @@ public interface IIterationRequest
 /// <summary>
 /// Pipeline builder interface for extension methods
 /// </summary>
-public interface IPipelineBuilder<TRequest, TResponse>
+public partial interface IPipelineBuilder<TRequest, TResponse>
 {
     IPipelineBuilder<TRequest, TResponse> Use(Func<PipelineContext<TRequest, TResponse>, Func<Task<TResponse>>, Task<TResponse>> middleware);
 }
@@ -88,7 +88,7 @@ public partial class PipelineContext<TRequest, TResponse>
 /// <summary>
 /// Iteration code generator interface
 /// </summary>
-public interface IIterationCodeGenerator
+public partial interface IIterationCodeGenerator
 {
     Task<string> GenerateOptimalIterationCodeAsync(IterationCodeRequest request);
     Task<IEnumerable<string>> GenerateMultiplePlatformIterationsAsync(IterationCodeRequest request);

@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Analytics
 {
-    public interface IAIAnalyticsService
+    public partial interface IAIAnalyticsService
 }

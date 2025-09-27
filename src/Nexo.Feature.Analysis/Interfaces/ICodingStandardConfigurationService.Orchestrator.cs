@@ -6,7 +6,7 @@ using Nexo.Feature.Analysis.Models;
 
 namespace Nexo.Feature.Analysis.Interfaces
 {
-    public interface ICodingStandardConfigurationService
+    public partial interface ICodingStandardConfigurationService
 {
     // Orchestration methods will be added here
 }

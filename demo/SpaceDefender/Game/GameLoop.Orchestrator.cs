@@ -4,7 +4,7 @@ using Nexo.Core.Domain.Entities.Infrastructure;
 
 namespace SpaceDefender.Game
 {
-    public interface IGameSystem
+    public partial interface IGameSystem
 {
     // Orchestration methods will be added here
 }

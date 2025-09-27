@@ -13,7 +13,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Deployment
     /// <summary>
     /// Interface for managing application deployment
     /// </summary>
-    public interface IDeploymentManager
+    public partial interface IDeploymentManager
     {
         /// <summary>
         /// Deploys an application to a specific target

@@ -44,7 +44,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for CombatLogic providers
     /// </summary>
-    public interface ICombatLogicProvider : IBaseDomainLogicProvider
+    public partial interface ICombatLogicProvider : IBaseDomainLogicProvider
     {
         new Task<CombatLogic> CreateAsync();
     }
@@ -52,7 +52,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for CombatLogic validation
     /// </summary>
-    public interface ICombatLogicValidator : IBaseDomainLogicValidator
+    public partial interface ICombatLogicValidator : IBaseDomainLogicValidator
     {
         Task<bool> ValidateAsync(CombatLogic component);
     }

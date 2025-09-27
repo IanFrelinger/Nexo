@@ -11,5 +11,5 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Infrastructure.Generation
 {
-public interface IPlugin
+public partial interface IPlugin
 }

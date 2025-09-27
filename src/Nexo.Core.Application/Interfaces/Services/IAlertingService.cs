@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Monitoring
     /// <summary>
     /// Interface for alerting services
     /// </summary>
-    public interface IAlertingService
+    public partial interface IAlertingService
     {
         Task<bool> SendAlertAsync(string message, AlertLevel level, Dictionary<string, string>? metadata = null);
         Task<List<Alert>> GetActiveAlertsAsync();

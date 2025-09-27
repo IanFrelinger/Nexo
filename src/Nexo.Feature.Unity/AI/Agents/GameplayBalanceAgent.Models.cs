@@ -9,7 +9,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Gameplay analyzer interface
     /// </summary>
-    public interface IGameplayAnalyzer
+    public partial interface IGameplayAnalyzer
     {
         Task<GameplayBalanceAnalysis> AnalyzeGameplayBalanceAsync(GameplayContext context);
     }
@@ -17,7 +17,7 @@ namespace Nexo.Feature.Unity.AI.Agents
     /// <summary>
     /// Balance calculator interface
     /// </summary>
-    public interface IBalanceCalculator
+    public partial interface IBalanceCalculator
     {
         Task<double> CalculateBalanceScoreAsync(GameplayData data);
         Task<IEnumerable<BalanceIssue>> IdentifyBalanceIssuesAsync(GameplayData data);

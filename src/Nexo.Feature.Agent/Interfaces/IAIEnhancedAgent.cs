@@ -11,7 +11,7 @@ namespace Nexo.Feature.Agent.Interfaces
     /// Defines the contract for an AI-enhanced agent that can leverage AI capabilities
     /// for enhanced task processing and decision-making.
     /// </summary>
-    public interface IAiEnhancedAgent : IAgent
+    public partial interface IAiEnhancedAgent : IAgent
     {
         /// <summary>
         /// Gets the AI model orchestrator used by this agent.

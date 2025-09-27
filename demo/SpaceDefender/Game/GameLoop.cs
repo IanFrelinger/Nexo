@@ -191,7 +191,7 @@ namespace SpaceDefender.Game
     /// Base interface for all game systems
     /// Demonstrates Nexo's interface-based architecture
     /// </summary>
-    public interface IGameSystem
+    public partial interface IGameSystem
     {
         Task UpdateAsync(GameFrame frame);
         string Name { get; }

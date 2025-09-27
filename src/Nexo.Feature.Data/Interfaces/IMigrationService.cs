@@ -8,7 +8,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Interface for database migration service
     /// </summary>
-    public interface IMigrationService
+    public partial interface IMigrationService
     {
         /// <summary>
         /// Gets all available migrations

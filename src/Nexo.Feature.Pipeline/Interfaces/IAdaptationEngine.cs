@@ -9,7 +9,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Interface for adaptation engine that applies system adaptations and optimizations.
     /// </summary>
-    public interface IAdaptationEngine
+    public partial interface IAdaptationEngine
     {
         /// <summary>
         /// Updates adaptation strategies based on learned patterns.

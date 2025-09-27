@@ -13,7 +13,7 @@ namespace Nexo.Feature.Factory.Application.Interfaces
     /// <summary>
     /// AI-powered decision engine that analyzes feature requirements and chooses the optimal execution strategy.
     /// </summary>
-    public interface IDecisionEngine
+    public partial interface IDecisionEngine
     {
         /// <summary>
         /// Determines the optimal execution strategy for a feature specification.

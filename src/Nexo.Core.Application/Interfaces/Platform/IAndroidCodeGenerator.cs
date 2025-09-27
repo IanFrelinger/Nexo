@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// Interface for Android native code generation.
     /// Generates native Android code with Jetpack Compose, Room, and Kotlin coroutines.
     /// </summary>
-    public interface IAndroidCodeGenerator
+    public partial interface IAndroidCodeGenerator
     {
         /// <summary>
         /// Generates native Android code from application logic.

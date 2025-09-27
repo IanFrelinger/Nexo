@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 
 namespace NexoDoomGame.DomainLogic.Base
 {
-    public interface IBaseDomainLogicProvider
+    public partial interface IBaseDomainLogicProvider
 }

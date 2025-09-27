@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 /// <summary>
 /// Interface for performance monitoring
 /// </summary>
-public interface IPerformanceMonitor
+public partial interface IPerformanceMonitor
 {
     /// <summary>
     /// Start monitoring performance metrics

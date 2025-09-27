@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Feature.Analysis.Interfaces
 {
-    public interface ITestDependencyAnalyzer
+    public partial interface ITestDependencyAnalyzer
 {
     // Orchestration methods will be added here
 }

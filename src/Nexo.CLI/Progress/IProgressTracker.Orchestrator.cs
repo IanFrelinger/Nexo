@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.CLI.Progress
 {
-    public interface IProgressTracker : IDisposable
+    public partial interface IProgressTracker : IDisposable
 {
     // Orchestration methods will be added here
 }

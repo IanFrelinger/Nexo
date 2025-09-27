@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Shared.Interfaces.Resource
 {
-    public interface IResourceOptimizer
+    public partial interface IResourceOptimizer
 {
     // Orchestration methods will be added here
 }

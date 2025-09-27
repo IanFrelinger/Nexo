@@ -5,7 +5,7 @@ using NexoDoomGame.DomainLogic.Base;
 
 namespace NexoDoomGame.DomainLogic
 {
-    public interface IHealthLogicProvider : IBaseDomainLogicProvider
+    public partial interface IHealthLogicProvider : IBaseDomainLogicProvider
 {
     // Orchestration methods will be added here
 }

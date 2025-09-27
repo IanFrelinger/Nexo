@@ -318,7 +318,7 @@ public partial class AgentLearningSystem : IAgentLearningSystem
 /// <summary>
 /// Interface for agent learning system
 /// </summary>
-public interface IAgentLearningSystem
+public partial interface IAgentLearningSystem
 {
     Task RecordAgentPerformance(string agentId, AgentRequest request, AgentResponse response, PerformanceMetrics actualPerformance);
     Task<AgentCapabilityImprovements> GetRecommendedImprovements(string agentId);
@@ -392,7 +392,7 @@ public record AgentPerformanceAnalytics
 /// <summary>
 /// Interface for performance feedback collection
 /// </summary>
-public interface IPerformanceFeedbackCollector
+public partial interface IPerformanceFeedbackCollector
 {
     Task<PerformanceMetrics> CollectMetricsAsync(string agentId, AgentRequest request, AgentResponse response);
     Task RecordFeedbackAsync(string agentId, AgentRequest request, AgentResponse response, PerformanceMetrics metrics);
@@ -401,7 +401,7 @@ public interface IPerformanceFeedbackCollector
 /// <summary>
 /// Interface for agent knowledge storage
 /// </summary>
-public interface IAgentKnowledgeStore
+public partial interface IAgentKnowledgeStore
 {
     Task StorePerformanceRecordAsync(AgentLearningRecord record);
     Task<IEnumerable<AgentLearningRecord>> GetRecentRecordsAsync(string agentId, TimeSpan timeWindow);

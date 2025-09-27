@@ -6,7 +6,7 @@ using Nexo.Feature.Web.Enums;
 
 namespace Nexo.Feature.Web.Interfaces
 {
-    public interface IWebAssemblyOptimizer
+    public partial interface IWebAssemblyOptimizer
 {
     // Orchestration methods will be added here
 }

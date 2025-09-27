@@ -33,7 +33,7 @@ namespace Nexo.Core.Application.Services.AI.Pipeline
     /// <summary>
     /// Testing result from AI pipeline processing
     /// </summary>
-    public class TestingResult
+    public partial class TestingResult
     {
         public string GeneratedTests { get; set; } = string.Empty;
         public TestType TestType { get; set; }

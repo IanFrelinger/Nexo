@@ -130,7 +130,7 @@ namespace Nexo.Verify
     /// <summary>
     /// Console interface for output
     /// </summary>
-    public interface IConsole
+    public partial interface IConsole
     {
         void WriteLine(string message);
     }

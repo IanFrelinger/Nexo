@@ -6,7 +6,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Interface for intelligent command suggestion engine with context awareness
     /// </summary>
-    public interface ICommandSuggestionEngine
+    public partial interface ICommandSuggestionEngine
     {
         /// <summary>
         /// Gets command completions for tab completion

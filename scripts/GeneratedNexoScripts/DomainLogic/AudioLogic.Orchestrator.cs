@@ -5,7 +5,7 @@ using NexoDoomGame.DomainLogic.Base;
 
 namespace NexoDoomGame.DomainLogic
 {
-    public interface IAudioLogicProvider : IBaseDomainLogicProvider
+    public partial interface IAudioLogicProvider : IBaseDomainLogicProvider
 {
     // Orchestration methods will be added here
 }

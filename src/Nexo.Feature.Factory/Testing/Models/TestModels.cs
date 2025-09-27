@@ -7,7 +7,7 @@ namespace Nexo.Feature.Factory.Testing.Models
     /// <summary>
     /// Represents the context for test execution.
     /// </summary>
-    public interface ITestContext
+    public partial interface ITestContext
     {
         /// <summary>
         /// Gets the test session identifier.

@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Monitoring
     /// Interface for production monitoring service.
     /// Part of Phase 3.4 production readiness features.
     /// </summary>
-    public interface IProductionMonitoringService
+    public partial interface IProductionMonitoringService
     {
         /// <summary>
         /// Starts comprehensive production monitoring.

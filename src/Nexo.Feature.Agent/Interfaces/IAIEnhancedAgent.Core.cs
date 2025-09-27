@@ -7,5 +7,5 @@ using Nexo.Feature.Agent.Models;
 
 namespace Nexo.Feature.Agent.Interfaces
 {
-    public interface IAiEnhancedAgent : IAgent
+    public partial interface IAiEnhancedAgent : IAgent
 }

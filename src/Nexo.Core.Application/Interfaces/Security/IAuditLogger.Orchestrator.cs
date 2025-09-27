@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Security
 {
-    public interface IAuditLogger
+    public partial interface IAuditLogger
 {
     // Orchestration methods will be added here
 }

@@ -102,7 +102,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Interface for audit service
     /// </summary>
-    public interface IAuditService
+    public partial interface IAuditService
     {
         Task<string> StartExecutionAsync(
             string executionId,

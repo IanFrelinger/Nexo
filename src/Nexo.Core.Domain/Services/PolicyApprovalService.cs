@@ -237,7 +237,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Interface for policy approval service
     /// </summary>
-    public interface IPolicyApprovalService
+    public partial interface IPolicyApprovalService
     {
         Task<PolicyApprovalRequest> CreateApprovalRequestAsync(
             string executionId,

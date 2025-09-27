@@ -3,7 +3,7 @@ namespace Nexo.Feature.Monitoring.Services;
 /// <summary>
 /// Interface for real-time adaptation dashboard
 /// </summary>
-public interface IAdaptationDashboard
+public partial interface IAdaptationDashboard
 {
     /// <summary>
     /// Get real-time dashboard data

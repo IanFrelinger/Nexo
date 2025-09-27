@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Security
 {
-    public interface IProductionSecurityAuditor
+    public partial interface IProductionSecurityAuditor
 }

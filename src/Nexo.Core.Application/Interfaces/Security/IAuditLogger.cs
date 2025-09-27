@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// Interface for audit logging of security events and operations.
     /// Part of Phase 3.3 security and compliance features.
     /// </summary>
-    public interface IAuditLogger
+    public partial interface IAuditLogger
     {
         /// <summary>
         /// Logs an audit event.

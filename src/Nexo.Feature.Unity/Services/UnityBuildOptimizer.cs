@@ -344,7 +344,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Unity build pipeline interface
     /// </summary>
-    public interface IUnityBuildPipeline
+    public partial interface IUnityBuildPipeline
     {
         Task<UnityBuildResult> BuildProjectAsync(UnityBuildRequest request);
         Task<bool> ValidateBuildSettingsAsync(UnityBuildSettings settings, UnityBuildTarget platform);
@@ -353,7 +353,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Platform optimizer interface
     /// </summary>
-    public interface IPlatformOptimizer
+    public partial interface IPlatformOptimizer
     {
         Task<PlatformOptimizationResult> OptimizeForPlatformAsync(UnityBuildTarget platform, UnityBuildSettings settings);
     }
@@ -361,7 +361,7 @@ namespace Nexo.Feature.Unity.Services
     /// <summary>
     /// Asset optimizer interface
     /// </summary>
-    public interface IAssetOptimizer
+    public partial interface IAssetOptimizer
     {
         Task<IEnumerable<AssetOptimization>> OptimizeAssetsAsync(string projectPath, IEnumerable<UnityBuildTarget> targetPlatforms);
     }

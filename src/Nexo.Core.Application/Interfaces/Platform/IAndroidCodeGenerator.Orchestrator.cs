@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
-    public interface IAndroidCodeGenerator
+    public partial interface IAndroidCodeGenerator
 {
     // Orchestration methods will be added here
 }

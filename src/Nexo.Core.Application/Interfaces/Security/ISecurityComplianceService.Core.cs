@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Security
 {
-    public interface ISecurityComplianceService
+    public partial interface ISecurityComplianceService
 }

@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Interfaces.Performance
     /// Interface for production-ready performance optimization and benchmarking.
     /// Part of Phase 3.4 production readiness features.
     /// </summary>
-    public interface IProductionPerformanceOptimizer
+    public partial interface IProductionPerformanceOptimizer
     {
         /// <summary>
         /// Runs comprehensive performance optimization across all services.

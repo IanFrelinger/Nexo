@@ -8,5 +8,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Integration
 {
-    public interface ISystemIntegrator
+    public partial interface ISystemIntegrator
 }

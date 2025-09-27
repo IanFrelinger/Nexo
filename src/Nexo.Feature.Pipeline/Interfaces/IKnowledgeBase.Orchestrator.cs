@@ -7,7 +7,7 @@ using ExecutionContext = Nexo.Feature.Pipeline.Models.ExecutionContext;
 
 namespace Nexo.Feature.Pipeline.Interfaces
 {
-    public interface IKnowledgeBase
+    public partial interface IKnowledgeBase
 {
     // Orchestration methods will be added here
 }

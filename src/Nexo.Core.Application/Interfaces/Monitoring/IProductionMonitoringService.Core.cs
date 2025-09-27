@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Monitoring
 {
-    public interface IProductionMonitoringService
+    public partial interface IProductionMonitoringService
 }

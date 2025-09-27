@@ -9,7 +9,7 @@ using Nexo.Core.Domain.Services;
 
 namespace Nexo.Core.Domain.Services
 {
-    public interface IPolicyExecutionService
+    public partial interface IPolicyExecutionService
 {
     // Orchestration methods will be added here
 }

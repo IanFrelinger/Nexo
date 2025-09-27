@@ -4,5 +4,5 @@ using System.Threading;
 
 namespace Nexo.Feature.Factory.Testing.Models
 {
-    public interface ITestContext
+    public partial interface ITestContext
 }

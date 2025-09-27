@@ -7,7 +7,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Interface for analyzing test dependencies and relationships.
     /// </summary>
-    public interface ITestDependencyAnalyzer
+    public partial interface ITestDependencyAnalyzer
     {
         /// <summary>
         /// Analyzes dependencies between test files.

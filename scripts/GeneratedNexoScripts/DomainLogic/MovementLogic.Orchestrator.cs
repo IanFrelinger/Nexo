@@ -5,7 +5,7 @@ using NexoDoomGame.DomainLogic.Base;
 
 namespace NexoDoomGame.DomainLogic
 {
-    public interface IMovementLogicProvider : IBaseDomainLogicProvider
+    public partial interface IMovementLogicProvider : IBaseDomainLogicProvider
 {
     // Orchestration methods will be added here
 }

@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// Interface for iOS native code generation.
     /// Part of Phase 6 platform-specific implementation.
     /// </summary>
-    public interface IIOSCodeGenerator
+    public partial interface IIOSCodeGenerator
     {
         /// <summary>
         /// Generates native iOS code from application logic.

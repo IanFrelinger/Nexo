@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 /// <summary>
 /// Interface for detecting and monitoring environment changes
 /// </summary>
-public interface IEnvironmentDetector
+public partial interface IEnvironmentDetector
 {
     /// <summary>
     /// Get current environment profile

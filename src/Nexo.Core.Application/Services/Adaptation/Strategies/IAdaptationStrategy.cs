@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.Adaptation.Strategies;
 /// <summary>
 /// Interface for adaptation strategies that can be applied to improve system performance
 /// </summary>
-public interface IAdaptationStrategy
+public partial interface IAdaptationStrategy
 {
     /// <summary>
     /// Unique identifier for this strategy
@@ -51,7 +51,7 @@ public interface IAdaptationStrategy
 /// <summary>
 /// Registry for managing adaptation strategies
 /// </summary>
-public interface IAdaptationStrategyRegistry
+public partial interface IAdaptationStrategyRegistry
 {
     /// <summary>
     /// Register a new adaptation strategy

@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Safety
     /// <summary>
     /// Interface for backup services
     /// </summary>
-    public interface IBackupService
+    public partial interface IBackupService
     {
         Task<string> CreateBackupAsync(string userId, BackupType type);
         Task<bool> RestoreBackupAsync(string userId, string backupId);

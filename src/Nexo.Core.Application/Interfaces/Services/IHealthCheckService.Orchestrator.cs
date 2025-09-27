@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Monitoring
 {
-    public interface IHealthCheckService
+    public partial interface IHealthCheckService
 {
     // Orchestration methods will be added here
 }

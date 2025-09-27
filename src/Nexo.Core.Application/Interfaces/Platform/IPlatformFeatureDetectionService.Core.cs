@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
-    public interface IPlatformFeatureDetectionService
+    public partial interface IPlatformFeatureDetectionService
 }

@@ -7,5 +7,5 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FeatureFactoryDemo.Commands
 {
-    public interface IGeneratedEntityRepository
+    public partial interface IGeneratedEntityRepository
 }

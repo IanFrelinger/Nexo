@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
-    public interface IIOSCodeGenerator
+    public partial interface IIOSCodeGenerator
 }

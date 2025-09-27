@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Feature.Data.Interfaces
 {
-    public interface IMigrationService
+    public partial interface IMigrationService
 }

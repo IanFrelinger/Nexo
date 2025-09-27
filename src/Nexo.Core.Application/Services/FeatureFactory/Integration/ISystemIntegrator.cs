@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Integration
     /// <summary>
     /// Interface for integrating applications with external systems
     /// </summary>
-    public interface ISystemIntegrator
+    public partial interface ISystemIntegrator
     {
         /// <summary>
         /// Integrates an application with REST APIs

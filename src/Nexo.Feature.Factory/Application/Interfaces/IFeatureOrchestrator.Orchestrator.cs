@@ -7,7 +7,7 @@ using Nexo.Feature.Factory.Domain.Models;
 
 namespace Nexo.Feature.Factory.Application.Interfaces
 {
-    public interface IFeatureOrchestrator
+    public partial interface IFeatureOrchestrator
 {
     // Orchestration methods will be added here
 }

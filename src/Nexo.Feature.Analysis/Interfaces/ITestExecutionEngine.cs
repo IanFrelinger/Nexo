@@ -9,7 +9,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Interface for executing individual tests.
     /// </summary>
-    public interface ITestExecutionEngine
+    public partial interface ITestExecutionEngine
     {
         /// <summary>
         /// Executes a single test file.

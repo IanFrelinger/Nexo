@@ -73,7 +73,7 @@ public partial class IterationOptimizationBehavior : IPipelineBehavior
 /// <summary>
 /// Interface for requests that are aware of iteration operations
 /// </summary>
-public interface IIterationAwareRequest
+public partial interface IIterationAwareRequest
 {
     /// <summary>
     /// Get the iteration context for this request

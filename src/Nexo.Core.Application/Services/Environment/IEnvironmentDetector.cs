@@ -6,7 +6,7 @@ namespace Nexo.Core.Application.Services.Environment;
 /// <summary>
 /// Interface for detecting and monitoring environment changes
 /// </summary>
-public interface IEnvironmentDetector
+public partial interface IEnvironmentDetector
 {
     /// <summary>
     /// Detect the current environment

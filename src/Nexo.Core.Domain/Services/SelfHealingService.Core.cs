@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Domain.Services
 {
-    public interface IProvider
+    public partial interface IProvider
     {
         // Interface members will be added here
     }

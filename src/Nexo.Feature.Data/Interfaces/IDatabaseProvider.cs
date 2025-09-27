@@ -8,7 +8,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Interface for database provider abstraction supporting multiple database types
     /// </summary>
-    public interface IDatabaseProvider
+    public partial interface IDatabaseProvider
     {
         /// <summary>
         /// Gets the database type this provider supports
@@ -79,7 +79,7 @@ namespace Nexo.Feature.Data.Interfaces
     /// <summary>
     /// Database transaction interface
     /// </summary>
-    public interface IDatabaseTransaction : IDisposable
+    public partial interface IDatabaseTransaction : IDisposable
     {
         /// <summary>
         /// Commits the transaction

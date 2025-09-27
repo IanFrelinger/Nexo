@@ -7,7 +7,7 @@ namespace Nexo.Core.Application.Services.Adaptation;
 /// <summary>
 /// Core adaptation engine that orchestrates real-time system improvements
 /// </summary>
-public interface IAdaptationEngine
+public partial interface IAdaptationEngine
 {
     /// <summary>
     /// Start the adaptation engine with continuous monitoring

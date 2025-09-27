@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Platform
 {
-    public interface INativeApiIntegrationService
+    public partial interface INativeApiIntegrationService
 {
     // Orchestration methods will be added here
 }

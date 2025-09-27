@@ -137,7 +137,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Interface for response deduplication service.
     /// </summary>
-    public interface IResponseDeduplicationService
+    public partial interface IResponseDeduplicationService
     {
         Task<CachedResponse?> FindSimilarResponseAsync(string requestHash, string requestContent, CancellationToken cancellationToken = default);
         Task CacheResponseAsync(string requestHash, string requestContent, string responseContent, TimeSpan? ttl = null, CancellationToken cancellationToken = default);
@@ -148,7 +148,7 @@ namespace Nexo.Infrastructure.Services.Caching.Advanced
     /// <summary>
     /// Interface for similarity calculation algorithms.
     /// </summary>
-    public interface ISimilarityCalculator
+    public partial interface ISimilarityCalculator
     {
         Task<double> ComputeSimilarityAsync(string content1, string content2, CancellationToken cancellationToken = default);
     }

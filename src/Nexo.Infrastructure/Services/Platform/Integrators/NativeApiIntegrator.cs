@@ -205,7 +205,7 @@ using System.Threading.Tasks;
 
 namespace {GetNamespaceForPlatform(platform)}
 {{
-    public interface I{apiName}Wrapper
+    public partial interface I{apiName}Wrapper
     {{
         Task<object> CallApiAsync(Dictionary<string, object> parameters);
         Task<bool> IsAvailableAsync();

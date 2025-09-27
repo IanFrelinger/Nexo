@@ -263,7 +263,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Plugin interface
     /// </summary>
-    public interface IPlugin
+    public partial interface IPlugin
     {
         string GetId();
         string GetName();
@@ -276,7 +276,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Block interface
     /// </summary>
-    public interface IBlock
+    public partial interface IBlock
     {
         string GetId();
         string GetName();
@@ -339,7 +339,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Interface for plugin service
     /// </summary>
-    public interface IPluginService
+    public partial interface IPluginService
     {
         Task<bool> LoadPluginAsync(
             string pluginPath,

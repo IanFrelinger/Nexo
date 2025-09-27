@@ -9,7 +9,7 @@ using Nexo.Feature.AI.Models;
 
 namespace Nexo.Feature.AI.Services
 {
-    public interface IAiModeHandler
+    public partial interface IAiModeHandler
 {
     // Orchestration methods will be added here
 }

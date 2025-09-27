@@ -10,7 +10,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Interface for orchestrating complete domain logic generation workflow
     /// </summary>
-    public interface IDomainLogicOrchestrator
+    public partial interface IDomainLogicOrchestrator
     {
         /// <summary>
         /// Generates complete domain logic from validated requirements

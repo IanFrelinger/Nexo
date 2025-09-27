@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Validation
 {
-    public interface IDomainLogicValidator
+    public partial interface IDomainLogicValidator
 {
     // Orchestration methods will be added here
 }

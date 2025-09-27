@@ -8,5 +8,5 @@ using Nexo.Verify.Asserts;
 
 namespace Nexo.Verify
 {
-    public interface IConsole
+    public partial interface IConsole
 }

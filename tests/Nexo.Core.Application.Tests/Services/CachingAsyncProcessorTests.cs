@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Tests.Services
 {
     public partial class CachingAsyncProcessorTests
     {
-        public struct TestKey
+        public partial struct TestKey
         {
             public string Value { get; }
             public TestKey(string value)

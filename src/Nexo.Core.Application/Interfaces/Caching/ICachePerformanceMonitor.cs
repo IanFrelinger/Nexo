@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// Interface for cache performance monitoring and analytics.
     /// Part of Phase 3.3 advanced caching features.
     /// </summary>
-    public interface ICachePerformanceMonitor : IDisposable
+    public partial interface ICachePerformanceMonitor : IDisposable
     {
         /// <summary>
         /// Records a cache operation for performance tracking.

@@ -6,7 +6,7 @@ namespace Nexo.Feature.Factory.Testing.Timeout
     /// <summary>
     /// Interface for managing timeouts and preventing test execution from hanging.
     /// </summary>
-    public interface ITimeoutManager
+    public partial interface ITimeoutManager
     {
         /// <summary>
         /// Creates a timeout cancellation token with escalation.

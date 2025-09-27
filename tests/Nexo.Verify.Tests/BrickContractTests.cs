@@ -108,7 +108,7 @@ namespace Nexo.Verify.Tests
     /// <summary>
     /// Generic brick interface
     /// </summary>
-    public interface IBrick<TInput, TOutput>
+    public partial interface IBrick<TInput, TOutput>
     {
         Task<TOutput> RunAsync(TInput input, Context context);
     }

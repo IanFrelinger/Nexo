@@ -8,7 +8,7 @@ namespace Nexo.Core.Application.Interfaces.Platform
     /// Interface for platform-specific performance optimization service.
     /// Implements platform-specific performance tuning, memory, and battery life optimization.
     /// </summary>
-    public interface IPlatformPerformanceOptimizationService
+    public partial interface IPlatformPerformanceOptimizationService
     {
         /// <summary>
         /// Optimizes performance for a specific platform.

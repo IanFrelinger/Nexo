@@ -5,5 +5,5 @@ using Nexo.Core.Domain.Entities.AI;
 
 namespace Nexo.Core.Application.Interfaces.Services
 {
-    public interface IAnalyticsService
+    public partial interface IAnalyticsService
 }

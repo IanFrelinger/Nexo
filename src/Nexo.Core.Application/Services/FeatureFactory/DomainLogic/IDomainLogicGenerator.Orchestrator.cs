@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
 {
-    public interface IDomainLogicGenerator
+    public partial interface IDomainLogicGenerator
 {
     // Orchestration methods will be added here
 }

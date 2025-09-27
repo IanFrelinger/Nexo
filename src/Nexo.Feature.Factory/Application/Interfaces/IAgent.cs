@@ -10,7 +10,7 @@ namespace Nexo.Feature.Factory.Application.Interfaces
     /// <summary>
     /// Base interface for all AI agents in the feature factory system.
     /// </summary>
-    public interface IAgent
+    public partial interface IAgent
     {
         /// <summary>
         /// Gets the unique identifier of the agent.

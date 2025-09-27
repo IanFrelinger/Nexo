@@ -8,5 +8,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.FeatureFactory.Monitoring
 {
-    public interface IApplicationMonitor
+    public partial interface IApplicationMonitor
 }

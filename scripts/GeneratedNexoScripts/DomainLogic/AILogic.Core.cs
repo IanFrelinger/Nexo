@@ -5,5 +5,5 @@ using NexoDoomGame.DomainLogic.Base;
 
 namespace NexoDoomGame.DomainLogic
 {
-    public interface IAILogicProvider : IBaseDomainLogicProvider
+    public partial interface IAILogicProvider : IBaseDomainLogicProvider
 }

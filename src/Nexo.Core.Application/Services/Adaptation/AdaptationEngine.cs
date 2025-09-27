@@ -193,18 +193,18 @@ public partial class AdaptationEngine : IAdaptationEngine, IHostedService
 }
 
 // Event argument classes
-public class PerformanceDegradationEventArgs : EventArgs
+public partial class PerformanceDegradationEventArgs : EventArgs
 {
     public PerformanceSeverity Severity { get; set; }
     public PerformanceMetrics Metrics { get; set; } = new();
 }
 
-public class NegativeFeedbackEventArgs : EventArgs
+public partial class NegativeFeedbackEventArgs : EventArgs
 {
     public UserFeedback Feedback { get; set; } = new();
 }
 
-public class EnvironmentChangeEventArgs : EventArgs
+public partial class EnvironmentChangeEventArgs : EventArgs
 {
     public string ChangeType { get; set; } = string.Empty;
     public EnvironmentProfile NewProfile { get; set; } = new();

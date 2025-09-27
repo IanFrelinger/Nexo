@@ -8,7 +8,7 @@ namespace Nexo.Core.Application.Interfaces.Services
     /// <summary>
     /// Interface for analytics services
     /// </summary>
-    public interface IAnalyticsService
+    public partial interface IAnalyticsService
     {
         Task TrackEventAsync(string eventName, Dictionary<string, object> properties);
         Task InitializeAsync();

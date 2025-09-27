@@ -44,7 +44,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for AILogic providers
     /// </summary>
-    public interface IAILogicProvider : IBaseDomainLogicProvider
+    public partial interface IAILogicProvider : IBaseDomainLogicProvider
     {
         new Task<AILogic> CreateAsync();
     }
@@ -52,7 +52,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for AILogic validation
     /// </summary>
-    public interface IAILogicValidator : IBaseDomainLogicValidator
+    public partial interface IAILogicValidator : IBaseDomainLogicValidator
     {
         Task<bool> ValidateAsync(AILogic component);
     }

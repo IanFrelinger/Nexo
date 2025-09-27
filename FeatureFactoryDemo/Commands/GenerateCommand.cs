@@ -194,7 +194,7 @@ namespace Nexo.FeatureFactory.Generated
         public DateTime? UpdatedAt {{ get; set; }}
     }}
 
-    public interface IGeneratedEntityRepository
+    public partial interface IGeneratedEntityRepository
     {{
         Task<GeneratedEntity?> GetByIdAsync(int id);
         Task<IEnumerable<GeneratedEntity>> GetAllAsync();

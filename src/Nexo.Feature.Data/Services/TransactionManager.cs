@@ -193,7 +193,7 @@ namespace Nexo.Feature.Data.Services
     /// <summary>
     /// Transaction manager interface
     /// </summary>
-    public interface ITransactionManager : IDisposable
+    public partial interface ITransactionManager : IDisposable
     {
         /// <summary>
         /// Gets whether there is an active transaction

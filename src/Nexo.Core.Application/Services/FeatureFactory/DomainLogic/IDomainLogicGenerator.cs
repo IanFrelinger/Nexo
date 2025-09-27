@@ -11,7 +11,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.DomainLogic
     /// <summary>
     /// Interface for generating domain logic from validated requirements
     /// </summary>
-    public interface IDomainLogicGenerator
+    public partial interface IDomainLogicGenerator
     {
         /// <summary>
         /// Generates complete domain logic from validated requirements

@@ -4,5 +4,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Onboarding
 {
-    public interface IProgressTrackingService
+    public partial interface IProgressTrackingService
 }

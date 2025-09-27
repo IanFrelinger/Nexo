@@ -236,7 +236,7 @@ public partial class ResourceAdaptationStrategy : IAdaptationStrategy
 /// <summary>
 /// Interface for resource management operations
 /// </summary>
-public interface IResourceManager
+public partial interface IResourceManager
 {
     Task SetCpuIntensiveOperationsLimit(double limit);
     Task EnableAggressiveGarbageCollection();

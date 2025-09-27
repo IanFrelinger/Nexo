@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.CLI.Help
 {
-    public interface IInteractiveHelpSystem
+    public partial interface IInteractiveHelpSystem
 {
     // Orchestration methods will be added here
 }

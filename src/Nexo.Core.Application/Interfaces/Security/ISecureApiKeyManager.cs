@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Security
     /// Interface for secure API key management.
     /// Part of Phase 3.3 security and compliance features.
     /// </summary>
-    public interface ISecureApiKeyManager
+    public partial interface ISecureApiKeyManager
     {
         /// <summary>
         /// Generates a new secure API key.

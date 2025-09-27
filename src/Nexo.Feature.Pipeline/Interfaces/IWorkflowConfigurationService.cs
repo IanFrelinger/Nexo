@@ -8,7 +8,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// <summary>
     /// Service for managing workflow configurations.
     /// </summary>
-    public interface IWorkflowConfigurationService
+    public partial interface IWorkflowConfigurationService
     {
         /// <summary>
         /// Loads a workflow configuration from a file.

@@ -12,7 +12,7 @@ namespace Nexo.Core.Application.Services.FeatureFactory.Orchestration
     /// <summary>
     /// Interface for orchestrating complete deployment workflows
     /// </summary>
-    public interface IDeploymentOrchestrator
+    public partial interface IDeploymentOrchestrator
     {
         /// <summary>
         /// Orchestrates complete deployment from natural language requirements

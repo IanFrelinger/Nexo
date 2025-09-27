@@ -10,7 +10,7 @@ using Nexo.Feature.Factory.Domain.Enums;
 
 namespace Nexo.Feature.Factory.Application.Interfaces
 {
-    public interface IDecisionEngine
+    public partial interface IDecisionEngine
 {
     // Orchestration methods will be added here
 }

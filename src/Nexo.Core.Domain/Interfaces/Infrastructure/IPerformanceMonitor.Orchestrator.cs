@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Core.Domain.Interfaces.Infrastructure
 {
-    public partial class IPerformanceMonitor
+    public partial interface IPerformanceMonitor
     {
         // Orchestration methods will be added here
     }

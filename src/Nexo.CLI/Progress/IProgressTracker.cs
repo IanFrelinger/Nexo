@@ -6,7 +6,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Interface for advanced progress tracking with nested operations and real-time updates
     /// </summary>
-    public interface IProgressTracker : IDisposable
+    public partial interface IProgressTracker : IDisposable
     {
         /// <summary>
         /// Starts a new progress operation
@@ -27,7 +27,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Interface for individual progress operations
     /// </summary>
-    public interface IProgressOperation : IDisposable
+    public partial interface IProgressOperation : IDisposable
     {
         string Description { get; }
         int CurrentStep { get; }
@@ -65,7 +65,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Interface for multi-step progress display
     /// </summary>
-    public interface IMultiStepProgressDisplay
+    public partial interface IMultiStepProgressDisplay
     {
         /// <summary>
         /// Defines the steps for a multi-step operation
@@ -86,7 +86,7 @@ namespace Nexo.CLI.Progress
     /// <summary>
     /// Interface for progress reporting
     /// </summary>
-    public interface IProgressReporter
+    public partial interface IProgressReporter
     {
         /// <summary>
         /// Reports progress with a message

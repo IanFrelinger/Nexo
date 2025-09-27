@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Services.Monitoring
 {
-    public interface IAlertingService
+    public partial interface IAlertingService
 {
     // Orchestration methods will be added here
 }

@@ -9,7 +9,7 @@ namespace Nexo.Feature.Web.Interfaces
     /// <summary>
     /// Interface for WebAssembly optimization services.
     /// </summary>
-    public interface IWebAssemblyOptimizer
+    public partial interface IWebAssemblyOptimizer
     {
         /// <summary>
         /// Optimizes WebAssembly code based on the provided configuration.

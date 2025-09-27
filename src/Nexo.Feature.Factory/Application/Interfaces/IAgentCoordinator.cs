@@ -10,7 +10,7 @@ namespace Nexo.Feature.Factory.Application.Interfaces
     /// <summary>
     /// Coordinates multiple specialized AI agents to work together on feature generation.
     /// </summary>
-    public interface IAgentCoordinator
+    public partial interface IAgentCoordinator
     {
         /// <summary>
         /// Coordinates the analysis of a feature specification using multiple agents.

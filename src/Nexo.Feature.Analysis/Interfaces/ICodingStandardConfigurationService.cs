@@ -9,7 +9,7 @@ namespace Nexo.Feature.Analysis.Interfaces
     /// <summary>
     /// Defines the contract for managing coding standards configurations.
     /// </summary>
-    public interface ICodingStandardConfigurationService
+    public partial interface ICodingStandardConfigurationService
     {
         /// <summary>
         /// Gets the current coding standards configuration.

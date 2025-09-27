@@ -6,7 +6,7 @@ namespace Nexo.CLI.Interactive
     /// <summary>
     /// Interface for managing persistent CLI state including user preferences and command history
     /// </summary>
-    public interface ICLIStateManager
+    public partial interface ICLIStateManager
     {
         /// <summary>
         /// Gets the current CLI context including project, platform, and user preferences

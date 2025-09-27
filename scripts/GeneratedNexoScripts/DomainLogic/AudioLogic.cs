@@ -42,7 +42,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for AudioLogic providers
     /// </summary>
-    public interface IAudioLogicProvider : IBaseDomainLogicProvider
+    public partial interface IAudioLogicProvider : IBaseDomainLogicProvider
     {
         new Task<AudioLogic> CreateAsync();
     }
@@ -50,7 +50,7 @@ namespace NexoDoomGame.DomainLogic
     /// <summary>
     /// Interface for AudioLogic validation
     /// </summary>
-    public interface IAudioLogicValidator : IBaseDomainLogicValidator
+    public partial interface IAudioLogicValidator : IBaseDomainLogicValidator
     {
         Task<bool> ValidateAsync(AudioLogic component);
     }

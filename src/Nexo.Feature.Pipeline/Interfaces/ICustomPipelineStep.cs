@@ -11,7 +11,7 @@ namespace Nexo.Feature.Pipeline.Interfaces
     /// Interface for custom pipeline steps that can be registered with the orchestrator.
     /// Provides extensibility for custom workflows and integrations.
     /// </summary>
-    public interface ICustomPipelineStep
+    public partial interface ICustomPipelineStep
     {
         /// <summary>
         /// Unique identifier for this custom step.

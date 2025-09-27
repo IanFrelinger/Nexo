@@ -6,7 +6,7 @@ using Nexo.Core.Domain.Enums.Extensions;
 
 namespace Nexo.Core.Domain.Models.Extensions
 {
-    public interface IPlugin
+    public partial interface IPlugin
     {
         // Interface members will be added here
     }

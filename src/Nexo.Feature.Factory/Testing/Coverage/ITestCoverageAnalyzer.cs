@@ -5,7 +5,7 @@ namespace Nexo.Feature.Factory.Testing.Coverage
     /// <summary>
     /// Interface for analyzing test coverage.
     /// </summary>
-    public interface ITestCoverageAnalyzer
+    public partial interface ITestCoverageAnalyzer
     {
         /// <summary>
         /// Analyzes test coverage for the specified assemblies.

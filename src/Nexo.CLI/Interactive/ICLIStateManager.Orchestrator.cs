@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Nexo.CLI.Interactive
 {
-    public interface ICLIStateManager
+    public partial interface ICLIStateManager
 {
     // Orchestration methods will be added here
 }

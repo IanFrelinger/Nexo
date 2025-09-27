@@ -6,7 +6,7 @@ using Nexo.Core.Domain.Models.Maintenance;
 
 namespace Nexo.Core.Domain.Interfaces
 {
-    public interface IToolMaintenanceService
+    public partial interface IToolMaintenanceService
 {
     // Orchestration methods will be added here
 }

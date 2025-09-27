@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Core.Domain.Services
 {
-    public interface IPlugin
+    public partial interface IPlugin
 {
     // Orchestration methods will be added here
 }

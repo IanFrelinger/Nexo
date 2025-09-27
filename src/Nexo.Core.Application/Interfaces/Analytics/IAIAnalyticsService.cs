@@ -9,7 +9,7 @@ namespace Nexo.Core.Application.Interfaces.Analytics
     /// Interface for AI analytics service.
     /// Part of Phase 3.3 analytics and reporting capabilities.
     /// </summary>
-    public interface IAIAnalyticsService
+    public partial interface IAIAnalyticsService
     {
         /// <summary>
         /// Records an AI usage event.

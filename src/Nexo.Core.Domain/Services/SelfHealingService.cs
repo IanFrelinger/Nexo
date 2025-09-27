@@ -291,7 +291,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Provider interface
     /// </summary>
-    public interface IProvider
+    public partial interface IProvider
     {
         string Name { get; }
         bool IsHealthy { get; }
@@ -340,7 +340,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Interface for self-healing service
     /// </summary>
-    public interface ISelfHealingService
+    public partial interface ISelfHealingService
     {
         Task<T> ExecuteWithSelfHealingAsync<T>(
             string operationId,

@@ -251,7 +251,7 @@ namespace Nexo.Core.Domain.Services
     /// <summary>
     /// Interface for parity service
     /// </summary>
-    public interface IParityService
+    public partial interface IParityService
     {
         Task<ParityResult> CompareOutputsAsync(
             string output1,

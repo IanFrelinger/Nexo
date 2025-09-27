@@ -9,7 +9,7 @@ using Nexo.Feature.Unity.Models;
 
 namespace Nexo.Feature.Unity.Services
 {
-    public interface IFileSystemService
+    public partial interface IFileSystemService
 {
     // Orchestration methods will be added here
 }

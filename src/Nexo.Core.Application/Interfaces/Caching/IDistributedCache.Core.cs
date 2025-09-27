@@ -5,5 +5,5 @@ using System.Threading.Tasks;
 
 namespace Nexo.Core.Application.Interfaces.Caching
 {
-    public interface IDistributedCache
+    public partial interface IDistributedCache
 }

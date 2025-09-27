@@ -8,7 +8,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Interface for distributed caching operations.
     /// </summary>
-    public interface IDistributedCache
+    public partial interface IDistributedCache
     {
         /// <summary>
         /// Gets a value from the cache.
@@ -199,7 +199,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Interface for cache serialization.
     /// </summary>
-    public interface ICacheSerializer
+    public partial interface ICacheSerializer
     {
         /// <summary>
         /// Serializes an object to a string.
@@ -221,7 +221,7 @@ namespace Nexo.Core.Application.Interfaces.Caching
     /// <summary>
     /// Interface for cache eviction policies.
     /// </summary>
-    public interface ICacheEvictionPolicy
+    public partial interface ICacheEvictionPolicy
     {
         /// <summary>
         /// Determines which items should be evicted when the cache is full.
