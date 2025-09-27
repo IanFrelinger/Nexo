@@ -1,8 +1,3 @@
-FeatureFactoryDemo/Services/CodebaseAnalysisService.cs
-FeatureFactoryDemo/Services/CommandHistoryService.cs
-FeatureFactoryDemo/Services/DemoDataService.cs
-FeatureFactoryDemo/Services/E2ETestGeneratorService.Core.cs
-FeatureFactoryDemo/Services/E2ETestGeneratorService.Generators.cs
 FeatureFactoryDemo/Services/E2ETestGeneratorService.Platforms.cs
 FeatureFactoryDemo/Services/E2ETestGeneratorService.Types.cs
 FeatureFactoryDemo/Services/E2ETestGeneratorService.cs
