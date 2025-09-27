@@ -1,8 +1,3 @@
-FeatureFactoryDemo/LoggingSystemValidation.DependencyInjection.cs
-FeatureFactoryDemo/LoggingSystemValidation.Logging.cs
-FeatureFactoryDemo/LoggingSystemValidation.Performance.cs
-FeatureFactoryDemo/LoggingSystemValidation.TestInfrastructure.cs
-FeatureFactoryDemo/LoggingSystemValidation.TestServices.cs
 FeatureFactoryDemo/LoggingSystemValidation.cs
 FeatureFactoryDemo/LoggingTestCommand.cs
 FeatureFactoryDemo/Models/CommandHistory.cs
