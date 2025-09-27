@@ -8,7 +8,7 @@ namespace Nexo.Feature.Security.Interfaces;
 /// <summary>
 /// Provides comprehensive audit logging and security monitoring capabilities
 /// </summary>
-public interface IAuditLogger
+public partial interface IAuditLogger
 {
     /// <summary>
     /// Logs a security event

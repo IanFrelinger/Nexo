@@ -9,7 +9,7 @@ namespace Playground.Server.Services;
 /// <summary>
 /// Generates desktop application code based on requirements.
 /// </summary>
-public class DesktopAppCodeGenerator
+public partial class DesktopAppCodeGenerator
 {
     public string GenerateDesktopAppCode(string prompt, List<string> features)
     {

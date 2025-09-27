@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 /// <summary>
 /// Interface for code optimization
 /// </summary>
-public interface ICodeOptimizer
+public partial interface ICodeOptimizer
 {
     /// <summary>
     /// Optimize code for performance

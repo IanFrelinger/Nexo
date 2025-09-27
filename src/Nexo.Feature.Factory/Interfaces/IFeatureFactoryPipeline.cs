@@ -8,7 +8,7 @@ namespace Nexo.Feature.Factory.Interfaces;
 /// <summary>
 /// Main interface for the Feature Factory pipeline that orchestrates all stages from natural language to production-ready code
 /// </summary>
-public interface IFeatureFactoryPipeline
+public partial interface IFeatureFactoryPipeline
 {
     /// <summary>
     /// Processes a complete feature request from natural language to production-ready implementation

@@ -18,7 +18,7 @@ public partial class GameCodeGenerator
 using System.Collections;
 using System.Collections.Generic;
 
-public class GameManager : MonoBehaviour
+public partial class GameManager : MonoBehaviour
 {
     [Header(""Game Settings"")]
     public float gameSpeed = 1f;

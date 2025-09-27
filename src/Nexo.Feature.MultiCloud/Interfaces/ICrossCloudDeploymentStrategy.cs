@@ -8,7 +8,7 @@ namespace Nexo.Feature.MultiCloud.Interfaces;
 /// <summary>
 /// Interface for cross-cloud deployment strategies
 /// </summary>
-public interface ICrossCloudDeploymentStrategy
+public partial interface ICrossCloudDeploymentStrategy
 {
     /// <summary>
     /// Gets the strategy name

@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 /// <summary>
 /// Interface for continuous learning system
 /// </summary>
-public interface IContinuousLearningSystem
+public partial interface IContinuousLearningSystem
 {
     /// <summary>
     /// Learn from adaptation results

@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 /// <summary>
 /// Interface for feedback analysis
 /// </summary>
-public interface IFeedbackAnalyzer
+public partial interface IFeedbackAnalyzer
 {
     /// <summary>
     /// Analyze a single feedback item

@@ -8,7 +8,7 @@ namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 /// <summary>
 /// Interface for pattern recognition engine
 /// </summary>
-public interface IPatternRecognitionEngine
+public partial interface IPatternRecognitionEngine
 {
     /// <summary>
     /// Identify patterns in user feedback

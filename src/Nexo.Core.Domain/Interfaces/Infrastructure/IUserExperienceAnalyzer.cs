@@ -7,7 +7,7 @@ namespace Nexo.Core.Domain.Interfaces.Infrastructure;
 /// <summary>
 /// Interface for user experience analysis
 /// </summary>
-public interface IUserExperienceAnalyzer
+public partial interface IUserExperienceAnalyzer
 {
     /// <summary>
     /// Analyze user experience based on feedback and metrics

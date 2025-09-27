@@ -8,7 +8,7 @@ namespace Nexo.Feature.MultiCloud.Interfaces;
 /// <summary>
 /// Factory for creating and managing cloud provider instances
 /// </summary>
-public interface ICloudProviderFactory
+public partial interface ICloudProviderFactory
 {
     /// <summary>
     /// Gets a cloud provider instance by name

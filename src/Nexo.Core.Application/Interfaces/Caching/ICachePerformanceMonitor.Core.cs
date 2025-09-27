@@ -6,4 +6,7 @@ using System.Threading.Tasks;
 namespace Nexo.Core.Application.Interfaces.Caching
 {
     public partial interface ICachePerformanceMonitor : IDisposable
+    {
+        // Interface members will be added here
+    }
 }

@@ -13,7 +13,7 @@ namespace Nexo.Infrastructure.Services.Platform.Generators;
 /// <summary>
 /// Generates desktop UI components and view models
 /// </summary>
-public class DesktopUIGenerator
+public partial class DesktopUIGenerator
 {
     private readonly ILogger<DesktopUIGenerator> _logger;
     private readonly IModelOrchestrator _modelOrchestrator;

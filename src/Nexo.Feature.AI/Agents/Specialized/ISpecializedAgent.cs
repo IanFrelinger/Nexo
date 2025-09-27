@@ -7,7 +7,7 @@ namespace Nexo.Feature.AI.Agents.Specialized;
 /// <summary>
 /// Specialized AI agent with domain expertise and coordination capabilities
 /// </summary>
-public interface ISpecializedAgent : IAISpecializedAgent
+public partial interface ISpecializedAgent : IAISpecializedAgent
 {
     /// <summary>
     /// Agent's area of specialization

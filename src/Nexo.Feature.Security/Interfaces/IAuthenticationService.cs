@@ -9,7 +9,7 @@ namespace Nexo.Feature.Security.Interfaces;
 /// <summary>
 /// Provides comprehensive authentication services with support for multiple protocols
 /// </summary>
-public interface IAuthenticationService
+public partial interface IAuthenticationService
 {
     /// <summary>
     /// Authenticates a user with username and password
