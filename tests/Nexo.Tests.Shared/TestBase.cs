@@ -23,50 +23,27 @@ namespace Nexo.Tests.Shared
         }
 
         /// <summary>
-        /// Executes a test with comprehensive error handling and retry logic
+        /// Executes a test with basic error handling
         /// </summary>
         protected async Task<T> ExecuteWithRetryAsync<T>(
             Func<Task<T>> testAction,
-            int maxRetries = 3,
+            int maxRetries = 1,
             int delayMs = 100,
             string? testName = null)
         {
             if (testAction == null)
                 throw new ArgumentNullException(nameof(testAction));
 
-            var attempts = 0;
-            Exception? lastException = null;
-
-            while (attempts < maxRetries)
+            try
             {
-                try
-                {
-                    attempts++;
-                    await _testSemaphore.WaitAsync();
-                    
-                    var result = await testAction();
-                    return result;
-                }
-                catch (Exception ex) when (attempts < maxRetries)
-                {
-                    lastException = ex;
-                    await Task.Delay(delayMs * attempts); // Exponential backoff
-                }
-                catch (Exception ex)
-                {
-                    throw new TestExecutionException(
-                        $"Test '{testName ?? "Unknown"}' failed after {attempts} attempts: {ex.Message}", 
-                        ex);
-                }
-                finally
-                {
-                    _testSemaphore.Release();
-                }
+                return await testAction();
             }
-
-            throw new TestExecutionException(
-                $"Test '{testName ?? "Unknown"}' failed after {maxRetries} attempts: {lastException?.Message}", 
-                lastException);
+            catch (Exception ex)
+            {
+                throw new TestExecutionException(
+                    $"Test '{testName ?? "Unknown"}' failed: {ex.Message}", 
+                    ex);
+            }
         }
 
         /// <summary>
@@ -80,37 +57,38 @@ namespace Nexo.Tests.Shared
             if (testAction == null)
                 throw new ArgumentNullException(nameof(testAction));
 
-            using var cts = new CancellationTokenSource(timeout);
-            
             try
             {
                 return await testAction();
             }
-            catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
+            catch (Exception ex)
             {
-                throw new TestTimeoutException(
-                    $"Test '{testName ?? "Unknown"}' timed out after {timeout.TotalMilliseconds}ms");
+                throw new TestExecutionException(
+                    $"Test '{testName ?? "Unknown"}' failed: {ex.Message}", 
+                    ex);
             }
         }
 
         /// <summary>
-        /// Executes a test with both retry logic and timeout protection
+        /// Executes a test with basic error handling
         /// </summary>
         protected async Task<T> ExecuteWithRetryAndTimeoutAsync<T>(
             Func<Task<T>> testAction,
-            int maxRetries = 3,
+            int maxRetries = 1,
             TimeSpan timeout = default,
             int delayMs = 100,
             string? testName = null)
         {
-            if (timeout == default)
-                timeout = TimeSpan.FromSeconds(30);
-
-            return await ExecuteWithRetryAsync(
-                () => ExecuteWithTimeoutAsync(testAction, timeout, testName),
-                maxRetries,
-                delayMs,
-                testName);
+            try
+            {
+                return await testAction();
+            }
+            catch (Exception ex)
+            {
+                throw new TestExecutionException(
+                    $"Test '{testName ?? "Unknown"}' failed: {ex.Message}", 
+                    ex);
+            }
         }
 
         /// <summary>

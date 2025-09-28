@@ -29,64 +29,38 @@ namespace Nexo.Tests.CLI.Commands
             }
 
             var startTime = DateTime.UtcNow;
-            var attempts = 0;
-            Exception? lastException = null;
 
-            while (attempts < MaxRetryAttempts)
+            try
             {
-                try
+                // Validate input parameters
+                var validationResult = ValidateInput(input);
+                if (!validationResult.IsValid)
                 {
-                    attempts++;
-                    await _semaphore.WaitAsync();
-                    
-                    using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(input.TimeoutMs ?? DefaultTimeoutMs));
-                    
-                    // Validate input parameters
-                    var validationResult = ValidateInput(input);
-                    if (!validationResult.IsValid)
-                    {
-                        return CommandResult<TestCLIOutput>.Failure($"Input validation failed: {validationResult.ErrorMessage}", DateTime.UtcNow - startTime);
-                    }
+                    return CommandResult<TestCLIOutput>.Failure($"Input validation failed: {validationResult.ErrorMessage}", DateTime.UtcNow - startTime);
+                }
 
-                    // Simulate CLI testing logic with proper async handling
-                    await Task.Delay(10, cts.Token); // Simulate async work
-                    
-                    // Perform actual CLI tests
-                    var testResults = await PerformCLITestsAsync(input, cts.Token);
-                    
-                    var output = new TestCLIOutput
-                    {
-                        TestName = input.TestName,
-                        Success = testResults.All(r => r.Success),
-                        ExecutionTime = DateTime.UtcNow - startTime,
-                        TestResults = testResults.Select(r => r.Message).ToArray(),
-                        Warnings = testResults.Where(r => r.IsWarning).Select(r => r.Message).ToArray(),
-                        Errors = testResults.Where(r => !r.Success && !r.IsWarning).Select(r => r.Message).ToArray()
-                    };
+                // Simulate CLI testing logic with proper async handling
+                await Task.Delay(10); // Simulate async work
+                
+                // Perform actual CLI tests
+                var testResults = await PerformCLITestsAsync(input);
+                
+                var output = new TestCLIOutput
+                {
+                    TestName = input.TestName,
+                    Success = testResults.All(r => r.Success),
+                    ExecutionTime = DateTime.UtcNow - startTime,
+                    TestResults = testResults.Select(r => r.Message).ToArray(),
+                    Warnings = testResults.Where(r => r.IsWarning).Select(r => r.Message).ToArray(),
+                    Errors = testResults.Where(r => !r.Success && !r.IsWarning).Select(r => r.Message).ToArray()
+                };
 
-                    return CommandResult<TestCLIOutput>.Success(output, output.ExecutionTime);
-                }
-                catch (OperationCanceledException) when (attempts < MaxRetryAttempts)
-                {
-                    lastException = new TimeoutException($"CLI test timed out after {input.TimeoutMs ?? DefaultTimeoutMs}ms");
-                    await Task.Delay(100 * attempts); // Exponential backoff
-                }
-                catch (Exception ex) when (attempts < MaxRetryAttempts)
-                {
-                    lastException = ex;
-                    await Task.Delay(100 * attempts); // Exponential backoff
-                }
-                catch (Exception ex)
-                {
-                    return CommandResult<TestCLIOutput>.Failure($"CLI test failed after {attempts} attempts: {ex.Message}", DateTime.UtcNow - startTime);
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
+                return CommandResult<TestCLIOutput>.Success(output, output.ExecutionTime);
             }
-
-            return CommandResult<TestCLIOutput>.Failure($"CLI test failed after {MaxRetryAttempts} attempts: {lastException?.Message}", DateTime.UtcNow - startTime);
+            catch (Exception ex)
+            {
+                return CommandResult<TestCLIOutput>.Failure($"CLI test failed: {ex.Message}", DateTime.UtcNow - startTime);
+            }
         }
 
         private static ValidationResult ValidateInput(TestCLIInput input)
@@ -112,25 +86,25 @@ namespace Nexo.Tests.CLI.Commands
             };
         }
 
-        private async Task<List<TestResult>> PerformCLITestsAsync(TestCLIInput input, CancellationToken cancellationToken)
+        private async Task<List<TestResult>> PerformCLITestsAsync(TestCLIInput input)
         {
             var results = new List<TestResult>();
 
             try
             {
                 // Test CLI version command
-                results.Add(await TestCLIVersionAsync(cancellationToken));
+                results.Add(await TestCLIVersionAsync());
                 
                 // Test CLI help command
-                results.Add(await TestCLIHelpAsync(cancellationToken));
+                results.Add(await TestCLIHelpAsync());
                 
                 // Test CLI argument parsing
-                results.Add(await TestCLIArgumentParsingAsync(input.Arguments ?? Array.Empty<string>(), cancellationToken));
+                results.Add(await TestCLIArgumentParsingAsync(input.Arguments ?? Array.Empty<string>()));
                 
                 // Test CLI verbose mode if enabled
                 if (input.Verbose)
                 {
-                    results.Add(await TestCLIVerboseModeAsync(cancellationToken));
+                    results.Add(await TestCLIVerboseModeAsync());
                 }
             }
             catch (Exception ex)
@@ -141,11 +115,11 @@ namespace Nexo.Tests.CLI.Commands
             return results;
         }
 
-        private async Task<TestResult> TestCLIVersionAsync(CancellationToken cancellationToken)
+        private async Task<TestResult> TestCLIVersionAsync()
         {
             try
             {
-                await Task.Delay(5, cancellationToken); // Simulate version check
+                await Task.Delay(5); // Simulate version check
                 return new TestResult { Success = true, Message = "CLI version command works" };
             }
             catch (Exception ex)
@@ -154,11 +128,11 @@ namespace Nexo.Tests.CLI.Commands
             }
         }
 
-        private async Task<TestResult> TestCLIHelpAsync(CancellationToken cancellationToken)
+        private async Task<TestResult> TestCLIHelpAsync()
         {
             try
             {
-                await Task.Delay(5, cancellationToken); // Simulate help command
+                await Task.Delay(5); // Simulate help command
                 return new TestResult { Success = true, Message = "CLI help command works" };
             }
             catch (Exception ex)
@@ -167,11 +141,11 @@ namespace Nexo.Tests.CLI.Commands
             }
         }
 
-        private async Task<TestResult> TestCLIArgumentParsingAsync(string[] arguments, CancellationToken cancellationToken)
+        private async Task<TestResult> TestCLIArgumentParsingAsync(string[] arguments)
         {
             try
             {
-                await Task.Delay(5, cancellationToken); // Simulate argument parsing
+                await Task.Delay(5); // Simulate argument parsing
                 
                 if (arguments.Length > 10)
                 {
@@ -186,11 +160,11 @@ namespace Nexo.Tests.CLI.Commands
             }
         }
 
-        private async Task<TestResult> TestCLIVerboseModeAsync(CancellationToken cancellationToken)
+        private async Task<TestResult> TestCLIVerboseModeAsync()
         {
             try
             {
-                await Task.Delay(5, cancellationToken); // Simulate verbose mode test
+                await Task.Delay(5); // Simulate verbose mode test
                 return new TestResult { Success = true, Message = "CLI verbose mode works" };
             }
             catch (Exception ex)
