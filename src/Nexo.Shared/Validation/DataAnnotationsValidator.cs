@@ -48,7 +48,7 @@ namespace Nexo.Shared.Validation
 
             foreach (var item in collection)
             {
-                var itemContext = context?.Clone() ?? new ValidationContext(item);
+                var itemContext = new ValidationContext(item);
                 itemContext.MemberName = $"[{index}]";
                 
                 var result = Validate(item, itemContext);
