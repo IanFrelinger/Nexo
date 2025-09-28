@@ -15,9 +15,6 @@
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="../Nexo.Shared/Nexo.Shared.csproj" />
-    </ItemGroup>
 
 
 </Project>

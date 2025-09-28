@@ -1,4 +1,0 @@
-
-namespace Nexo.Shared.Models
-{
-}

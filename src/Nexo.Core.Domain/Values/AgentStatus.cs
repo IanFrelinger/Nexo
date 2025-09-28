@@ -1,7 +1,9 @@
-using Nexo.Shared.Values;
 namespace Nexo.Core.Domain.Values;
-public sealed record AgentStatus(string Value, string Display) : BaseTypeValue(Value, Display)
+
+public sealed class AgentStatus : BaseTypeValue
 {
+    public AgentStatus(string value, string display) : base(value, display) { }
+    
     public static readonly AgentStatus Idle   = new("idle",   "Idle");
     public static readonly AgentStatus Active = new("active", "Active");
 }

@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Nexo.Core.Application.Agents;
 
 public interface IAgentFactory
