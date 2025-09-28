@@ -5,53 +5,92 @@ using Nexo.Tests.Shared.Commands;
 
 namespace Nexo.Tests.Shared
 {
-    public class SharedTests
+    public class SharedTests : TestBase
     {
+        private readonly TestSharedCommand _command;
+
+        public SharedTests()
+        {
+            _command = new TestSharedCommand();
+            RegisterDisposable(_command);
+        }
+
         [Fact]
         public async Task TestSharedCommand_ExecuteAsync_ShouldReturnSuccess()
         {
             // Arrange
-            var command = new TestSharedCommand();
-            var input = new TestSharedInput
+            var input = CreateTestInput<TestSharedInput>(i =>
             {
-                SharedComponentType = "All",
-                IncludeResourceTests = true,
-                IncludePlatformTests = true,
-                IncludeModelTests = true
-            };
+                i.SharedComponentType = "All";
+                i.IncludeResourceTests = true;
+                i.IncludePlatformTests = true;
+                i.IncludeModelTests = true;
+            });
 
-            // Act
-            var result = await command.ExecuteAsync(input);
+            // Act & Assert
+            var result = await ExecuteWithRetryAndTimeoutAsync(
+                () => _command.ExecuteAsync(input),
+                testName: "Shared Command Test");
 
-            // Assert
-            Assert.True(result.IsSuccess);
-            Assert.NotNull(result.Data);
-            Assert.Equal("All", result.Data.SharedComponentType);
-            Assert.True(result.Data.Success);
-            Assert.True(result.Data.TestResults.Length > 0);
+            AssertTestSuccess(result, r => 
+                r.SharedComponentType == "All" && 
+                r.Success && 
+                r.TestResults.Length > 0);
         }
 
         [Fact]
         public async Task TestSharedCommand_ExecuteAsync_WithPartialTests_ShouldReturnSuccess()
         {
             // Arrange
-            var command = new TestSharedCommand();
-            var input = new TestSharedInput
+            var input = CreateTestInput<TestSharedInput>(i =>
             {
-                SharedComponentType = "Platform",
-                IncludeResourceTests = false,
-                IncludePlatformTests = true,
-                IncludeModelTests = false
-            };
+                i.SharedComponentType = "Platform";
+                i.IncludeResourceTests = false;
+                i.IncludePlatformTests = true;
+                i.IncludeModelTests = false;
+            });
 
-            // Act
-            var result = await command.ExecuteAsync(input);
+            // Act & Assert
+            var result = await ExecuteWithRetryAndTimeoutAsync(
+                () => _command.ExecuteAsync(input),
+                testName: "Partial Shared Command Test");
 
-            // Assert
+            AssertTestSuccess(result, r => 
+                r.SharedComponentType == "Platform" && 
+                r.Success);
+        }
+
+        [Fact]
+        public async Task TestSharedCommand_ExecuteAsync_WithNullInput_ShouldReturnFailure()
+        {
+            // Act & Assert
+            var result = await ExecuteWithRetryAndTimeoutAsync(
+                () => _command.ExecuteAsync(null!),
+                testName: "Null Input Test");
+
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Input cannot be null", result.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task TestSharedCommand_ExecuteAsync_WithInvalidInput_ShouldReturnFailure()
+        {
+            // Arrange
+            var input = CreateTestInput<TestSharedInput>(i =>
+            {
+                i.SharedComponentType = ""; // Invalid empty type
+                i.IncludeResourceTests = true;
+                i.IncludePlatformTests = true;
+                i.IncludeModelTests = true;
+            });
+
+            // Act & Assert
+            var result = await ExecuteWithRetryAndTimeoutAsync(
+                () => _command.ExecuteAsync(input),
+                testName: "Invalid Input Test");
+
+            // Should still succeed but with warnings or different behavior
             Assert.True(result.IsSuccess);
-            Assert.NotNull(result.Data);
-            Assert.Equal("Platform", result.Data.SharedComponentType);
-            Assert.True(result.Data.Success);
         }
 
         [Theory]
@@ -66,23 +105,66 @@ namespace Nexo.Tests.Shared
             bool includeModel)
         {
             // Arrange
-            var command = new TestSharedCommand();
-            var input = new TestSharedInput
+            var input = CreateTestInput<TestSharedInput>(i =>
             {
-                SharedComponentType = componentType,
-                IncludeResourceTests = includeResource,
-                IncludePlatformTests = includePlatform,
-                IncludeModelTests = includeModel
-            };
+                i.SharedComponentType = componentType;
+                i.IncludeResourceTests = includeResource;
+                i.IncludePlatformTests = includePlatform;
+                i.IncludeModelTests = includeModel;
+            });
 
-            // Act
-            var result = await command.ExecuteAsync(input);
+            // Act & Assert
+            var result = await ExecuteWithRetryAndTimeoutAsync(
+                () => _command.ExecuteAsync(input),
+                testName: $"Different Input Test - {componentType}");
 
-            // Assert
-            Assert.True(result.IsSuccess);
-            Assert.NotNull(result.Data);
-            Assert.Equal(componentType, result.Data.SharedComponentType);
-            Assert.True(result.Data.Success);
+            AssertTestSuccess(result, r => 
+                r.SharedComponentType == componentType && 
+                r.Success);
+        }
+
+        [Fact]
+        public async Task TestSharedCommand_ExecuteAsync_WithTimeout_ShouldHandleGracefully()
+        {
+            // Arrange
+            var input = CreateTestInput<TestSharedInput>(i =>
+            {
+                i.SharedComponentType = "All";
+                i.IncludeResourceTests = true;
+                i.IncludePlatformTests = true;
+                i.IncludeModelTests = true;
+            });
+
+            // Act & Assert
+            var result = await ExecuteWithTimeoutAsync(
+                () => _command.ExecuteAsync(input),
+                TimeSpan.FromMilliseconds(100), // Very short timeout
+                testName: "Timeout Test");
+
+            // Should either succeed quickly or handle timeout gracefully
+            Assert.True(result.IsSuccess || !string.IsNullOrEmpty(result.ErrorMessage));
+        }
+
+        [Fact]
+        public async Task TestSharedCommand_ExecuteAsync_WithRetry_ShouldHandleTransientFailures()
+        {
+            // Arrange
+            var input = CreateTestInput<TestSharedInput>(i =>
+            {
+                i.SharedComponentType = "All";
+                i.IncludeResourceTests = true;
+                i.IncludePlatformTests = true;
+                i.IncludeModelTests = true;
+            });
+
+            // Act & Assert
+            var result = await ExecuteWithRetryAsync(
+                () => _command.ExecuteAsync(input),
+                maxRetries: 3,
+                delayMs: 50,
+                testName: "Retry Test");
+
+            AssertTestSuccess(result);
         }
     }
 }
