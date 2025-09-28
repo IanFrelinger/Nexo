@@ -71,7 +71,7 @@ namespace Nexo.Core.Domain.Agents
             }
             catch (Exception ex)
             {
-                return AgentResult.FromException(ex, Id, task.Type.Name);
+                return AgentResult.FromException(ex, Id, task.Type.ToString());
             }
         }
 
@@ -129,13 +129,24 @@ namespace Nexo.Core.Domain.Agents
         /// </summary>
         public virtual AgentState GetState()
         {
-            return new AgentState
-            {
-                AgentId = Id,
-                Status = Status,
-                Configuration = new Dictionary<string, object>(Configuration),
-                LastUpdated = DateTime.UtcNow
-            };
+            return new AgentState(
+                Id,
+                Name,
+                Status,
+                Platform,
+                Capabilities,
+                FocusAreas,
+                Configuration.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
+                DateTimeOffset.UtcNow,
+                null,
+                null,
+                null,
+                null,
+                new Dictionary<string, object>(),
+                new List<string>(),
+                new List<string>(),
+                DateTimeOffset.UtcNow,
+                1);
         }
 
         /// <summary>

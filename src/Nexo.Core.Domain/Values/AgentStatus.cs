@@ -1,23 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nexo.Shared.Interfaces.Types;
+using Nexo.Shared.Values;
 
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
     /// Represents the current operational status of an agent as a value object
     /// </summary>
-    public sealed class AgentStatus : IEquatable<AgentStatus>
+    public sealed class AgentStatus : BaseComparableTypeValue, IParsableTypeValue, ISerializableTypeValue
     {
-        public string Name { get; }
-        public string Description { get; }
-        public int Value { get; }
-
-        private AgentStatus(string name, string description, int value)
+        private AgentStatus(string name, string description, int value) : base(name, description, value)
         {
-            Name = name;
-            Description = description;
-            Value = value;
         }
 
         // Static instances for each agent status
@@ -39,15 +34,33 @@ namespace Nexo.Core.Domain.Values
         public static AgentStatus FromValue(int value) => 
             All.FirstOrDefault(s => s.Value == value) ?? Inactive;
 
-        // Equality and comparison
-        public bool Equals(AgentStatus? other) => other != null && Value == other.Value;
-        public override bool Equals(object? obj) => obj is AgentStatus other && Equals(other);
-        public override int GetHashCode() => Value.GetHashCode();
-        public override string ToString() => Name;
+        // IParsableTypeValue implementation
+        public static bool TryParse(string value, out ITypeValue? result)
+        {
+            var status = FromName(value);
+            result = status;
+            return status != Inactive || value.Equals("Inactive", StringComparison.OrdinalIgnoreCase);
+        }
 
-        public static bool operator ==(AgentStatus? left, AgentStatus? right) => 
-            ReferenceEquals(left, right) || (left?.Equals(right) ?? false);
-        public static bool operator !=(AgentStatus? left, AgentStatus? right) => 
-            !(left == right);
+        public static ITypeValue Parse(string value)
+        {
+            if (TryParse(value, out var result))
+                return result;
+            throw new ArgumentException($"Invalid agent status: {value}", nameof(value));
+        }
+
+    // ISerializableTypeValue implementation
+    public object ToSerializable() => new { Name, Description, Value, Type = "AgentStatus" };
+
+        public static ITypeValue FromSerializable(object value)
+        {
+            if (value is { } obj)
+            {
+                var name = obj.GetType().GetProperty("Name")?.GetValue(obj)?.ToString();
+                if (!string.IsNullOrEmpty(name))
+                    return FromName(name);
+            }
+            return Inactive;
+        }
     }
 }

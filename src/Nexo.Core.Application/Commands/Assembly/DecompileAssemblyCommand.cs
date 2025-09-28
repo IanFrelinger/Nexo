@@ -1,68 +1,73 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Nexo.Core.Application.Commands;
+using Nexo.Core.Application.Interfaces;
 using Nexo.Shared.Models.Assembly;
 
 namespace Nexo.Core.Application.Commands.Assembly
 {
     /// <summary>
-    /// Command to decompile a .NET assembly to source code
+    /// Command to decompile a .NET assembly
     /// </summary>
     public class DecompileAssemblyCommand : BaseCommand<DecompileAssemblyInput, DecompileAssemblyOutput>
     {
-        public override string CommandId => "DecompileAssembly";
-        public override string CommandName => "Decompile Assembly";
-        public override string Description => "Decompile a .NET assembly to source code and IL";
+        public override string Id => "decompile-assembly";
+        public override string Name => "Decompile Assembly";
+        public override string Description => "Decompiles a .NET assembly to source code";
 
-        public override async Task<CommandResult<DecompileAssemblyOutput>> ExecuteAsync(DecompileAssemblyInput input, CancellationToken cancellationToken = default)
+        protected override async Task<DecompileAssemblyOutput> ExecuteInternalAsync(DecompileAssemblyInput input, CancellationToken cancellationToken)
         {
-            try
+            // Simulate assembly decompilation
+            await Task.Delay(200, cancellationToken);
+
+            return new DecompileAssemblyOutput
             {
-                if (string.IsNullOrEmpty(input.AssemblyPath))
-                {
-                    return CreateFailureResult<DecompileAssemblyOutput>("Assembly path is required");
-                }
-
-                if (!System.IO.File.Exists(input.AssemblyPath))
-                {
-                    return CreateFailureResult<DecompileAssemblyOutput>($"Assembly file not found: {input.AssemblyPath}");
-                }
-
-                // Perform assembly decompilation
-                var result = await PerformDecompilationAsync(input.AssemblyPath, input.Settings, cancellationToken);
-
-                var output = new DecompileAssemblyOutput
-                {
-                    AssemblyPath = input.AssemblyPath,
-                    DecompilationResult = result,
-                    Success = true
-                };
-
-                return CreateSuccessResult(output);
-            }
-            catch (Exception ex)
-            {
-                return CreateFailureResult<DecompileAssemblyOutput>($"Assembly decompilation failed: {ex.Message}");
-            }
-        }
-
-        private async Task<DecompilationResult> PerformDecompilationAsync(string assemblyPath, DecompilationSettings settings, CancellationToken cancellationToken)
-        {
-            await Task.Delay(500, cancellationToken); // Simulate processing
-            
-            // TODO: Implement actual assembly decompilation using ICSharpCode.Decompiler
-            return new DecompilationResult
-            {
-                AssemblyPath = assemblyPath,
-                AssemblyName = System.IO.Path.GetFileNameWithoutExtension(assemblyPath),
+                AssemblyPath = input.AssemblyPath,
+                AssemblyName = System.IO.Path.GetFileNameWithoutExtension(input.AssemblyPath),
                 DecompiledAt = DateTime.UtcNow,
                 Status = DecompilationStatus.Success,
-                Settings = settings,
-                Types = new List<DecompiledType>(),
+                Types = new List<DecompiledType>
+                {
+                    new DecompiledType
+                    {
+                        Name = "ExampleClass",
+                        FullName = "ExampleNamespace.ExampleClass",
+                        Namespace = "ExampleNamespace",
+                        SourceCode = "public class ExampleClass { }",
+                        Kind = TypeKind.Class,
+                        Members = new List<DecompiledMember>(),
+                        Warnings = new List<DecompilationWarning>()
+                    }
+                },
                 Resources = new List<DecompiledResource>(),
-                Warnings = new List<DecompilationWarning>()
+                Warnings = new List<DecompilationWarning>(),
+                Settings = input.Settings
             };
         }
+    }
+
+    /// <summary>
+    /// Input for assembly decompilation
+    /// </summary>
+    public class DecompileAssemblyInput
+    {
+        public string AssemblyPath { get; set; } = string.Empty;
+        public DecompilationSettings Settings { get; set; } = new DecompilationSettings();
+    }
+
+    /// <summary>
+    /// Output from assembly decompilation
+    /// </summary>
+    public class DecompileAssemblyOutput
+    {
+        public string AssemblyPath { get; set; } = string.Empty;
+        public string AssemblyName { get; set; } = string.Empty;
+        public DateTime DecompiledAt { get; set; }
+        public DecompilationStatus Status { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+        public IReadOnlyList<DecompiledType> Types { get; set; } = new List<DecompiledType>();
+        public IReadOnlyList<DecompiledResource> Resources { get; set; } = new List<DecompiledResource>();
+        public IReadOnlyList<DecompilationWarning> Warnings { get; set; } = new List<DecompilationWarning>();
+        public DecompilationSettings Settings { get; set; } = new DecompilationSettings();
     }
 }

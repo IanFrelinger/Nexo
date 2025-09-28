@@ -65,13 +65,13 @@ namespace Nexo.Core.Domain.Agents
         {
             return task.Type switch
             {
-                "AnalyzeAssembly" => await AnalyzeAssemblyAsync(task),
-                "DecompileAssembly" => await DecompileAssemblyAsync(task),
-                "AnalyzeIL" => await AnalyzeILAsync(task),
-                "ScanSecurity" => await ScanSecurityAsync(task),
-                "AnalyzePerformance" => await AnalyzePerformanceAsync(task),
-                "ExtractMetadata" => await ExtractMetadataAsync(task),
-                "CompareAssemblies" => await CompareAssembliesAsync(task),
+                TaskType.CodeAnalysis => await AnalyzeAssemblyAsync(task),
+                TaskType.CodeGeneration => await DecompileAssemblyAsync(task),
+                TaskType.DataProcessing => await AnalyzeILAsync(task),
+                TaskType.SecurityAnalysis => await ScanSecurityAsync(task),
+                TaskType.Testing => await AnalyzePerformanceAsync(task),
+                TaskType.Infrastructure => await ExtractMetadataAsync(task),
+                TaskType.Custom => await CompareAssembliesAsync(task),
                 _ => AgentResult.Failure($"Unknown task type: {task.Type}", agentId: Id, operationType: "Execute")
             };
         }
@@ -122,7 +122,7 @@ namespace Nexo.Core.Domain.Agents
             try
             {
                 var assemblyPath = task.Parameters.GetValueOrDefault("AssemblyPath", "").ToString();
-                var settings = task.Parameters.GetValueOrDefault("Settings", new DecompilationSettings());
+                var settings = task.Parameters.GetValueOrDefault("Settings", new DecompilationSettings()) as DecompilationSettings ?? new DecompilationSettings();
                 
                 if (string.IsNullOrEmpty(assemblyPath))
                 {
@@ -207,8 +207,8 @@ namespace Nexo.Core.Domain.Agents
                         ["AssemblyPath"] = assemblyPath,
                         ["SecurityIssues"] = securityIssues,
                         ["IssueCount"] = securityIssues.Count,
-                        ["CriticalIssues"] = securityIssues.Count(i => i.Severity == SecuritySeverity.Critical),
-                        ["HighIssues"] = securityIssues.Count(i => i.Severity == SecuritySeverity.High)
+                        ["CriticalIssues"] = securityIssues.Count(i => i.Severity == "Critical"),
+                        ["HighIssues"] = securityIssues.Count(i => i.Severity == "High")
                     },
                     agentId: Id,
                     operationType: "ScanSecurity");

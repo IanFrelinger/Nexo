@@ -1,95 +1,79 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Nexo.Core.Application.Interfaces;
 
 namespace Nexo.Core.Application.Commands
 {
     /// <summary>
-    /// Base implementation for commands with common functionality
+    /// Base implementation for commands
     /// </summary>
     /// <typeparam name="TInput">The input type for the command</typeparam>
     /// <typeparam name="TOutput">The output type for the command</typeparam>
     public abstract class BaseCommand<TInput, TOutput> : ICommand<TInput, TOutput>
     {
-        public abstract string CommandId { get; }
-        public abstract string CommandName { get; }
+        public abstract string Id { get; }
+        public abstract string Name { get; }
         public abstract string Description { get; }
-        public virtual bool CanExecuteInParallel => true;
-        public virtual string[] Dependencies => Array.Empty<string>();
 
-        public abstract Task<CommandResult<TOutput>> ExecuteAsync(TInput input, CancellationToken cancellationToken = default);
-
-        public virtual bool CanExecute(TInput input)
+        /// <summary>
+        /// Executes the command with timing and error handling
+        /// </summary>
+        public async Task<CommandResult<TOutput>> ExecuteAsync(TInput input, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                return ValidateInput(input);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public virtual async Task<CommandResult<TInput>> UndoAsync(TInput input, TOutput output, CancellationToken cancellationToken = default)
-        {
-            var startTime = DateTime.UtcNow;
+            var stopwatch = Stopwatch.StartNew();
             
             try
             {
-                await UndoInternalAsync(input, output, cancellationToken);
-                var duration = DateTime.UtcNow - startTime;
+                // Validate input
+                var validationResult = ValidateInput(input);
+                if (!validationResult.IsValid)
+                {
+                    return CommandResult<TOutput>.Failure(
+                        $"Input validation failed: {string.Join(", ", validationResult.Errors)}",
+                        stopwatch.Elapsed);
+                }
+
+                // Execute the command
+                var result = await ExecuteInternalAsync(input, cancellationToken);
                 
-                return CommandResult<TInput>.Success(
-                    input,
-                    duration,
-                    new[] { $"{CommandName} undo completed successfully" }
-                );
+                stopwatch.Stop();
+                return CommandResult<TOutput>.Success(result, stopwatch.Elapsed);
+            }
+            catch (OperationCanceledException)
+            {
+                stopwatch.Stop();
+                return CommandResult<TOutput>.Failure("Command was cancelled", stopwatch.Elapsed);
             }
             catch (Exception ex)
             {
-                var duration = DateTime.UtcNow - startTime;
-                return CommandResult<TInput>.Failure(
-                    $"Failed to undo {CommandName}: {ex.Message}",
-                    duration
-                );
+                stopwatch.Stop();
+                return CommandResult<TOutput>.Failure($"Command execution failed: {ex.Message}", stopwatch.Elapsed);
             }
         }
 
         /// <summary>
-        /// Validates the input for this command
+        /// Validates the input for the command
         /// </summary>
-        protected virtual bool ValidateInput(TInput input)
+        protected virtual CommandValidationResult ValidateInput(TInput input)
         {
-            return input != null;
+            if (input == null)
+            {
+                return new CommandValidationResult
+                {
+                    IsValid = false,
+                    Errors = new[] { "Input cannot be null" }
+                };
+            }
+
+            return new CommandValidationResult { IsValid = true };
         }
 
         /// <summary>
-        /// Performs the actual undo logic
+        /// Executes the command logic
         /// </summary>
-        protected virtual Task UndoInternalAsync(TInput input, TOutput output, CancellationToken cancellationToken)
-        {
-            // Default implementation does nothing (commands that don't modify state)
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Creates a successful result with timing
-        /// </summary>
-        protected CommandResult<TOutput> CreateSuccessResult(TOutput data, DateTime startTime, string[]? warnings = null, Dictionary<string, object>? metadata = null)
-        {
-            var duration = DateTime.UtcNow - startTime;
-            return CommandResult<TOutput>.Success(data, duration, warnings, metadata);
-        }
-
-        /// <summary>
-        /// Creates a failed result with timing
-        /// </summary>
-        protected CommandResult<TOutput> CreateFailureResult(string errorMessage, DateTime startTime, Dictionary<string, object>? metadata = null)
-        {
-            var duration = DateTime.UtcNow - startTime;
-            return CommandResult<TOutput>.Failure(errorMessage, duration, metadata);
-        }
+        protected abstract Task<TOutput> ExecuteInternalAsync(TInput input, CancellationToken cancellationToken);
     }
 }

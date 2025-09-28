@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
+    <ProjectReference Include="..\Nexo.Tools.Assembly\Nexo.Tools.Assembly.csproj" />
+    <ProjectReference Include="..\Nexo.Policies\Nexo.Policies.csproj" />
+    <ProjectReference Include="..\Nexo.Adapters.Models\Nexo.Adapters.Models.csproj" />
+  </ItemGroup>
+</Project>
