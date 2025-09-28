@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Nexo.Core.Domain.Enums;
-using TaskStatus = Nexo.Core.Domain.Enums.TaskStatus;
+using Nexo.Core.Domain.Values;
 
 namespace Nexo.Core.Domain.Entities
 {
@@ -39,7 +38,7 @@ namespace Nexo.Core.Domain.Entities
         /// <summary>
         /// Gets the current status of the sprint.
         /// </summary>
-        public System.Threading.Tasks.TaskStatus Status { get; set; }
+        public Values.TaskStatus Status { get; set; }
 
         /// <summary>
         /// Gets or sets the identifier of the assignee for the task.
@@ -68,7 +67,7 @@ namespace Nexo.Core.Domain.Entities
             Description = description;
             StoryPoints = storyPoints;
             Priority = priority;
-            Status = (System.Threading.Tasks.TaskStatus)TaskStatus.Todo;
+            Status = Values.TaskStatus.Todo;
         }
     }
 }

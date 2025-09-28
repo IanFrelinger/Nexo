@@ -1,4 +1,0 @@
-id,subject,label,confidence
-1,Urgent: Database connection issue,urgent,0.95
-2,Question about pricing,normal,0.80
-3,Weekly Newsletter - January 15 2024,newsletter,0.90

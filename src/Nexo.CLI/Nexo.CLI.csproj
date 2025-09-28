@@ -27,44 +27,20 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-  
-  <!-- Conditional compilation for feature exclusion -->
-  <PropertyGroup Condition="'$(ExcludeAI)' == 'true'">
-    <DefineConstants>$(DefineConstants);EXCLUDE_AI</DefineConstants>
-  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
-    <PackageReference Include="System.Text.Json" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
-    <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
     <ProjectReference Include="../Nexo.Core.Application/Nexo.Core.Application.csproj" />
-    <ProjectReference Include="../Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="../Nexo.Shared/Nexo.Shared.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Pipeline/Nexo.Feature.Pipeline.csproj" />
-    <ProjectReference Include="../Nexo.Feature.AI/Nexo.Feature.AI.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Agent/Nexo.Feature.Agent.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Analysis/Nexo.Feature.Analysis.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Container/Nexo.Feature.Container.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Project/Nexo.Feature.Project.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Platform/Nexo.Feature.Platform.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Template/Nexo.Feature.Template.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Validation/Nexo.Feature.Validation.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Plugin/Nexo.Feature.Plugin.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Logging/Nexo.Feature.Logging.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Web/Nexo.Feature.Web.csproj" />
-    <ProjectReference Include="../Nexo.Feature.Factory/Nexo.Feature.Factory.csproj" />
-    <ProjectReference Include="../Nexo.Verify/Nexo.Verify.csproj" />
+    <ProjectReference Include="../Nexo.Core/Nexo.Core.csproj" />
   </ItemGroup>
 
 </Project>

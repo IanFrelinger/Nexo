@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections.ObjectModel;
-using Nexo.Core.Domain.Enums;
+using Nexo.Core.Domain.Values;
 using Nexo.Core.Domain.ValueObjects;
 
 namespace Nexo.Core.Domain.Entities

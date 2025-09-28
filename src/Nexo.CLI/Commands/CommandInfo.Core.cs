@@ -1,4 +1,0 @@
-
-namespace Nexo.CLI.Commands
-{
-}

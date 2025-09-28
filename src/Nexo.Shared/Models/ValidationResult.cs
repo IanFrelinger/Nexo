@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Nexo.Shared.Enums;
+using Nexo.Shared.Values;
 
 namespace Nexo.Shared.Models
 {

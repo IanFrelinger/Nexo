@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Nexo.Shared.Enums;
+using Nexo.Shared.Values;
 
 namespace Nexo.Shared.Models
 {
@@ -13,10 +13,10 @@ namespace Nexo.Shared.Models
         public ValidationSeverity Severity { get; set; }
         public string? Field { get; set; }
         public Dictionary<string, object> Details { get; set; } = new Dictionary<string, object>();
-        public ValidationError(string message, ValidationSeverity severity = ValidationSeverity.Error, string? field = null)
+        public ValidationError(string message, ValidationSeverity? severity = null, string? field = null)
         {
             Message = message;
-            Severity = severity;
+            Severity = severity ?? ValidationSeverity.Error;
             Field = field;
         }
     }

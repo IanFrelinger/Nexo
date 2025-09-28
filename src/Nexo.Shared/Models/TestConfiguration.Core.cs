@@ -1,4 +1,4 @@
-using Nexo.Core.Application.Enums;
+using Nexo.Shared.Values;
 using Nexo.Core.Application.Interfaces;
 
 namespace Nexo.Shared.Models

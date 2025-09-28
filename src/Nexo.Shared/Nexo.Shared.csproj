@@ -13,8 +13,5 @@
     <PackageReference Include="JetBrains.Annotations" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="../Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
-  </ItemGroup>
 
 </Project> 

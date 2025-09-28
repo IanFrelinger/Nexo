@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Nexo.Core.Domain.Entities.AI;
 
 namespace Nexo.Core.Domain.Common
 {
@@ -29,16 +28,5 @@ namespace Nexo.Core.Domain.Common
         public string Framework { get; set; } = string.Empty;
         public List<string> Criteria { get; set; } = new();
         public Dictionary<string, object> Requirements { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Base class for AI operation requests
-    /// </summary>
-    public abstract class AIOperationRequest : CodeRequest
-    {
-        public AIRequirements AIRequirements { get; set; } = new();
-        public int MaxTokens { get; set; } = 1000;
-        public double Temperature { get; set; } = 0.7;
-        public string OperationType { get; set; } = string.Empty;
     }
 }

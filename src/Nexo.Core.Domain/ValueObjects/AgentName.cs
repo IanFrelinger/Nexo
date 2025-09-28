@@ -1,43 +1,50 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Nexo.Core.Domain.ValueObjects
 {
-    public sealed class AgentName : IComparable<AgentName>, IEquatable<AgentName>
+    /// <summary>
+    /// Represents a human-readable name for an agent
+    /// </summary>
+    public sealed class AgentName : IEquatable<AgentName>
     {
         public string Value { get; }
+
         public AgentName(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("Agent name cannot be empty", nameof(value));
+                throw new ArgumentException("Agent name cannot be null or empty", nameof(value));
+            
             if (value.Length > 100)
                 throw new ArgumentException("Agent name cannot exceed 100 characters", nameof(value));
-            Value = value.Trim();
+            
+            Value = value;
         }
-        public static implicit operator string(AgentName name) { return name.Value; }
-        public override string ToString() { return Value; }
-        public int CompareTo(AgentName? other) { return string.Compare(Value, other?.Value, StringComparison.Ordinal); }
-        public override bool Equals(object? obj)
-        {
-            var result = Equals(obj as AgentName);
-            return result;
-        }
-        public bool Equals(AgentName? other)
-        {
-            var result = (ReferenceEquals(this, other)) || (other != null && string.Equals(Value, other.Value, StringComparison.Ordinal));
-            return result;
-        }
-        public override int GetHashCode()
-        {
-            var hash = Value.GetHashCode();
-            return hash;
-        }
-        public static bool operator ==(AgentName? left, AgentName? right)
-        {
-            if (ReferenceEquals(left, right)) return true;
-            if (left is null || right is null) return false;
-            return left.Equals(right);
-        }
-        public static bool operator !=(AgentName? left, AgentName? right) => !(left == right);
+
+        // Factory methods
+        public static AgentName FromString(string value) => new(value);
+        public static AgentName Create(string value) => new(value);
+
+        // Equality and comparison
+        public bool Equals(AgentName? other) => 
+            other != null && Value.Equals(other.Value, StringComparison.OrdinalIgnoreCase);
+
+        public override bool Equals(object? obj) => 
+            obj is AgentName other && Equals(other);
+
+        public override int GetHashCode() => 
+            Value.GetHashCode(StringComparison.OrdinalIgnoreCase);
+
+        public override string ToString() => Value;
+
+        public static bool operator ==(AgentName? left, AgentName? right) => 
+            ReferenceEquals(left, right) || (left?.Equals(right) ?? false);
+
+        public static bool operator !=(AgentName? left, AgentName? right) => 
+            !(left == right);
+
+        public static implicit operator string(AgentName agentName) => agentName.Value;
+        public static implicit operator AgentName(string value) => new(value);
     }
 }

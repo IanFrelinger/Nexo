@@ -1,4 +1,0 @@
-id,name,email,priority,status
-1,John Doe,john@example.com,high,open
-2,Jane Smith,jane@example.com,medium,in_progress
-3,Bob Johnson,bob@example.com,low,closed

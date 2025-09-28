@@ -16,8 +16,5 @@
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="../Nexo.Observability/Nexo.Observability.csproj" />
-  </ItemGroup>
 
 </Project>

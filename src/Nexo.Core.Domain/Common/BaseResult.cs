@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Nexo.Core.Domain.Enums.AI;
+using Nexo.Core.Domain.Values;
 
 namespace Nexo.Core.Domain.Common
 {
@@ -79,10 +79,10 @@ namespace Nexo.Core.Domain.Common
     {
         public string GeneratedContent { get; set; } = string.Empty;
         public string Explanation { get; set; } = string.Empty;
-        public AIConfidenceLevel Confidence { get; set; }
+        public AIConfidenceLevel Confidence { get; set; } = AIConfidenceLevel.Medium;
         public double ConfidenceScore { get; set; }
         public List<string> Suggestions { get; set; } = new();
-        public AIEngineType EngineType { get; set; }
+        public AIEngineType EngineType { get; set; } = AIEngineType.GPT;
         public int QualityScore { get; set; }
         public int Coverage { get; set; }
         public List<string> Tags { get; set; } = new();

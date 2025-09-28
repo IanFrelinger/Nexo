@@ -1,7 +1,0 @@
-name: "Test Feature"
-version: "1.0.0"
-capabilities: []
-parameters:
-  "test-param": "test-value"
-policies:
-  - "test-policy"

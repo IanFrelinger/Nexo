@@ -1,8 +1,0 @@
-{
-  "Name": "TestPlugin",
-  "Version": "1.0.0",
-  "Description": "A test plugin for unit testing with sensing capability",
-  "Author": "Test Author",
-  "MinimalNexoVersion": "1.0.0",
-  "Capabilities": ["ISense"]
-}

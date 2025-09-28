@@ -1,6 +1,0 @@
-block: transform/translate_and_tone
-inputs: [text, language]
-outputs: [text_translated, tone_suggestion]
-require_ai: false
-provider: ${NEXO_PROVIDER}
-model: ${NEXO_MODEL}
