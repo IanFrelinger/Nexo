@@ -1,13 +1,18 @@
 name: ci
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 jobs:
-  build:
+  build-test:
     runs-on: ${{ matrix.os }}
     strategy:
-      matrix: { os: [ubuntu-latest, windows-latest], dotnet: [8.0.x] }
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        dotnet: [8.0.x]
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-dotnet@v4
-      with: { dotnet-version: ${{ matrix.dotnet }} }
-    - run: dotnet restore
-    - run: dotnet build --configuration Release -warnaserror
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: ${{ matrix.dotnet }} }
+      - run: dotnet restore
+      - run: dotnet build -c Release -warnaserror
+      - run: dotnet test  -c Release --no-build
