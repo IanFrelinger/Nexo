@@ -1,33 +1,54 @@
-namespace Nexo.Shared
+namespace Nexo.Shared.Constants
 {
     /// <summary>
-    /// Default environment variable names.
+    /// Common environment names
     /// </summary>
-    public static class EnvironmentConstants
+    public static class Environments
     {
-        /// <summary>
-        /// Environment variable for API key.
-        /// </summary>
-        public const string ApiKeyEnvironmentVariable = "NEXO_API_KEY";
-        
-        /// <summary>
-        /// Environment variable for database connection string.
-        /// </summary>
-        public const string DatabaseConnectionStringEnvironmentVariable = "NEXO_DATABASE_CONNECTION_STRING";
-        
-        /// <summary>
-        /// Environment variable for log level.
-        /// </summary>
-        public const string LogLevelEnvironmentVariable = "NEXO_LOG_LEVEL";
-        
-        /// <summary>
-        /// Environment variable for cache size.
-        /// </summary>
-        public const string CacheSizeEnvironmentVariable = "NEXO_CACHE_SIZE";
-        
-        /// <summary>
-        /// Environment variable for timeout.
-        /// </summary>
-        public const string TimeoutEnvironmentVariable = "NEXO_TIMEOUT";
+        public const string Development = "Development";
+        public const string Staging = "Staging";
+        public const string Production = "Production";
+        public const string Testing = "Testing";
+        public const string Local = "Local";
+    }
+
+    /// <summary>
+    /// Common log levels
+    /// </summary>
+    public static class LogLevels
+    {
+        public const string Trace = "Trace";
+        public const string Debug = "Debug";
+        public const string Information = "Information";
+        public const string Warning = "Warning";
+        public const string Error = "Error";
+        public const string Critical = "Critical";
+    }
+
+    /// <summary>
+    /// Common priority levels
+    /// </summary>
+    public static class Priorities
+    {
+        public const string Low = "Low";
+        public const string Normal = "Normal";
+        public const string High = "High";
+        public const string Critical = "Critical";
+        public const string Emergency = "Emergency";
+    }
+
+    /// <summary>
+    /// Common status values
+    /// </summary>
+    public static class Statuses
+    {
+        public const string Active = "Active";
+        public const string Inactive = "Inactive";
+        public const string Pending = "Pending";
+        public const string Completed = "Completed";
+        public const string Failed = "Failed";
+        public const string Cancelled = "Cancelled";
+        public const string Running = "Running";
+        public const string Stopped = "Stopped";
     }
 }

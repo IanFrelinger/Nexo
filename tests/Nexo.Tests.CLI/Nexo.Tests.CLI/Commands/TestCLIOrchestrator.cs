@@ -1,22 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Nexo.Core.Application.Commands;
 
 namespace Nexo.Tests.CLI.Commands
 {
     /// <summary>
-    /// Orchestrator for CLI testing commands with comprehensive error handling
+    /// Orchestrator for CLI testing commands
     /// </summary>
-    public class TestCLIOrchestrator : IDisposable
+    public class TestCLIOrchestrator
     {
         private readonly List<ICommand<object, object>> _commands = new();
-        private readonly SemaphoreSlim _orchestratorSemaphore = new(1, 1);
-        private readonly Dictionary<string, int> _testRetryCounts = new();
-        private const int MaxOrchestrationRetries = 2;
-        private const int DefaultOrchestrationTimeoutMs = 30000;
 
         public void RegisterCommand<TInput, TOutput>(ICommand<TInput, TOutput> command)
         {
@@ -43,18 +38,6 @@ namespace Nexo.Tests.CLI.Commands
 
             try
             {
-                // Validate orchestration input
-                var validationResult = ValidateOrchestrationInput(input);
-                if (!validationResult.IsValid)
-                {
-                    return new TestCLIOrchestrationResult
-                    {
-                        Success = false,
-                        ErrorMessage = $"Orchestration input validation failed: {validationResult.ErrorMessage}",
-                        ExecutionTime = DateTime.UtcNow - startTime
-                    };
-                }
-
                 // Execute CLI version test
                 var versionCommand = new TestCLICommand();
                 var versionInput = new TestCLIInput 
@@ -125,9 +108,7 @@ namespace Nexo.Tests.CLI.Commands
                     PassedTests = results.Count(r => r.Success),
                     FailedTests = results.Count(r => !r.Success),
                     ExecutionTime = totalDuration,
-                    TestResults = results.ToArray(),
-                    Warnings = results.SelectMany(r => r.Warnings).ToArray(),
-                    Errors = results.SelectMany(r => r.Errors).ToArray()
+                    TestResults = results.ToArray()
                 };
             }
             catch (Exception ex)
@@ -143,33 +124,6 @@ namespace Nexo.Tests.CLI.Commands
         }
 
 
-        private static ValidationResult ValidateOrchestrationInput(TestCLIOrchestrationInput input)
-        {
-            var errors = new List<string>();
-
-            if (input.TestTimeoutMs.HasValue && input.TestTimeoutMs.Value <= 0)
-                errors.Add("Test timeout must be positive");
-
-            if (input.TestTimeoutMs.HasValue && input.TestTimeoutMs.Value > 60000)
-                errors.Add("Test timeout cannot exceed 60 seconds");
-
-            if (input.TimeoutMs.HasValue && input.TimeoutMs.Value <= 0)
-                errors.Add("Orchestration timeout must be positive");
-
-            if (input.TimeoutMs.HasValue && input.TimeoutMs.Value > 300000)
-                errors.Add("Orchestration timeout cannot exceed 5 minutes");
-
-            return new ValidationResult
-            {
-                IsValid = errors.Count == 0,
-                ErrorMessage = string.Join("; ", errors)
-            };
-        }
-
-        public void Dispose()
-        {
-            _orchestratorSemaphore?.Dispose();
-        }
     }
 
     public class TestCLIOrchestrationInput
@@ -177,11 +131,6 @@ namespace Nexo.Tests.CLI.Commands
         public string[] TestArguments { get; set; } = Array.Empty<string>();
         public bool IncludeVerboseTests { get; set; }
         public string TestEnvironment { get; set; } = "Development";
-        public int? TimeoutMs { get; set; }
-        public int? TestTimeoutMs { get; set; }
-        public bool EnableRetries { get; set; } = true;
-        public bool EnableParallelExecution { get; set; } = false;
-        public string[]? ExpectedTestNames { get; set; }
     }
 
     public class TestCLIOrchestrationResult
@@ -193,11 +142,5 @@ namespace Nexo.Tests.CLI.Commands
         public TimeSpan ExecutionTime { get; set; }
         public string? ErrorMessage { get; set; }
         public TestCLIOutput[] TestResults { get; set; } = Array.Empty<TestCLIOutput>();
-        public string[] Warnings { get; set; } = Array.Empty<string>();
-        public string[] Errors { get; set; } = Array.Empty<string>();
-        public int OrchestrationAttempts { get; set; }
-        public DateTime StartedAt { get; set; } = DateTime.UtcNow;
-        public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
-        public Dictionary<string, object> Metadata { get; set; } = new();
     }
 }

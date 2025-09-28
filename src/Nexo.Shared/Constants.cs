@@ -3,7 +3,7 @@ namespace Nexo.Shared
     /// <summary>
     /// Application-wide constants to replace magic numbers and strings.
     /// </summary>
-    public static class Constants
+    public static class ApplicationConstants
     {
         /// <summary>
         /// Default timeout values in milliseconds.
