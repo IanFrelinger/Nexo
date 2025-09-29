@@ -1,6 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Nexo.Core.Application;
+using Nexo.Core.Application.Interfaces;
+using Nexo.Core.Application.Orchestration;
+using NexoDirectorStudio.Commands;
 
 namespace NexoDirectorStudio.Orchestration
 {
@@ -28,10 +31,15 @@ namespace NexoDirectorStudio.Orchestration
         
         private static void ConfigureServices(IServiceCollection services)
         {
-            // TODO: Register Nexo orchestrator and command handlers
-            // This will be implemented in Phase 2 when we define the DTOs and commands
+            // Register Nexo orchestrator and command handlers
+            services.AddSingleton<IOrchestrator, GenericCommandOrchestrator>();
+            services.AddSingleton<GenericCommandOrchestrator>();
+            services.AddSingleton<IPreValidator, NoopPreValidator>();
             
-            // For now, just register basic services
+            // Register Director Studio commands
+            services.AddTransient<IPlanGameSliceCommand, PlanGameSliceCommand>();
+            
+            // Register basic services
             services.AddLogging();
         }
         
