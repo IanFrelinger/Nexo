@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Nexo.Abstractions/Nexo.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Nexo.Core.Application/Nexo.Core.Application.csproj" />
+    <ProjectReference Include="../../src/Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="../../src/Nexo.Runtime/Nexo.Runtime.csproj" />
+    <ProjectReference Include="../../src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj" />
+    <ProjectReference Include="../../src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
+    <ProjectReference Include="../../src/Nexo.Agents.Dev/Nexo.Agents.Dev.csproj" />
+  </ItemGroup>
+
+</Project>

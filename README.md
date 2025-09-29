@@ -89,6 +89,23 @@ Nexo/
 
 ### Installation
 
+#### CLI (dotnet tool)
+
+```bash
+# Install Nexo CLI globally
+dotnet tool install --global Nexo.CLI
+
+# Verify installation
+nexo --help
+
+# Run commands
+nexo analyze --path .
+nexo validate --filter "Category=Architecture" --format-json
+nexo agent --name CodeWriter --input ./requests/new_feature.json --format-json
+```
+
+#### Development Setup
+
 ```bash
 # Clone the repository
 git clone https://github.com/IanFrelinger/Nexo.git
@@ -215,6 +232,7 @@ dotnet run --project src/Nexo.Demo.DevCLI -- mode extend
 - **Unit Tests**: Individual component testing
 - **Integration Tests**: Cross-component testing
 - **Architecture Tests**: Architectural rule validation
+- **Contract Tests**: Behavioral contracts (idempotency, timeouts, policies)
 - **End-to-End Tests**: Complete workflow testing
 
 ### Running Tests
@@ -223,11 +241,33 @@ dotnet run --project src/Nexo.Demo.DevCLI -- mode extend
 # Run all tests
 dotnet test
 
-# Run specific test category
-dotnet test --filter Category=Architecture
+# Run specific test categories
+dotnet test --filter "Category=Architecture"
+dotnet test --filter "Category=Contract"
+dotnet test --filter "Category=Integration"
+dotnet test --filter "Category=E2E"
 
 # Run with coverage
 dotnet test --collect:"XPlat Code Coverage"
+
+# Run tests with solution filters for faster iteration
+dotnet test Nexo.tests.slnf --filter "Category=Architecture"
+dotnet test Nexo.cli.slnf --filter "Category=Contract"
+```
+
+### Solution Filters (Fast Development)
+
+```bash
+# CLI-focused development
+dotnet build Nexo.cli.slnf -c Debug
+dotnet test Nexo.cli.slnf
+
+# Core libraries only
+dotnet build Nexo.core.slnf -c Debug
+dotnet test Nexo.core.slnf
+
+# All tests
+dotnet test Nexo.tests.slnf
 ```
 
 ⸻
