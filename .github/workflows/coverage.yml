@@ -1,0 +1,27 @@
+name: coverage
+on:
+  pull_request:
+  push:
+    branches: [ master, main ]
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - run: dotnet restore
+      # Enforce threshold with coverlet.msbuild
+      - name: Run tests with coverage + threshold
+        run: >
+          dotnet test -c Release --no-restore
+          /p:CollectCoverage=true
+          /p:CoverletOutputFormat=cobertura
+          /p:Threshold=80
+          /p:ThresholdType=line
+          /p:ExcludeByFile="**/bin/**,**/obj/**,**/*.g.cs"
+      - name: Upload coverage (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: '**/TestResults/**/*.cobertura.xml'

@@ -1,81 +1,16 @@
-name: Code Analysis
-
+name: analyzers
 on:
-  push:
-    branches: [ master, main, develop ]
   pull_request:
-    branches: [ master, main, develop ]
-
-env:
-  DOTNET_VERSION: '8.0.x'
-
+  push:
+    branches: [ master, main ]
 jobs:
-  analyzers:
+  analyzers_and_format:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Cache NuGet packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Run code formatting check
-      run: dotnet format --verify-no-changes --verbosity diagnostic
-
-    - name: Build with warnings as errors
-      run: dotnet build --no-restore --configuration Release --verbosity normal -warnaserror
-
-    - name: Run static analysis
-      run: |
-        dotnet build --no-restore --configuration Release --verbosity normal -p:RunAnalyzersDuringBuild=true -p:RunAnalyzersDuringLiveAnalysis=true
-
-  architecture-tests:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-
-    - name: Cache NuGet packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Run architecture tests
-      run: dotnet test tests/Nexo.Tests.Architecture/Nexo.Tests.Architecture.csproj --no-build --configuration Release --verbosity normal --logger trx --logger "console;verbosity=detailed"
-
-    - name: Upload architecture test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: architecture-test-results
-        path: TestResults/
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - name: dotnet format (verify)
+        run: dotnet format --verify-no-changes
+      - name: Build with analyzers as errors
+        run: dotnet build -c Release -warnaserror

@@ -1,0 +1,25 @@
+name: tests
+on:
+  pull_request:
+  push:
+    branches: [ master, main ]
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - run: dotnet restore
+      - name: Unit tests
+        run: dotnet test -c Release --no-restore --filter "Category=Unit|TestCategory=Unit"
+
+  integration_e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - run: dotnet restore
+      - name: Integration + E2E tests
+        run: dotnet test -c Release --no-restore --filter "Category=Integration|Category=E2E|TestCategory=Integration|TestCategory=E2E"

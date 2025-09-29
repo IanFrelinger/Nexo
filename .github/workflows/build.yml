@@ -1,0 +1,16 @@
+name: build
+on:
+  pull_request:
+  push:
+    branches: [ master, main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '8.0.x' }
+      - name: Restore
+        run: dotnet restore
+      - name: Build (warn as error)
+        run: dotnet build -c Release -warnaserror --no-restore

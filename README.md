@@ -1,5 +1,10 @@
 # Nexo
 
+![Build](https://github.com/IanFrelinger/Nexo/actions/workflows/build.yml/badge.svg)
+![Tests](https://github.com/IanFrelinger/Nexo/actions/workflows/tests.yml/badge.svg)
+![Analyzers](https://github.com/IanFrelinger/Nexo/actions/workflows/analyzers.yml/badge.svg)
+![Coverage](https://github.com/IanFrelinger/Nexo/actions/workflows/coverage.yml/badge.svg)
+
 **Agent-First .NET Development Framework with Comprehensive Tooling**
 
 Nexo is a modern, agent-first development framework built for .NET that provides intelligent automation, comprehensive tooling, and robust architectural patterns. It combines AI agents, development tools, and policy enforcement to create a complete development platform.
