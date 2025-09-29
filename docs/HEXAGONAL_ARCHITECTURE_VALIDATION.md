@@ -150,7 +150,7 @@ The current architecture demonstrates excellent adherence to hexagonal architect
 6. **Value Objects**: Proper replacement of enums with value objects
 7. **Small Classes**: All classes are under 200 lines as requested
 
-### 🔄 **Minor Improvements** (Optional)
+### Minor Improvements (Optional)
 1. **Dependency Injection**: Consider adding more comprehensive DI configuration
 2. **Event Sourcing**: Consider adding domain events for agent state changes
 3. **Persistence**: Consider adding repository interfaces for agent persistence

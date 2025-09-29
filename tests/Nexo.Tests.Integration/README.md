@@ -2,7 +2,7 @@
 
 This directory contains comprehensive integration tests for the Nexo framework, designed to test end-to-end workflows, performance, error handling, and system resilience.
 
-## 🏗️ Test Architecture
+## Test Architecture
 
 The integration test suite follows a comprehensive testing strategy:
 
@@ -14,7 +14,7 @@ The integration test suite follows a comprehensive testing strategy:
 - **Test Runner**: Orchestrated test execution (`IntegrationTestRunner`)
 - **Utilities**: Helper functions and utilities (`IntegrationTestHelper`)
 
-## 📁 Test Structure
+## Test Structure
 
 ```
 tests/Nexo.Tests.Integration/
@@ -38,7 +38,7 @@ tests/Nexo.Tests.Integration/
 └── README.md                         # This file
 ```
 
-## 🧪 Test Categories
+## Test Categories
 
 ### 1. End-to-End Workflow Tests
 - **Complete Workflow**: Full project creation to agent execution
@@ -68,7 +68,7 @@ tests/Nexo.Tests.Integration/
 - **Utilities**: Helper function testing
 - **Reporting**: Test report generation
 
-## 🚀 Running Tests
+## Running Tests
 
 ### Run All Integration Tests
 ```bash
@@ -100,7 +100,7 @@ dotnet test tests/Nexo.Tests.Integration/Nexo.Tests.Integration/Nexo.Tests.Integ
 dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 - `NEXO_TEST_ENV`: Test environment (default: "Development")
@@ -131,7 +131,7 @@ var config = new IntegrationTestConfiguration
 };
 ```
 
-## 📊 Test Results
+## Test Results
 
 ### Test Summary
 - **Total Test Suites**: Number of test suites executed
@@ -151,7 +151,7 @@ Integration tests generate comprehensive reports including:
 - System information
 - Configuration details
 
-## 🔧 Test Utilities
+## Test Utilities
 
 ### IntegrationTestHelper
 - **CreateTestDirectory()**: Create test directories
@@ -172,7 +172,7 @@ Integration tests generate comprehensive reports including:
 - **ExecuteCompleteWorkflowAsync()**: Execute full workflows
 - **Dispose()**: Clean up resources
 
-## 🎯 Test Scenarios
+## Test Scenarios
 
 ### 1. Full Integration Test
 Tests the complete workflow from project creation through agent execution:
@@ -205,7 +205,7 @@ Validates different configuration scenarios:
 - Environment-specific settings
 - Parameter validation
 
-## 📈 Performance Benchmarks
+## Performance Benchmarks
 
 ### Execution Time Thresholds
 - **Project Creation**: < 5 seconds
@@ -225,7 +225,7 @@ Validates different configuration scenarios:
 - **Average Execution Time**: < 8 seconds
 - **Resource Cleanup**: No resource leaks
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 1. **System Requirements Not Met**: Ensure sufficient memory and processor cores
@@ -239,7 +239,7 @@ Validates different configuration scenarios:
 - Monitor resource usage: Use performance monitoring utilities
 - Review test reports: Generated JSON reports with detailed information
 
-## 🔄 Continuous Integration
+## Continuous Integration
 
 ### CI/CD Integration
 - Automated test execution on code changes
@@ -255,7 +255,7 @@ Validates different configuration scenarios:
 - Parallel test execution
 - Test result aggregation
 
-## 📚 Best Practices
+## Best Practices
 
 ### Test Design
 - Use test fixtures for consistent setup

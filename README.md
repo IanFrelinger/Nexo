@@ -11,22 +11,22 @@ Nexo is a modern, agent-first development framework built for .NET that provides
 
 ⸻
 
-## 🚀 Key Features
+## Key Features
 
-- **🤖 Agent-First Architecture**: AI agents as first-class citizens with cross-platform support
-- **🛠️ CLI Tool**: Packable dotnet tool with subcommands, JSON output, and rich help
-- **🛠️ Development Tools**: Comprehensive tooling for build, test, file operations, and git workflows
-- **🔒 Policy Enforcement**: Security and workflow policies with configurable rules
-- **🏗️ Clean Architecture**: Hexagonal architecture with enforced layering rules
-- **📦 Assembly Analysis**: Advanced .NET assembly analysis, decompilation, and security scanning
-- **🔄 TDD Workflows**: Built-in Test-Driven Development support with intelligent agents
-- **✅ Quality Gates**: Comprehensive testing, linting, and architectural validation
-- **🧪 Contract Testing**: Idempotency, timeout, and policy enforcement testing framework
-- **⚡ Fast Development**: Solution filters for rapid iteration and focused builds
+- **Agent-First Architecture**: AI agents as first-class citizens with cross-platform support
+- **CLI Tool**: Packable dotnet tool with subcommands, JSON output, and rich help
+- **Development Tools**: Comprehensive tooling for build, test, file operations, and git workflows
+- **Policy Enforcement**: Security and workflow policies with configurable rules
+- **Clean Architecture**: Hexagonal architecture with enforced layering rules
+- **Assembly Analysis**: Advanced .NET assembly analysis, decompilation, and security scanning
+- **TDD Workflows**: Built-in Test-Driven Development support with intelligent agents
+- **Quality Gates**: Comprehensive testing, linting, and architectural validation
+- **Contract Testing**: Idempotency, timeout, and policy enforcement testing framework
+- **Fast Development**: Solution filters for rapid iteration and focused builds
 
 ⸻
 
-## 🏗️ Architecture
+## Architecture
 
 ### Core Components
 
@@ -88,7 +88,7 @@ Nexo/
 
 ⸻
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -160,7 +160,7 @@ dotnet run --project src/Nexo.Demo.DevCLI -- mode extend
 
 ⸻
 
-## 🛠️ CLI Tool
+## CLI Tool
 
 Nexo provides a powerful command-line interface that can be installed as a global dotnet tool.
 
@@ -239,7 +239,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ⸻
 
-## 🤖 AI Agents
+## AI Agents
 
 ### Development Agents
 
@@ -257,7 +257,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ⸻
 
-## 🛠️ Development Tools
+## Development Tools
 
 ### Build & Test Tools
 
@@ -275,7 +275,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ⸻
 
-## 🔒 Policy System
+## Policy System
 
 ### Development Policies
 
@@ -291,7 +291,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ⸻
 
-## 🏗️ Architecture Validation
+## Architecture Validation
 
 ### Enforced Rules
 
@@ -310,7 +310,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ⸻
 
-## 📚 Documentation
+## Documentation
 
 - **[Architecture Guide](docs/architecture.md)**: Detailed architectural patterns
 - **[API Reference](docs/api/)**: Complete API documentation
@@ -319,7 +319,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ⸻
 
-## 🧪 Testing
+## Testing
 
 ### Test Categories
 
@@ -396,7 +396,7 @@ dotnet test Nexo.tests.slnf --collect:"XPlat Code Coverage"
 
 ⸻
 
-## 🚀 CI/CD & Quality Gates
+## CI/CD & Quality Gates
 
 Nexo enforces comprehensive quality gates through automated CI/CD pipelines.
 
@@ -439,7 +439,7 @@ npx commitlint --from HEAD~1 --to HEAD --verbose
 
 ⸻
 
-## 🤝 Contributing
+## Contributing
 
 ### Development Workflow
 
@@ -475,13 +475,13 @@ ci: add commitlint validation to GitHub Actions
 
 ⸻
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
 ⸻
 
-## 🆘 Support
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/IanFrelinger/Nexo/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/IanFrelinger/Nexo/discussions)
@@ -489,7 +489,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ⸻
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### ✅ Completed
 - [x] CLI tool with subcommands and JSON output
@@ -499,12 +499,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - [x] Architecture validation (18 tests)
 - [x] Quality gates and code analysis
 
-### 🚧 In Progress
+### In Progress
 - [ ] Real implementation of CLI commands
 - [ ] Advanced contract test implementations
 - [ ] Multi-targeting support (netstandard2.1)
 
-### 📋 Planned
+### Planned
 - [ ] Enhanced AI agent capabilities
 - [ ] Web-based development interface
 - [ ] Plugin system for custom tools
@@ -515,4 +515,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Built with ❤️ for the .NET community**
+Built for the .NET community

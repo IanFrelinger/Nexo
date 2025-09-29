@@ -378,4 +378,4 @@ This project follows the [Contributor Covenant Code of Conduct](https://www.cont
 
 ---
 
-Thank you for contributing to Nexo! 🚀
+Thank you for contributing to Nexo!
