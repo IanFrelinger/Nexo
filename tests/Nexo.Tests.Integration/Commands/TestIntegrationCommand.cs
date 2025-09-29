@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nexo.Core.Application.Commands;
 using Nexo.Core.Application.Commands.Project;
@@ -20,43 +21,52 @@ namespace Nexo.Tests.Integration.Commands
                 
                 var testResults = new List<string>();
                 
-                // Test project creation
-                var createProjectCommand = new CreateProjectCommand();
-                var createProjectInput = new CreateProjectInput
+                // Test project creation (if enabled)
+                if (input.IncludeProjectTests)
                 {
-                    Name = "Integration Test Project",
-                    Path = "/tmp/integration-test",
-                    Runtime = "Docker"
-                };
-                var createProjectResult = await createProjectCommand.ExecuteAsync(createProjectInput);
-                testResults.Add($"Project creation test: {(createProjectResult.IsSuccess ? "PASSED" : "FAILED")}");
+                    var createProjectCommand = new CreateProjectCommand();
+                    var createProjectInput = new CreateProjectInput
+                    {
+                        Name = "Integration Test Project",
+                        Path = "/tmp/integration-test",
+                        Runtime = "Docker"
+                    };
+                    var createProjectResult = await createProjectCommand.ExecuteAsync(createProjectInput);
+                    testResults.Add($"Project creation test: {(createProjectResult.IsSuccess ? "PASSED" : "FAILED")}");
+                }
                 
-                // Test agent creation
-                var createAgentCommand = new CreateAgentCommand();
-                var createAgentInput = new CreateAgentInput
+                // Test agent creation (if enabled)
+                if (input.IncludeAgentTests)
                 {
-                    Name = "Integration Test Agent",
-                    Role = "Developer",
-                    Platform = "Windows"
-                };
-                var createAgentResult = await createAgentCommand.ExecuteAsync(createAgentInput);
-                testResults.Add($"Agent creation test: {(createAgentResult.IsSuccess ? "PASSED" : "FAILED")}");
+                    var createAgentCommand = new CreateAgentCommand();
+                    var createAgentInput = new CreateAgentInput
+                    {
+                        Name = "Integration Test Agent",
+                        Role = "Developer",
+                        Platform = "Windows"
+                    };
+                    var createAgentResult = await createAgentCommand.ExecuteAsync(createAgentInput);
+                    testResults.Add($"Agent creation test: {(createAgentResult.IsSuccess ? "PASSED" : "FAILED")}");
+                }
                 
-                // Test assembly analysis
-                var analyzeAssemblyCommand = new AnalyzeAssemblyCommand();
-                var analyzeAssemblyInput = new AnalyzeAssemblyInput
+                // Test assembly analysis (if enabled)
+                if (input.IncludeAssemblyTests)
                 {
-                    AssemblyPath = "/tmp/test.dll",
-                    IncludePrivateMembers = false,
-                    IncludeSecurityAnalysis = true
-                };
-                var analyzeAssemblyResult = await analyzeAssemblyCommand.ExecuteAsync(analyzeAssemblyInput);
-                testResults.Add($"Assembly analysis test: {(analyzeAssemblyResult.IsSuccess ? "PASSED" : "FAILED")}");
+                    var analyzeAssemblyCommand = new AnalyzeAssemblyCommand();
+                    var analyzeAssemblyInput = new AnalyzeAssemblyInput
+                    {
+                        AssemblyPath = "/tmp/test.dll",
+                        IncludePrivateMembers = false,
+                        IncludeSecurityAnalysis = true
+                    };
+                    var analyzeAssemblyResult = await analyzeAssemblyCommand.ExecuteAsync(analyzeAssemblyInput);
+                    testResults.Add($"Assembly analysis test: {(analyzeAssemblyResult.IsSuccess ? "PASSED" : "FAILED")}");
+                }
                 
                 var output = new TestIntegrationOutput
                 {
                     IntegrationTestType = input.IntegrationTestType,
-                    Success = createProjectResult.IsSuccess && createAgentResult.IsSuccess && analyzeAssemblyResult.IsSuccess,
+                    Success = testResults.All(r => r.Contains("PASSED")),
                     ExecutionTime = TimeSpan.FromMilliseconds(100),
                     TestResults = testResults.ToArray()
                 };
