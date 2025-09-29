@@ -27,7 +27,7 @@ Nexo follows a clean, agent-first architecture with strict layering rules and co
 ## Layer Architecture
 
 ### Presentation Layer
-- **Nexo.CLI**: Command-line interface
+- **Nexo.CLI**: Packable dotnet tool with subcommands and JSON output
 - **Nexo.Demo.DevCLI**: Demo application
 - **Web UI**: Future web interface
 
@@ -210,8 +210,15 @@ public interface IPolicy
 ### Testing Strategy
 - **Unit tests** for individual components
 - **Integration tests** for cross-component functionality
-- **Architecture tests** for rule validation
+- **Architecture tests** (18 comprehensive tests) for rule validation
+- **Contract tests** for behavioral guarantees (idempotency, timeouts, policies)
 - **End-to-end tests** for complete workflows
+
+### Test Categories
+- **Architecture**: Layering rules, single ownership, type-value system
+- **Contract**: Idempotency, timeout enforcement, policy compliance
+- **Integration**: Cross-component testing with real dependencies
+- **E2E**: Complete workflow testing from CLI to agents
 
 ### Error Handling
 - **OperationResult<T>** for consistent error handling

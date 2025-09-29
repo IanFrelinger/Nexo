@@ -9,12 +9,15 @@ Nexo is a modern, agent-first development framework built for .NET that provides
 ## 🚀 Key Features
 
 - **🤖 Agent-First Architecture**: AI agents as first-class citizens with cross-platform support
+- **🛠️ CLI Tool**: Packable dotnet tool with subcommands, JSON output, and rich help
 - **🛠️ Development Tools**: Comprehensive tooling for build, test, file operations, and git workflows
 - **🔒 Policy Enforcement**: Security and workflow policies with configurable rules
 - **🏗️ Clean Architecture**: Hexagonal architecture with enforced layering rules
 - **📦 Assembly Analysis**: Advanced .NET assembly analysis, decompilation, and security scanning
 - **🔄 TDD Workflows**: Built-in Test-Driven Development support with intelligent agents
 - **✅ Quality Gates**: Comprehensive testing, linting, and architectural validation
+- **🧪 Contract Testing**: Idempotency, timeout, and policy enforcement testing framework
+- **⚡ Fast Development**: Solution filters for rapid iteration and focused builds
 
 ⸻
 
@@ -72,6 +75,7 @@ Nexo/
 │   └── Nexo.Examples/              # Example implementations (non-packable)
 ├── tests/
 │   ├── Nexo.Tests.Architecture/    # Architectural validation tests
+│   ├── Nexo.Tests.Contracts/       # Contract tests (idempotency, timeouts, policies)
 │   ├── Nexo.Tests.Integration/     # Integration tests
 │   └── [other test projects]
 └── docs/                           # Comprehensive documentation
@@ -127,20 +131,105 @@ dotnet run --project src/Nexo.Demo.DevCLI
 ### Basic Usage
 
 ```bash
-# Show version information
-dotnet run --project src/Nexo.CLI -- version
+# Install the CLI tool globally
+dotnet tool install --global Nexo.CLI
 
 # Show help
-dotnet run --project src/Nexo.CLI -- help
+nexo --help
 
-# Analyze an assembly
-dotnet run --project src/Nexo.CLI -- assembly analyze --path MyAssembly.dll
+# Analyze code and policies
+nexo analyze --path . --format-json
+
+# Run architecture validation
+nexo validate --filter "Category=Architecture"
+
+# Run an agent
+nexo agent --name CodeWriter --input request.json --format-json
 
 # Run development agent in heal mode
 dotnet run --project src/Nexo.Demo.DevCLI -- mode heal
 
 # Run development agent in extend mode (TDD)
 dotnet run --project src/Nexo.Demo.DevCLI -- mode extend
+```
+
+⸻
+
+## 🛠️ CLI Tool
+
+Nexo provides a powerful command-line interface that can be installed as a global dotnet tool.
+
+### Installation
+
+```bash
+# Install globally
+dotnet tool install --global Nexo.CLI
+
+# Verify installation
+nexo --version
+```
+
+### Commands
+
+#### `nexo analyze`
+Run code/assembly analyzers and policies with comprehensive validation.
+
+```bash
+# Analyze current directory
+nexo analyze
+
+# Analyze specific path
+nexo analyze --path /path/to/project
+
+# Get JSON output for CI/automation
+nexo analyze --format-json
+```
+
+#### `nexo validate`
+Run architecture tests and contract checks quickly.
+
+```bash
+# Run all validations
+nexo validate
+
+# Filter by test category
+nexo validate --filter "Category=Architecture"
+
+# Get JSON output
+nexo validate --format-json
+```
+
+#### `nexo agent`
+Execute agent actions with optional input files.
+
+```bash
+# Run agent with name
+nexo agent --name CodeWriter
+
+# Run with input file
+nexo agent --name CodeWriter --input request.json
+
+# Get JSON output
+nexo agent --name CodeWriter --format-json
+```
+
+### Exit Codes
+
+- `0`: Success
+- `2`: Validation failed
+- `3`: Policy violation
+- `10`: Unexpected error
+
+### JSON Output
+
+When using `--format-json`, the CLI outputs structured JSON:
+
+```json
+{
+  "ok": true,
+  "data": { "message": "No violations" },
+  "error": null
+}
 ```
 
 ⸻
@@ -231,9 +320,20 @@ dotnet run --project src/Nexo.Demo.DevCLI -- mode extend
 
 - **Unit Tests**: Individual component testing
 - **Integration Tests**: Cross-component testing
-- **Architecture Tests**: Architectural rule validation
+- **Architecture Tests**: Architectural rule validation (18 comprehensive tests)
 - **Contract Tests**: Behavioral contracts (idempotency, timeouts, policies)
 - **End-to-End Tests**: Complete workflow testing
+
+### Contract Testing
+
+Contract tests ensure behavioral guarantees across the system:
+
+- **Idempotency**: Operations produce the same result when run multiple times
+- **Timeout Enforcement**: Operations respect configured timeouts
+- **Policy Compliance**: Tools and agents respect security and workflow policies
+- **Audit Logging**: All operations generate proper audit trails
+- **Binary File Protection**: Prevents overwriting of binary files (.dll, .exe, etc.)
+- **Write Size Limits**: Enforces maximum write sizes per operation
 
 ### Running Tests
 
@@ -257,17 +357,79 @@ dotnet test Nexo.cli.slnf --filter "Category=Contract"
 
 ### Solution Filters (Fast Development)
 
+Nexo includes solution filters for rapid development iteration:
+
 ```bash
-# CLI-focused development
+# CLI-focused development (includes CLI + core dependencies)
 dotnet build Nexo.cli.slnf -c Debug
 dotnet test Nexo.cli.slnf
 
-# Core libraries only
+# Core libraries only (abstractions, runtime, application, domain)
 dotnet build Nexo.core.slnf -c Debug
 dotnet test Nexo.core.slnf
 
-# All tests
+# All tests (architecture, contracts, integration, unit)
 dotnet test Nexo.tests.slnf
+
+# Run specific test categories with filters
+dotnet test Nexo.tests.slnf --filter "Category=Architecture"
+dotnet test Nexo.tests.slnf --filter "Category=Contract"
+```
+
+### Development Workflow
+
+```bash
+# Quick CLI development cycle
+dotnet build Nexo.cli.slnf && dotnet test Nexo.cli.slnf
+
+# Focus on core functionality
+dotnet build Nexo.core.slnf && dotnet test Nexo.core.slnf
+
+# Full test suite before commit
+dotnet test Nexo.tests.slnf --collect:"XPlat Code Coverage"
+```
+
+⸻
+
+## 🚀 CI/CD & Quality Gates
+
+Nexo enforces comprehensive quality gates through automated CI/CD pipelines.
+
+### Automated Workflows
+
+- **Build & Test**: Multi-platform testing with coverage collection
+- **Code Analysis**: Static analysis, formatting, and style enforcement
+- **Architecture Validation**: Automated architectural rule enforcement
+- **Commit Validation**: Conventional commit format enforcement
+- **CLI Publishing**: Automated NuGet package publishing on tags
+
+### Quality Gates
+
+- **✅ 18 Architecture Tests**: Enforce layering rules, single ownership, type-value system
+- **✅ Warnings as Errors**: Production code must be warning-free
+- **✅ Public API Protection**: Track and validate API surface changes
+- **✅ Coverage Threshold**: 80% minimum code coverage requirement
+- **✅ Contract Testing**: Idempotency, timeout, and policy enforcement
+- **✅ Security Scanning**: Automated security vulnerability detection
+
+### GitHub Actions
+
+```yaml
+# Required checks for PRs
+- build-and-test.yml    # Build, test, coverage
+- analyzers.yml         # Code analysis, formatting
+- architecture.yml      # Architecture validation
+- commitlint.yml        # Commit message validation
+```
+
+### Local Development
+
+```bash
+# Run all quality gates locally
+dotnet build -warnaserror
+dotnet test --collect:"XPlat Code Coverage"
+dotnet format --verify-no-changes
+npx commitlint --from HEAD~1 --to HEAD --verbose
 ```
 
 ⸻
@@ -324,10 +486,25 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🗺️ Roadmap
 
+### ✅ Completed
+- [x] CLI tool with subcommands and JSON output
+- [x] Contract testing framework
+- [x] Solution filters for fast development
+- [x] Comprehensive CI/CD pipeline
+- [x] Architecture validation (18 tests)
+- [x] Quality gates and code analysis
+
+### 🚧 In Progress
+- [ ] Real implementation of CLI commands
+- [ ] Advanced contract test implementations
+- [ ] Multi-targeting support (netstandard2.1)
+
+### 📋 Planned
 - [ ] Enhanced AI agent capabilities
 - [ ] Web-based development interface
 - [ ] Plugin system for custom tools
 - [ ] Cloud-based agent execution
+- [ ] dotnet new templates
 - [ ] Integration with popular IDEs
 - [ ] Advanced security scanning features
 

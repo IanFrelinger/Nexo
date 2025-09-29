@@ -36,6 +36,11 @@ Thank you for your interest in contributing to Nexo! This guide will help you ge
    dotnet test
    ```
 
+6. **Test the CLI tool**:
+   ```bash
+   dotnet run --project src/Nexo.CLI -- --help
+   ```
+
 ## Development Workflow
 
 ### 1. Create a Feature Branch
@@ -73,6 +78,56 @@ git push origin feature/your-feature-name
 ```
 
 Then create a pull request on GitHub.
+
+## Development Tools
+
+### Solution Filters
+
+Nexo provides solution filters for faster development iteration:
+
+```bash
+# CLI-focused development (includes CLI + core dependencies)
+dotnet build Nexo.cli.slnf
+dotnet test Nexo.cli.slnf
+
+# Core libraries only (abstractions, runtime, application, domain)
+dotnet build Nexo.core.slnf
+dotnet test Nexo.core.slnf
+
+# All tests (architecture, contracts, integration, unit)
+dotnet test Nexo.tests.slnf
+```
+
+### Test Categories
+
+Run specific test categories for focused testing:
+
+```bash
+# Architecture tests (18 comprehensive tests)
+dotnet test --filter "Category=Architecture"
+
+# Contract tests (idempotency, timeouts, policies)
+dotnet test --filter "Category=Contract"
+
+# Integration tests
+dotnet test --filter "Category=Integration"
+
+# End-to-end tests
+dotnet test --filter "Category=E2E"
+```
+
+### CLI Development
+
+When working on CLI features:
+
+```bash
+# Quick CLI build and test cycle
+dotnet build Nexo.cli.slnf && dotnet test Nexo.cli.slnf
+
+# Test CLI commands
+dotnet run --project src/Nexo.CLI -- --help
+dotnet run --project src/Nexo.CLI -- analyze --format-json
+```
 
 ## Coding Standards
 
