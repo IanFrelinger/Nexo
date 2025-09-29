@@ -26,7 +26,6 @@
     <ProjectReference Include="../../../src/Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
     <ProjectReference Include="../../../src/Nexo.Core/Nexo.Core.csproj" />
     <ProjectReference Include="../../../src/Nexo.Runtime/Nexo.Runtime.csproj" />
-    <ProjectReference Include="../../../src/Nexo.Examples/Nexo.Examples.csproj" />
     <ProjectReference Include="../../../src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj" />
     <ProjectReference Include="../../../src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
     <ProjectReference Include="../../../src/Nexo.Agents.Dev/Nexo.Agents.Dev.csproj" />

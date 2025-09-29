@@ -8,7 +8,7 @@ public sealed class RepoDelta : IActionDelta
 {
     public int TickFrom { get; init; }
     public int TickTo   { get; init; }
-    public byte[]? Signature { get; set; }
+    public IReadOnlyList<byte>? Signature { get; set; }
     public IReadOnlyList<string> Log => _log;
     public IReadOnlyList<FileEdit> Edits => _edits;
 

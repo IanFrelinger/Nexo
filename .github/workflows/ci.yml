@@ -11,6 +11,23 @@ jobs:
         dotnet: [8.0.x]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for commitlint
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install commitlint
+        run: npm install
+      - name: Validate commit messages
+        run: |
+          # Only validate commits in the current PR
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
+          else
+            # For push events, validate the last commit
+            npx commitlint --from HEAD~1 --to HEAD --verbose
+          fi
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: ${{ matrix.dotnet }} }
       - run: dotnet restore

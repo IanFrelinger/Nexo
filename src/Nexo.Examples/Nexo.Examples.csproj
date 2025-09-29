@@ -4,9 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
-    <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
-  </ItemGroup>
+  <!-- Examples project should not have project references to avoid shipping dependencies -->
 </Project>

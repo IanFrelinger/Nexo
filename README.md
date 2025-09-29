@@ -352,7 +352,43 @@ dotnet pack
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Submit a pull request
+5. Follow conventional commit format (see below)
+6. Submit a pull request
+
+### Commit Convention
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) to maintain a clear and consistent commit history. All commits must follow this format:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+#### Types
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `perf`: A code change that improves performance
+- `test`: Adding missing tests or correcting existing tests
+- `build`: Changes that affect the build system or external dependencies
+- `ci`: Changes to our CI configuration files and scripts
+- `chore`: Other changes that don't modify src or test files
+- `revert`: Reverts a previous commit
+
+#### Examples
+```bash
+feat: add assembly decompilation capability
+fix: resolve memory leak in agent orchestration
+docs: update API documentation for security scanning
+test: add integration tests for CLI commands
+ci: add commitlint validation to GitHub Actions
+```
+
+The CI pipeline will validate all commit messages and fail if they don't follow the conventional commit format.
 
 ⸻
 

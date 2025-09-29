@@ -11,6 +11,5 @@
     <PackageReference Include="FluentAssertions" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Nexo.Examples/Nexo.Examples.csproj" />
   </ItemGroup>
 </Project>

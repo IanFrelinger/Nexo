@@ -12,12 +12,12 @@ public interface ITool
 {
     string Id { get; }
     ToolSchema Schema { get; }
-    Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct);
+    Task<ToolResult> InvokeAsync(ToolCall toolCall, WorldSnapshot s, CancellationToken ct);
 }
 
 public interface IPolicy
 {
-    bool Approve(ToolCall call, WorldSnapshot s, out string reason);
+    bool Approve(ToolCall toolCall, WorldSnapshot s, out string reason);
 }
 
 public interface IModel
@@ -29,13 +29,13 @@ public interface IActionDelta
 {
     int TickFrom { get; }
     int TickTo { get; }
-    byte[]? Signature { get; set; }
+    IReadOnlyList<byte>? Signature { get; set; }
     IReadOnlyList<string> Log { get; }
 }
 
 public sealed record ActionDelta(int TickFrom, int TickTo, IReadOnlyList<string> Log) : IActionDelta
 {
-    public byte[]? Signature { get; set; }
+    public IReadOnlyList<byte>? Signature { get; set; }
     public static IActionDelta Merge(IEnumerable<IActionDelta> deltas)
     {
         var list = deltas.ToList();
@@ -76,7 +76,7 @@ public interface IAgentMemory
 public interface IToolbox
 {
     IEnumerable<ToolSchema> Schemas();
-    Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct);
+    Task<ToolResult> InvokeAsync(ToolCall toolCall, WorldSnapshot s, CancellationToken ct);
     IAgentMemory MemoryFor(IAgent agent);
 }
 

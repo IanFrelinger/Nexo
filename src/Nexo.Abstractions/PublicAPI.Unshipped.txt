@@ -1,0 +1,61 @@
+#nullable enable
+Nexo.Abstractions.ActionDelta
+Nexo.Abstractions.ActionDelta.TickFrom.get -> int
+Nexo.Abstractions.ActionDelta.TickTo.get -> int
+Nexo.Abstractions.ActionDelta.Signature.get -> string
+Nexo.Abstractions.ActionDelta.Log.get -> string
+Nexo.Abstractions.ActionDelta.Merge(ActionDelta) -> ActionDelta
+Nexo.Abstractions.AgentActions
+Nexo.Abstractions.AgentActions.ToolCalls.get -> System.Collections.Generic.IReadOnlyList<Nexo.Abstractions.ToolCall>
+Nexo.Abstractions.AgentObservation
+Nexo.Abstractions.AgentObservation.Snapshot.get -> Nexo.Abstractions.WorldSnapshot
+Nexo.Abstractions.AgentObservation.At.get -> System.DateTime
+Nexo.Abstractions.AgentObservation.Agent.get -> string
+Nexo.Abstractions.EventRecord
+Nexo.Abstractions.EventRecord.EventType.get -> string
+Nexo.Abstractions.EventRecord.Message.get -> string
+Nexo.Abstractions.IAgent
+Nexo.Abstractions.IAgent.Name.get -> string
+Nexo.Abstractions.IAgent.ThinkAsync(Nexo.Abstractions.ModelInput, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<Nexo.Abstractions.ModelOutput>
+Nexo.Abstractions.IAgentMemory
+Nexo.Abstractions.IAgentMemory.Write(Nexo.Abstractions.EventRecord) -> void
+Nexo.Abstractions.IAgentMemory.Query(string) -> System.Collections.Generic.IEnumerable<Nexo.Abstractions.EventRecord>
+Nexo.Abstractions.IAgentMemory.Schemas.get -> System.Collections.Generic.IReadOnlyDictionary<string, Nexo.Abstractions.ToolSchema>
+Nexo.Abstractions.IAgentMemory.InvokeAsync(Nexo.Abstractions.ToolCall, Nexo.Abstractions.WorldSnapshot, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<Nexo.Abstractions.ToolResult>
+Nexo.Abstractions.IAgentMemory.MemoryFor(string) -> Nexo.Abstractions.IAgentMemory
+Nexo.Abstractions.IActionDelta
+Nexo.Abstractions.IActionDelta.TickFrom.get -> int
+Nexo.Abstractions.IActionDelta.TickTo.get -> int
+Nexo.Abstractions.IActionDelta.Signature.get -> string
+Nexo.Abstractions.IActionDelta.Log.get -> string
+Nexo.Abstractions.IActionDelta.Merge(IActionDelta) -> IActionDelta
+Nexo.Abstractions.IModel
+Nexo.Abstractions.IModel.Schema.get -> Nexo.Abstractions.ToolSchema
+Nexo.Abstractions.IModel.CompleteAsync(Nexo.Abstractions.ModelInput, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<Nexo.Abstractions.ModelOutput>
+Nexo.Abstractions.IPolicy
+Nexo.Abstractions.IPolicy.Approve(Nexo.Abstractions.ToolCall, Nexo.Abstractions.WorldSnapshot, out string) -> bool
+Nexo.Abstractions.ITool
+Nexo.Abstractions.ITool.InvokeAsync(Nexo.Abstractions.ToolCall, Nexo.Abstractions.WorldSnapshot, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<Nexo.Abstractions.ToolResult>
+Nexo.Abstractions.IToolbox
+Nexo.Abstractions.IToolbox.InvokeAsync(Nexo.Abstractions.ToolCall, Nexo.Abstractions.WorldSnapshot, System.Threading.CancellationToken) -> System.Threading.Tasks.Task<Nexo.Abstractions.ToolResult>
+Nexo.Abstractions.ModelInput
+Nexo.Abstractions.ModelInput.Messages.get -> System.Collections.Generic.IReadOnlyList<string>
+Nexo.Abstractions.ModelOutput
+Nexo.Abstractions.ModelOutput.Text.get -> string
+Nexo.Abstractions.ToolCall
+Nexo.Abstractions.ToolCall.Id.get -> string
+Nexo.Abstractions.ToolCall.Description.get -> string
+Nexo.Abstractions.ToolCall.InputJsonSchema.get -> string
+Nexo.Abstractions.ToolCall.Arguments.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
+Nexo.Abstractions.ToolCall.ParseArgs<T>() -> T
+Nexo.Abstractions.ToolCall.None.get -> Nexo.Abstractions.ToolCall
+Nexo.Abstractions.ToolResult
+Nexo.Abstractions.ToolResult.Delta.get -> Nexo.Abstractions.IActionDelta
+Nexo.Abstractions.ToolResult.Payload.get -> object
+Nexo.Abstractions.ToolSchema
+Nexo.Abstractions.ToolSchema.Id.get -> string
+Nexo.Abstractions.ToolSchema.Description.get -> string
+Nexo.Abstractions.ToolSchema.InputJsonSchema.get -> string
+Nexo.Abstractions.WorldSnapshot
+Nexo.Abstractions.WorldSnapshot.Tick.get -> int
+Nexo.Abstractions.WorldSnapshot.Data.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
