@@ -39,6 +39,8 @@ namespace NexoDirectorStudio.Orchestration
             // Register Director Studio commands
             services.AddTransient<IPlanGameSliceCommand, PlanGameSliceCommand>();
             services.AddTransient<IBuildWorldLayoutCommand, BuildWorldLayoutCommand>();
+            services.AddTransient<IPlaceInteractionsCommand, PlaceInteractionsCommand>();
+            services.AddTransient<ICreateContentBundleCommand, CreateContentBundleCommand>();
             
             // Register basic services
             services.AddLogging();
