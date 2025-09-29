@@ -1,0 +1,83 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  COVERAGE_THRESHOLD: 80
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dotnet: [8.0.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release --verbosity normal
+
+    - name: Run tests with coverage
+      run: |
+        dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger trx --logger "console;verbosity=detailed"
+
+    - name: Generate coverage report
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        reportgenerator -reports:"TestResults/**/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:"Html;Cobertura"
+
+    - name: Upload coverage reports
+      if: matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./TestResults/**/coverage.cobertura.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+
+    - name: Check coverage threshold
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet tool install -g dotnet-coverage
+        dotnet coverage report TestResults/**/coverage.cobertura.xml --threshold ${{ env.COVERAGE_THRESHOLD }}
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: TestResults/
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-latest' && always()
+      with:
+        name: coverage-report
+        path: CoverageReport/
