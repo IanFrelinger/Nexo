@@ -30,6 +30,19 @@ jobs:
           fi
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: ${{ matrix.dotnet }} }
-      - run: dotnet restore
-      - run: dotnet build -c Release -warnaserror
-      - run: dotnet test  -c Release --no-build
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build solution
+        run: dotnet build -c Release -warnaserror
+      - name: Run unit tests
+        run: dotnet test -c Release --no-build --verbosity normal
+      - name: Run integration tests
+        run: dotnet test tests/Nexo.Tests.Integration/Nexo.Tests.Integration/Nexo.Tests.Integration.csproj -c Release --no-build --verbosity normal
+      - name: Run tests with coverage
+        run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --verbosity normal
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          files: ./TestResults/**/coverage.cobertura.xml
+          fail_ci_if_error: false
