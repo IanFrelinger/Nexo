@@ -1,0 +1,243 @@
+using NUnit.Framework;
+using NexoDirectorStudio.Validators;
+using NexoDirectorStudio.DTO;
+
+namespace NexoDirectorStudio.Tests.EditMode
+{
+    /// <summary>
+    /// Validation test for Phase 5 - validates that the validation suite is working correctly.
+    /// This test can be run to verify Phase 5 implementation.
+    /// </summary>
+    [TestFixture]
+    public class ValidationPhase5Test
+    {
+        [Test]
+        public void Phase5_ValidationSuite_ShouldWork()
+        {
+            // Arrange
+            var playabilityValidator = new PlayabilityValidator();
+            var mechanicsValidator = new MechanicsValidator();
+            
+            // Create test data
+            var gamePlan = CreateTestGamePlan();
+            var interactionGraph = CreateTestInteractionGraph();
+            
+            // Act - Test PlayabilityValidator
+            var playabilityResult = playabilityValidator.ValidateAsync(interactionGraph, CancellationToken.None).Result;
+            
+            // Act - Test MechanicsValidator
+            var mechanicsResult = mechanicsValidator.ValidateAsync(gamePlan, CancellationToken.None).Result;
+            
+            // Act - Test ValidationReport aggregation
+            var validationReport = ValidationReport.Create(new[] { playabilityResult, mechanicsResult });
+            
+            // Assert - Validators should work
+            Assert.IsNotNull(playabilityResult, "PlayabilityValidator should return a result");
+            Assert.IsNotNull(mechanicsResult, "MechanicsValidator should return a result");
+            Assert.IsNotNull(validationReport, "ValidationReport should be created");
+            
+            // Assert - Results should have expected properties
+            Assert.IsTrue(playabilityResult.Score >= 0 && playabilityResult.Score <= 100, "Playability score should be 0-100");
+            Assert.IsTrue(mechanicsResult.Score >= 0 && mechanicsResult.Score <= 100, "Mechanics score should be 0-100");
+            Assert.IsTrue(validationReport.OverallScore >= 0 && validationReport.OverallScore <= 100, "Overall score should be 0-100");
+            
+            // Assert - ValidationReport should have proper status
+            Assert.IsTrue(Enum.IsDefined(typeof(ValidationStatus), validationReport.Status), "Validation status should be valid");
+            Assert.IsNotNull(validationReport.Summary, "Validation summary should not be null");
+            Assert.IsNotNull(validationReport.Details, "Validation details should not be null");
+            
+            // Assert - ValidationReport should aggregate results correctly
+            Assert.AreEqual(2, validationReport.Results.Count, "Should have 2 validation results");
+            Assert.IsTrue(validationReport.AllIssues.Count >= 0, "Should have issues list");
+            Assert.IsTrue(validationReport.AllSuggestions.Count >= 0, "Should have suggestions list");
+            
+            // Assert - ValidationReport should have proper gating
+            Assert.IsTrue(validationReport.IsPlaytestAllowed == (validationReport.Status == ValidationStatus.Pass), 
+                "Playtest allowed should match status");
+            Assert.IsTrue(validationReport.HasCriticalIssues == validationReport.AllIssues.Any(i => i.Severity == ValidationSeverity.Critical),
+                "Critical issues flag should be correct");
+            
+            Console.WriteLine($"Phase 5 Validation Test Results:");
+            Console.WriteLine($"- Playability Score: {playabilityResult.Score}/100");
+            Console.WriteLine($"- Mechanics Score: {mechanicsResult.Score}/100");
+            Console.WriteLine($"- Overall Score: {validationReport.OverallScore}/100");
+            Console.WriteLine($"- Status: {validationReport.Status}");
+            Console.WriteLine($"- Playtest Allowed: {validationReport.IsPlaytestAllowed}");
+            Console.WriteLine($"- Issues: {validationReport.AllIssues.Count}");
+            Console.WriteLine($"- Suggestions: {validationReport.AllSuggestions.Count}");
+        }
+        
+        [Test]
+        public void Phase5_ValidationReport_ShouldSerializeToJson()
+        {
+            // Arrange
+            var playabilityValidator = new PlayabilityValidator();
+            var interactionGraph = CreateTestInteractionGraph();
+            var playabilityResult = playabilityValidator.ValidateAsync(interactionGraph, CancellationToken.None).Result;
+            var validationReport = ValidationReport.Create(playabilityResult);
+            
+            // Act
+            var json = validationReport.ToJson();
+            var deserializedReport = ValidationReport.FromJson(json);
+            
+            // Assert
+            Assert.IsNotNull(json, "JSON should not be null");
+            Assert.IsTrue(json.Length > 0, "JSON should not be empty");
+            Assert.IsNotNull(deserializedReport, "Deserialized report should not be null");
+            Assert.AreEqual(validationReport.Status, deserializedReport.Status, "Status should match after deserialization");
+            Assert.AreEqual(validationReport.OverallScore, deserializedReport.OverallScore, "Score should match after deserialization");
+        }
+        
+        [Test]
+        public void Phase5_ValidationIssues_ShouldHaveProperSeverity()
+        {
+            // Arrange
+            var mechanicsValidator = new MechanicsValidator();
+            var gamePlan = CreateTestGamePlan();
+            
+            // Act
+            var result = mechanicsValidator.ValidateAsync(gamePlan, CancellationToken.None).Result;
+            
+            // Assert
+            Assert.IsNotNull(result.Issues, "Issues should not be null");
+            
+            foreach (var issue in result.Issues)
+            {
+                Assert.IsTrue(Enum.IsDefined(typeof(ValidationSeverity), issue.Severity), 
+                    $"Issue severity should be valid: {issue.Severity}");
+                Assert.IsNotNull(issue.Title, "Issue title should not be null");
+                Assert.IsNotNull(issue.Description, "Issue description should not be null");
+                Assert.IsNotNull(issue.Category, "Issue category should not be null");
+            }
+        }
+        
+        [Test]
+        public void Phase5_ValidationSuggestions_ShouldHaveProperPriority()
+        {
+            // Arrange
+            var playabilityValidator = new PlayabilityValidator();
+            var interactionGraph = CreateTestInteractionGraph();
+            
+            // Act
+            var result = playabilityValidator.ValidateAsync(interactionGraph, CancellationToken.None).Result;
+            
+            // Assert
+            Assert.IsNotNull(result.Suggestions, "Suggestions should not be null");
+            
+            foreach (var suggestion in result.Suggestions)
+            {
+                Assert.IsTrue(suggestion.Priority >= 1 && suggestion.Priority <= 5, 
+                    $"Suggestion priority should be 1-5: {suggestion.Priority}");
+                Assert.IsNotNull(suggestion.Title, "Suggestion title should not be null");
+                Assert.IsNotNull(suggestion.Description, "Suggestion description should not be null");
+                Assert.IsNotNull(suggestion.Category, "Suggestion category should not be null");
+            }
+        }
+        
+        [Test]
+        public void Phase5_ValidationReport_ShouldHandleEmptyResults()
+        {
+            // Act
+            var emptyReport = ValidationReport.Empty();
+            
+            // Assert
+            Assert.IsNotNull(emptyReport, "Empty report should not be null");
+            Assert.AreEqual(ValidationStatus.Pass, emptyReport.Status, "Empty report should have Pass status");
+            Assert.AreEqual(100, emptyReport.OverallScore, "Empty report should have perfect score");
+            Assert.IsTrue(emptyReport.IsPlaytestAllowed, "Empty report should allow playtest");
+            Assert.AreEqual(0, emptyReport.AllIssues.Count, "Empty report should have no issues");
+            Assert.AreEqual(0, emptyReport.AllSuggestions.Count, "Empty report should have no suggestions");
+        }
+        
+        private static GamePlan CreateTestGamePlan()
+        {
+            return new GamePlan
+            {
+                Id = "test-plan-1",
+                SourceBrief = new DesignBrief
+                {
+                    Description = "A test game slice",
+                    GenreHint = "FPS",
+                    TargetDurationMinutes = 5,
+                    DifficultyLevel = 3,
+                    Seed = 12345
+                },
+                Genre = "FPS",
+                Description = "A test FPS game slice",
+                CoreMechanics = new[] { "Shoot", "Aim", "Move", "Reload" },
+                PlayerExperience = new[] { "Intense", "Fast-paced" },
+                EstimatedDurationMinutes = 5,
+                DifficultyProgression = new[]
+                {
+                    new DifficultyBeat { TimeOffsetSeconds = 0, DifficultyLevel = 2, Description = "Start" },
+                    new DifficultyBeat { TimeOffsetSeconds = 60, DifficultyLevel = 3, Description = "Ramp up" }
+                },
+                NarrativeBeats = new[] { "Introduction", "Climax", "Resolution" },
+                RequiredAssets = new[]
+                {
+                    new AssetRequirement
+                    {
+                        AssetType = "Weapon",
+                        Name = "Test Weapon",
+                        Description = "A test weapon",
+                        IsRequired = true,
+                        Priority = 5
+                    }
+                },
+                Seed = 12345
+            };
+        }
+        
+        private static InteractionGraph CreateTestInteractionGraph()
+        {
+            var spawnNode = new InteractionNode
+            {
+                Id = "spawn-1",
+                NodeType = "Spawn",
+                WorldPosition = new Vector3(0, 0, 0),
+                Name = "Player Spawn",
+                Description = "Spawns the player",
+                Actions = Array.Empty<InteractionAction>(),
+                IsRepeatable = false,
+                Priority = 10
+            };
+            
+            var goalNode = new InteractionNode
+            {
+                Id = "goal-1",
+                NodeType = "Goal",
+                WorldPosition = new Vector3(10, 0, 0),
+                Name = "Level Goal",
+                Description = "Completes the level",
+                Actions = Array.Empty<InteractionAction>(),
+                IsRepeatable = false,
+                Priority = 5
+            };
+            
+            var nodes = new[] { spawnNode, goalNode };
+            
+            var connections = new[]
+            {
+                new InteractionConnection
+                {
+                    Id = "conn-1",
+                    SourceNodeId = spawnNode.Id,
+                    TargetNodeId = goalNode.Id,
+                    ConnectionType = "Success",
+                    Weight = 1.0f
+                }
+            };
+            
+            return new InteractionGraph
+            {
+                Id = "test-graph-1",
+                WorldLayoutId = "test-layout-1",
+                Nodes = nodes,
+                Connections = connections,
+                Variables = Array.Empty<InteractionVariable>(),
+                EntryPointIds = new[] { spawnNode.Id },
+                Seed = 12345
+            };
+        }
+    }
+}
