@@ -1,0 +1,39 @@
+{
+    "name": "com.nexo.director-studio",
+    "version": "0.1.0",
+    "displayName": "Nexo Director Studio",
+    "description": "A Unity editor tool that enables non-programmers to create game slices from natural-language briefs across any genre.",
+    "unity": "2022.3",
+    "author": {
+        "name": "Nexo Team",
+        "email": "team@nexo.dev"
+    },
+    "keywords": [
+        "game-development",
+        "ai",
+        "orchestration",
+        "director",
+        "natural-language",
+        "genre-agnostic"
+    ],
+    "dependencies": {
+        "com.unity.test-framework": "1.3.5"
+    },
+    "samples": [
+        {
+            "displayName": "Basic Usage",
+            "description": "Basic examples of using Director Studio",
+            "path": "Samples~/BasicUsage"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/nexo-dev/nexo.git",
+        "directory": "src/NexoDirectorStudio"
+    },
+    "license": "MIT",
+    "homepage": "https://github.com/nexo-dev/nexo",
+    "bugs": {
+        "url": "https://github.com/nexo-dev/nexo/issues"
+    }
+}
