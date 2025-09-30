@@ -4,6 +4,8 @@ using Nexo.Core.Application;
 using Nexo.Core.Application.Interfaces;
 using Nexo.Core.Application.Orchestration;
 using NexoDirectorStudio.Commands;
+using NexoDirectorStudio.Profiles;
+using NexoDirectorStudio.Validators;
 
 namespace NexoDirectorStudio.Orchestration
 {
@@ -41,6 +43,17 @@ namespace NexoDirectorStudio.Orchestration
             services.AddTransient<IBuildWorldLayoutCommand, BuildWorldLayoutCommand>();
             services.AddTransient<IPlaceInteractionsCommand, PlaceInteractionsCommand>();
             services.AddTransient<ICreateContentBundleCommand, CreateContentBundleCommand>();
+            
+            // Register Director Studio validators
+            services.AddTransient<IValidator<GamePlan>, PlayabilityValidator>();
+            services.AddTransient<IValidator<GamePlan>, MechanicsValidator>();
+            
+            // Register genre profiles
+            services.AddSingleton<GenreRegistry>();
+            services.AddTransient<IGenreProfile, FPSProfile>();
+            services.AddTransient<IGenreProfile, PlatformerProfile>();
+            services.AddTransient<IGenreProfile, RPGProfile>();
+            services.AddSingleton<GenreProfileService>();
             
             // Register basic services
             services.AddLogging();
