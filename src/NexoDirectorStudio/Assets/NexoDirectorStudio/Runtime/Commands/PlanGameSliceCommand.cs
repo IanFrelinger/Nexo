@@ -8,34 +8,34 @@ namespace NexoDirectorStudio.Commands
     /// </summary>
     public sealed class PlanGameSliceCommand : IPlanGameSliceCommand
     {
-        public async ValueTask<GamePlan> ExecuteAsync(DesignBrief input, CancellationToken ct)
+        public async ValueTask<GamePlan> ExecuteAsync(IPlanGameSliceCommand.Input input, CancellationToken ct)
         {
             // TODO: Replace with real AI model integration in Phase 8
             // For now, return a deterministic canned plan based on the input
             
             await Task.Delay(100, ct); // Simulate processing time
             
-            var random = new Random(input.Seed);
+            var random = new Random(input.DesignBrief.Seed);
             
             // Generate deterministic plan based on brief
-            var genre = DetectGenre(input);
+            var genre = DetectGenre(input.DesignBrief);
             var mechanics = GenerateMechanics(genre, random);
-            var experience = GeneratePlayerExperience(input, random);
+            var experience = GeneratePlayerExperience(input.DesignBrief, random);
             var assets = GenerateAssetRequirements(genre, random);
             
             var plan = new GamePlan
             {
-                SourceBrief = input,
+                SourceBrief = input.DesignBrief,
                 Genre = genre,
-                Description = $"A {genre} game slice: {input.Description}",
+                Description = $"A {genre} game slice: {input.DesignBrief.Description}",
                 CoreMechanics = mechanics,
                 PlayerExperience = experience,
-                EstimatedDurationMinutes = input.TargetDurationMinutes,
-                DifficultyProgression = GenerateDifficultyProgression(input, random),
-                NarrativeBeats = GenerateNarrativeBeats(input, random),
+                EstimatedDurationMinutes = input.DesignBrief.TargetDurationMinutes,
+                DifficultyProgression = GenerateDifficultyProgression(input.DesignBrief, random),
+                NarrativeBeats = GenerateNarrativeBeats(input.DesignBrief, random),
                 RequiredAssets = assets,
-                Seed = input.Seed,
-                Hash = GeneratePlanHash(input, genre, mechanics)
+                Seed = input.DesignBrief.Seed,
+                Hash = GeneratePlanHash(input.DesignBrief, genre, mechanics)
             };
             
             return plan;

@@ -7,7 +7,8 @@ namespace NexoDirectorStudio.Commands
     /// Command to plan a game slice from a design brief.
     /// This is the first step in the Director Studio pipeline.
     /// </summary>
-    public interface IPlanGameSliceCommand : ICommand<DesignBrief, GamePlan>
+    public interface IPlanGameSliceCommand : ICommand<IPlanGameSliceCommand.Input, GamePlan>
     {
+        public sealed record Input(DesignBrief DesignBrief, string? GenreHint = null);
     }
 }
