@@ -6,6 +6,7 @@ using Nexo.Core.Application.Orchestration;
 using NexoDirectorStudio.Commands;
 using NexoDirectorStudio.Profiles;
 using NexoDirectorStudio.Validators;
+using NexoDirectorStudio.Adapters;
 
 namespace NexoDirectorStudio.Orchestration
 {
@@ -56,6 +57,11 @@ namespace NexoDirectorStudio.Orchestration
             services.AddTransient<IGenreProfile, PlatformerProfile>();
             services.AddTransient<IGenreProfile, RPGProfile>();
             services.AddSingleton<GenreProfileService>();
+            
+            // Register offline adapters
+            services.AddSingleton<IOllamaAdapter, OllamaAdapter>();
+            services.AddSingleton<ITextureGenAdapter, ComfyUIAdapter>();
+            services.AddSingleton<ITtsAdapter, PiperAdapter>();
             
             // Register basic services
             services.AddLogging();
