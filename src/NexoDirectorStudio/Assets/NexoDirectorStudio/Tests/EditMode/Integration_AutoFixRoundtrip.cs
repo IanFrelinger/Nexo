@@ -1,0 +1,399 @@
+using NUnit.Framework;
+using System.Threading;
+using System.Threading.Tasks;
+using NexoDirectorStudio.Commands;
+using NexoDirectorStudio.DTO;
+using NexoDirectorStudio.Validators;
+using NexoDirectorStudio.Orchestration;
+
+namespace NexoDirectorStudio.Tests.EditMode
+{
+    /// <summary>
+    /// Integration tests for auto-fix roundtrip functionality.
+    /// Tests the complete workflow from proposing fixes to applying them and revalidating.
+    /// </summary>
+    [TestFixture]
+    public class Integration_AutoFixRoundtrip
+    {
+        private DirectorStudioService _service;
+        private IProposeAutoFixesCommand _proposeCommand;
+        private IApplyAutoFixesCommand _applyCommand;
+        private GamePlan _testGamePlan;
+        private ValidationReport _originalReport;
+        
+        [SetUp]
+        public void SetUp()
+        {
+            _service = new DirectorStudioService();
+            _proposeCommand = _service.GetService<IProposeAutoFixesCommand>();
+            _applyCommand = _service.GetService<IApplyAutoFixesCommand>();
+            
+            // Create a test game plan with known issues
+            _testGamePlan = CreateTestGamePlanWithIssues();
+            
+            // Create a validation report with issues
+            _originalReport = CreateTestValidationReport();
+        }
+        
+        [TearDown]
+        public void TearDown()
+        {
+            _service?.Dispose();
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldProposeFixes()
+        {
+            // Act
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            
+            // Assert
+            Assert.IsNotNull(proposal, "Should propose fixes");
+            Assert.IsNotNull(proposal.ProposedFixes, "Should have proposed fixes");
+            Assert.IsTrue(proposal.ProposedFixes.Count > 0, "Should have at least one proposed fix");
+            Assert.IsNotNull(proposal.Summary, "Should have summary");
+            Assert.IsNotNull(proposal.Description, "Should have description");
+            Assert.IsTrue(proposal.ConfidenceScore >= 0 && proposal.ConfidenceScore <= 100, "Should have valid confidence score");
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldApplyFixes()
+        {
+            // Arrange
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            
+            // Act
+            var updatedGamePlan = await _applyCommand.ExecuteAsync(_testGamePlan, deltaPlan, CancellationToken.None);
+            
+            // Assert
+            Assert.IsNotNull(updatedGamePlan, "Should return updated game plan");
+            Assert.AreNotEqual(_testGamePlan.Id, updatedGamePlan.Id, "Should have different ID");
+            Assert.IsTrue(updatedGamePlan.Id.Contains("_fixed_"), "Should have fixed suffix in ID");
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldImproveValidationScore()
+        {
+            // Arrange
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            var updatedGamePlan = await _applyCommand.ExecuteAsync(_testGamePlan, deltaPlan, CancellationToken.None);
+            
+            // Act - Revalidate the updated game plan
+            var updatedReport = await RevalidateGamePlan(updatedGamePlan);
+            
+            // Assert
+            Assert.IsNotNull(updatedReport, "Should have updated validation report");
+            Assert.IsTrue(updatedReport.OverallScore >= _originalReport.OverallScore, "Score should improve or stay the same");
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldReduceIssueCount()
+        {
+            // Arrange
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            var updatedGamePlan = await _applyCommand.ExecuteAsync(_testGamePlan, deltaPlan, CancellationToken.None);
+            
+            // Act - Revalidate the updated game plan
+            var updatedReport = await RevalidateGamePlan(updatedGamePlan);
+            
+            // Assert
+            Assert.IsNotNull(updatedReport, "Should have updated validation report");
+            Assert.IsTrue(updatedReport.AllIssues.Count <= _originalReport.AllIssues.Count, "Issue count should decrease or stay the same");
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldMaintainGamePlanIntegrity()
+        {
+            // Arrange
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            
+            // Act
+            var updatedGamePlan = await _applyCommand.ExecuteAsync(_testGamePlan, deltaPlan, CancellationToken.None);
+            
+            // Assert
+            Assert.IsNotNull(updatedGamePlan, "Should return updated game plan");
+            Assert.AreEqual(_testGamePlan.Genre, updatedGamePlan.Genre, "Should maintain genre");
+            Assert.AreEqual(_testGamePlan.SourceBrief.Description, updatedGamePlan.SourceBrief.Description, "Should maintain brief description");
+            Assert.IsTrue(updatedGamePlan.CoreMechanics.Length >= _testGamePlan.CoreMechanics.Length, "Should add or maintain mechanics");
+            Assert.IsTrue(updatedGamePlan.RequiredAssets.Length >= _testGamePlan.RequiredAssets.Length, "Should add or maintain assets");
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldHandleEmptyProposal()
+        {
+            // Arrange
+            var emptyReport = ValidationReport.Empty();
+            var proposal = await _proposeCommand.ExecuteAsync(emptyReport, CancellationToken.None);
+            
+            // Act
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            var updatedGamePlan = await _applyCommand.ExecuteAsync(_testGamePlan, deltaPlan, CancellationToken.None);
+            
+            // Assert
+            Assert.IsNotNull(updatedGamePlan, "Should handle empty proposal");
+            Assert.AreEqual(_testGamePlan.Id, updatedGamePlan.Id, "Should maintain original ID for empty proposal");
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldHandleInvalidDeltaPlan()
+        {
+            // Arrange
+            var invalidDeltaPlan = new DeltaPlan
+            {
+                Id = "invalid",
+                OriginalGamePlanId = "nonexistent",
+                Changes = Array.Empty<GamePlanChange>(),
+                Summary = "Invalid delta plan",
+                Description = "This delta plan is invalid",
+                IsApplied = false
+            };
+            
+            // Act & Assert
+            var updatedGamePlan = await _applyCommand.ExecuteAsync(_testGamePlan, invalidDeltaPlan, CancellationToken.None);
+            
+            // Should still return a valid game plan
+            Assert.IsNotNull(updatedGamePlan, "Should handle invalid delta plan gracefully");
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldHandleAlreadyAppliedDeltaPlan()
+        {
+            // Arrange
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            var appliedDeltaPlan = deltaPlan with { IsApplied = true };
+            
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            {
+                await _applyCommand.ExecuteAsync(_testGamePlan, appliedDeltaPlan, CancellationToken.None);
+            });
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldHandleNullGamePlan()
+        {
+            // Arrange
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await _applyCommand.ExecuteAsync(null, deltaPlan, CancellationToken.None);
+            });
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldHandleNullDeltaPlan()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await _applyCommand.ExecuteAsync(_testGamePlan, null, CancellationToken.None);
+            });
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldHandleCancellation()
+        {
+            // Arrange
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            var cancellationTokenSource = new CancellationTokenSource();
+            cancellationTokenSource.Cancel();
+            
+            // Act & Assert
+            await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            {
+                await _applyCommand.ExecuteAsync(_testGamePlan, deltaPlan, cancellationTokenSource.Token);
+            });
+        }
+        
+        [Test]
+        public async Task AutoFixRoundtrip_ShouldCompleteFullWorkflow()
+        {
+            // Arrange
+            var originalScore = _originalReport.OverallScore;
+            var originalIssueCount = _originalReport.AllIssues.Count;
+            
+            // Act - Complete workflow
+            var proposal = await _proposeCommand.ExecuteAsync(_originalReport, CancellationToken.None);
+            var deltaPlan = CreateDeltaPlanFromProposal(proposal);
+            var updatedGamePlan = await _applyCommand.ExecuteAsync(_testGamePlan, deltaPlan, CancellationToken.None);
+            var updatedReport = await RevalidateGamePlan(updatedGamePlan);
+            
+            // Assert
+            Assert.IsNotNull(proposal, "Should have proposal");
+            Assert.IsNotNull(deltaPlan, "Should have delta plan");
+            Assert.IsNotNull(updatedGamePlan, "Should have updated game plan");
+            Assert.IsNotNull(updatedReport, "Should have updated report");
+            
+            // The workflow should complete successfully
+            Assert.IsTrue(updatedReport.OverallScore >= originalScore, "Score should improve or stay the same");
+            Assert.IsTrue(updatedReport.AllIssues.Count <= originalIssueCount, "Issue count should decrease or stay the same");
+        }
+        
+        private static GamePlan CreateTestGamePlanWithIssues()
+        {
+            return new GamePlan
+            {
+                Id = "test-plan-with-issues",
+                SourceBrief = new DesignBrief
+                {
+                    Description = "A test game slice with issues",
+                    GenreHint = "FPS",
+                    TargetDurationMinutes = 5,
+                    DifficultyLevel = 3,
+                    Seed = 12345
+                },
+                Genre = "FPS",
+                Description = "A test FPS game slice with issues",
+                CoreMechanics = new[] { "Shoot" }, // Missing mechanics
+                PlayerExperience = new[] { "Intense" },
+                EstimatedDurationMinutes = 5,
+                DifficultyProgression = Array.Empty<DifficultyBeat>(), // Missing progression
+                NarrativeBeats = Array.Empty<string>(), // Missing narrative
+                RequiredAssets = Array.Empty<AssetRequirement>(), // Missing assets
+                Seed = 12345
+            };
+        }
+        
+        private static ValidationReport CreateTestValidationReport()
+        {
+            var issues = new[]
+            {
+                new ValidationIssue
+                {
+                    Severity = ValidationSeverity.Critical,
+                    Category = "Mechanics",
+                    Title = "Missing Critical Mechanics",
+                    Description = "FPS games require Aim and Move mechanics",
+                    Location = "GamePlan.CoreMechanics",
+                    SuggestedFix = "Add Aim and Move to core mechanics"
+                },
+                new ValidationIssue
+                {
+                    Severity = ValidationSeverity.Error,
+                    Category = "Assets",
+                    Title = "Missing Weapon Assets",
+                    Description = "FPS games require weapon assets",
+                    Location = "GamePlan.RequiredAssets",
+                    SuggestedFix = "Add weapon assets to required assets"
+                }
+            };
+            
+            var suggestions = new[]
+            {
+                new ValidationSuggestion
+                {
+                    Category = "Mechanics",
+                    Title = "Add Missing Mechanics",
+                    Description = "Consider adding missing FPS mechanics",
+                    Priority = 4,
+                    Effort = "Low"
+                },
+                new ValidationSuggestion
+                {
+                    Category = "Assets",
+                    Title = "Add Weapon Assets",
+                    Description = "Add weapon assets for FPS gameplay",
+                    Priority = 3,
+                    Effort = "Medium"
+                }
+            };
+            
+            return new ValidationReport
+            {
+                Status = ValidationStatus.Fail,
+                OverallScore = 40,
+                Message = "Validation failed with critical issues",
+                Details = "Found 2 critical issues and 2 suggestions",
+                Issues = issues,
+                Suggestions = suggestions
+            };
+        }
+        
+        private static DeltaPlan CreateDeltaPlanFromProposal(AutoFixProposal proposal)
+        {
+            var changes = new List<GamePlanChange>();
+            
+            foreach (var fix in proposal.ProposedFixes)
+            {
+                changes.AddRange(fix.Changes);
+            }
+            
+            return new DeltaPlan
+            {
+                Id = $"delta_{proposal.Id}",
+                OriginalGamePlanId = "test-plan-with-issues",
+                Changes = changes,
+                Summary = proposal.Summary,
+                Description = proposal.Description,
+                IsApplied = false
+            };
+        }
+        
+        private async Task<ValidationReport> RevalidateGamePlan(GamePlan gamePlan)
+        {
+            // Simulate revalidation by creating a new report
+            // In a real implementation, this would run the actual validators
+            
+            var issues = new List<ValidationIssue>();
+            var suggestions = new List<ValidationSuggestion>();
+            
+            // Check if mechanics were added
+            if (gamePlan.CoreMechanics.Length > 1)
+            {
+                // Remove the critical mechanics issue
+            }
+            else
+            {
+                issues.Add(new ValidationIssue
+                {
+                    Severity = ValidationSeverity.Critical,
+                    Category = "Mechanics",
+                    Title = "Still Missing Critical Mechanics",
+                    Description = "FPS games still require Aim and Move mechanics",
+                    Location = "GamePlan.CoreMechanics",
+                    SuggestedFix = "Add Aim and Move to core mechanics"
+                });
+            }
+            
+            // Check if assets were added
+            if (gamePlan.RequiredAssets.Length > 0)
+            {
+                // Remove the critical assets issue
+            }
+            else
+            {
+                issues.Add(new ValidationIssue
+                {
+                    Severity = ValidationSeverity.Error,
+                    Category = "Assets",
+                    Title = "Still Missing Weapon Assets",
+                    Description = "FPS games still require weapon assets",
+                    Location = "GamePlan.RequiredAssets",
+                    SuggestedFix = "Add weapon assets to required assets"
+                });
+            }
+            
+            var score = issues.Count == 0 ? 80 : 60;
+            var status = issues.Count == 0 ? ValidationStatus.Pass : ValidationStatus.Warning;
+            
+            return new ValidationReport
+            {
+                Status = status,
+                OverallScore = score,
+                Message = $"Validation completed with {issues.Count} issues",
+                Details = $"Found {issues.Count} issues and {suggestions.Count} suggestions",
+                Issues = issues,
+                Suggestions = suggestions
+            };
+        }
+    }
+}

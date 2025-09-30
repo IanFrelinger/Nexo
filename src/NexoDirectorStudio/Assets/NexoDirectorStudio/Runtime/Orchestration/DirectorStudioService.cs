@@ -43,6 +43,8 @@ namespace NexoDirectorStudio.Orchestration
             services.AddTransient<IBuildWorldLayoutCommand, BuildWorldLayoutCommand>();
             services.AddTransient<IPlaceInteractionsCommand, PlaceInteractionsCommand>();
             services.AddTransient<ICreateContentBundleCommand, CreateContentBundleCommand>();
+            services.AddTransient<IProposeAutoFixesCommand, ProposeAutoFixesCommand>();
+            services.AddTransient<IApplyAutoFixesCommand, ApplyAutoFixesCommand>();
             
             // Register Director Studio validators
             services.AddTransient<IValidator<GamePlan>, PlayabilityValidator>();
