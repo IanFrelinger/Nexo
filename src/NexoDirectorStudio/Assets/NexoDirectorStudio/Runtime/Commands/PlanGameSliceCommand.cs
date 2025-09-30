@@ -23,20 +23,21 @@ namespace NexoDirectorStudio.Commands
             var experience = GeneratePlayerExperience(input.DesignBrief, random);
             var assets = GenerateAssetRequirements(genre, random);
             
-            var plan = new GamePlan
-            {
-                SourceBrief = input.DesignBrief,
-                Genre = genre,
-                Description = $"A {genre} game slice: {input.DesignBrief.Description}",
-                CoreMechanics = mechanics,
-                PlayerExperience = experience,
-                EstimatedDurationMinutes = input.DesignBrief.TargetDurationMinutes,
-                DifficultyProgression = GenerateDifficultyProgression(input.DesignBrief, random),
-                NarrativeBeats = GenerateNarrativeBeats(input.DesignBrief, random),
-                RequiredAssets = assets,
-                Seed = input.DesignBrief.Seed,
-                Hash = GeneratePlanHash(input.DesignBrief, genre, mechanics)
-            };
+            var plan = new GamePlan(
+                Id: Guid.NewGuid().ToString(),
+                SourceBrief: input.DesignBrief,
+                Genre: genre,
+                Description: $"A {genre} game slice: {input.DesignBrief.Description}",
+                CoreMechanics: mechanics,
+                PlayerExperience: experience,
+                EstimatedDurationMinutes: input.DesignBrief.TargetDurationMinutes,
+                DifficultyProgression: GenerateDifficultyProgression(input.DesignBrief, random),
+                NarrativeBeats: GenerateNarrativeBeats(input.DesignBrief, random),
+                RequiredAssets: assets,
+                Seed: input.DesignBrief.Seed,
+                GeneratedAt: DateTimeOffset.UtcNow,
+                Hash: GeneratePlanHash(input.DesignBrief, genre, mechanics)
+            );
             
             return plan;
         }

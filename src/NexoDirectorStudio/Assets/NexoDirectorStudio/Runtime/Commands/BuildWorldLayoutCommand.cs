@@ -9,44 +9,46 @@ namespace NexoDirectorStudio.Commands
     /// </summary>
     public sealed class BuildWorldLayoutCommand : IBuildWorldLayoutCommand
     {
-        public async ValueTask<WorldLayout> ExecuteAsync(GamePlan input, CancellationToken ct)
+        public async ValueTask<WorldLayout> ExecuteAsync(IBuildWorldLayoutCommand.Input input, CancellationToken ct)
         {
             // TODO: Replace with real world generation in later phases
             // For now, create a deterministic world layout based on the game plan
             
             await Task.Delay(100, ct); // Simulate processing time
             
-            var random = new Random(input.Seed);
+            var random = new Random(input.GamePlan.Seed);
             
             // Generate world dimensions based on genre and duration
-            var dimensions = CalculateWorldDimensions(input);
+            var dimensions = CalculateWorldDimensions(input.GamePlan);
             
             // Generate tile grid
-            var tiles = GenerateTileGrid(dimensions, input, random);
+            var tiles = GenerateTileGrid(dimensions, input.GamePlan, random);
             
             // Generate interactive objects
-            var objects = GenerateObjects(input, random);
+            var objects = GenerateObjects(input.GamePlan, random);
             
             // Generate navigation nodes
-            var navigationNodes = GenerateNavigationNodes(input, random);
+            var navigationNodes = GenerateNavigationNodes(input.GamePlan, random);
             
             // Generate lighting configuration
-            var lighting = GenerateLighting(input, random);
+            var lighting = GenerateLighting(input.GamePlan, random);
             
             // Generate camera configuration
-            var camera = GenerateCamera(input, random);
+            var camera = GenerateCamera(input.GamePlan, random);
             
-            var layout = new WorldLayout
-            {
-                GamePlanId = input.Id,
-                Dimensions = dimensions,
-                Tiles = tiles,
-                Objects = objects,
-                NavigationNodes = navigationNodes,
-                Lighting = lighting,
-                Camera = camera,
-                Seed = input.Seed
-            };
+            var layout = new WorldLayout(
+                Id: Guid.NewGuid().ToString(),
+                Name: $"World for {input.GamePlan.Genre}",
+                GamePlanId: input.GamePlan.Id,
+                Dimensions: dimensions,
+                Tiles: tiles,
+                Objects: objects,
+                NavigationNodes: navigationNodes,
+                Lighting: lighting,
+                Camera: camera,
+                Seed: input.GamePlan.Seed,
+                GeneratedAt: DateTimeOffset.UtcNow
+            );
             
             return layout;
         }

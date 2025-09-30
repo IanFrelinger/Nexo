@@ -7,57 +7,30 @@ namespace NexoDirectorStudio.DTO
     /// Represents the spatial layout of the game world, including tiles, objects, and navigation.
     /// This is the output of the world building phase.
     /// </summary>
-    public sealed record WorldLayout
+    public sealed record WorldLayout(
+        string Id,
+        string Name,
+        string GamePlanId,
+        Vector3 Dimensions,
+        IReadOnlyList<TileData> Tiles,
+        IReadOnlyList<ObjectData> Objects,
+        IReadOnlyList<NavigationNode> NavigationNodes,
+        LightingData Lighting,
+        CameraData Camera,
+        int Seed,
+        DateTimeOffset GeneratedAt)
     {
-        /// <summary>
-        /// Unique identifier for this world layout.
-        /// </summary>
-        public string Id { get; init; } = Guid.NewGuid().ToString();
-        
-        /// <summary>
-        /// The game plan this layout was generated from.
-        /// </summary>
-        public string GamePlanId { get; init; } = string.Empty;
-        
-        /// <summary>
-        /// Overall dimensions of the world in Unity units.
-        /// </summary>
-        public Vector3 Dimensions { get; init; }
-        
-        /// <summary>
-        /// Grid-based tile layout.
-        /// </summary>
-        public IReadOnlyList<TileData> Tiles { get; init; } = Array.Empty<TileData>();
-        
-        /// <summary>
-        /// Interactive objects placed in the world.
-        /// </summary>
-        public IReadOnlyList<ObjectData> Objects { get; init; } = Array.Empty<ObjectData>();
-        
-        /// <summary>
-        /// Navigation waypoints and paths.
-        /// </summary>
-        public IReadOnlyList<NavigationNode> NavigationNodes { get; init; } = Array.Empty<NavigationNode>();
-        
-        /// <summary>
-        /// Lighting configuration for the world.
-        /// </summary>
-        public LightingData Lighting { get; init; } = new();
-        
-        /// <summary>
-        /// Camera configuration and constraints.
-        /// </summary>
-        public CameraData Camera { get; init; } = new();
-        
-        /// <summary>
-        /// Seed used for deterministic generation.
-        /// </summary>
-        public int Seed { get; init; }
-        
-        /// <summary>
-        /// Timestamp when the layout was generated.
-        /// </summary>
-        public DateTimeOffset GeneratedAt { get; init; } = DateTimeOffset.UtcNow;
+        public string Id { get; init; } = Id;
+        public string Name { get; init; } = Name;
+        public string GamePlanId { get; init; } = GamePlanId;
+        public Vector3 Dimensions { get; init; } = Dimensions;
+        public IReadOnlyList<TileData> Tiles { get; init; } = Tiles;
+        public IReadOnlyList<ObjectData> Objects { get; init; } = Objects;
+        public IReadOnlyList<NavigationNode> NavigationNodes { get; init; } = NavigationNodes;
+        public LightingData Lighting { get; init; } = Lighting;
+        public CameraData Camera { get; init; } = Camera;
+        public int Seed { get; init; } = Seed;
+        public DateTimeOffset GeneratedAt { get; init; } = GeneratedAt;
     }
     
     /// <summary>
