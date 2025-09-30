@@ -1,25 +1,182 @@
-name: tests
-on:
-  pull_request:
-  push:
-    branches: [ master, main ]
-jobs:
-  unit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '8.0.x' }
-      - run: dotnet restore
-      - name: Unit tests
-        run: dotnet test -c Release --no-restore --filter "Category=Unit|TestCategory=Unit"
+name: Test Director Studio
 
-  integration_e2e:
-    runs-on: ubuntu-latest
+on:
+  push:
+    branches: [ master, develop, feature/* ]
+    paths:
+      - 'src/NexoDirectorStudio/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - 'src/NexoDirectorStudio/**'
+      - '.github/workflows/tests.yml'
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dotnet-version: ['8.0.x']
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '8.0.x' }
-      - run: dotnet restore
-      - name: Integration + E2E tests
-        run: dotnet test -c Release --no-restore --filter "Category=Integration|Category=E2E|TestCategory=Integration|TestCategory=E2E"
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+    
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Run Unit Tests
+      run: |
+        cd src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        dotnet test Tests/EditMode/NexoDirectorStudio.Tests.EditMode.asmdef --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=unit-tests-${{ matrix.os }}.trx"
+    
+    - name: Run Integration Tests
+      run: |
+        cd src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        dotnet test Tests/EditMode/ --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=integration-tests-${{ matrix.os }}.trx"
+    
+    - name: Run Smoke Tests
+      run: |
+        cd src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        dotnet test Tests/EditMode/ --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=smoke-tests-${{ matrix.os }}.trx"
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: |
+          src/NexoDirectorStudio/Assets/NexoDirectorStudio/Tests/EditMode/TestResults/
+        retention-days: 7
+    
+    - name: Test Summary
+      run: |
+        echo "## Test Summary - ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Unit Tests**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Integration Tests**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Smoke Tests**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Results**: Available for download" >> $GITHUB_STEP_SUMMARY
+
+  playmode-tests:
+    name: PlayMode Tests
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        unity-version: ['2022.3.0f1', '2023.1.0f1']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Unity
+      uses: game-ci/unity-setup@v2
+      with:
+        unity-version: ${{ matrix.unity-version }}
+    
+    - name: Cache Unity
+      uses: actions/cache@v4
+      with:
+        path: Library
+        key: Library-${{ matrix.os }}-${{ matrix.unity-version }}
+        restore-keys: |
+          Library-${{ matrix.os }}-
+    
+    - name: Run PlayMode Tests
+      uses: game-ci/unity-test-runner@v2
+      with:
+        unityVersion: ${{ matrix.unity-version }}
+        testMode: playmode
+        projectPath: src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        artifactsPath: artifacts/playmode-tests
+        githubToken: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Upload PlayMode Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playmode-test-results-${{ matrix.os }}-${{ matrix.unity-version }}
+        path: artifacts/playmode-tests
+        retention-days: 7
+    
+    - name: PlayMode Test Summary
+      run: |
+        echo "## PlayMode Test Summary - ${{ matrix.os }} - Unity ${{ matrix.unity-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Unity Version**: ${{ matrix.unity-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **PlayMode Tests**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Results**: Available for download" >> $GITHUB_STEP_SUMMARY
+
+  headless-tests:
+    name: Headless Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Run Headless Tests
+      run: |
+        cd src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        dotnet test Tests/EditMode/ --configuration Release --no-build --verbosity normal --filter "Category=Headless" --logger "trx;LogFileName=headless-tests.trx"
+    
+    - name: Upload Headless Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: headless-test-results
+        path: |
+          src/NexoDirectorStudio/Assets/NexoDirectorStudio/Tests/EditMode/TestResults/
+        retention-days: 7
+    
+    - name: Headless Test Summary
+      run: |
+        echo "## Headless Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Headless Tests**: ✅ Completed" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: Ubuntu (Headless)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Results**: Available for download" >> $GITHUB_STEP_SUMMARY

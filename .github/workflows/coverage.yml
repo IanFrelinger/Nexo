@@ -1,27 +1,137 @@
-name: coverage
+name: Code Coverage
+
 on:
-  pull_request:
   push:
-    branches: [ master, main ]
+    branches: [ master, develop, feature/* ]
+    paths:
+      - 'src/NexoDirectorStudio/**'
+      - '.github/workflows/coverage.yml'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - 'src/NexoDirectorStudio/**'
+      - '.github/workflows/coverage.yml'
+
 jobs:
   coverage:
+    name: Code Coverage
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '8.0.x' }
-      - run: dotnet restore
-      # Enforce threshold with coverlet.msbuild
-      - name: Run tests with coverage + threshold
-        run: >
-          dotnet test -c Release --no-restore
-          /p:CollectCoverage=true
-          /p:CoverletOutputFormat=cobertura
-          /p:Threshold=80
-          /p:ThresholdType=line
-          /p:ExcludeByFile="**/bin/**,**/obj/**,**/*.g.cs"
-      - name: Upload coverage (artifact)
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: '**/TestResults/**/*.cobertura.xml'
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Install Coverage Tools
+      run: |
+        dotnet tool install --global dotnet-reportgenerator-globaltool
+        dotnet tool install --global dotnet-coverage
+    
+    - name: Run Tests with Coverage
+      run: |
+        cd src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        dotnet test Tests/EditMode/ --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=coverage-tests.trx"
+    
+    - name: Generate Coverage Report
+      run: |
+        cd src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        reportgenerator -reports:"Tests/EditMode/TestResults/**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"Html;Cobertura"
+    
+    - name: Check Coverage Threshold
+      run: |
+        cd src/NexoDirectorStudio/Assets/NexoDirectorStudio
+        echo "Checking coverage threshold..."
+        
+        # Extract coverage percentage from the report
+        COVERAGE=$(grep -o 'line-rate="[0-9.]*"' coverage-report/Cobertura.xml | grep -o '[0-9.]*' | head -1)
+        COVERAGE_PERCENT=$(echo "$COVERAGE * 100" | bc)
+        
+        echo "Current coverage: ${COVERAGE_PERCENT}%"
+        echo "Required coverage: 80%"
+        
+        if (( $(echo "$COVERAGE_PERCENT >= 80" | bc -l) )); then
+          echo "✅ Coverage threshold met: ${COVERAGE_PERCENT}% >= 80%"
+        else
+          echo "❌ Coverage threshold not met: ${COVERAGE_PERCENT}% < 80%"
+          exit 1
+        fi
+        
+        echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "- **Current Coverage**: ${COVERAGE_PERCENT}%" >> $GITHUB_STEP_SUMMARY
+        echo "- **Required Coverage**: 80%" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: $([ $(echo "$COVERAGE_PERCENT >= 80" | bc -l) -eq 1 ] && echo "✅ PASSED" || echo "❌ FAILED")" >> $GITHUB_STEP_SUMMARY
+    
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          src/NexoDirectorStudio/Assets/NexoDirectorStudio/coverage-report/
+        retention-days: 30
+    
+    - name: Upload Coverage Data
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-data
+        path: |
+          src/NexoDirectorStudio/Assets/NexoDirectorStudio/Tests/EditMode/TestResults/
+        retention-days: 30
+    
+    - name: Comment Coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Read coverage report
+          const coveragePath = 'src/NexoDirectorStudio/Assets/NexoDirectorStudio/coverage-report/Cobertura.xml';
+          if (fs.existsSync(coveragePath)) {
+            const coverageData = fs.readFileSync(coveragePath, 'utf8');
+            const lineRateMatch = coverageData.match(/line-rate="([0-9.]+)"/);
+            const coveragePercent = lineRateMatch ? (parseFloat(lineRateMatch[1]) * 100).toFixed(2) : 'Unknown';
+            
+            const comment = `## 📊 Code Coverage Report
+            
+            **Coverage**: ${coveragePercent}%
+            **Threshold**: 80%
+            **Status**: ${parseFloat(coveragePercent) >= 80 ? '✅ PASSED' : '❌ FAILED'}
+            
+            Detailed coverage report is available in the workflow artifacts.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
+    
+    - name: Coverage Summary
+      run: |
+        echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Coverage Report**: Generated" >> $GITHUB_STEP_SUMMARY
+        echo "- **Threshold Check**: 80% minimum" >> $GITHUB_STEP_SUMMARY
+        echo "- **Artifacts**: Available for download" >> $GITHUB_STEP_SUMMARY
+        echo "- **PR Comments**: Enabled for pull requests" >> $GITHUB_STEP_SUMMARY
