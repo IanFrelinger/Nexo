@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using NexoDirectorStudio.Interactions;
 
 namespace NexoDirectorStudio.Game
 {
@@ -9,11 +10,18 @@ namespace NexoDirectorStudio.Game
     /// Represents the goal/exit in the Doom FPS game.
     /// Handles level completion and victory conditions.
     /// </summary>
-    public class DoomGoal : MonoBehaviour
+    public class DoomGoal : MonoBehaviour, IInteraction, IResettableInteraction
     {
         [Header("Goal Settings")]
         public bool isActivated = false;
         public string goalMessage = "Level Complete!";
+        
+        // IInteraction implementation
+        public event Action<IInteraction> Triggered;
+        public bool IsArmed { get; private set; }
+        public bool HasTriggered { get; private set; }
+        private float _triggerTime;
+        private int _triggerCount;
         
         void Start()
         {
@@ -68,12 +76,63 @@ namespace NexoDirectorStudio.Game
             isActivated = true;
             Debug.Log($"🎯 {goalMessage}");
             
+            // Trigger interaction event
+            Trigger();
+            
             // Trigger victory condition
             var playerGame = FindObjectOfType<DoomFPSGame>();
             if (playerGame != null)
             {
                 playerGame.Victory();
             }
+        }
+        
+        // IInteraction implementation
+        public void Initialize()
+        {
+            IsArmed = false;
+            HasTriggered = false;
+            _triggerTime = 0f;
+            _triggerCount = 0;
+        }
+        
+        public void Arm()
+        {
+            IsArmed = true;
+        }
+        
+        public void Trigger()
+        {
+            if (!IsArmed || HasTriggered) return;
+            
+            HasTriggered = true;
+            _triggerTime = Time.time;
+            _triggerCount++;
+            
+            Triggered?.Invoke(this);
+        }
+        
+        public InteractionMetadata GetMetadata()
+        {
+            return new InteractionMetadata
+            {
+                Type = "Goal",
+                Name = "Level Goal",
+                Position = transform.position,
+                IsArmed = IsArmed,
+                HasTriggered = HasTriggered,
+                TriggerTime = _triggerTime,
+                TriggerCount = _triggerCount
+            };
+        }
+        
+        // IResettableInteraction implementation
+        public void Reset()
+        {
+            isActivated = false;
+            HasTriggered = false;
+            _triggerTime = 0f;
+            _triggerCount = 0;
         }
         
         Mesh CreateGoalMesh()

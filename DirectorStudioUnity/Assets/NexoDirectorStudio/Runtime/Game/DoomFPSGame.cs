@@ -363,6 +363,9 @@ namespace NexoDirectorStudio.Game
             powerUps.Add(obj);
             var powerUp = obj.AddComponent<DoomPowerUp>();
             powerUp.Initialize();
+            
+            // Register with InteractionBus
+            RegisterInteraction(powerUp);
         }
         
         void SetPlayerSpawn(GameObject obj)
@@ -374,6 +377,9 @@ namespace NexoDirectorStudio.Game
         {
             var goal = obj.AddComponent<DoomGoal>();
             goal.Initialize();
+            
+            // Register with InteractionBus
+            RegisterInteraction(goal);
         }
         
         void InitializeUI()
@@ -546,6 +552,25 @@ namespace NexoDirectorStudio.Game
         {
             currentAmmo = Mathf.Min(maxAmmo, currentAmmo + amount);
             Debug.Log($"🔫 Ammo added! Ammo: {currentAmmo}");
+        }
+        
+        /// <summary>
+        /// Register an interaction with the InteractionBus
+        /// </summary>
+        private void RegisterInteraction(IInteraction interaction)
+        {
+            if (interaction == null) return;
+            
+            // Ensure InteractionBus exists
+            var bus = Object.FindFirstObjectByType<InteractionBus>();
+            if (bus == null)
+            {
+                var busGO = new GameObject("InteractionBus");
+                bus = busGO.AddComponent<InteractionBus>();
+            }
+            
+            // Register the interaction
+            bus.Register(interaction);
         }
     }
 }

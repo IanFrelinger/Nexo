@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using NexoDirectorStudio.Interactions;
 
 namespace NexoDirectorStudio.Game
 {
@@ -9,12 +10,19 @@ namespace NexoDirectorStudio.Game
     /// Represents a power-up in the Doom FPS game.
     /// Handles power-up behavior and pickup mechanics.
     /// </summary>
-    public class DoomPowerUp : MonoBehaviour
+    public class DoomPowerUp : MonoBehaviour, IInteraction, IResettableInteraction
     {
         [Header("Power-up Stats")]
         public PowerUpType powerUpType = PowerUpType.Health;
         public int value = 25;
         public bool isPickedUp = false;
+        
+        // IInteraction implementation
+        public event Action<IInteraction> Triggered;
+        public bool IsArmed { get; private set; }
+        public bool HasTriggered { get; private set; }
+        private float _triggerTime;
+        private int _triggerCount;
         
         public enum PowerUpType
         {
@@ -105,9 +113,61 @@ namespace NexoDirectorStudio.Game
                         break;
                 }
                 
+                // Trigger interaction event
+                Trigger();
+                
                 // Hide power-up
                 gameObject.SetActive(false);
             }
+        }
+        
+        // IInteraction implementation
+        public void Initialize()
+        {
+            IsArmed = false;
+            HasTriggered = false;
+            _triggerTime = 0f;
+            _triggerCount = 0;
+        }
+        
+        public void Arm()
+        {
+            IsArmed = true;
+        }
+        
+        public void Trigger()
+        {
+            if (!IsArmed || HasTriggered) return;
+            
+            HasTriggered = true;
+            _triggerTime = Time.time;
+            _triggerCount++;
+            
+            Triggered?.Invoke(this);
+        }
+        
+        public InteractionMetadata GetMetadata()
+        {
+            return new InteractionMetadata
+            {
+                Type = "PowerUp",
+                Name = $"{powerUpType} PowerUp",
+                Position = transform.position,
+                IsArmed = IsArmed,
+                HasTriggered = HasTriggered,
+                TriggerTime = _triggerTime,
+                TriggerCount = _triggerCount
+            };
+        }
+        
+        // IResettableInteraction implementation
+        public void Reset()
+        {
+            isPickedUp = false;
+            HasTriggered = false;
+            _triggerTime = 0f;
+            _triggerCount = 0;
+            gameObject.SetActive(true);
         }
         
         Mesh CreatePowerUpMesh()

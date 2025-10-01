@@ -4,6 +4,7 @@ using System.Threading;
 using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
+using NexoDirectorStudio.Interactions;
 
 namespace NexoDirectorStudio.Agents
 {
@@ -22,6 +23,8 @@ namespace NexoDirectorStudio.Agents
         private Vector3 currentTarget;
         private float lastDecisionTime;
         private float decisionInterval = 0.25f;
+        private float lastInteractionTime;
+        private float interactionInterval = 1f;
 
         void Start()
         {
@@ -47,6 +50,13 @@ namespace NexoDirectorStudio.Agents
             }
 
             Act();
+            
+            // Try to interact with nearby objects
+            if (Time.time - lastInteractionTime > interactionInterval)
+            {
+                TryInteractWithNearbyObjects();
+                lastInteractionTime = Time.time;
+            }
         }
 
         void Think()
@@ -139,6 +149,30 @@ namespace NexoDirectorStudio.Agents
                 }
             }
             return best;
+        }
+        
+        void TryInteractWithNearbyObjects()
+        {
+            // Find nearby interactive objects
+            var nearbyObjects = Physics.OverlapSphere(transform.position, detectionRadius);
+            
+            foreach (var collider in nearbyObjects)
+            {
+                // Try to find IInteraction components
+                var interaction = collider.GetComponent<IInteraction>();
+                if (interaction != null && interaction.IsArmed && !interaction.HasTriggered)
+                {
+                    // Simulate interaction by calling Trigger directly
+                    interaction.Trigger();
+                    Debug.Log($"🤖 Autoplayer triggered interaction: {interaction.GetMetadata().Name}");
+                }
+                
+                // Also try clicking on the object for UI-based interactions
+                if (collider.CompareTag("PowerUp") || collider.CompareTag("Goal"))
+                {
+                    Clicking.Click(collider.gameObject);
+                }
+            }
         }
     }
 }
