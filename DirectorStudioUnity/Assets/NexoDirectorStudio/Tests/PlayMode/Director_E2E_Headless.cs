@@ -166,7 +166,7 @@ namespace NexoDirectorStudio.Tests.PlayMode
         public void TearDown()
         {
             // Clean up test objects
-            var testObjects = UnityEngine.Object.FindObjectsOfType<GameObject>();
+            var testObjects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
             foreach (var obj in testObjects)
             {
                 if (obj.name.Contains("Test") || obj.name.Contains("AgentDirector") || obj.name.Contains("DirectorStudioService"))

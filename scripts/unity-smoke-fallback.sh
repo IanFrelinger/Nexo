@@ -9,7 +9,7 @@ mkdir -p "$ART"
 "$UNITY" \
   -batchmode -nographics \
   -projectPath "$PROJ" \
-  -executeMethod NexoDirectorStudio.Editor.CI.CiDirectorSmoke.Run \
+  -executeMethod NexoDirectorStudio.Editor.CI.CiEditorSmoke.Run \
   -prompt "short FPS room with a switch and a door" \
   -seconds 10 \
   -results "$ART/playmode-smoke.json" \

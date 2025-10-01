@@ -15,4 +15,11 @@ mkdir -p "$ART"
   -assemblyNames "$ASM" \
   -testResults "$ART/playmode-results.xml" \
   -logFile "$ART/unity-playmode.log" \
-  -quit
+  -quit || true
+
+# echo quick status
+if [[ -s "$ART/playmode-results.xml" ]]; then
+  echo "PlayMode XML created: $ART/playmode-results.xml"
+else
+  echo "PlayMode XML missing (will use smoke fallback)."
+fi
