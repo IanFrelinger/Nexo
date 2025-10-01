@@ -136,7 +136,7 @@ namespace NexoDirectorStudio.Tests.EditMode
                 System.Console.WriteLine("Running comprehensive validation checks...");
                 
                 var validators = service.GetService<System.Collections.Generic.IEnumerable<IValidator<GamePlan>>>();
-                var validationResults = new List<ValidationResult>();
+                var validationResults = new List<NexoDirectorStudio.Validators.ValidationResult>();
                 
                 foreach (var validator in validators)
                 {

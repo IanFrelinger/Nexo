@@ -183,7 +183,7 @@ namespace NexoDirectorStudio.Tests.EditMode
                 CanAutoFix = true
             };
             
-            var validationResult = new ValidationResult
+            var validationResult = new NexoDirectorStudio.Validators.ValidationResult
             {
                 IsValid = false,
                 Score = 0,
