@@ -41,7 +41,7 @@
 2. **Select Genre**: Choose a genre or let the system auto-detect
 3. **Generate Plan**: Click "Plan Game Slice" to create a detailed game plan
 4. **Validate**: Review validation results and apply auto-fixes if needed
-5. **Playtest**: Test your generated game slice in Unity
+5. **Generate Content**: Nexo agents will generate all game components as part of the pipeline
 
 ## 📁 Package Structure
 

@@ -21,7 +21,7 @@ Director Studio is built on top of Nexo's agent-first orchestration system, prov
 4. Select or auto-detect the genre
 5. Click **Plan Game Slice** to generate your content
 6. Review the validation report
-7. Click **Playtest** to try your game slice
+7. Nexo agents will generate all game components as part of the pipeline
 
 ## Features
 

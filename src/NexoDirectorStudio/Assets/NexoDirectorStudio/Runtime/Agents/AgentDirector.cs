@@ -6,6 +6,7 @@ using NexoDirectorStudio.Orchestration;
 using NexoDirectorStudio.Commands;
 using NexoDirectorStudio.DTO;
 using NexoDirectorStudio.Adapters;
+using NexoDirectorStudio.Validation;
 
 namespace NexoDirectorStudio.Agents
 {
@@ -16,7 +17,6 @@ namespace NexoDirectorStudio.Agents
     {
         [TextArea(4, 12)] public string prompt = "Doom-style FPS. 15 min. Intense combat, key gates. seed=666.";
         public bool autoLaunch = true;
-        public bool attachAutoplayer = true;
         public string genreHint = "FPS";
         public int targetMinutes = 15;
         public int difficulty = 4;
@@ -25,8 +25,16 @@ namespace NexoDirectorStudio.Agents
         [Header("Events")] public UnityEvent onPlanned;
         public UnityEvent onWorldBuilt;
         public UnityEvent onLaunched;
+        public UnityEvent onValidated;
+
+        [Header("Validation Settings")]
+        public bool enableComponentValidation = true;
+        public float validationTimeoutSeconds = 30f;
+        public int maxValidationRetries = 3;
+        public float minValidationScore = 80f;
 
         private DirectorStudioService _svc;
+        private TestRunnerIntegration _testRunner;
 
         async void Start()
         {
@@ -39,6 +47,7 @@ namespace NexoDirectorStudio.Agents
         public async Task RunAsync(CancellationToken ct)
         {
             _svc = new DirectorStudioService();
+            _testRunner = new TestRunnerIntegration(maxValidationRetries, validationTimeoutSeconds);
 
             // Optional: consult adapters for enrichment (LLM, etc.)
             var ollama = _svc.GetService<IOllamaAdapter>();
@@ -67,33 +76,55 @@ namespace NexoDirectorStudio.Agents
             var content = await _svc.GetService<ICreateContentBundleCommand>()
                 .ExecuteAsync(new ICreateContentBundleCommand.Input(interactions, plan), ct);
 
-            // Launch runtime scene objects in Unity
-            var launcherGo = new GameObject("DoomGameLauncher (Agent)");
-            var launcher = launcherGo.AddComponent<NexoDirectorStudio.Game.DoomGameLauncher>();
-            launcher.autoLaunch = false;
-
-            // Inject data and start
-            var gameGo = new GameObject("DoomFPSGame (Agent)");
-            var game = gameGo.AddComponent<NexoDirectorStudio.Game.DoomFPSGame>();
-            game.gamePlan = plan;
-            game.worldLayout = world;
-            game.interactionGraph = interactions;
-            game.contentBundle = content;
-
-            // Player + camera
-            var player = new GameObject("Player");
-            player.tag = "Player";
-            player.AddComponent<CharacterController>();
-            gameGo.transform.SetParent(player.transform, false);
-
-            var cam = new GameObject("Main Camera");
-            cam.tag = "MainCamera";
-            cam.AddComponent<Camera>();
-
-            if (attachAutoplayer)
+            // Validate generated components using Unity test runner
+            if (enableComponentValidation)
             {
-                player.AddComponent<AIAutoplayer>();
+                Debug.Log("🧪 Starting component validation...");
+                
+                var validationResult = await _testRunner.RunValidationTestsWithRetryAsync(
+                    content, 
+                    plan, 
+                    async (failedResult) =>
+                    {
+                        // Regenerate content based on validation failures
+                        Debug.Log($"🔄 Regenerating content due to validation failures (Score: {failedResult.OverallScore:F1}%)");
+                        
+                        // In a real implementation, this would use the validation results
+                        // to guide the regeneration process with specific improvements
+                        return await _svc.GetService<ICreateContentBundleCommand>()
+                            .ExecuteAsync(new ICreateContentBundleCommand.Input(interactions, plan), ct);
+                    },
+                    ct);
+
+                if (validationResult.OverallPassed && validationResult.OverallScore >= minValidationScore)
+                {
+                    Debug.Log($"✅ Component validation PASSED - Score: {validationResult.OverallScore:F1}%");
+                    onValidated?.Invoke();
+                }
+                else
+                {
+                    Debug.LogWarning($"⚠️ Component validation completed with issues - Score: {validationResult.OverallScore:F1}%");
+                    
+                    // Log recommendations
+                    var recommendations = _testRunner.GetValidationRecommendations(validationResult);
+                    foreach (var recommendation in recommendations)
+                    {
+                        Debug.LogWarning($"💡 Recommendation: {recommendation}");
+                    }
+                }
+
+                // Export validation report
+                var reportPath = $"Assets/Generated/ValidationReports/validation_{content.Id}_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.txt";
+                await _testRunner.ExportValidationReportAsync(validationResult, reportPath, ct);
             }
+
+            // Game components will be generated by Nexo agents as part of the pipeline
+            // The content bundle now contains all the generated Unity assets
+            Debug.Log($"✅ Pipeline complete - Generated content bundle with {content.Assets.Count} assets");
+            Debug.Log($"📋 Game Plan: {plan.Description}");
+            Debug.Log($"🏗️ World Layout: {world.Dimensions.x}x{world.Dimensions.y}x{world.Dimensions.z}");
+            Debug.Log($"⚔️ Interactions: {interactions.Nodes.Count} nodes, {interactions.Connections.Count} connections");
+            Debug.Log($"🎮 Content Bundle: {content.Assets.Count} assets ready for Unity");
 
             onLaunched?.Invoke();
         }
