@@ -8,6 +8,7 @@ using System;
 using NexoDirectorStudio.Agents;
 using NexoDirectorStudio.Interactions;
 using NexoDirectorStudio.DTO;
+using NexoDirectorStudio.Orchestration;
 
 namespace NexoDirectorStudio.Tests.PlayMode
 {
@@ -26,7 +27,7 @@ namespace NexoDirectorStudio.Tests.PlayMode
             Debug.Log("🚀 Starting DirectorStudio E2E test...");
             
             // 1) Find or create DirectorStudioService
-            var director = Object.FindFirstObjectByType<DirectorStudioService>();
+            var director = UnityEngine.Object.FindFirstObjectByType<DirectorStudioService>();
             if (director == null)
             {
                 var directorGO = new GameObject("DirectorStudioService");
@@ -51,7 +52,7 @@ namespace NexoDirectorStudio.Tests.PlayMode
             yield return RunGenerationPipeline(agentDirector);
             
             // 4) Ensure InteractionBus exists
-            var bus = Object.FindFirstObjectByType<InteractionBus>();
+            var bus = UnityEngine.Object.FindFirstObjectByType<InteractionBus>();
             if (bus == null)
             {
                 var busGO = new GameObject("InteractionBus");
@@ -109,7 +110,7 @@ namespace NexoDirectorStudio.Tests.PlayMode
             var endTime = startTime + 10f; // 10 second budget for autoplayer
             
             // Find the autoplayer
-            var autoplayer = Object.FindFirstObjectByType<AIAutoplayer>();
+            var autoplayer = UnityEngine.Object.FindFirstObjectByType<AIAutoplayer>();
             Assert.IsNotNull(autoplayer, "AIAutoplayer not found");
             
             // Run the autoplayer
@@ -170,12 +171,12 @@ namespace NexoDirectorStudio.Tests.PlayMode
         public void TearDown()
         {
             // Clean up test objects
-            var testObjects = Object.FindObjectsOfType<GameObject>();
+            var testObjects = UnityEngine.Object.FindObjectsOfType<GameObject>();
             foreach (var obj in testObjects)
             {
                 if (obj.name.Contains("Test") || obj.name.Contains("AgentDirector") || obj.name.Contains("DirectorStudioService"))
                 {
-                    Object.DestroyImmediate(obj);
+                    UnityEngine.Object.DestroyImmediate(obj);
                 }
             }
         }
