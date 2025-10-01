@@ -25,7 +25,7 @@ namespace NexoDirectorStudio.Game
         
         void Start()
         {
-            Initialize();
+            InitializeGoal();
         }
         
         void OnTriggerEnter(Collider other)
@@ -36,7 +36,7 @@ namespace NexoDirectorStudio.Game
             }
         }
         
-        public void Initialize()
+        public void InitializeGoal()
         {
             // Set up goal appearance
             var renderer = GetComponent<Renderer>();

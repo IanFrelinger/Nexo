@@ -36,7 +36,7 @@ namespace NexoDirectorStudio.CLI
             Debug.Log("🚀 Starting DirectorStudio CLI...");
             
             // Initialize metrics collection
-            _metricsCollector = Object.FindFirstObjectByType<MetricsCollector>();
+            _metricsCollector = UnityEngine.Object.FindFirstObjectByType<MetricsCollector>();
             if (_metricsCollector == null)
             {
                 var metricsGO = new GameObject("MetricsCollector");
@@ -116,7 +116,7 @@ namespace NexoDirectorStudio.CLI
             }
             
             // 3) Ensure InteractionBus exists
-            _interactionBus = Object.FindFirstObjectByType<InteractionBus>();
+            _interactionBus = UnityEngine.Object.FindFirstObjectByType<InteractionBus>();
             if (_interactionBus == null)
             {
                 var busGO = new GameObject("InteractionBus");

@@ -35,7 +35,7 @@ namespace NexoDirectorStudio.Game
         
         void Start()
         {
-            Initialize();
+            InitializePowerUp();
         }
         
         void OnTriggerEnter(Collider other)
@@ -46,7 +46,7 @@ namespace NexoDirectorStudio.Game
             }
         }
         
-        public void Initialize()
+        public void InitializePowerUp()
         {
             // Set up power-up appearance
             var renderer = GetComponent<Renderer>();

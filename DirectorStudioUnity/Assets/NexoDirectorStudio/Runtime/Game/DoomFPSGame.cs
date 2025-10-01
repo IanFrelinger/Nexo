@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using NexoDirectorStudio.DTO;
+using NexoDirectorStudio.Interactions;
 
 namespace NexoDirectorStudio.Game
 {
@@ -362,7 +363,7 @@ namespace NexoDirectorStudio.Game
         {
             powerUps.Add(obj);
             var powerUp = obj.AddComponent<DoomPowerUp>();
-            powerUp.Initialize();
+            powerUp.InitializePowerUp();
             
             // Register with InteractionBus
             RegisterInteraction(powerUp);
@@ -376,7 +377,7 @@ namespace NexoDirectorStudio.Game
         void SetGoal(GameObject obj)
         {
             var goal = obj.AddComponent<DoomGoal>();
-            goal.Initialize();
+            goal.InitializeGoal();
             
             // Register with InteractionBus
             RegisterInteraction(goal);
@@ -562,7 +563,7 @@ namespace NexoDirectorStudio.Game
             if (interaction == null) return;
             
             // Ensure InteractionBus exists
-            var bus = Object.FindFirstObjectByType<InteractionBus>();
+            var bus = UnityEngine.Object.FindFirstObjectByType<InteractionBus>();
             if (bus == null)
             {
                 var busGO = new GameObject("InteractionBus");

@@ -12,7 +12,6 @@ namespace NexoDirectorStudio.Interactions
     {
         public static InteractionBus Instance { get; private set; }
         
-        [Header("Metrics")]
         public int TotalInteractions => _all.Count;
         public int TriggeredCount { get; private set; }
         public int ArmedCount => _all.Count(i => i.IsArmed);
