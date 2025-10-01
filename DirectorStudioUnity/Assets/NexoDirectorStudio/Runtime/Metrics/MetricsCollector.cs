@@ -187,7 +187,7 @@ namespace NexoDirectorStudio.Metrics
             _performanceMetrics.MinFPS = _minFps;
             _performanceMetrics.MaxFPS = _maxFps;
             _performanceMetrics.FrameCount = _frameCount;
-            _performanceMetrics.MemoryUsageMB = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemory() / (1024f * 1024f);
+            _performanceMetrics.MemoryUsageMB = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong() / (1024f * 1024f);
         }
         
         private void CheckHeartbeat()

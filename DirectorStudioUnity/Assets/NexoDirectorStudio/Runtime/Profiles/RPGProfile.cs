@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using NexoDirectorStudio.DTO;
-using NexoDirectorStudio.Validators;
 
 namespace NexoDirectorStudio.Profiles
 {
@@ -411,11 +410,8 @@ namespace NexoDirectorStudio.Profiles
             return new ValidationResult
             {
                 IsValid = issues.Count == 0 || issues.All(i => i.Severity < ValidationSeverity.Critical),
-                Score = Math.Max(0, score),
-                Message = message,
-                Details = GenerateRPGDetails(plan, issues),
-                Issues = issues,
-                Suggestions = GetSuggestions(plan)
+                Errors = issues.Where(i => i.Severity >= ValidationSeverity.Error).Select(i => i.Description).ToArray(),
+                Warnings = issues.Where(i => i.Severity == ValidationSeverity.Warning).Select(i => i.Description).ToArray()
             };
         }
         
