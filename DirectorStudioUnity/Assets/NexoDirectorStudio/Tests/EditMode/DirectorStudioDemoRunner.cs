@@ -155,7 +155,7 @@ namespace NexoDirectorStudio.Tests.EditMode
                 var validators = _service.GetService<IEnumerable<IValidator<GamePlan>>>();
                 Assert.IsNotNull(validators, "Validators should be available");
                 
-                var validationResults = new List<ValidationResult>();
+                var validationResults = new List<NexoDirectorStudio.Validators.ValidationResult>();
                 foreach (var validator in validators)
                 {
                     var result = await validator.ValidateAsync(gamePlan, CancellationToken.None);

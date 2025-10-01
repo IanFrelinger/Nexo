@@ -26,13 +26,8 @@ namespace NexoDirectorStudio.Tests.PlayMode
         {
             Debug.Log("🚀 Starting DirectorStudio E2E test...");
             
-            // 1) Find or create DirectorStudioService
-            var director = UnityEngine.Object.FindFirstObjectByType<DirectorStudioService>();
-            if (director == null)
-            {
-                var directorGO = new GameObject("DirectorStudioService");
-                director = directorGO.AddComponent<DirectorStudioService>();
-            }
+            // 1) Create DirectorStudioService
+            var director = new DirectorStudioService();
             Assert.IsNotNull(director, "DirectorStudioService not found");
             
             // 2) Create AgentDirector for the test

@@ -197,7 +197,7 @@ namespace NexoDirectorStudio.Tests.EditMode
                 // Step 6: Run Validation
                 System.Console.WriteLine("6️⃣ Running Validation...");
                 var validators = _service.GetService<IEnumerable<IValidator<GamePlan>>>();
-                var validationResults = new List<ValidationResult>();
+                var validationResults = new List<NexoDirectorStudio.Validators.ValidationResult>();
                 
                 foreach (var validator in validators)
                 {

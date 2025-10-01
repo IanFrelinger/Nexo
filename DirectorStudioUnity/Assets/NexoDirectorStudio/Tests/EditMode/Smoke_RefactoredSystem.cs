@@ -157,7 +157,7 @@ namespace NexoDirectorStudio.Tests.EditMode
             
             // Act
             var validators = _service.GetService<System.Collections.Generic.IEnumerable<IValidator<GamePlan>>>();
-            var validationResults = new List<ValidationResult>();
+            var validationResults = new List<NexoDirectorStudio.Validators.ValidationResult>();
             
             foreach (var validator in validators)
             {
