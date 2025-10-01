@@ -1,22 +1,15 @@
 {
-    "name": "NexoDirectorStudio.Editor",
-    "rootNamespace": "NexoDirectorStudio.Editor",
-    "references": [
-        "NexoDirectorStudio.Runtime",
-        "Nexo.Abstractions",
-        "Nexo.Core.Application"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [
-        "UNITY_EDITOR"
-    ],
-    "versionDefines": [],
-    "noEngineReferences": false
+  "name": "NexoDirectorStudio.Editor",
+  "rootNamespace": "NexoDirectorStudio.Editor",
+  "references": [ "NexoDirectorStudio.Runtime" ],
+  "includePlatforms": [ "Editor" ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": []
 }

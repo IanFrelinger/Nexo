@@ -9,7 +9,9 @@ mkdir -p "$ART"
 "$UNITY" \
   -batchmode -nographics \
   -projectPath "$PROJ" \
-  -executeMethod NexoDirectorStudio.Editor.CI.CiPlaymodeRunner.Run \
-  -testResults "$ART/playmode-results.json" \
-  -logFile "$ART/unity-playmode-fallback.log" \
+  -executeMethod NexoDirectorStudio.Editor.CI.CiDirectorSmoke.Run \
+  -prompt "short FPS room with a switch and a door" \
+  -seconds 10 \
+  -results "$ART/playmode-smoke.json" \
+  -logFile "$ART/unity-smoke.log" \
   -quit
