@@ -356,35 +356,69 @@ namespace NexoDirectorStudio.Editor
             }
         }
 
-        private static async Task CreateInteractionPointsAsync(InteractionGraph graph, GamePlan gamePlan)
-        {
-            var interactionsGO = new GameObject("Interactions");
-            
-            foreach (var node in graph.Nodes)
+            private static async Task CreateInteractionPointsAsync(InteractionGraph graph, GamePlan gamePlan)
             {
-                var nodeGO = new GameObject($"Interaction_{node.Id}");
-                nodeGO.transform.SetParent(interactionsGO.transform);
-                nodeGO.transform.position = new Vector3(
-                    UnityEngine.Random.Range(-5, 5),
-                    1,
-                    UnityEngine.Random.Range(-5, 5)
-                );
+                var interactionsGO = new GameObject("Interactions");
                 
-                // Create a sphere to represent the interaction point
-                var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                sphere.transform.SetParent(nodeGO.transform);
-                sphere.transform.localPosition = Vector3.zero;
-                sphere.transform.localScale = Vector3.one * 0.5f;
-                sphere.name = "InteractionVisual";
-                
-                // Add a bright color to make it visible
-                var renderer = sphere.GetComponent<Renderer>();
-                if (renderer != null)
+                foreach (var node in graph.Nodes)
                 {
-                    renderer.material.color = Color.yellow;
+                    var nodeGO = new GameObject($"Interaction_{node.Id}");
+                    nodeGO.transform.SetParent(interactionsGO.transform);
+                    nodeGO.transform.position = node.WorldPosition;
+                    
+                    // Create visual representation based on node type
+                    GameObject visual = null;
+                    Color nodeColor = Color.white;
+                    
+                    switch (node.NodeType)
+                    {
+                        case "Enemy":
+                            visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                            nodeColor = Color.red;
+                            nodeGO.tag = "Enemy";
+                            break;
+                        case "Collectible":
+                            visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                            nodeColor = Color.blue;
+                            nodeGO.name = $"Keycard_{node.Id}";
+                            break;
+                        case "Door":
+                            visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                            nodeColor = Color.gray;
+                            nodeGO.name = $"Door_{node.Id}";
+                            break;
+                        case "Boss":
+                            visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                            nodeColor = Color.magenta;
+                            nodeGO.name = $"Boss_{node.Id}";
+                            break;
+                        case "PowerUp":
+                            visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                            nodeColor = Color.green;
+                            nodeGO.name = $"PowerUp_{node.Id}";
+                            break;
+                        default:
+                            visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                            nodeColor = Color.yellow;
+                            break;
+                    }
+                    
+                    if (visual != null)
+                    {
+                        visual.transform.SetParent(nodeGO.transform);
+                        visual.transform.localPosition = Vector3.zero;
+                        visual.transform.localScale = Vector3.one * 0.8f;
+                        visual.name = "Visual";
+                        
+                        // Add color to make it visible
+                        var renderer = visual.GetComponent<Renderer>();
+                        if (renderer != null)
+                        {
+                            renderer.material.color = nodeColor;
+                        }
+                    }
                 }
             }
-        }
 
         private static async Task SetupAutoPlaytestAsync(string scenePath, GamePlan gamePlan)
         {
