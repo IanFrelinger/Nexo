@@ -1,23 +1,16 @@
 {
-    "name": "NexoDirectorStudio.Tests.PlayMode",
-    "rootNamespace": "NexoDirectorStudio.Tests.PlayMode",
-    "references": [
-        "NexoDirectorStudio.Runtime",
-        "NexoDirectorStudio.Editor"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_EDITOR"
-    ],
-    "versionDefines": [],
-    "noEngineReferences": false
+  "name": "NexoDirectorStudio.Tests.PlayMode",
+  "rootNamespace": "NexoDirectorStudio.Tests",
+  "references": [ "NexoDirectorStudio.Runtime" ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [ "TestAssemblies" ],
+  "testAssembly": true
 }
