@@ -18,8 +18,8 @@ namespace NexoDirectorStudio.Editor
 			try
 			{
 				var args = Environment.GetCommandLineArgs();
-				var scenePath = ReadArg(args, "--scene");
-				var secondsStr = ReadArg(args, "--seconds") ?? "10";
+				var scenePath = ReadArg(args, "--scene") ?? ReadArg(args, "-scene");
+				var secondsStr = ReadArg(args, "--seconds") ?? ReadArg(args, "-seconds") ?? "10";
 				if (string.IsNullOrEmpty(scenePath))
 				{
 					System.Console.Error.WriteLine("HeadlessPlayRunner: --scene <path> is required");

@@ -24,7 +24,7 @@ namespace NexoDirectorStudio.Editor
             try
             {
                 var args = Environment.GetCommandLineArgs();
-                var prompt = ReadArg(args, "--prompt") ?? "Create a simple Adventure game with exploration";
+                var prompt = ReadArg(args, "--prompt") ?? ReadArg(args, "-prompt") ?? "Create a simple Adventure game with exploration";
 
                 System.Console.WriteLine("=== Director CLI Runner ===");
                 System.Console.WriteLine($"Prompt: {prompt}");
