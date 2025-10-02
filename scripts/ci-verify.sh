@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Paths (adjust if yours differ)
 UNITY="/Applications/Unity/Hub/Editor/6000.2.6f1/Unity.app/Contents/MacOS/Unity"
 PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../DirectorStudioUnity" && pwd)"
 ART="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -10,6 +9,7 @@ ASM="NexoDirectorStudio.Tests.PlayMode"
 XML="$ART/playmode-results.xml"
 LOG_UTF="$ART/unity-playmode.log"
 JSON="$ART/playmode-smoke.json"
+SMOKE_JUNIT="$ART/playmode-smoke.junit.xml"
 LOG_SMOKE="$ART/unity-smoke.log"
 
 echo "==> [1/2] Running UTF PlayMode tests (Unity 6)..."
@@ -25,7 +25,7 @@ UTF_EXIT=$?
 set -e
 
 if [[ -s "$XML" ]]; then
-  echo "✅ UTF PlayMode produced XML: $XML (exit=$UTF_EXIT)"
+  echo "✅ UTF PlayMode produced JUnit XML: $XML"
   exit $UTF_EXIT
 fi
 
@@ -39,12 +39,15 @@ echo "⚠️  UTF PlayMode did not produce XML. Falling back to editor smoke..."
   -results "$JSON" \
   -logFile "$LOG_SMOKE" \
   -quit
-
-# Exit code from Unity indicates pass/fail for smoke runner
 SMOKE_EXIT=$?
-if [[ -f "$JSON" ]]; then
-  echo "🧪 Smoke results:"
-  cat "$JSON" || true
+
+# Prefer JUnit XML from smoke for CI parsers; show JSON too
+if [[ -f "$SMOKE_JUNIT" ]]; then
+  echo "🧪 Smoke JUnit XML: $SMOKE_JUNIT"
+  [[ -f "$JSON" ]] && echo "🧪 Smoke JSON:" && cat "$JSON" || true
+  exit $SMOKE_EXIT
 fi
-echo "Logs: $LOG_UTF (UTF), $LOG_SMOKE (smoke)"
+
+# Fallback: if JUnit missing but JSON exists, still exit with proper code
+[[ -f "$JSON" ]] && echo "🧪 Smoke JSON:" && cat "$JSON" || true
 exit $SMOKE_EXIT
