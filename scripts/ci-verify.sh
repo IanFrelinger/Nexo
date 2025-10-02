@@ -1,53 +1,63 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-UNITY="/Applications/Unity/Hub/Editor/6000.2.6f1/Unity.app/Contents/MacOS/Unity"
-PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../DirectorStudioUnity" && pwd)"
-ART="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ASM="NexoDirectorStudio.Tests.PlayMode"
+# ---------- Config (env-overridable) ----------
+UNITY_BIN="${UNITY_BIN:-/Applications/Unity/Hub/Editor/6000.2.6f1/Unity.app/Contents/MacOS/Unity}"
+PROJ="${PROJ:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../DirectorStudioUnity" && pwd)}"
+ART="${ART:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+ASM="${ASM:-NexoDirectorStudio.Tests.PlayMode}"
+PROMPT="${PROMPT:-short FPS room with a switch and a door}"
+SMOKE_SECONDS="${SMOKE_SECONDS:-10}"
 
-XML="$ART/playmode-results.xml"
-LOG_UTF="$ART/unity-playmode.log"
-JSON="$ART/playmode-smoke.json"
+UTF_XML="$ART/playmode-results.xml"
+UTF_LOG="$ART/unity-playmode.log"
+SMOKE_JSON="$ART/playmode-smoke.json"
 SMOKE_JUNIT="$ART/playmode-smoke.junit.xml"
-LOG_SMOKE="$ART/unity-smoke.log"
+SMOKE_LOG="$ART/unity-smoke.log"
 
-echo "==> [1/2] Running UTF PlayMode tests (Unity 6)..."
+mkdir -p "$ART"
+
+# ---------- Try UTF PlayMode ----------
+echo "==> UTF PlayMode: $UNITY_BIN"
 set +e
-"$UNITY" -batchmode -nographics \
+"$UNITY_BIN" -batchmode -nographics \
   -projectPath "$PROJ" \
   -runTests -testPlatform PlayMode \
   -assemblyNames "$ASM" \
-  -testResults "$XML" \
-  -logFile "$LOG_UTF" \
+  -testResults "$UTF_XML" \
+  -logFile "$UTF_LOG" \
   -quit
 UTF_EXIT=$?
 set -e
 
-if [[ -s "$XML" ]]; then
-  echo "✅ UTF PlayMode produced JUnit XML: $XML"
-  exit $UTF_EXIT
+if [[ -s "$UTF_XML" ]]; then
+  echo "✅ UTF PlayMode: XML produced → $UTF_XML (exit=$UTF_EXIT)"
+  exit "$UTF_EXIT"
 fi
+echo "⚠️  UTF PlayMode produced no XML; falling back to smoke..."
 
-echo "⚠️  UTF PlayMode did not produce XML. Falling back to editor smoke..."
-
-"$UNITY" -batchmode -nographics \
+# ---------- Smoke (Editor, no PlayMode) ----------
+"$UNITY_BIN" -batchmode -nographics \
   -projectPath "$PROJ" \
   -executeMethod NexoDirectorStudio.Editor.CI.CiEditorSmoke.Run \
-  -prompt "short FPS room with a switch and a door" \
-  -seconds 10 \
-  -results "$JSON" \
-  -logFile "$LOG_SMOKE" \
+  -prompt "$PROMPT" \
+  -seconds "$SMOKE_SECONDS" \
+  -results "$SMOKE_JSON" \
+  -logFile "$SMOKE_LOG" \
   -quit
 SMOKE_EXIT=$?
 
-# Prefer JUnit XML from smoke for CI parsers; show JSON too
+# Prefer JUnit from smoke; print short verdict
 if [[ -f "$SMOKE_JUNIT" ]]; then
-  echo "🧪 Smoke JUnit XML: $SMOKE_JUNIT"
-  [[ -f "$JSON" ]] && echo "🧪 Smoke JSON:" && cat "$JSON" || true
-  exit $SMOKE_EXIT
+  echo "🧪 Smoke JUnit: $SMOKE_JUNIT"
+  if [[ -f "$SMOKE_JSON" ]]; then
+    OK=$(jq -r '.ok' "$SMOKE_JSON" 2>/dev/null || echo "")
+    TRIG=$(jq -r '.interactionsTriggered' "$SMOKE_JSON" 2>/dev/null || echo "")
+    echo "Smoke verdict: ok=${OK:-?}, interactions=${TRIG:-?}, exit=$SMOKE_EXIT"
+  fi
+  exit "$SMOKE_EXIT"
 fi
 
-# Fallback: if JUnit missing but JSON exists, still exit with proper code
-[[ -f "$JSON" ]] && echo "🧪 Smoke JSON:" && cat "$JSON" || true
-exit $SMOKE_EXIT
+# Last resort: show JSON and exit with Unity code
+[[ -f "$SMOKE_JSON" ]] && (echo "🧪 Smoke JSON:"; cat "$SMOKE_JSON") || true
+exit "$SMOKE_EXIT"

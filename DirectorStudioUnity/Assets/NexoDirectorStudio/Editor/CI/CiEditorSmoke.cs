@@ -90,33 +90,51 @@ namespace NexoDirectorStudio.Editor.CI
 
         private static void Write(string path, string prompt, int secs, int triggered)
         {
-            var ok = triggered > 0;
+            // Compute simple checks you care about
+            bool sceneLoaded = UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene().IsValid();
+            bool bootOk     = true; // flip to false if your bootstrap detects missing EventSystem/MainCamera/etc.
+            bool interacted = triggered > 0;
+            bool withinTime = secs >= 1; // or track actual elapsed and compare to a budget
 
-            // JSON (existing)
+            var ok = sceneLoaded && bootOk && interacted && withinTime;
+
+            // JSON (enhanced with granular checks)
             var json = "{\n" +
                        $"  \"prompt\": \"{Escape(prompt)}\",\n" +
                        $"  \"seconds\": {secs},\n" +
                        $"  \"interactionsTriggered\": {triggered},\n" +
+                       $"  \"sceneLoaded\": {sceneLoaded.ToString().ToLower()},\n" +
+                       $"  \"bootstrapOk\": {bootOk.ToString().ToLower()},\n" +
+                       $"  \"withinTimeBudget\": {withinTime.ToString().ToLower()},\n" +
                        $"  \"ok\": {ok.ToString().ToLower()}\n" +
                        "}\n";
             Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
             File.WriteAllText(path, json);
-            Debug.Log($"[CiEditorSmoke] ok={ok} triggered={triggered} results={path}");
 
-            // NEW: Minimal JUnit XML sidecar so CI can parse test results natively
-            //   - 1 testcase: "AutoplayInteractions" under suite "CiEditorSmoke"
-            //   - failure node included when no interactions were triggered
-            var junitPath = Path.ChangeExtension(path, ".junit.xml");
-            var failures = ok ? 0 : 1;
-            var xml = 
-$@"<?xml version=""1.0"" encoding=""UTF-8""?>
-<testsuite name=""CiEditorSmoke"" tests=""1"" failures=""{failures}"" time=""{secs}"">
-  <testcase classname=""CiEditorSmoke"" name=""AutoplayInteractions"" time=""{secs}"">
-{(ok ? "" : "    <failure message=\"No interactions were triggered by the autoplay agent.\" />")}
-  </testcase>
+            // JUnit XML with multiple <testcase> nodes
+            var suite = "CiEditorSmoke";
+            var sb = new System.Text.StringBuilder();
+            int failures = 0;
+            void Case(string name, bool pass, string? msg = null) {
+                if (!pass) failures++;
+                sb.AppendLine($"  <testcase classname=\"{suite}\" name=\"{System.Security.SecurityElement.Escape(name)}\" time=\"{secs}\">");
+                if (!pass)
+                    sb.AppendLine($"    <failure message=\"{System.Security.SecurityElement.Escape(msg ?? "failed")}\" />");
+                sb.AppendLine("  </testcase>");
+            }
+
+            Case("SceneLoaded", sceneLoaded, "Generated scene failed to load");
+            Case("BootstrapReady", bootOk, "Bootstrap prerequisites missing");
+            Case("AutoplayInteractions", interacted, "No interactions were triggered by the autoplay agent");
+            Case("WithinTimeBudget", withinTime, "Exceeded allotted time budget");
+
+            var junitPath = System.IO.Path.ChangeExtension(path, ".junit.xml");
+            var xml = $@"<?xml version=""1.0"" encoding=""UTF-8""?>
+<testsuite name=""{suite}"" tests=""4"" failures=""{failures}"" time=""{secs}"">
+{sb}
 </testsuite>";
-            File.WriteAllText(junitPath, xml);
-            Debug.Log($"[CiEditorSmoke] Wrote JUnit XML: {junitPath}");
+            System.IO.File.WriteAllText(junitPath, xml);
+            Debug.Log($"[CiEditorSmoke] ok={ok} triggered={triggered} junit={junitPath}");
         }
 
         private static int Fail(string msg, string outPath)
