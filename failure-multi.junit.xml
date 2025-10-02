@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CiEditorSmoke" tests="4" failures="1" time="1">
+  <testcase classname="CiEditorSmoke" name="SceneLoaded" time="1">
+  </testcase>
+  <testcase classname="CiEditorSmoke" name="BootstrapReady" time="1">
+  </testcase>
+  <testcase classname="CiEditorSmoke" name="AutoplayInteractions" time="1">
+    <failure message="No interactions were triggered by the autoplay agent" />
+  </testcase>
+  <testcase classname="CiEditorSmoke" name="WithinTimeBudget" time="1">
+  </testcase>
+
+</testsuite>

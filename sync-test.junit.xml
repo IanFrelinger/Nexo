@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="CiEditorSmoke" tests="1" failures="0" time="2">
+  <testcase classname="CiEditorSmoke" name="AutoplayInteractions" time="2">
+
+  </testcase>
+</testsuite>

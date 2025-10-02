@@ -1,6 +1,6 @@
 {
-  "prompt": "short FPS room with a switch and a door",
-  "seconds": 10,
+  "prompt": "test failure case",
+  "seconds": 1,
   "interactionsTriggered": 0,
   "sceneLoaded": true,
   "bootstrapOk": true,
