@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NexoDirectorStudio.Orchestration;
 using NexoDirectorStudio.Phases;
+using NexoDirectorStudio.Config;
 using NexoDirectorStudio.DTO;
 using NexoDirectorStudio.Commands;
 using NexoDirectorStudio.Validators;
@@ -16,38 +17,63 @@ namespace NexoDirectorStudio.EditorCLI
 {
     public static class DirectorPipelineCli
     {
-        // Usage (example):
-        //  -executeMethod NexoDirectorStudio.EditorCLI.DirectorPipelineCli.Run --prompt "..." --seed 42 --artifacts /abs/path --resume
-        public static void Run()
+        // -executeMethod NexoDirectorStudio.EditorCLI.DirectorPipelineCli.Run
+        //   [--config nexo.pipeline.json] [--prompt "..."] [--seed 42] [--artifacts /abs/path] [--resume]
+        public static async void Run()
         {
             try
             {
                 var args = Environment.GetCommandLineArgs();
-                string Arg(string key, string def=null)
+                string Arg(string key, string def = null)
                 {
-                    var idx = Array.IndexOf(args, key);
-                    return (idx >= 0 && idx < args.Length - 1) ? args[idx+1] : def;
+                    var i = Array.IndexOf(args, key);
+                    return (i >= 0 && i < args.Length - 1) ? args[i + 1] : def;
                 }
 
-                var prompt = Arg("--prompt", "micro room with one switch and one door");
-                var seed = int.TryParse(Arg("--seed","1337"), out var s) ? s : 1337;
-                var artifacts = Arg("--artifacts", "Artifacts");
+                var configPath = Arg("--config", "nexo.pipeline.json");
+                var cfg = PipelineConfigLoader.LoadFromPath(configPath, new PipelineConfig());
+                // CLI flags override config
+                cfg.prompt    = Arg("--prompt", cfg.prompt);
+                cfg.artifacts = Arg("--artifacts", cfg.artifacts);
+                if (int.TryParse(Arg("--seed", cfg.seed.ToString()), out var s)) cfg.seed = s;
                 var resume = args.Contains("--resume");
 
                 var svc = new DirectorStudioService();
-                var ctx = new RunContext { Seed = seed, ArtifactRoot = artifacts, Checkpoints = resume ? new FileCheckpointStore() : null };
-                ctx.Rng.Init(seed);
+                var ctx = new RunContext { Seed = cfg.seed, ArtifactRoot = cfg.artifacts, Checkpoints = resume ? new FileCheckpointStore() : null };
+                ctx.Rng.Init(cfg.seed);
                 Directory.CreateDirectory(ctx.RunFolder);
 
-                var runner = new PhaseRunner()
-                    .Add(new PlanPhase(svc.GetService<IPlanGameSliceCommand>()))
-                    .Add(new LayoutPhase(svc.GetService<IBuildWorldLayoutCommand>()))
-                    .Add(new PlacementPhase(svc.GetService<IPlaceInteractionsCommand>()))
-                    .Add(new ContentPhase(svc.GetService<ICreateContentBundleCommand>()))
-                    .Add(new ValidatePhase(svc.GetService<IValidator<ContentBundle>>()));
+                var runner = new PhaseRunner();
+                var reg = PhaseRegistry.BuildDefault(svc);
+                if (cfg.phases != null && cfg.phases.Length > 0)
+                    foreach (var p in cfg.phases) runner.Add(reg.Create(p.type, svc));
+                else
+                    runner.Add(new PlanPhase(svc.GetService<IPlanGameSliceCommand>()))
+                          .Add(new LayoutPhase(svc.GetService<IBuildWorldLayoutCommand>()))
+                          .Add(new PlacementPhase(svc.GetService<IPlaceInteractionsCommand>()))
+                          .Add(new ContentPhase(svc.GetService<ICreateContentBundleCommand>()))
+                          .Add(new ValidatePhase(svc.GetService<IValidator<ContentBundle>>()));
 
-                var brief = new DesignBrief(Description: prompt);
-                _ = RunAsync(runner, brief, ctx);
+                var brief = new DesignBrief(Description: cfg.prompt); // adapt to your DTO
+                Debug.Log($"[DirectorPipelineCli] Starting pipeline with prompt: {cfg.prompt}, seed: {cfg.seed}");
+                var t0 = DateTime.UtcNow;
+                await RunAsync(runner, brief, ctx);
+                var t1 = DateTime.UtcNow;
+                Debug.Log($"[DirectorPipelineCli] Pipeline completed in {(t1 - t0).TotalMilliseconds:F0}ms");
+
+                // Run index summary
+                var summary = new
+                {
+                    runId = ctx.RunId.ToString("N"),
+                    seed = cfg.seed,
+                    prompt = cfg.prompt,
+                    config = configPath,
+                    artifacts = ctx.RunFolder,
+                    elapsedMs = (t1 - t0).TotalMilliseconds
+                };
+                File.WriteAllText(Path.Combine(ctx.RunFolder, "run.summary.json"), JsonUtility.ToJson(new Wrap { payload = summary }, true));
+                Debug.Log("[DirectorPipelineCli] Done. " + ctx.RunFolder);
+                EditorApplication.Exit(0);
             }
             catch (Exception ex)
             {
@@ -58,10 +84,12 @@ namespace NexoDirectorStudio.EditorCLI
 
         private static async Task RunAsync(PhaseRunner runner, object input, RunContext ctx)
         {
+            Debug.Log($"[DirectorPipelineCli] Running phases with input type: {input.GetType().Name}");
             await runner.RunAsync(input, ctx, CancellationToken.None);
-            Debug.Log("[DirectorPipelineCli] Done. Artifacts: " + ctx.RunFolder);
-            EditorApplication.Exit(0);
+            Debug.Log($"[DirectorPipelineCli] All phases completed successfully");
         }
+
+        [Serializable] private class Wrap { public object payload; }
     }
 }
 #endif

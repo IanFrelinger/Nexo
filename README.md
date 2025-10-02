@@ -113,6 +113,11 @@ nexo validate --filter "Category=Architecture" --format-json
 nexo agent --name CodeWriter --input ./requests/new_feature.json --format-json
 ```
 
+### DirectorStudio Quickstart
+- Open Unity → **Nexo → Director Runbook**, set Prompt/Seed → Run.
+- CLI: `scripts/run-with-config.sh` (uses `nexo.pipeline.json`).
+- CI: `scripts/ci-verify.sh` (JUnit XML produced by UTF or smoke).
+
 #### Development Setup
 
 ```bash

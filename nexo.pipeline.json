@@ -1,0 +1,17 @@
+{
+  "name": "MyGameSlice",
+  "version": "0.1.0",
+  "seed": 1337,
+  "prompt": "micro room with one switch and one door",
+  "artifacts": "Artifacts",
+  "phases": [
+    { "token": "Plan",      "type": "PlanPhase",      "cache": true,  "timeoutMs": 1000 },
+    { "token": "Layout",    "type": "LayoutPhase",    "cache": true,  "timeoutMs": 1500 },
+    { "token": "Placement", "type": "PlacementPhase", "cache": true,  "timeoutMs": 1500 },
+    { "token": "Content",   "type": "ContentPhase",   "cache": false, "timeoutMs": 3000 },
+    { "token": "Validate",  "type": "ValidatePhase",  "cache": true,  "timeoutMs": 1000 }
+  ],
+  "adapters": "nexo.adapters.json",
+  "acceptance": "Assets/NexoDirectorStudio/Acceptance/Default.asset",
+  "scenarios": ["Assets/NexoDirectorStudio/Scenarios/Smoke.asset"]
+}

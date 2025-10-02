@@ -9,8 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0000000000000000000000000000000000, type: 3}
+  m_Script: {fileID: 11500000, guid: eb7dd6e7271f448bd85caa1903b5e913, type: 3}
   m_Name: Default
+  m_EditorClassIdentifier: NexoDirectorStudio.Runtime::NexoDirectorStudio.Acceptance.AcceptanceSpec
   MinInteractions: 1
   MustTriggerIds: []
   MaxPlanMs: 1000

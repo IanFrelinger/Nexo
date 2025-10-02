@@ -81,6 +81,9 @@ namespace NexoDirectorStudio.Orchestration
                 };
                 return validators as T;
             }
+            
+            if (typeof(T) == typeof(IValidator<ContentBundle>))
+                return new ContentBundleValidator() as T;
 
             // Create adapter services
             if (typeof(T) == typeof(IOllamaAdapter))

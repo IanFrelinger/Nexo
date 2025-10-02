@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NexoDirectorStudio.Orchestration;
 using NexoDirectorStudio.Phases;
+using NexoDirectorStudio.Config;
 using NexoDirectorStudio.DTO;
 using NexoDirectorStudio.Commands;
 using NexoDirectorStudio.Validators;
@@ -14,49 +15,59 @@ namespace NexoDirectorStudio.EditorUI
 {
     public sealed class RunbookWindow : EditorWindow
     {
-        private int _seed = 1337;
-        private string _artifacts = "Artifacts";
-        private string _prompt = "micro room with one switch and one door";
+        private string _configPath = "nexo.pipeline.json";
+        private PipelineConfig _cfg = new PipelineConfig();
         private Vector2 _scroll;
 
         [MenuItem("Nexo/Director Runbook")]
         public static void ShowWindow() => GetWindow<RunbookWindow>("Director Runbook");
 
+        private void OnEnable() { if (File.Exists(_configPath)) _cfg = PipelineConfigLoader.LoadFromPath(_configPath, _cfg); }
+
         private void OnGUI()
         {
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
-            EditorGUILayout.LabelField("Run context", EditorStyles.boldLabel);
-            _seed = EditorGUILayout.IntField("Seed", _seed);
-            _artifacts = EditorGUILayout.TextField("Artifacts Root", _artifacts);
-            _prompt = EditorGUILayout.TextField("Prompt", _prompt);
+            EditorGUILayout.LabelField("Configuration", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            _configPath = EditorGUILayout.TextField("Config Path", _configPath);
+            if (GUILayout.Button("Load", GUILayout.Width(80))) _cfg = PipelineConfigLoader.LoadFromPath(_configPath, _cfg);
+            EditorGUILayout.EndHorizontal();
 
-            GUILayout.Space(8);
-            if (GUILayout.Button("Run (Plan → Layout → Placement → Content → Validate)"))
+            _cfg.prompt = EditorGUILayout.TextField("Prompt", _cfg.prompt);
+            _cfg.seed   = EditorGUILayout.IntField("Seed", _cfg.seed);
+            _cfg.artifacts = EditorGUILayout.TextField("Artifacts Root", _cfg.artifacts);
+            EditorGUILayout.Space();
+
+            if (GUILayout.Button("Run Pipeline (Plan→Layout→Placement→Content→Validate)"))
                 _ = RunPipeline();
 
-            if (GUILayout.Button("Open Artifacts Folder"))
-                EditorUtility.RevealInFinder(Path.Combine(_artifacts));
+            if (GUILayout.Button("Open Artifacts Root"))
+                EditorUtility.RevealInFinder(_cfg.artifacts);
 
             EditorGUILayout.EndScrollView();
         }
 
         private async Task RunPipeline()
         {
-            var svc = new DirectorStudioService();
-            var ctx = new RunContext { Seed = _seed, ArtifactRoot = _artifacts, Checkpoints = new FileCheckpointStore() };
-            ctx.Rng.Init(_seed);
+            var svc = new DirectorStudioService(); // direct instantiation (not MonoBehaviour)
+            var ctx = new RunContext { Seed = _cfg.seed, ArtifactRoot = _cfg.artifacts, Checkpoints = new FileCheckpointStore() };
+            ctx.Rng.Init(_cfg.seed);
 
-            // construct phases using existing commands from service
-            var runner = new PhaseRunner()
-                .Add(new PlanPhase(svc.GetService<IPlanGameSliceCommand>()))
-                .Add(new LayoutPhase(svc.GetService<IBuildWorldLayoutCommand>()))
-                .Add(new PlacementPhase(svc.GetService<IPlaceInteractionsCommand>()))
-                .Add(new ContentPhase(svc.GetService<ICreateContentBundleCommand>()))
-                .Add(new ValidatePhase(svc.GetService<IValidator<ContentBundle>>()));
+            // Build default phases; if cfg.phases has entries, respect their order/types.
+            var runner = new PhaseRunner();
+            var reg = PhaseRegistry.BuildDefault(svc);
+            if (_cfg.phases != null && _cfg.phases.Length > 0)
+                foreach (var p in _cfg.phases) runner.Add(reg.Create(p.type, svc));
+            else
+                runner.Add(new PlanPhase(svc.GetService<IPlanGameSliceCommand>()))
+                      .Add(new LayoutPhase(svc.GetService<IBuildWorldLayoutCommand>()))
+                      .Add(new PlacementPhase(svc.GetService<IPlaceInteractionsCommand>()))
+                      .Add(new ContentPhase(svc.GetService<ICreateContentBundleCommand>()))
+                      .Add(new ValidatePhase(svc.GetService<IValidator<ContentBundle>>()));
 
-            var brief = new DesignBrief(Description: _prompt);
+            var brief = new DesignBrief(Description: _cfg.prompt); // adapt if your DTO differs
             await runner.RunAsync(brief, ctx, CancellationToken.None);
-            Debug.Log("[Runbook] Pipeline completed.");
+            Debug.Log($"[Runbook] Done. Artifacts: {ctx.RunFolder}");
         }
     }
 }

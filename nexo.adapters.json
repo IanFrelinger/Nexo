@@ -1,0 +1,5 @@
+{
+  "ollama": { "endpoint": "http://localhost:11434", "model": "llama3", "timeoutMs": 40000 },
+  "comfy":  { "endpoint": "http://127.0.0.1:8188",  "workflow": "tile_textures.json" },
+  "piper":  { "voice": "en_US-amy-medium" }
+}

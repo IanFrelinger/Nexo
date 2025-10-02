@@ -124,9 +124,21 @@ $@"<?xml version=""1.0"" encoding=""UTF-8""?>
 {Case("AutoplayInteractions", interacted, $"InteractionsTriggered={triggered} < Min={minInt}")}
 {Case("WithinTimeBudget", true, "Time budget exceeded")}
 </testsuite>";
-            File.WriteAllText(junitPath, xml);
+                    File.WriteAllText(junitPath, xml);
 
-            EditorApplication.Exit(failures == 0 ? 0 : 2);
+                    // On failure, capture a screenshot to help with forensics
+                    try
+                    {
+                        if (failures > 0)
+                        {
+                            var shotPath = System.IO.Path.ChangeExtension(outPath, ".png");
+                            ScreenCapture.CaptureScreenshot(shotPath);
+                            Debug.Log($"[CiEditorSmoke] Wrote screenshot: {shotPath}");
+                        }
+                    }
+                    catch { /* ignore capture errors in headless */ }
+
+                    EditorApplication.Exit(failures == 0 ? 0 : 2);
         }
 
         private static string GetArg(string name)
