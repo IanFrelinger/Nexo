@@ -126,10 +126,41 @@ $@"<?xml version=""1.0"" encoding=""UTF-8""?>
 </testsuite>";
                     File.WriteAllText(junitPath, xml);
 
+                    // === Functional Validation Suite ===
+                    var validators = new System.Collections.Generic.List<NexoDirectorStudio.Editor.Validation.Functional.IFunctionalValidator>
+                    {
+                        new NexoDirectorStudio.Editor.Validation.Functional.GameplayValidator(),
+                        new NexoDirectorStudio.Editor.Validation.Functional.VisualsValidator(),
+                        new NexoDirectorStudio.Editor.Validation.Functional.AudioValidator(),
+                        new NexoDirectorStudio.Editor.Validation.Functional.SystemsValidator()
+                    };
+                    var funcReport = NexoDirectorStudio.Editor.Validation.Functional.FunctionalValidationSuite.RunAll(validators);
+
+                    // Write functional JSON sidecar next to smoke JSON
+                    var functionalJsonPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(outPath) ?? ".", "functional_smoke.json");
+                    System.IO.File.WriteAllText(functionalJsonPath, UnityEngine.JsonUtility.ToJson(funcReport, true));
+                    UnityEngine.Debug.Log($"[CiEditorSmoke] Functional report written: {functionalJsonPath} (failures={funcReport.failures})");
+
+                    // Append functional assertions to JUnit (each assertion becomes a testcase)
+                    var junitPathFinal = System.IO.Path.ChangeExtension(outPath, ".junit.xml");
+                    var xmlContent = System.IO.File.ReadAllText(junitPathFinal);
+                    var sbFunc = new System.Text.StringBuilder();
+                    foreach (var a in funcReport.assertions)
+                    {
+                        var nameEsc = a.name.Replace("\"","'");
+                        var msgEsc = (a.message ?? "failed").Replace("\"","'");
+                        if (a.pass)
+                            sbFunc.AppendLine($"  <testcase classname=\"CiEditorSmoke.Functional\" name=\"{nameEsc}\" time=\"{seconds}\"></testcase>");
+                        else
+                            sbFunc.AppendLine($"  <testcase classname=\"CiEditorSmoke.Functional\" name=\"{nameEsc}\" time=\"{seconds}\">\n    <failure message=\"{msgEsc}\" />\n  </testcase>");
+                    }
+                    xmlContent = xmlContent.Replace("</testsuite>", sbFunc.ToString() + "</testsuite>");
+                    System.IO.File.WriteAllText(junitPathFinal, xmlContent);
+
                     // On failure, capture a screenshot to help with forensics
                     try
                     {
-                        if (failures > 0)
+                        if (failures > 0 || funcReport.failures > 0)
                         {
                             var shotPath = System.IO.Path.ChangeExtension(outPath, ".png");
                             ScreenCapture.CaptureScreenshot(shotPath);
@@ -138,7 +169,9 @@ $@"<?xml version=""1.0"" encoding=""UTF-8""?>
                     }
                     catch { /* ignore capture errors in headless */ }
 
-                    EditorApplication.Exit(failures == 0 ? 0 : 2);
+                    // If any functional assertion failed, make sure CI fails
+                    var totalFailures = failures + funcReport.failures;
+                    EditorApplication.Exit(totalFailures == 0 ? 0 : 2);
         }
 
         private static string GetArg(string name)

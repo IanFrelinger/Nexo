@@ -1,0 +1,130 @@
+{
+    "assertions": [
+        {
+            "name": "Gameplay.PlayerPresent",
+            "pass": false,
+            "message": "No Player in scene (tag 'Player' or name contains 'player')",
+            "details": ""
+        },
+        {
+            "name": "Gameplay.PlayerLocomotion",
+            "pass": false,
+            "message": "No CharacterController/Rigidbody on Player",
+            "details": ""
+        },
+        {
+            "name": "Gameplay.PlayerCollider",
+            "pass": false,
+            "message": "No Collider on Player",
+            "details": ""
+        },
+        {
+            "name": "Gameplay.InteractionsExist",
+            "pass": true,
+            "message": "Found 1 interactions",
+            "details": ""
+        },
+        {
+            "name": "Gameplay.InteractionsArmed",
+            "pass": true,
+            "message": "1/1 interactions armed",
+            "details": "Ensure InteractionBus.Register(...) is called for each interactable and colliders/layers permit activation."
+        },
+        {
+            "name": "Gameplay.NavMeshReady",
+            "pass": false,
+            "message": "No NavMesh detected (bake or build at runtime)",
+            "details": ""
+        },
+        {
+            "name": "Gameplay.OppositionPresent",
+            "pass": false,
+            "message": "No enemy/target object found",
+            "details": ""
+        },
+        {
+            "name": "Visuals.MainCamera",
+            "pass": true,
+            "message": "MainCamera present",
+            "details": ""
+        },
+        {
+            "name": "Visuals.LightPresent",
+            "pass": false,
+            "message": "No enabled Light in scene",
+            "details": ""
+        },
+        {
+            "name": "Visuals.MaterialsAssigned",
+            "pass": true,
+            "message": "All renderers have materials",
+            "details": ""
+        },
+        {
+            "name": "Visuals.NoErrorShader",
+            "pass": true,
+            "message": "No InternalErrorShader in use",
+            "details": ""
+        },
+        {
+            "name": "Visuals.TransformSane",
+            "pass": true,
+            "message": "No NaN or zero-scale transforms",
+            "details": ""
+        },
+        {
+            "name": "Audio.SingleListener",
+            "pass": false,
+            "message": "Enabled listeners: 0",
+            "details": "There should be exactly one enabled AudioListener."
+        },
+        {
+            "name": "Audio.SourcePresent",
+            "pass": false,
+            "message": "No AudioSource found",
+            "details": ""
+        },
+        {
+            "name": "Audio.PlayOnAwakeHasClip",
+            "pass": true,
+            "message": "All playOnAwake sources have clips",
+            "details": ""
+        },
+        {
+            "name": "Audio.VolumeRange",
+            "pass": true,
+            "message": "All volumes in [0,1]",
+            "details": ""
+        },
+        {
+            "name": "Systems.EventSystem",
+            "pass": true,
+            "message": "EventSystem present",
+            "details": ""
+        },
+        {
+            "name": "Systems.TimeScale",
+            "pass": true,
+            "message": "TimeScale > 0",
+            "details": ""
+        },
+        {
+            "name": "Systems.PhysicsPresent",
+            "pass": true,
+            "message": "At least one Collider present",
+            "details": ""
+        },
+        {
+            "name": "Systems.Raycastable",
+            "pass": false,
+            "message": "Nothing is hit by a forward ray from MainCamera (layers/colliders?)",
+            "details": ""
+        },
+        {
+            "name": "Scene.MissingScripts",
+            "pass": true,
+            "message": "No missing scripts in scene",
+            "details": "Remove/repair missing MonoBehaviour references on GameObjects."
+        }
+    ]
+}
