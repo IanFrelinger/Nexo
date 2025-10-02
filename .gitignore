@@ -53,12 +53,27 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Unity (if any)
-Library/
-Temp/
-obj/
-Build/
-Builds/
+# --- Unity generated (keep diffs clean)
+DirectorStudioUnity/Library/
+DirectorStudioUnity/Temp/
+DirectorStudioUnity/Logs/
+DirectorStudioUnity/Obj/
+DirectorStudioUnity/MemoryCaptures/
+DirectorStudioUnity/Recordings/
+DirectorStudioUnity/Builds/
+DirectorStudioUnity/Artifacts/
+DirectorStudioUnity/UserSettings/
+DirectorStudioUnity/Assets/GeneratedScenes/
+DirectorStudioUnity/Assets/Generated/
+# Rider/VS cache
+.idea/
+.vs/
+*.suo
+*.user
+*.userprefs
+# OS cruft
+.DS_Store
+Thumbs.db
 
 # Unreal Engine (if any)
 Binaries/
