@@ -54,7 +54,7 @@ namespace NexoDirectorStudio.EditorCLI
                           .Add(new ContentPhase(svc.GetService<ICreateContentBundleCommand>()))
                           .Add(new ValidatePhase(svc.GetService<IValidator<ContentBundle>>()));
 
-                var brief = new DesignBrief(Description: cfg.prompt); // adapt to your DTO
+                var brief = new DesignBrief(Description: cfg.prompt, GenreHint: "fps", Seed: cfg.seed); // adapt to your DTO
                 Debug.Log($"[DirectorPipelineCli] Starting pipeline with prompt: {cfg.prompt}, seed: {cfg.seed}");
                 var t0 = DateTime.UtcNow;
                 await RunAsync(runner, brief, ctx);
@@ -62,7 +62,7 @@ namespace NexoDirectorStudio.EditorCLI
                 Debug.Log($"[DirectorPipelineCli] Pipeline completed in {(t1 - t0).TotalMilliseconds:F0}ms");
 
                 // Run index summary
-                var summary = new
+                var summary = new RunSummary
                 {
                     runId = ctx.RunId.ToString("N"),
                     seed = cfg.seed,
@@ -71,7 +71,7 @@ namespace NexoDirectorStudio.EditorCLI
                     artifacts = ctx.RunFolder,
                     elapsedMs = (t1 - t0).TotalMilliseconds
                 };
-                File.WriteAllText(Path.Combine(ctx.RunFolder, "run.summary.json"), JsonUtility.ToJson(new Wrap { payload = summary }, true));
+                File.WriteAllText(Path.Combine(ctx.RunFolder, "run.summary.json"), JsonUtility.ToJson(summary, true));
                 Debug.Log("[DirectorPipelineCli] Done. " + ctx.RunFolder);
                 EditorApplication.Exit(0);
             }
@@ -89,7 +89,15 @@ namespace NexoDirectorStudio.EditorCLI
             Debug.Log($"[DirectorPipelineCli] All phases completed successfully");
         }
 
-        [Serializable] private class Wrap { public object payload; }
+        [Serializable] private class RunSummary
+        {
+            public string runId;
+            public int seed;
+            public string prompt;
+            public string config;
+            public string artifacts;
+            public double elapsedMs;
+        }
     }
 }
 #endif

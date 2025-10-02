@@ -65,7 +65,7 @@ namespace NexoDirectorStudio.EditorUI
                       .Add(new ContentPhase(svc.GetService<ICreateContentBundleCommand>()))
                       .Add(new ValidatePhase(svc.GetService<IValidator<ContentBundle>>()));
 
-            var brief = new DesignBrief(Description: _cfg.prompt); // adapt if your DTO differs
+            var brief = new DesignBrief(Description: _cfg.prompt, GenreHint: "fps", Seed: _cfg.seed); // adapt if your DTO differs
             await runner.RunAsync(brief, ctx, CancellationToken.None);
             Debug.Log($"[Runbook] Done. Artifacts: {ctx.RunFolder}");
         }
