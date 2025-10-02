@@ -126,14 +126,15 @@ $@"<?xml version=""1.0"" encoding=""UTF-8""?>
 </testsuite>";
                     File.WriteAllText(junitPath, xml);
 
-                    // === Functional Validation Suite ===
-                    var validators = new System.Collections.Generic.List<NexoDirectorStudio.Editor.Validation.Functional.IFunctionalValidator>
-                    {
-                        new NexoDirectorStudio.Editor.Validation.Functional.GameplayValidator(),
-                        new NexoDirectorStudio.Editor.Validation.Functional.VisualsValidator(),
-                        new NexoDirectorStudio.Editor.Validation.Functional.AudioValidator(),
-                        new NexoDirectorStudio.Editor.Validation.Functional.SystemsValidator()
-                    };
+            // === Functional Validation Suite ===
+            var validators = new System.Collections.Generic.List<NexoDirectorStudio.Editor.Validation.Functional.IFunctionalValidator>
+            {
+                new NexoDirectorStudio.Editor.Validation.Functional.GameplayValidator(),
+                new NexoDirectorStudio.Editor.Validation.Functional.EngagementValidator(),
+                new NexoDirectorStudio.Editor.Validation.Functional.VisualsValidator(),
+                new NexoDirectorStudio.Editor.Validation.Functional.AudioValidator(),
+                new NexoDirectorStudio.Editor.Validation.Functional.SystemsValidator()
+            };
                     var funcReport = NexoDirectorStudio.Editor.Validation.Functional.FunctionalValidationSuite.RunAll(validators);
 
                     // Write functional JSON sidecar next to smoke JSON
