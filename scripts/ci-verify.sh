@@ -43,6 +43,7 @@ echo "⚠️  UTF PlayMode produced no XML; falling back to smoke..."
   -prompt "$PROMPT" \
   -seconds "$SMOKE_SECONDS" \
   -results "$SMOKE_JSON" \
+  -acceptance "Assets/NexoDirectorStudio/Acceptance/Default.asset" \
   -logFile "$SMOKE_LOG" \
   -quit
 SMOKE_EXIT=$?

@@ -716,6 +716,7 @@ namespace NexoDirectorStudio.Editor
         public event Action<IInteraction> Triggered;
         public bool IsArmed { get; private set; }
         public bool HasTriggered { get; private set; }
+        public string InteractionId => $"simple-test-{GetInstanceID()}";
         private float _triggerTime;
         private int _triggerCount;
         
@@ -756,6 +757,14 @@ namespace NexoDirectorStudio.Editor
             
             Triggered?.Invoke(this);
             Debug.Log($"🎯 Simple interaction triggered: {name}");
+        }
+        
+        public bool TryInvoke()
+        {
+            if (!IsArmed || HasTriggered) return false;
+            
+            Trigger();
+            return true;
         }
         
         public InteractionMetadata GetMetadata()

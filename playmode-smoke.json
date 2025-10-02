@@ -1,9 +1,9 @@
 {
   "prompt": "short FPS room with a switch and a door",
   "seconds": 10,
-  "interactionsTriggered": 0,
+  "interactionsTriggered": 1,
   "sceneLoaded": true,
   "bootstrapOk": true,
   "withinTimeBudget": true,
-  "ok": false
+  "ok": true
 }

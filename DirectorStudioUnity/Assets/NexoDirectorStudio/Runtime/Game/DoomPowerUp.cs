@@ -21,6 +21,7 @@ namespace NexoDirectorStudio.Game
         public event Action<IInteraction> Triggered;
         public bool IsArmed { get; private set; }
         public bool HasTriggered { get; private set; }
+        public string InteractionId => $"powerup-{powerUpType}-{GetInstanceID()}";
         private float _triggerTime;
         private int _triggerCount;
         
@@ -144,6 +145,14 @@ namespace NexoDirectorStudio.Game
             _triggerCount++;
             
             Triggered?.Invoke(this);
+        }
+        
+        public bool TryInvoke()
+        {
+            if (!IsArmed || HasTriggered) return false;
+            
+            Trigger();
+            return true;
         }
         
         public InteractionMetadata GetMetadata()

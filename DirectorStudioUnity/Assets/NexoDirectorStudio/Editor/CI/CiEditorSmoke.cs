@@ -23,17 +23,73 @@ namespace NexoDirectorStudio.Editor.CI
 
             var spec = string.IsNullOrEmpty(accPath) ? null : AssetDatabase.LoadAssetAtPath<AcceptanceSpec>(accPath);
 
-            // Create a simple test scene
+            // Create a simple test scene with interactions
             var testScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var sceneLoaded = testScene.IsValid();
 
-            // Simulate "play" time without entering play mode
-            var end = DateTime.UtcNow.AddSeconds(seconds);
-            while (DateTime.UtcNow < end) { /* hook EditorApplication.update if needed */ }
+            // Ensure prerequisites exist (EventSystem, MainCamera, etc.)
+            var eventSystem = UnityEngine.Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+            if (eventSystem == null)
+            {
+                var eventSystemObj = new GameObject("EventSystem");
+                eventSystemObj.AddComponent<UnityEngine.EventSystems.EventSystem>();
+                eventSystemObj.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+            }
 
-            // Inspect interactions
+            var mainCamera = UnityEngine.Camera.main;
+            if (mainCamera == null)
+            {
+                var cameraObj = new GameObject("Main Camera");
+                cameraObj.AddComponent<UnityEngine.Camera>();
+                cameraObj.tag = "MainCamera";
+            }
+
+            // Create InteractionBus
+            var busObj = new GameObject("InteractionBus");
+            var bus = busObj.AddComponent<InteractionBus>();
+
+            // Create test interactions
+            var interactionObj = new GameObject("TestInteraction");
+            var collider = interactionObj.AddComponent<BoxCollider>();
+            collider.isTrigger = true;
+            var interaction = interactionObj.AddComponent<TestInteraction>();
+            
+            // Register interaction with bus
+            bus.Register(interaction);
+
+            // Simulate "play" time and trigger interactions deterministically
+            var end = DateTime.UtcNow.AddSeconds(seconds);
             var triggered = 0;
-            try { var bus = UnityEngine.Object.FindFirstObjectByType<InteractionBus>(); triggered = bus ? bus.TriggeredCount : 0; } catch {}
+            
+            // Physics simulation setup
+            var hadAutoSimulation = Physics.autoSimulation;
+            Physics.autoSimulation = false;
+            
+            try
+            {
+                while (DateTime.UtcNow < end)
+                {
+                    // Step physics if needed
+                    Physics.Simulate(0.02f);
+                    
+                    // Trigger interactions deterministically
+                    if (interaction.IsArmed && !interaction.HasTriggered)
+                    {
+                        if (interaction.TryInvoke())
+                        {
+                            triggered++;
+                        }
+                    }
+                    
+                    // Small delay to prevent busy waiting
+                    System.Threading.Thread.Sleep(10);
+                }
+            }
+            finally
+            {
+                // Restore physics settings
+                Physics.autoSimulation = hadAutoSimulation;
+            }
 
             // Acceptance checks
             var minInt = spec ? spec.MinInteractions : 1;

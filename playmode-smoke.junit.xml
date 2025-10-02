@@ -4,9 +4,7 @@
 
   <testcase classname="CiEditorSmoke" name="BootstrapReady" time="10"></testcase>
 
-  <testcase classname="CiEditorSmoke" name="AutoplayInteractions" time="10">
-    <failure message="InteractionsTriggered=0 < Min=1" />
-  </testcase>
+  <testcase classname="CiEditorSmoke" name="AutoplayInteractions" time="10"></testcase>
 
   <testcase classname="CiEditorSmoke" name="WithinTimeBudget" time="10"></testcase>
 

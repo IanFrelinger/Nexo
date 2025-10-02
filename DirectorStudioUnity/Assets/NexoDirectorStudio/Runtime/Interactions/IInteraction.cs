@@ -7,7 +7,7 @@ namespace NexoDirectorStudio.Interactions
     /// Interface for all interactive objects in DirectorStudio.
     /// Provides centralized interaction management and metrics.
     /// </summary>
-    public interface IInteraction
+    public interface IInteraction : IInvokeInteraction
     {
         /// <summary>
         /// Event fired when this interaction is triggered
@@ -25,6 +25,11 @@ namespace NexoDirectorStudio.Interactions
         bool HasTriggered { get; }
         
         /// <summary>
+        /// Gets the interaction ID for tracking purposes.
+        /// </summary>
+        string InteractionId { get; }
+        
+        /// <summary>
         /// Initialize the interaction (called once during registration)
         /// </summary>
         void Initialize();
@@ -38,6 +43,12 @@ namespace NexoDirectorStudio.Interactions
         /// Trigger the interaction (can be called by autoplayer or user input)
         /// </summary>
         void Trigger();
+        
+        /// <summary>
+        /// Attempts to invoke this interaction directly.
+        /// </summary>
+        /// <returns>True if the interaction was successfully triggered</returns>
+        bool TryInvoke();
         
         /// <summary>
         /// Get interaction metadata for metrics
