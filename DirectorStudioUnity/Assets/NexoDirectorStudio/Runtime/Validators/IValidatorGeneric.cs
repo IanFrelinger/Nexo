@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 namespace NexoDirectorStudio.Validators
 {
     /// <summary>
-    /// Base interface for all validators in the Director Studio validation suite.
+    /// Generic validator interface for type-safe validation.
     /// </summary>
-    public interface IValidator
+    /// <typeparam name="T">The type of input to validate</typeparam>
+    public interface IValidator<T> : IValidator
     {
         /// <summary>
         /// Validates the given input and returns a validation result.
@@ -15,6 +16,6 @@ namespace NexoDirectorStudio.Validators
         /// <param name="input">The input to validate</param>
         /// <param name="ct">Cancellation token</param>
         /// <returns>Validation result</returns>
-        Task<ValidationResult> ValidateAsync(object input, CancellationToken ct);
+        Task<ValidationResult> ValidateAsync(T input, CancellationToken ct);
     }
 }

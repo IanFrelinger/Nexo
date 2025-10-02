@@ -48,533 +48,145 @@ namespace NexoDirectorStudio.Editor
                 System.Console.WriteLine($"  ✓ Genre: {designBrief.GenreHint}, Duration: {designBrief.TargetDurationMinutes}min, Difficulty: {designBrief.DifficultyLevel}");
                 System.Console.WriteLine();
 
-                // Phase 3: Command Setup
-                System.Console.WriteLine("⚙️ Phase 3: Command Setup");
-                System.Console.WriteLine("  ✓ Getting command services...");
-                var planCmd = service.GetService<IPlanGameSliceCommand>();
-                var buildCmd = service.GetService<IBuildWorldLayoutCommand>();
-                var placeCmd = service.GetService<IPlaceInteractionsCommand>();
-                var bundleCmd = service.GetService<ICreateContentBundleCommand>();
-                System.Console.WriteLine("  ✓ All commands ready");
+                // Phase 3: Game Planning
+                System.Console.WriteLine("🎯 Phase 3: Game Planning");
+                System.Console.WriteLine("  ✓ Generating game mechanics and structure...");
+                var planCommand = service.GetService<IPlanGameSliceCommand>();
+                var plan = await planCommand.ExecuteAsync(new IPlanGameSliceCommand.Input(designBrief), CancellationToken.None);
+                System.Console.WriteLine($"  ✓ Plan created: {plan.CoreMechanics.Count} mechanics, {plan.EstimatedDurationMinutes}min duration");
+                System.Console.WriteLine($"  ✓ Mechanics: {string.Join(", ", plan.CoreMechanics.Take(3))}...");
                 System.Console.WriteLine();
 
-                // Phase 4: Game Planning
-                System.Console.WriteLine("🎮 Phase 4: Game Planning");
-                System.Console.WriteLine("  ✓ Executing game slice planning...");
-                var gamePlan = await planCmd.ExecuteAsync(new IPlanGameSliceCommand.Input(designBrief), CancellationToken.None);
-                System.Console.WriteLine($"  ✓ Game plan created: {gamePlan.Id}");
-                System.Console.WriteLine($"  ✓ Mechanics: {gamePlan.CoreMechanics.Count}, Assets: {gamePlan.RequiredAssets.Count}");
+                // Phase 4: World Layout
+                System.Console.WriteLine("🏗️ Phase 4: World Layout");
+                System.Console.WriteLine("  ✓ Generating spatial layout and navigation...");
+                var layoutCommand = service.GetService<IBuildWorldLayoutCommand>();
+                var world = await layoutCommand.ExecuteAsync(new IBuildWorldLayoutCommand.Input(plan), CancellationToken.None);
+                System.Console.WriteLine($"  ✓ World created: {world.Tiles.Count} tiles, {world.Objects.Count} objects");
+                System.Console.WriteLine($"  ✓ Dimensions: {world.Dimensions.x:F1}x{world.Dimensions.y:F1}x{world.Dimensions.z:F1}");
                 System.Console.WriteLine();
 
-                // Phase 5: World Building
-                System.Console.WriteLine("🏗️ Phase 5: World Building");
-                System.Console.WriteLine("  ✓ Building world layout...");
-                var world = await buildCmd.ExecuteAsync(new IBuildWorldLayoutCommand.Input(gamePlan), CancellationToken.None);
-                System.Console.WriteLine($"  ✓ World layout created: {world.Id}");
-                System.Console.WriteLine($"  ✓ Dimensions: {world.Dimensions.x}x{world.Dimensions.y}, Tiles: {world.Tiles.Count}");
+                // Phase 5: Interaction Placement
+                System.Console.WriteLine("🎮 Phase 5: Interaction Placement");
+                System.Console.WriteLine("  ✓ Placing interactive elements and triggers...");
+                var placementCommand = service.GetService<IPlaceInteractionsCommand>();
+                var interactions = await placementCommand.ExecuteAsync(new IPlaceInteractionsCommand.Input(world, plan), CancellationToken.None);
+                System.Console.WriteLine($"  ✓ Interactions placed: {interactions.Nodes.Count} nodes, {interactions.Connections.Count} connections");
+                System.Console.WriteLine($"  ✓ Entry points: {interactions.EntryPointIds.Count}");
                 System.Console.WriteLine();
 
-                // Phase 6: Interaction Placement
-                System.Console.WriteLine("🔗 Phase 6: Interaction Placement");
-                System.Console.WriteLine("  ✓ Placing interactions and connections...");
-                var graph = await placeCmd.ExecuteAsync(new IPlaceInteractionsCommand.Input(world, gamePlan), CancellationToken.None);
-                System.Console.WriteLine($"  ✓ Interaction graph created: {graph.Id}");
-                System.Console.WriteLine($"  ✓ Nodes: {graph.Nodes.Count}, Connections: {graph.Connections.Count}");
+                // Phase 6: Content Bundle Creation
+                System.Console.WriteLine("📦 Phase 6: Content Bundle Creation");
+                System.Console.WriteLine("  ✓ Generating assets and content...");
+                var contentCommand = service.GetService<ICreateContentBundleCommand>();
+                var bundle = await contentCommand.ExecuteAsync(new ICreateContentBundleCommand.Input(interactions, plan), CancellationToken.None);
+                System.Console.WriteLine($"  ✓ Bundle created: {bundle.Assets.Count} assets");
+                System.Console.WriteLine($"  ✓ Addressables group: {bundle.AddressablesGroup.GroupName}");
                 System.Console.WriteLine();
 
-                // Phase 7: Content Generation
-                System.Console.WriteLine("📦 Phase 7: Content Generation");
-                System.Console.WriteLine("  ✓ Creating content bundle...");
-                var bundle = await bundleCmd.ExecuteAsync(new ICreateContentBundleCommand.Input(graph, gamePlan), CancellationToken.None);
-                System.Console.WriteLine($"  ✓ Content bundle created: {bundle.Id}");
-                System.Console.WriteLine($"  ✓ Assets: {bundle.Assets.Count}");
-                System.Console.WriteLine();
-
-                // Phase 8: Validation
-                System.Console.WriteLine("✅ Phase 8: Validation");
-                System.Console.WriteLine("  ✓ Running validators...");
-                var validators = service.GetService<IEnumerable<IValidator<GamePlan>>>() ?? Enumerable.Empty<IValidator<GamePlan>>();
-                var results = new List<ValidationResult>();
-                var validatorCount = 0;
-                foreach (var v in validators)
+                // Phase 7: Validation
+                System.Console.WriteLine("✅ Phase 7: Validation");
+                System.Console.WriteLine("  ✓ Running validation checks...");
+                var validator = service.GetService<IValidator<ContentBundle>>();
+                var validation = await validator.ValidateAsync(bundle, CancellationToken.None);
+                System.Console.WriteLine($"  ✓ Validation complete: {(validation.IsValid ? "PASSED" : "FAILED")} (Score: {validation.Score}/100)");
+                if (!validation.IsValid)
                 {
-                    validatorCount++;
-                    System.Console.WriteLine($"  ✓ Running validator {validatorCount}...");
-                    var r = await v.ValidateAsync(gamePlan, CancellationToken.None);
-                    results.Add(r);
+                    System.Console.WriteLine($"  ⚠️ Issues found: {validation.Issues.Count}");
+                    foreach (var issue in validation.Issues.Take(3))
+                    {
+                        System.Console.WriteLine($"    - {issue.Title}: {issue.Description}");
+                    }
                 }
-                var passedValidations = results.Count(r => r.Score > 0);
-                System.Console.WriteLine($"  ✓ Validation complete: {passedValidations}/{results.Count} passed");
                 System.Console.WriteLine();
 
-                // Print concise summary
-                System.Console.WriteLine("=== Pipeline Result ===");
-                System.Console.WriteLine($"Brief: {designBrief.Description} (GenreHint={designBrief.GenreHint})");
-                System.Console.WriteLine($"GamePlan: {gamePlan.Id} | Mechanics={gamePlan.CoreMechanics.Count} Assets={gamePlan.RequiredAssets.Count}");
-                System.Console.WriteLine($"World: {world.Id} | Size={world.Dimensions.x}x{world.Dimensions.y} Tiles={world.Tiles.Count}");
-                System.Console.WriteLine($"Graph: {graph.Id} | Nodes={graph.Nodes.Count} Connections={graph.Connections.Count}");
-                System.Console.WriteLine($"Bundle: {bundle.Id} | Assets={bundle.Assets.Count}");
-                System.Console.WriteLine($"Validators: {results.Count} | Passed≈{results.Count(r=>r.Score>0)}");
-                System.Console.WriteLine();
-
-                // Phase 9: Scene Generation & Editor Integration
-                System.Console.WriteLine("🎬 Phase 9: Scene Generation & Editor Integration");
-                System.Console.WriteLine("  ✓ Generating Unity scene from content bundle...");
-                var scenePath = await GenerateSceneFromBundleAsync(bundle, gamePlan, world, graph);
+                // Phase 8: Scene Generation
+                System.Console.WriteLine("🎬 Phase 8: Scene Generation");
+                System.Console.WriteLine("  ✓ Creating Unity scene...");
+                var scenePath = await CreateSceneAsync(plan, world, interactions, bundle);
                 System.Console.WriteLine($"  ✓ Scene created: {scenePath}");
                 System.Console.WriteLine();
 
-                // Phase 10: Auto-Playtest Setup
-                System.Console.WriteLine("🤖 Phase 10: Auto-Playtest Setup");
-                System.Console.WriteLine("  ✓ Setting up AI autoplayer for immediate testing...");
-                await SetupAutoPlaytestAsync(scenePath, gamePlan);
-                System.Console.WriteLine("  ✓ Autoplayer configured and ready");
+                // Phase 9: Playtesting Setup
+                System.Console.WriteLine("🤖 Phase 9: Playtesting Setup");
+                System.Console.WriteLine("  ✓ Setting up AI playtesting...");
+                await SetupPlaytestingAsync(scenePath, plan);
+                System.Console.WriteLine("  ✓ Playtesting configured");
                 System.Console.WriteLine();
 
-                // Phase 11: Editor Focus
-                System.Console.WriteLine("🎯 Phase 11: Editor Focus");
-                System.Console.WriteLine("  ✓ Opening scene in Unity Editor...");
-                await OpenSceneInEditorAsync(scenePath);
-                System.Console.WriteLine("  ✓ Scene loaded and focused for playtesting");
-                System.Console.WriteLine();
+                System.Console.WriteLine("🎉 Director CLI Runner completed successfully!");
+                System.Console.WriteLine($"📁 Generated scene: {scenePath}");
+                System.Console.WriteLine($"📊 Validation score: {validation.Score}/100");
+                System.Console.WriteLine($"🎮 Ready for playtesting!");
 
-                System.Console.WriteLine("🎉 Ready for Playtesting!");
-                System.Console.WriteLine("=========================");
-                System.Console.WriteLine("• Scene is now open in Unity Editor");
-                System.Console.WriteLine("• AI Autoplayer is attached and ready");
-                System.Console.WriteLine("• Press Play to start automated testing");
-                System.Console.WriteLine("• Provide feedback to iterate on design");
-                System.Console.WriteLine();
-
-                // Phase 12: Feedback Collection Setup
-                System.Console.WriteLine("💬 Phase 12: Feedback Collection Setup");
-                System.Console.WriteLine("  ✓ Setting up feedback collection system...");
-                await SetupFeedbackCollectionAsync(gamePlan.Id, scenePath);
-                System.Console.WriteLine("  ✓ Feedback system ready - use 'NexoDirectorStudio/Record Feedback' menu");
-                System.Console.WriteLine();
-
-                // Don't exit - keep editor open for playtesting
-                System.Console.WriteLine("Editor will remain open for playtesting and feedback collection.");
-                System.Console.WriteLine("Use the Unity menu 'NexoDirectorStudio/Record Feedback' to provide design feedback.");
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"CLI Error: {ex.Message}\n{ex.StackTrace}");
-                EditorApplication.Exit(1);
-            }
-        }
-
-        private static string ReadArg(string[] args, string key)
-        {
-            for (int i = 0; i < args.Length - 1; i++)
-            {
-                if (string.Equals(args[i], key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return args[i + 1];
-                }
-            }
-            return null;
-        }
-
-        public static async Task<DesignBrief> PromptToBriefAsync(DirectorStudioService service, string prompt, CancellationToken ct)
-        {
-            // Heuristic parse of the prompt without external adapters
-            string description = prompt;
-            string genre = InferGenre(prompt);
-            int minutes = InferMinutes(prompt);
-            int difficulty = InferDifficulty(prompt);
-
-            return await Task.FromResult(new DesignBrief(
-                Description: description,
-                GenreHint: genre,
-                TargetDurationMinutes: minutes,
-                DifficultyLevel: difficulty,
-                Seed: Environment.TickCount
-            ));
-        }
-
-        private static string TryExtract(string text, string key)
-        {
-            try
-            {
-                var idx = text.IndexOf(key, StringComparison.OrdinalIgnoreCase);
-                if (idx < 0) return null;
-                var colon = text.IndexOf(':', idx);
-                if (colon < 0) return null;
-
-                int end = text.Length;
-                var comma = text.IndexOf(',', colon + 1);
-                var newline = text.IndexOf('\n', colon + 1);
-                var brace = text.IndexOf('}', colon + 1);
-                var bracket = text.IndexOf(']', colon + 1);
-                if (comma >= 0) end = Math.Min(end, comma);
-                if (newline >= 0) end = Math.Min(end, newline);
-                if (brace >= 0) end = Math.Min(end, brace);
-                if (bracket >= 0) end = Math.Min(end, bracket);
-
-                var raw = text.Substring(colon + 1, end - colon - 1).Trim().Trim('"');
-                return string.IsNullOrWhiteSpace(raw) ? null : raw;
-            }
-            catch { return null; }
-        }
-
-        private static string InferGenre(string prompt)
-        {
-            var p = prompt.ToLowerInvariant();
-            if (p.Contains("fps") || p.Contains("shooter")) return "FPS";
-            if (p.Contains("platform")) return "Platformer";
-            if (p.Contains("rpg")) return "RPG";
-            if (p.Contains("adventure")) return "Adventure";
-            if (p.Contains("survival")) return "Survival";
-            return "Adventure";
-        }
-
-        private static int InferMinutes(string prompt)
-        {
-            // pick the first number in range 3..60, else default 10
-            int num = 0;
-            var digits = new string(prompt.Where(char.IsDigit).ToArray());
-            if (int.TryParse(digits, out num))
-            {
-                if (num >= 3 && num <= 60) return num;
-            }
-            return 10;
-        }
-
-        private static int InferDifficulty(string prompt)
-        {
-            var p = prompt.ToLowerInvariant();
-            if (p.Contains("easy")) return 1;
-            if (p.Contains("hard")) return 3;
-            if (p.Contains("medium") || p.Contains("normal")) return 2;
-            return 2;
-        }
-
-        private static async Task<string> GenerateSceneFromBundleAsync(ContentBundle bundle, GamePlan gamePlan, WorldLayout world, InteractionGraph graph)
-        {
-            // Create a new scene for the generated game slice
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            
-            // Generate scene name from game plan
-            var sceneName = $"Generated_{gamePlan.Id}_{DateTime.Now:yyyyMMdd_HHmmss}";
-            var scenePath = $"Assets/GeneratedScenes/{sceneName}.unity";
-            
-            // Ensure directory exists
-            var directory = System.IO.Path.GetDirectoryName(scenePath);
-            if (!System.IO.Directory.Exists(directory))
-            {
-                System.IO.Directory.CreateDirectory(directory);
-            }
-
-            // Create basic scene structure
-            await CreateBasicSceneStructureAsync(scene, world, graph, gamePlan);
-            
-            // Save the scene
-            EditorSceneManager.SaveScene(scene, scenePath);
-            
-            return scenePath;
-        }
-
-        private static async Task CreateBasicSceneStructureAsync(UnityEngine.SceneManagement.Scene scene, WorldLayout world, InteractionGraph graph, GamePlan gamePlan)
-        {
-            // Create a main camera
-            var cameraGO = new GameObject("Main Camera");
-            var camera = cameraGO.AddComponent<Camera>();
-            cameraGO.transform.position = new Vector3(0, 5, -10);
-            cameraGO.transform.LookAt(Vector3.zero);
-
-            // Create a player object
-            var playerGO = new GameObject("Player");
-            playerGO.transform.position = Vector3.zero;
-            
-            // Add basic player components
-            var playerController = playerGO.AddComponent<CharacterController>();
-            playerController.height = 2f;
-            playerController.radius = 0.5f;
-            
-            // Add a simple capsule for visualization
-            var capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            capsule.transform.SetParent(playerGO.transform);
-            capsule.transform.localPosition = Vector3.zero;
-            capsule.name = "PlayerVisual";
-
-            // Create world geometry based on world layout
-            await CreateWorldGeometryAsync(world, gamePlan);
-            
-            // Create interaction points based on graph
-            await CreateInteractionPointsAsync(graph, gamePlan);
-            
-            // Add lighting
-            var lightGO = new GameObject("Directional Light");
-            var light = lightGO.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1f;
-            lightGO.transform.rotation = Quaternion.Euler(50, -30, 0);
-        }
-
-        private static async Task CreateWorldGeometryAsync(WorldLayout world, GamePlan gamePlan)
-        {
-            var worldGO = new GameObject("World");
-            
-            // Create basic floor
-            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            floor.transform.SetParent(worldGO.transform);
-            floor.transform.position = new Vector3(0, -1, 0);
-            floor.transform.localScale = new Vector3(world.Dimensions.x * 2, 1, world.Dimensions.y * 2);
-            floor.name = "Floor";
-            
-            // Create walls based on world dimensions
-            for (int x = 0; x < world.Dimensions.x; x++)
-            {
-                for (int y = 0; y < world.Dimensions.y; y++)
-                {
-                    var tile = world.Tiles.FirstOrDefault(t => t.GridPosition.x == x && t.GridPosition.y == y);
-                    if (tile != null)
-                    {
-                        await CreateTileGeometryAsync(tile, worldGO.transform, x, y);
-                    }
-                }
-            }
-        }
-
-        private static async Task CreateTileGeometryAsync(object tile, Transform parent, int x, int y)
-        {
-            // Create a simple cube for each tile
-            var tileGO = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            tileGO.transform.SetParent(parent);
-            tileGO.transform.position = new Vector3(x * 2, 0, y * 2);
-            tileGO.transform.localScale = new Vector3(1.8f, 2f, 1.8f);
-            tileGO.name = $"Tile_{x}_{y}";
-            
-            // Add a random color for variety
-            var renderer = tileGO.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = new Color(
-                    UnityEngine.Random.Range(0.3f, 0.8f),
-                    UnityEngine.Random.Range(0.3f, 0.8f),
-                    UnityEngine.Random.Range(0.3f, 0.8f)
-                );
-            }
-        }
-
-            private static async Task CreateInteractionPointsAsync(InteractionGraph graph, GamePlan gamePlan)
-            {
-                var interactionsGO = new GameObject("Interactions");
-                
-                foreach (var node in graph.Nodes)
-                {
-                    var nodeGO = new GameObject($"Interaction_{node.Id}");
-                    nodeGO.transform.SetParent(interactionsGO.transform);
-                    nodeGO.transform.position = node.WorldPosition;
-                    
-                    // Create visual representation based on node type
-                    GameObject visual = null;
-                    Color nodeColor = Color.white;
-                    
-                    switch (node.NodeType)
-                    {
-                        case "Enemy":
-                            visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                            nodeColor = Color.red;
-                            nodeGO.tag = "Enemy";
-                            break;
-                        case "Collectible":
-                            visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                            nodeColor = Color.blue;
-                            nodeGO.name = $"Keycard_{node.Id}";
-                            break;
-                        case "Door":
-                            visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                            nodeColor = Color.gray;
-                            nodeGO.name = $"Door_{node.Id}";
-                            break;
-                        case "Boss":
-                            visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-                            nodeColor = Color.magenta;
-                            nodeGO.name = $"Boss_{node.Id}";
-                            break;
-                        case "PowerUp":
-                            visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                            nodeColor = Color.green;
-                            nodeGO.name = $"PowerUp_{node.Id}";
-                            break;
-                        default:
-                            visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                            nodeColor = Color.yellow;
-                            break;
-                    }
-                    
-                    if (visual != null)
-                    {
-                        visual.transform.SetParent(nodeGO.transform);
-                        visual.transform.localPosition = Vector3.zero;
-                        visual.transform.localScale = Vector3.one * 0.8f;
-                        visual.name = "Visual";
-                        
-                        // Add color to make it visible
-                        var renderer = visual.GetComponent<Renderer>();
-                        if (renderer != null)
-                        {
-                            renderer.material.color = nodeColor;
-                        }
-                    }
-                }
-            }
-
-        private static async Task SetupAutoPlaytestAsync(string scenePath, GamePlan gamePlan)
-        {
-            // Find the player object in the scene
-            var scene = EditorSceneManager.GetSceneByPath(scenePath);
-            if (!scene.IsValid()) return;
-            
-            var playerGO = GameObject.Find("Player");
-            if (playerGO == null) return;
-            
-            // Add AgentDirector component
-            var agentDirector = playerGO.AddComponent<AgentDirector>();
-            
-            // Configure the agent director
-            agentDirector.prompt = gamePlan.Description;
-            agentDirector.attachAutoplayer = true;
-            
-            // Add AIAutoplayer component for automated testing
-            var autoplayer = playerGO.AddComponent<AIAutoplayer>();
-            
-            // Configure autoplayer behavior based on game plan
-            // AIAutoplayer uses built-in behavior, no Policy property needed
-            // It automatically prioritizes: enemy → power-up → goal → wander
-        }
-
-        private static async Task OpenSceneInEditorAsync(string scenePath)
-        {
-            // Load the scene in the editor
-            EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
-            
-            // Focus the scene view on the player
-            var playerGO = GameObject.Find("Player");
-            if (playerGO != null)
-            {
-                Selection.activeGameObject = playerGO;
-                SceneView.FrameLastActiveSceneView();
-            }
-            
-            // Set the scene as the active scene
-            var scene = EditorSceneManager.GetSceneByPath(scenePath);
-            EditorSceneManager.SetActiveScene(scene);
-        }
-
-        private static async Task SetupFeedbackCollectionAsync(string gamePlanId, string scenePath)
-        {
-            // Store the current game plan ID and scene path for feedback collection
-            EditorPrefs.SetString("CurrentGamePlanId", gamePlanId);
-            EditorPrefs.SetString("CurrentScenePath", scenePath);
-            
-            // Create a feedback collection component in the scene
-            var feedbackGO = new GameObject("FeedbackCollector");
-            var feedbackComponent = feedbackGO.AddComponent<FeedbackCollectorComponent>();
-            feedbackComponent.GamePlanId = gamePlanId;
-            feedbackComponent.ScenePath = scenePath;
-        }
-    }
-
-    /// <summary>
-    /// MonoBehaviour component for feedback collection in generated scenes.
-    /// </summary>
-    public class FeedbackCollectorComponent : MonoBehaviour
-    {
-        public string GamePlanId;
-        public string ScenePath;
-
-        [ContextMenu("Record Positive Feedback")]
-        public void RecordPositiveFeedback()
-        {
-            FeedbackCollector.RecordFeedback(GamePlanId, ScenePath, "Positive playtest experience", 5);
-        }
-
-        [ContextMenu("Record Negative Feedback")]
-        public void RecordNegativeFeedback()
-        {
-            FeedbackCollector.RecordFeedback(GamePlanId, ScenePath, "Issues identified during playtest", 2);
-        }
-
-        [ContextMenu("Show Feedback Summary")]
-        public void ShowFeedbackSummary()
-        {
-            var summary = FeedbackCollector.GenerateFeedbackSummary(GamePlanId);
-            Debug.Log($"Feedback Summary for {GamePlanId}:\n{summary}");
-        }
-    }
-    
-    /// <summary>
-    /// Simple playtesting integration for DirectorCliRunner
-    /// </summary>
-    public static class PlaytestIntegration
-    {
-        // Usage: -executeMethod NexoDirectorStudio.Editor.PlaytestIntegration.RunPlaytest --prompt "FPS game" --testDuration 15
-        public static void RunPlaytest()
-        {
-            try
-            {
-                var args = Environment.GetCommandLineArgs();
-                var prompt = ReadArg(args, "--prompt") ?? ReadArg(args, "-prompt") ?? "FPS shooter with enemies and power-ups";
-                var testDuration = float.TryParse(ReadArg(args, "--testDuration") ?? ReadArg(args, "-testDuration"), out var td) ? td : 15f;
-                var resultsPath = ReadArg(args, "--results") ?? ReadArg(args, "-results") ?? Path.GetFullPath("playtest-integration-results.json");
-
-                System.Console.WriteLine("=== Playtest Integration ===");
-                System.Console.WriteLine($"Prompt: {prompt}");
-                System.Console.WriteLine($"Test Duration: {testDuration}s");
-                System.Console.WriteLine();
-
-                // 1. Generate game content using existing DirectorCliRunner
-                System.Console.WriteLine("🎬 Phase 1: Generating game content...");
-                using var service = new DirectorStudioService();
-                var designBrief = DirectorCliRunner.PromptToBriefAsync(service, prompt, CancellationToken.None).Result;
-                
-                var plan = new PlanGameSliceCommand().ExecuteAsync(new IPlanGameSliceCommand.Input(designBrief), CancellationToken.None).Result;
-                var world = new BuildWorldLayoutCommand().ExecuteAsync(new IBuildWorldLayoutCommand.Input(plan), CancellationToken.None).Result;
-                var interactions = new PlaceInteractionsCommand().ExecuteAsync(new IPlaceInteractionsCommand.Input(world, plan), CancellationToken.None).Result;
-                var bundle = new CreateContentBundleCommand().ExecuteAsync(new ICreateContentBundleCommand.Input(interactions, plan), CancellationToken.None).Result;
-                
-                System.Console.WriteLine($"✓ Generated: {plan.CoreMechanics.Count} mechanics, {world.Tiles.Count} tiles, {interactions.Nodes.Count} interactions");
-
-                // 2. Create playtest scene
-                System.Console.WriteLine("🎮 Phase 2: Creating playtest scene...");
-                var scenePath = CreatePlaytestScene(plan, world);
-                System.Console.WriteLine($"✓ Scene created: {scenePath}");
-
-                // 3. Run playtest
-                System.Console.WriteLine($"🤖 Phase 3: Running AI playtest for {testDuration}s...");
-                var metrics = RunPlaytestSync(scenePath, testDuration);
-                System.Console.WriteLine($"✓ Playtest completed: {metrics.interactionTriggerCount} interactions triggered");
-
-                // 4. Save results
-                System.Console.WriteLine("💾 Phase 4: Saving results...");
-                SaveResults(metrics, prompt, testDuration, resultsPath);
-                System.Console.WriteLine($"✓ Results saved: {resultsPath}");
-
-                System.Console.WriteLine("✅ Playtest integration completed successfully!");
                 EditorApplication.Exit(0);
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"❌ Playtest integration failed: {ex.Message}");
+                System.Console.WriteLine($"❌ Director CLI Runner failed: {ex.Message}");
+                System.Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 EditorApplication.Exit(1);
             }
         }
-        
-        private static string CreatePlaytestScene(GamePlan plan, WorldLayout world)
+
+        public static async Task<DesignBrief> PromptToBriefAsync(DirectorStudioService service, string prompt, CancellationToken cancellationToken)
+        {
+            // Simple prompt-to-brief conversion for CLI
+            var brief = new DesignBrief(
+                Description: prompt,
+                GenreHint: ExtractGenreHint(prompt),
+                TargetDurationMinutes: ExtractDuration(prompt),
+                DifficultyLevel: ExtractDifficulty(prompt),
+                Seed: Environment.TickCount
+            );
+            
+            return brief;
+        }
+
+        private static string ExtractGenreHint(string prompt)
+        {
+            var lower = prompt.ToLower();
+            if (lower.Contains("fps") || lower.Contains("shooter") || lower.Contains("gun")) return "fps";
+            if (lower.Contains("rpg") || lower.Contains("role") || lower.Contains("character")) return "rpg";
+            if (lower.Contains("platform") || lower.Contains("jump") || lower.Contains("mario")) return "platformer";
+            if (lower.Contains("puzzle") || lower.Contains("solve") || lower.Contains("brain")) return "puzzle";
+            if (lower.Contains("racing") || lower.Contains("car") || lower.Contains("speed")) return "racing";
+            if (lower.Contains("strategy") || lower.Contains("tactical") || lower.Contains("plan")) return "strategy";
+            return "adventure";
+        }
+
+        private static int ExtractDuration(string prompt)
+        {
+            var lower = prompt.ToLower();
+            if (lower.Contains("short") || lower.Contains("quick")) return 5;
+            if (lower.Contains("long") || lower.Contains("extended")) return 30;
+            if (lower.Contains("medium")) return 15;
+            return 10;
+        }
+
+        private static int ExtractDifficulty(string prompt)
+        {
+            var lower = prompt.ToLower();
+            if (lower.Contains("easy") || lower.Contains("simple")) return 1;
+            if (lower.Contains("hard") || lower.Contains("difficult") || lower.Contains("challenging")) return 5;
+            if (lower.Contains("medium")) return 3;
+            return 3;
+        }
+
+        private static async Task<string> CreateSceneAsync(GamePlan plan, WorldLayout world, InteractionGraph interactions, ContentBundle bundle)
         {
             // Create a new scene
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             
-            // Create basic FPS game structure
-            var gameGO = new GameObject("FPSGame");
+            // Create main game object
+            var gameGO = new GameObject("GeneratedGame");
             var game = gameGO.AddComponent<NexoDirectorStudio.Game.DoomFPSGame>();
             game.gamePlan = plan;
             game.worldLayout = world;
+            game.interactionGraph = interactions;
+            game.contentBundle = bundle;
             
-            // Create player with autoplayer
+            // Create player
             var player = new GameObject("Player");
             player.tag = "Player";
             player.AddComponent<CharacterController>();
@@ -592,113 +204,138 @@ namespace NexoDirectorStudio.Editor
             var busGO = new GameObject("InteractionBus");
             var bus = busGO.AddComponent<InteractionBus>();
             
-            // Create test interactions
-            CreateTestInteractions(bus);
+            // Create world tiles
+            CreateWorldTiles(world, bus);
+            
+            // Create interactive objects
+            CreateInteractiveObjects(interactions, bus);
             
             // Save scene
-            var scenePath = $"Assets/GeneratedScenes/Playtest_{plan.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.unity";
+            var scenePath = $"Assets/GeneratedScenes/Generated_{plan.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.unity";
             Directory.CreateDirectory(Path.GetDirectoryName(scenePath));
             EditorSceneManager.SaveScene(scene, scenePath);
             
             return scenePath;
         }
-        
-        private static void CreateTestInteractions(InteractionBus bus)
+
+        private static void CreateWorldTiles(WorldLayout world, InteractionBus bus)
         {
-            // Create power-ups
-            for (int i = 0; i < 3; i++)
+            foreach (var tile in world.Tiles)
             {
-                var powerUp = new GameObject($"PowerUp_{i}");
-                powerUp.tag = "PowerUp";
-                powerUp.transform.position = new Vector3(i * 5, 1, 5);
+                var tileGO = new GameObject($"Tile_{tile.GridPosition.x}_{tile.GridPosition.y}");
+                tileGO.transform.position = tile.WorldPosition;
                 
-                var collider = powerUp.AddComponent<BoxCollider>();
-                collider.isTrigger = true;
+                // Add collider
+                var collider = tileGO.AddComponent<BoxCollider>();
+                collider.size = Vector3.one;
                 
-                var interaction = powerUp.AddComponent<SimpleTestInteraction>();
-                bus.Register(interaction);
-            }
-            
-            // Create enemies
-            for (int i = 0; i < 2; i++)
-            {
-                var enemy = new GameObject($"Enemy_{i}");
-                enemy.tag = "Enemy";
-                enemy.transform.position = new Vector3(i * 8, 1, 8);
+                // Add material based on tile type
+                var renderer = tileGO.AddComponent<MeshRenderer>();
+                var mesh = tileGO.AddComponent<MeshFilter>();
+                mesh.mesh = CreateCubeMesh();
                 
-                var collider = enemy.AddComponent<BoxCollider>();
-                collider.isTrigger = true;
-                
-                var interaction = enemy.AddComponent<SimpleTestInteraction>();
-                bus.Register(interaction);
+                // Set material color based on tile type
+                var material = new Material(Shader.Find("Standard"));
+                material.color = GetTileColor(tile.TileType);
+                renderer.material = material;
             }
         }
-        
-        private static PlaytestMetrics RunPlaytestSync(string scenePath, float testDuration)
+
+        private static void CreateInteractiveObjects(InteractionGraph interactions, InteractionBus bus)
         {
-            // Load the scene
+            foreach (var node in interactions.Nodes)
+            {
+                var objGO = new GameObject($"Interaction_{node.Name}");
+                objGO.transform.position = node.WorldPosition;
+                
+                // Add collider
+                var collider = objGO.AddComponent<BoxCollider>();
+                collider.isTrigger = true;
+                collider.size = Vector3.one * 2;
+                
+                // Add interaction component
+                var interaction = objGO.AddComponent<SimpleTestInteraction>();
+                bus.Register(interaction);
+                
+                // Add visual representation
+                var renderer = objGO.AddComponent<MeshRenderer>();
+                var mesh = objGO.AddComponent<MeshFilter>();
+                mesh.mesh = CreateSphereMesh();
+                
+                var material = new Material(Shader.Find("Standard"));
+                material.color = GetInteractionColor(node.NodeType);
+                renderer.material = material;
+            }
+        }
+
+        private static async Task SetupPlaytestingAsync(string scenePath, GamePlan plan)
+        {
+            // Add feedback collector to the scene
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
-            if (!scene.IsValid())
-            {
-                throw new Exception($"Failed to load scene: {scenePath}");
-            }
+            var feedbackGO = new GameObject("FeedbackCollector");
+            var feedback = feedbackGO.AddComponent<FeedbackCollectorComponent>();
+            feedback.GamePlanId = plan.Id;
+            feedback.ScenePath = scenePath;
             
-            // Create playtest agent
-            var agentGO = new GameObject("SimplePlaytestAgent");
-            var agent = agentGO.AddComponent<SimplePlaytestAgent>();
-            agent.testDuration = testDuration;
-            agent.enableMetrics = true;
-            
-            // Set up completion handler
-            PlaytestMetrics result = null;
-            var completed = false;
-            
-            agent.OnPlaytestComplete += (metrics) =>
-            {
-                result = metrics;
-                completed = true;
-            };
-            
-            // Wait for playtest completion synchronously
-            var startTime = Time.time;
-            while (!completed && (Time.time - startTime) < testDuration + 10)
-            {
-                System.Threading.Thread.Sleep(16);
-            }
-            
-            // Cleanup
-            if (agentGO != null)
-            {
-                UnityEngine.Object.DestroyImmediate(agentGO);
-            }
-            
-            return result ?? new PlaytestMetrics { playtestCompleted = false };
+            EditorSceneManager.SaveScene(scene);
         }
-        
-        private static void SaveResults(PlaytestMetrics metrics, string prompt, float testDuration, string resultsPath)
+
+        private static Mesh CreateCubeMesh()
         {
-            var result = new
+            var mesh = new Mesh();
+            mesh.vertices = new Vector3[]
             {
-                prompt = prompt,
-                testDuration = testDuration,
-                success = metrics.playtestCompleted,
-                metrics = new
-                {
-                    playtestDuration = metrics.totalPlaytestDuration,
-                    averageFPS = metrics.averageFPS,
-                    maxDistanceTraveled = metrics.maxDistanceTraveled,
-                    totalInteractionsFound = metrics.totalInteractionsFound,
-                    interactionTriggerCount = metrics.interactionTriggerCount,
-                    interactionSuccessRate = metrics.interactionSuccessRate
-                },
-                timestamp = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                new Vector3(-0.5f, -0.5f, -0.5f), new Vector3(0.5f, -0.5f, -0.5f), new Vector3(0.5f, 0.5f, -0.5f), new Vector3(-0.5f, 0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f, 0.5f), new Vector3(0.5f, -0.5f, 0.5f), new Vector3(0.5f, 0.5f, 0.5f), new Vector3(-0.5f, 0.5f, 0.5f)
             };
-            
-            var json = JsonUtility.ToJson(result, true);
-            Directory.CreateDirectory(Path.GetDirectoryName(resultsPath));
-            File.WriteAllText(resultsPath, json);
+            mesh.triangles = new int[]
+            {
+                0, 2, 1, 0, 3, 2, 2, 3, 4, 2, 4, 5, 1, 2, 5, 5, 2, 6, 4, 7, 6, 4, 6, 5, 0, 7, 4, 0, 4, 3, 0, 1, 5, 0, 5, 4
+            };
+            mesh.RecalculateNormals();
+            return mesh;
         }
-        
+
+        private static Mesh CreateSphereMesh()
+        {
+            var mesh = new Mesh();
+            mesh.vertices = new Vector3[]
+            {
+                new Vector3(0, 0.5f, 0), new Vector3(0.5f, 0, 0), new Vector3(0, 0, 0.5f), new Vector3(-0.5f, 0, 0), new Vector3(0, 0, -0.5f), new Vector3(0, -0.5f, 0)
+            };
+            mesh.triangles = new int[]
+            {
+                0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1, 5, 2, 1, 5, 3, 2, 5, 4, 3, 5, 1, 4
+            };
+            mesh.RecalculateNormals();
+            return mesh;
+        }
+
+        private static Color GetTileColor(string tileType)
+        {
+            return tileType.ToLower() switch
+            {
+                "ground" => Color.green,
+                "wall" => Color.gray,
+                "platform" => Color.yellow,
+                "hazard" => Color.red,
+                _ => Color.white
+            };
+        }
+
+        private static Color GetInteractionColor(string nodeType)
+        {
+            return nodeType.ToLower() switch
+            {
+                "trigger" => Color.blue,
+                "event" => Color.cyan,
+                "quest" => Color.magenta,
+                "dialog" => Color.yellow,
+                "spawn" => Color.green,
+                _ => Color.white
+            };
+        }
+
         private static string ReadArg(string[] args, string name)
         {
             for (int i = 0; i < args.Length - 1; i++)
@@ -709,78 +346,4 @@ namespace NexoDirectorStudio.Editor
             return null;
         }
     }
-    
-    // Simple test interaction for playtesting
-    public class SimpleTestInteraction : MonoBehaviour, IInteraction
-    {
-        public event Action<IInteraction> Triggered;
-        public bool IsArmed { get; private set; }
-        public bool HasTriggered { get; private set; }
-        public string InteractionId => $"simple-test-{GetInstanceID()}";
-        private float _triggerTime;
-        private int _triggerCount;
-        
-        void Start()
-        {
-            Initialize();
-            Arm();
-        }
-        
-        void OnTriggerEnter(Collider other)
-        {
-            if (IsArmed && !HasTriggered && other.CompareTag("Player"))
-            {
-                Trigger();
-            }
-        }
-        
-        public void Initialize()
-        {
-            IsArmed = false;
-            HasTriggered = false;
-            _triggerTime = 0f;
-            _triggerCount = 0;
-        }
-        
-        public void Arm()
-        {
-            IsArmed = true;
-        }
-        
-        public void Trigger()
-        {
-            if (!IsArmed || HasTriggered) return;
-            
-            HasTriggered = true;
-            _triggerTime = Time.time;
-            _triggerCount++;
-            
-            Triggered?.Invoke(this);
-            Debug.Log($"🎯 Simple interaction triggered: {name}");
-        }
-        
-        public bool TryInvoke()
-        {
-            if (!IsArmed || HasTriggered) return false;
-            
-            Trigger();
-            return true;
-        }
-        
-        public InteractionMetadata GetMetadata()
-        {
-            return new InteractionMetadata
-            {
-                Type = "SimpleTestInteraction",
-                Name = name,
-                Position = transform.position,
-                IsArmed = IsArmed,
-                HasTriggered = HasTriggered,
-                TriggerTime = _triggerTime,
-                TriggerCount = _triggerCount
-            };
-        }
-    }
 }
-
-

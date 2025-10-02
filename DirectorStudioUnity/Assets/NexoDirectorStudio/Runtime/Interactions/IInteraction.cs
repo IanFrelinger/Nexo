@@ -27,7 +27,7 @@ namespace NexoDirectorStudio.Interactions
         /// <summary>
         /// Gets the interaction ID for tracking purposes.
         /// </summary>
-        string InteractionId { get; }
+        new string InteractionId { get; }
         
         /// <summary>
         /// Initialize the interaction (called once during registration)
@@ -48,7 +48,7 @@ namespace NexoDirectorStudio.Interactions
         /// Attempts to invoke this interaction directly.
         /// </summary>
         /// <returns>True if the interaction was successfully triggered</returns>
-        bool TryInvoke();
+        new bool TryInvoke();
         
         /// <summary>
         /// Get interaction metadata for metrics

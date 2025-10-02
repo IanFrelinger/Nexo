@@ -1,9 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System;
-using System.Collections.Generic;
-
 
 namespace NexoDirectorStudio.DTO
 {
@@ -40,22 +36,4 @@ namespace NexoDirectorStudio.DTO
         public DateTimeOffset GeneratedAt { get; init; } = GeneratedAt;
         public string Hash { get; init; } = Hash;
     }
-    
-    /// <summary>
-    /// Represents a difficulty beat in the game progression.
-    /// </summary>
-    public sealed record DifficultyBeat(
-        float TimeOffsetSeconds,
-        int DifficultyLevel,
-        string Description);
-    
-    /// <summary>
-    /// Represents an asset requirement for the game slice.
-    /// </summary>
-    public sealed record AssetRequirement(
-        string AssetType,
-        string Name,
-        string Description,
-        bool IsRequired = true,
-        int Priority = 3);
 }
