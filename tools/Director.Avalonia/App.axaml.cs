@@ -53,6 +53,9 @@ public partial class App : Application
         services.AddSingleton<NexoCommandService>();
         services.AddSingleton<SystemSettingsService>();
         services.AddSingleton<UnityDiscoveryService>();
+        services.AddSingleton<CodeModificationService>();
+        services.AddSingleton<NaturalLanguageProcessor>();
+        services.AddSingleton<HotReloadService>();
 
         // ViewModels
         services.AddSingleton<EnhancedMainViewModel>();
@@ -61,6 +64,7 @@ public partial class App : Application
         services.AddTransient<LogsViewModel>();
         services.AddTransient<GatesViewModel>();
         services.AddTransient<ValidationViewModel>();
+        services.AddTransient<CodeModificationViewModel>();
     }
 
     // OnExit method removed - not compatible with current Avalonia version
