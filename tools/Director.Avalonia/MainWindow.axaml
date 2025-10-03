@@ -5,10 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="Director.Avalonia.MainWindow"
-        x:DataType="vm:MainViewModel"
+        x:DataType="vm:EnhancedMainViewModel"
         Title="Director Studio - Nexo Companion"
         Width="1200" Height="800"
-        MinWidth="800" MinHeight="600">
+        MinWidth="800" MinHeight="600"
+        FontFamily="{Binding SystemFontFamily}"
+        FontSize="{Binding SystemFontSize}">
 
   <Grid>
     <Grid.RowDefinitions>
@@ -59,6 +61,23 @@
         <ScrollViewer>
           <StackPanel Margin="16" Spacing="16">
             
+            <!-- Unity Discovery -->
+            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
+              <StackPanel>
+                <TextBlock Text="Unity Discovery" FontWeight="Bold" Margin="0,0,0,8"/>
+                <StackPanel Spacing="8">
+                  <Button Content="Auto-Discover Unity" Command="{Binding AutoDiscoverUnityCommand}" 
+                          HorizontalAlignment="Stretch" Background="#0078D4"/>
+                  <TextBlock Text="{Binding UnityStatus}" FontSize="11" Opacity="0.8" TextWrapping="Wrap"/>
+                  <ComboBox ItemsSource="{Binding UnityInstallations}" 
+                            SelectedItem="{Binding SelectedUnityInstallation}"
+                            DisplayMemberBinding="{Binding Version}">
+                    <ComboBox.PlaceholderText>Select Unity Installation</ComboBox.PlaceholderText>
+                  </ComboBox>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
             <!-- Connection Settings -->
             <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
               <StackPanel>
@@ -68,6 +87,8 @@
                   <TextBox Text="{Binding Token}" Watermark="Unity token..."/>
                   <Button Content="Auto-Discover Token" Command="{Binding AutoDiscoverTokenCommand}" 
                           HorizontalAlignment="Stretch"/>
+                  <Button Content="Auto-Connect" Command="{Binding AutoConnectCommand}" 
+                          HorizontalAlignment="Stretch" Background="#28A745"/>
                 </StackPanel>
               </StackPanel>
             </Border>

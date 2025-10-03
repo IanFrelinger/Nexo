@@ -31,7 +31,7 @@ public partial class App : Application
             .Build();
 
         // Get services
-        var mainViewModel = _host.Services.GetRequiredService<MainViewModel>();
+        var mainViewModel = _host.Services.GetRequiredService<EnhancedMainViewModel>();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -51,9 +51,12 @@ public partial class App : Application
         services.AddSingleton<TokenService>();
         services.AddSingleton<DiffService>();
         services.AddSingleton<NexoCommandService>();
+        services.AddSingleton<SystemSettingsService>();
+        services.AddSingleton<UnityDiscoveryService>();
 
         // ViewModels
-        services.AddTransient<MainViewModel>();
+        services.AddSingleton<EnhancedMainViewModel>();
+        services.AddTransient<MainViewModel>(); // Keep for compatibility
         services.AddTransient<ConnectionViewModel>();
         services.AddTransient<LogsViewModel>();
         services.AddTransient<GatesViewModel>();
