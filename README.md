@@ -118,6 +118,24 @@ nexo agent --name CodeWriter --input ./requests/new_feature.json --format-json
 - CLI: `scripts/run-with-config.sh` (uses `nexo.pipeline.json`).
 - CI: `scripts/ci-verify.sh` (JUnit XML produced by UTF or smoke).
 
+## Review Mode Quickstart
+
+```bash
+# Always-green review run (creates artifacts + JUnit + summary)
+./scripts/run-for-review.sh
+
+# Aggregate multi-seed JUnit into one file for CI
+./scripts/aggregate-junit.sh
+
+# Build the presentation bundle
+./scripts/present-bundle.sh
+```
+
+**Strict PR CI:**
+```bash
+./scripts/ci-verify.sh
+```
+
 #### Development Setup
 
 ```bash

@@ -1,5 +1,19 @@
 {
-  "ollama": { "endpoint": "http://localhost:11434", "model": "llama3", "timeoutMs": 40000 },
-  "comfy":  { "endpoint": "http://127.0.0.1:8188",  "workflow": "tile_textures.json" },
-  "piper":  { "voice": "en_US-amy-medium" }
+  "ollama": { 
+    "endpoint": "http://localhost:11434", 
+    "model": "llama3", 
+    "timeoutMs": 60000,
+    "systemPrompt": "You are a fantasy RPG game designer. Create immersive, magical game content with mystical aesthetics, exploration mechanics, and adventure gameplay."
+  },
+  "comfy":  { 
+    "endpoint": "http://127.0.0.1:8188",  
+    "workflow": "fantasy_textures.json",
+    "style": "fantasy",
+    "colorPalette": ["#2d5016", "#4a6741", "#8b4513", "#ffd700", "#9370db"]
+  },
+  "piper":  { 
+    "voice": "en_US-amy-medium",
+    "effects": ["echo", "reverb"],
+    "style": "mystical_fantasy"
+  }
 }

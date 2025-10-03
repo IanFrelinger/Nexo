@@ -1,8 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 LG="Artifacts/last_good"
-[[ -d "$LG" ]] || { echo "No last_good yet"; exit 1; }
+if [[ ! -d "$LG" ]]; then
+  echo "No last_good directory found."
+  exit 1
+fi
+
+RC=0
 for p in Plan Layout Placement Content Validate; do
-  [[ -s "$LG/$p/output.json" ]] || { echo "Missing last_good for $p"; exit 2; }
+  if [[ ! -s "$LG/$p/output.json" ]]; then
+    echo "Missing or empty: $LG/$p/output.json"
+    RC=2
+  else
+    echo "OK: $LG/$p/output.json"
+  fi
 done
-echo "last_good complete"
+
+exit $RC

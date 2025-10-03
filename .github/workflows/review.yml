@@ -1,0 +1,44 @@
+name: Review Mode (Always-Green)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"  # 3AM UTC nightly, optional
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    env:
+      UNITY_BIN: /Applications/Unity/Hub/Editor/6000.0.0f1/Unity.app/Contents/MacOS/Unity
+      PROJ: ${{ github.workspace }}/DirectorStudioUnity
+      ART:  ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libxml2 + jq
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils jq
+
+      - name: Run for review (always-green)
+        run: ./scripts/run-for-review.sh || true
+
+      - name: Aggregate JUnit across seeds
+        run: ./scripts/aggregate-junit.sh playmode-review-aggregate.junit.xml Artifacts/*/playmode-smoke.junit.xml
+
+      - name: Generate markdown summary
+        run: ./scripts/review-summary-md.sh review_summary.json REVIEW_SUMMARY.md
+
+      - name: Build presentation bundle
+        run: ./scripts/present-bundle.sh
+
+      - name: Upload review bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-bundle
+          path: |
+            Presentation/boomer-slice/**
+            playmode-review-aggregate.junit.xml
+            review_summary.json
+            REVIEW_SUMMARY.md
+            Artifacts/**/playmode-smoke.junit.xml
+            Artifacts/**/playmode-smoke.json
+            Artifacts/**/functional_smoke.json

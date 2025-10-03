@@ -1,0 +1,33 @@
+name: PR - Strict CI
+on:
+  pull_request:
+
+jobs:
+  strict-ci:
+    runs-on: ubuntu-latest   # Prefer a self-hosted Unity runner if you have one
+    env:
+      UNITY_BIN: /Applications/Unity/Hub/Editor/6000.0.0f1/Unity.app/Contents/MacOS/Unity
+      PROJ: ${{ github.workspace }}/DirectorStudioUnity
+      ART:  ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # (Optional) install libxml2 for xmllint used by aggregate script
+      - name: Install libxml2 (xmllint)
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils jq
+
+      - name: Strict CI Gate
+        run: ./scripts/ci-verify.sh
+
+      - name: Upload artifacts (JUnit + logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-ci-artifacts
+          path: |
+            playmode-results.xml
+            playmode-smoke.junit.xml
+            playmode-smoke.json
+            functional_smoke.json
+            unity-playmode.log
+            unity-smoke.log
