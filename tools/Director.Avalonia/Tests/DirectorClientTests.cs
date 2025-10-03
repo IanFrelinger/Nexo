@@ -2,29 +2,38 @@ using Director.Avalonia.Services;
 using Director.Core.Protocol;
 using System.Text.Json;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace Director.Avalonia.Tests;
 
 public class DirectorClientTests
 {
+    private readonly ILogger<DirectorClient> _logger;
+
+    public DirectorClientTests()
+    {
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        _logger = loggerFactory.CreateLogger<DirectorClient>();
+    }
+
     [Fact]
     public void DirectorClient_InitialState_IsNotConnected()
     {
-        using var client = new DirectorClient();
+        using var client = new DirectorClient(_logger);
         Assert.False(client.IsConnected);
     }
 
     [Fact]
     public void DirectorClient_Dispose_DoesNotThrow()
     {
-        using var client = new DirectorClient();
+        using var client = new DirectorClient(_logger);
         // Should not throw
     }
 
     [Fact]
     public async Task DirectorClient_SendCommand_WhenNotConnected_DoesNotThrow()
     {
-        using var client = new DirectorClient();
+        using var client = new DirectorClient(_logger);
         var command = new DirectorCommand("test", "test", new { });
         
         // Should not throw, just silently fail

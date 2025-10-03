@@ -52,6 +52,9 @@ public partial class EnhancedMainViewModel : ObservableObject
     [ObservableProperty]
     private SystemTheme _systemTheme = SystemTheme.Light;
 
+    [ObservableProperty]
+    private bool _useFileBasedCommunication = true; // Default to file-based for sandboxed testing
+
     public ObservableCollection<LogLineEvent> Logs { get; } = new();
     public ObservableCollection<GateResultEvent> Gates { get; } = new();
     public ObservableCollection<UnityInstallation> UnityInstallations { get; } = new();
@@ -206,12 +209,17 @@ public partial class EnhancedMainViewModel : ObservableObject
             return;
         }
 
-        StatusMessage = "Connecting...";
+        // Set the communication mode before connecting
+        _directorClient.UseFileBasedCommunication = UseFileBasedCommunication;
+        
+        StatusMessage = UseFileBasedCommunication ? "Connecting via file-based communication..." : "Connecting to Unity Editor...";
         var success = await _directorClient.ConnectAsync(Token);
         
         if (success)
         {
-            StatusMessage = "Connected to Unity Editor";
+            StatusMessage = UseFileBasedCommunication 
+                ? "Connected via file-based communication (Mock Unity)" 
+                : "Connected to Unity Editor";
             LastActivity = DateTime.Now.ToString("HH:mm:ss");
         }
         else
