@@ -5,104 +5,240 @@ namespace Director.Core.Protocol;
 /// <summary>
 /// Payload for running Nexo CLI commands
 /// </summary>
-/// <param name="Command">Nexo command (analyze, validate, agent, etc.)</param>
-/// <param name="Args">Command arguments</param>
-/// <param name="WorkingDirectory">Working directory for the command</param>
-public sealed record RunNexoPayload(string Command, string[] Args, string? WorkingDirectory = null);
+public sealed class RunNexoPayload
+{
+    public string Command { get; set; } = string.Empty;
+    public string[] Args { get; set; } = Array.Empty<string>();
+    public string? WorkingDirectory { get; set; }
+
+    public RunNexoPayload() { }
+
+    public RunNexoPayload(string command, string[] args, string? workingDirectory = null)
+    {
+        Command = command;
+        Args = args;
+        WorkingDirectory = workingDirectory;
+    }
+}
 
 /// <summary>
 /// Payload for opening Unity scenes
 /// </summary>
-/// <param name="ScenePath">Path to the scene file</param>
-public sealed record OpenScenePayload(string ScenePath);
+public sealed class OpenScenePayload
+{
+    public string ScenePath { get; set; } = string.Empty;
+
+    public OpenScenePayload() { }
+
+    public OpenScenePayload(string scenePath)
+    {
+        ScenePath = scenePath;
+    }
+}
 
 /// <summary>
 /// Payload for toggling Unity play mode
 /// </summary>
-/// <param name="ForceState">Force specific play state, null to toggle</param>
-public sealed record TogglePlayPayload(bool? ForceState = null);
+public sealed class TogglePlayPayload
+{
+    public bool? ForceState { get; set; }
+
+    public TogglePlayPayload() { }
+
+    public TogglePlayPayload(bool? forceState = null)
+    {
+        ForceState = forceState;
+    }
+}
 
 /// <summary>
 /// Payload for applying UI modifications to Unity Editor
 /// </summary>
-/// <param name="TargetSlot">Target UI slot identifier</param>
-/// <param name="UiSchema">UI schema definition as JSON</param>
-public sealed record ApplyUIModPayload(string TargetSlot, JsonElement UiSchema);
+public sealed class ApplyUIModPayload
+{
+    public string TargetSlot { get; set; } = string.Empty;
+    public JsonElement UiSchema { get; set; }
+
+    public ApplyUIModPayload() { }
+
+    public ApplyUIModPayload(string targetSlot, JsonElement uiSchema)
+    {
+        TargetSlot = targetSlot;
+        UiSchema = uiSchema;
+    }
+}
 
 /// <summary>
 /// Payload for getting Unity project information
 /// </summary>
-public sealed record GetProjectInfoPayload();
+public sealed class GetProjectInfoPayload
+{
+    public GetProjectInfoPayload() { }
+}
 
 /// <summary>
 /// Payload for listing Unity scenes
 /// </summary>
-public sealed record ListScenesPayload();
+public sealed class ListScenesPayload
+{
+    public ListScenesPayload() { }
+}
 
 /// <summary>
 /// Payload for ping/health check
 /// </summary>
-public sealed record PingPayload();
+public sealed class PingPayload
+{
+    public PingPayload() { }
+}
 
 // Event payloads
 
 /// <summary>
 /// Event payload for log lines
 /// </summary>
-/// <param name="Line">Log line content</param>
-/// <param name="Level">Log level</param>
-public sealed record LogLineEvent(string Line, LogLevel Level = LogLevel.Information);
+public sealed class LogLineEvent
+{
+    public string Line { get; set; } = string.Empty;
+    public LogLevel Level { get; set; } = LogLevel.Information;
+
+    public LogLineEvent() { }
+
+    public LogLineEvent(string line, LogLevel level = LogLevel.Information)
+    {
+        Line = line;
+        Level = level;
+    }
+}
 
 /// <summary>
 /// Event payload for command completion
 /// </summary>
-/// <param name="ExitCode">Process exit code</param>
-/// <param name="Error">Error message if any</param>
-public sealed record RunFinishedEvent(int ExitCode, string? Error = null);
+public sealed class RunFinishedEvent
+{
+    public int ExitCode { get; set; }
+    public string? Error { get; set; }
+
+    public RunFinishedEvent() { }
+
+    public RunFinishedEvent(int exitCode, string? error = null)
+    {
+        ExitCode = exitCode;
+        Error = error;
+    }
+}
 
 /// <summary>
 /// Event payload for Unity play state changes
 /// </summary>
-/// <param name="IsPlaying">Current play state</param>
-public sealed record PlayStateEvent(bool IsPlaying);
+public sealed class PlayStateEvent
+{
+    public bool IsPlaying { get; set; }
+
+    public PlayStateEvent() { }
+
+    public PlayStateEvent(bool isPlaying)
+    {
+        IsPlaying = isPlaying;
+    }
+}
 
 /// <summary>
 /// Event payload for Unity compilation events
 /// </summary>
-/// <param name="Started">True if compilation started, false if finished</param>
-public sealed record CompilationEvent(bool Started);
+public sealed class CompilationEvent
+{
+    public bool Started { get; set; }
+
+    public CompilationEvent() { }
+
+    public CompilationEvent(bool started)
+    {
+        Started = started;
+    }
+}
 
 /// <summary>
 /// Event payload for gate validation results
 /// </summary>
-/// <param name="GateName">Name of the gate</param>
-/// <param name="Passed">Whether the gate passed</param>
-/// <param name="Message">Optional message</param>
-public sealed record GateResultEvent(string GateName, bool Passed, string? Message = null);
+public sealed class GateResultEvent
+{
+    public string GateName { get; set; } = string.Empty;
+    public bool Passed { get; set; }
+    public string? Message { get; set; }
+
+    public GateResultEvent() { }
+
+    public GateResultEvent(string gateName, bool passed, string? message = null)
+    {
+        GateName = gateName;
+        Passed = passed;
+        Message = message;
+    }
+}
 
 /// <summary>
 /// Event payload for heartbeat/keepalive
 /// </summary>
-/// <param name="Timestamp">Heartbeat timestamp</param>
-public sealed record HeartbeatEvent(DateTime Timestamp);
+public sealed class HeartbeatEvent
+{
+    public DateTime Timestamp { get; set; }
+
+    public HeartbeatEvent() { }
+
+    public HeartbeatEvent(DateTime timestamp)
+    {
+        Timestamp = timestamp;
+    }
+}
 
 /// <summary>
 /// Event payload for connection status
 /// </summary>
-/// <param name="Connected">Connection status</param>
-/// <param name="Message">Status message</param>
-public sealed record ConnectionEvent(bool Connected, string Message);
+public sealed class ConnectionEvent
+{
+    public bool Connected { get; set; }
+    public string Message { get; set; } = string.Empty;
+
+    public ConnectionEvent() { }
+
+    public ConnectionEvent(bool connected, string message)
+    {
+        Connected = connected;
+        Message = message;
+    }
+}
 
 /// <summary>
 /// Event payload for Unity project information
 /// </summary>
-/// <param name="ProjectName">Unity project name</param>
-/// <param name="UnityVersion">Unity version</param>
-/// <param name="ProjectPath">Project root path</param>
-public sealed record ProjectInfoEvent(string ProjectName, string UnityVersion, string ProjectPath);
+public sealed class ProjectInfoEvent
+{
+    public string ProjectName { get; set; } = string.Empty;
+    public string UnityVersion { get; set; } = string.Empty;
+    public string ProjectPath { get; set; } = string.Empty;
+
+    public ProjectInfoEvent() { }
+
+    public ProjectInfoEvent(string projectName, string unityVersion, string projectPath)
+    {
+        ProjectName = projectName;
+        UnityVersion = unityVersion;
+        ProjectPath = projectPath;
+    }
+}
 
 /// <summary>
 /// Event payload for Unity scene list
 /// </summary>
-/// <param name="Scenes">List of scene paths</param>
-public sealed record SceneListEvent(string[] Scenes);
+public sealed class SceneListEvent
+{
+    public string[] Scenes { get; set; } = Array.Empty<string>();
+
+    public SceneListEvent() { }
+
+    public SceneListEvent(string[] scenes)
+    {
+        Scenes = scenes;
+    }
+}

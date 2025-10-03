@@ -22,13 +22,13 @@ public class DirectorClientTests
     }
 
     [Fact]
-    public void DirectorClient_SendCommand_WhenNotConnected_DoesNotThrow()
+    public async Task DirectorClient_SendCommand_WhenNotConnected_DoesNotThrow()
     {
         using var client = new DirectorClient();
         var command = new DirectorCommand("test", "test", new { });
         
         // Should not throw, just silently fail
-        client.SendCommandAsync(command).Wait();
+        await client.SendCommandAsync(command);
     }
 }
 

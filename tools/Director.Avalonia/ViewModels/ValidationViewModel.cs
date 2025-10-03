@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Director.Avalonia.Services;
 using Director.Core.Protocol;
+using System.Windows.Input;
 
 namespace Director.Avalonia.ViewModels;
 
@@ -38,6 +39,7 @@ public partial class ValidationViewModel : ObservableObject
         {
             var command = _nexoCommandService.CreateValidationCommand();
             // TODO: Send command through DirectorClient
+            await Task.Delay(100); // Simulate async work
             LastValidationResult = "Validation completed";
         }
         catch (Exception ex)
@@ -60,6 +62,7 @@ public partial class ValidationViewModel : ObservableObject
         {
             var command = _nexoCommandService.CreateAnalysisCommand();
             // TODO: Send command through DirectorClient
+            await Task.Delay(100); // Simulate async work
             LastValidationResult = "Analysis completed";
         }
         catch (Exception ex)

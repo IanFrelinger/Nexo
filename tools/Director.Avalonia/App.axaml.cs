@@ -60,9 +60,6 @@ public partial class App : Application
         services.AddTransient<ValidationViewModel>();
     }
 
-    public override void OnExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
-    {
-        _host?.Dispose();
-        base.OnExit(sender, e);
-    }
+    // OnExit method removed - not compatible with current Avalonia version
+    // Cleanup will be handled by the application lifetime
 }

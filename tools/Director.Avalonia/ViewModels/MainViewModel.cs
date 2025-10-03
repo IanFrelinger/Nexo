@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Director.Avalonia.Services;
 using Director.Core.Protocol;
+using System.Windows.Input;
 using System.Collections.ObjectModel;
 
 namespace Director.Avalonia.ViewModels;
@@ -173,7 +174,7 @@ public partial class MainViewModel : ObservableObject
     {
         var uiSchema = new
         {
-            elements = new[]
+            elements = new object[]
             {
                 new
                 {
@@ -206,7 +207,7 @@ public partial class MainViewModel : ObservableObject
             case "LogLine":
                 if (evt.Payload is LogLineEvent logEvent)
                 {
-                    App.Current?.Dispatcher.InvokeAsync(() =>
+                    global::Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         Logs.Add(logEvent);
                         LastActivity = DateTime.Now.ToString("HH:mm:ss");
@@ -217,7 +218,7 @@ public partial class MainViewModel : ObservableObject
             case "GateResult":
                 if (evt.Payload is GateResultEvent gateEvent)
                 {
-                    App.Current?.Dispatcher.InvokeAsync(() =>
+                    global::Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         Gates.Add(gateEvent);
                         LastActivity = DateTime.Now.ToString("HH:mm:ss");
@@ -228,7 +229,7 @@ public partial class MainViewModel : ObservableObject
             case "RunFinished":
                 if (evt.Payload is RunFinishedEvent runEvent)
                 {
-                    App.Current?.Dispatcher.InvokeAsync(() =>
+                    global::Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         StatusMessage = runEvent.ExitCode == 0 ? "Command completed successfully" : $"Command failed (exit code: {runEvent.ExitCode})";
                         LastActivity = DateTime.Now.ToString("HH:mm:ss");
@@ -240,7 +241,7 @@ public partial class MainViewModel : ObservableObject
 
     private void OnConnectionStatusChanged(object? sender, string status)
     {
-        App.Current?.Dispatcher.InvokeAsync(() =>
+        global::Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
             ConnectionStatus = status;
             IsConnected = status == "Connected";

@@ -60,48 +60,60 @@
           <StackPanel Margin="16" Spacing="16">
             
             <!-- Connection Settings -->
-            <GroupBox Header="Connection" Padding="8">
-              <StackPanel Spacing="8">
-                <TextBlock Text="Token:" FontWeight="Bold"/>
-                <TextBox Text="{Binding Token}" Watermark="Unity token..."/>
-                <Button Content="Auto-Discover Token" Command="{Binding AutoDiscoverTokenCommand}" 
-                        HorizontalAlignment="Stretch"/>
+            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
+              <StackPanel>
+                <TextBlock Text="Connection" FontWeight="Bold" Margin="0,0,0,8"/>
+                <StackPanel Spacing="8">
+                  <TextBlock Text="Token:" FontWeight="Bold"/>
+                  <TextBox Text="{Binding Token}" Watermark="Unity token..."/>
+                  <Button Content="Auto-Discover Token" Command="{Binding AutoDiscoverTokenCommand}" 
+                          HorizontalAlignment="Stretch"/>
+                </StackPanel>
               </StackPanel>
-            </GroupBox>
+            </Border>
 
             <!-- Nexo Commands -->
-            <GroupBox Header="Nexo Commands" Padding="8">
-              <StackPanel Spacing="8">
-                <Button Content="Run Validation" Command="{Binding RunValidationCommand}" 
-                        HorizontalAlignment="Stretch" Background="#28A745"/>
-                <Button Content="Run Analysis" Command="{Binding RunAnalysisCommand}" 
-                        HorizontalAlignment="Stretch" Background="#17A2B8"/>
-                <Button Content="List Agents" Command="{Binding ListAgentsCommand}" 
-                        HorizontalAlignment="Stretch" Background="#6F42C1"/>
+            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
+              <StackPanel>
+                <TextBlock Text="Nexo Commands" FontWeight="Bold" Margin="0,0,0,8"/>
+                <StackPanel Spacing="8">
+                  <Button Content="Run Validation" Command="{Binding RunValidationCommand}" 
+                          HorizontalAlignment="Stretch" Background="#28A745"/>
+                  <Button Content="Run Analysis" Command="{Binding RunAnalysisCommand}" 
+                          HorizontalAlignment="Stretch" Background="#17A2B8"/>
+                  <Button Content="List Agents" Command="{Binding ListAgentsCommand}" 
+                          HorizontalAlignment="Stretch" Background="#6F42C1"/>
+                </StackPanel>
               </StackPanel>
-            </GroupBox>
+            </Border>
 
             <!-- Unity Commands -->
-            <GroupBox Header="Unity Commands" Padding="8">
-              <StackPanel Spacing="8">
-                <Button Content="Toggle Play Mode" Command="{Binding TogglePlayCommand}" 
-                        HorizontalAlignment="Stretch" Background="#FFC107"/>
-                <Button Content="Get Project Info" Command="{Binding GetProjectInfoCommand}" 
-                        HorizontalAlignment="Stretch" Background="#FD7E14"/>
-                <Button Content="List Scenes" Command="{Binding ListScenesCommand}" 
-                        HorizontalAlignment="Stretch" Background="#20C997"/>
+            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
+              <StackPanel>
+                <TextBlock Text="Unity Commands" FontWeight="Bold" Margin="0,0,0,8"/>
+                <StackPanel Spacing="8">
+                  <Button Content="Toggle Play Mode" Command="{Binding TogglePlayCommand}" 
+                          HorizontalAlignment="Stretch" Background="#FFC107"/>
+                  <Button Content="Get Project Info" Command="{Binding GetProjectInfoCommand}" 
+                          HorizontalAlignment="Stretch" Background="#FD7E14"/>
+                  <Button Content="List Scenes" Command="{Binding ListScenesCommand}" 
+                          HorizontalAlignment="Stretch" Background="#20C997"/>
+                </StackPanel>
               </StackPanel>
-            </GroupBox>
+            </Border>
 
             <!-- UI Modifications -->
-            <GroupBox Header="UI Modifications" Padding="8">
-              <StackPanel Spacing="8">
-                <TextBlock Text="Target Slot:" FontWeight="Bold"/>
-                <TextBox Text="{Binding TargetSlot}" Watermark="e.g., quality.filters"/>
-                <Button Content="Apply UI Mod" Command="{Binding ApplyUIModCommand}" 
-                        HorizontalAlignment="Stretch" Background="#6F42C1"/>
+            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8">
+              <StackPanel>
+                <TextBlock Text="UI Modifications" FontWeight="Bold" Margin="0,0,0,8"/>
+                <StackPanel Spacing="8">
+                  <TextBlock Text="Target Slot:" FontWeight="Bold"/>
+                  <TextBox Text="{Binding TargetSlot}" Watermark="e.g., quality.filters"/>
+                  <Button Content="Apply UI Mod" Command="{Binding ApplyUIModCommand}" 
+                          HorizontalAlignment="Stretch" Background="#6F42C1"/>
+                </StackPanel>
               </StackPanel>
-            </GroupBox>
+            </Border>
 
           </StackPanel>
         </ScrollViewer>
@@ -115,8 +127,8 @@
         </Grid.RowDefinitions>
 
         <!-- Main Output -->
-        <TabView Grid.Row="0" Margin="16">
-          <TabViewItem Header="Logs">
+        <TabControl Grid.Row="0" Margin="16">
+          <TabItem Header="Logs">
             <ScrollViewer>
               <ItemsControl ItemsSource="{Binding Logs}">
                 <ItemsControl.ItemTemplate>
@@ -128,9 +140,9 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
             </ScrollViewer>
-          </TabViewItem>
+          </TabItem>
           
-          <TabViewItem Header="Gates">
+          <TabItem Header="Gates">
             <ScrollViewer>
               <ItemsControl ItemsSource="{Binding Gates}">
                 <ItemsControl.ItemTemplate>
@@ -145,8 +157,8 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
             </ScrollViewer>
-          </TabViewItem>
-        </TabView>
+          </TabItem>
+        </TabControl>
 
         <!-- Status Bar -->
         <Border Grid.Row="1" Background="#F8F9FA" BorderBrush="#E1E1E1" BorderThickness="0,1,0,0">

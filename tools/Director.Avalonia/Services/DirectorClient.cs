@@ -57,6 +57,7 @@ public sealed class DirectorClient : IDisposable
         _reader?.Dispose();
         _tcpClient?.Dispose();
         
+        await Task.Delay(10); // Small delay to prevent warning
         ConnectionStatusChanged?.Invoke(this, "Disconnected");
     }
 

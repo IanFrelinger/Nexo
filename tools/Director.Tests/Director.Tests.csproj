@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
+    <StartupObject>Director.Tests.SimpleTestRunner</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,10 +16,12 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Director.Avalonia.csproj" />
+    <ProjectReference Include="../Director.Core/Director.Core.csproj" />
+    <ProjectReference Include="../Director.Avalonia/Director.Avalonia.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Director.Avalonia.Services;
+using System.Windows.Input;
 
 namespace Director.Avalonia.ViewModels;
 
@@ -77,7 +78,7 @@ public partial class ConnectionViewModel : ObservableObject
 
     private void OnConnectionStatusChanged(object? sender, string status)
     {
-        App.Current?.Dispatcher.InvokeAsync(() =>
+        global::Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
         {
             IsConnected = status == "Connected";
             StatusMessage = status;
