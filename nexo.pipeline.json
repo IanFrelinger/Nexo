@@ -13,5 +13,12 @@
   ],
   "adapters": "nexo.adapters.json",
   "acceptance": "Assets/NexoDirectorStudio/Acceptance/Default.asset",
-  "scenarios": ["Assets/NexoDirectorStudio/Scenarios/Smoke.asset"]
+  "scenarios": ["Assets/NexoDirectorStudio/Scenarios/Smoke.asset"],
+  "review": {
+    "mode": "strict",
+    "canarySeeds": [1337, 7, 42],
+    "failSoft": false,
+    "minEngagement": 70,
+    "minGameplayQuality": 80
+  }
 }

@@ -5,6 +5,14 @@ using UnityEngine;
 namespace NexoDirectorStudio.Config
 {
     [Serializable] public class PipelinePhaseConfig { public string token; public string type; public bool cache; public int timeoutMs; }
+    [Serializable] public class ReviewConfig
+    {
+        public string mode = "strict"; // "strict" | "always-green"
+        public int[] canarySeeds = { 1337, 7, 42 };
+        public bool failSoft = false;
+        public int minEngagement = 70;
+        public int minGameplayQuality = 80;
+    }
     [Serializable] public class PipelineConfig
     {
         public string name = "MyGameSlice";
@@ -16,6 +24,7 @@ namespace NexoDirectorStudio.Config
         public string adapters = "nexo.adapters.json";
         public string acceptance = "Assets/NexoDirectorStudio/Acceptance/Default.asset";
         public string[] scenarios = Array.Empty<string>();
+        public ReviewConfig review = new ReviewConfig();
     }
 
     public static class PipelineConfigLoader

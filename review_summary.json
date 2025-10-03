@@ -1,0 +1,26 @@
+{
+  "seeds": [
+    {
+      "seed": 1337,
+      "status": "playable",
+      "fallbacksUsed": false,
+      "engagement": 85,
+      "gameplayQuality": 92
+    },
+    {
+      "seed": 7,
+      "status": "playable",
+      "fallbacksUsed": true,
+      "fallbackPhases": ["Content"],
+      "engagement": 72,
+      "gameplayQuality": 84
+    },
+    {
+      "seed": 42,
+      "status": "playable",
+      "fallbacksUsed": false,
+      "engagement": 88,
+      "gameplayQuality": 95
+    }
+  ]
+}

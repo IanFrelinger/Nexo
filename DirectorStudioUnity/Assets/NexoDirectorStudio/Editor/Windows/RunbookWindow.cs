@@ -41,6 +41,19 @@ namespace NexoDirectorStudio.EditorUI
             if (GUILayout.Button("Run Pipeline (Plan→Layout→Placement→Content→Validate)"))
                 _ = RunPipeline();
 
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Review Mode", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Review mode ensures playable results with fallbacks for demos", MessageType.Info);
+            
+            if (GUILayout.Button("Run for Review (Always-Green)", GUILayout.Height(30)))
+                _ = RunForReview("always-green");
+
+            if (GUILayout.Button("Run for Review (Strict)", GUILayout.Height(30)))
+                _ = RunForReview("strict");
+
+            if (GUILayout.Button("Create Presentation Bundle", GUILayout.Height(30)))
+                CreatePresentationBundle();
+
             if (GUILayout.Button("Open Artifacts Root"))
                 EditorUtility.RevealInFinder(_cfg.artifacts);
 
@@ -68,6 +81,70 @@ namespace NexoDirectorStudio.EditorUI
             var brief = new DesignBrief(Description: _cfg.prompt, GenreHint: "fps", Seed: _cfg.seed); // adapt if your DTO differs
             await runner.RunAsync(brief, ctx, CancellationToken.None);
             Debug.Log($"[Runbook] Done. Artifacts: {ctx.RunFolder}");
+        }
+
+        private async Task RunForReview(string mode)
+        {
+            Debug.Log($"[Runbook] Starting review mode: {mode}");
+            
+            // Update config for review mode
+            if (_cfg.review == null)
+                _cfg.review = new ReviewConfig();
+            
+            _cfg.review.mode = mode;
+            _cfg.review.failSoft = mode == "always-green";
+            
+            // Run review CLI
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "bash",
+                    Arguments = $"-c \"cd {Directory.GetCurrentDirectory()} && ./scripts/run-for-review.sh {mode}\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
+            
+            process.Start();
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            process.WaitForExit();
+            
+            Debug.Log($"[Runbook] Review mode output: {output}");
+            if (!string.IsNullOrEmpty(error))
+                Debug.LogWarning($"[Runbook] Review mode errors: {error}");
+            
+            Debug.Log($"[Runbook] Review mode complete. Check Artifacts/review/ for results.");
+        }
+
+        private void CreatePresentationBundle()
+        {
+            Debug.Log("[Runbook] Creating presentation bundle...");
+            
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "bash",
+                    Arguments = $"-c \"cd {Directory.GetCurrentDirectory()} && ./scripts/present-bundle.sh\"",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
+            
+            process.Start();
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            
+            Debug.Log($"[Runbook] Presentation bundle output: {output}");
+            if (!string.IsNullOrEmpty(error))
+                Debug.LogWarning($"[Runbook] Presentation bundle errors: {error}");
+            
+            Debug.Log("[Runbook] Presentation bundle created. Check Presentation/ folder.");
         }
     }
 }

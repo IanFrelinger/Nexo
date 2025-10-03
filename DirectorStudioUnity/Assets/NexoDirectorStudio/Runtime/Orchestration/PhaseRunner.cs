@@ -40,9 +40,9 @@ namespace NexoDirectorStudio.Orchestration
                         continue;
                     }
 
-                    // phase execution (with optional caching)
+                    // phase execution with fallback support
                     UnityEngine.Debug.Log($"[PhaseRunner] Executing phase {token?.Value ?? "Unknown"} with input type: {current?.GetType().Name ?? "null"}");
-                    var output = await PhaseInvoker.InvokeAsync(phase, current, ctx, ct);
+                    var output = await PhaseGuard.ExecuteWithFallback(phase, current, ctx, ct);
                     UnityEngine.Debug.Log($"[PhaseRunner] Phase {token?.Value ?? "Unknown"} completed, output type: {output?.GetType().Name ?? "null"}");
                     current = output;
 
