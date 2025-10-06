@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Director.Core/Director.Core.csproj" />
+    <ProjectReference Include="../../src/Nexo.Core.UI/Nexo.Core.UI.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Tests/**" />

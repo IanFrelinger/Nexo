@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <PackageId>Nexo.Core.UI.Unity</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Nexo AI</Authors>
+    <Description>Unity Editor-specific implementations of Nexo UI primitives</Description>
+    <PackageTags>ui;design-system;primitives;unity;editor</PackageTags>
+    <RepositoryUrl>https://github.com/nexo-ai/director</RepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Only include Unity references when UNITY_PATH is provided -->
+  <ItemGroup Condition="'$(UNITY_PATH)' != ''">
+    <Reference Include="UnityEditor">
+      <HintPath>$(UNITY_PATH)/UnityEditor.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(UNITY_PATH)/UnityEngine/UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(UNITY_PATH)/UnityEngine/UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(UNITY_PATH)/UnityEngine/UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(UNITY_PATH)/UnityEngine/UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Nexo.Core.UI/Nexo.Core.UI.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -4,5 +4,6 @@
              RequestedThemeVariant="Default">
   <Application.Styles>
     <FluentTheme />
+    <StyleInclude Source="Styles/Primitives.axaml"/>
   </Application.Styles>
 </Application>

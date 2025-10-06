@@ -2,25 +2,34 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Director.Avalonia.ViewModels"
         xmlns:local="using:Director.Avalonia.Views"
+        xmlns:converters="using:Director.Avalonia.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        mc:Ignorable="d" d:DesignWidth="1600" d:DesignHeight="1000"
         x:Class="Director.Avalonia.MainWindow"
         x:DataType="vm:EnhancedMainViewModel"
         Title="Director Studio - Nexo Companion"
-        Width="1200" Height="800"
-        MinWidth="800" MinHeight="600"
-        FontFamily="{Binding SystemFontFamily}"
-        FontSize="{Binding SystemFontSize}">
+        Width="1600" Height="1000"
+        MinWidth="1200" MinHeight="800"
+        FontFamily="{Binding SystemFontFamily}">
+
+  <Window.Resources>
+    <converters:BoolToColorConverter x:Key="BoolToColorConverter"/>
+  </Window.Resources>
 
   <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <!-- Top Toolbar -->
-    <Border Grid.Row="0" Background="#2D2D30" Padding="8">
+    <!-- Header Navigation - Larger, More Readable -->
+    <Border Grid.Row="0" 
+            Background="White" 
+            BorderBrush="#E0E0E0" 
+            BorderThickness="0,0,0,2" 
+            Padding="32,24">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto"/>
@@ -28,24 +37,35 @@
           <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Connection Status -->
-        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-          <Ellipse Width="12" Height="12" Fill="Green"/>
-          <TextBlock Text="{Binding ConnectionStatus}" Foreground="White" VerticalAlignment="Center"/>
+        <!-- Connection Status - Larger -->
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <Ellipse Width="16" Height="16" 
+                   Fill="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}}" 
+                   Classes="status-indicator"/>
+          <TextBlock Text="{Binding ConnectionStatus}" 
+                     Classes="body-large"
+                     VerticalAlignment="Center"/>
         </StackPanel>
 
-        <!-- Title -->
-        <TextBlock Grid.Column="1" Text="Director Studio" 
-                   FontSize="18" FontWeight="Bold" 
-                   Foreground="White" HorizontalAlignment="Center" 
+        <!-- Title - Larger -->
+        <TextBlock Grid.Column="1" 
+                   Text="Director Studio" 
+                   Classes="heading-1"
+                   HorizontalAlignment="Center" 
                    VerticalAlignment="Center"/>
 
-        <!-- Action Buttons -->
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-          <Button Content="Connect" Command="{Binding ConnectCommand}" 
-                  IsEnabled="{Binding !IsConnected}" Background="#0078D4"/>
-          <Button Content="Disconnect" Command="{Binding DisconnectCommand}" 
-                  IsEnabled="{Binding IsConnected}" Background="#D13438"/>
+        <!-- Action Buttons - Larger -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16">
+          <Button Content="Connect" 
+                  Command="{Binding ConnectCommand}" 
+                  IsEnabled="{Binding !IsConnected}" 
+                  Classes="primary"
+                  MinWidth="120"/>
+          <Button Content="Disconnect" 
+                  Command="{Binding DisconnectCommand}" 
+                  IsEnabled="{Binding IsConnected}" 
+                  Classes="danger"
+                  MinWidth="120"/>
         </StackPanel>
       </Grid>
     </Border>
@@ -53,92 +73,131 @@
     <!-- Main Content -->
     <Grid Grid.Row="1">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="300"/>
+        <ColumnDefinition Width="360"/>
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
 
-      <!-- Left Panel - Controls -->
-      <Border Grid.Column="0" Background="#F3F3F3" BorderBrush="#E1E1E1" BorderThickness="0,0,1,0">
-        <ScrollViewer>
-          <StackPanel Margin="16" Spacing="16">
+      <!-- Left Sidebar - Better Spacing -->
+      <Border Grid.Column="0" 
+              Background="#F8F9FA" 
+              BorderBrush="#E0E0E0" 
+              BorderThickness="0,0,2,0">
+        <ScrollViewer Padding="32" VerticalScrollBarVisibility="Auto">
+          <StackPanel Spacing="32">
             
-            <!-- Unity Discovery -->
-            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
-              <StackPanel>
-                <TextBlock Text="Unity Discovery" FontWeight="Bold" Margin="0,0,0,8"/>
-                <StackPanel Spacing="8">
-                  <Button Content="Auto-Discover Unity" Command="{Binding AutoDiscoverUnityCommand}" 
-                          HorizontalAlignment="Stretch" Background="#0078D4"/>
-                  <TextBlock Text="{Binding UnityStatus}" FontSize="11" Opacity="0.8" TextWrapping="Wrap"/>
+            <!-- Unity Discovery Card -->
+            <Border Classes="card">
+              <StackPanel Spacing="20">
+                <TextBlock Text="Unity Discovery" Classes="heading-2"/>
+                <StackPanel Spacing="16">
+                  <Button Content="Auto-Discover Unity" 
+                          Command="{Binding AutoDiscoverUnityCommand}" 
+                          HorizontalAlignment="Stretch" 
+                          Classes="primary"/>
+                  <TextBlock Text="{Binding UnityStatus}" 
+                             Classes="caption"
+                             TextWrapping="Wrap"/>
                   <ComboBox ItemsSource="{Binding UnityInstallations}" 
                             SelectedItem="{Binding SelectedUnityInstallation}"
-                            DisplayMemberBinding="{Binding Version}">
+                            DisplayMemberBinding="{Binding Version}"
+                            Classes="body">
                     <ComboBox.PlaceholderText>Select Unity Installation</ComboBox.PlaceholderText>
                   </ComboBox>
                 </StackPanel>
               </StackPanel>
             </Border>
 
-            <!-- Connection Settings -->
-            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
-              <StackPanel>
-                <TextBlock Text="Connection" FontWeight="Bold" Margin="0,0,0,8"/>
-                <StackPanel Spacing="8">
-                  <!-- Communication Mode Toggle -->
-                  <StackPanel Orientation="Horizontal" Spacing="8">
-                    <CheckBox IsChecked="{Binding UseFileBasedCommunication}" Content="Use File-Based Communication"/>
-                    <TextBlock Text="(No ports/firewall)" FontSize="10" Opacity="0.7" VerticalAlignment="Center"/>
+            <!-- Connection Settings Card -->
+            <Border Classes="card">
+              <StackPanel Spacing="20">
+                <TextBlock Text="Connection Settings" Classes="heading-2"/>
+                <StackPanel Spacing="20">
+                  <!-- Communication Mode Toggle - Better Layout -->
+                  <StackPanel Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                    <CheckBox IsChecked="{Binding UseFileBasedCommunication}" 
+                              Classes="switch"
+                              VerticalAlignment="Center"/>
+                    <StackPanel>
+                      <TextBlock Text="File-Based Communication" Classes="body"/>
+                      <TextBlock Text="No ports/firewall required" Classes="caption"/>
+                    </StackPanel>
                   </StackPanel>
                   
-                  <TextBlock Text="Token:" FontWeight="Bold"/>
-                  <TextBox Text="{Binding Token}" Watermark="Unity token..."/>
-                  <Button Content="Auto-Discover Token" Command="{Binding AutoDiscoverTokenCommand}" 
-                          HorizontalAlignment="Stretch"/>
-                  <Button Content="Auto-Connect" Command="{Binding AutoConnectCommand}" 
-                          HorizontalAlignment="Stretch" Background="#28A745"/>
+                  <StackPanel Spacing="12">
+                    <TextBlock Text="Authentication Token" Classes="body"/>
+                    <TextBox Text="{Binding Token}" 
+                             Watermark="Unity token..." 
+                             Classes="body"/>
+                    <Button Content="Auto-Discover Token" 
+                            Command="{Binding AutoDiscoverTokenCommand}" 
+                            HorizontalAlignment="Stretch"
+                            Classes="secondary"/>
+                    <Button Content="Auto-Connect" 
+                            Command="{Binding AutoConnectCommand}" 
+                            HorizontalAlignment="Stretch" 
+                            Classes="success"/>
+                  </StackPanel>
                 </StackPanel>
               </StackPanel>
             </Border>
 
-            <!-- Nexo Commands -->
-            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
-              <StackPanel>
-                <TextBlock Text="Nexo Commands" FontWeight="Bold" Margin="0,0,0,8"/>
-                <StackPanel Spacing="8">
-                  <Button Content="Run Validation" Command="{Binding RunValidationCommand}" 
-                          HorizontalAlignment="Stretch" Background="#28A745"/>
-                  <Button Content="Run Analysis" Command="{Binding RunAnalysisCommand}" 
-                          HorizontalAlignment="Stretch" Background="#17A2B8"/>
-                  <Button Content="List Agents" Command="{Binding ListAgentsCommand}" 
-                          HorizontalAlignment="Stretch" Background="#6F42C1"/>
+            <!-- Nexo Commands Card -->
+            <Border Classes="card">
+              <StackPanel Spacing="20">
+                <TextBlock Text="Nexo Commands" Classes="heading-2"/>
+                <StackPanel Spacing="12">
+                  <Button Content="Run Validation" 
+                          Command="{Binding RunValidationCommand}" 
+                          HorizontalAlignment="Stretch" 
+                          Classes="success"/>
+                  <Button Content="Run Analysis" 
+                          Command="{Binding RunAnalysisCommand}" 
+                          HorizontalAlignment="Stretch" 
+                          Classes="info"/>
+                  <Button Content="List Agents" 
+                          Command="{Binding ListAgentsCommand}" 
+                          HorizontalAlignment="Stretch" 
+                          Classes="secondary"/>
                 </StackPanel>
               </StackPanel>
             </Border>
 
-            <!-- Unity Commands -->
-            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,16">
-              <StackPanel>
-                <TextBlock Text="Unity Commands" FontWeight="Bold" Margin="0,0,0,8"/>
-                <StackPanel Spacing="8">
-                  <Button Content="Toggle Play Mode" Command="{Binding TogglePlayCommand}" 
-                          HorizontalAlignment="Stretch" Background="#FFC107"/>
-                  <Button Content="Get Project Info" Command="{Binding GetProjectInfoCommand}" 
-                          HorizontalAlignment="Stretch" Background="#FD7E14"/>
-                  <Button Content="List Scenes" Command="{Binding ListScenesCommand}" 
-                          HorizontalAlignment="Stretch" Background="#20C997"/>
+            <!-- Unity Commands Card -->
+            <Border Classes="card">
+              <StackPanel Spacing="20">
+                <TextBlock Text="Unity Commands" Classes="heading-2"/>
+                <StackPanel Spacing="12">
+                  <Button Content="Toggle Play Mode" 
+                          Command="{Binding TogglePlayCommand}" 
+                          HorizontalAlignment="Stretch" 
+                          Classes="warning"/>
+                  <Button Content="Get Project Info" 
+                          Command="{Binding GetProjectInfoCommand}" 
+                          HorizontalAlignment="Stretch" 
+                          Classes="info"/>
+                  <Button Content="List Scenes" 
+                          Command="{Binding ListScenesCommand}" 
+                          HorizontalAlignment="Stretch" 
+                          Classes="secondary"/>
                 </StackPanel>
               </StackPanel>
             </Border>
 
-            <!-- UI Modifications -->
-            <Border Background="White" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="8">
-              <StackPanel>
-                <TextBlock Text="UI Modifications" FontWeight="Bold" Margin="0,0,0,8"/>
-                <StackPanel Spacing="8">
-                  <TextBlock Text="Target Slot:" FontWeight="Bold"/>
-                  <TextBox Text="{Binding TargetSlot}" Watermark="e.g., quality.filters"/>
-                  <Button Content="Apply UI Mod" Command="{Binding ApplyUIModCommand}" 
-                          HorizontalAlignment="Stretch" Background="#6F42C1"/>
+            <!-- UI Modifications Card -->
+            <Border Classes="card">
+              <StackPanel Spacing="20">
+                <TextBlock Text="UI Modifications" Classes="heading-2"/>
+                <StackPanel Spacing="16">
+                  <StackPanel Spacing="12">
+                    <TextBlock Text="Target Slot" Classes="body"/>
+                    <TextBox Text="{Binding TargetSlot}" 
+                             Watermark="e.g., quality.filters" 
+                             Classes="body"/>
+                    <Button Content="Apply UI Modification" 
+                            Command="{Binding ApplyUIModCommand}" 
+                            HorizontalAlignment="Stretch" 
+                            Classes="secondary"/>
+                  </StackPanel>
                 </StackPanel>
               </StackPanel>
             </Border>
@@ -147,22 +206,24 @@
         </ScrollViewer>
       </Border>
 
-      <!-- Right Panel - Logs and Output -->
-      <Grid Grid.Column="1">
+      <!-- Right Content Area -->
+      <Grid Grid.Column="1" Background="#F8F9FA">
         <Grid.RowDefinitions>
           <RowDefinition Height="*"/>
-          <RowDefinition Height="200"/>
+          <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Main Output -->
-        <TabControl Grid.Row="0" Margin="16">
+        <!-- Main Output Tabs - Better Spacing -->
+        <TabControl Grid.Row="0" Margin="32" Classes="body">
           <TabItem Header="Logs">
-            <ScrollViewer>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,20">
               <ItemsControl ItemsSource="{Binding Logs}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
-                    <Border Background="LightGray" Margin="0,2" Padding="8,4">
-                      <TextBlock Text="{Binding Line}" FontFamily="Consolas" FontSize="12"/>
+                    <Border Classes="log-item">
+                      <TextBlock Text="{Binding Line}" 
+                                 Classes="mono"
+                                 TextWrapping="Wrap"/>
                     </Border>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -171,14 +232,19 @@
           </TabItem>
           
           <TabItem Header="Gates">
-            <ScrollViewer>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,20">
               <ItemsControl ItemsSource="{Binding Gates}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
-                    <Border Background="LightBlue" Margin="0,2" Padding="8,4">
-                      <StackPanel>
-                        <TextBlock Text="{Binding GateName}" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding Message}" FontSize="11" Opacity="0.8"/>
+                    <Border Classes="gate-item">
+                      <StackPanel Spacing="12">
+                        <TextBlock Text="{Binding GateName}" 
+                                   Classes="body"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Message}" 
+                                   Classes="body-small"
+                                   Foreground="#666666"
+                                   TextWrapping="Wrap"/>
                       </StackPanel>
                     </Border>
                   </DataTemplate>
@@ -192,17 +258,22 @@
           </TabItem>
         </TabControl>
 
-        <!-- Status Bar -->
-        <Border Grid.Row="1" Background="#F8F9FA" BorderBrush="#E1E1E1" BorderThickness="0,1,0,0">
-          <Grid Margin="16,8">
+        <!-- Status Bar - Better Spacing -->
+        <Border Grid.Row="1" Classes="status-bar">
+          <Grid>
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*"/>
               <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
-            <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" VerticalAlignment="Center"/>
-            <TextBlock Grid.Column="1" Text="{Binding LastActivity}" VerticalAlignment="Center" 
-                       FontSize="11" Opacity="0.7"/>
+            <TextBlock Grid.Column="0" 
+                       Text="{Binding StatusMessage}" 
+                       VerticalAlignment="Center"
+                       Classes="body-small"/>
+            <TextBlock Grid.Column="1" 
+                       Text="{Binding LastActivity}" 
+                       VerticalAlignment="Center" 
+                       Classes="caption"/>
           </Grid>
         </Border>
       </Grid>
