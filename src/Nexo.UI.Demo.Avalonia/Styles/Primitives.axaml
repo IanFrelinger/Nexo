@@ -1,0 +1,190 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Base Typography Styles -->
+  <Style Selector="TextBlock">
+    <Setter Property="FontFamily" Value="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+    <Setter Property="LineHeight" Value="1.5"/>
+  </Style>
+
+  <!-- Typography Hierarchy -->
+  <Style Selector="TextBlock.heading-1">
+    <Setter Property="FontSize" Value="30"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="LineHeight" Value="1.25"/>
+    <Setter Property="Margin" Value="0,0,0,24"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+  </Style>
+
+  <Style Selector="TextBlock.heading-2">
+    <Setter Property="FontSize" Value="24"/>
+    <Setter Property="FontWeight" Value="Bold"/>
+    <Setter Property="LineHeight" Value="1.25"/>
+    <Setter Property="Margin" Value="0,0,0,16"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+  </Style>
+
+  <Style Selector="TextBlock.heading-3">
+    <Setter Property="FontSize" Value="20"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="LineHeight" Value="1.5"/>
+    <Setter Property="Margin" Value="0,0,0,12"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+  </Style>
+
+  <Style Selector="TextBlock.body-large">
+    <Setter Property="FontSize" Value="16"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="LineHeight" Value="1.625"/>
+    <Setter Property="Margin" Value="0,0,0,12"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+  </Style>
+
+  <Style Selector="TextBlock.body">
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="LineHeight" Value="1.625"/>
+    <Setter Property="Margin" Value="0,0,0,8"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+  </Style>
+
+  <Style Selector="TextBlock.body-small">
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="LineHeight" Value="1.625"/>
+    <Setter Property="Margin" Value="0,0,0,4"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+  </Style>
+
+  <Style Selector="TextBlock.caption">
+    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontWeight" Value="Normal"/>
+    <Setter Property="Foreground" Value="#666666"/>
+    <Setter Property="LineHeight" Value="1.5"/>
+    <Setter Property="Margin" Value="0,0,0,4"/>
+  </Style>
+
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="LineHeight" Value="1.625"/>
+  </Style>
+
+  <!-- Button Styles -->
+  <Style Selector="Button">
+    <Setter Property="FontFamily" Value="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontWeight" Value="Medium"/>
+    <Setter Property="MinHeight" Value="48"/>
+    <Setter Property="MinWidth" Value="120"/>
+    <Setter Property="Padding" Value="24,16"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+        <BrushTransition Property="Foreground" Duration="0:0:0.15"/>
+        <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <!-- Button Variants -->
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="#0066CC"/>
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="BorderBrush" Value="#0066CC"/>
+  </Style>
+
+  <Style Selector="Button.secondary">
+    <Setter Property="Background" Value="#F1F3F5"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+    <Setter Property="BorderBrush" Value="#CED4DA"/>
+  </Style>
+
+  <Style Selector="Button.success">
+    <Setter Property="Background" Value="#28A745"/>
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="BorderBrush" Value="#28A745"/>
+  </Style>
+
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="#DC3545"/>
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="BorderBrush" Value="#DC3545"/>
+  </Style>
+
+  <Style Selector="Button.warning">
+    <Setter Property="Background" Value="#FFC107"/>
+    <Setter Property="Foreground" Value="#000000"/>
+    <Setter Property="BorderBrush" Value="#FFC107"/>
+  </Style>
+
+  <Style Selector="Button.info">
+    <Setter Property="Background" Value="#17A2B8"/>
+    <Setter Property="Foreground" Value="#FFFFFF"/>
+    <Setter Property="BorderBrush" Value="#17A2B8"/>
+  </Style>
+
+  <!-- Input Field Styles -->
+  <Style Selector="TextBox">
+    <Setter Property="FontFamily" Value="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="MinHeight" Value="48"/>
+    <Setter Property="Padding" Value="16,12"/>
+    <Setter Property="CornerRadius" Value="8"/>
+    <Setter Property="BorderThickness" Value="2"/>
+    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="BorderBrush" Value="#CED4DA"/>
+    <Setter Property="Foreground" Value="#1A1A1A"/>
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+        <BrushTransition Property="Background" Duration="0:0:0.15"/>
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <Style Selector="TextBox:focus">
+    <Setter Property="BorderBrush" Value="#0066CC"/>
+  </Style>
+
+  <!-- Card Styles -->
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+    <Setter Property="BorderThickness" Value="2"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Padding" Value="16"/>
+    <Setter Property="Margin" Value="0,0,0,12"/>
+  </Style>
+
+  <!-- Section Styles -->
+  <Style Selector="Border.section">
+    <Setter Property="Background" Value="#FFFFFF"/>
+    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="12"/>
+    <Setter Property="Padding" Value="24"/>
+    <Setter Property="Margin" Value="0,0,0,24"/>
+  </Style>
+
+  <!-- Demo-specific styles -->
+  <Style Selector="Border.demo-header">
+    <Setter Property="Background" Value="#0066CC"/>
+    <Setter Property="Padding" Value="24"/>
+    <Setter Property="Margin" Value="0,0,0,24"/>
+  </Style>
+
+  <Style Selector="Border.demo-footer">
+    <Setter Property="Background" Value="#F8F9FA"/>
+    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+    <Setter Property="BorderThickness" Value="0,1,0,0"/>
+    <Setter Property="Padding" Value="16"/>
+    <Setter Property="Margin" Value="0,24,0,0"/>
+  </Style>
+
+</Styles>

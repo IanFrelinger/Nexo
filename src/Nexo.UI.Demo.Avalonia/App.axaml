@@ -1,0 +1,11 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Nexo.UI.Demo.Avalonia.App"
+             RequestedThemeVariant="Default">
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Nexo.UI.Demo.Avalonia/Styles/Primitives.axaml"/>
+  </Application.Styles>
+
+</Application>
