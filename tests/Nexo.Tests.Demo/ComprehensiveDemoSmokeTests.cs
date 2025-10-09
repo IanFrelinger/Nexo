@@ -328,6 +328,17 @@ public class ComprehensiveDemoSmokeTests : DemoTestBase
     }
 
     [Fact]
+    public void VideoScript_ShouldHaveCorrectDuration()
+    {
+        // Arrange
+        var scriptPath = Path.Combine(GetProjectRoot(), "docs", "VIDEO_SCRIPT.md");
+        var content = File.ReadAllText(scriptPath);
+        
+        // Act & Assert
+        content.Should().Contain("Total Duration: 3-4 minutes");
+    }
+
+    [Fact]
     public void VideoScript_ShouldHaveAllSections()
     {
         // Arrange
@@ -351,6 +362,45 @@ public class ComprehensiveDemoSmokeTests : DemoTestBase
         {
             content.Should().Contain(section, $"Video script should contain section '{section}'");
         }
+    }
+
+    [Fact]
+    public void VideoScript_ShouldHaveKeyMetrics()
+    {
+        // Arrange
+        var scriptPath = Path.Combine(GetProjectRoot(), "docs", "VIDEO_SCRIPT.md");
+        var content = File.ReadAllText(scriptPath);
+        
+        // Act & Assert
+        content.Should().Contain("80%");
+        content.Should().Contain("$450K");
+        content.Should().Contain("20 hours");
+    }
+
+    [Fact]
+    public void RecordingChecklist_ShouldHaveTimeEstimates()
+    {
+        // Arrange
+        var checklistPath = Path.Combine(GetProjectRoot(), "docs", "DEMO_RECORDING_CHECKLIST.md");
+        var content = File.ReadAllText(checklistPath);
+        
+        // Act & Assert
+        content.Should().Contain("Time Estimates");
+        content.Should().Contain("6-9 hours");
+    }
+
+    [Fact]
+    public void RecordingChecklist_ShouldHaveSuccessCriteria()
+    {
+        // Arrange
+        var checklistPath = Path.Combine(GetProjectRoot(), "docs", "DEMO_RECORDING_CHECKLIST.md");
+        var content = File.ReadAllText(checklistPath);
+        
+        // Act & Assert
+        content.Should().Contain("Success Criteria");
+        content.Should().Contain("All demos work");
+        content.Should().Contain("Clear audio");
+        content.Should().Contain("Smooth transitions");
     }
 
     [Fact]
