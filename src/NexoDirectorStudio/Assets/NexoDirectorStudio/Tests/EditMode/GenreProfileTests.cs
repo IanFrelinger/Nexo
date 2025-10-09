@@ -14,12 +14,12 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class GenreProfileTests
     {
-        private DirectorStudioService _service;
+        private IIIDirectorStudioService _service;
 
         [SetUp]
         public void SetUp()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
         }
 
         [TearDown]

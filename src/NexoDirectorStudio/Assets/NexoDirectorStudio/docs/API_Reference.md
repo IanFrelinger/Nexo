@@ -483,7 +483,7 @@ All adapters implement graceful error recovery:
 
 ```csharp
 // Get the service
-var service = new DirectorStudioService();
+var service = new DirectorStudioServiceUnified();
 
 // Create a design brief
 var brief = new DesignBrief

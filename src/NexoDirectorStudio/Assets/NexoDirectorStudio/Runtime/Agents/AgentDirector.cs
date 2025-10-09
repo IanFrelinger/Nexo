@@ -46,7 +46,7 @@ namespace NexoDirectorStudio.Agents
 
         public async Task RunAsync(CancellationToken ct)
         {
-            _svc = new DirectorStudioService();
+            _svc = new DirectorStudioServiceUnified();
             _testRunner = new TestRunnerIntegration(maxValidationRetries, validationTimeoutSeconds);
 
             // Optional: consult adapters for enrichment (LLM, etc.)

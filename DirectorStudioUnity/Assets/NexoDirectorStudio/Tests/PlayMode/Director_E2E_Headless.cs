@@ -27,7 +27,7 @@ namespace NexoDirectorStudio.Tests.PlayMode
             Debug.Log("🚀 Starting DirectorStudio E2E test...");
             
             // 1) Create DirectorStudioService
-            var director = new DirectorStudioService();
+            var director = new DirectorStudioServiceUnified();
             Assert.IsNotNull(director, "DirectorStudioService not found");
             
             // 2) Create AgentDirector for the test

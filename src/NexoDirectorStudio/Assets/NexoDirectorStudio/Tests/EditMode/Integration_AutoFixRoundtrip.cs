@@ -15,7 +15,7 @@ namespace NexoDirectorStudio.Tests.EditMode
     [TestFixture]
     public class Integration_AutoFixRoundtrip
     {
-        private DirectorStudioService _service;
+        private IDirectorStudioService _service;
         private IProposeAutoFixesCommand _proposeCommand;
         private IApplyAutoFixesCommand _applyCommand;
         private GamePlan _testGamePlan;
@@ -24,7 +24,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         [SetUp]
         public void SetUp()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
             _proposeCommand = _service.GetService<IProposeAutoFixesCommand>();
             _applyCommand = _service.GetService<IApplyAutoFixesCommand>();
             

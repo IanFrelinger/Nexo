@@ -14,11 +14,11 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class AutoFixValidationTests : IDisposable
     {
-        private readonly DirectorStudioService _service;
+        private readonly IIDirectorStudioService _service;
         
         public AutoFixValidationTests()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
         }
         
         public void Dispose()

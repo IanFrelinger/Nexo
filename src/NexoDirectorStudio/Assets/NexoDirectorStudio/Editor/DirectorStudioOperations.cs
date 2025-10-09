@@ -19,10 +19,10 @@ namespace NexoDirectorStudio.Editor
     public class DirectorStudioOperations : IDirectorStudioOperations
     {
         private readonly DirectorStudioUIState _state;
-        private readonly DirectorStudioService _service;
+        private readonly IDirectorStudioService _service;
         private readonly GenreProfileService _profileService;
 
-        public DirectorStudioOperations(DirectorStudioUIState state, DirectorStudioService service, GenreProfileService profileService)
+        public DirectorStudioOperations(DirectorStudioUIState state, IDirectorStudioService service, GenreProfileService profileService)
         {
             _state = state ?? throw new ArgumentNullException(nameof(state));
             _service = service ?? throw new ArgumentNullException(nameof(service));

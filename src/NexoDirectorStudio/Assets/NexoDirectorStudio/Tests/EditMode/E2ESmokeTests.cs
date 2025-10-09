@@ -22,13 +22,13 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class E2ESmokeTests
     {
-        private DirectorStudioService _service;
+        private IDirectorStudioService _service;
         private TestRunnerIntegration _testRunner;
 
         [SetUp]
         public void SetUp()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
             _testRunner = new TestRunnerIntegration(maxRetries: 2, timeoutSeconds: 20f);
         }
 

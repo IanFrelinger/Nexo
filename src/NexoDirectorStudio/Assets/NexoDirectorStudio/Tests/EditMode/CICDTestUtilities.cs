@@ -22,7 +22,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var plan = await service.GetService<IPlanGameSliceCommand>()
                     .ExecuteAsync(new IPlanGameSliceCommand.Input(brief), CancellationToken.None);
@@ -72,7 +72,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         /// <summary>
         /// Validates service resolution for CI/CD testing.
         /// </summary>
-        public static bool ValidateServiceResolution(DirectorStudioService service)
+        public static bool ValidateServiceResolution(IDirectorStudioService service)
         {
             try
             {

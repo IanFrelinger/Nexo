@@ -15,12 +15,12 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class ConcurrencyTests
     {
-        private DirectorStudioService _service;
+        private IIDirectorStudioService _service;
 
         [SetUp]
         public void SetUp()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
         }
 
         [TearDown]

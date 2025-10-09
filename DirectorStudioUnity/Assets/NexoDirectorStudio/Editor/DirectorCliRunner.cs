@@ -32,7 +32,7 @@ namespace NexoDirectorStudio.Editor
                 System.Console.WriteLine($"Prompt: {prompt}");
                 System.Console.WriteLine();
 
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
 
                 // Phase 1: Service Initialization
                 System.Console.WriteLine("🔧 Phase 1: Service Initialization");
@@ -129,7 +129,7 @@ namespace NexoDirectorStudio.Editor
             }
         }
 
-        public static async Task<DesignBrief> PromptToBriefAsync(DirectorStudioService service, string prompt, CancellationToken cancellationToken)
+        public static async Task<DesignBrief> PromptToBriefAsync(IDirectorStudioService service, string prompt, CancellationToken cancellationToken)
         {
             // Simple prompt-to-brief conversion for CLI
             var brief = new DesignBrief(

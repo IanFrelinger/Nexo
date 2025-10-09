@@ -15,7 +15,7 @@ namespace NexoDirectorStudio.Editor
     /// </summary>
     public class DirectorStudioWindow : EditorWindow
     {
-        private DirectorStudioService _service;
+        private IDirectorStudioService _service;
         private GenreProfileService _profileService;
         private DirectorStudioUIState _uiState;
         private DirectorStudioOperations _operations;
@@ -39,7 +39,7 @@ namespace NexoDirectorStudio.Editor
         {
             try
             {
-                _service = new DirectorStudioService();
+                _service = new DirectorStudioServiceUnified();
                 _profileService = _service.GetService<GenreProfileService>();
             }
             catch (System.Exception ex)

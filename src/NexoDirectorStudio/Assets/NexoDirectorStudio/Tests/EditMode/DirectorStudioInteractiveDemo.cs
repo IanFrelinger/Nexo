@@ -27,7 +27,7 @@ namespace NexoDirectorStudio.Tests.EditMode
             {
                 // Initialize Director Studio
                 Console.WriteLine("🚀 Initializing Director Studio...");
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 Console.WriteLine("✅ Director Studio initialized successfully!");
                 Console.WriteLine();
                 

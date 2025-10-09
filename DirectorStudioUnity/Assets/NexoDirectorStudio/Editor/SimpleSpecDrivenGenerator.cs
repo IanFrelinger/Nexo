@@ -193,7 +193,7 @@ Focus on creating a cohesive experience that delivers the {spec.EmotionalGoal.To
         
         private static GameContent GenerateGameContentSync(DesignBrief designBrief, GameSpecification spec)
         {
-            using var service = new DirectorStudioService();
+            using var service = new DirectorStudioServiceUnified();
             
             var plan = new PlanGameSliceCommand().ExecuteAsync(new IPlanGameSliceCommand.Input(designBrief), CancellationToken.None).Result;
             var world = new BuildWorldLayoutCommand().ExecuteAsync(new IBuildWorldLayoutCommand.Input(plan), CancellationToken.None).Result;

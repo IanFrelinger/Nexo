@@ -62,7 +62,7 @@ namespace NexoDirectorStudio.EditorUI
 
         private async Task RunPipeline()
         {
-            var svc = new DirectorStudioService(); // direct instantiation (not MonoBehaviour)
+            var svc = new DirectorStudioServiceUnified(); // direct instantiation (not MonoBehaviour)
             var ctx = new RunContext { Seed = _cfg.seed, ArtifactRoot = _cfg.artifacts, Checkpoints = new FileCheckpointStore() };
             ctx.Rng.Init(_cfg.seed);
 

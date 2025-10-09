@@ -17,11 +17,11 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class ServiceValidationTests : IDisposable
     {
-        private readonly DirectorStudioService _service;
+        private readonly IDirectorStudioService _service;
         
         public ServiceValidationTests()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
         }
         
         public void Dispose()

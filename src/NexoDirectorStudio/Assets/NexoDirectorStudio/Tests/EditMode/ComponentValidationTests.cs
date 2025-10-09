@@ -19,13 +19,13 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class ComponentValidationTests
     {
-        private DirectorStudioService _service;
+        private IIDirectorStudioService _service;
         private ComponentValidator _validator;
 
         [SetUp]
         public void SetUp()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
             _validator = new ComponentValidator(maxRetries: 3, timeoutSeconds: 30f);
         }
 

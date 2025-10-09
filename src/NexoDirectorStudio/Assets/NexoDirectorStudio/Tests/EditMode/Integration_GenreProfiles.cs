@@ -11,13 +11,13 @@ namespace NexoDirectorStudio.Tests.EditMode
     [TestFixture]
     public class Integration_GenreProfiles
     {
-        private DirectorStudioService _service;
+        private IDirectorStudioService _service;
         private GenreProfileService _profileService;
         
         [SetUp]
         public void SetUp()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
             _profileService = _service.GetService<GenreProfileService>();
             _profileService.InitializeProfiles();
         }

@@ -82,7 +82,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 Console.WriteLine("  ✅ DirectorStudioService initialized");
                 
                 var planCommand = service.GetService<IPlanGameSliceCommand>();
@@ -107,7 +107,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var designBrief = new DesignBrief
                 {
@@ -138,7 +138,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var gamePlan = new GamePlan
                 {
@@ -175,7 +175,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var ollamaAdapter = service.GetService<IOllamaAdapter>();
                 var comfyuiAdapter = service.GetService<ITextureGenAdapter>();
@@ -202,7 +202,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var genreRegistry = service.GetService<GenreRegistry>();
                 var allProfiles = genreRegistry.GetAllProfiles();
@@ -254,7 +254,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var designBrief = new DesignBrief
                 {
@@ -299,7 +299,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var planCommand = service.GetService<IPlanGameSliceCommand>();
                 
@@ -339,7 +339,7 @@ namespace NexoDirectorStudio.Tests.EditMode
         {
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 
                 var designBrief = new DesignBrief
                 {

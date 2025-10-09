@@ -29,7 +29,7 @@ namespace NexoDirectorStudio.Tests.EditMode
 
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 var testRunner = new TestRunnerIntegration(config.MaxRetries, config.TimeoutSeconds);
 
                 var briefs = new[]
@@ -98,7 +98,7 @@ namespace NexoDirectorStudio.Tests.EditMode
 
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
 
                 // Test service resolution
                 var services = new object[]
@@ -153,7 +153,7 @@ namespace NexoDirectorStudio.Tests.EditMode
 
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 var brief = new DesignBrief("Performance test", "FPS", 1, 2, 2001);
 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -206,7 +206,7 @@ namespace NexoDirectorStudio.Tests.EditMode
 
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
 
                 // Quick smoke test
                 var brief = new DesignBrief("CI/CD smoke test", "FPS", 1, 1, 3001);
@@ -242,7 +242,7 @@ namespace NexoDirectorStudio.Tests.EditMode
 
             try
             {
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 var testRunner = new TestRunnerIntegration(config.MaxRetries, config.TimeoutSeconds);
 
                 var brief = new DesignBrief("Component validation test", "FPS", 1, 2, 4001);

@@ -22,11 +22,11 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class Validation_CompleteSystem : IDisposable
     {
-        private readonly DirectorStudioService _service;
+        private readonly IIDirectorStudioService _service;
         
         public Validation_CompleteSystem()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
         }
         
         public void Dispose()

@@ -17,11 +17,11 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class Smoke_RefactoredSystem : IDisposable
     {
-        private readonly DirectorStudioService _service;
+        private readonly IDirectorStudioService _service;
         
         public Smoke_RefactoredSystem()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
         }
         
         public void Dispose()

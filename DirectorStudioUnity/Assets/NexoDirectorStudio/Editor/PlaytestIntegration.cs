@@ -35,7 +35,7 @@ namespace NexoDirectorStudio.Editor
 
                 // 1. Generate game content using existing DirectorCliRunner
                 System.Console.WriteLine("🎬 Phase 1: Generating game content...");
-                using var service = new DirectorStudioService();
+                using var service = new DirectorStudioServiceUnified();
                 var designBrief = DirectorCliRunner.PromptToBriefAsync(service, prompt, CancellationToken.None).Result;
                 
                 var plan = new PlanGameSliceCommand().ExecuteAsync(new IPlanGameSliceCommand.Input(designBrief), CancellationToken.None).Result;

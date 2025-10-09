@@ -1,26 +1,27 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Nexo.Core.Application;
+using Nexo.Core.Application.Interfaces;
+using Nexo.Core.Application.Orchestration;
 using NexoDirectorStudio.Commands;
+using NexoDirectorStudio.Profiles;
 using NexoDirectorStudio.Validators;
 using NexoDirectorStudio.Adapters;
-using NexoDirectorStudio.Profiles;
-using NexoDirectorStudio.DTO;
 
 namespace NexoDirectorStudio.Orchestration
 {
     /// <summary>
-    /// Main service composition and dependency injection container for Director Studio.
-    /// Provides access to all commands, validators, and adapters.
+    /// Director Studio service implementation for Unity projects.
+    /// Now uses the unified DirectorStudioServiceUnified implementation.
     /// </summary>
-    public class DirectorStudioService : IDisposable
+    public class DirectorStudioService : IDirectorStudioService
     {
-        private readonly Dictionary<Type, object> _services = new();
-        private bool _disposed = false;
+        private readonly IDirectorStudioService _unifiedService;
 
         public DirectorStudioService()
         {
-            InitializeServices();
+            _unifiedService = new DirectorStudioServiceUnified();
         }
 
         /// <summary>
@@ -30,97 +31,42 @@ namespace NexoDirectorStudio.Orchestration
         /// <returns>The service instance</returns>
         public T GetService<T>() where T : class
         {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(DirectorStudioService));
-
-            if (_services.TryGetValue(typeof(T), out var service))
-            {
-                return (T)service;
-            }
-
-            // Create service on demand if not found
-            var newService = CreateService<T>();
-            if (newService != null)
-            {
-                _services[typeof(T)] = newService;
-                return newService;
-            }
-
-            throw new InvalidOperationException($"Service of type {typeof(T).Name} is not available");
+            return _unifiedService.GetService<T>();
         }
 
-        private T CreateService<T>() where T : class
+        /// <summary>
+        /// Checks if a service of the specified type is available.
+        /// </summary>
+        /// <typeparam name="T">The type of service to check</typeparam>
+        /// <returns>True if the service is available, false otherwise</returns>
+        public bool IsServiceAvailable<T>() where T : class
         {
-            // Create command services
-            if (typeof(T) == typeof(IPlanGameSliceCommand))
-                return new PlanGameSliceCommand() as T;
-            
-            if (typeof(T) == typeof(IBuildWorldLayoutCommand))
-                return new BuildWorldLayoutCommand() as T;
-            
-            if (typeof(T) == typeof(IPlaceInteractionsCommand))
-                return new PlaceInteractionsCommand() as T;
-            
-            if (typeof(T) == typeof(ICreateContentBundleCommand))
-                return new CreateContentBundleCommand() as T;
-            
-            if (typeof(T) == typeof(IProposeAutoFixesCommand))
-                return new ProposeAutoFixesCommand() as T;
-            
-            if (typeof(T) == typeof(IApplyAutoFixesCommand))
-                return new ApplyAutoFixesCommand() as T;
-
-            // Create validator services
-            if (typeof(T) == typeof(IEnumerable<IValidator<GamePlan>>))
-            {
-                var validators = new List<IValidator<GamePlan>>
-                {
-                    (IValidator<GamePlan>)new PlayabilityValidator(),
-                    (IValidator<GamePlan>)new MechanicsValidator(),
-                    (IValidator<GamePlan>)new PerformanceValidator()
-                };
-                return validators as T;
-            }
-            
-            if (typeof(T) == typeof(IValidator<ContentBundle>))
-                return new ContentBundleValidator() as T;
-
-            // Create adapter services
-            if (typeof(T) == typeof(IOllamaAdapter))
-                return new OllamaAdapter() as T;
-            
-            if (typeof(T) == typeof(ITextureGenAdapter))
-                return new ComfyUIAdapter() as T;
-            
-            if (typeof(T) == typeof(ITtsAdapter))
-                return new PiperAdapter() as T;
-
-            // Create profile services
-            if (typeof(T) == typeof(GenreProfileService))
-                return new GenreProfileService() as T;
-
-            return null;
+            return _unifiedService.IsServiceAvailable<T>();
         }
 
-        private void InitializeServices()
+        /// <summary>
+        /// Initializes the service with default configuration.
+        /// </summary>
+        public void Initialize()
         {
-            // Initialize core services
-            _services[typeof(GenreProfileService)] = new GenreProfileService();
+            _unifiedService.Initialize();
         }
 
+        /// <summary>
+        /// Gets the service provider for advanced scenarios.
+        /// </summary>
+        /// <returns>The underlying service provider</returns>
+        public object GetServiceProvider()
+        {
+            return _unifiedService.GetServiceProvider();
+        }
+
+        /// <summary>
+        /// Disposes of the service and its resources.
+        /// </summary>
         public void Dispose()
         {
-            if (!_disposed)
-            {
-                // Dispose all disposable services
-                foreach (var service in _services.Values.OfType<IDisposable>())
-                {
-                    service?.Dispose();
-                }
-                
-                _services.Clear();
-                _disposed = true;
-            }
+            _unifiedService?.Dispose();
         }
     }
 }

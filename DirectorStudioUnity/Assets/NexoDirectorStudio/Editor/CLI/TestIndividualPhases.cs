@@ -21,7 +21,7 @@ namespace NexoDirectorStudio.EditorCLI
             {
                 Debug.Log("[TestIndividualPhases] Starting individual phase tests...");
                 
-                var svc = new DirectorStudioService();
+                var svc = new DirectorStudioServiceUnified();
                 var ctx = new RunContext { Seed = 1337, ArtifactRoot = "Artifacts", Checkpoints = null };
                 ctx.Rng.Init(1337);
                 

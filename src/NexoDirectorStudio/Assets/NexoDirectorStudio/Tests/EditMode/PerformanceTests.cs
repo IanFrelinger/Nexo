@@ -21,13 +21,13 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class PerformanceTests
     {
-        private DirectorStudioService _service;
+        private IDirectorStudioService _service;
         private TestRunnerIntegration _testRunner;
 
         [SetUp]
         public void SetUp()
         {
-            _service = new DirectorStudioService();
+            _service = new DirectorStudioServiceUnified();
             _testRunner = new TestRunnerIntegration(maxRetries: 1, timeoutSeconds: 10f);
         }
 

@@ -38,7 +38,7 @@ namespace NexoDirectorStudio.EditorCLI
                 if (int.TryParse(Arg("--seed", cfg.seed.ToString()), out var s)) cfg.seed = s;
                 var resume = args.Contains("--resume");
 
-                var svc = new DirectorStudioService();
+                var svc = new DirectorStudioServiceUnified();
                 var ctx = new RunContext { Seed = cfg.seed, ArtifactRoot = cfg.artifacts, Checkpoints = resume ? new FileCheckpointStore() : null };
                 ctx.Rng.Init(cfg.seed);
                 Directory.CreateDirectory(ctx.RunFolder);

@@ -81,7 +81,7 @@ namespace NexoDirectorStudio.Editor.CLI
                 ctx.Rng.Init(seed);
 
                 // Create service and run phases
-                var service = new DirectorStudioService();
+                var service = new DirectorStudioServiceUnified();
                 var planPhase = new PlanPhase(service.GetService<IPlanGameSliceCommand>());
                 var layoutPhase = new LayoutPhase(service.GetService<IBuildWorldLayoutCommand>());
                 var placementPhase = new PlacementPhase(service.GetService<IPlaceInteractionsCommand>());
