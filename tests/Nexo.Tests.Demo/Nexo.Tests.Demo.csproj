@@ -24,6 +24,7 @@
     <ProjectReference Include="../../src/Nexo.Core.UI/Nexo.Core.UI.csproj" />
     <ProjectReference Include="../../src/Nexo.Core.UI.Avalonia/Nexo.Core.UI.Avalonia.csproj" />
     <ProjectReference Include="../../src/Nexo.UI.Demo.Avalonia/Nexo.UI.Demo.Avalonia.csproj" />
+    <ProjectReference Include="../Nexo.Tests.Demo.Infrastructure/Nexo.Tests.Demo.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

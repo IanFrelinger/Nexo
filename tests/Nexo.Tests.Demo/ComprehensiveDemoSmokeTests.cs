@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using Nexo.Tests.Demo.Infrastructure;
 
 namespace Nexo.Tests.Demo;
 
@@ -11,11 +12,11 @@ namespace Nexo.Tests.Demo;
 /// Comprehensive smoke tests for all demo applications in the Nexo project.
 /// These tests validate that all demo components are ready for demonstration and recording.
 /// </summary>
-public class ComprehensiveDemoSmokeTests
+public class ComprehensiveDemoSmokeTests : DemoTestBase
 {
     private readonly ITestOutputHelper _output;
 
-    public ComprehensiveDemoSmokeTests(ITestOutputHelper output)
+    public ComprehensiveDemoSmokeTests(ITestOutputHelper output) : base(output)
     {
         _output = output;
     }
@@ -25,26 +26,8 @@ public class ComprehensiveDemoSmokeTests
     [Fact]
     public void AvaloniaDemo_ProjectStructure_ShouldBeComplete()
     {
-        // Arrange
-        var projectRoot = GetProjectRoot();
-        var avaloniaDemoPath = Path.Combine(projectRoot, "src", "Nexo.UI.Demo.Avalonia");
-        
-        var requiredFiles = new[]
-        {
-            "Nexo.UI.Demo.Avalonia.csproj",
-            "MainWindow.axaml",
-            "MainWindow.axaml.cs",
-            "App.axaml",
-            "App.axaml.cs",
-            "Program.cs"
-        };
-
-        // Act & Assert
-        foreach (var file in requiredFiles)
-        {
-            var filePath = Path.Combine(avaloniaDemoPath, file);
-            File.Exists(filePath).Should().BeTrue($"Required file {file} should exist in Avalonia demo");
-        }
+        // Use base class method instead of duplicate code
+        AssertAvaloniaDemoStructure();
     }
 
     [Fact]
@@ -127,21 +110,8 @@ public class ComprehensiveDemoSmokeTests
     [Fact]
     public void UnityDemo_ProjectStructure_ShouldBeComplete()
     {
-        // Arrange
-        var projectRoot = GetProjectRoot();
-        var unityDemoPath = Path.Combine(projectRoot, "src", "Nexo.Core.UI.Unity", "Frameworks", "Unity");
-        
-        var requiredFiles = new[]
-        {
-            "PrimitivesDemoWindow.cs"
-        };
-
-        // Act & Assert
-        foreach (var file in requiredFiles)
-        {
-            var filePath = Path.Combine(unityDemoPath, file);
-            File.Exists(filePath).Should().BeTrue($"Required file {file} should exist in Unity demo");
-        }
+        // Use base class method instead of duplicate code
+        AssertUnityDemoStructure();
     }
 
     [Fact]
@@ -168,25 +138,8 @@ public class ComprehensiveDemoSmokeTests
     [Fact]
     public void DirectorStudio_ProjectStructure_ShouldBeComplete()
     {
-        // Arrange
-        var projectRoot = GetProjectRoot();
-        var directorStudioPath = Path.Combine(projectRoot, "src", "NexoDirectorStudio");
-        
-        var requiredDirectories = new[]
-        {
-            "Assets",
-            "Assets/NexoDirectorStudio",
-            "Assets/NexoDirectorStudio/Tests",
-            "Assets/NexoDirectorStudio/Tests/EditMode",
-            "Assets/NexoDirectorStudio/Tests/PlayMode"
-        };
-
-        // Act & Assert
-        foreach (var dir in requiredDirectories)
-        {
-            var dirPath = Path.Combine(directorStudioPath, dir);
-            Directory.Exists(dirPath).Should().BeTrue($"Required directory {dir} should exist in Director Studio");
-        }
+        // Use base class method instead of duplicate code
+        AssertDirectorStudioStructure();
     }
 
     [Fact]
@@ -557,23 +510,6 @@ public class ComprehensiveDemoSmokeTests
                 Directory.Exists(component).Should().BeTrue($"Critical demo component should exist: {component}");
             }
         }
-    }
-
-    #endregion
-
-    #region Helper Methods
-
-    private static string GetProjectRoot()
-    {
-        var currentDirectory = Directory.GetCurrentDirectory();
-        var directory = new DirectoryInfo(currentDirectory);
-        
-        while (directory != null && !File.Exists(Path.Combine(directory.FullName, "Nexo.sln")))
-        {
-            directory = directory.Parent;
-        }
-        
-        return directory?.FullName ?? throw new InvalidOperationException("Could not find project root");
     }
 
     #endregion
