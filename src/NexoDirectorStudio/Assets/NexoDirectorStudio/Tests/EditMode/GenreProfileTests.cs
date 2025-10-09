@@ -14,7 +14,7 @@ namespace NexoDirectorStudio.Tests.EditMode
     /// </summary>
     public class GenreProfileTests
     {
-        private IIIDirectorStudioService _service;
+        private IDirectorStudioService _service;
 
         [SetUp]
         public void SetUp()
