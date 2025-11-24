@@ -15,6 +15,7 @@ public interface IConsoleRenderer
     void RenderAnalysisResult(AnalysisResult result, bool json);
     void RenderValidationResult(ValidationResult result, bool json);
     void RenderAgentResult(AgentExecutionResult result, bool json);
+    void RenderAgentList(IReadOnlyList<AgentMetadata> agents, bool json);
     void RenderTable<T>(IEnumerable<T> items);
 }
 
