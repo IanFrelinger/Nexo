@@ -152,33 +152,41 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         var command = new RunValidationCommand(null);
         
         // The handler should catch the InvalidOperationException and wrap it in a ValidationException
-        ValidationException? caughtException = null;
+        // We expect a ValidationException to be thrown, so we catch it and verify it
+        bool exceptionThrown = false;
+        
         try
         {
             var result = await handler.Handle(command, CancellationToken.None);
             // If we get here, no exception was thrown - that's a test failure
-            throw new Exception("Expected ValidationException to be thrown but handler returned a result");
+            throw new AssertionException("Expected ValidationException to be thrown but handler returned a result");
         }
         catch (ValidationException ex)
         {
             // This is expected - the handler wraps the exception
-            caughtException = ex;
+            exceptionThrown = true;
+            
+            // Verify the exception message contains expected content
+            if (!ex.Message.Contains("Validation failed"))
+            {
+                throw new AssertionException($"Exception message should mention 'Validation failed' but was: {ex.Message}");
+            }
+        }
+        catch (AssertionException)
+        {
+            // Re-throw assertion exceptions
+            throw;
         }
         catch (Exception ex)
         {
             // If we catch a different exception, that's also a failure
-            throw new Exception($"Expected ValidationException but got {ex.GetType().Name}: {ex.Message}");
+            throw new AssertionException($"Expected ValidationException but got {ex.GetType().Name}: {ex.Message}");
         }
 
-        // Verify the exception was caught and has the right message
-        if (caughtException == null)
+        // Verify the exception was thrown
+        if (!exceptionThrown)
         {
-            throw new Exception("Expected ValidationException to be thrown but none was caught");
-        }
-        
-        if (!caughtException.Message.Contains("Validation failed"))
-        {
-            throw new Exception($"Exception message should mention 'Validation failed' but was: {caughtException.Message}");
+            throw new AssertionException("Expected ValidationException to be thrown but none was caught");
         }
     }
 

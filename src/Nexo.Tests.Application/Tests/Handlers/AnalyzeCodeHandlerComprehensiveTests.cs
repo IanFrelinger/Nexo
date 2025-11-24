@@ -129,33 +129,41 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
         // The handler should catch the UnauthorizedAccessException and wrap it in an AnalysisException
-        AnalysisException? caughtException = null;
+        // We expect an AnalysisException to be thrown, so we catch it and verify it
+        bool exceptionThrown = false;
+        
         try
         {
             var result = await handler.Handle(command, CancellationToken.None);
             // If we get here, no exception was thrown - that's a test failure
-            throw new Exception("Expected AnalysisException to be thrown but handler returned a result");
+            throw new AssertionException("Expected AnalysisException to be thrown but handler returned a result");
         }
         catch (AnalysisException ex)
         {
             // This is expected - the handler wraps the exception
-            caughtException = ex;
+            exceptionThrown = true;
+            
+            // Verify the exception message contains expected content
+            if (!ex.Message.Contains("Unauthorized access"))
+            {
+                throw new AssertionException($"Exception message should mention 'Unauthorized access' but was: {ex.Message}");
+            }
+        }
+        catch (AssertionException)
+        {
+            // Re-throw assertion exceptions
+            throw;
         }
         catch (Exception ex)
         {
             // If we catch a different exception, that's also a failure
-            throw new Exception($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
+            throw new AssertionException($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
         }
 
-        // Verify the exception was caught and has the right message
-        if (caughtException == null)
+        // Verify the exception was thrown
+        if (!exceptionThrown)
         {
-            throw new Exception("Expected AnalysisException to be thrown but none was caught");
-        }
-        
-        if (!caughtException.Message.Contains("Unauthorized access"))
-        {
-            throw new Exception($"Exception message should mention 'Unauthorized access' but was: {caughtException.Message}");
+            throw new AssertionException("Expected AnalysisException to be thrown but none was caught");
         }
     }
 
@@ -172,33 +180,43 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
         // The handler should catch the InvalidOperationException and wrap it in an AnalysisException
-        AnalysisException? caughtException = null;
+        // We expect an AnalysisException to be thrown, so we catch it and verify it
+        bool exceptionThrown = false;
+        string? exceptionMessage = null;
+        
         try
         {
             var result = await handler.Handle(command, CancellationToken.None);
             // If we get here, no exception was thrown - that's a test failure
-            throw new Exception("Expected AnalysisException to be thrown but handler returned a result");
+            throw new AssertionException("Expected AnalysisException to be thrown but handler returned a result");
         }
         catch (AnalysisException ex)
         {
             // This is expected - the handler wraps the exception
-            caughtException = ex;
+            exceptionThrown = true;
+            exceptionMessage = ex.Message;
+            
+            // Verify the exception message contains expected content
+            if (!ex.Message.Contains("Analysis failed"))
+            {
+                throw new AssertionException($"Exception message should mention 'Analysis failed' but was: {ex.Message}");
+            }
+        }
+        catch (AssertionException)
+        {
+            // Re-throw assertion exceptions
+            throw;
         }
         catch (Exception ex)
         {
             // If we catch a different exception, that's also a failure
-            throw new Exception($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
+            throw new AssertionException($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
         }
 
-        // Verify the exception was caught and has the right message
-        if (caughtException == null)
+        // Verify the exception was thrown
+        if (!exceptionThrown)
         {
-            throw new Exception("Expected AnalysisException to be thrown but none was caught");
-        }
-        
-        if (!caughtException.Message.Contains("Analysis failed"))
-        {
-            throw new Exception($"Exception message should mention 'Analysis failed' but was: {caughtException.Message}");
+            throw new AssertionException("Expected AnalysisException to be thrown but none was caught");
         }
     }
 
