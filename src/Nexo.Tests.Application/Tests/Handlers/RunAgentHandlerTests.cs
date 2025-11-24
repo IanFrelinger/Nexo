@@ -84,8 +84,7 @@ public class RunAgentHandlerTests : UnitTestBase
         {
             AgentName = "test-agent",
             Success = false,
-            Message = "Execution failed",
-            ErrorMessage = "Test error"
+            Message = "Execution failed"
         };
 
         mockExecutor
