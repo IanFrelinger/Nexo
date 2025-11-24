@@ -492,50 +492,279 @@ This document outlines a comprehensive plan to achieve 100% test coverage for th
 - `src/Nexo.Tests.Application/Tests/Testing/TestBaseTests.cs`
 - `src/Nexo.Tests.Application/Tests/Testing/UnitTestBaseTests.cs`
 
-## Implementation Strategy
+## Sprint-Based Implementation Strategy
 
-### Step 1: Create Test Infrastructure
-1. Ensure all test projects build successfully
-2. Verify test discovery works
-3. Create test base classes and helpers
+### Sprint 0: Test Infrastructure Setup (1-2 days)
+**Goal:** Establish foundation for all testing work
 
-### Step 2: Domain Layer (Week 1)
-1. Complete value object tests
-2. Complete exception tests
-3. Complete error code tests
-4. Target: 100% domain layer coverage
+**Deliverables:**
+- [ ] Ensure all test projects build successfully
+- [ ] Verify test discovery works (`nexo test` command)
+- [ ] Create test base classes and helpers
+- [ ] Set up test project structure
+- [ ] Document test patterns and conventions
+- [ ] Create test data fixtures and builders
 
-### Step 3: Application Layer (Week 2)
-1. Complete handler tests
-2. Complete validator tests
-3. Complete behavior tests
-4. Complete model tests
-5. Target: 100% application layer coverage
+**Definition of Done:**
+- All test projects compile
+- Test discovery finds existing tests
+- Test execution works end-to-end
+- Test helpers are available for use
 
-### Step 4: Infrastructure Layer (Week 3)
-1. Complete adapter tests
-2. Complete caching tests
-3. Complete metrics tests
-4. Complete testing infrastructure tests
-5. Target: 100% infrastructure layer coverage
+---
 
-### Step 5: CLI Layer (Week 4)
-1. Complete command tests
-2. Complete formatting tests
-3. Complete program tests
-4. Target: 100% CLI layer coverage
+### Sprint 1: Domain Layer Foundation (5 days)
+**Goal:** Achieve 100% test coverage for Domain layer
 
-### Step 6: Integration & E2E (Week 5)
-1. Create integration test scenarios
-2. Create E2E test scenarios
-3. Test full workflows
-4. Target: Critical path coverage
+**User Story:** As a developer, I want comprehensive tests for all domain value objects and exceptions so that domain logic is validated and protected.
 
-### Step 7: Coverage Verification
-1. Run coverage analysis
-2. Identify gaps
-3. Fill remaining gaps
-4. Target: 100% overall coverage
+**Deliverables:**
+- [ ] Complete value object tests (RiskLevel, all value objects)
+- [ ] Complete exception tests (all constructors, error codes, suggestions)
+- [ ] Complete error code tests (constants, format, uniqueness)
+- [ ] Target: 100% domain layer coverage
+
+**Acceptance Criteria:**
+- All value objects have tests
+- All exceptions have tests covering all constructors
+- All error codes are validated
+- Coverage report shows 100% for Domain layer
+- All tests pass
+
+**Estimated Test Count:** ~15-20 test methods
+
+---
+
+### Sprint 2: Application Layer - Handlers & Validators (5 days)
+**Goal:** Achieve 100% test coverage for Application layer handlers and validators
+
+**User Story:** As a developer, I want comprehensive tests for all application handlers and validators so that business logic is validated and edge cases are handled.
+
+**Deliverables:**
+- [ ] Complete handler tests (AnalyzeCode, RunValidation, RunAgent, GetConfiguration, ListAgents)
+- [ ] Complete validator tests (AnalyzeCode, RunValidation, RunAgent)
+- [ ] Complete behavior tests (ValidationBehavior)
+- [ ] Target: 100% handler and validator coverage
+
+**Acceptance Criteria:**
+- All handlers have comprehensive tests (success, failure, edge cases)
+- All validators have tests for all validation rules
+- ValidationBehavior is fully tested
+- All tests use proper mocking
+- Coverage report shows 100% for handlers and validators
+
+**Estimated Test Count:** ~40-50 test methods
+
+---
+
+### Sprint 3: Application Layer - Models & Behaviors (3 days)
+**Goal:** Complete Application layer test coverage
+
+**User Story:** As a developer, I want tests for all application models and behaviors so that data structures and cross-cutting concerns are validated.
+
+**Deliverables:**
+- [ ] Complete model tests (AnalysisResult, ValidationResult, AgentExecutionResult, ProgressReport, TestResult)
+- [ ] Verify record immutability and equality
+- [ ] Test model initialization and validation
+- [ ] Target: 100% Application layer coverage
+
+**Acceptance Criteria:**
+- All models have tests
+- Record equality and immutability verified
+- All initialization paths tested
+- Coverage report shows 100% for Application layer
+
+**Estimated Test Count:** ~15-20 test methods
+
+---
+
+### Sprint 4: Infrastructure Layer - Analysis & Validation (5 days)
+**Goal:** Achieve 100% test coverage for Analysis and Validation infrastructure
+
+**User Story:** As a developer, I want comprehensive tests for analysis and validation adapters so that infrastructure integrations are reliable and error handling is robust.
+
+**Deliverables:**
+- [ ] Complete AnalysisServiceAdapter tests (with real files, edge cases, cancellation)
+- [ ] Complete CachedAnalysisServiceAdapter tests (cache hit/miss, expiration)
+- [ ] Complete AnalysisRuleEngine tests (rule execution, multiple rules)
+- [ ] Complete SecurityAnalysisRule and CodeQualityRule tests
+- [ ] Complete ValidationServiceAdapter tests (with real test projects, TRX parsing)
+- [ ] Complete CachedValidationServiceAdapter tests
+- [ ] Complete TrxTestResultParser tests (valid/invalid TRX files, edge cases)
+- [ ] Target: 100% analysis and validation infrastructure coverage
+
+**Acceptance Criteria:**
+- All adapters have integration tests with real dependencies
+- Caching behavior is fully tested
+- Rule engine and rules are fully tested
+- TRX parser handles all scenarios
+- Error handling is comprehensive
+- Coverage report shows 100% for analysis and validation infrastructure
+
+**Estimated Test Count:** ~50-60 test methods
+
+---
+
+### Sprint 5: Infrastructure Layer - Agents, Config, Caching & Metrics (5 days)
+**Goal:** Complete Infrastructure layer test coverage
+
+**User Story:** As a developer, I want comprehensive tests for agent execution, configuration, caching, and metrics so that all infrastructure services are reliable.
+
+**Deliverables:**
+- [ ] Complete AgentExecutorAdapter tests (agent discovery, execution, error handling)
+- [ ] Complete AgentRegistryAdapter tests (agent discovery, metadata)
+- [ ] Complete ConfigurationServiceAdapter tests (file operations, JSON handling)
+- [ ] Complete MemoryCacheStrategy tests (get/set, expiration, concurrency)
+- [ ] Complete MemoryMetricsCollector tests (execution time, counters, concurrency)
+- [ ] Complete TestRunnerAdapter tests (discovery, execution, filtering)
+- [ ] Target: 100% Infrastructure layer coverage
+
+**Acceptance Criteria:**
+- All agent adapters have comprehensive tests
+- Configuration service handles all file scenarios
+- Caching strategy is fully tested (including edge cases)
+- Metrics collector is fully tested
+- Test runner is fully tested
+- Coverage report shows 100% for Infrastructure layer
+
+**Estimated Test Count:** ~40-50 test methods
+
+---
+
+### Sprint 6: CLI Layer - Commands (5 days)
+**Goal:** Achieve 100% test coverage for CLI commands
+
+**User Story:** As a user, I want comprehensive tests for all CLI commands so that the CLI is reliable and handles all scenarios correctly.
+
+**Deliverables:**
+- [ ] Complete AnalyzeCommand tests (success, failures, JSON, verbose, exit codes)
+- [ ] Complete ValidateCommand tests (with/without filter, JSON, verbose, exit codes)
+- [ ] Complete AgentCommand tests (with/without input, JSON, verbose, exit codes)
+- [ ] Complete ListAgentsCommand tests (listing, JSON, verbose)
+- [ ] Complete ConfigCommand tests (display, JSON, verbose)
+- [ ] Complete TestCommand tests (filtering, JSON, verbose, progress)
+- [ ] Target: 100% CLI command coverage
+
+**Acceptance Criteria:**
+- All commands have comprehensive tests
+- JSON output is validated
+- Verbose mode is tested
+- Exit codes are verified
+- Error handling is comprehensive
+- Coverage report shows 100% for CLI commands
+
+**Estimated Test Count:** ~40-50 test methods
+
+---
+
+### Sprint 7: CLI Layer - Formatting & Program (3 days)
+**Goal:** Complete CLI layer test coverage
+
+**User Story:** As a developer, I want comprehensive tests for formatting and program setup so that output rendering and DI configuration are validated.
+
+**Deliverables:**
+- [ ] Complete ConsoleRenderer tests (all render methods, JSON and non-JSON modes)
+- [ ] Complete Program tests (command registration, DI setup, routing)
+- [ ] Target: 100% CLI layer coverage
+
+**Acceptance Criteria:**
+- All render methods are tested
+- JSON and non-JSON modes are tested
+- Program setup is validated
+- Coverage report shows 100% for CLI layer
+
+**Estimated Test Count:** ~20-25 test methods
+
+---
+
+### Sprint 8: Test Framework & Integration Tests (5 days)
+**Goal:** Complete test framework coverage and add integration/E2E tests
+
+**User Story:** As a developer, I want the test framework itself to be fully tested and have integration tests for critical workflows.
+
+**Deliverables:**
+- [ ] Complete TestBase and UnitTestBase tests
+- [ ] Create integration test scenarios (full workflows)
+- [ ] Create E2E test scenarios (end-to-end command execution)
+- [ ] Test critical user paths
+- [ ] Target: Test framework 100% coverage + critical path integration coverage
+
+**Acceptance Criteria:**
+- Test framework abstractions are fully tested
+- Integration tests cover critical workflows
+- E2E tests validate full command execution
+- All integration tests pass
+- Coverage report shows test framework is fully covered
+
+**Estimated Test Count:** ~30-40 test methods
+
+---
+
+### Sprint 9: Coverage Verification & Gap Filling (3 days)
+**Goal:** Achieve 100% overall test coverage
+
+**User Story:** As a developer, I want 100% test coverage verified and any remaining gaps filled.
+
+**Deliverables:**
+- [ ] Run comprehensive coverage analysis
+- [ ] Identify any remaining coverage gaps
+- [ ] Fill remaining gaps
+- [ ] Verify 100% overall coverage
+- [ ] Document coverage metrics
+- [ ] Target: 100% overall coverage verified
+
+**Acceptance Criteria:**
+- Coverage analysis shows 100% coverage
+- All identified gaps are filled
+- Coverage report is documented
+- All tests pass
+- Test execution time is < 5 minutes
+
+**Estimated Test Count:** Variable (gap filling)
+
+---
+
+### Sprint 10: Test Optimization & Documentation (2 days)
+**Goal:** Optimize test execution and document test suite
+
+**User Story:** As a developer, I want fast, well-documented tests that are easy to maintain.
+
+**Deliverables:**
+- [ ] Optimize slow tests
+- [ ] Add test documentation
+- [ ] Create test execution guide
+- [ ] Document test patterns and best practices
+- [ ] Verify test execution time < 5 minutes
+- [ ] Target: Optimized, documented test suite
+
+**Acceptance Criteria:**
+- All tests execute in < 5 minutes
+- Test documentation is complete
+- Test patterns are documented
+- Test execution guide is available
+- Test suite is maintainable
+
+---
+
+## Sprint Summary
+
+| Sprint | Focus Area | Duration | Test Count Target | Coverage Target |
+|--------|-----------|----------|-------------------|-----------------|
+| Sprint 0 | Test Infrastructure | 1-2 days | Setup | Foundation |
+| Sprint 1 | Domain Layer | 5 days | 15-20 | 100% Domain |
+| Sprint 2 | Application - Handlers/Validators | 5 days | 40-50 | 100% Handlers/Validators |
+| Sprint 3 | Application - Models | 3 days | 15-20 | 100% Application |
+| Sprint 4 | Infrastructure - Analysis/Validation | 5 days | 50-60 | 100% Analysis/Validation |
+| Sprint 5 | Infrastructure - Agents/Config/Cache/Metrics | 5 days | 40-50 | 100% Infrastructure |
+| Sprint 6 | CLI - Commands | 5 days | 40-50 | 100% Commands |
+| Sprint 7 | CLI - Formatting/Program | 3 days | 20-25 | 100% CLI |
+| Sprint 8 | Test Framework & Integration | 5 days | 30-40 | Framework + Integration |
+| Sprint 9 | Coverage Verification | 3 days | Variable | 100% Overall |
+| Sprint 10 | Optimization & Documentation | 2 days | N/A | Optimized & Documented |
+
+**Total Estimated Duration:** ~37-40 days (7-8 weeks)
+**Total Estimated Test Count:** ~250-300 test methods
+**Final Coverage Target:** 100% overall coverage
 
 ## Test Execution
 
@@ -574,10 +803,24 @@ nexo test --format-json
 
 ## Metrics Tracking
 
+### Coverage Metrics
 - **Current Coverage:** ~5% (estimated)
 - **Target Coverage:** 100%
-- **Test Count Target:** ~200+ test methods
+- **Test Count Target:** ~250-300 test methods
 - **Test Execution Time Target:** < 5 minutes
+
+### Sprint Metrics
+- **Total Sprints:** 10 sprints
+- **Total Duration:** ~37-40 days (7-8 weeks)
+- **Average Sprint Duration:** 3-5 days
+- **Sprints to 100% Coverage:** 9 sprints (Sprint 10 is optimization)
+
+### Progress Tracking
+Track progress using:
+- Coverage reports per sprint
+- Test count per sprint
+- Test execution time
+- Sprint burndown charts
 
 ## Notes
 
