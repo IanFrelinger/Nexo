@@ -60,7 +60,7 @@ public class DomainExceptionsComprehensiveTests : UnitTestBase
         var ex2 = new AnalysisException("Message 2", innerEx1);
         AssertEqual("Message 2", ex2.Message);
         AssertNotNull(ex2.InnerException);
-        AssertEqual("Inner exception", ex2.InnerException.Message);
+        AssertEqual("Inner exception", ex2.InnerException!.Message);
         AssertNull(ex2.ErrorCode);
         AssertNull(ex2.Suggestion);
 
@@ -109,7 +109,7 @@ public class DomainExceptionsComprehensiveTests : UnitTestBase
         var ex2 = new ValidationException("Message 2", innerEx1);
         AssertEqual("Message 2", ex2.Message);
         AssertNotNull(ex2.InnerException);
-        AssertEqual("Inner exception", ex2.InnerException.Message);
+        AssertEqual("Inner exception", ex2.InnerException!.Message);
         AssertNull(ex2.ErrorCode);
         AssertNull(ex2.Suggestion);
 
@@ -160,7 +160,7 @@ public class DomainExceptionsComprehensiveTests : UnitTestBase
         AssertEqual("test-agent", ex2.AgentName);
         AssertEqual("Message 2", ex2.Message);
         AssertNotNull(ex2.InnerException);
-        AssertEqual("Inner exception", ex2.InnerException.Message);
+        AssertEqual("Inner exception", ex2.InnerException!.Message);
         AssertNull(ex2.ErrorCode);
         AssertNull(ex2.Suggestion);
 
@@ -213,7 +213,7 @@ public class DomainExceptionsComprehensiveTests : UnitTestBase
         var ex2 = new ConfigurationException("Message 2", innerEx1);
         AssertEqual("Message 2", ex2.Message);
         AssertNotNull(ex2.InnerException);
-        AssertEqual("Inner exception", ex2.InnerException.Message);
+        AssertEqual("Inner exception", ex2.InnerException!.Message);
         AssertNull(ex2.ErrorCode);
         AssertNull(ex2.Suggestion);
 
