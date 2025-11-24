@@ -50,14 +50,27 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
                 Message = "All AnalyzeCodeHandler tests passed"
             };
         }
-        catch (Exception ex)
+        catch (AssertionException ex)
         {
+            // AssertionException means a test assertion failed - this is a test failure
             return new TestResult
             {
                 TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+        }
+        catch (Exception ex)
+        {
+            // Any other exception is unexpected
+            return new TestResult
+            {
+                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = $"Unexpected exception: {ex.GetType().Name}: {ex.Message}",
                 StackTrace = ex.StackTrace
             };
         }
@@ -130,7 +143,7 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         
         // The handler should catch the UnauthorizedAccessException and wrap it in an AnalysisException
         // We expect an AnalysisException to be thrown, so we catch it and verify it
-        bool exceptionThrown = false;
+        AnalysisException? caughtException = null;
         
         try
         {
@@ -141,13 +154,15 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         catch (AnalysisException ex)
         {
             // This is expected - the handler wraps the exception
-            exceptionThrown = true;
+            caughtException = ex;
             
             // Verify the exception message contains expected content
             if (!ex.Message.Contains("Unauthorized access"))
             {
                 throw new AssertionException($"Exception message should mention 'Unauthorized access' but was: {ex.Message}");
             }
+            // If we get here, the exception was caught and verified - test passes
+            return; // Exit early since we successfully caught and verified the exception
         }
         catch (AssertionException)
         {
@@ -160,8 +175,8 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
             throw new AssertionException($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
         }
 
-        // Verify the exception was thrown
-        if (!exceptionThrown)
+        // If we get here without catching an exception, that's a failure
+        if (caughtException == null)
         {
             throw new AssertionException("Expected AnalysisException to be thrown but none was caught");
         }
@@ -181,8 +196,7 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         
         // The handler should catch the InvalidOperationException and wrap it in an AnalysisException
         // We expect an AnalysisException to be thrown, so we catch it and verify it
-        bool exceptionThrown = false;
-        string? exceptionMessage = null;
+        AnalysisException? caughtException = null;
         
         try
         {
@@ -193,14 +207,15 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         catch (AnalysisException ex)
         {
             // This is expected - the handler wraps the exception
-            exceptionThrown = true;
-            exceptionMessage = ex.Message;
+            caughtException = ex;
             
             // Verify the exception message contains expected content
             if (!ex.Message.Contains("Analysis failed"))
             {
                 throw new AssertionException($"Exception message should mention 'Analysis failed' but was: {ex.Message}");
             }
+            // If we get here, the exception was caught and verified - test passes
+            return; // Exit early since we successfully caught and verified the exception
         }
         catch (AssertionException)
         {
@@ -213,8 +228,8 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
             throw new AssertionException($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
         }
 
-        // Verify the exception was thrown
-        if (!exceptionThrown)
+        // If we get here without catching an exception, that's a failure
+        if (caughtException == null)
         {
             throw new AssertionException("Expected AnalysisException to be thrown but none was caught");
         }

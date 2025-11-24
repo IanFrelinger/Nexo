@@ -45,14 +45,27 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
                 Message = "All RunValidationHandler tests passed"
             };
         }
-        catch (Exception ex)
+        catch (AssertionException ex)
         {
+            // AssertionException means a test assertion failed - this is a test failure
             return new Nexo.Core.Application.Testing.Models.TestResult
             {
                 TestName = nameof(RunValidationHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+        }
+        catch (Exception ex)
+        {
+            // Any other exception is unexpected
+            return new Nexo.Core.Application.Testing.Models.TestResult
+            {
+                TestName = nameof(RunValidationHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = $"Unexpected exception: {ex.GetType().Name}: {ex.Message}",
                 StackTrace = ex.StackTrace
             };
         }
@@ -153,7 +166,7 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         
         // The handler should catch the InvalidOperationException and wrap it in a ValidationException
         // We expect a ValidationException to be thrown, so we catch it and verify it
-        bool exceptionThrown = false;
+        ValidationException? caughtException = null;
         
         try
         {
@@ -164,13 +177,15 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         catch (ValidationException ex)
         {
             // This is expected - the handler wraps the exception
-            exceptionThrown = true;
+            caughtException = ex;
             
             // Verify the exception message contains expected content
             if (!ex.Message.Contains("Validation failed"))
             {
                 throw new AssertionException($"Exception message should mention 'Validation failed' but was: {ex.Message}");
             }
+            // If we get here, the exception was caught and verified - test passes
+            return; // Exit early since we successfully caught and verified the exception
         }
         catch (AssertionException)
         {
@@ -183,8 +198,8 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
             throw new AssertionException($"Expected ValidationException but got {ex.GetType().Name}: {ex.Message}");
         }
 
-        // Verify the exception was thrown
-        if (!exceptionThrown)
+        // If we get here without catching an exception, that's a failure
+        if (caughtException == null)
         {
             throw new AssertionException("Expected ValidationException to be thrown but none was caught");
         }
