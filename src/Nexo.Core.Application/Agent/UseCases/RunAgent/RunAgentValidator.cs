@@ -1,0 +1,17 @@
+using FluentValidation;
+
+namespace Nexo.Core.Application.Agent.UseCases.RunAgent;
+
+/// <summary>
+/// Validator for RunAgentCommand.
+/// </summary>
+public class RunAgentValidator : AbstractValidator<RunAgentCommand>
+{
+    public RunAgentValidator()
+    {
+        RuleFor(x => x.AgentName)
+            .NotEmpty()
+            .WithMessage("Agent name is required");
+    }
+}
+

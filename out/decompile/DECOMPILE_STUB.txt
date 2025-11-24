@@ -1,0 +1,3 @@
+[stub] Decompilation not implemented.
+Assembly: /Users/ianfrelinger/CursorProjects/Nexo/src/Nexo.Core.Domain/bin/Debug/net8.0/Nexo.Core.Domain.dll
+Tick: 0

@@ -1,0 +1,137 @@
+using System.Text.Json;
+using Nexo.Core.Application.Analysis.Models;
+using Nexo.Core.Application.Validation.Models;
+using Nexo.Core.Application.Agent.Models;
+
+namespace Nexo.CLI.Formatting;
+
+/// <summary>
+/// Host-specific console renderer for CLI output.
+/// </summary>
+public interface IConsoleRenderer
+{
+    void RenderSuccess(string message);
+    void RenderError(string message);
+    void RenderAnalysisResult(AnalysisResult result, bool json);
+    void RenderValidationResult(ValidationResult result, bool json);
+    void RenderAgentResult(AgentExecutionResult result, bool json);
+    void RenderTable<T>(IEnumerable<T> items);
+}
+
+/// <summary>
+/// Console renderer implementation.
+/// </summary>
+public class ConsoleRenderer : IConsoleRenderer
+{
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public ConsoleRenderer()
+    {
+        _jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = false,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
+    }
+
+    public void RenderSuccess(string message)
+    {
+        Console.Out.WriteLine(message);
+    }
+
+    public void RenderError(string message)
+    {
+        Console.Error.WriteLine(message);
+    }
+
+    public void RenderAnalysisResult(AnalysisResult result, bool json)
+    {
+        if (json)
+        {
+            var envelope = new CliEnvelope<AnalysisResult>(!result.HasViolations, result, result.HasViolations ? $"Found {result.TotalViolations} violation(s)" : null);
+            Console.Out.WriteLine(JsonSerializer.Serialize(envelope, _jsonOptions));
+        }
+        else
+        {
+            if (result.HasViolations)
+            {
+                Console.Error.WriteLine($"Found {result.TotalViolations} violation(s):");
+                foreach (var violation in result.Violations)
+                {
+                    Console.Error.WriteLine($"  - {violation.Rule}: {violation.Message} ({violation.FilePath}:{violation.LineNumber})");
+                }
+            }
+            else
+            {
+                Console.Out.WriteLine("No violations found.");
+            }
+        }
+    }
+
+    public void RenderValidationResult(ValidationResult result, bool json)
+    {
+        if (json)
+        {
+            var envelope = new CliEnvelope<ValidationResult>(result.Passed, result, result.Passed ? null : "Validation failed");
+            Console.Out.WriteLine(JsonSerializer.Serialize(envelope, _jsonOptions));
+        }
+        else
+        {
+            if (result.Passed)
+            {
+                Console.Out.WriteLine($"Validation passed ({result.TestsPassed}/{result.TestsRun} tests)");
+            }
+            else
+            {
+                Console.Error.WriteLine($"Validation failed ({result.TestsFailed}/{result.TestsRun} tests failed)");
+                if (result.TestResults != null)
+                {
+                    foreach (var test in result.TestResults.Where(t => !t.Passed))
+                    {
+                        Console.Error.WriteLine($"  - {test.Name}: {test.Message}");
+                    }
+                }
+            }
+        }
+    }
+
+    public void RenderAgentResult(AgentExecutionResult result, bool json)
+    {
+        if (json)
+        {
+            var envelope = new CliEnvelope<AgentExecutionResult>(result.Success, result, result.Success ? null : result.Message);
+            Console.Out.WriteLine(JsonSerializer.Serialize(envelope, _jsonOptions));
+        }
+        else
+        {
+            if (result.Success)
+            {
+                Console.Out.WriteLine($"Agent '{result.AgentName}' executed successfully");
+                if (result.Duration.HasValue)
+                {
+                    Console.Out.WriteLine($"Duration: {result.Duration.Value.TotalMilliseconds}ms");
+                }
+            }
+            else
+            {
+                Console.Error.WriteLine($"Agent '{result.AgentName}' failed: {result.Message}");
+            }
+        }
+    }
+
+    public void RenderTable<T>(IEnumerable<T> items)
+    {
+        // Simple table rendering - can be enhanced with Spectre.Console later
+        foreach (var item in items)
+        {
+            Console.Out.WriteLine(item?.ToString() ?? string.Empty);
+        }
+    }
+
+    private record CliEnvelope<T>(
+        [property: System.Text.Json.Serialization.JsonPropertyName("ok")] bool Ok,
+        [property: System.Text.Json.Serialization.JsonPropertyName("data")] T? Data,
+        [property: System.Text.Json.Serialization.JsonPropertyName("error")] string? Error
+    );
+}
+

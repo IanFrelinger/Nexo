@@ -1,28 +1,29 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using MediatR;
+using FluentValidation;
+using Nexo.CLI.Commands;
+using Nexo.CLI.Formatting;
+using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
+using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Core.Application.Agent.UseCases.RunAgent;
+using Nexo.Abstractions;
+using Nexo.Demo.CLI.Agents;
+using Nexo.Agents.Dev;
 
 namespace Nexo.CLI;
 
-enum ExitCode
-{
-    Ok = 0,
-    ValidationFailed = 2,
-    PolicyViolation = 3,
-    UnexpectedError = 10
-}
-
-record CliEnvelope<T>(
-    [property: JsonPropertyName("ok")] bool Ok,
-    [property: JsonPropertyName("data")] T? Data,
-    [property: JsonPropertyName("error")] string? Error
-);
-
 static class Program
 {
-    static int Main(string[] args)
+    static async Task<int> Main(string[] args)
     {
+        // Build host with dependency injection
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureServices(ConfigureServices)
+            .Build();
+
         var root = new RootCommand("Nexo command-line interface")
         {
             TreatUnmatchedTokensAsErrors = true
@@ -36,6 +37,12 @@ static class Program
 
         root.AddGlobalOption(jsonOpt);
 
+        // Get services from DI container
+        var serviceProvider = host.Services;
+        var analyzeCommand = serviceProvider.GetRequiredService<AnalyzeCommand>();
+        var validateCommand = serviceProvider.GetRequiredService<ValidateCommand>();
+        var agentCommand = serviceProvider.GetRequiredService<AgentCommand>();
+
         // nexo analyze
         var analyzeCmd = new Command("analyze", "Run code/assembly analyzers and policies")
         {
@@ -45,103 +52,81 @@ static class Program
                 getDefaultValue: () => new DirectoryInfo(Environment.CurrentDirectory)
             )
         };
-        analyzeCmd.SetHandler((DirectoryInfo path, bool json) =>
-        {
-            try
+        analyzeCmd.SetHandler(
+            async (DirectoryInfo path, bool json) =>
             {
-                // TODO: wire to your real analyzers/services
-                var violations = new string[] { /* fill from services */ };
-                if (violations.Length == 0)
-                {
-                    Emit<object>(json, new { message = "No violations" }, null, ExitCode.Ok);
-                }
-                else
-                {
-                    Emit<object>(json, null, $"Found {violations.Length} violation(s).", ExitCode.ValidationFailed);
-                }
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                Emit<object>(json, null, $"Policy violation: {ex.Message}", ExitCode.PolicyViolation);
-            }
-            catch (Exception ex)
-            {
-                Emit<object>(json, null, ex.Message, ExitCode.UnexpectedError);
-            }
-        }, analyzeCmd.Options[0] as Option<DirectoryInfo> ?? throw new InvalidOperationException(), jsonOpt);
+                var exitCode = await analyzeCommand.ExecuteAsync(path, json);
+                Environment.Exit(exitCode);
+            },
+            analyzeCmd.Options[0] as Option<DirectoryInfo> ?? throw new InvalidOperationException(),
+            jsonOpt);
 
         // nexo validate
         var validateCmd = new Command("validate", "Run architecture tests/contract checks quickly")
         {
             new Option<string?>("--filter", "Optional test filter (Category/Trait)")
         };
-        validateCmd.SetHandler((string? filter, bool json) =>
-        {
-            try
+        validateCmd.SetHandler(
+            async (string? filter, bool json) =>
             {
-                // TODO: route to your test runner facade or lightweight validations
-                var passed = true; // flip when failures
-                if (passed) Emit<object>(json, new { message = "Validation passed" }, null, ExitCode.Ok);
-                else Emit<object>(json, null, "Validation failed", ExitCode.ValidationFailed);
-            }
-            catch (Exception ex)
-            {
-                Emit<object>(json, null, ex.Message, ExitCode.UnexpectedError);
-            }
-        }, validateCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(), jsonOpt);
+                var exitCode = await validateCommand.ExecuteAsync(filter, json);
+                Environment.Exit(exitCode);
+            },
+            validateCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            jsonOpt);
 
-        // nexo agent run
+        // nexo agent
         var agentCmd = new Command("agent", "Run an agent action")
         {
             new Option<string>("--name", "Agent name") { IsRequired = true },
             new Option<FileInfo?>("--input", "Optional input file")
         };
-        agentCmd.SetHandler((string name, FileInfo? input, bool json) =>
-        {
-            try
+        agentCmd.SetHandler(
+            async (string name, FileInfo? input, bool json) =>
             {
-                // TODO: call your AgentFactory and execute
-                var result = new { agent = name, ran = true };
-                Emit<object>(json, result, null, ExitCode.Ok);
-            }
-            catch (TimeoutException ex)
-            {
-                Emit<object>(json, null, $"Timeout: {ex.Message}", ExitCode.ValidationFailed);
-            }
-            catch (Exception ex)
-            {
-                Emit<object>(json, null, ex.Message, ExitCode.UnexpectedError);
-            }
-        },
-        agentCmd.Options[0] as Option<string> ?? throw new InvalidOperationException(),
-        agentCmd.Options[1] as Option<FileInfo?> ?? throw new InvalidOperationException(),
-        jsonOpt);
+                var exitCode = await agentCommand.ExecuteAsync(name, input, json);
+                Environment.Exit(exitCode);
+            },
+            agentCmd.Options[0] as Option<string> ?? throw new InvalidOperationException(),
+            agentCmd.Options[1] as Option<FileInfo?> ?? throw new InvalidOperationException(),
+            jsonOpt);
 
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
 
-        return root.Invoke(args);
+        return await root.InvokeAsync(args);
+    }
 
-        static void Emit<T>(bool json, T? data, string? error, ExitCode code)
+    private static void ConfigureServices(IServiceCollection services)
+    {
+        // Register MediatR
+        services.AddMediatR(cfg =>
         {
-            if (json)
-            {
-                var env = new CliEnvelope<T>(code == ExitCode.Ok, data, error);
-                var payload = JsonSerializer.Serialize(env, new JsonSerializerOptions
-                {
-                    WriteIndented = false,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                });
-                Console.Out.WriteLine(payload);
-            }
-            else
-            {
-                if (code == ExitCode.Ok) Console.Out.WriteLine(data is null ? "OK" : data!.ToString());
-                else Console.Error.WriteLine(error);
-            }
+            cfg.RegisterServicesFromAssembly(typeof(AnalyzeCodeCommand).Assembly);
+        });
 
-            Environment.Exit((int)code);
-        }
+        // Register FluentValidation
+        services.AddValidatorsFromAssembly(typeof(AnalyzeCodeValidator).Assembly);
+
+        // Register validation pipeline behavior
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.ValidationBehavior<,>));
+
+        // Register CLI commands
+        services.AddScoped<AnalyzeCommand>();
+        services.AddScoped<ValidateCommand>();
+        services.AddScoped<AgentCommand>();
+
+        // Register renderer
+        services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();
+
+        // Register infrastructure adapters
+        services.AddScoped<Nexo.Core.Application.Analysis.Ports.IAnalysisService, Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter>();
+        services.AddScoped<Nexo.Core.Application.Validation.Ports.IValidationService, Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter>();
+        services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentExecutor, Nexo.Infrastructure.Agent.Adapters.AgentExecutorAdapter>();
+
+        // Register available agents
+        services.AddTransient<IAgent, DirectorAgent>(sp => new DirectorAgent("director"));
+        services.AddTransient<IAgent, DevDirectorAgent>(sp => new DevDirectorAgent(DevMode.Heal));
     }
 }
