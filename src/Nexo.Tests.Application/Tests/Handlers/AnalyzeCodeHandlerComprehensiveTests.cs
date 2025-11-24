@@ -128,8 +128,15 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
 
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
-        await AssertThrowsAsync<AnalysisException>(async () => 
-            await handler.Handle(command, CancellationToken.None), "Expected AnalysisException");
+        try
+        {
+            await handler.Handle(command, CancellationToken.None);
+            throw new Exception("Expected AnalysisException but none was thrown");
+        }
+        catch (AnalysisException)
+        {
+            // Expected - test passes
+        }
     }
 
     private async Task TestGeneralException()
@@ -144,8 +151,15 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
 
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
-        await AssertThrowsAsync<AnalysisException>(async () => 
-            await handler.Handle(command, CancellationToken.None), "Expected AnalysisException");
+        try
+        {
+            await handler.Handle(command, CancellationToken.None);
+            throw new Exception("Expected AnalysisException but none was thrown");
+        }
+        catch (AnalysisException)
+        {
+            // Expected - test passes
+        }
     }
 
     private async Task TestCancellation()

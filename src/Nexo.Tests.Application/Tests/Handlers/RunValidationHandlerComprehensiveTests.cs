@@ -143,8 +143,15 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
 
         var command = new RunValidationCommand(null);
         
-        await AssertThrowsAsync<ValidationException>(async () => 
-            await handler.Handle(command, CancellationToken.None), "Expected ValidationException");
+        try
+        {
+            await handler.Handle(command, CancellationToken.None);
+            throw new Exception("Expected ValidationException but none was thrown");
+        }
+        catch (ValidationException)
+        {
+            // Expected - test passes
+        }
     }
 
     private async Task TestCancellation()
