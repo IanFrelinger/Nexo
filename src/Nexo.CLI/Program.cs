@@ -149,12 +149,36 @@ static class Program
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
 
+        // Register caching
+        services.AddSingleton<Nexo.Core.Application.Common.Ports.ICacheStrategy, Nexo.Infrastructure.Caching.MemoryCacheStrategy>();
+
+        // Register metrics
+        services.AddSingleton<Nexo.Core.Application.Common.Ports.IMetricsCollector, Nexo.Infrastructure.Metrics.MemoryMetricsCollector>();
+
         // Register agent registry
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentRegistry, Nexo.Infrastructure.Agent.Adapters.AgentRegistryAdapter>();
 
-        // Register infrastructure adapters
-        services.AddScoped<Nexo.Core.Application.Analysis.Ports.IAnalysisService, Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter>();
-        services.AddScoped<Nexo.Core.Application.Validation.Ports.IValidationService, Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter>();
+        // Register infrastructure adapters (with caching decorators)
+        services.AddScoped<Nexo.Core.Application.Analysis.Ports.IAnalysisService>(sp =>
+        {
+            var inner = new Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter(
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter>>(),
+                sp.GetRequiredService<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>());
+            var cache = sp.GetRequiredService<Nexo.Core.Application.Common.Ports.ICacheStrategy>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter>>();
+            return new Nexo.Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter(inner, cache, logger);
+        });
+
+        services.AddScoped<Nexo.Core.Application.Validation.Ports.IValidationService>(sp =>
+        {
+            var inner = new Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter(
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter>>(),
+                sp.GetRequiredService<Nexo.Infrastructure.Validation.Parsers.ITestResultParser>());
+            var cache = sp.GetRequiredService<Nexo.Core.Application.Common.Ports.ICacheStrategy>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Validation.Adapters.CachedValidationServiceAdapter>>();
+            return new Nexo.Infrastructure.Validation.Adapters.CachedValidationServiceAdapter(inner, cache, logger);
+        });
+
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentExecutor, Nexo.Infrastructure.Agent.Adapters.AgentExecutorAdapter>();
 
         // Register available agents

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Agent.Ports;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.Core.Application.Agent.UseCases.RunAgent;
@@ -13,13 +14,16 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
 {
     private readonly IAgentExecutor _agentExecutor;
     private readonly ILogger<RunAgentHandler> _logger;
+    private readonly IMetricsCollector? _metricsCollector;
 
     public RunAgentHandler(
         IAgentExecutor agentExecutor,
-        ILogger<RunAgentHandler> logger)
+        ILogger<RunAgentHandler> logger,
+        IMetricsCollector? metricsCollector = null)
     {
         _agentExecutor = agentExecutor ?? throw new ArgumentNullException(nameof(agentExecutor));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _metricsCollector = metricsCollector;
     }
 
     public async Task<AgentExecutionResult> Handle(
@@ -40,6 +44,16 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
                 cancellationToken);
 
             var duration = DateTime.UtcNow - startTime;
+            _metricsCollector?.RecordExecutionTime($"Agent.{request.AgentName}", duration);
+            _metricsCollector?.IncrementCounter("Agent.Executed");
+            if (result.Success)
+            {
+                _metricsCollector?.IncrementCounter("Agent.Success");
+            }
+            else
+            {
+                _metricsCollector?.IncrementCounter("Agent.Failed");
+            }
 
             _logger.LogInformation(
                 "Agent execution completed: {AgentName}, Success: {Success}, Duration: {Duration}ms",
@@ -56,6 +70,7 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
         }
         catch (TimeoutException ex)
         {
+            _metricsCollector?.IncrementCounter("Agent.Timeouts");
             _logger.LogWarning(
                 ex,
                 "Agent execution timed out: {AgentName}",
@@ -68,6 +83,7 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
         }
         catch (Exception ex)
         {
+            _metricsCollector?.IncrementCounter("Agent.Errors");
             _logger.LogError(
                 ex,
                 "Unexpected error during agent execution: {AgentName}",
