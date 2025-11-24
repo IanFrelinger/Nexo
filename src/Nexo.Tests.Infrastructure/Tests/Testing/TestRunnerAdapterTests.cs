@@ -78,12 +78,15 @@ public class TestRunnerAdapterTests : UnitTestBase
 
         var runner = new TestRunnerAdapter(mockLogger.Object, serviceProvider);
 
-        // Should discover at least some tests (including SimpleTestForRunner)
-        var result = await runner.RunTestsAsync(null, null, CancellationToken.None);
+        // Filter to only discover SimpleTestForRunner to avoid recursion
+        // (TestRunnerAdapterTests would discover itself and cause infinite loop)
+        var result = await runner.RunTestsAsync("SimpleTestForRunner", null, CancellationToken.None);
 
         AssertNotNull(result);
-        AssertTrue(result.TotalTests > 0, "Should discover at least one test");
-        AssertTrue(result.Results.Count > 0, "Should have test results");
+        AssertTrue(result.TotalTests >= 1, "Should discover at least SimpleTestForRunner");
+        AssertTrue(result.Results.Count >= 1, "Should have test results");
+        AssertTrue(result.Results.Any(r => r.TestName.Contains("SimpleTestForRunner", StringComparison.OrdinalIgnoreCase)),
+            "Should discover SimpleTestForRunner");
     }
 
     private async Task TestTestDiscoveryWithFilter()
@@ -116,12 +119,10 @@ public class TestRunnerAdapterTests : UnitTestBase
         var result = await runner.RunTestsAsync("SimpleTestForRunner", null, CancellationToken.None);
 
         AssertNotNull(result);
-        AssertTrue(result.TotalTests > 0, "Should have discovered tests");
+        AssertTrue(result.TotalTests >= 1, "Should have discovered SimpleTestForRunner");
         var simpleTest = result.Results.FirstOrDefault(r => r.TestName.Contains("SimpleTestForRunner", StringComparison.OrdinalIgnoreCase));
-        if (simpleTest != null)
-        {
-            AssertTrue(simpleTest.Passed, "SimpleTestForRunner should pass");
-        }
+        AssertNotNull(simpleTest, "Should have found SimpleTestForRunner result");
+        AssertTrue(simpleTest!.Passed, "SimpleTestForRunner should pass");
     }
 
     private async Task TestProgressReporting()
@@ -170,8 +171,9 @@ public class TestRunnerAdapterTests : UnitTestBase
 
         var runner = new TestRunnerAdapter(mockLogger.Object, serviceProvider);
 
-        // Run tests - if any test throws an exception, it should be caught and reported
-        var result = await runner.RunTestsAsync(null, null, CancellationToken.None);
+        // Run SimpleTestForRunner - if it throws an exception, it should be caught and reported
+        // We filter to avoid recursion from TestRunnerAdapterTests discovering itself
+        var result = await runner.RunTestsAsync("SimpleTestForRunner", null, CancellationToken.None);
 
         AssertNotNull(result);
         // Should have results even if some tests failed
