@@ -1,8 +1,8 @@
-# 100% Test Coverage Plan for Nexo
+# 100% Test Coverage Plan for Nexo - Cursor Agent Edition
 
 ## Overview
 
-This document outlines a comprehensive plan to achieve 100% test coverage for the Nexo CLI application using the new bootstrapped command-based test framework.
+This document provides a structured, AI-agent-friendly plan to achieve 100% test coverage for the Nexo CLI application. Each task is designed to be executed by Cursor's coding agent with clear instructions, code patterns, and acceptance criteria.
 
 ## Current Test Coverage Status
 
@@ -23,811 +23,787 @@ This document outlines a comprehensive plan to achieve 100% test coverage for th
 
 ### ❌ Not Yet Tested (Priority Order)
 
-## Phase 1: Domain Layer (100% Coverage Target)
+---
 
-### 1.1 Value Objects
-**Location:** `src/Nexo.Core.Domain/Values/`
+## Sprint 0: Test Infrastructure Setup
 
-**Tests Needed:**
-- [ ] `RiskLevelTests` - Complete enum coverage
-  - Test all enum values (Low, Medium, High, Critical)
-  - Test enum parsing/string conversion
-  - Test enum comparison
+**Duration:** 1-2 days  
+**Goal:** Establish foundation for all testing work
 
-- [ ] Test all other value objects in `Values/` directory
-  - Discover and test each value object
-  - Test validation logic
-  - Test equality/comparison
-  - Test immutability
+### Task 0.1: Verify Test Projects Build
+**File:** `src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj` and others
 
-**Test File:** `src/Nexo.Tests.Domain/Tests/ValueObjectsTests.cs`
+**Instructions:**
+1. Run `dotnet build` on all test projects
+2. Fix any compilation errors
+3. Ensure all test projects reference correct dependencies
 
-### 1.2 Domain Exceptions
-**Location:** `src/Nexo.Core.Domain/Exceptions/`
+**Command:**
+```bash
+dotnet build src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
+dotnet build src/Nexo.Tests.Application/Nexo.Tests.Application.csproj
+dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+dotnet build src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
+```
 
-**Tests Needed:**
-- [x] `DomainExceptionsTests` - Basic exception creation
-- [ ] `DomainExceptionsComprehensiveTests` - Complete coverage
-  - Test all exception constructors
-  - Test exception message propagation
-  - Test inner exception handling
-  - Test error code assignment
-  - Test suggestion property
+**Acceptance Criteria:**
+- All test projects build successfully
+- No compilation errors
+- All dependencies resolved
 
-**Test File:** `src/Nexo.Tests.Domain/Tests/DomainExceptionsComprehensiveTests.cs`
+### Task 0.2: Verify Test Discovery
+**File:** `src/Nexo.Infrastructure/Testing/TestRunnerAdapter.cs`
 
-### 1.3 Error Codes
-**Location:** `src/Nexo.Core.Domain/Exceptions/ErrorCodes.cs`
+**Instructions:**
+1. Run `nexo test` command
+2. Verify existing tests are discovered
+3. Verify tests execute successfully
 
-**Tests Needed:**
-- [ ] `ErrorCodesTests`
-  - Verify all error code constants are defined
-  - Test error code format consistency
-  - Test error code uniqueness
+**Command:**
+```bash
+dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- test
+```
 
-**Test File:** `src/Nexo.Tests.Domain/Tests/ErrorCodesTests.cs`
+**Acceptance Criteria:**
+- Test discovery finds all existing tests
+- Tests execute without errors
+- Test output is readable
 
-## Phase 2: Application Layer (100% Coverage Target)
+### Task 0.3: Create Test Helpers
+**File:** `src/Nexo.Tests.Application/Helpers/TestHelpers.cs` (new file)
 
-### 2.1 Handlers
-**Location:** `src/Nexo.Core.Application/*/UseCases/*/`
+**Instructions:**
+Create a test helpers file with common utilities:
 
-**Tests Needed:**
+```csharp
+namespace Nexo.Tests.Application.Helpers;
 
-#### Analysis Handlers
-- [x] `AnalysisHandlerTests` - Basic
-- [ ] `AnalyzeCodeHandlerComprehensiveTests`
-  - Test with valid path
-  - Test with invalid path
-  - Test with null path (validation)
-  - Test cancellation token propagation
-  - Test exception handling (UnauthorizedAccessException)
-  - Test metrics collection
-  - Test progress reporting
-  - Test with violations found
-  - Test with no violations
+public static class TestHelpers
+{
+    public static DirectoryInfo CreateTempDirectory()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        return Directory.CreateDirectory(tempPath);
+    }
 
-#### Validation Handlers
-- [x] `ValidationHandlerTests` - Basic
-- [ ] `RunValidationHandlerComprehensiveTests`
-  - Test with filter
-  - Test without filter
-  - Test with no test projects
-  - Test with failed tests
-  - Test with passed tests
-  - Test cancellation
-  - Test metrics collection
-  - Test progress reporting
-  - Test exception handling
+    public static void CleanupTempDirectory(DirectoryInfo dir)
+    {
+        if (dir.Exists)
+        {
+            Directory.Delete(dir.FullName, true);
+        }
+    }
 
-#### Agent Handlers
-- [ ] `RunAgentHandlerTests`
-  - Test with valid agent name
-  - Test with invalid agent name
-  - Test with input file
-  - Test without input file
-  - Test timeout exception
-  - Test agent execution exception
-  - Test duration tracking
-  - Test metrics collection
-  - Test progress reporting
+    public static FileInfo CreateTempAssemblyFile(DirectoryInfo dir, string name = "test.dll")
+    {
+        var filePath = Path.Combine(dir.FullName, name);
+        File.WriteAllText(filePath, "dummy assembly content");
+        return new FileInfo(filePath);
+    }
+}
+```
 
-#### Configuration Handlers
-- [ ] `GetConfigurationHandlerTests`
-  - Test loading from file
-  - Test loading defaults when file missing
-  - Test invalid JSON format
-  - Test file read errors
-  - Test exception handling
+**Acceptance Criteria:**
+- Test helpers file created
+- Common utilities available
+- Helpers are reusable
 
-#### Agent Registry Handlers
-- [ ] `ListAgentsHandlerTests`
-  - Test listing all agents
-  - Test with no agents registered
-  - Test agent metadata extraction
+---
 
-**Test Files:**
-- `src/Nexo.Tests.Application/Tests/Handlers/AnalyzeCodeHandlerComprehensiveTests.cs`
-- `src/Nexo.Tests.Application/Tests/Handlers/RunValidationHandlerComprehensiveTests.cs`
-- `src/Nexo.Tests.Application/Tests/Handlers/RunAgentHandlerTests.cs`
-- `src/Nexo.Tests.Application/Tests/Handlers/GetConfigurationHandlerTests.cs`
-- `src/Nexo.Tests.Application/Tests/Handlers/ListAgentsHandlerTests.cs`
+## Sprint 1: Domain Layer Foundation
 
-### 2.2 Validators
-**Location:** `src/Nexo.Core.Application/*/UseCases/*/`
+**Duration:** 5 days  
+**Goal:** Achieve 100% test coverage for Domain layer  
+**Target:** ~15-20 test methods
 
-**Tests Needed:**
-- [ ] `AnalyzeCodeValidatorTests`
-  - Test null path validation
-  - Test non-existent directory validation
-  - Test valid path scenarios
-  - Test error messages
+### Task 1.1: Complete Value Object Tests
+**File:** `src/Nexo.Tests.Domain/Tests/ValueObjectsTests.cs` (new file)
 
-- [ ] `RunValidationValidatorTests`
-  - Test filter validation (if any)
-  - Test edge cases
+**Instructions:**
+1. Read all value objects from `src/Nexo.Core.Domain/Values/`
+2. Create comprehensive tests for each value object
+3. Test enum values, parsing, comparison, validation
 
-- [ ] `RunAgentValidatorTests`
-  - Test empty agent name
-  - Test null agent name
-  - Test whitespace-only agent name
-  - Test valid agent names
+**Pattern:**
+```csharp
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+using Nexo.Core.Domain.Values;
 
-**Test Files:**
+namespace Nexo.Tests.Domain.Tests;
+
+public class ValueObjectsTests : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Test RiskLevel enum
+            AssertTrue(Enum.IsDefined(typeof(RiskLevel), RiskLevel.Low));
+            AssertTrue(Enum.IsDefined(typeof(RiskLevel), RiskLevel.Medium));
+            AssertTrue(Enum.IsDefined(typeof(RiskLevel), RiskLevel.High));
+            AssertTrue(Enum.IsDefined(typeof(RiskLevel), RiskLevel.Critical));
+            
+            // Test enum comparison
+            AssertTrue(RiskLevel.Critical > RiskLevel.High);
+            AssertTrue(RiskLevel.High > RiskLevel.Medium);
+            AssertTrue(RiskLevel.Medium > RiskLevel.Low);
+            
+            // Add tests for other value objects discovered in Values/ directory
+            
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(ValueObjectsTests),
+                Category = "Domain",
+                Passed = true,
+                Message = "All value object tests passed"
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(ValueObjectsTests),
+                Category = "Domain",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
+```
+
+**Steps:**
+1. List all files in `src/Nexo.Core.Domain/Values/`
+2. For each value object, create test cases:
+   - Initialization
+   - Validation
+   - Equality/comparison
+   - Immutability
+3. Run tests: `nexo test --filter "ValueObjects"`
+
+**Acceptance Criteria:**
+- All value objects have tests
+- All enum values tested
+- Comparison logic tested
+- Coverage shows 100% for Values/ directory
+
+### Task 1.2: Complete Exception Tests
+**File:** `src/Nexo.Tests.Domain/Tests/DomainExceptionsComprehensiveTests.cs` (new file)
+
+**Instructions:**
+1. Read all exception classes from `src/Nexo.Core.Domain/Exceptions/`
+2. Test all constructors for each exception
+3. Test error code assignment
+4. Test suggestion property
+
+**Pattern:**
+```csharp
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+using Nexo.Core.Domain.Exceptions;
+
+namespace Nexo.Tests.Domain.Tests;
+
+public class DomainExceptionsComprehensiveTests : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Test AnalysisException - all constructors
+            var ex1 = new AnalysisException("Message");
+            AssertEqual("Message", ex1.Message);
+            
+            var ex2 = new AnalysisException("Message", ErrorCodes.AnalysisUnauthorizedAccess);
+            AssertEqual("Message", ex2.Message);
+            AssertEqual(ErrorCodes.AnalysisUnauthorizedAccess, ex2.ErrorCode);
+            
+            var ex3 = new AnalysisException("Message", new Exception("Inner"));
+            AssertEqual("Message", ex3.Message);
+            AssertNotNull(ex3.InnerException);
+            
+            var ex4 = new AnalysisException("Message", ErrorCodes.AnalysisUnauthorizedAccess, new Exception("Inner"), "Suggestion");
+            AssertEqual("Message", ex4.Message);
+            AssertEqual(ErrorCodes.AnalysisUnauthorizedAccess, ex4.ErrorCode);
+            AssertEqual("Suggestion", ex4.Suggestion);
+            
+            // Repeat for ValidationException, AgentExecutionException, ConfigurationException
+            
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(DomainExceptionsComprehensiveTests),
+                Category = "Domain",
+                Passed = true,
+                Message = "All exception tests passed"
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(DomainExceptionsComprehensiveTests),
+                Category = "Domain",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
+```
+
+**Steps:**
+1. List all exception classes
+2. For each exception, test all constructors
+3. Verify error code assignment
+4. Verify suggestion property
+5. Run tests: `nexo test --filter "Exceptions"`
+
+**Acceptance Criteria:**
+- All exceptions have tests
+- All constructors tested
+- Error codes verified
+- Suggestions verified
+- Coverage shows 100% for Exceptions/ directory
+
+### Task 1.3: Complete Error Codes Tests
+**File:** `src/Nexo.Tests.Domain/Tests/ErrorCodesTests.cs` (new file)
+
+**Instructions:**
+1. Read `src/Nexo.Core.Domain/Exceptions/ErrorCodes.cs`
+2. Verify all constants are defined
+3. Test format consistency
+4. Test uniqueness
+
+**Pattern:**
+```csharp
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+using Nexo.Core.Domain.Exceptions;
+
+namespace Nexo.Tests.Domain.Tests;
+
+public class ErrorCodesTests : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Verify all error codes are defined
+            AssertNotNull(ErrorCodes.AnalysisPathNotFound);
+            AssertNotNull(ErrorCodes.AnalysisUnauthorizedAccess);
+            // ... test all error codes
+            
+            // Verify format consistency (e.g., all start with category prefix)
+            AssertTrue(ErrorCodes.AnalysisPathNotFound.StartsWith("ANALYSIS_"));
+            AssertTrue(ErrorCodes.ValidationNoTestProjects.StartsWith("VALIDATION_"));
+            
+            // Verify uniqueness
+            var allCodes = new[]
+            {
+                ErrorCodes.AnalysisPathNotFound,
+                ErrorCodes.AnalysisUnauthorizedAccess,
+                // ... all error codes
+            };
+            AssertEqual(allCodes.Length, allCodes.Distinct().Count());
+            
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(ErrorCodesTests),
+                Category = "Domain",
+                Passed = true,
+                Message = "All error code tests passed"
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(ErrorCodesTests),
+                Category = "Domain",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
+```
+
+**Acceptance Criteria:**
+- All error codes verified
+- Format consistency verified
+- Uniqueness verified
+- Coverage shows 100% for ErrorCodes class
+
+---
+
+## Sprint 2: Application Layer - Handlers & Validators
+
+**Duration:** 5 days  
+**Goal:** Achieve 100% test coverage for Application layer handlers and validators  
+**Target:** ~40-50 test methods
+
+### Task 2.1: Comprehensive AnalyzeCodeHandler Tests
+**File:** `src/Nexo.Tests.Application/Tests/Handlers/AnalyzeCodeHandlerComprehensiveTests.cs` (new file)
+
+**Instructions:**
+1. Read `src/Nexo.Core.Application/Analysis/UseCases/AnalyzeCode/AnalyzeCodeHandler.cs`
+2. Create test class with Moq mocks
+3. Test all scenarios: success, failures, edge cases, cancellation
+
+**Pattern:**
+```csharp
+using Microsoft.Extensions.Logging;
+using Moq;
+using Nexo.Core.Application.Analysis.Models;
+using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
+using Nexo.Core.Application.Common.Models;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+using Nexo.Core.Domain.Exceptions;
+
+namespace Nexo.Tests.Application.Tests.Handlers;
+
+public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
+{
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Test 1: Successful analysis with no violations
+            var mockService = new Mock<IAnalysisService>();
+            var mockLogger = new Mock<ILogger<AnalyzeCodeHandler>>();
+            var handler = new AnalyzeCodeHandler(mockService.Object, mockLogger.Object);
+            
+            var expectedResult = new AnalysisResult
+            {
+                HasViolations = false,
+                Violations = Array.Empty<Violation>(),
+                TotalViolations = 0
+            };
+            
+            mockService
+                .Setup(s => s.AnalyzeAsync(It.IsAny<DirectoryInfo>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(expectedResult);
+            
+            var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
+            var result = await handler.Handle(command, cancellationToken);
+            
+            AssertNotNull(result);
+            AssertFalse(result.HasViolations);
+            AssertEqual(0, result.TotalViolations);
+            
+            // Test 2: Analysis with violations
+            // Test 3: UnauthorizedAccessException handling
+            // Test 4: Cancellation token propagation
+            // Test 5: Progress reporting
+            // Test 6: Metrics collection
+            
+            return new TestResult
+            {
+                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = true,
+                Message = "All AnalyzeCodeHandler tests passed"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new TestResult
+            {
+                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+        }
+    }
+}
+```
+
+**Steps:**
+1. Create test file with pattern above
+2. Add test cases for:
+   - Success scenarios (with/without violations)
+   - Exception handling (UnauthorizedAccessException, AnalysisException)
+   - Cancellation token
+   - Progress reporting
+   - Metrics collection
+3. Run tests: `nexo test --filter "AnalyzeCodeHandler"`
+
+**Acceptance Criteria:**
+- All handler scenarios tested
+- Mocks properly configured
+- Exception handling verified
+- Coverage shows 100% for AnalyzeCodeHandler
+
+### Task 2.2: Comprehensive RunValidationHandler Tests
+**File:** `src/Nexo.Tests.Application/Tests/Handlers/RunValidationHandlerComprehensiveTests.cs` (new file)
+
+**Instructions:**
+Similar to Task 2.1, but for RunValidationHandler. Test:
+- With filter
+- Without filter
+- No test projects
+- Failed tests
+- Passed tests
+- Cancellation
+- Metrics
+- Progress reporting
+
+**Acceptance Criteria:**
+- All scenarios tested
+- Coverage shows 100% for RunValidationHandler
+
+### Task 2.3: RunAgentHandler Tests
+**File:** `src/Nexo.Tests.Application/Tests/Handlers/RunAgentHandlerTests.cs` (new file)
+
+**Instructions:**
+Test RunAgentHandler with:
+- Valid agent name
+- Invalid agent name
+- With input file
+- Without input file
+- Timeout exception
+- Agent execution exception
+- Duration tracking
+- Metrics collection
+
+**Acceptance Criteria:**
+- All scenarios tested
+- Coverage shows 100% for RunAgentHandler
+
+### Task 2.4: Validator Tests
+**Files:**
 - `src/Nexo.Tests.Application/Tests/Validators/AnalyzeCodeValidatorTests.cs`
 - `src/Nexo.Tests.Application/Tests/Validators/RunValidationValidatorTests.cs`
 - `src/Nexo.Tests.Application/Tests/Validators/RunAgentValidatorTests.cs`
 
-### 2.3 Behaviors
-**Location:** `src/Nexo.Core.Application/Behaviors/`
+**Instructions:**
+For each validator:
+1. Test all validation rules
+2. Test error messages
+3. Test edge cases (null, empty, whitespace)
 
-**Tests Needed:**
-- [ ] `ValidationBehaviorTests`
-  - Test validation passes
-  - Test validation fails
-  - Test multiple validators
-  - Test no validators registered
-  - Test exception handling
+**Pattern:**
+```csharp
+using FluentValidation.TestHelper;
+using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 
-**Test File:** `src/Nexo.Tests.Application/Tests/Behaviors/ValidationBehaviorTests.cs`
+namespace Nexo.Tests.Application.Tests.Validators;
 
-### 2.4 Models
-**Location:** `src/Nexo.Core.Application/*/Models/`
+public class AnalyzeCodeValidatorTests : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var validator = new AnalyzeCodeValidator();
+            
+            // Test null path
+            var command1 = new AnalyzeCodeCommand(null!);
+            var result1 = validator.TestValidate(command1);
+            result1.ShouldHaveValidationErrorFor(x => x.Path);
+            
+            // Test non-existent path
+            var command2 = new AnalyzeCodeCommand(new DirectoryInfo("nonexistent"));
+            var result2 = validator.TestValidate(command2);
+            result2.ShouldHaveValidationErrorFor(x => x.Path);
+            
+            // Test valid path
+            var command3 = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
+            var result3 = validator.TestValidate(command3);
+            result3.ShouldNotHaveValidationErrorFor(x => x.Path);
+            
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(AnalyzeCodeValidatorTests),
+                Category = "Application",
+                Passed = true,
+                Message = "All validator tests passed"
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(AnalyzeCodeValidatorTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
+```
 
-**Tests Needed:**
-- [ ] `AnalysisResultTests`
-  - Test record equality
-  - Test record immutability
-  - Test initialization
+**Acceptance Criteria:**
+- All validators tested
+- All validation rules verified
+- Error messages verified
+- Coverage shows 100% for validators
 
-- [ ] `ValidationResultTests`
-  - Test record equality
-  - Test record immutability
-  - Test initialization
+---
 
-- [ ] `AgentExecutionResultTests`
-  - Test record equality
-  - Test record immutability
-  - Test initialization
+## Sprint 3: Application Layer - Models
 
-- [ ] `ProgressReportTests`
-  - Test record equality
-  - Test percentage bounds (0-100)
-  - Test step validation
+**Duration:** 3 days  
+**Goal:** Complete Application layer test coverage  
+**Target:** ~15-20 test methods
 
-- [ ] `TestResultTests`
-  - Test record equality
-  - Test initialization
-
-**Test Files:**
+### Task 3.1: Model Tests
+**Files:**
 - `src/Nexo.Tests.Application/Tests/Models/AnalysisResultTests.cs`
 - `src/Nexo.Tests.Application/Tests/Models/ValidationResultTests.cs`
 - `src/Nexo.Tests.Application/Tests/Models/AgentExecutionResultTests.cs`
 - `src/Nexo.Tests.Application/Tests/Models/ProgressReportTests.cs`
 - `src/Nexo.Tests.Application/Tests/Models/TestResultTests.cs`
 
-## Phase 3: Infrastructure Layer (100% Coverage Target)
-
-### 3.1 Analysis Adapters
-**Location:** `src/Nexo.Infrastructure/Analysis/`
-
-**Tests Needed:**
-- [x] `AnalysisServiceAdapterTests` - Basic
-- [ ] `AnalysisServiceAdapterComprehensiveTests`
-  - Test with real assembly files
-  - Test with empty directory
-  - Test with no assemblies
-  - Test unauthorized access exception
-  - Test cancellation
-  - Test progress reporting
-  - Test violation aggregation
-  - Test error handling per assembly
-
-- [ ] `CachedAnalysisServiceAdapterTests`
-  - Test cache hit scenario
-  - Test cache miss scenario
-  - Test cache expiration
-  - Test cache key generation
-  - Test progress reporting with cache
-
-- [ ] `AnalysisRuleEngineTests`
-  - Test rule execution
-  - Test multiple rules
-  - Test rule failure handling
-  - Test cancellation
-
-- [ ] `SecurityAnalysisRuleTests`
-  - Test security violation detection
-  - Test various security scenarios
-
-- [ ] `CodeQualityRuleTests`
-  - Test code quality violation detection
-  - Test various quality scenarios
-
-**Test Files:**
-- `src/Nexo.Tests.Infrastructure/Tests/Analysis/AnalysisServiceAdapterComprehensiveTests.cs`
-- `src/Nexo.Tests.Infrastructure/Tests/Analysis/CachedAnalysisServiceAdapterTests.cs`
-- `src/Nexo.Tests.Infrastructure/Tests/Analysis/AnalysisRuleEngineTests.cs`
-- `src/Nexo.Tests.Infrastructure/Tests/Analysis/SecurityAnalysisRuleTests.cs`
-- `src/Nexo.Tests.Infrastructure/Tests/Analysis/CodeQualityRuleTests.cs`
-
-### 3.2 Validation Adapters
-**Location:** `src/Nexo.Infrastructure/Validation/`
-
-**Tests Needed:**
-- [ ] `ValidationServiceAdapterTests`
-  - Test with real test projects
-  - Test with no test projects
-  - Test with filter
-  - Test without filter
-  - Test TRX file parsing
-  - Test cancellation
-  - Test progress reporting
-  - Test error handling
-
-- [ ] `CachedValidationServiceAdapterTests`
-  - Test cache hit scenario
-  - Test cache miss scenario
-  - Test cache expiration
-  - Test cache key generation
-  - Test progress reporting with cache
-
-- [ ] `TrxTestResultParserTests`
-  - Test valid TRX file parsing
-  - Test invalid TRX file
-  - Test missing TRX file
-  - Test malformed XML
-  - Test various test outcomes (Passed, Failed, Skipped)
-  - Test duration parsing
-  - Test error message extraction
-
-**Test Files:**
-- `src/Nexo.Tests.Infrastructure/Tests/Validation/ValidationServiceAdapterTests.cs`
-- `src/Nexo.Tests.Infrastructure/Tests/Validation/CachedValidationServiceAdapterTests.cs`
-- `src/Nexo.Tests.Infrastructure/Tests/Validation/TrxTestResultParserTests.cs`
-
-### 3.3 Agent Adapters
-**Location:** `src/Nexo.Infrastructure/Agent/`
-
-**Tests Needed:**
-- [ ] `AgentExecutorAdapterTests`
-  - Test with valid agent
-  - Test with invalid agent name
-  - Test with input file
-  - Test without input file
-  - Test agent discovery
-  - Test capability registry setup
-  - Test policy engine setup
-  - Test timeout handling
-  - Test exception handling
-  - Test default assembly path finding
-
-- [ ] `AgentRegistryAdapterTests`
-  - Test agent discovery from DI
-  - Test agent metadata extraction
-  - Test with no agents registered
-  - Test with multiple agents
-
-**Test Files:**
-- `src/Nexo.Tests.Infrastructure/Tests/Agent/AgentExecutorAdapterTests.cs`
-- `src/Nexo.Tests.Infrastructure/Tests/Agent/AgentRegistryAdapterTests.cs`
-
-### 3.4 Configuration Adapters
-**Location:** `src/Nexo.Infrastructure/Configuration/`
-
-**Tests Needed:**
-- [ ] `ConfigurationServiceAdapterTests`
-  - Test loading from existing file
-  - Test loading defaults when file missing
-  - Test invalid JSON format
-  - Test file read errors
-  - Test file write errors
-  - Test directory creation
-  - Test JSON serialization/deserialization
-
-**Test File:** `src/Nexo.Tests.Infrastructure/Tests/Configuration/ConfigurationServiceAdapterTests.cs`
-
-### 3.5 Caching
-**Location:** `src/Nexo.Infrastructure/Caching/`
-
-**Tests Needed:**
-- [ ] `MemoryCacheStrategyTests`
-  - Test cache get/set
-  - Test cache expiration
-  - Test cache key uniqueness
-  - Test concurrent access
-  - Test memory limits
-
-**Test File:** `src/Nexo.Tests.Infrastructure/Tests/Caching/MemoryCacheStrategyTests.cs`
-
-### 3.6 Metrics
-**Location:** `src/Nexo.Infrastructure/Metrics/`
-
-**Tests Needed:**
-- [ ] `MemoryMetricsCollectorTests`
-  - Test execution time recording
-  - Test counter increment
-  - Test counter with value
-  - Test metrics retrieval
-  - Test concurrent access
-
-**Test File:** `src/Nexo.Tests.Infrastructure/Tests/Metrics/MemoryMetricsCollectorTests.cs`
-
-### 3.7 Testing Infrastructure
-**Location:** `src/Nexo.Infrastructure/Testing/`
-
-**Tests Needed:**
-- [ ] `TestRunnerAdapterTests`
-  - Test test discovery
-  - Test test execution
-  - Test filter functionality
-  - Test progress reporting
-  - Test cancellation
-  - Test error handling
-  - Test test instance creation
-  - Test setup/cleanup
-
-**Test File:** `src/Nexo.Tests.Infrastructure/Tests/Testing/TestRunnerAdapterTests.cs`
-
-## Phase 4: CLI Layer (100% Coverage Target)
-
-### 4.1 Commands
-**Location:** `src/Nexo.CLI/Commands/`
-
-**Tests Needed:**
-- [ ] `AnalyzeCommandTests`
-  - Test successful execution
-  - Test with violations
-  - Test without violations
-  - Test JSON output
-  - Test verbose mode
-  - Test progress reporting
-  - Test exception handling
-  - Test exit codes
-
-- [ ] `ValidateCommandTests`
-  - Test successful execution
-  - Test with filter
-  - Test without filter
-  - Test with failed tests
-  - Test JSON output
-  - Test verbose mode
-  - Test progress reporting
-  - Test exception handling
-  - Test exit codes
-
-- [ ] `AgentCommandTests`
-  - Test successful execution
-  - Test with input file
-  - Test without input file
-  - Test invalid agent name
-  - Test JSON output
-  - Test verbose mode
-  - Test exception handling
-  - Test exit codes
-
-- [ ] `ListAgentsCommandTests`
-  - Test listing agents
-  - Test with no agents
-  - Test JSON output
-  - Test verbose mode
-
-- [ ] `ConfigCommandTests`
-  - Test displaying configuration
-  - Test JSON output
-  - Test verbose mode
-  - Test exception handling
-
-- [ ] `TestCommandTests`
-  - Test running all tests
-  - Test with filter
-  - Test JSON output
-  - Test verbose mode
-  - Test progress reporting
-  - Test exit codes
-
-**Test Files:**
-- `src/Nexo.Tests.CLI/Tests/Commands/AnalyzeCommandTests.cs`
-- `src/Nexo.Tests.CLI/Tests/Commands/ValidateCommandTests.cs`
-- `src/Nexo.Tests.CLI/Tests/Commands/AgentCommandTests.cs`
-- `src/Nexo.Tests.CLI/Tests/Commands/ListAgentsCommandTests.cs`
-- `src/Nexo.Tests.CLI/Tests/Commands/ConfigCommandTests.cs`
-- `src/Nexo.Tests.CLI/Tests/Commands/TestCommandTests.cs`
-
-### 4.2 Formatting
-**Location:** `src/Nexo.CLI/Formatting/`
-
-**Tests Needed:**
-- [ ] `ConsoleRendererTests`
-  - Test RenderSuccess
-  - Test RenderError
-  - Test RenderErrorWithCode
-  - Test RenderProgressStart
-  - Test RenderProgressComplete
-  - Test RenderProgress
-  - Test RenderAnalysisResult (JSON and non-JSON)
-  - Test RenderValidationResult (JSON and non-JSON)
-  - Test RenderAgentResult (JSON and non-JSON)
-  - Test RenderAgentList (JSON and non-JSON)
-  - Test RenderConfiguration (JSON and non-JSON)
-  - Test RenderTable
-
-**Test File:** `src/Nexo.Tests.CLI/Tests/Formatting/ConsoleRendererTests.cs`
-
-### 4.3 Program
-**Location:** `src/Nexo.CLI/Program.cs`
-
-**Tests Needed:**
-- [ ] `ProgramTests`
-  - Test command registration
-  - Test service registration
-  - Test DI container setup
-  - Test command routing
-
-**Test File:** `src/Nexo.Tests.CLI/Tests/ProgramTests.cs`
-
-## Phase 5: Test Framework Itself (100% Coverage Target)
-
-### 5.1 Test Abstractions
-**Location:** `src/Nexo.Core.Application/Testing/Abstractions/`
-
-**Tests Needed:**
-- [ ] `TestBaseTests`
-  - Test TestName property
-  - Test Category property
-  - Test SetupAsync
-  - Test CleanupAsync
-  - Test ExecuteAsync
-
-- [ ] `UnitTestBaseTests`
-  - Test AssertTrue
-  - Test AssertFalse
-  - Test AssertEqual
-  - Test AssertNotNull
-  - Test AssertNull
-  - Test AssertThrows
-  - Test AssertThrowsAsync
-
-**Test Files:**
-- `src/Nexo.Tests.Application/Tests/Testing/TestBaseTests.cs`
-- `src/Nexo.Tests.Application/Tests/Testing/UnitTestBaseTests.cs`
-
-## Sprint-Based Implementation Strategy
-
-### Sprint 0: Test Infrastructure Setup (1-2 days)
-**Goal:** Establish foundation for all testing work
-
-**Deliverables:**
-- [ ] Ensure all test projects build successfully
-- [ ] Verify test discovery works (`nexo test` command)
-- [ ] Create test base classes and helpers
-- [ ] Set up test project structure
-- [ ] Document test patterns and conventions
-- [ ] Create test data fixtures and builders
-
-**Definition of Done:**
-- All test projects compile
-- Test discovery finds existing tests
-- Test execution works end-to-end
-- Test helpers are available for use
-
----
-
-### Sprint 1: Domain Layer Foundation (5 days)
-**Goal:** Achieve 100% test coverage for Domain layer
-
-**User Story:** As a developer, I want comprehensive tests for all domain value objects and exceptions so that domain logic is validated and protected.
-
-**Deliverables:**
-- [ ] Complete value object tests (RiskLevel, all value objects)
-- [ ] Complete exception tests (all constructors, error codes, suggestions)
-- [ ] Complete error code tests (constants, format, uniqueness)
-- [ ] Target: 100% domain layer coverage
-
-**Acceptance Criteria:**
-- All value objects have tests
-- All exceptions have tests covering all constructors
-- All error codes are validated
-- Coverage report shows 100% for Domain layer
-- All tests pass
-
-**Estimated Test Count:** ~15-20 test methods
-
----
-
-### Sprint 2: Application Layer - Handlers & Validators (5 days)
-**Goal:** Achieve 100% test coverage for Application layer handlers and validators
-
-**User Story:** As a developer, I want comprehensive tests for all application handlers and validators so that business logic is validated and edge cases are handled.
-
-**Deliverables:**
-- [ ] Complete handler tests (AnalyzeCode, RunValidation, RunAgent, GetConfiguration, ListAgents)
-- [ ] Complete validator tests (AnalyzeCode, RunValidation, RunAgent)
-- [ ] Complete behavior tests (ValidationBehavior)
-- [ ] Target: 100% handler and validator coverage
-
-**Acceptance Criteria:**
-- All handlers have comprehensive tests (success, failure, edge cases)
-- All validators have tests for all validation rules
-- ValidationBehavior is fully tested
-- All tests use proper mocking
-- Coverage report shows 100% for handlers and validators
-
-**Estimated Test Count:** ~40-50 test methods
-
----
-
-### Sprint 3: Application Layer - Models & Behaviors (3 days)
-**Goal:** Complete Application layer test coverage
-
-**User Story:** As a developer, I want tests for all application models and behaviors so that data structures and cross-cutting concerns are validated.
-
-**Deliverables:**
-- [ ] Complete model tests (AnalysisResult, ValidationResult, AgentExecutionResult, ProgressReport, TestResult)
-- [ ] Verify record immutability and equality
-- [ ] Test model initialization and validation
-- [ ] Target: 100% Application layer coverage
-
-**Acceptance Criteria:**
-- All models have tests
-- Record equality and immutability verified
-- All initialization paths tested
-- Coverage report shows 100% for Application layer
-
-**Estimated Test Count:** ~15-20 test methods
-
----
-
-### Sprint 4: Infrastructure Layer - Analysis & Validation (5 days)
-**Goal:** Achieve 100% test coverage for Analysis and Validation infrastructure
-
-**User Story:** As a developer, I want comprehensive tests for analysis and validation adapters so that infrastructure integrations are reliable and error handling is robust.
-
-**Deliverables:**
-- [ ] Complete AnalysisServiceAdapter tests (with real files, edge cases, cancellation)
-- [ ] Complete CachedAnalysisServiceAdapter tests (cache hit/miss, expiration)
-- [ ] Complete AnalysisRuleEngine tests (rule execution, multiple rules)
-- [ ] Complete SecurityAnalysisRule and CodeQualityRule tests
-- [ ] Complete ValidationServiceAdapter tests (with real test projects, TRX parsing)
-- [ ] Complete CachedValidationServiceAdapter tests
-- [ ] Complete TrxTestResultParser tests (valid/invalid TRX files, edge cases)
-- [ ] Target: 100% analysis and validation infrastructure coverage
-
-**Acceptance Criteria:**
-- All adapters have integration tests with real dependencies
-- Caching behavior is fully tested
-- Rule engine and rules are fully tested
-- TRX parser handles all scenarios
-- Error handling is comprehensive
-- Coverage report shows 100% for analysis and validation infrastructure
-
-**Estimated Test Count:** ~50-60 test methods
-
----
-
-### Sprint 5: Infrastructure Layer - Agents, Config, Caching & Metrics (5 days)
-**Goal:** Complete Infrastructure layer test coverage
-
-**User Story:** As a developer, I want comprehensive tests for agent execution, configuration, caching, and metrics so that all infrastructure services are reliable.
-
-**Deliverables:**
-- [ ] Complete AgentExecutorAdapter tests (agent discovery, execution, error handling)
-- [ ] Complete AgentRegistryAdapter tests (agent discovery, metadata)
-- [ ] Complete ConfigurationServiceAdapter tests (file operations, JSON handling)
-- [ ] Complete MemoryCacheStrategy tests (get/set, expiration, concurrency)
-- [ ] Complete MemoryMetricsCollector tests (execution time, counters, concurrency)
-- [ ] Complete TestRunnerAdapter tests (discovery, execution, filtering)
-- [ ] Target: 100% Infrastructure layer coverage
-
-**Acceptance Criteria:**
-- All agent adapters have comprehensive tests
-- Configuration service handles all file scenarios
-- Caching strategy is fully tested (including edge cases)
-- Metrics collector is fully tested
-- Test runner is fully tested
-- Coverage report shows 100% for Infrastructure layer
-
-**Estimated Test Count:** ~40-50 test methods
-
----
-
-### Sprint 6: CLI Layer - Commands (5 days)
-**Goal:** Achieve 100% test coverage for CLI commands
-
-**User Story:** As a user, I want comprehensive tests for all CLI commands so that the CLI is reliable and handles all scenarios correctly.
-
-**Deliverables:**
-- [ ] Complete AnalyzeCommand tests (success, failures, JSON, verbose, exit codes)
-- [ ] Complete ValidateCommand tests (with/without filter, JSON, verbose, exit codes)
-- [ ] Complete AgentCommand tests (with/without input, JSON, verbose, exit codes)
-- [ ] Complete ListAgentsCommand tests (listing, JSON, verbose)
-- [ ] Complete ConfigCommand tests (display, JSON, verbose)
-- [ ] Complete TestCommand tests (filtering, JSON, verbose, progress)
-- [ ] Target: 100% CLI command coverage
-
-**Acceptance Criteria:**
-- All commands have comprehensive tests
-- JSON output is validated
-- Verbose mode is tested
-- Exit codes are verified
-- Error handling is comprehensive
-- Coverage report shows 100% for CLI commands
-
-**Estimated Test Count:** ~40-50 test methods
-
----
-
-### Sprint 7: CLI Layer - Formatting & Program (3 days)
-**Goal:** Complete CLI layer test coverage
-
-**User Story:** As a developer, I want comprehensive tests for formatting and program setup so that output rendering and DI configuration are validated.
-
-**Deliverables:**
-- [ ] Complete ConsoleRenderer tests (all render methods, JSON and non-JSON modes)
-- [ ] Complete Program tests (command registration, DI setup, routing)
-- [ ] Target: 100% CLI layer coverage
-
-**Acceptance Criteria:**
-- All render methods are tested
-- JSON and non-JSON modes are tested
-- Program setup is validated
-- Coverage report shows 100% for CLI layer
-
-**Estimated Test Count:** ~20-25 test methods
-
----
-
-### Sprint 8: Test Framework & Integration Tests (5 days)
-**Goal:** Complete test framework coverage and add integration/E2E tests
-
-**User Story:** As a developer, I want the test framework itself to be fully tested and have integration tests for critical workflows.
-
-**Deliverables:**
-- [ ] Complete TestBase and UnitTestBase tests
-- [ ] Create integration test scenarios (full workflows)
-- [ ] Create E2E test scenarios (end-to-end command execution)
-- [ ] Test critical user paths
-- [ ] Target: Test framework 100% coverage + critical path integration coverage
-
-**Acceptance Criteria:**
-- Test framework abstractions are fully tested
-- Integration tests cover critical workflows
-- E2E tests validate full command execution
-- All integration tests pass
-- Coverage report shows test framework is fully covered
-
-**Estimated Test Count:** ~30-40 test methods
-
----
-
-### Sprint 9: Coverage Verification & Gap Filling (3 days)
-**Goal:** Achieve 100% overall test coverage
-
-**User Story:** As a developer, I want 100% test coverage verified and any remaining gaps filled.
-
-**Deliverables:**
-- [ ] Run comprehensive coverage analysis
-- [ ] Identify any remaining coverage gaps
-- [ ] Fill remaining gaps
-- [ ] Verify 100% overall coverage
-- [ ] Document coverage metrics
-- [ ] Target: 100% overall coverage verified
-
-**Acceptance Criteria:**
-- Coverage analysis shows 100% coverage
-- All identified gaps are filled
-- Coverage report is documented
-- All tests pass
-- Test execution time is < 5 minutes
-
-**Estimated Test Count:** Variable (gap filling)
-
----
-
-### Sprint 10: Test Optimization & Documentation (2 days)
-**Goal:** Optimize test execution and document test suite
-
-**User Story:** As a developer, I want fast, well-documented tests that are easy to maintain.
-
-**Deliverables:**
-- [ ] Optimize slow tests
-- [ ] Add test documentation
-- [ ] Create test execution guide
-- [ ] Document test patterns and best practices
-- [ ] Verify test execution time < 5 minutes
-- [ ] Target: Optimized, documented test suite
-
-**Acceptance Criteria:**
-- All tests execute in < 5 minutes
-- Test documentation is complete
-- Test patterns are documented
-- Test execution guide is available
-- Test suite is maintainable
-
----
-
-## Sprint Summary
-
-| Sprint | Focus Area | Duration | Test Count Target | Coverage Target |
-|--------|-----------|----------|-------------------|-----------------|
-| Sprint 0 | Test Infrastructure | 1-2 days | Setup | Foundation |
-| Sprint 1 | Domain Layer | 5 days | 15-20 | 100% Domain |
-| Sprint 2 | Application - Handlers/Validators | 5 days | 40-50 | 100% Handlers/Validators |
-| Sprint 3 | Application - Models | 3 days | 15-20 | 100% Application |
-| Sprint 4 | Infrastructure - Analysis/Validation | 5 days | 50-60 | 100% Analysis/Validation |
-| Sprint 5 | Infrastructure - Agents/Config/Cache/Metrics | 5 days | 40-50 | 100% Infrastructure |
-| Sprint 6 | CLI - Commands | 5 days | 40-50 | 100% Commands |
-| Sprint 7 | CLI - Formatting/Program | 3 days | 20-25 | 100% CLI |
-| Sprint 8 | Test Framework & Integration | 5 days | 30-40 | Framework + Integration |
-| Sprint 9 | Coverage Verification | 3 days | Variable | 100% Overall |
-| Sprint 10 | Optimization & Documentation | 2 days | N/A | Optimized & Documented |
-
-**Total Estimated Duration:** ~37-40 days (7-8 weeks)
-**Total Estimated Test Count:** ~250-300 test methods
-**Final Coverage Target:** 100% overall coverage
-
-## Test Execution
-
-### Run All Tests
-```bash
-nexo test
+**Instructions:**
+For each model (record type):
+1. Test record equality
+2. Test record immutability
+3. Test initialization
+4. Test with/without optional properties
+
+**Pattern:**
+```csharp
+using Nexo.Core.Application.Analysis.Models;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+
+namespace Nexo.Tests.Application.Tests.Models;
+
+public class AnalysisResultTests : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Test record equality
+            var result1 = new AnalysisResult
+            {
+                HasViolations = false,
+                Violations = Array.Empty<Violation>(),
+                TotalViolations = 0
+            };
+            
+            var result2 = new AnalysisResult
+            {
+                HasViolations = false,
+                Violations = Array.Empty<Violation>(),
+                TotalViolations = 0
+            };
+            
+            AssertEqual(result1, result2);
+            
+            // Test immutability (records are immutable by default)
+            // Test initialization with violations
+            // Test initialization without violations
+            
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(AnalysisResultTests),
+                Category = "Application",
+                Passed = true,
+                Message = "All model tests passed"
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                TestName = nameof(AnalysisResultTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
 ```
 
-### Run Tests by Category
+**Acceptance Criteria:**
+- All models tested
+- Record equality verified
+- Immutability verified
+- Coverage shows 100% for models
+
+---
+
+## Sprint 4: Infrastructure Layer - Analysis & Validation
+
+**Duration:** 5 days  
+**Goal:** Achieve 100% test coverage for Analysis and Validation infrastructure  
+**Target:** ~50-60 test methods
+
+### Task 4.1: AnalysisServiceAdapter Comprehensive Tests
+**File:** `src/Nexo.Tests.Infrastructure/Tests/Analysis/AnalysisServiceAdapterComprehensiveTests.cs` (new file)
+
+**Instructions:**
+1. Create temporary directories with test assemblies
+2. Test with real file system operations
+3. Test all scenarios: empty directory, no assemblies, errors, cancellation
+
+**Pattern:**
+```csharp
+using Microsoft.Extensions.Logging;
+using Moq;
+using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Common.Models;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+using Nexo.Infrastructure.Analysis.Adapters;
+using Nexo.Infrastructure.Analysis.Rules;
+using Nexo.Tests.Application.Helpers;
+
+namespace Nexo.Tests.Infrastructure.Tests.Analysis;
+
+public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
+{
+    private DirectoryInfo? _tempDir;
+
+    public override async Task SetupAsync(CancellationToken cancellationToken = default)
+    {
+        _tempDir = TestHelpers.CreateTempDirectory();
+    }
+
+    public override async Task CleanupAsync(CancellationToken cancellationToken = default)
+    {
+        if (_tempDir != null)
+        {
+            TestHelpers.CleanupTempDirectory(_tempDir);
+        }
+    }
+
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var mockLogger = new Mock<ILogger<AnalysisServiceAdapter>>();
+            var mockRuleEngine = new Mock<AnalysisRuleEngine>(Array.Empty<IAnalysisRule>(), mockLogger.Object);
+            var adapter = new AnalysisServiceAdapter(mockLogger.Object, mockRuleEngine.Object);
+            
+            // Test with empty directory
+            var result1 = await adapter.AnalyzeAsync(_tempDir!, null, cancellationToken);
+            AssertNotNull(result1);
+            
+            // Test with assembly files
+            TestHelpers.CreateTempAssemblyFile(_tempDir!, "test.dll");
+            var result2 = await adapter.AnalyzeAsync(_tempDir!, null, cancellationToken);
+            AssertNotNull(result2);
+            
+            // Test cancellation
+            var cts = new CancellationTokenSource();
+            cts.Cancel();
+            await AssertThrowsAsync<OperationCanceledException>(() => 
+                adapter.AnalyzeAsync(_tempDir!, null, cts.Token));
+            
+            return new TestResult
+            {
+                TestName = nameof(AnalysisServiceAdapterComprehensiveTests),
+                Category = "Infrastructure",
+                Passed = true,
+                Message = "All AnalysisServiceAdapter tests passed"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new TestResult
+            {
+                TestName = nameof(AnalysisServiceAdapterComprehensiveTests),
+                Category = "Infrastructure",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+        }
+    }
+}
+```
+
+**Steps:**
+1. Use TestHelpers for temp directories
+2. Test all scenarios
+3. Use real file system operations
+4. Test error handling
+
+**Acceptance Criteria:**
+- All scenarios tested
+- Real file operations work
+- Error handling verified
+- Coverage shows 100% for AnalysisServiceAdapter
+
+### Task 4.2-4.7: Other Infrastructure Tests
+Follow similar patterns for:
+- CachedAnalysisServiceAdapter
+- AnalysisRuleEngine
+- SecurityAnalysisRule
+- CodeQualityRule
+- ValidationServiceAdapter
+- CachedValidationServiceAdapter
+- TrxTestResultParser
+
+**Acceptance Criteria:**
+- All adapters tested
+- All rules tested
+- Coverage shows 100% for infrastructure
+
+---
+
+## Sprint 5-10: Continue Pattern
+
+Continue the same pattern for remaining sprints:
+- Clear task definitions
+- Code patterns provided
+- Step-by-step instructions
+- Acceptance criteria
+- Test commands to run
+
+---
+
+## Quick Reference: Test Execution Commands
+
 ```bash
+# Run all tests
+nexo test
+
+# Run tests by category
 nexo test --filter "Domain"
 nexo test --filter "Application"
 nexo test --filter "Infrastructure"
 nexo test --filter "CLI"
-```
 
-### Run Tests with Verbose Output
-```bash
+# Run specific test
+nexo test --filter "AnalyzeCodeHandler"
+
+# Run with verbose output
 nexo test --verbose
-```
 
-### Run Tests with JSON Output
-```bash
+# Run with JSON output
 nexo test --format-json
 ```
 
-## Success Criteria
+## Agent Instructions Summary
 
-1. **100% Code Coverage** - All public methods, properties, and classes tested
-2. **All Edge Cases** - Error scenarios, boundary conditions, null checks
-3. **All Integration Points** - Adapters, handlers, commands fully tested
-4. **All User Flows** - End-to-end scenarios covered
-5. **Maintainable Tests** - Tests follow Clean Architecture principles
-6. **Fast Execution** - All tests run in < 5 minutes
-7. **CI/CD Ready** - Tests can run in automated pipelines
+For Cursor coding agent:
+1. Read the task definition
+2. Follow the code pattern provided
+3. Implement all test cases listed
+4. Run the test command to verify
+5. Check acceptance criteria
+6. Move to next task
 
-## Metrics Tracking
-
-### Coverage Metrics
-- **Current Coverage:** ~5% (estimated)
-- **Target Coverage:** 100%
-- **Test Count Target:** ~250-300 test methods
-- **Test Execution Time Target:** < 5 minutes
-
-### Sprint Metrics
-- **Total Sprints:** 10 sprints
-- **Total Duration:** ~37-40 days (7-8 weeks)
-- **Average Sprint Duration:** 3-5 days
-- **Sprints to 100% Coverage:** 9 sprints (Sprint 10 is optimization)
-
-### Progress Tracking
-Track progress using:
-- Coverage reports per sprint
-- Test count per sprint
-- Test execution time
-- Sprint burndown charts
-
-## Notes
-
-- All tests use the new bootstrapped test framework
-- Tests are discoverable at runtime
-- Tests follow Clean Architecture principles
-- Tests use dependency injection where appropriate
-- Tests are isolated and can run independently
-- Tests include both positive and negative scenarios
-
+Each task is self-contained with:
+- Clear file paths
+- Code patterns to follow
+- Step-by-step instructions
+- Acceptance criteria
+- Test commands
