@@ -30,6 +30,8 @@
     <ProjectReference Include="../../../src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj" />
     <ProjectReference Include="../../../src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
     <ProjectReference Include="../../../src/Nexo.Agents.Dev/Nexo.Agents.Dev.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Demo.CLI/Nexo.Demo.CLI.csproj" />
   </ItemGroup>
 
 </Project>
