@@ -24,7 +24,15 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
             await TestSuccessfulValidationWithFilter();
             await TestSuccessfulValidationWithoutFilter();
             await TestFailedTests();
-            await TestGeneralException();
+            try
+            {
+                await TestGeneralException();
+            }
+            catch (Exception ex) when (ex is not AssertionException)
+            {
+                // If an exception escapes TestGeneralException, it means the test failed
+                throw new Exception($"TestGeneralException failed: {ex.Message}", ex);
+            }
             await TestCancellation();
             await TestProgressReporting();
             await TestMetricsCollection();
