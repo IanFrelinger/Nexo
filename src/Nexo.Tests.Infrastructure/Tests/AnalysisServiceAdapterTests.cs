@@ -8,7 +8,7 @@ namespace Nexo.Tests.Infrastructure.Tests;
 /// </summary>
 public class AnalysisServiceAdapterTests : UnitTestBase
 {
-    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -16,24 +16,24 @@ public class AnalysisServiceAdapterTests : UnitTestBase
             // Full integration tests would require actual assembly files
             AssertTrue(true, "AnalysisServiceAdapter structure verified");
 
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(AnalysisServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "AnalysisServiceAdapter tests passed"
-            };
+            });
         }
         catch (Exception ex)
         {
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(AnalysisServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = ex.Message,
                 StackTrace = ex.StackTrace
-            };
+            });
         }
     }
 }

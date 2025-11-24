@@ -105,9 +105,68 @@ public class TestRunnerAdapter : ITestRunner
     private List<TestBase> DiscoverTests(string? filter)
     {
         var tests = new List<TestBase>();
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+        
+        // Get already loaded assemblies
+        var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies()
             .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
             .ToList();
+        
+        // Also try to load test assemblies from known locations
+        var baseDir = AppContext.BaseDirectory;
+        var testAssemblyNames = new[]
+        {
+            "Nexo.Tests.Domain",
+            "Nexo.Tests.Application",
+            "Nexo.Tests.Infrastructure",
+            "Nexo.Tests.CLI"
+        };
+        
+        var assemblies = new List<System.Reflection.Assembly>(loadedAssemblies);
+        
+        // Try loading by name first (works if already referenced)
+        foreach (var assemblyName in testAssemblyNames)
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.Load(assemblyName);
+                if (!assemblies.Any(a => a.FullName == assembly.FullName))
+                {
+                    assemblies.Add(assembly);
+                    _logger.LogDebug("Loaded test assembly by name: {Name}", assemblyName);
+                }
+            }
+            catch
+            {
+                // Try loading from file - check multiple possible locations
+                var possiblePaths = new[]
+                {
+                    Path.Combine(baseDir, $"{assemblyName}.dll"),
+                    Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Debug", "net8.0", $"{assemblyName}.dll"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Debug", "net8.0", $"{assemblyName}.dll")
+                };
+                
+                foreach (var assemblyPath in possiblePaths)
+                {
+                    if (File.Exists(assemblyPath))
+                    {
+                        try
+                        {
+                            var assembly = System.Reflection.Assembly.LoadFrom(assemblyPath);
+                            if (!assemblies.Any(a => a.FullName == assembly.FullName))
+                            {
+                                assemblies.Add(assembly);
+                                _logger.LogDebug("Loaded test assembly from file: {Path}", assemblyPath);
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogDebug(ex, "Failed to load test assembly: {Path}", assemblyPath);
+                        }
+                    }
+                }
+            }
+        }
 
         foreach (var assembly in assemblies)
         {

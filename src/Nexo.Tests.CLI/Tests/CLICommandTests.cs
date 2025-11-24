@@ -8,31 +8,31 @@ namespace Nexo.Tests.CLI.Tests;
 /// </summary>
 public class CLICommandTests : UnitTestBase
 {
-    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             // Basic smoke test - verify CLI structure
             AssertTrue(true, "CLI command structure verified");
 
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(CLICommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "CLI command tests passed"
-            };
+            });
         }
         catch (Exception ex)
         {
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(CLICommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,
                 StackTrace = ex.StackTrace
-            };
+            });
         }
     }
 }
