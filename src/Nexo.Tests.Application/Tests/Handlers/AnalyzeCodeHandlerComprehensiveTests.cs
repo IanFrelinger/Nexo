@@ -128,19 +128,29 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
 
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
+        // The handler should catch the UnauthorizedAccessException and wrap it in an AnalysisException
         AnalysisException? caughtException = null;
         try
         {
-            await handler.Handle(command, CancellationToken.None);
+            var result = await handler.Handle(command, CancellationToken.None);
+            // If we get here, no exception was thrown - that's a test failure
+            throw new Exception("Expected AnalysisException to be thrown but handler returned a result");
         }
         catch (AnalysisException ex)
         {
+            // This is expected - the handler wraps the exception
             caughtException = ex;
         }
+        catch (Exception ex)
+        {
+            // If we catch a different exception, that's also a failure
+            throw new Exception($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
+        }
 
+        // Verify the exception was caught and has the right message
         if (caughtException == null)
         {
-            throw new Exception("Expected AnalysisException to be thrown but none was thrown");
+            throw new Exception("Expected AnalysisException to be thrown but none was caught");
         }
         
         if (!caughtException.Message.Contains("Unauthorized access"))
@@ -161,19 +171,29 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
 
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
+        // The handler should catch the InvalidOperationException and wrap it in an AnalysisException
         AnalysisException? caughtException = null;
         try
         {
-            await handler.Handle(command, CancellationToken.None);
+            var result = await handler.Handle(command, CancellationToken.None);
+            // If we get here, no exception was thrown - that's a test failure
+            throw new Exception("Expected AnalysisException to be thrown but handler returned a result");
         }
         catch (AnalysisException ex)
         {
+            // This is expected - the handler wraps the exception
             caughtException = ex;
         }
+        catch (Exception ex)
+        {
+            // If we catch a different exception, that's also a failure
+            throw new Exception($"Expected AnalysisException but got {ex.GetType().Name}: {ex.Message}");
+        }
 
+        // Verify the exception was caught and has the right message
         if (caughtException == null)
         {
-            throw new Exception("Expected AnalysisException to be thrown but none was thrown");
+            throw new Exception("Expected AnalysisException to be thrown but none was caught");
         }
         
         if (!caughtException.Message.Contains("Analysis failed"))
