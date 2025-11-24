@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
+using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.Core.Application.Validation.UseCases.RunValidation;
 
@@ -29,17 +30,27 @@ public class RunValidationHandler : IRequestHandler<RunValidationCommand, Valida
             "Starting validation with filter: {Filter}",
             request.Filter ?? "none");
 
-        var result = await _validationService.ValidateAsync(
-            request.Filter,
-            cancellationToken);
+        try
+        {
+            var result = await _validationService.ValidateAsync(
+                request.Filter,
+                cancellationToken);
 
-        _logger.LogInformation(
-            "Validation completed. Passed: {Passed}, Tests: {PassedCount}/{TotalCount}",
-            result.Passed,
-            result.TestsPassed,
-            result.TestsRun);
+            _logger.LogInformation(
+                "Validation completed. Passed: {Passed}, Tests: {PassedCount}/{TotalCount}",
+                result.Passed,
+                result.TestsPassed,
+                result.TestsRun);
 
-        return result;
+            return result;
+        }
+        catch (Exception ex) when (ex is not ValidationException)
+        {
+            _logger.LogError(ex, "Unexpected error during validation");
+            throw new ValidationException(
+                $"Validation failed with filter: {request.Filter ?? "none"}",
+                ex);
+        }
     }
 }
 

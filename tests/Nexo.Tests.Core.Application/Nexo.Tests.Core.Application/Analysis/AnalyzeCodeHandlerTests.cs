@@ -65,7 +65,7 @@ public class AnalyzeCodeHandlerTests
                 Message = "Security issue found",
                 FilePath = "/test/file.cs",
                 LineNumber = 10,
-                Severity = "High"
+                Severity = Nexo.Core.Domain.Values.RiskLevel.High
             }
         };
 

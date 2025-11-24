@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
+using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.CLI.Commands;
 
@@ -34,6 +35,12 @@ public class AnalyzeCommand
             _renderer.RenderAnalysisResult(result, json);
 
             return result.HasViolations ? (int)ExitCode.ValidationFailed : (int)ExitCode.Ok;
+        }
+        catch (AnalysisException ex)
+        {
+            _logger.LogError(ex, "Analysis failed");
+            _renderer.RenderError(ex.Message);
+            return (int)ExitCode.ValidationFailed;
         }
         catch (UnauthorizedAccessException ex)
         {

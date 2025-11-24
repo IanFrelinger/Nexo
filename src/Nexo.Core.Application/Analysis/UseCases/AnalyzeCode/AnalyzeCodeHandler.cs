@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 
@@ -29,15 +30,32 @@ public class AnalyzeCodeHandler : IRequestHandler<AnalyzeCodeCommand, AnalysisRe
             "Starting analysis for path: {Path}",
             request.Path.FullName);
 
-        var result = await _analysisService.AnalyzeAsync(
-            request.Path,
-            cancellationToken);
+        try
+        {
+            var result = await _analysisService.AnalyzeAsync(
+                request.Path,
+                cancellationToken);
 
-        _logger.LogInformation(
-            "Analysis completed. Found {Count} violation(s)",
-            result.TotalViolations);
+            _logger.LogInformation(
+                "Analysis completed. Found {Count} violation(s)",
+                result.TotalViolations);
 
-        return result;
+            return result;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogError(ex, "Unauthorized access during analysis");
+            throw new AnalysisException(
+                $"Unauthorized access to path: {request.Path.FullName}",
+                ex);
+        }
+        catch (Exception ex) when (ex is not AnalysisException)
+        {
+            _logger.LogError(ex, "Unexpected error during analysis");
+            throw new AnalysisException(
+                $"Analysis failed for path: {request.Path.FullName}",
+                ex);
+        }
     }
 }
 

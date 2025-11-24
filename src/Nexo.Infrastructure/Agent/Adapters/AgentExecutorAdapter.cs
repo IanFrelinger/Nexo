@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Agent.Ports;
+using Nexo.Core.Domain.Exceptions;
 using Nexo.Abstractions;
 using Nexo.Runtime;
 using Nexo.Tools.Assembly;
@@ -46,12 +47,9 @@ public class AgentExecutorAdapter : IAgentExecutor
             var agent = FindAgent(agentName);
             if (agent == null)
             {
-                return new AgentExecutionResult
-                {
-                    AgentName = agentName,
-                    Success = false,
-                    Message = $"Agent '{agentName}' not found"
-                };
+                throw new AgentExecutionException(
+                    agentName,
+                    $"Agent '{agentName}' not found");
             }
 
             // Set up toolbox with available tools
@@ -135,29 +133,28 @@ public class AgentExecutorAdapter : IAgentExecutor
                 Output = new { Delta = delta?.Log ?? Array.Empty<string>() }
             };
         }
+        catch (AgentExecutionException)
+        {
+            // Re-throw domain exceptions
+            throw;
+        }
         catch (TimeoutException ex)
         {
             var duration = DateTime.UtcNow - startTime;
             _logger.LogWarning(ex, "Agent execution timed out: {AgentName}", agentName);
-            return new AgentExecutionResult
-            {
-                AgentName = agentName,
-                Success = false,
-                Message = $"Timeout: {ex.Message}",
-                Duration = duration
-            };
+            throw new AgentExecutionException(
+                agentName,
+                $"Agent execution timed out: {ex.Message}",
+                ex);
         }
         catch (Exception ex)
         {
             var duration = DateTime.UtcNow - startTime;
             _logger.LogError(ex, "Error executing agent: {AgentName}", agentName);
-            return new AgentExecutionResult
-            {
-                AgentName = agentName,
-                Success = false,
-                Message = $"Error: {ex.Message}",
-                Duration = duration
-            };
+            throw new AgentExecutionException(
+                agentName,
+                $"Agent execution failed: {ex.Message}",
+                ex);
         }
     }
 

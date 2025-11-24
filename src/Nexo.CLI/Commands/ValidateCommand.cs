@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.CLI.Commands;
 
@@ -34,6 +35,12 @@ public class ValidateCommand
             _renderer.RenderValidationResult(result, json);
 
             return result.Passed ? (int)ExitCode.Ok : (int)ExitCode.ValidationFailed;
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogError(ex, "Validation failed");
+            _renderer.RenderError(ex.Message);
+            return (int)ExitCode.ValidationFailed;
         }
         catch (Exception ex)
         {

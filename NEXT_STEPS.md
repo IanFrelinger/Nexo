@@ -49,16 +49,16 @@ public class AnalyzeCodeHandlerTests
 
 **Summary:** ~47 test methods implemented across unit, integration, and E2E tests. See `TESTING_IMPLEMENTATION_SUMMARY.md` for details.
 
-## Priority 2: Domain Integration
+## Priority 2: Domain Integration ✅ COMPLETED
 
-### 2.1 Use Domain Value Objects in DTOs
+### 2.1 Use Domain Value Objects in DTOs ✅
 **Current Issue:** DTOs use primitives (string, int) instead of domain value objects
 
 **Tasks:**
-- [ ] Create `ViolationSeverity` value object (or use existing `RiskLevel`)
-- [ ] Update `Violation` DTO to use `RiskLevel` instead of `string? Severity`
-- [ ] Create `AnalysisStatus` value object if needed
-- [ ] Use domain value objects throughout Application layer DTOs
+- [x] Use existing `RiskLevel` value object
+- [x] Update `Violation` DTO to use `RiskLevel` instead of `string? Severity`
+- [x] Update `AnalysisServiceAdapter` to use `RiskLevel` values
+- [x] Update `ConsoleRenderer` to display severity
 
 **Example:**
 ```csharp
@@ -75,15 +75,19 @@ public record Violation
 }
 ```
 
-### 2.2 Domain Exceptions
+### 2.2 Domain Exceptions ✅
 **Location:** `Nexo.Core.Domain/Exceptions/`
 
 **Tasks:**
-- [ ] Create `AnalysisException` domain exception
-- [ ] Create `ValidationException` domain exception
-- [ ] Create `AgentExecutionException` domain exception
-- [ ] Update handlers to throw domain exceptions
-- [ ] Map domain exceptions to appropriate exit codes in CLI
+- [x] Create `DomainException` base class
+- [x] Create `AnalysisException` domain exception
+- [x] Create `ValidationException` domain exception
+- [x] Create `AgentExecutionException` domain exception (with AgentName property)
+- [x] Update handlers to throw domain exceptions
+- [x] Update Infrastructure adapters to throw domain exceptions
+- [x] Map domain exceptions to appropriate exit codes in CLI
+
+**Summary:** Domain exceptions created and integrated throughout. See `DOMAIN_INTEGRATION_SUMMARY.md` for details.
 
 ## Priority 3: Enhanced Functionality
 

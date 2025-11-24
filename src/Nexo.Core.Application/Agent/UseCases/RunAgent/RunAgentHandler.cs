@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Agent.Ports;
+using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.Core.Application.Agent.UseCases.RunAgent;
 
@@ -48,6 +49,11 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
 
             return result with { Duration = duration };
         }
+        catch (AgentExecutionException)
+        {
+            // Re-throw domain exceptions
+            throw;
+        }
         catch (TimeoutException ex)
         {
             _logger.LogWarning(
@@ -55,14 +61,22 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
                 "Agent execution timed out: {AgentName}",
                 request.AgentName);
 
-            var duration = DateTime.UtcNow - startTime;
-            return new AgentExecutionResult
-            {
-                AgentName = request.AgentName,
-                Success = false,
-                Message = $"Timeout: {ex.Message}",
-                Duration = duration
-            };
+            throw new AgentExecutionException(
+                request.AgentName,
+                $"Agent execution timed out: {ex.Message}",
+                ex);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Unexpected error during agent execution: {AgentName}",
+                request.AgentName);
+
+            throw new AgentExecutionException(
+                request.AgentName,
+                $"Agent execution failed: {ex.Message}",
+                ex);
         }
     }
 }

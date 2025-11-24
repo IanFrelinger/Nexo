@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Domain.Values;
+using Nexo.Core.Domain.Exceptions;
 using Nexo.Tools.Assembly;
 using Nexo.Abstractions;
 using System.Text.Json;
@@ -75,7 +77,7 @@ public class AnalysisServiceAdapter : IAnalysisService
                                 Rule = "SecurityScan",
                                 Message = $"Security scan found {countElement.GetInt32()} finding(s)",
                                 FilePath = assemblyFile.FullName,
-                                Severity = "High"
+                                Severity = RiskLevel.High
                             });
                         }
                     }
@@ -92,7 +94,7 @@ public class AnalysisServiceAdapter : IAnalysisService
                         Rule = "AnalysisError",
                         Message = $"Failed to analyze: {ex.Message}",
                         FilePath = assemblyFile.FullName,
-                        Severity = "Medium"
+                        Severity = RiskLevel.Medium
                     });
                 }
             }
@@ -100,12 +102,21 @@ public class AnalysisServiceAdapter : IAnalysisService
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogError(ex, "Unauthorized access to path: {Path}", path.FullName);
+            throw new AnalysisException(
+                $"Unauthorized access to path: {path.FullName}",
+                ex);
+        }
+        catch (AnalysisException)
+        {
+            // Re-throw domain exceptions
             throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during analysis");
-            throw;
+            throw new AnalysisException(
+                $"Analysis failed for path: {path.FullName}",
+                ex);
         }
 
         var result = new AnalysisResult

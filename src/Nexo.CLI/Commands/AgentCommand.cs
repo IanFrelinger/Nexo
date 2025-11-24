@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
+using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.CLI.Commands;
 
@@ -34,6 +35,12 @@ public class AgentCommand
             _renderer.RenderAgentResult(result, json);
 
             return result.Success ? (int)ExitCode.Ok : (int)ExitCode.ValidationFailed;
+        }
+        catch (AgentExecutionException ex)
+        {
+            _logger.LogError(ex, "Agent execution failed: {AgentName}", ex.AgentName);
+            _renderer.RenderError(ex.Message);
+            return (int)ExitCode.ValidationFailed;
         }
         catch (TimeoutException ex)
         {

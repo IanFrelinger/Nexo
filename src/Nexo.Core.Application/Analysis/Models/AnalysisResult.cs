@@ -1,3 +1,5 @@
+using Nexo.Core.Domain.Values;
+
 namespace Nexo.Core.Application.Analysis.Models;
 
 /// <summary>
@@ -19,6 +21,6 @@ public record Violation
     public required string Message { get; init; }
     public required string FilePath { get; init; }
     public int? LineNumber { get; init; }
-    public string? Severity { get; init; }
+    public RiskLevel Severity { get; init; } = RiskLevel.Medium;
 }
 

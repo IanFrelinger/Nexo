@@ -58,7 +58,7 @@ public class ConsoleRenderer : IConsoleRenderer
                 Console.Error.WriteLine($"Found {result.TotalViolations} violation(s):");
                 foreach (var violation in result.Violations)
                 {
-                    Console.Error.WriteLine($"  - {violation.Rule}: {violation.Message} ({violation.FilePath}:{violation.LineNumber})");
+                    Console.Error.WriteLine($"  - [{violation.Severity}] {violation.Rule}: {violation.Message} ({violation.FilePath}:{violation.LineNumber})");
                 }
             }
             else
