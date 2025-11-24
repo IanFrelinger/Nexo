@@ -9,6 +9,7 @@ using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
+using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
 using Nexo.Demo.CLI.Agents;
 using Nexo.Agents.Dev;
@@ -125,10 +126,25 @@ static class Program
             jsonOpt,
             verboseOpt);
 
+        // nexo test
+        var testCommand = serviceProvider.GetRequiredService<TestCommand>();
+        var testCmd = new Command("test", "Run tests");
+        testCmd.AddOption(new Option<string?>("--filter", "Filter tests by name or category"));
+        testCmd.SetHandler(
+            async (string? filter, bool json, bool verbose) =>
+            {
+                var exitCode = await testCommand.ExecuteAsync(filter, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            testCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            jsonOpt,
+            verboseOpt);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
         root.AddCommand(configCmd);
+        root.AddCommand(testCmd);
 
         return await root.InvokeAsync(args);
     }
@@ -139,6 +155,7 @@ static class Program
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(AnalyzeCodeCommand).Assembly);
+            cfg.RegisterServicesFromAssembly(typeof(RunTestsCommand).Assembly);
         });
 
         // Register FluentValidation
@@ -156,6 +173,10 @@ static class Program
         services.AddScoped<AgentCommand>();
         services.AddScoped<ListAgentsCommand>();
         services.AddScoped<ConfigCommand>();
+        services.AddScoped<TestCommand>();
+
+        // Register test runner
+        services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
 
         // Register renderer
         services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();
