@@ -50,6 +50,18 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
                 Message = "All AnalyzeCodeHandler tests passed"
             };
         }
+        catch (AnalysisException)
+        {
+            // This is expected for exception tests - they should catch it internally
+            // If we get here, it means the exception test didn't catch it properly
+            return new TestResult
+            {
+                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = "Exception test did not properly catch AnalysisException"
+            };
+        }
         catch (Exception ex)
         {
             return new TestResult
@@ -128,15 +140,18 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
 
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
+        AnalysisException? caughtException = null;
         try
         {
             await handler.Handle(command, CancellationToken.None);
-            throw new Exception("Expected AnalysisException but none was thrown");
         }
-        catch (AnalysisException)
+        catch (AnalysisException ex)
         {
-            // Expected - test passes
+            caughtException = ex;
         }
+
+        AssertNotNull(caughtException, "Expected AnalysisException to be thrown");
+        AssertTrue(caughtException.Message.Contains("Unauthorized access"), "Exception message should mention unauthorized access");
     }
 
     private async Task TestGeneralException()
@@ -151,15 +166,18 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
 
         var command = new AnalyzeCodeCommand(new DirectoryInfo(Path.GetTempPath()));
         
+        AnalysisException? caughtException = null;
         try
         {
             await handler.Handle(command, CancellationToken.None);
-            throw new Exception("Expected AnalysisException but none was thrown");
         }
-        catch (AnalysisException)
+        catch (AnalysisException ex)
         {
-            // Expected - test passes
+            caughtException = ex;
         }
+
+        AssertNotNull(caughtException, "Expected AnalysisException to be thrown");
+        AssertTrue(caughtException.Message.Contains("Analysis failed"), "Exception message should mention analysis failed");
     }
 
     private async Task TestCancellation()

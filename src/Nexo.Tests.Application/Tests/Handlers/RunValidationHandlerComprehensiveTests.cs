@@ -37,6 +37,18 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
                 Message = "All RunValidationHandler tests passed"
             };
         }
+        catch (ValidationException)
+        {
+            // This is expected for exception tests - they should catch it internally
+            // If we get here, it means the exception test didn't catch it properly
+            return new Nexo.Core.Application.Testing.Models.TestResult
+            {
+                TestName = nameof(RunValidationHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = "Exception test did not properly catch ValidationException"
+            };
+        }
         catch (Exception ex)
         {
             return new Nexo.Core.Application.Testing.Models.TestResult
@@ -143,15 +155,18 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
 
         var command = new RunValidationCommand(null);
         
+        ValidationException? caughtException = null;
         try
         {
             await handler.Handle(command, CancellationToken.None);
-            throw new Exception("Expected ValidationException but none was thrown");
         }
-        catch (ValidationException)
+        catch (ValidationException ex)
         {
-            // Expected - test passes
+            caughtException = ex;
         }
+
+        AssertNotNull(caughtException, "Expected ValidationException to be thrown");
+        AssertTrue(caughtException.Message.Contains("Validation failed"), "Exception message should mention validation failed");
     }
 
     private async Task TestCancellation()
