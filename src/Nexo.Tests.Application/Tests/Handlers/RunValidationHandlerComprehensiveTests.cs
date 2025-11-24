@@ -4,6 +4,7 @@ using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
+using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
@@ -62,7 +63,7 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
             TestsRun = 10,
             TestsPassed = 10,
             TestsFailed = 0,
-            TestResults = new List<Core.Application.Validation.Models.TestResult>()
+            TestResults = new List<ValidationTestResult>()
         };
 
         mockService
