@@ -50,19 +50,6 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
                 Message = "All AnalyzeCodeHandler tests passed"
             };
         }
-        catch (AnalysisException ex)
-        {
-            // This is expected for exception tests - they should catch it internally
-            // If we get here, it means the exception test didn't catch it properly
-            // But let's check if it's from our test methods - if so, it's actually a test failure
-            return new TestResult
-            {
-                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
-                Category = "Application",
-                Passed = false,
-                ErrorMessage = $"Exception test did not properly catch AnalysisException: {ex.Message}"
-            };
-        }
         catch (Exception ex)
         {
             return new TestResult

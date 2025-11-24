@@ -37,18 +37,6 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
                 Message = "All RunValidationHandler tests passed"
             };
         }
-        catch (ValidationException)
-        {
-            // This is expected for exception tests - they should catch it internally
-            // If we get here, it means the exception test didn't catch it properly
-            return new Nexo.Core.Application.Testing.Models.TestResult
-            {
-                TestName = nameof(RunValidationHandlerComprehensiveTests),
-                Category = "Application",
-                Passed = false,
-                ErrorMessage = "Exception test did not properly catch ValidationException"
-            };
-        }
         catch (Exception ex)
         {
             return new Nexo.Core.Application.Testing.Models.TestResult
