@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
+using Nexo.Infrastructure.Validation.Parsers;
 using Nexo.Tools.Dev;
 using Nexo.Abstractions;
 using System.Text.Json;
@@ -15,10 +16,14 @@ namespace Nexo.Infrastructure.Validation.Adapters;
 public class ValidationServiceAdapter : IValidationService
 {
     private readonly ILogger<ValidationServiceAdapter> _logger;
+    private readonly ITestResultParser _testResultParser;
 
-    public ValidationServiceAdapter(ILogger<ValidationServiceAdapter> logger)
+    public ValidationServiceAdapter(
+        ILogger<ValidationServiceAdapter> logger,
+        ITestResultParser testResultParser)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _testResultParser = testResultParser ?? throw new ArgumentNullException(nameof(testResultParser));
     }
 
     public async Task<ValidationResult> ValidateAsync(
@@ -55,7 +60,7 @@ public class ValidationServiceAdapter : IValidationService
             var testTool = new DotnetTestTool();
             var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
 
-            var testResults = new List<TestResult>();
+            var allTestResults = new List<TestResult>();
             int totalTestsRun = 0;
             int totalTestsPassed = 0;
             int totalTestsFailed = 0;
@@ -72,36 +77,44 @@ public class ValidationServiceAdapter : IValidationService
 
                     var result = await testTool.InvokeAsync(testCall, snapshot, cancellationToken);
 
-                    // Parse result
-                    if (result.Payload is System.Text.Json.JsonElement jsonElement)
+                    // Try to find and parse TRX files
+                    var trxFiles = Directory.GetFiles(
+                        projectDir,
+                        "*.trx",
+                        SearchOption.AllDirectories)
+                        .OrderByDescending(f => new FileInfo(f).LastWriteTime)
+                        .Take(1) // Get most recent TRX file
+                        .Select(f => new FileInfo(f))
+                        .ToList();
+
+                    if (trxFiles.Any())
                     {
-                        var ok = jsonElement.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
+                        // Parse TRX file for detailed results
+                        var parsedResults = await _testResultParser.ParseAsync(trxFiles.First(), cancellationToken);
+                        allTestResults.AddRange(parsedResults);
                         
-                        if (ok)
+                        totalTestsRun += parsedResults.Count;
+                        totalTestsPassed += parsedResults.Count(r => r.Passed);
+                        totalTestsFailed += parsedResults.Count(r => !r.Passed);
+                    }
+                    else
+                    {
+                        // Fallback to simple result parsing
+                        if (result.Payload is System.Text.Json.JsonElement jsonElement)
                         {
-                            totalTestsPassed++;
-                            testResults.Add(new TestResult
-                            {
-                                Name = testProject.Name,
-                                Passed = true,
-                                Message = "Tests passed"
-                            });
-                        }
-                        else
-                        {
-                            totalTestsFailed++;
-                            var stderr = jsonElement.TryGetProperty("stderr", out var stderrElement)
-                                ? stderrElement.GetString()
-                                : "Test execution failed";
+                            var ok = jsonElement.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
                             
-                            testResults.Add(new TestResult
+                            allTestResults.Add(new TestResult
                             {
                                 Name = testProject.Name,
-                                Passed = false,
-                                Message = stderr
+                                Passed = ok,
+                                Message = ok ? "Tests passed" : "Test execution failed"
                             });
+                            
+                            if (ok) totalTestsPassed++;
+                            else totalTestsFailed++;
+                            totalTestsRun++;
                         }
-                        totalTestsRun++;
                     }
                 }
                 catch (Exception ex)
@@ -112,7 +125,7 @@ public class ValidationServiceAdapter : IValidationService
                         testProject.Name);
 
                     totalTestsFailed++;
-                    testResults.Add(new TestResult
+                    allTestResults.Add(new TestResult
                     {
                         Name = testProject.Name,
                         Passed = false,
@@ -133,7 +146,7 @@ public class ValidationServiceAdapter : IValidationService
                 TestsRun = totalTestsRun,
                 TestsPassed = totalTestsPassed,
                 TestsFailed = totalTestsFailed,
-                TestResults = testResults
+                TestResults = allTestResults
             };
         }
         catch (Exception ex)

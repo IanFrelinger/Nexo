@@ -3,9 +3,7 @@ using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
 using Nexo.Core.Domain.Values;
 using Nexo.Core.Domain.Exceptions;
-using Nexo.Tools.Assembly;
-using Nexo.Abstractions;
-using System.Text.Json;
+using Nexo.Infrastructure.Analysis.Rules;
 
 namespace Nexo.Infrastructure.Analysis.Adapters;
 
@@ -16,10 +14,14 @@ namespace Nexo.Infrastructure.Analysis.Adapters;
 public class AnalysisServiceAdapter : IAnalysisService
 {
     private readonly ILogger<AnalysisServiceAdapter> _logger;
+    private readonly AnalysisRuleEngine _ruleEngine;
 
-    public AnalysisServiceAdapter(ILogger<AnalysisServiceAdapter> logger)
+    public AnalysisServiceAdapter(
+        ILogger<AnalysisServiceAdapter> logger,
+        AnalysisRuleEngine ruleEngine)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _ruleEngine = ruleEngine ?? throw new ArgumentNullException(nameof(ruleEngine));
     }
 
     public async Task<AnalysisResult> AnalyzeAsync(
@@ -43,44 +45,13 @@ public class AnalysisServiceAdapter : IAnalysisService
                 "Found {Count} assembly file(s) to analyze",
                 assemblyFiles.Count);
 
-            // Use assembly analysis tools
-            var analyzeTool = new AssemblyAnalyzeTool();
-            var securityTool = new AssemblySecurityScanTool();
-            var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
-
             foreach (var assemblyFile in assemblyFiles)
             {
                 try
                 {
-                    // Analyze assembly metadata
-                    var analyzeCall = new ToolCall(
-                        "assembly.analyze",
-                        JsonDocument.Parse($$"""{"path":"{{assemblyFile.FullName}}"}""").RootElement);
-
-                    var analyzeResult = await analyzeTool.InvokeAsync(analyzeCall, snapshot, cancellationToken);
-
-                    // Security scan
-                    var securityCall = new ToolCall(
-                        "assembly.security_scan",
-                        JsonDocument.Parse($$"""{"path":"{{assemblyFile.FullName}}"}""").RootElement);
-
-                    var securityResult = await securityTool.InvokeAsync(securityCall, snapshot, cancellationToken);
-
-                    // Check for security findings
-                    if (securityResult.Payload is System.Text.Json.JsonElement jsonElement)
-                    {
-                        if (jsonElement.TryGetProperty("Count", out var countElement) &&
-                            countElement.GetInt32() > 0)
-                        {
-                            violations.Add(new Violation
-                            {
-                                Rule = "SecurityScan",
-                                Message = $"Security scan found {countElement.GetInt32()} finding(s)",
-                                FilePath = assemblyFile.FullName,
-                                Severity = RiskLevel.High
-                            });
-                        }
-                    }
+                    // Use rule engine to run all analysis rules
+                    var ruleViolations = await _ruleEngine.AnalyzeAsync(assemblyFile, cancellationToken);
+                    violations.AddRange(ruleViolations);
                 }
                 catch (Exception ex)
                 {

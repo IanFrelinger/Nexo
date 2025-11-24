@@ -44,6 +44,40 @@ public class ConsoleRenderer : IConsoleRenderer
         Console.Error.WriteLine(message);
     }
 
+    public void RenderAgentList(IReadOnlyList<Nexo.Core.Application.Agent.Models.AgentMetadata> agents, bool json)
+    {
+        if (json)
+        {
+            var envelope = new CliEnvelope<IReadOnlyList<Nexo.Core.Application.Agent.Models.AgentMetadata>>(
+                true, 
+                agents, 
+                null);
+            Console.Out.WriteLine(JsonSerializer.Serialize(envelope, _jsonOptions));
+        }
+        else
+        {
+            if (agents.Count == 0)
+            {
+                Console.Out.WriteLine("No agents found.");
+                return;
+            }
+
+            Console.Out.WriteLine($"Found {agents.Count} agent(s):");
+            foreach (var agent in agents)
+            {
+                Console.Out.WriteLine($"  - {agent.Name}");
+                if (!string.IsNullOrWhiteSpace(agent.Description))
+                {
+                    Console.Out.WriteLine($"    Description: {agent.Description}");
+                }
+                if (agent.Capabilities.Count > 0)
+                {
+                    Console.Out.WriteLine($"    Capabilities: {string.Join(", ", agent.Capabilities)}");
+                }
+            }
+        }
+    }
+
     public void RenderAnalysisResult(AnalysisResult result, bool json)
     {
         if (json)

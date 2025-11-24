@@ -91,6 +91,19 @@ static class Program
             agentCmd.Options[1] as Option<FileInfo?> ?? throw new InvalidOperationException(),
             jsonOpt);
 
+        // nexo agent list
+        var listAgentsCommand = serviceProvider.GetRequiredService<ListAgentsCommand>();
+        var listAgentsCmd = new Command("list", "List available agents");
+        listAgentsCmd.AddOption(jsonOpt);
+        listAgentsCmd.SetHandler(
+            async (bool json) =>
+            {
+                var exitCode = await listAgentsCommand.ExecuteAsync(json);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt);
+        agentCmd.AddCommand(listAgentsCmd);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
@@ -116,9 +129,28 @@ static class Program
         services.AddScoped<AnalyzeCommand>();
         services.AddScoped<ValidateCommand>();
         services.AddScoped<AgentCommand>();
+        services.AddScoped<ListAgentsCommand>();
 
         // Register renderer
         services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();
+
+        // Register test result parsers
+        services.AddScoped<Nexo.Infrastructure.Validation.Parsers.ITestResultParser, Nexo.Infrastructure.Validation.Parsers.TrxTestResultParser>();
+
+        // Register analysis rules
+        services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.SecurityAnalysisRule>();
+        services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.CodeQualityRule>();
+
+        // Register analysis rule engine
+        services.AddScoped<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>(sp =>
+        {
+            var rules = sp.GetServices<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
+            return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
+        });
+
+        // Register agent registry
+        services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentRegistry, Nexo.Infrastructure.Agent.Adapters.AgentRegistryAdapter>();
 
         // Register infrastructure adapters
         services.AddScoped<Nexo.Core.Application.Analysis.Ports.IAnalysisService, Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter>();

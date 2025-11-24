@@ -1,0 +1,109 @@
+using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Validation.Models;
+
+namespace Nexo.Infrastructure.Validation.Parsers;
+
+/// <summary>
+/// Parser for TRX (Visual Studio Test Results) files.
+/// </summary>
+public class TrxTestResultParser : ITestResultParser
+{
+    private readonly ILogger<TrxTestResultParser> _logger;
+
+    public TrxTestResultParser(ILogger<TrxTestResultParser> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public IReadOnlyList<string> SupportedExtensions => new[] { ".trx" };
+
+    public Task<IReadOnlyList<TestResult>> ParseAsync(
+        FileInfo resultFile,
+        CancellationToken cancellationToken = default)
+    {
+        if (!resultFile.Exists)
+        {
+            _logger.LogWarning("TRX file does not exist: {Path}", resultFile.FullName);
+            return Task.FromResult<IReadOnlyList<TestResult>>(Array.Empty<TestResult>());
+        }
+
+        try
+        {
+            var doc = XDocument.Load(resultFile.FullName);
+            var ns = XNamespace.Get("http://microsoft.com/schemas/VisualStudio/TeamTest/2010");
+
+            var testResults = new List<TestResult>();
+
+            // Find all UnitTestResult elements
+            var unitTestResults = doc.Descendants(ns + "UnitTestResult").ToList();
+
+            foreach (var unitTestResult in unitTestResults)
+            {
+                var testName = unitTestResult.Attribute("testName")?.Value ?? "Unknown";
+                var outcome = unitTestResult.Attribute("outcome")?.Value ?? "Unknown";
+                var duration = unitTestResult.Attribute("duration")?.Value;
+                var startTime = unitTestResult.Attribute("startTime")?.Value;
+                var endTime = unitTestResult.Attribute("endTime")?.Value;
+
+                // Extract error message if failed
+                string? errorMessage = null;
+                if (outcome == "Failed")
+                {
+                    var output = unitTestResult.Element(ns + "Output");
+                    var errorInfo = output?.Element(ns + "ErrorInfo");
+                    var message = errorInfo?.Element(ns + "Message");
+                    errorMessage = message?.Value;
+                }
+
+                // Extract category/trait if available
+                var category = ExtractCategory(unitTestResult, ns);
+
+                var passed = outcome == "Passed" || outcome == "Completed";
+
+                testResults.Add(new TestResult
+                {
+                    Name = testName,
+                    Passed = passed,
+                    Message = errorMessage,
+                    Category = category
+                });
+            }
+
+            _logger.LogInformation(
+                "Parsed {Count} test results from TRX file: {Path}",
+                testResults.Count,
+                resultFile.FullName);
+
+            return Task.FromResult<IReadOnlyList<TestResult>>(testResults);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to parse TRX file: {Path}", resultFile.FullName);
+            return Task.FromResult<IReadOnlyList<TestResult>>(Array.Empty<TestResult>());
+        }
+    }
+
+    private static string? ExtractCategory(XElement unitTestResult, XNamespace ns)
+    {
+        // Try to find category in TestDefinition
+        var testId = unitTestResult.Attribute("testId")?.Value;
+        if (testId == null) return null;
+
+        // Look for parent UnitTest element with matching id
+        var unitTest = unitTestResult.Document?
+            .Descendants(ns + "UnitTest")
+            .FirstOrDefault(ut => ut.Attribute("id")?.Value == testId);
+
+        if (unitTest == null) return null;
+
+        var testCategory = unitTest.Descendants(ns + "TestCategory")
+            .FirstOrDefault()?
+            .Element(ns + "TestCategoryItem")?
+            .Attribute("TestCategory")?
+            .Value;
+
+        return testCategory;
+    }
+}
+
