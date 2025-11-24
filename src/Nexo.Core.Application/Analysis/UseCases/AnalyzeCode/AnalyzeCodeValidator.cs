@@ -11,9 +11,11 @@ public class AnalyzeCodeValidator : AbstractValidator<AnalyzeCodeCommand>
     {
         RuleFor(x => x.Path)
             .NotNull()
-            .WithMessage("Path is required")
-            .Must(p => p.Exists)
-            .WithMessage("Path must exist");
+            .WithMessage("Path is required");
+            
+        RuleFor(x => x.Path)
+            .Must(p => p != null && p.Exists)
+            .WithMessage("Path must exist")
+            .When(x => x.Path != null);
     }
 }
-

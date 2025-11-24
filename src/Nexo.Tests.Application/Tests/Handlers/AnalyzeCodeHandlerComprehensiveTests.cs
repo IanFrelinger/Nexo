@@ -143,8 +143,6 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         
         // The handler should catch the UnauthorizedAccessException and wrap it in an AnalysisException
         // We expect an AnalysisException to be thrown, so we catch it and verify it
-        AnalysisException? caughtException = null;
-        
         try
         {
             var result = await handler.Handle(command, CancellationToken.None);
@@ -154,15 +152,13 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         catch (AnalysisException ex)
         {
             // This is expected - the handler wraps the exception
-            caughtException = ex;
-            
             // Verify the exception message contains expected content
             if (!ex.Message.Contains("Unauthorized access"))
             {
                 throw new AssertionException($"Exception message should mention 'Unauthorized access' but was: {ex.Message}");
             }
             // If we get here, the exception was caught and verified - test passes
-            return; // Exit early since we successfully caught and verified the exception
+            // No need to return, just let the method complete normally
         }
         catch (AssertionException)
         {
@@ -190,8 +186,6 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         
         // The handler should catch the InvalidOperationException and wrap it in an AnalysisException
         // We expect an AnalysisException to be thrown, so we catch it and verify it
-        AnalysisException? caughtException = null;
-        
         try
         {
             var result = await handler.Handle(command, CancellationToken.None);
@@ -201,15 +195,13 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         catch (AnalysisException ex)
         {
             // This is expected - the handler wraps the exception
-            caughtException = ex;
-            
             // Verify the exception message contains expected content
             if (!ex.Message.Contains("Analysis failed"))
             {
                 throw new AssertionException($"Exception message should mention 'Analysis failed' but was: {ex.Message}");
             }
             // If we get here, the exception was caught and verified - test passes
-            return; // Exit early since we successfully caught and verified the exception
+            // No need to return, just let the method complete normally
         }
         catch (AssertionException)
         {

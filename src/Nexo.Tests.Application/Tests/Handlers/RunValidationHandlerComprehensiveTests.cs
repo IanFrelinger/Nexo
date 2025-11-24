@@ -166,8 +166,6 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         
         // The handler should catch the InvalidOperationException and wrap it in a ValidationException
         // We expect a ValidationException to be thrown, so we catch it and verify it
-        ValidationException? caughtException = null;
-        
         try
         {
             var result = await handler.Handle(command, CancellationToken.None);
@@ -177,15 +175,13 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         catch (ValidationException ex)
         {
             // This is expected - the handler wraps the exception
-            caughtException = ex;
-            
             // Verify the exception message contains expected content
             if (!ex.Message.Contains("Validation failed"))
             {
                 throw new AssertionException($"Exception message should mention 'Validation failed' but was: {ex.Message}");
             }
             // If we get here, the exception was caught and verified - test passes
-            return; // Exit early since we successfully caught and verified the exception
+            // No need to return, just let the method complete normally
         }
         catch (AssertionException)
         {
