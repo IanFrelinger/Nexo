@@ -17,7 +17,7 @@ namespace Nexo.Tests.Application.Tests.Handlers;
 /// </summary>
 public class RunValidationHandlerComprehensiveTests : UnitTestBase
 {
-    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<Nexo.Core.Application.Testing.Models.TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -29,7 +29,7 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
             await TestProgressReporting();
             await TestMetricsCollection();
 
-            return new TestResult
+            return new Nexo.Core.Application.Testing.Models.TestResult
             {
                 TestName = nameof(RunValidationHandlerComprehensiveTests),
                 Category = "Application",
@@ -39,7 +39,7 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestResult
+            return new Nexo.Core.Application.Testing.Models.TestResult
             {
                 TestName = nameof(RunValidationHandlerComprehensiveTests),
                 Category = "Application",
