@@ -21,21 +21,13 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
     {
         try
         {
-            await TestSuccessfulValidationWithFilter();
-            await TestSuccessfulValidationWithoutFilter();
-            await TestFailedTests();
-            try
-            {
-                await TestGeneralException();
-            }
-            catch (Exception ex) when (ex is not AssertionException)
-            {
-                // If an exception escapes TestGeneralException, it means the test failed
-                throw new Exception($"TestGeneralException failed: {ex.Message}", ex);
-            }
-            await TestCancellation();
-            await TestProgressReporting();
-            await TestMetricsCollection();
+            await RunTestWithErrorHandling("TestSuccessfulValidationWithFilter", TestSuccessfulValidationWithFilter);
+            await RunTestWithErrorHandling("TestSuccessfulValidationWithoutFilter", TestSuccessfulValidationWithoutFilter);
+            await RunTestWithErrorHandling("TestFailedTests", TestFailedTests);
+            await RunTestWithErrorHandling("TestGeneralException", TestGeneralException);
+            await RunTestWithErrorHandling("TestCancellation", TestCancellation);
+            await RunTestWithErrorHandling("TestProgressReporting", TestProgressReporting);
+            await RunTestWithErrorHandling("TestMetricsCollection", TestMetricsCollection);
 
             return new Nexo.Core.Application.Testing.Models.TestResult
             {
@@ -47,19 +39,17 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            // AssertionException means a test assertion failed - this is a test failure
             return new Nexo.Core.Application.Testing.Models.TestResult
             {
                 TestName = nameof(RunValidationHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
-                ErrorMessage = ex.Message,
+                ErrorMessage = $"Assertion failed: {ex.Message}",
                 StackTrace = ex.StackTrace
             };
         }
         catch (Exception ex)
         {
-            // Any other exception is unexpected
             return new Nexo.Core.Application.Testing.Models.TestResult
             {
                 TestName = nameof(RunValidationHandlerComprehensiveTests),
@@ -68,6 +58,37 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
                 ErrorMessage = $"Unexpected exception: {ex.GetType().Name}: {ex.Message}",
                 StackTrace = ex.StackTrace
             };
+        }
+    }
+
+    private async Task RunTestWithErrorHandling(string testName, Func<Task> testAction)
+    {
+        try
+        {
+            await testAction();
+        }
+        catch (AssertionException)
+        {
+            throw; // Re-throw assertion exceptions
+        }
+        catch (ValidationException ex) when (testName == "TestGeneralException")
+        {
+            // Expected for this test - it should catch it itself
+            throw new AssertionException($"Test {testName} did not catch expected ValidationException: {ex.Message}", ex);
+        }
+        catch (ValidationException ex) when (testName == "TestCancellation" && ex.InnerException is OperationCanceledException)
+        {
+            // Expected - cancellation was wrapped in ValidationException
+            return;
+        }
+        catch (OperationCanceledException) when (testName == "TestCancellation")
+        {
+            // Expected - cancellation was properly propagated
+            return;
+        }
+        catch (Exception ex)
+        {
+            throw new AssertionException($"Test {testName} threw unexpected exception: {ex.Message}", ex);
         }
     }
 
