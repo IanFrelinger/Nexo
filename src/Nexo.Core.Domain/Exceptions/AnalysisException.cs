@@ -5,6 +5,9 @@ namespace Nexo.Core.Domain.Exceptions;
 /// </summary>
 public class AnalysisException : DomainException
 {
+    public string? ErrorCode { get; }
+    public string? Suggestion { get; }
+
     public AnalysisException(string message) : base(message)
     {
     }
@@ -12,6 +15,20 @@ public class AnalysisException : DomainException
     public AnalysisException(string message, Exception innerException) 
         : base(message, innerException)
     {
+    }
+
+    public AnalysisException(string message, string errorCode, string? suggestion = null) 
+        : base(message)
+    {
+        ErrorCode = errorCode;
+        Suggestion = suggestion;
+    }
+
+    public AnalysisException(string message, string errorCode, Exception innerException, string? suggestion = null) 
+        : base(message, innerException)
+    {
+        ErrorCode = errorCode;
+        Suggestion = suggestion;
     }
 }
 

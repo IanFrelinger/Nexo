@@ -39,7 +39,14 @@ public class AnalyzeCommand
         catch (AnalysisException ex)
         {
             _logger.LogError(ex, "Analysis failed");
-            _renderer.RenderError(ex.Message);
+            if (!string.IsNullOrEmpty(ex.ErrorCode))
+            {
+                _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
+            }
+            else
+            {
+                _renderer.RenderError(ex.Message);
+            }
             return (int)ExitCode.ValidationFailed;
         }
         catch (UnauthorizedAccessException ex)

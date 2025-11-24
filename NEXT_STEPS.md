@@ -175,30 +175,35 @@ Nexo.Infrastructure/Analysis/
 
 **Summary:** Caching and metrics fully implemented. Decorator pattern used for caching (OCP compliance). All handlers track execution time and counters.
 
-## Priority 5: Developer Experience
+## Priority 5: Developer Experience ✅ MOSTLY COMPLETED
 
-### 5.1 Better Error Messages
+### 5.1 Better Error Messages ✅
 **Tasks:**
-- [ ] Improve validation error messages
-- [ ] Add suggestions for common errors
-- [ ] Create error code system
-- [ ] Add troubleshooting guide links
+- [x] Improve error messages with error codes
+- [x] Add suggestions for common errors
+- [x] Create error code system (`ErrorCodes` class)
+- [x] Update domain exceptions to include ErrorCode and Suggestion
+- [x] Update CLI renderer to display error codes and suggestions
+- [ ] Add troubleshooting guide links - pending
 
-### 5.2 Configuration Support
+### 5.2 Configuration Support ✅
 **Location:** `Nexo.Core.Application/Configuration/`
 
 **Tasks:**
-- [ ] Create configuration models for analysis rules
-- [ ] Create configuration models for validation settings
-- [ ] Support configuration files (JSON, YAML)
-- [ ] Add `nexo config` command
+- [x] Create configuration models (`AnalysisConfiguration`, `ValidationConfiguration`, `NexoConfiguration`)
+- [x] Create `IConfigurationService` port
+- [x] Implement `ConfigurationServiceAdapter` with JSON file support
+- [x] Add `nexo config` command (`ConfigCommand`)
+- [ ] Support YAML configuration - pending (JSON implemented)
 
-### 5.3 Logging Improvements
+### 5.3 Logging Improvements ⚠️ PARTIAL
 **Tasks:**
-- [ ] Structured logging with correlation IDs
-- [ ] Log levels configuration
-- [ ] Progress indicators for long-running operations
-- [ ] Verbose mode support
+- [x] Log levels configuration (via `LoggingConfiguration`)
+- [ ] Structured logging with correlation IDs - pending
+- [ ] Progress indicators for long-running operations - pending
+- [ ] Verbose mode support - pending
+
+**Summary:** Error messages and configuration support fully implemented. Logging improvements partially complete (configuration ready, structured logging pending).
 
 ## Priority 6: Documentation
 

@@ -39,7 +39,14 @@ public class AgentCommand
         catch (AgentExecutionException ex)
         {
             _logger.LogError(ex, "Agent execution failed: {AgentName}", ex.AgentName);
-            _renderer.RenderError(ex.Message);
+            if (!string.IsNullOrEmpty(ex.ErrorCode))
+            {
+                _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
+            }
+            else
+            {
+                _renderer.RenderError(ex.Message);
+            }
             return (int)ExitCode.ValidationFailed;
         }
         catch (TimeoutException ex)

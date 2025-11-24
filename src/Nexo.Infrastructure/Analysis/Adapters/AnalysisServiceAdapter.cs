@@ -75,7 +75,9 @@ public class AnalysisServiceAdapter : IAnalysisService
             _logger.LogError(ex, "Unauthorized access to path: {Path}", path.FullName);
             throw new AnalysisException(
                 $"Unauthorized access to path: {path.FullName}",
-                ex);
+                Nexo.Core.Domain.Exceptions.ErrorCodes.AnalysisUnauthorizedAccess,
+                ex,
+                "Check file permissions and ensure you have read access to the directory.");
         }
         catch (AnalysisException)
         {

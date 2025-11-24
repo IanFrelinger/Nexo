@@ -49,7 +49,9 @@ public class AgentExecutorAdapter : IAgentExecutor
             {
                 throw new AgentExecutionException(
                     agentName,
-                    $"Agent '{agentName}' not found");
+                    $"Agent '{agentName}' not found",
+                    Nexo.Core.Domain.Exceptions.ErrorCodes.AgentNotFound,
+                    $"Use 'nexo agent list' to see available agents.");
             }
 
             // Set up toolbox with available tools

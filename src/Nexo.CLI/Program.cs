@@ -104,9 +104,22 @@ static class Program
             jsonOpt);
         agentCmd.AddCommand(listAgentsCmd);
 
+        // nexo config
+        var configCommand = serviceProvider.GetRequiredService<ConfigCommand>();
+        var configCmd = new Command("config", "View or manage configuration");
+        configCmd.AddOption(jsonOpt);
+        configCmd.SetHandler(
+            async (bool json) =>
+            {
+                var exitCode = await configCommand.ExecuteAsync(json);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
+        root.AddCommand(configCmd);
 
         return await root.InvokeAsync(args);
     }
@@ -125,11 +138,15 @@ static class Program
         // Register validation pipeline behavior
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.ValidationBehavior<,>));
 
+        // Register configuration service
+        services.AddSingleton<Nexo.Core.Application.Configuration.Ports.IConfigurationService, Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>();
+
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();
         services.AddScoped<ValidateCommand>();
         services.AddScoped<AgentCommand>();
         services.AddScoped<ListAgentsCommand>();
+        services.AddScoped<ConfigCommand>();
 
         // Register renderer
         services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();

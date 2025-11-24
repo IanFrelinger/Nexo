@@ -1,0 +1,34 @@
+namespace Nexo.Core.Domain.Exceptions;
+
+/// <summary>
+/// Exception thrown when configuration operations fail.
+/// </summary>
+public class ConfigurationException : DomainException
+{
+    public string? ErrorCode { get; }
+    public string? Suggestion { get; }
+
+    public ConfigurationException(string message) : base(message)
+    {
+    }
+
+    public ConfigurationException(string message, Exception innerException) 
+        : base(message, innerException)
+    {
+    }
+
+    public ConfigurationException(string message, string errorCode, string? suggestion = null) 
+        : base(message)
+    {
+        ErrorCode = errorCode;
+        Suggestion = suggestion;
+    }
+
+    public ConfigurationException(string message, string errorCode, Exception innerException, string? suggestion = null) 
+        : base(message, innerException)
+    {
+        ErrorCode = errorCode;
+        Suggestion = suggestion;
+    }
+}
+

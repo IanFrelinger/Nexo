@@ -12,6 +12,7 @@ public interface IConsoleRenderer
 {
     void RenderSuccess(string message);
     void RenderError(string message);
+    void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null);
     void RenderAnalysisResult(AnalysisResult result, bool json);
     void RenderValidationResult(ValidationResult result, bool json);
     void RenderAgentResult(AgentExecutionResult result, bool json);
@@ -42,7 +43,16 @@ public class ConsoleRenderer : IConsoleRenderer
 
     public void RenderError(string message)
     {
-        Console.Error.WriteLine(message);
+        Console.Error.WriteLine($"Error: {message}");
+    }
+
+    public void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null)
+    {
+        Console.Error.WriteLine($"Error [{errorCode}]: {message}");
+        if (!string.IsNullOrWhiteSpace(suggestion))
+        {
+            Console.Error.WriteLine($"Suggestion: {suggestion}");
+        }
     }
 
     public void RenderAgentList(IReadOnlyList<Nexo.Core.Application.Agent.Models.AgentMetadata> agents, bool json)
