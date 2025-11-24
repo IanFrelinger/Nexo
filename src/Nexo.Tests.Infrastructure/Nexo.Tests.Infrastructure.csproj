@@ -8,8 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Moq" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nexo.Tests.Application\Nexo.Tests.Application.csproj" />
   </ItemGroup>
 
 </Project>
