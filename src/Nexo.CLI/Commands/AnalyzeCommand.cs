@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.CLI.Commands;
@@ -41,7 +42,28 @@ public class AnalyzeCommand
 
         try
         {
-            var command = new AnalyzeCodeCommand(path);
+            Progress<ProgressReport>? progress = null;
+            if (verbose || !json)
+            {
+                progress = new Progress<ProgressReport>(report =>
+                {
+                    if (json)
+                    {
+                        // In JSON mode, only log to stderr
+                        _logger.LogInformation(
+                            "Progress: {Percentage}% - {Message}",
+                            report.Percentage,
+                            report.Message);
+                    }
+                    else
+                    {
+                        // In normal mode, show progress on stdout
+                        _renderer.RenderProgress(report);
+                    }
+                });
+            }
+
+            var command = new AnalyzeCodeCommand(path, progress);
             var result = await _mediator.Send(command);
 
             _renderer.RenderAnalysisResult(result, json);

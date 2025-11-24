@@ -39,6 +39,7 @@ public class AnalyzeCodeHandler : IRequestHandler<AnalyzeCodeCommand, AnalysisRe
         {
             var result = await _analysisService.AnalyzeAsync(
                 request.Path,
+                request.Progress,
                 cancellationToken);
 
             var duration = DateTime.UtcNow - startTime;

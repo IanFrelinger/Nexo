@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Common.Ports;
 using System.Security.Cryptography;
 using System.Text;
@@ -28,6 +29,7 @@ public class CachedAnalysisServiceAdapter : IAnalysisService
 
     public async Task<AnalysisResult> AnalyzeAsync(
         DirectoryInfo path,
+        IProgress<ProgressReport>? progress = null,
         CancellationToken cancellationToken = default)
     {
         // Generate cache key from path + file hash
@@ -38,12 +40,18 @@ public class CachedAnalysisServiceAdapter : IAnalysisService
         if (cachedResult != null)
         {
             _logger.LogInformation("Returning cached analysis result for path: {Path}", path.FullName);
+            progress?.Report(new ProgressReport
+            {
+                Percentage = 100,
+                Message = "Returning cached analysis result",
+                Metadata = new Dictionary<string, object> { ["Cached"] = true }
+            });
             return cachedResult;
         }
 
         // Cache miss, call inner service
         _logger.LogInformation("Cache miss, analyzing path: {Path}", path.FullName);
-        var result = await _inner.AnalyzeAsync(path, cancellationToken);
+        var result = await _inner.AnalyzeAsync(path, progress, cancellationToken);
 
         // Store in cache (30 minute expiration)
         await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(30), cancellationToken);

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.CLI.Commands;
@@ -41,7 +42,26 @@ public class ValidateCommand
 
         try
         {
-            var command = new RunValidationCommand(filter);
+            Progress<ProgressReport>? progress = null;
+            if (verbose || !json)
+            {
+                progress = new Progress<ProgressReport>(report =>
+                {
+                    if (json)
+                    {
+                        _logger.LogInformation(
+                            "Progress: {Percentage}% - {Message}",
+                            report.Percentage,
+                            report.Message);
+                    }
+                    else
+                    {
+                        _renderer.RenderProgress(report);
+                    }
+                });
+            }
+
+            var command = new RunValidationCommand(filter, progress);
             var result = await _mediator.Send(command);
 
             _renderer.RenderValidationResult(result, json);

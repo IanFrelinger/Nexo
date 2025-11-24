@@ -2,6 +2,7 @@ using System.Text.Json;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Agent.Models;
+using Nexo.Core.Application.Common.Models;
 
 namespace Nexo.CLI.Formatting;
 
@@ -15,6 +16,7 @@ public interface IConsoleRenderer
     void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null);
     void RenderProgressStart(string message);
     void RenderProgressComplete(string message);
+    void RenderProgress(ProgressReport report);
     void RenderAnalysisResult(AnalysisResult result, bool json);
     void RenderValidationResult(ValidationResult result, bool json);
     void RenderAgentResult(AgentExecutionResult result, bool json);
@@ -56,6 +58,14 @@ public class ConsoleRenderer : IConsoleRenderer
     public void RenderProgressComplete(string message)
     {
         Console.Out.WriteLine($"[complete] {message}");
+    }
+
+    public void RenderProgress(ProgressReport report)
+    {
+        var stepInfo = report.TotalSteps.HasValue && report.CurrentStep.HasValue
+            ? $" ({report.CurrentStep}/{report.TotalSteps})"
+            : string.Empty;
+        Console.Out.WriteLine($"[{report.Percentage}%]{stepInfo} {report.Message}");
     }
 
     public void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null)

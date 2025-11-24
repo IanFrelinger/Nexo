@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Domain.Values;
 using Nexo.Core.Domain.Exceptions;
 using Nexo.Infrastructure.Analysis.Rules;
@@ -26,11 +27,20 @@ public class AnalysisServiceAdapter : IAnalysisService
 
     public async Task<AnalysisResult> AnalyzeAsync(
         DirectoryInfo path,
+        IProgress<ProgressReport>? progress = null,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
             "Analyzing path: {Path}",
             path.FullName);
+
+        progress?.Report(new ProgressReport
+        {
+            Percentage = 0,
+            Message = $"Starting analysis of {path.FullName}",
+            CurrentStep = 0,
+            TotalSteps = null
+        });
 
         var violations = new List<Violation>();
 
@@ -45,8 +55,36 @@ public class AnalysisServiceAdapter : IAnalysisService
                 "Found {Count} assembly file(s) to analyze",
                 assemblyFiles.Count);
 
+            progress?.Report(new ProgressReport
+            {
+                Percentage = 5,
+                Message = $"Found {assemblyFiles.Count} assembly file(s) to analyze",
+                CurrentStep = 0,
+                TotalSteps = assemblyFiles.Count
+            });
+
+            var totalFiles = assemblyFiles.Count;
+            var currentFile = 0;
+
             foreach (var assemblyFile in assemblyFiles)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                currentFile++;
+                var percentage = 5 + (int)((currentFile / (double)totalFiles) * 90);
+
+                progress?.Report(new ProgressReport
+                {
+                    Percentage = percentage,
+                    Message = $"Analyzing {Path.GetFileName(assemblyFile.FullName)} ({currentFile}/{totalFiles})",
+                    CurrentStep = currentFile,
+                    TotalSteps = totalFiles,
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["File"] = assemblyFile.FullName
+                    }
+                });
+
                 try
                 {
                     // Use rule engine to run all analysis rules
@@ -69,6 +107,14 @@ public class AnalysisServiceAdapter : IAnalysisService
                     });
                 }
             }
+
+            progress?.Report(new ProgressReport
+            {
+                Percentage = 100,
+                Message = $"Analysis completed. Found {violations.Count} violation(s)",
+                CurrentStep = totalFiles,
+                TotalSteps = totalFiles
+            });
         }
         catch (UnauthorizedAccessException ex)
         {

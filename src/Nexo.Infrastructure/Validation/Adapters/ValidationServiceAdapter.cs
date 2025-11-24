@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Infrastructure.Validation.Parsers;
 using Nexo.Tools.Dev;
 using Nexo.Abstractions;
@@ -28,11 +29,20 @@ public class ValidationServiceAdapter : IValidationService
 
     public async Task<ValidationResult> ValidateAsync(
         string? filter,
+        IProgress<ProgressReport>? progress = null,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation(
             "Running validation with filter: {Filter}",
             filter ?? "none");
+
+        progress?.Report(new ProgressReport
+        {
+            Percentage = 0,
+            Message = $"Starting validation with filter: {filter ?? "none"}",
+            CurrentStep = 0,
+            TotalSteps = null
+        });
 
         try
         {
@@ -46,6 +56,11 @@ public class ValidationServiceAdapter : IValidationService
             if (testProjects.Count == 0)
             {
                 _logger.LogInformation("No test projects found - validation skipped");
+                progress?.Report(new ProgressReport
+                {
+                    Percentage = 100,
+                    Message = "No test projects found - validation skipped"
+                });
                 return new ValidationResult
                 {
                     Passed = true,
@@ -56,6 +71,14 @@ public class ValidationServiceAdapter : IValidationService
                 };
             }
 
+            progress?.Report(new ProgressReport
+            {
+                Percentage = 5,
+                Message = $"Found {testProjects.Count} test project(s)",
+                CurrentStep = 0,
+                TotalSteps = testProjects.Count
+            });
+
             // Use DotnetTestTool to run tests
             var testTool = new DotnetTestTool();
             var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
@@ -64,9 +87,28 @@ public class ValidationServiceAdapter : IValidationService
             int totalTestsRun = 0;
             int totalTestsPassed = 0;
             int totalTestsFailed = 0;
+            var totalProjects = testProjects.Count;
+            var currentProject = 0;
 
             foreach (var testProject in testProjects)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                currentProject++;
+                var percentage = 5 + (int)((currentProject / (double)totalProjects) * 90);
+
+                progress?.Report(new ProgressReport
+                {
+                    Percentage = percentage,
+                    Message = $"Running tests in {Path.GetFileName(testProject.FullName)} ({currentProject}/{totalProjects})",
+                    CurrentStep = currentProject,
+                    TotalSteps = totalProjects,
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["Project"] = testProject.FullName
+                    }
+                });
+
                 try
                 {
                     var projectDir = testProject.Directory?.FullName ?? currentDir.FullName;
@@ -136,6 +178,14 @@ public class ValidationServiceAdapter : IValidationService
 
             // Pass if no tests failed (even if no tests were run)
             var passed = totalTestsFailed == 0;
+
+            progress?.Report(new ProgressReport
+            {
+                Percentage = 100,
+                Message = $"Validation completed. Passed: {passed}, Tests: {totalTestsPassed}/{totalTestsRun}",
+                CurrentStep = totalProjects,
+                TotalSteps = totalProjects
+            });
 
             return new ValidationResult
             {

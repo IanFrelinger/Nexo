@@ -39,6 +39,7 @@ public class RunValidationHandler : IRequestHandler<RunValidationCommand, Valida
         {
             var result = await _validationService.ValidateAsync(
                 request.Filter,
+                request.Progress,
                 cancellationToken);
 
             var duration = DateTime.UtcNow - startTime;

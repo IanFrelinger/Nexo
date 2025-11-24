@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Common.Ports;
 using System.Security.Cryptography;
 using System.Text;
@@ -28,6 +29,7 @@ public class CachedValidationServiceAdapter : IValidationService
 
     public async Task<ValidationResult> ValidateAsync(
         string? filter,
+        IProgress<ProgressReport>? progress = null,
         CancellationToken cancellationToken = default)
     {
         // Generate cache key from filter + project hash
@@ -38,12 +40,18 @@ public class CachedValidationServiceAdapter : IValidationService
         if (cachedResult != null)
         {
             _logger.LogInformation("Returning cached validation result for filter: {Filter}", filter ?? "none");
+            progress?.Report(new ProgressReport
+            {
+                Percentage = 100,
+                Message = "Returning cached validation result",
+                Metadata = new Dictionary<string, object> { ["Cached"] = true }
+            });
             return cachedResult;
         }
 
         // Cache miss, call inner service
         _logger.LogInformation("Cache miss, running validation with filter: {Filter}", filter ?? "none");
-        var result = await _inner.ValidateAsync(filter, cancellationToken);
+        var result = await _inner.ValidateAsync(filter, progress, cancellationToken);
 
         // Store in cache (15 minute expiration for test results)
         await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15), cancellationToken);
