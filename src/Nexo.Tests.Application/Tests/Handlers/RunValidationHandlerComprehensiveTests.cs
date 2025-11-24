@@ -1,0 +1,225 @@
+using Microsoft.Extensions.Logging;
+using Moq;
+using Nexo.Core.Application.Common.Models;
+using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+using Nexo.Core.Application.Validation.Models;
+using Nexo.Core.Application.Validation.Ports;
+using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Core.Domain.Exceptions;
+
+namespace Nexo.Tests.Application.Tests.Handlers;
+
+/// <summary>
+/// Comprehensive tests for RunValidationHandler covering all scenarios.
+/// </summary>
+public class RunValidationHandlerComprehensiveTests : UnitTestBase
+{
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await TestSuccessfulValidationWithFilter();
+            await TestSuccessfulValidationWithoutFilter();
+            await TestFailedTests();
+            await TestGeneralException();
+            await TestCancellation();
+            await TestProgressReporting();
+            await TestMetricsCollection();
+
+            return new TestResult
+            {
+                TestName = nameof(RunValidationHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = true,
+                Message = "All RunValidationHandler tests passed"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new TestResult
+            {
+                TestName = nameof(RunValidationHandlerComprehensiveTests),
+                Category = "Application",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+        }
+    }
+
+    private async Task TestSuccessfulValidationWithFilter()
+    {
+        var mockService = new Mock<IValidationService>();
+        var mockLogger = new Mock<ILogger<RunValidationHandler>>();
+        var handler = new RunValidationHandler(mockService.Object, mockLogger.Object);
+
+        var expectedResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 10,
+            TestsPassed = 10,
+            TestsFailed = 0,
+            TestResults = new List<Core.Application.Validation.Models.TestResult>()
+        };
+
+        mockService
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResult);
+
+        var command = new RunValidationCommand("TestFilter");
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        AssertNotNull(result);
+        AssertTrue(result.Passed);
+        AssertEqual(10, result.TestsRun);
+    }
+
+    private async Task TestSuccessfulValidationWithoutFilter()
+    {
+        var mockService = new Mock<IValidationService>();
+        var mockLogger = new Mock<ILogger<RunValidationHandler>>();
+        var handler = new RunValidationHandler(mockService.Object, mockLogger.Object);
+
+        var expectedResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 5,
+            TestsPassed = 5,
+            TestsFailed = 0
+        };
+
+        mockService
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResult);
+
+        var command = new RunValidationCommand(null);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        AssertNotNull(result);
+        AssertTrue(result.Passed);
+    }
+
+    private async Task TestFailedTests()
+    {
+        var mockService = new Mock<IValidationService>();
+        var mockLogger = new Mock<ILogger<RunValidationHandler>>();
+        var handler = new RunValidationHandler(mockService.Object, mockLogger.Object);
+
+        var expectedResult = new ValidationResult
+        {
+            Passed = false,
+            Message = "Some tests failed",
+            TestsRun = 10,
+            TestsPassed = 8,
+            TestsFailed = 2
+        };
+
+        mockService
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResult);
+
+        var command = new RunValidationCommand(null);
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        AssertNotNull(result);
+        AssertFalse(result.Passed);
+        AssertEqual(2, result.TestsFailed);
+    }
+
+    private async Task TestGeneralException()
+    {
+        var mockService = new Mock<IValidationService>();
+        var mockLogger = new Mock<ILogger<RunValidationHandler>>();
+        var handler = new RunValidationHandler(mockService.Object, mockLogger.Object);
+
+        mockService
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Test exception"));
+
+        var command = new RunValidationCommand(null);
+        
+        await AssertThrowsAsync<ValidationException>(async () => 
+            await handler.Handle(command, CancellationToken.None), "Expected ValidationException");
+    }
+
+    private async Task TestCancellation()
+    {
+        var mockService = new Mock<IValidationService>();
+        var mockLogger = new Mock<ILogger<RunValidationHandler>>();
+        var handler = new RunValidationHandler(mockService.Object, mockLogger.Object);
+
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        mockService
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        var command = new RunValidationCommand(null);
+        
+        await AssertThrowsAsync<OperationCanceledException>(async () => 
+            await handler.Handle(command, cts.Token), "Expected OperationCanceledException");
+    }
+
+    private async Task TestProgressReporting()
+    {
+        var mockService = new Mock<IValidationService>();
+        var mockLogger = new Mock<ILogger<RunValidationHandler>>();
+        var handler = new RunValidationHandler(mockService.Object, mockLogger.Object);
+
+        var progress = new Progress<ProgressReport>();
+        var expectedResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 0,
+            TestsPassed = 0,
+            TestsFailed = 0
+        };
+
+        mockService
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResult);
+
+        var command = new RunValidationCommand(null, progress);
+        await handler.Handle(command, CancellationToken.None);
+
+        mockService.Verify(s => s.ValidateAsync(
+            It.IsAny<string?>(), 
+            It.IsAny<IProgress<ProgressReport>>(), 
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private async Task TestMetricsCollection()
+    {
+        var mockService = new Mock<IValidationService>();
+        var mockLogger = new Mock<ILogger<RunValidationHandler>>();
+        var mockMetrics = new Mock<IMetricsCollector>();
+        var handler = new RunValidationHandler(mockService.Object, mockLogger.Object, mockMetrics.Object);
+
+        var expectedResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 10,
+            TestsPassed = 8,
+            TestsFailed = 2
+        };
+
+        mockService
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResult);
+
+        var command = new RunValidationCommand(null);
+        await handler.Handle(command, CancellationToken.None);
+
+        mockMetrics.Verify(m => m.RecordExecutionTime("Validation", It.IsAny<TimeSpan>()), Times.Once);
+        mockMetrics.Verify(m => m.IncrementCounter(It.Is<string>(s => s == "Validation.Executed"), It.IsAny<int>()), Times.Once);
+        mockMetrics.Verify(m => m.IncrementCounter(It.Is<string>(s => s == "Validation.TestsRun"), It.IsAny<int>()), Times.Once);
+    }
+}
+
