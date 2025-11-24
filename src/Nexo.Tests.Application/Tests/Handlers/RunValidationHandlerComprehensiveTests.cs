@@ -165,8 +165,15 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
             caughtException = ex;
         }
 
-        AssertNotNull(caughtException, "Expected ValidationException to be thrown");
-        AssertTrue(caughtException!.Message.Contains("Validation failed"), "Exception message should mention validation failed");
+        if (caughtException == null)
+        {
+            throw new Exception("Expected ValidationException to be thrown but none was thrown");
+        }
+        
+        if (!caughtException.Message.Contains("Validation failed"))
+        {
+            throw new Exception($"Exception message should mention 'Validation failed' but was: {caughtException.Message}");
+        }
     }
 
     private async Task TestCancellation()

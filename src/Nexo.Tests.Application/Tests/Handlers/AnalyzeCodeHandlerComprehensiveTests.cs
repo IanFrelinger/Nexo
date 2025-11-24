@@ -50,16 +50,17 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
                 Message = "All AnalyzeCodeHandler tests passed"
             };
         }
-        catch (AnalysisException)
+        catch (AnalysisException ex)
         {
             // This is expected for exception tests - they should catch it internally
             // If we get here, it means the exception test didn't catch it properly
+            // But let's check if it's from our test methods - if so, it's actually a test failure
             return new TestResult
             {
                 TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
-                ErrorMessage = "Exception test did not properly catch AnalysisException"
+                ErrorMessage = $"Exception test did not properly catch AnalysisException: {ex.Message}"
             };
         }
         catch (Exception ex)
@@ -150,8 +151,15 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
             caughtException = ex;
         }
 
-        AssertNotNull(caughtException, "Expected AnalysisException to be thrown");
-        AssertTrue(caughtException!.Message.Contains("Unauthorized access"), "Exception message should mention unauthorized access");
+        if (caughtException == null)
+        {
+            throw new Exception("Expected AnalysisException to be thrown but none was thrown");
+        }
+        
+        if (!caughtException.Message.Contains("Unauthorized access"))
+        {
+            throw new Exception($"Exception message should mention 'Unauthorized access' but was: {caughtException.Message}");
+        }
     }
 
     private async Task TestGeneralException()
@@ -176,8 +184,15 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
             caughtException = ex;
         }
 
-        AssertNotNull(caughtException, "Expected AnalysisException to be thrown");
-        AssertTrue(caughtException!.Message.Contains("Analysis failed"), "Exception message should mention analysis failed");
+        if (caughtException == null)
+        {
+            throw new Exception("Expected AnalysisException to be thrown but none was thrown");
+        }
+        
+        if (!caughtException.Message.Contains("Analysis failed"))
+        {
+            throw new Exception($"Exception message should mention 'Analysis failed' but was: {caughtException.Message}");
+        }
     }
 
     private async Task TestCancellation()
