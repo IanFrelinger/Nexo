@@ -37,6 +37,12 @@ static class Program
 
         root.AddGlobalOption(jsonOpt);
 
+        var verboseOpt = new Option<bool>(
+            name: "--verbose",
+            description: "Enable verbose logging and progress output."
+        );
+        root.AddGlobalOption(verboseOpt);
+
         // Get services from DI container
         var serviceProvider = host.Services;
         var analyzeCommand = serviceProvider.GetRequiredService<AnalyzeCommand>();
@@ -53,13 +59,14 @@ static class Program
             )
         };
         analyzeCmd.SetHandler(
-            async (DirectoryInfo path, bool json) =>
+            async (DirectoryInfo path, bool json, bool verbose) =>
             {
-                var exitCode = await analyzeCommand.ExecuteAsync(path, json);
+                var exitCode = await analyzeCommand.ExecuteAsync(path, json, verbose);
                 Environment.Exit(exitCode);
             },
             analyzeCmd.Options[0] as Option<DirectoryInfo> ?? throw new InvalidOperationException(),
-            jsonOpt);
+            jsonOpt,
+            verboseOpt);
 
         // nexo validate
         var validateCmd = new Command("validate", "Run architecture tests/contract checks quickly")
@@ -67,13 +74,14 @@ static class Program
             new Option<string?>("--filter", "Optional test filter (Category/Trait)")
         };
         validateCmd.SetHandler(
-            async (string? filter, bool json) =>
+            async (string? filter, bool json, bool verbose) =>
             {
-                var exitCode = await validateCommand.ExecuteAsync(filter, json);
+                var exitCode = await validateCommand.ExecuteAsync(filter, json, verbose);
                 Environment.Exit(exitCode);
             },
             validateCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
-            jsonOpt);
+            jsonOpt,
+            verboseOpt);
 
         // nexo agent
         var agentCmd = new Command("agent", "Run an agent action")
@@ -82,39 +90,40 @@ static class Program
             new Option<FileInfo?>("--input", "Optional input file")
         };
         agentCmd.SetHandler(
-            async (string name, FileInfo? input, bool json) =>
+            async (string name, FileInfo? input, bool json, bool verbose) =>
             {
-                var exitCode = await agentCommand.ExecuteAsync(name, input, json);
+                var exitCode = await agentCommand.ExecuteAsync(name, input, json, verbose);
                 Environment.Exit(exitCode);
             },
             agentCmd.Options[0] as Option<string> ?? throw new InvalidOperationException(),
             agentCmd.Options[1] as Option<FileInfo?> ?? throw new InvalidOperationException(),
-            jsonOpt);
+            jsonOpt,
+            verboseOpt);
 
         // nexo agent list
         var listAgentsCommand = serviceProvider.GetRequiredService<ListAgentsCommand>();
         var listAgentsCmd = new Command("list", "List available agents");
-        listAgentsCmd.AddOption(jsonOpt);
         listAgentsCmd.SetHandler(
-            async (bool json) =>
+            async (bool json, bool verbose) =>
             {
-                var exitCode = await listAgentsCommand.ExecuteAsync(json);
+                var exitCode = await listAgentsCommand.ExecuteAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
-            jsonOpt);
+            jsonOpt,
+            verboseOpt);
         agentCmd.AddCommand(listAgentsCmd);
 
         // nexo config
         var configCommand = serviceProvider.GetRequiredService<ConfigCommand>();
         var configCmd = new Command("config", "View or manage configuration");
-        configCmd.AddOption(jsonOpt);
         configCmd.SetHandler(
-            async (bool json) =>
+            async (bool json, bool verbose) =>
             {
-                var exitCode = await configCommand.ExecuteAsync(json);
+                var exitCode = await configCommand.ExecuteAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
-            jsonOpt);
+            jsonOpt,
+            verboseOpt);
 
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);

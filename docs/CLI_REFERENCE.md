@@ -7,6 +7,7 @@ The Nexo CLI (`nexo`) is built on top of `System.CommandLine` and MediatR handle
 | Option | Description |
 |--------|-------------|
 | `--json` | Outputs JSON envelopes (`ok`, `data`, `error`). |
+| `--verbose` | Enables correlation IDs + progress indicators for long operations. |
 
 ## Commands
 
@@ -16,6 +17,7 @@ The Nexo CLI (`nexo`) is built on top of `System.CommandLine` and MediatR handle
 - **Options:**
   - `--path <Directory>`: Root folder to scan (default `.`).
   - `--json`
+  - `--verbose`
 - **Exit Codes:**
   - `0` – No violations.
   - `2` – Violations found or validation failure.
@@ -28,6 +30,7 @@ The Nexo CLI (`nexo`) is built on top of `System.CommandLine` and MediatR handle
 - **Options:**
   - `--filter <Trait>`: Optional filter passed to `dotnet test`.
   - `--json`
+  - `--verbose`
 - **Behavior:** Discovers test projects automatically, runs `dotnet test --logger trx`, parses TRX files, and aggregates results. Caching prevents repeated runs when inputs do not change.
 
 ### `nexo agent`
@@ -37,13 +40,14 @@ The Nexo CLI (`nexo`) is built on top of `System.CommandLine` and MediatR handle
   - `--name <AgentName>` (required)
   - `--input <File>`: Optional input payload for the agent.
   - `--json`
+  - `--verbose`
 - **Subcommands:**
   - `nexo agent list` — Lists available agents with metadata.
 
 ### `nexo config`
 
 - **Description:** Displays the current configuration (or outputs JSON).
-- **Options:** `--json`
+- **Options:** `--json`, `--verbose`
 - **Configuration File:** `~/.nexo/config.json` (created automatically). Provides analysis rule settings, validation defaults, and logging preferences.
 
 ## Exit Codes

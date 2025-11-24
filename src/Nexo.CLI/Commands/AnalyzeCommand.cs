@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
@@ -25,8 +26,19 @@ public class AnalyzeCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<int> ExecuteAsync(DirectoryInfo path, bool json)
+    public async Task<int> ExecuteAsync(DirectoryInfo path, bool json, bool verbose)
     {
+        var correlationId = Guid.NewGuid().ToString();
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["CorrelationId"] = correlationId
+        });
+
+        if (verbose)
+        {
+            _renderer.RenderProgressStart($"CorrelationId={correlationId} :: analyzing {path.FullName}");
+        }
+
         try
         {
             var command = new AnalyzeCodeCommand(path);
@@ -34,20 +46,16 @@ public class AnalyzeCommand
 
             _renderer.RenderAnalysisResult(result, json);
 
+            if (verbose)
+            {
+                _renderer.RenderProgressComplete($"CorrelationId={correlationId} :: analysis completed");
+            }
+
             return result.HasViolations ? (int)ExitCode.ValidationFailed : (int)ExitCode.Ok;
         }
         catch (AnalysisException ex)
         {
-            _logger.LogError(ex, "Analysis failed");
-            if (!string.IsNullOrEmpty(ex.ErrorCode))
-            {
-                _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
-            }
-            else
-            {
-                _renderer.RenderError(ex.Message);
-            }
-            return (int)ExitCode.ValidationFailed;
+            return HandleAnalysisException(ex);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -61,6 +69,20 @@ public class AnalyzeCommand
             _renderer.RenderError(ex.Message);
             return (int)ExitCode.UnexpectedError;
         }
+    }
+
+    private int HandleAnalysisException(AnalysisException ex)
+    {
+        _logger.LogError(ex, "Analysis failed");
+        if (!string.IsNullOrEmpty(ex.ErrorCode))
+        {
+            _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
+        }
+        else
+        {
+            _renderer.RenderError(ex.Message);
+        }
+        return (int)ExitCode.ValidationFailed;
     }
 }
 

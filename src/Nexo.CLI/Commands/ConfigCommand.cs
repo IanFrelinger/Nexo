@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
@@ -25,8 +26,19 @@ public class ConfigCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<int> ExecuteAsync(bool json)
+    public async Task<int> ExecuteAsync(bool json, bool verbose)
     {
+        var correlationId = Guid.NewGuid().ToString();
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["CorrelationId"] = correlationId
+        });
+
+        if (verbose)
+        {
+            _renderer.RenderProgressStart($"CorrelationId={correlationId} :: loading configuration");
+        }
+
         try
         {
             var query = new GetConfigurationQuery();
@@ -54,6 +66,11 @@ public class ConfigCommand
                 Console.Out.WriteLine($"  Logging:");
                 Console.Out.WriteLine($"    Level: {config.Logging.Level}");
                 Console.Out.WriteLine($"    Structured Logging: {config.Logging.EnableStructuredLogging}");
+            }
+
+            if (verbose)
+            {
+                _renderer.RenderProgressComplete($"CorrelationId={correlationId} :: configuration loaded");
             }
 
             return (int)ExitCode.Ok;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
@@ -25,8 +26,19 @@ public class ValidateCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<int> ExecuteAsync(string? filter, bool json)
+    public async Task<int> ExecuteAsync(string? filter, bool json, bool verbose)
     {
+        var correlationId = Guid.NewGuid().ToString();
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["CorrelationId"] = correlationId
+        });
+
+        if (verbose)
+        {
+            _renderer.RenderProgressStart($"CorrelationId={correlationId} :: validating (filter={filter ?? "none"})");
+        }
+
         try
         {
             var command = new RunValidationCommand(filter);
@@ -34,20 +46,16 @@ public class ValidateCommand
 
             _renderer.RenderValidationResult(result, json);
 
+            if (verbose)
+            {
+                _renderer.RenderProgressComplete($"CorrelationId={correlationId} :: validation finished");
+            }
+
             return result.Passed ? (int)ExitCode.Ok : (int)ExitCode.ValidationFailed;
         }
         catch (ValidationException ex)
         {
-            _logger.LogError(ex, "Validation failed");
-            if (!string.IsNullOrEmpty(ex.ErrorCode))
-            {
-                _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
-            }
-            else
-            {
-                _renderer.RenderError(ex.Message);
-            }
-            return (int)ExitCode.ValidationFailed;
+            return HandleValidationException(ex);
         }
         catch (Exception ex)
         {
@@ -55,6 +63,20 @@ public class ValidateCommand
             _renderer.RenderError(ex.Message);
             return (int)ExitCode.UnexpectedError;
         }
+    }
+
+    private int HandleValidationException(ValidationException ex)
+    {
+        _logger.LogError(ex, "Validation failed");
+        if (!string.IsNullOrEmpty(ex.ErrorCode))
+        {
+            _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
+        }
+        else
+        {
+            _renderer.RenderError(ex.Message);
+        }
+        return (int)ExitCode.ValidationFailed;
     }
 }
 

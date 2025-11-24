@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
@@ -25,14 +26,30 @@ public class AgentCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<int> ExecuteAsync(string agentName, FileInfo? inputFile, bool json)
+    public async Task<int> ExecuteAsync(string agentName, FileInfo? inputFile, bool json, bool verbose)
     {
+        var correlationId = Guid.NewGuid().ToString();
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["CorrelationId"] = correlationId
+        });
+
+        if (verbose)
+        {
+            _renderer.RenderProgressStart($"CorrelationId={correlationId} :: running agent '{agentName}'");
+        }
+
         try
         {
             var command = new RunAgentCommand(agentName, inputFile);
             var result = await _mediator.Send(command);
 
             _renderer.RenderAgentResult(result, json);
+
+            if (verbose)
+            {
+                _renderer.RenderProgressComplete($"CorrelationId={correlationId} :: agent '{agentName}' completed");
+            }
 
             return result.Success ? (int)ExitCode.Ok : (int)ExitCode.ValidationFailed;
         }

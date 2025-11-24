@@ -184,7 +184,7 @@ Nexo.Infrastructure/Analysis/
 - [x] Create error code system (`ErrorCodes` class)
 - [x] Update domain exceptions to include ErrorCode and Suggestion
 - [x] Update CLI renderer to display error codes and suggestions
-- [ ] Add troubleshooting guide links - pending
+- [x] Add troubleshooting guide links (`docs/TROUBLESHOOTING_GUIDE.md`)
 
 ### 5.2 Configuration Support ✅
 **Location:** `Nexo.Core.Application/Configuration/`
@@ -196,14 +196,14 @@ Nexo.Infrastructure/Analysis/
 - [x] Add `nexo config` command (`ConfigCommand`)
 - [ ] Support YAML configuration - pending (JSON implemented)
 
-### 5.3 Logging Improvements ⚠️ PARTIAL
+### 5.3 Logging Improvements ✅
 **Tasks:**
 - [x] Log levels configuration (via `LoggingConfiguration`)
-- [ ] Structured logging with correlation IDs - pending
-- [ ] Progress indicators for long-running operations - pending
-- [ ] Verbose mode support - pending
+- [x] Structured logging with correlation IDs (command-level scopes + JSON envelope)
+- [x] Progress indicators for long-running operations (`IConsoleRenderer.RenderProgress*`)
+- [x] Verbose mode support (`--verbose` global option)
 
-**Summary:** Error messages and configuration support fully implemented. Logging improvements partially complete (configuration ready, structured logging pending).
+**Summary:** Developer experience polish complete — commands now opt into verbose progress, log scopes carry correlation IDs, and docs highlight the new switches.
 
 ## Priority 6: Documentation ✅ COMPLETED
 

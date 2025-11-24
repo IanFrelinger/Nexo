@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
@@ -24,14 +25,30 @@ public class ListAgentsCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<int> ExecuteAsync(bool json)
+    public async Task<int> ExecuteAsync(bool json, bool verbose)
     {
+        var correlationId = Guid.NewGuid().ToString();
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["CorrelationId"] = correlationId
+        });
+
+        if (verbose)
+        {
+            _renderer.RenderProgressStart($"CorrelationId={correlationId} :: listing agents");
+        }
+
         try
         {
             var query = new ListAgentsQuery();
             var agents = await _mediator.Send(query);
 
             _renderer.RenderAgentList(agents, json);
+
+            if (verbose)
+            {
+                _renderer.RenderProgressComplete($"CorrelationId={correlationId} :: listing done");
+            }
 
             return (int)ExitCode.Ok;
         }

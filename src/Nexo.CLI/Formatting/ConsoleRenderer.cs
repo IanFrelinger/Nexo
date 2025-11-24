@@ -13,6 +13,8 @@ public interface IConsoleRenderer
     void RenderSuccess(string message);
     void RenderError(string message);
     void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null);
+    void RenderProgressStart(string message);
+    void RenderProgressComplete(string message);
     void RenderAnalysisResult(AnalysisResult result, bool json);
     void RenderValidationResult(ValidationResult result, bool json);
     void RenderAgentResult(AgentExecutionResult result, bool json);
@@ -44,6 +46,16 @@ public class ConsoleRenderer : IConsoleRenderer
     public void RenderError(string message)
     {
         Console.Error.WriteLine($"Error: {message}");
+    }
+
+    public void RenderProgressStart(string message)
+    {
+        Console.Out.WriteLine($"[progress] {message}");
+    }
+
+    public void RenderProgressComplete(string message)
+    {
+        Console.Out.WriteLine($"[complete] {message}");
     }
 
     public void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null)
