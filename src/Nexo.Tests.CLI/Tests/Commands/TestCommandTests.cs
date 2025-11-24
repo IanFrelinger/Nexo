@@ -1,3 +1,4 @@
+using System.IO;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -111,10 +112,25 @@ public class TestCommandTests : UnitTestBase
             .Setup(m => m.Send(It.IsAny<RunTestsCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(result);
 
-        var command = new TestCommand(mockMediator.Object, mockRenderer.Object, mockLogger.Object);
-        var exitCode = await command.ExecuteAsync(null, false, false);
+        // Redirect console output to prevent it from being captured as test output
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        try
+        {
+            using var stringWriter = new StringWriter();
+            Console.SetOut(stringWriter);
+            Console.SetError(stringWriter);
 
-        AssertEqual((int)ExitCode.ValidationFailed, exitCode);
+            var command = new TestCommand(mockMediator.Object, mockRenderer.Object, mockLogger.Object);
+            var exitCode = await command.ExecuteAsync(null, false, false);
+
+            AssertEqual((int)ExitCode.ValidationFailed, exitCode);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
     }
 
     private async Task TestJsonOutput()
