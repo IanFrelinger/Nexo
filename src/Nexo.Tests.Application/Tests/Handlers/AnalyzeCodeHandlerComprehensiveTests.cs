@@ -151,7 +151,7 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         }
 
         AssertNotNull(caughtException, "Expected AnalysisException to be thrown");
-        AssertTrue(caughtException.Message.Contains("Unauthorized access"), "Exception message should mention unauthorized access");
+        AssertTrue(caughtException!.Message.Contains("Unauthorized access"), "Exception message should mention unauthorized access");
     }
 
     private async Task TestGeneralException()
@@ -177,7 +177,7 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         }
 
         AssertNotNull(caughtException, "Expected AnalysisException to be thrown");
-        AssertTrue(caughtException.Message.Contains("Analysis failed"), "Exception message should mention analysis failed");
+        AssertTrue(caughtException!.Message.Contains("Analysis failed"), "Exception message should mention analysis failed");
     }
 
     private async Task TestCancellation()
