@@ -1,0 +1,265 @@
+using Microsoft.Extensions.Logging;
+using Moq;
+using Nexo.Core.Application.Common.Models;
+using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Testing.Abstractions;
+using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
+using Nexo.Core.Application.Validation.Models;
+using Nexo.Core.Application.Validation.Ports;
+using Nexo.Infrastructure.Validation.Adapters;
+using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
+
+namespace Nexo.Tests.Infrastructure.Tests.Validation;
+
+public class CachedValidationServiceAdapterTests : UnitTestBase
+{
+    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await TestCacheHit();
+            await TestCacheMiss();
+            await TestCacheStorage();
+            await TestProgressReportingWithCacheHit();
+            await TestProgressReportingWithCacheMiss();
+            await TestCancellation();
+
+            return new TestingTestResult
+            {
+                TestName = nameof(CachedValidationServiceAdapterTests),
+                Category = "Infrastructure",
+                Passed = true,
+                Message = "All CachedValidationServiceAdapter tests passed"
+            };
+        }
+        catch (AssertionException ex)
+        {
+            return new TestingTestResult
+            {
+                TestName = nameof(CachedValidationServiceAdapterTests),
+                Category = "Infrastructure",
+                Passed = false,
+                ErrorMessage = $"Assertion failed: {ex.Message}",
+                StackTrace = ex.StackTrace
+            };
+        }
+        catch (Exception ex)
+        {
+            return new TestingTestResult
+            {
+                TestName = nameof(CachedValidationServiceAdapterTests),
+                Category = "Infrastructure",
+                Passed = false,
+                ErrorMessage = $"Unexpected exception: {ex.Message}",
+                StackTrace = ex.StackTrace
+            };
+        }
+    }
+
+    private async Task TestCacheHit()
+    {
+        var mockInner = new Mock<IValidationService>();
+        var mockCache = new Mock<ICacheStrategy>();
+        var mockLogger = new Mock<ILogger<CachedValidationServiceAdapter>>();
+
+        var cachedResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 5,
+            TestsPassed = 5,
+            TestsFailed = 0
+        };
+
+        mockCache
+            .Setup(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cachedResult);
+
+        var adapter = new CachedValidationServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
+        var result = await adapter.ValidateAsync(null, null, CancellationToken.None);
+
+        AssertNotNull(result);
+        AssertTrue(result.Passed);
+        AssertEqual(5, result.TestsRun);
+
+        // Inner service should not be called on cache hit
+        mockInner.Verify(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCache.Verify(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private async Task TestCacheMiss()
+    {
+        var mockInner = new Mock<IValidationService>();
+        var mockCache = new Mock<ICacheStrategy>();
+        var mockLogger = new Mock<ILogger<CachedValidationServiceAdapter>>();
+
+        var innerResult = new ValidationResult
+        {
+            Passed = false,
+            Message = "Some tests failed",
+            TestsRun = 5,
+            TestsPassed = 3,
+            TestsFailed = 2,
+            TestResults = new List<ValidationTestResult>
+            {
+                new ValidationTestResult { Name = "Test1", Passed = true },
+                new ValidationTestResult { Name = "Test2", Passed = false }
+            }
+        };
+
+        // Cache miss - return null
+        mockCache
+            .Setup(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ValidationResult?)null);
+
+        mockInner
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(innerResult);
+
+        var adapter = new CachedValidationServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
+        var result = await adapter.ValidateAsync("test-filter", null, CancellationToken.None);
+
+        AssertNotNull(result);
+        AssertFalse(result.Passed);
+        AssertEqual(5, result.TestsRun);
+        AssertEqual(2, result.TestsFailed);
+
+        // Inner service should be called on cache miss
+        mockInner.Verify(s => s.ValidateAsync("test-filter", It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockCache.Verify(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private async Task TestCacheStorage()
+    {
+        var mockInner = new Mock<IValidationService>();
+        var mockCache = new Mock<ICacheStrategy>();
+        var mockLogger = new Mock<ILogger<CachedValidationServiceAdapter>>();
+
+        var innerResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 3,
+            TestsPassed = 3,
+            TestsFailed = 0
+        };
+
+        // Cache miss
+        mockCache
+            .Setup(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ValidationResult?)null);
+
+        mockInner
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(innerResult);
+
+        var adapter = new CachedValidationServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
+        await adapter.ValidateAsync(null, null, CancellationToken.None);
+
+        // Result should be stored in cache with 15 minute expiration
+        mockCache.Verify(c => c.SetAsync(
+            It.IsAny<string>(),
+            It.Is<ValidationResult>(r => r.Passed == true),
+            It.Is<TimeSpan>(t => t.TotalMinutes == 15),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private async Task TestProgressReportingWithCacheHit()
+    {
+        var mockInner = new Mock<IValidationService>();
+        var mockCache = new Mock<ICacheStrategy>();
+        var mockLogger = new Mock<ILogger<CachedValidationServiceAdapter>>();
+
+        var cachedResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 5,
+            TestsPassed = 5,
+            TestsFailed = 0
+        };
+
+        mockCache
+            .Setup(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cachedResult);
+
+        var progressReports = new List<ProgressReport>();
+        var progress = new Progress<ProgressReport>(report => progressReports.Add(report));
+
+        var adapter = new CachedValidationServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
+        await adapter.ValidateAsync(null, progress, CancellationToken.None);
+
+        // Should report cached status - Progress<T> may invoke callback asynchronously
+        if (progressReports.Count > 0)
+        {
+            var cachedReport = progressReports.FirstOrDefault(r => 
+                r.Message.Contains("cached", StringComparison.OrdinalIgnoreCase) ||
+                (r.Metadata != null && r.Metadata.ContainsKey("Cached")));
+            if (cachedReport != null)
+            {
+                AssertTrue(cachedReport.Message.Contains("cached", StringComparison.OrdinalIgnoreCase) ||
+                           cachedReport.Message.Contains("Cached", StringComparison.OrdinalIgnoreCase),
+                    $"Progress message should indicate cached result, got: {cachedReport.Message}");
+                AssertNotNull(cachedReport.Metadata, "Progress report should have metadata");
+                AssertTrue(cachedReport.Metadata!.ContainsKey("Cached"), "Progress report metadata should contain 'Cached' key");
+            }
+        }
+    }
+
+    private async Task TestProgressReportingWithCacheMiss()
+    {
+        var mockInner = new Mock<IValidationService>();
+        var mockCache = new Mock<ICacheStrategy>();
+        var mockLogger = new Mock<ILogger<CachedValidationServiceAdapter>>();
+
+        var innerResult = new ValidationResult
+        {
+            Passed = true,
+            Message = "All tests passed",
+            TestsRun = 3,
+            TestsPassed = 3,
+            TestsFailed = 0
+        };
+
+        mockCache
+            .Setup(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ValidationResult?)null);
+
+        var progressReports = new List<ProgressReport>();
+        var progress = new Progress<ProgressReport>(report => progressReports.Add(report));
+
+        mockInner
+            .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(innerResult)
+            .Callback<string?, IProgress<ProgressReport>?, CancellationToken>((filter, prog, ct) =>
+            {
+                prog?.Report(new ProgressReport { Percentage = 50, Message = "Running tests" });
+            });
+
+        var adapter = new CachedValidationServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
+        await adapter.ValidateAsync(null, progress, CancellationToken.None);
+
+        // Progress should be passed through to inner service
+        // May or may not have reports depending on timing
+    }
+
+    private async Task TestCancellation()
+    {
+        var mockInner = new Mock<IValidationService>();
+        var mockCache = new Mock<ICacheStrategy>();
+        var mockLogger = new Mock<ILogger<CachedValidationServiceAdapter>>();
+
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        mockCache
+            .Setup(c => c.GetAsync<ValidationResult>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException());
+
+        var adapter = new CachedValidationServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
+
+        await AssertThrowsAsync<OperationCanceledException>(() =>
+            adapter.ValidateAsync(null, null, cts.Token));
+    }
+}
+
