@@ -9,7 +9,7 @@ namespace Nexo.Tests.Domain.Tests;
 /// </summary>
 public class DomainValueObjectsTests : UnitTestBase
 {
-    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -19,24 +19,24 @@ public class DomainValueObjectsTests : UnitTestBase
             AssertTrue(Enum.IsDefined(typeof(RiskLevel), RiskLevel.High));
             AssertTrue(Enum.IsDefined(typeof(RiskLevel), RiskLevel.Critical));
 
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(DomainValueObjectsTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All domain value object tests passed"
-            };
+            });
         }
         catch (Exception ex)
         {
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(DomainValueObjectsTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = ex.Message,
                 StackTrace = ex.StackTrace
-            };
+            });
         }
     }
 }

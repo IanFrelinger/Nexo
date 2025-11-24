@@ -9,59 +9,58 @@ namespace Nexo.Tests.Domain.Tests;
 /// </summary>
 public class DomainExceptionsTests : UnitTestBase
 {
-    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             // Test AnalysisException
             var analysisEx = new AnalysisException(
                 "Test message",
-                ErrorCodes.AnalysisUnexpectedError);
+                ErrorCodes.AnalysisUnauthorizedAccess);
             AssertEqual("Test message", analysisEx.Message);
-            AssertNotNull(analysisEx.ErrorCode);
-            AssertEqual(ErrorCodes.AnalysisUnexpectedError.Code, analysisEx.ErrorCode.Code);
+            AssertEqual(ErrorCodes.AnalysisUnauthorizedAccess, analysisEx.ErrorCode);
 
             // Test ValidationException
             var validationEx = new ValidationException(
                 "Test message",
-                ErrorCodes.ValidationUnexpectedError);
+                ErrorCodes.ValidationNoTestProjects);
             AssertEqual("Test message", validationEx.Message);
-            AssertNotNull(validationEx.ErrorCode);
+            AssertEqual(ErrorCodes.ValidationNoTestProjects, validationEx.ErrorCode);
 
             // Test AgentExecutionException
             var agentEx = new AgentExecutionException(
                 "test-agent",
                 "Test message",
-                ErrorCodes.AgentUnexpectedError);
+                ErrorCodes.AgentNotFound);
             AssertEqual("test-agent", agentEx.AgentName);
             AssertEqual("Test message", agentEx.Message);
-            AssertNotNull(agentEx.ErrorCode);
+            AssertEqual(ErrorCodes.AgentNotFound, agentEx.ErrorCode);
 
             // Test ConfigurationException
             var configEx = new ConfigurationException(
                 "Test message",
-                ErrorCodes.ConfigurationUnexpectedError);
+                ErrorCodes.ConfigFileNotFound);
             AssertEqual("Test message", configEx.Message);
-            AssertNotNull(configEx.ErrorCode);
+            AssertEqual(ErrorCodes.ConfigFileNotFound, configEx.ErrorCode);
 
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(DomainExceptionsTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All domain exception tests passed"
-            };
+            });
         }
         catch (Exception ex)
         {
-            return new TestResult
+            return Task.FromResult(new TestResult
             {
                 TestName = nameof(DomainExceptionsTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = ex.Message,
                 StackTrace = ex.StackTrace
-            };
+            });
         }
     }
 }
