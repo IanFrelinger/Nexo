@@ -35,7 +35,57 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-nuget-
     
-    - name: Restore dependencies
+    - name: Build Docker Test Image
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        docker build -f .docker/Dockerfile.test -t nexo-test:ubuntu .
+    
+    - name: Run Unit Tests (Docker - Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mkdir -p test-results
+        docker run --rm \
+          -v "${{ github.workspace }}/test-results:/workspace/test-results" \
+          -e DOTNET_VERSION=8.0 \
+          nexo-test:ubuntu \
+          bash -c "
+            cd src/Nexo.CLI &&
+            dotnet run --project Nexo.CLI.csproj -- test --format-json > /workspace/test-results/ubuntu-output.txt 2>/workspace/test-results/ubuntu-logs.txt || true &&
+            python3 << 'PYEOF'
+import json
+import sys
+import re
+try:
+    with open('/workspace/test-results/ubuntu-output.txt', 'r') as f:
+        content = f.read()
+    matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
+    for match in reversed(matches):
+        try:
+            data = json.loads(match)
+            if 'TotalTests' in data:
+                with open('/workspace/test-results/test-results.json', 'w') as out:
+                    json.dump(data, out, indent=2)
+                total = data.get('TotalTests', 0)
+                passed = data.get('PassedTests', 0)
+                failed = data.get('FailedTests', 0)
+                print(f'✅ Tests: {total} total, {passed} passed, {failed} failed')
+                sys.exit(0 if failed == 0 else 1)
+        except:
+            continue
+    print('❌ No valid test results found')
+    with open('/workspace/test-results/test-results.json', 'w') as out:
+        json.dump({\"TotalTests\": 0, \"PassedTests\": 0, \"FailedTests\": 0, \"Results\": []}, out)
+    sys.exit(1)
+except Exception as e:
+    print(f'Error: {e}')
+    with open('/workspace/test-results/test-results.json', 'w') as out:
+        json.dump({\"TotalTests\": 0, \"PassedTests\": 0, \"FailedTests\": 0, \"Results\": []}, out)
+    sys.exit(1)
+PYEOF
+          "
+    
+    - name: Restore dependencies (Native)
+      if: matrix.os != 'ubuntu-latest'
       run: |
         dotnet restore src/Nexo.Core.Domain/Nexo.Core.Domain.csproj
         dotnet restore src/Nexo.Core.Application/Nexo.Core.Application.csproj
@@ -46,7 +96,8 @@ jobs:
         dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
         dotnet restore src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
     
-    - name: Build solution
+    - name: Build solution (Native)
+      if: matrix.os != 'ubuntu-latest'
       run: |
         dotnet build src/Nexo.Core.Domain/Nexo.Core.Domain.csproj --configuration Release --no-restore
         dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj --configuration Release --no-restore
@@ -57,12 +108,14 @@ jobs:
         dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --configuration Release --no-restore
         dotnet build src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj --configuration Release --no-restore
     
-    - name: Run Unit Tests
+    - name: Run Unit Tests (Native - Windows/macOS)
+      if: matrix.os != 'ubuntu-latest'
       run: |
         cd src/Nexo.CLI
+        mkdir -p ../test-results
         
         # Run tests with JSON output
-        dotnet run --project Nexo.CLI.csproj -- test --format-json > test-output.txt 2>test-logs.txt
+        dotnet run --project Nexo.CLI.csproj -- test --format-json > ../test-results/${{ matrix.os }}-output.txt 2>../test-results/${{ matrix.os }}-logs.txt
         TEST_EXIT=$?
         
         # Extract JSON from output (handles multi-line JSON)
@@ -70,9 +123,14 @@ jobs:
 import sys
 import json
 import re
+import os
+
+os_name = os.environ.get('RUNNER_OS', 'unknown').lower()
+output_file = f'../test-results/{os_name}-output.txt'
+results_file = '../test-results/test-results.json'
 
 try:
-    with open('test-output.txt', 'r') as f:
+    with open(output_file, 'r') as f:
         content = f.read()
     
     # Find JSON object with TotalTests
@@ -83,7 +141,7 @@ try:
         try:
             data = json.loads(match)
             if 'TotalTests' in data:
-                with open('test-results.json', 'w') as out:
+                with open(results_file, 'w') as out:
                     json.dump(data, out, indent=2)
                 print(f"✅ Extracted JSON: {data.get('TotalTests', 0)} tests")
                 sys.exit(0)
@@ -92,19 +150,19 @@ try:
     
     print("❌ No valid JSON found")
     # Create empty result
-    with open('test-results.json', 'w') as out:
+    with open(results_file, 'w') as out:
         json.dump({"TotalTests": 0, "PassedTests": 0, "FailedTests": 0, "Results": []}, out)
     sys.exit(1)
 except Exception as e:
     print(f"Error: {e}")
-    with open('test-results.json', 'w') as out:
+    with open(results_file, 'w') as out:
         json.dump({"TotalTests": 0, "PassedTests": 0, "FailedTests": 0, "Results": []}, out)
     sys.exit(1)
 PYEOF
         
         # Show summary
-        if [ -f test-results.json ] && [ -s test-results.json ]; then
-          python3 -c "import json; data = json.load(open('test-results.json')); print(f\"\n📊 Test Summary:\"); print(f\"  Total: {data.get('TotalTests', 0)}\"); print(f\"  Passed: {data.get('PassedTests', 0)}\"); print(f\"  Failed: {data.get('FailedTests', 0)}\")" 2>/dev/null || true
+        if [ -f ../test-results/test-results.json ] && [ -s ../test-results/test-results.json ]; then
+          python3 -c "import json; data = json.load(open('../test-results/test-results.json')); print(f\"\n📊 Test Summary:\"); print(f\"  Total: {data.get('TotalTests', 0)}\"); print(f\"  Passed: {data.get('PassedTests', 0)}\"); print(f\"  Failed: {data.get('FailedTests', 0)}\")" 2>/dev/null || true
         fi
         
         # Exit with test result code
@@ -116,20 +174,28 @@ PYEOF
       with:
         name: test-results-${{ matrix.os }}
         path: |
-          src/Nexo.CLI/test-results.json
-          src/Nexo.CLI/test-logs.txt
+          test-results/test-results.json
+          test-results/*-output.txt
+          test-results/*-logs.txt
         retention-days: 7
     
     - name: Test Summary
       if: always()
       run: |
         echo "## Unit Test Results - ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
-        if [ -f src/Nexo.CLI/test-results.json ] && [ -s src/Nexo.CLI/test-results.json ]; then
+        if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+          echo "- **Test Method**: Docker Container" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Test Method**: Native Runner" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f test-results/test-results.json ] && [ -s test-results/test-results.json ]; then
           python3 << 'PYEOF'
 import json
 import sys
 try:
-    with open('src/Nexo.CLI/test-results.json') as f:
+    with open('test-results/test-results.json') as f:
         data = json.load(f)
     total = data.get('TotalTests', 0)
     passed = data.get('PassedTests', 0)
@@ -150,5 +216,5 @@ except Exception as e:
     print(f"Error parsing results: {e}")
 PYEOF
         else
-          echo "- ⚠️ Test results not available"
+          echo "- ⚠️ Test results not available" >> $GITHUB_STEP_SUMMARY
         fi
