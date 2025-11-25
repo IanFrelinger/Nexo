@@ -4,17 +4,47 @@ This directory contains Docker setup for running Nexo CLI unit tests locally bef
 
 ## Quick Start
 
-Run tests locally using Docker:
+### Run tests on Linux (Ubuntu)
 
 ```bash
 ./scripts/test-local.sh
 ```
 
-This will:
-1. Build a Docker image with .NET 8.0 SDK
-2. Run all unit tests in the container
-3. Extract and display test results
-4. Save results to `test-results/` directory
+### Run tests on all platforms including mobile
+
+```bash
+./scripts/test-local.sh --mobile
+```
+
+### Run tests on specific platform
+
+```bash
+./scripts/test-local.sh --platform ubuntu
+./scripts/test-android.sh  # Android (requires Docker)
+./scripts/test-ios.sh      # iOS (requires macOS with Xcode)
+```
+
+## Platform Support
+
+### Linux (Ubuntu)
+- **Method**: Docker container
+- **Requirements**: Docker
+- **Command**: `./scripts/test-local.sh --platform ubuntu`
+
+### Android
+- **Method**: Docker container with Android SDK
+- **Requirements**: Docker
+- **Command**: `./scripts/test-android.sh`
+- **Note**: Uses Android SDK in Docker for testing Android-specific file paths and behaviors
+
+### iOS
+- **Method**: Native macOS execution
+- **Requirements**: 
+  - macOS
+  - Xcode installed
+  - .NET 8.0 SDK
+- **Command**: `./scripts/test-ios.sh`
+- **Note**: iOS testing must be run on a Mac
 
 ## Options
 
@@ -22,12 +52,14 @@ This will:
 
 ```bash
 ./scripts/test-local.sh --platform ubuntu
+./scripts/test-local.sh --platform android
+./scripts/test-local.sh --platform ios  # macOS only
 ```
 
-### Run all platforms (if you have multiple Docker images)
+### Run all platforms (including mobile)
 
 ```bash
-./scripts/test-local.sh --all
+./scripts/test-local.sh --mobile
 ```
 
 ### Quick test (skip build cache)
@@ -41,38 +73,48 @@ This will:
 ### Build the test image
 
 ```bash
+# Linux/Ubuntu
 docker build -f .docker/Dockerfile.test -t nexo-test:ubuntu .
+
+# Android
+docker build -f .docker/Dockerfile.test-android -t nexo-test:android .
 ```
 
 ### Run tests manually
 
 ```bash
+# Linux
 docker run --rm \
   -v "$(pwd)/test-results:/workspace/test-results" \
   nexo-test:ubuntu \
+  bash -c "cd src/Nexo.CLI && dotnet run --project Nexo.CLI.csproj -- test --format-json"
+
+# Android
+docker run --rm \
+  -v "$(pwd)/test-results:/workspace/test-results" \
+  nexo-test:android \
   bash -c "cd src/Nexo.CLI && dotnet run --project Nexo.CLI.csproj -- test --format-json"
 ```
 
 ## Test Results
 
 Test results are saved to `test-results/` directory:
-- `ubuntu-results.json` - JSON test results
-- `ubuntu-logs.txt` - Test execution logs
+- `ubuntu-results.json` - Linux test results
+- `android-results.json` - Android test results
+- `ios-results.json` - iOS test results
+- `*-logs.txt` - Test execution logs
 
-## Platform Support
+## Platform-Specific Notes
 
-Currently supports:
-- **Ubuntu** (via Docker Linux containers)
+### Android
+- Uses Android SDK in Docker container
+- Tests Android-specific file system behaviors
+- Requires Docker with sufficient resources
 
-Note: Windows and macOS testing requires:
-- Windows: Windows containers (Docker Desktop with WSL2 backend)
-- macOS: macOS runners (not available in Docker, use GitHub Actions)
-
-For full cross-platform testing, use GitHub Actions which runs on native Windows/macOS runners.
-
-## Integration with CI/CD
-
-The local Docker tests mirror the GitHub Actions workflow (`.github/workflows/unit-tests.yml`), so passing locally should mean passing in CI.
+### iOS
+- Must run on macOS (cannot run in Docker)
+- Requires Xcode for iOS simulator support
+- Tests iOS-specific file system behaviors
 
 ## Troubleshooting
 
@@ -83,7 +125,7 @@ The local Docker tests mirror the GitHub Actions workflow (`.github/workflows/un
 
 ### Permission denied
 ```bash
-chmod +x scripts/test-local.sh
+chmod +x scripts/test-local.sh scripts/test-android.sh scripts/test-ios.sh
 ```
 
 ### Build fails
@@ -92,6 +134,15 @@ chmod +x scripts/test-local.sh
 docker system prune -a
 ```
 
+### iOS test fails
+- Ensure you're on macOS
+- Install Xcode from App Store
+- Verify .NET SDK is installed: `dotnet --version`
+
+### Android test fails
+- Ensure Docker has enough resources (memory, CPU)
+- Android SDK download may take time on first run
+- Check Docker logs for Android SDK installation issues
+
 ### Test results not found
 Check `test-results/` directory and logs in `test-results/*-logs.txt`
-

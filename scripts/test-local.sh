@@ -116,12 +116,17 @@ PYEOF
 PLATFORMS=("ubuntu")
 ALL_PLATFORMS=false
 QUICK=false
+INCLUDE_MOBILE=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --all)
             ALL_PLATFORMS=true
             PLATFORMS=("ubuntu")
+            shift
+            ;;
+        --mobile)
+            INCLUDE_MOBILE=true
             shift
             ;;
         --quick)
@@ -134,11 +139,19 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--all] [--quick] [--platform ubuntu]"
+            echo "Usage: $0 [--all] [--mobile] [--quick] [--platform ubuntu|android|ios]"
             exit 1
             ;;
     esac
 done
+
+# Add mobile platforms if requested
+if [ "$INCLUDE_MOBILE" = true ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        PLATFORMS+=("ios")
+    fi
+    PLATFORMS+=("android")
+fi
 
 # Run tests
 FAILED_PLATFORMS=()
