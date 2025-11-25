@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -10,22 +11,67 @@ using System.Threading.Tasks;
 
 namespace Nexo.Tools.TestRunner;
 
-class Program
+internal static class Program
 {
-    private static readonly string ProjectRoot = GetProjectRoot();
-    private static readonly string TestResultsDir = Path.Combine(ProjectRoot, "test-results");
-    private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-    private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-    private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-
-    static async Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         Console.WriteLine("🧪 Nexo CLI Unit Test Runner (Cross-Platform)");
         Console.WriteLine("==============================================");
         Console.WriteLine();
 
-        // Parse arguments
-        var platforms = new List<string>();
+        var context = TestContext.Create();
+        Directory.CreateDirectory(context.ResultsDir);
+
+        var (requestedTargets, includeMobile) = ArgumentParser.Parse(args);
+        var registry = RunnerRegistry.Build(includeMobile, context);
+        var targets = TargetSelector.ResolveTargets(requestedTargets, includeMobile, registry).ToList();
+
+        if (targets.Count == 0)
+        {
+            Console.WriteLine("No platforms requested. Use --platform to specify targets.");
+            return 1;
+        }
+
+        var results = new List<TestRunResult>();
+        foreach (var target in targets)
+        {
+            var runner = registry.Resolve(target);
+            if (runner is null)
+            {
+                results.Add(TestRunResult.Failure(target, $"Unknown or unsupported platform '{target}'"));
+                continue;
+            }
+
+            if (!runner.IsEnabled)
+            {
+                results.Add(TestRunResult.Failure(target, $"Platform '{target}' is not supported on this host"));
+                continue;
+            }
+
+            try
+            {
+                Console.WriteLine($"Testing on {target}...");
+                Console.WriteLine();
+                results.Add(await runner.RunAsync());
+                Console.WriteLine();
+            }
+            catch (Exception ex)
+            {
+                results.Add(TestRunResult.Failure(target, ex.Message));
+            }
+        }
+
+        return SummaryPrinter.Render(results, context.ResultsDir);
+    }
+}
+
+#region Argument & target helpers
+
+static class ArgumentParser
+{
+    public static (List<string> requestedTargets, bool includeMobile) Parse(string[] args)
+    {
+        var targets = new List<string>();
         var includeMobile = false;
 
         for (int i = 0; i < args.Length; i++)
@@ -33,119 +79,115 @@ class Program
             switch (args[i])
             {
                 case "--all":
-                    platforms.Add("ubuntu");
+                    targets.Add("ubuntu");
                     break;
                 case "--mobile":
                     includeMobile = true;
                     break;
                 case "--quick":
-                    // TODO: Implement quick mode (skip build cache)
+                    // Reserved for future quick mode support.
                     break;
                 case "--platform":
                     if (i + 1 < args.Length)
                     {
-                        platforms.Add(args[++i]);
+                        targets.Add(args[++i]);
                     }
                     break;
                 default:
                     Console.WriteLine($"Unknown option: {args[i]}");
                     PrintUsage();
-                    return 1;
+                    Environment.Exit(1);
+                    break;
             }
         }
 
-        // Default to ubuntu if no platform specified
-        if (platforms.Count == 0)
+        if (targets.Count == 0)
         {
-            platforms.Add("ubuntu");
+            targets.Add("ubuntu");
         }
 
-        // Add mobile platforms if requested
+        return (targets, includeMobile);
+    }
+
+    private static void PrintUsage()
+    {
+        Console.WriteLine("Usage: dotnet run -- [options]");
+        Console.WriteLine();
+        Console.WriteLine("Options:");
+        Console.WriteLine("  --all              Run on default desktop platform(s)");
+        Console.WriteLine("  --mobile           Include mobile platforms (iOS, Android)");
+        Console.WriteLine("  --quick            Skip build cache (reserved)");
+        Console.WriteLine("  --platform <name>  Run on specific platform (ubuntu, ios, android)");
+        Console.WriteLine();
+        Console.WriteLine("Examples:");
+        Console.WriteLine("  dotnet run --                    # Linux only");
+        Console.WriteLine("  dotnet run -- --mobile           # Linux + iOS + Android");
+        Console.WriteLine("  dotnet run -- --platform ios     # iOS only");
+        Console.WriteLine("  dotnet run -- --platform android # Android only");
+        Console.WriteLine();
+    }
+}
+
+static class TargetSelector
+{
+    public static IEnumerable<string> ResolveTargets(IEnumerable<string> requested, bool includeMobile, RunnerRegistry registry)
+    {
+        var ordered = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var target in requested)
+        {
+            if (seen.Add(target))
+            {
+                ordered.Add(target);
+            }
+        }
+
         if (includeMobile)
         {
-            if (IsMacOS)
+            foreach (var runner in registry.MobileRunners)
             {
-                platforms.Add("ios");
-            }
-            platforms.Add("android");
-        }
-
-        // Ensure test results directory exists
-        Directory.CreateDirectory(TestResultsDir);
-
-        // Run tests
-        var failedPlatforms = new List<string>();
-        var passedPlatforms = new List<string>();
-
-        foreach (var platform in platforms)
-        {
-            Console.WriteLine($"Testing on {platform}...");
-            Console.WriteLine();
-
-            bool success = false;
-            try
-            {
-                switch (platform.ToLower())
+                var id = runner.PlatformIds.First();
+                if (seen.Add(id))
                 {
-                    case "ios":
-                        success = await RunIOSTests();
-                        break;
-                    case "android":
-                        success = await RunAndroidTests();
-                        break;
-                    case "ubuntu":
-                    case "linux":
-                        success = await RunDockerTests("ubuntu");
-                        break;
-                    default:
-                        Console.WriteLine($"❌ Unknown platform: {platform}");
-                        failedPlatforms.Add(platform);
-                        continue;
+                    ordered.Add(id);
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error running tests on {platform}: {ex.Message}");
-                failedPlatforms.Add(platform);
-                continue;
-            }
-
-            if (success)
-            {
-                passedPlatforms.Add(platform);
-            }
-            else
-            {
-                failedPlatforms.Add(platform);
-            }
-
-            Console.WriteLine();
         }
 
-        // Summary
+        return ordered;
+    }
+}
+
+static class SummaryPrinter
+{
+    public static int Render(IEnumerable<TestRunResult> results, string resultsDir)
+    {
+        var passed = results.Where(r => r.Success).ToList();
+        var failed = results.Where(r => !r.Success).ToList();
+
         Console.WriteLine("==============================================");
         Console.WriteLine("📊 Test Summary");
         Console.WriteLine("==============================================");
 
-        if (passedPlatforms.Count > 0)
+        if (passed.Count > 0)
         {
             Console.WriteLine("✅ Passed platforms:");
-            foreach (var platform in passedPlatforms)
+            foreach (var result in passed)
             {
-                Console.WriteLine($"   ✓ {platform}");
+                Console.WriteLine($"   ✓ {result.Platform}");
             }
         }
 
-        if (failedPlatforms.Count > 0)
+        if (failed.Count > 0)
         {
             Console.WriteLine("❌ Failed platforms:");
-            foreach (var platform in failedPlatforms)
+            foreach (var result in failed)
             {
-                Console.WriteLine($"   ✗ {platform}");
-                var logFile = Path.Combine(TestResultsDir, $"{platform}-logs.txt");
-                if (File.Exists(logFile))
+                Console.WriteLine($"   ✗ {result.Platform} - {result.Message}");
+                if (!string.IsNullOrEmpty(result.LogPath))
                 {
-                    Console.WriteLine($"   Check {logFile} for details");
+                    Console.WriteLine($"   Logs: {result.LogPath}");
                 }
             }
             return 1;
@@ -154,398 +196,372 @@ class Program
         Console.WriteLine();
         Console.WriteLine("✅ All tests passed on all platforms!");
         Console.WriteLine();
-        Console.WriteLine($"Test results are available in: {TestResultsDir}");
-
+        Console.WriteLine($"Test results are available in: {resultsDir}");
         return 0;
     }
+}
 
-    private static async Task<bool> RunDockerTests(string platform)
+#endregion
+
+#region Context & runtime info
+
+record TestContext(string ProjectRoot, string ResultsDir, IRuntimeInfo RuntimeInfo)
+{
+    public static TestContext Create()
     {
-        Console.WriteLine($"🐳 Running tests in Docker ({platform})...");
+        var root = DiscoverProjectRoot();
+        var results = Path.Combine(root, "test-results");
+        return new TestContext(root, results, SystemRuntimeInfo.Create());
+    }
 
-        var dockerfile = Path.Combine(ProjectRoot, ".docker", "Dockerfile.test");
-        if (!File.Exists(dockerfile))
+    private static string DiscoverProjectRoot()
+    {
+        var current = Directory.GetCurrentDirectory();
+        var dir = new DirectoryInfo(current);
+
+        while (dir != null)
         {
-            Console.WriteLine($"❌ Dockerfile not found: {dockerfile}");
-            return false;
+            if (File.Exists(Path.Combine(dir.FullName, "src", "Nexo.CLI", "Nexo.CLI.csproj")))
+            {
+                return dir.FullName;
+            }
+            dir = dir.Parent;
         }
 
-        // Build Docker image
-        var buildArgs = new ProcessStartInfo
+        return current;
+    }
+}
+
+interface IRuntimeInfo
+{
+    bool IsWindows { get; }
+    bool IsMacOS { get; }
+    bool IsLinux { get; }
+}
+
+sealed class SystemRuntimeInfo : IRuntimeInfo
+{
+    private SystemRuntimeInfo(bool isWindows, bool isMac, bool isLinux)
+    {
+        IsWindows = isWindows;
+        IsMacOS = isMac;
+        IsLinux = isLinux;
+    }
+
+    public bool IsWindows { get; }
+    public bool IsMacOS { get; }
+    public bool IsLinux { get; }
+
+    public static SystemRuntimeInfo Create() => new(
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
+        RuntimeInformation.IsOSPlatform(OSPlatform.OSX),
+        RuntimeInformation.IsOSPlatform(OSPlatform.Linux));
+}
+
+#endregion
+
+#region Runner registry & contracts
+
+interface ITestPlatformRunner
+{
+    IReadOnlyCollection<string> PlatformIds { get; }
+    bool IsMobile { get; }
+    bool IsEnabled { get; }
+    Task<TestRunResult> RunAsync();
+}
+
+sealed class RunnerRegistry
+{
+    private readonly List<ITestPlatformRunner> _runners;
+    private readonly Dictionary<string, ITestPlatformRunner> _lookup;
+
+    private RunnerRegistry(IEnumerable<ITestPlatformRunner> runners)
+    {
+        _runners = runners.ToList();
+        _lookup = _runners
+            .SelectMany(r => r.PlatformIds.Select(id => (id, runner: r)))
+            .ToDictionary(k => k.id, v => v.runner, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public static RunnerRegistry Build(bool includeMobile, TestContext context)
+    {
+        var runners = new List<ITestPlatformRunner>
+        {
+            new UbuntuDockerRunner(context)
+        };
+
+        if (includeMobile)
+        {
+            runners.Add(new AndroidDockerRunner(context));
+            runners.Add(new IosNativeRunner(context));
+        }
+
+        return new RunnerRegistry(runners);
+    }
+
+    public IEnumerable<ITestPlatformRunner> MobileRunners => _runners.Where(r => r.IsMobile);
+    public ITestPlatformRunner? Resolve(string id) => _lookup.TryGetValue(id, out var runner) ? runner : null;
+}
+
+#endregion
+
+#region Runner implementations
+
+abstract class DockerRunnerBase : ITestPlatformRunner
+{
+    protected DockerRunnerBase(TestContext context, string primaryId, IEnumerable<string>? aliases, string dockerfileRelativePath, bool isMobile)
+    {
+        Context = context;
+        DockerfilePath = Path.Combine(context.ProjectRoot, dockerfileRelativePath);
+        IsMobile = isMobile;
+        PlatformIds = new ReadOnlyCollection<string>(
+            new[] { primaryId }.Concat(aliases ?? Array.Empty<string>()).ToList());
+    }
+
+    protected TestContext Context { get; }
+    protected string DockerfilePath { get; }
+    protected string ContainerTag => $"nexo-test-{PlatformIds.First()}";
+
+    public IReadOnlyCollection<string> PlatformIds { get; }
+    public bool IsMobile { get; }
+    public virtual bool IsEnabled => File.Exists(DockerfilePath);
+
+    public async Task<TestRunResult> RunAsync()
+    {
+        Directory.CreateDirectory(Context.ResultsDir);
+        Console.WriteLine($"🐳 Running tests in Docker ({PlatformIds.First()})...");
+
+        var buildResult = await ProcessRunner.RunAsync(new ProcessStartInfo
         {
             FileName = "docker",
-            Arguments = $"build -f {dockerfile} -t nexo-test:{platform} .",
-            WorkingDirectory = ProjectRoot,
+            Arguments = $"build -f \"{DockerfilePath}\" -t {ContainerTag} .",
+            WorkingDirectory = Context.ProjectRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
-        };
+        });
 
-        Console.WriteLine($"Building Docker image: nexo-test:{platform}...");
-        using var buildProcess = Process.Start(buildArgs);
-        if (buildProcess == null)
+        if (buildResult.ExitCode != 0)
         {
-            Console.WriteLine("❌ Failed to start Docker build process");
-            return false;
+            return TestRunResult.Failure(PlatformIds.First(), $"Docker build failed: {buildResult.StandardError}");
         }
 
-        await buildProcess.WaitForExitAsync();
-        if (buildProcess.ExitCode != 0)
-        {
-            Console.WriteLine("❌ Docker build failed");
-            var error = await buildProcess.StandardError.ReadToEndAsync();
-            Console.WriteLine(error);
-            return false;
-        }
-
-        // Run tests in Docker
-        var resultsFile = Path.Combine(TestResultsDir, $"{platform}-results.json");
-        var logsFile = Path.Combine(TestResultsDir, $"{platform}-logs.txt");
-        var resultsFileInContainer = "/workspace/test-results/results.json";
-        var logsFileInContainer = "/workspace/test-results/logs.txt";
-
-        // Create Python script for JSON extraction
-        var pythonScript = $@"import json
-import sys
-import re
-try:
-    with open('{resultsFileInContainer}', 'r') as f:
-        content = f.read()
-    matches = re.findall(r'\\{{[^{{}}]*(?:\\{{[^{{}}]*\\}}[^{{}}]*)*\\}}', content, re.DOTALL)
-    for match in reversed(matches):
-        try:
-            data = json.loads(match)
-            if 'TotalTests' in data:
-                with open('{resultsFileInContainer}', 'w') as out:
-                    json.dump(data, out, indent=2)
-                total = data.get('TotalTests', 0)
-                passed = data.get('PassedTests', 0)
-                failed = data.get('FailedTests', 0)
-                print(f'✅ {platform}: {{total}} total, {{passed}} passed, {{failed}} failed')
-                sys.exit(0 if failed == 0 else 1)
-        except:
-            continue
-    print('❌ No valid test results found')
-    sys.exit(1)
-except Exception as e:
-    print(f'Error: {{e}}')
-    sys.exit(1)
-";
-
-        var pythonScriptFile = Path.Combine(Path.GetTempPath(), $"nexo-extract-{platform}-{Guid.NewGuid()}.py");
-        await File.WriteAllTextAsync(pythonScriptFile, pythonScript);
-
-        // Use a simpler approach: write script to temp file and execute it
-        var scriptFile = Path.Combine(Path.GetTempPath(), $"nexo-test-{platform}-{Guid.NewGuid()}.sh");
-        var runScript = $@"cd src/Nexo.CLI &&
-dotnet run --project Nexo.CLI.csproj -- test --format-json > {resultsFileInContainer} 2>{logsFileInContainer} || true &&
-python3 /scripts/{Path.GetFileName(pythonScriptFile)}
-";
-        var scriptContent = "#!/bin/bash\n" + runScript;
-        await File.WriteAllTextAsync(scriptFile, scriptContent);
-        
-        if (!IsWindows)
-        {
-            // Make executable on Unix
-            var chmodProcess = Process.Start(new ProcessStartInfo
-            {
-                FileName = "chmod",
-                Arguments = $"+x {scriptFile}",
-                UseShellExecute = false
-            });
-            chmodProcess?.WaitForExit();
-        }
-        
+        var tempDir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), $"nexo-tests-{Guid.NewGuid():N}"));
         try
         {
+            var containerResults = "/workspace/test-results/results.json";
+            var containerLogs = "/workspace/test-results/logs.txt";
+            var pythonScriptName = "extract.py";
+            var shellScriptName = "run.sh";
+
+            await File.WriteAllTextAsync(Path.Combine(tempDir.FullName, pythonScriptName),
+                TestScriptBuilder.CreateExtractorScript(containerResults, PlatformIds.First()));
+
+            var shellScript = BuildShellScript(containerResults, containerLogs, pythonScriptName);
+            var shellPath = Path.Combine(tempDir.FullName, shellScriptName);
+            await File.WriteAllTextAsync(shellPath, shellScript);
+            MakeExecutable(shellPath);
+
             var runArgs = new ProcessStartInfo
             {
                 FileName = "docker",
-                Arguments = $"run --rm -v \"{ProjectRoot}/test-results:/workspace/test-results\" -v \"{Path.GetDirectoryName(scriptFile)}:/scripts\" -v \"{Path.GetDirectoryName(pythonScriptFile)}:/scripts\" nexo-test:{platform} bash /scripts/{Path.GetFileName(scriptFile)}",
-                WorkingDirectory = ProjectRoot,
+                Arguments = BuildDockerArguments(tempDir.FullName, shellScriptName),
+                WorkingDirectory = Context.ProjectRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false
             };
 
-            using var runProcess = Process.Start(runArgs);
-            if (runProcess == null)
+            var runResult = await ProcessRunner.RunAsync(runArgs);
+            Console.WriteLine(runResult.StandardOutput);
+            if (!string.IsNullOrWhiteSpace(runResult.StandardError))
             {
-                Console.WriteLine("❌ Failed to start Docker run process");
-                return false;
+                Console.WriteLine(runResult.StandardError);
             }
 
-            var output = await runProcess.StandardOutput.ReadToEndAsync();
-            var error = await runProcess.StandardError.ReadToEndAsync();
+            var finalResults = Path.Combine(Context.ResultsDir, $"{PlatformIds.First()}-results.json");
+            var finalLogs = Path.Combine(Context.ResultsDir, $"{PlatformIds.First()}-logs.txt");
+            MoveIfExists(Path.Combine(Context.ResultsDir, "results.json"), finalResults);
+            MoveIfExists(Path.Combine(Context.ResultsDir, "logs.txt"), finalLogs);
 
-            await runProcess.WaitForExitAsync();
-
-            Console.WriteLine(output);
-            if (!string.IsNullOrEmpty(error))
-            {
-                Console.WriteLine(error);
-            }
-
-            // Copy results from container
-            var tempResults = Path.Combine(TestResultsDir, "results.json");
-            var tempLogs = Path.Combine(TestResultsDir, "logs.txt");
-            if (File.Exists(tempResults))
-            {
-                File.Move(tempResults, resultsFile, true);
-            }
-            if (File.Exists(tempLogs))
-            {
-                File.Move(tempLogs, logsFile, true);
-            }
-
-            return runProcess.ExitCode == 0;
+            return runResult.ExitCode == 0
+                ? TestRunResult.SuccessResult(PlatformIds.First(), "Tests passed", finalLogs, finalResults)
+                : TestRunResult.Failure(PlatformIds.First(), "Tests failed", finalLogs);
         }
         finally
         {
-            if (File.Exists(scriptFile))
-            {
-                File.Delete(scriptFile);
-            }
-            if (File.Exists(pythonScriptFile))
-            {
-                File.Delete(pythonScriptFile);
-            }
+            TryDelete(tempDir.FullName);
         }
     }
 
-    private static async Task<bool> RunAndroidTests()
+    protected virtual string BuildDockerArguments(string tempDir, string scriptName)
     {
-        Console.WriteLine("🤖 Running tests on Android (Docker)...");
+        var envVariables = string.Join(" ", GetEnvironmentVariables().Select(kv => $"-e {kv.Key}={kv.Value}"));
+        return $"run --rm -v \"{Context.ResultsDir}:/workspace/test-results\" -v \"{tempDir}:/scripts\" {envVariables} {ContainerTag} bash /scripts/{scriptName}";
+    }
 
-        var dockerfile = Path.Combine(ProjectRoot, ".docker", "Dockerfile.test-android");
-        if (!File.Exists(dockerfile))
+    protected virtual IDictionary<string, string> GetEnvironmentVariables() => new Dictionary<string, string>();
+    protected abstract string BuildShellScript(string resultsPath, string logsPath, string pythonScriptName);
+
+    private static void MoveIfExists(string source, string destination)
+    {
+        if (File.Exists(source))
         {
-            Console.WriteLine($"❌ Android Dockerfile not found: {dockerfile}");
-            return false;
+            File.Move(source, destination, true);
+        }
+    }
+
+    private static void MakeExecutable(string path)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return;
         }
 
-        // Build Docker image
-        var buildArgs = new ProcessStartInfo
+        Process.Start(new ProcessStartInfo
         {
-            FileName = "docker",
-            Arguments = $"build -f {dockerfile} -t nexo-test:android .",
-            WorkingDirectory = ProjectRoot,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
+            FileName = "chmod",
+            Arguments = $"+x \"{path}\"",
             UseShellExecute = false
-        };
+        })?.WaitForExit();
+    }
 
-        Console.WriteLine("Building Android Docker image...");
-        using var buildProcess = Process.Start(buildArgs);
-        if (buildProcess == null)
-        {
-            Console.WriteLine("❌ Failed to start Docker build process");
-            return false;
-        }
-
-        await buildProcess.WaitForExitAsync();
-        if (buildProcess.ExitCode != 0)
-        {
-            Console.WriteLine("❌ Docker build failed");
-            var error = await buildProcess.StandardError.ReadToEndAsync();
-            Console.WriteLine(error);
-            return false;
-        }
-
-        // Run tests
-        var resultsFile = Path.Combine(TestResultsDir, "android-results.json");
-        var logsFile = Path.Combine(TestResultsDir, "android-logs.txt");
-
-        // Create Python script for JSON extraction
-        var androidPythonScript = @"import json
-import sys
-import re
-try:
-    with open('/workspace/test-results/android-output.txt', 'r') as f:
-        content = f.read()
-    matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
-    for match in reversed(matches):
-        try:
-            data = json.loads(match)
-            if 'TotalTests' in data:
-                with open('/workspace/test-results/android-results.json', 'w') as out:
-                    json.dump(data, out, indent=2)
-                total = data.get('TotalTests', 0)
-                passed = data.get('PassedTests', 0)
-                failed = data.get('FailedTests', 0)
-                print(f'✅ Android: {total} total, {passed} passed, {failed} failed')
-                sys.exit(0 if failed == 0 else 1)
-        except:
-            continue
-    print('❌ No valid test results found')
-    sys.exit(1)
-except Exception as e:
-    print(f'Error: {e}')
-    sys.exit(1)
-";
-
-        var androidPythonScriptFile = Path.Combine(Path.GetTempPath(), $"nexo-extract-android-{Guid.NewGuid()}.py");
-        await File.WriteAllTextAsync(androidPythonScriptFile, androidPythonScript);
-
-        var runScript = $@"cd src/Nexo.CLI &&
-dotnet run --project Nexo.CLI.csproj -- test --format-json > /workspace/test-results/android-output.txt 2>/workspace/test-results/android-logs.txt || true &&
-python3 /scripts/{Path.GetFileName(androidPythonScriptFile)}
-";
-
-        // Use a simpler approach: write script to temp file and execute it
-        var scriptFile = Path.Combine(Path.GetTempPath(), $"nexo-test-android-{Guid.NewGuid()}.sh");
-        // Make script executable on Unix systems
-        var scriptContent = "#!/bin/bash\n" + runScript;
-        await File.WriteAllTextAsync(scriptFile, scriptContent);
-        
-        if (!IsWindows)
-        {
-            // Make executable on Unix
-            var chmodProcess = Process.Start(new ProcessStartInfo
-            {
-                FileName = "chmod",
-                Arguments = $"+x {scriptFile}",
-                UseShellExecute = false
-            });
-            chmodProcess?.WaitForExit();
-        }
-        
+    private static void TryDelete(string path)
+    {
         try
         {
-            var runArgs = new ProcessStartInfo
+            if (Directory.Exists(path))
             {
-                FileName = "docker",
-                Arguments = $"run --rm -v \"{ProjectRoot}/test-results:/workspace/test-results\" -v \"{Path.GetDirectoryName(scriptFile)}:/scripts\" -e ANDROID_HOME=/opt/android-sdk nexo-test:android bash /scripts/{Path.GetFileName(scriptFile)}",
-                WorkingDirectory = ProjectRoot,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
-
-        using var runProcess = Process.Start(runArgs);
-        if (runProcess == null)
-        {
-            Console.WriteLine("❌ Failed to start Docker run process");
-            return false;
-        }
-
-        var output = await runProcess.StandardOutput.ReadToEndAsync();
-        var error = await runProcess.StandardError.ReadToEndAsync();
-
-        await runProcess.WaitForExitAsync();
-
-        Console.WriteLine(output);
-        if (!string.IsNullOrEmpty(error))
-        {
-            Console.WriteLine(error);
-        }
-
-        return runProcess.ExitCode == 0;
-        }
-        finally
-        {
-            if (File.Exists(scriptFile))
-            {
-                File.Delete(scriptFile);
+                Directory.Delete(path, true);
             }
-            if (File.Exists(androidPythonScriptFile))
-            {
-                File.Delete(androidPythonScriptFile);
-            }
+        }
+        catch
+        {
+            // ignore cleanup issues
         }
     }
+}
 
-    private static async Task<bool> RunIOSTests()
+sealed class UbuntuDockerRunner : DockerRunnerBase
+{
+    public UbuntuDockerRunner(TestContext context)
+        : base(context, "ubuntu", new[] { "linux" }, ".docker/Dockerfile.test", isMobile: false)
     {
-        if (!IsMacOS)
-        {
-            Console.WriteLine("❌ iOS testing requires macOS");
-            return false;
-        }
+    }
 
+    protected override string BuildShellScript(string resultsPath, string logsPath, string pythonScriptName)
+    {
+        return $"#!/bin/bash{Environment.NewLine}" +
+               "cd src/Nexo.CLI" + Environment.NewLine +
+               $"dotnet run --project Nexo.CLI.csproj -- test --format-json > {resultsPath} 2>{logsPath} || true" + Environment.NewLine +
+               $"python3 /scripts/{pythonScriptName}{Environment.NewLine}";
+    }
+}
+
+sealed class AndroidDockerRunner : DockerRunnerBase
+{
+    public AndroidDockerRunner(TestContext context)
+        : base(context, "android", null, ".docker/Dockerfile.test-android", isMobile: true)
+    {
+    }
+
+    protected override IDictionary<string, string> GetEnvironmentVariables()
+        => new Dictionary<string, string> { { "ANDROID_HOME", "/opt/android-sdk" } };
+
+    protected override string BuildShellScript(string resultsPath, string logsPath, string pythonScriptName)
+    {
+        return $"#!/bin/bash{Environment.NewLine}" +
+               "cd src/Nexo.CLI" + Environment.NewLine +
+               $"dotnet run --project Nexo.CLI.csproj -- test --format-json > {resultsPath} 2>{logsPath} || true" + Environment.NewLine +
+               $"python3 /scripts/{pythonScriptName}{Environment.NewLine}";
+    }
+}
+
+sealed class IosNativeRunner : ITestPlatformRunner
+{
+    private readonly TestContext _context;
+
+    public IosNativeRunner(TestContext context)
+    {
+        _context = context;
+        PlatformIds = new ReadOnlyCollection<string>(new[] { "ios" });
+    }
+
+    public IReadOnlyCollection<string> PlatformIds { get; }
+    public bool IsMobile => true;
+    public bool IsEnabled => _context.RuntimeInfo.IsMacOS;
+
+    public async Task<TestRunResult> RunAsync()
+    {
         Console.WriteLine("🍎 Running tests on iOS (macOS native)...");
 
-        // Check for Xcode
-        var xcodeCheck = new ProcessStartInfo
+        var xcodeResult = await ProcessRunner.RunAsync(new ProcessStartInfo
         {
             FileName = "xcodebuild",
             Arguments = "-version",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
-        };
+        });
 
-        using var xcodeProcess = Process.Start(xcodeCheck);
-        if (xcodeProcess == null)
+        if (xcodeResult.ExitCode != 0)
         {
-            Console.WriteLine("❌ Xcode is not installed");
-            Console.WriteLine("   Please install Xcode from the App Store");
-            return false;
+            return TestRunResult.Failure("ios", "Xcode is not installed");
         }
 
-        await xcodeProcess.WaitForExitAsync();
-        if (xcodeProcess.ExitCode != 0)
-        {
-            Console.WriteLine("❌ Xcode is not installed");
-            Console.WriteLine("   Please install Xcode from the App Store");
-            return false;
-        }
-
-        // Run tests natively
-        var cliProject = Path.Combine(ProjectRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
+        var cliProject = Path.Combine(_context.ProjectRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
         if (!File.Exists(cliProject))
         {
-            Console.WriteLine($"❌ CLI project not found: {cliProject}");
-            return false;
+            return TestRunResult.Failure("ios", $"CLI project not found at {cliProject}");
         }
 
-        var resultsFile = Path.Combine(TestResultsDir, "ios-results.json");
-        var logsFile = Path.Combine(TestResultsDir, "ios-logs.txt");
+        var logsFile = Path.Combine(_context.ResultsDir, "ios-logs.txt");
+        var resultsFile = Path.Combine(_context.ResultsDir, "ios-results.json");
 
-        var testArgs = new ProcessStartInfo
+        var testResult = await ProcessRunner.RunAsync(new ProcessStartInfo
         {
             FileName = "dotnet",
             Arguments = "run --project Nexo.CLI.csproj -- test --format-json",
-            WorkingDirectory = Path.Combine(ProjectRoot, "src", "Nexo.CLI"),
+            WorkingDirectory = Path.Combine(_context.ProjectRoot, "src", "Nexo.CLI"),
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
-        };
+        });
 
-        using var testProcess = Process.Start(testArgs);
-        if (testProcess == null)
+        await File.WriteAllTextAsync(logsFile, testResult.StandardError);
+        var parsed = TestResultParser.TryParse(testResult.StandardOutput);
+        if (parsed == null)
         {
-            Console.WriteLine("❌ Failed to start test process");
-            return false;
+            return TestRunResult.Failure("ios", "Unable to parse test output", logsFile);
         }
 
-        var output = await testProcess.StandardOutput.ReadToEndAsync();
-        var error = await testProcess.StandardError.ReadToEndAsync();
+        var json = JsonSerializer.Serialize(parsed, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(resultsFile, json);
+        var message = $"✅ iOS: {parsed.TotalTests} total, {parsed.PassedTests} passed, {parsed.FailedTests} failed";
 
-        await testProcess.WaitForExitAsync();
-
-        // Write logs
-        await File.WriteAllTextAsync(logsFile, error);
-
-        // Parse JSON from output
-        var result = ParseTestResults(output);
-        if (result != null)
-        {
-            var json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(resultsFile, json);
-
-            Console.WriteLine($"✅ iOS: {result.TotalTests} total, {result.PassedTests} passed, {result.FailedTests} failed");
-            return result.FailedTests == 0;
-        }
-
-        Console.WriteLine("❌ No valid test results found");
-        Console.WriteLine($"Output preview: {output.Substring(0, Math.Min(200, output.Length))}...");
-        return false;
+        return parsed.FailedTests == 0
+            ? TestRunResult.SuccessResult("ios", message, logsFile, resultsFile)
+            : TestRunResult.Failure("ios", message, logsFile);
     }
+}
 
-    private static TestResults? ParseTestResults(string output)
+#endregion
+
+#region Result & parsing helpers
+
+record TestRunResult(string Platform, bool Success, string Message, string? LogPath, string? ResultPath)
+{
+    public static TestRunResult SuccessResult(string platform, string message, string? logPath = null, string? resultPath = null)
+        => new(platform, true, message, logPath, resultPath);
+
+    public static TestRunResult Failure(string platform, string message, string? logPath = null)
+        => new(platform, false, message, logPath, null);
+}
+
+static class TestResultParser
+{
+    public static TestResults? TryParse(string output)
     {
-        // Try to find JSON in the output
         var jsonMatch = Regex.Match(output, @"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", RegexOptions.Singleline);
         if (jsonMatch.Success)
         {
@@ -560,11 +576,10 @@ python3 /scripts/{Path.GetFileName(androidPythonScriptFile)}
             }
             catch
             {
-                // Try next match
+                // ignore
             }
         }
 
-        // Fallback: try to extract from text
         var passedMatch = Regex.Match(output, @"(\d+)\s+passed", RegexOptions.IgnoreCase);
         var failedMatch = Regex.Match(output, @"(\d+)\s+failed", RegexOptions.IgnoreCase);
         var totalMatch = Regex.Match(output, @"(\d+)\s+total", RegexOptions.IgnoreCase);
@@ -586,42 +601,7 @@ python3 /scripts/{Path.GetFileName(androidPythonScriptFile)}
         return null;
     }
 
-
-    private static string GetProjectRoot()
-    {
-        var current = Directory.GetCurrentDirectory();
-        var dir = new DirectoryInfo(current);
-
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "src", "Nexo.CLI", "Nexo.CLI.csproj")))
-            {
-                return dir.FullName;
-            }
-            dir = dir.Parent;
-        }
-
-        return current;
-    }
-
-    private static void PrintUsage()
-    {
-        Console.WriteLine("Usage: dotnet run -- [options]");
-        Console.WriteLine();
-        Console.WriteLine("Options:");
-        Console.WriteLine("  --all              Run on all desktop platforms");
-        Console.WriteLine("  --mobile           Include mobile platforms (iOS, Android)");
-        Console.WriteLine("  --quick            Skip build cache");
-        Console.WriteLine("  --platform <name>   Run on specific platform (ubuntu, ios, android)");
-        Console.WriteLine();
-        Console.WriteLine("Examples:");
-        Console.WriteLine("  dotnet run --                    # Linux only");
-        Console.WriteLine("  dotnet run -- --mobile           # Linux + iOS + Android");
-        Console.WriteLine("  dotnet run -- --platform ios     # iOS only");
-        Console.WriteLine("  dotnet run -- --platform android # Android only");
-    }
-
-    private class TestResults
+    public class TestResults
     {
         public int TotalTests { get; set; }
         public int PassedTests { get; set; }
@@ -629,3 +609,66 @@ python3 /scripts/{Path.GetFileName(androidPythonScriptFile)}
     }
 }
 
+static class TestScriptBuilder
+{
+    private const string Template = @"
+import json
+import sys
+import re
+
+RESULT_PATH = r""{RESULT_PATH}""
+PLATFORM = ""{PLATFORM}""
+
+try:
+    with open(RESULT_PATH, 'r') as f:
+        content = f.read()
+    matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
+    for match in reversed(matches):
+        try:
+            data = json.loads(match)
+            if 'TotalTests' in data:
+                with open(RESULT_PATH, 'w') as out:
+                    json.dump(data, out, indent=2)
+                total = data.get('TotalTests', 0)
+                passed = data.get('PassedTests', 0)
+                failed = data.get('FailedTests', 0)
+                print(f'✅ {PLATFORM}: {total} total, {passed} passed, {failed} failed')
+                sys.exit(0 if failed == 0 else 1)
+        except Exception:
+            continue
+    print('❌ No valid test results found')
+    sys.exit(1)
+except Exception as e:
+    print(f'Error: {{e}}')
+    sys.exit(1)
+";
+
+    public static string CreateExtractorScript(string resultPath, string platformName)
+    {
+        var escapedPath = resultPath.Replace(@"\", @"\\");
+        return Template
+            .Replace("{RESULT_PATH}", escapedPath)
+            .Replace("{PLATFORM}", platformName);
+    }
+}
+
+static class ProcessRunner
+{
+    public static async Task<ProcessRunResult> RunAsync(ProcessStartInfo info)
+    {
+        using var process = Process.Start(info);
+        if (process == null)
+        {
+            return new ProcessRunResult(-1, string.Empty, "Failed to start process");
+        }
+
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        return new ProcessRunResult(process.ExitCode, await outputTask, await errorTask);
+    }
+}
+
+record ProcessRunResult(int ExitCode, string StandardOutput, string StandardError);
+
+#endregion
