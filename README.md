@@ -1,9 +1,5 @@
 # Nexo
 
-![Build](https://github.com/IanFrelinger/Nexo/actions/workflows/build.yml/badge.svg)
-![Tests](https://github.com/IanFrelinger/Nexo/actions/workflows/tests.yml/badge.svg)
-![Analyzers](https://github.com/IanFrelinger/Nexo/actions/workflows/analyzers.yml/badge.svg)
-![Coverage](https://github.com/IanFrelinger/Nexo/actions/workflows/coverage.yml/badge.svg)
 
 **Agent-First .NET Development Framework with Comprehensive Tooling**
 
@@ -144,11 +140,15 @@ Nexo/
 │   ├── Nexo.Tools.Assembly/        # Assembly analysis and decompilation
 │   ├── Nexo.Demo.DevCLI/           # Demo CLI application
 │   └── Nexo.Examples/              # Example implementations (non-packable)
-├── tests/
-│   ├── Nexo.Tests.Architecture/    # Architectural validation tests
-│   ├── Nexo.Tests.Contracts/       # Contract tests (idempotency, timeouts, policies)
-│   ├── Nexo.Tests.Integration/     # Integration tests
-│   └── [other test projects]
+│   ├── Nexo.CLI/                   # CLI application
+│   ├── Nexo.Tools.TestRunner/      # Cross-platform test runner
+│   ├── Nexo.Core.UI/               # Framework-agnostic UI primitives
+│   ├── Nexo.Core.UI.Avalonia/      # Avalonia renderer
+│   ├── Nexo.Core.UI.Unity/         # Unity Editor renderer
+│   ├── Nexo.Tests.Application/     # Application layer tests
+│   ├── Nexo.Tests.CLI/              # CLI E2E tests
+│   ├── Nexo.Tests.Domain/           # Domain layer tests
+│   └── Nexo.Tests.Infrastructure/   # Infrastructure layer tests
 └── docs/                           # Comprehensive documentation
 ```
 
@@ -179,12 +179,7 @@ nexo validate --filter "Category=Architecture" --format-json
 nexo agent --name CodeWriter --input ./requests/new_feature.json --format-json
 ```
 
-### DirectorStudio Quickstart
-- Open Unity → **Nexo → Director Runbook**, set Prompt/Seed → Run.
-- CLI: `scripts/run-with-config.sh` (uses `nexo.pipeline.json`).
-- CI: `scripts/ci-verify.sh` (JUnit XML produced by UTF or smoke).
-
-## Review Mode Quickstart
+## Quick Start
 
 ```bash
 # Always-green review run (creates artifacts + JUnit + summary)
@@ -218,8 +213,8 @@ dotnet build
 # Run tests
 dotnet test
 
-# Run the demo CLI
-dotnet run --project src/Nexo.Demo.DevCLI
+# Run cross-platform tests
+dotnet run --project src/Nexo.Tools.TestRunner
 ```
 
 ### Basic Usage
@@ -240,11 +235,14 @@ nexo validate --filter "Category=Architecture"
 # Run an agent
 nexo agent --name CodeWriter --input request.json --format-json
 
-# Run development agent in heal mode
-dotnet run --project src/Nexo.Demo.DevCLI -- mode heal
+# List available agents
+nexo agent list
 
-# Run development agent in extend mode (TDD)
-dotnet run --project src/Nexo.Demo.DevCLI -- mode extend
+# View configuration
+nexo config
+
+# Run tests
+nexo test --filter "Category=Architecture"
 ```
 
 ⸻
@@ -305,6 +303,34 @@ nexo agent --name CodeWriter --input request.json
 
 # Get JSON output
 nexo agent --name CodeWriter --format-json
+
+# List available agents
+nexo agent list
+```
+
+#### `nexo config`
+View or manage configuration.
+
+```bash
+# View current configuration
+nexo config
+
+# Get JSON output
+nexo config --format-json
+```
+
+#### `nexo test`
+Run tests with optional filtering.
+
+```bash
+# Run all tests
+nexo test
+
+# Filter by test name or category
+nexo test --filter "Category=Architecture"
+
+# Get JSON output
+nexo test --format-json
 ```
 
 ### Exit Codes
@@ -332,7 +358,6 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ### Development Agents
 
-- **DevDirectorAgent**: Orchestrates development workflows with heal/extend modes
 - **TDD Agent**: Implements Test-Driven Development workflows
 - **Code Generation Agent**: Generates code based on specifications
 - **Security Analysis Agent**: Analyzes code for security vulnerabilities
@@ -444,43 +469,6 @@ dotnet test --filter "Category=E2E"
 # Run with coverage
 dotnet test --collect:"XPlat Code Coverage"
 
-# Run tests with solution filters for faster iteration
-dotnet test Nexo.tests.slnf --filter "Category=Architecture"
-dotnet test Nexo.cli.slnf --filter "Category=Contract"
-```
-
-### Solution Filters (Fast Development)
-
-Nexo includes solution filters for rapid development iteration:
-
-```bash
-# CLI-focused development (includes CLI + core dependencies)
-dotnet build Nexo.cli.slnf -c Debug
-dotnet test Nexo.cli.slnf
-
-# Core libraries only (abstractions, runtime, application, domain)
-dotnet build Nexo.core.slnf -c Debug
-dotnet test Nexo.core.slnf
-
-# All tests (architecture, contracts, integration, unit)
-dotnet test Nexo.tests.slnf
-
-# Run specific test categories with filters
-dotnet test Nexo.tests.slnf --filter "Category=Architecture"
-dotnet test Nexo.tests.slnf --filter "Category=Contract"
-```
-
-### Development Workflow
-
-```bash
-# Quick CLI development cycle
-dotnet build Nexo.cli.slnf && dotnet test Nexo.cli.slnf
-
-# Focus on core functionality
-dotnet build Nexo.core.slnf && dotnet test Nexo.core.slnf
-
-# Full test suite before commit
-dotnet test Nexo.tests.slnf --collect:"XPlat Code Coverage"
 ```
 
 ⸻
@@ -508,13 +496,11 @@ Nexo enforces comprehensive quality gates through automated CI/CD pipelines.
 
 ### GitHub Actions
 
-```yaml
-# Required checks for PRs
-- build-and-test.yml    # Build, test, coverage
-- analyzers.yml         # Code analysis, formatting
-- architecture.yml      # Architecture validation
-- commitlint.yml        # Commit message validation
-```
+GitHub Actions workflows can be configured for:
+- Build and test automation
+- Code analysis and formatting
+- Architecture validation
+- Commit message validation
 
 ### Local Development
 
@@ -583,13 +569,14 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ### ✅ Completed
 - [x] CLI tool with subcommands and JSON output
 - [x] Contract testing framework
-- [x] Solution filters for fast development
-- [x] Comprehensive CI/CD pipeline
+- [x] Comprehensive test suite (Application, Domain, Infrastructure, CLI)
 - [x] Architecture validation (18 tests)
 - [x] Quality gates and code analysis
+- [x] Cross-platform test runner (Ubuntu, iOS, Android, Unity)
+- [x] Framework-agnostic UI primitives system
+- [x] Logging abstraction with DI support
 
 ### In Progress
-- [ ] Real implementation of CLI commands
 - [ ] Advanced contract test implementations
 - [ ] Multi-targeting support (netstandard2.1)
 
