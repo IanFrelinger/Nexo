@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <AssemblyTitle>Nexo Test Runner</AssemblyTitle>
+    <AssemblyDescription>Cross-platform test runner for Nexo CLI unit tests</AssemblyDescription>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="System.Diagnostics.Process" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Nexo.CLI/Nexo.CLI.csproj" />
+  </ItemGroup>
+
+</Project>
+
