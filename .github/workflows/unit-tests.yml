@@ -1,0 +1,154 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [ master, main, develop, feature/* ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  unit-tests:
+    name: Unit Tests - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dotnet-version: ['8.0.x']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+    
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore dependencies
+      run: |
+        dotnet restore src/Nexo.Core.Domain/Nexo.Core.Domain.csproj
+        dotnet restore src/Nexo.Core.Application/Nexo.Core.Application.csproj
+        dotnet restore src/Nexo.Infrastructure/Nexo.Infrastructure.csproj
+        dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+        dotnet restore src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
+        dotnet restore src/Nexo.Tests.Application/Nexo.Tests.Application.csproj
+        dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+        dotnet restore src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
+    
+    - name: Build solution
+      run: |
+        dotnet build src/Nexo.Core.Domain/Nexo.Core.Domain.csproj --configuration Release --no-restore
+        dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj --configuration Release --no-restore
+        dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --configuration Release --no-restore
+        dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release --no-restore
+        dotnet build src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj --configuration Release --no-restore
+        dotnet build src/Nexo.Tests.Application/Nexo.Tests.Application.csproj --configuration Release --no-restore
+        dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --configuration Release --no-restore
+        dotnet build src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj --configuration Release --no-restore
+    
+    - name: Run Unit Tests
+      run: |
+        cd src/Nexo.CLI
+        
+        # Run tests with JSON output
+        dotnet run --project Nexo.CLI.csproj -- test --format-json > test-output.txt 2>test-logs.txt
+        TEST_EXIT=$?
+        
+        # Extract JSON from output (handles multi-line JSON)
+        python3 << 'PYEOF'
+import sys
+import json
+import re
+
+try:
+    with open('test-output.txt', 'r') as f:
+        content = f.read()
+    
+    # Find JSON object with TotalTests
+    json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+    matches = re.findall(json_pattern, content, re.DOTALL)
+    
+    for match in reversed(matches):
+        try:
+            data = json.loads(match)
+            if 'TotalTests' in data:
+                with open('test-results.json', 'w') as out:
+                    json.dump(data, out, indent=2)
+                print(f"✅ Extracted JSON: {data.get('TotalTests', 0)} tests")
+                sys.exit(0)
+        except:
+            continue
+    
+    print("❌ No valid JSON found")
+    # Create empty result
+    with open('test-results.json', 'w') as out:
+        json.dump({"TotalTests": 0, "PassedTests": 0, "FailedTests": 0, "Results": []}, out)
+    sys.exit(1)
+except Exception as e:
+    print(f"Error: {e}")
+    with open('test-results.json', 'w') as out:
+        json.dump({"TotalTests": 0, "PassedTests": 0, "FailedTests": 0, "Results": []}, out)
+    sys.exit(1)
+PYEOF
+        
+        # Show summary
+        if [ -f test-results.json ] && [ -s test-results.json ]; then
+          python3 -c "import json; data = json.load(open('test-results.json')); print(f\"\n📊 Test Summary:\"); print(f\"  Total: {data.get('TotalTests', 0)}\"); print(f\"  Passed: {data.get('PassedTests', 0)}\"); print(f\"  Failed: {data.get('FailedTests', 0)}\")" 2>/dev/null || true
+        fi
+        
+        # Exit with test result code
+        exit $TEST_EXIT
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: |
+          src/Nexo.CLI/test-results.json
+          src/Nexo.CLI/test-logs.txt
+        retention-days: 7
+    
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "## Unit Test Results - ${{ matrix.os }}" >> $GITHUB_STEP_SUMMARY
+        if [ -f src/Nexo.CLI/test-results.json ] && [ -s src/Nexo.CLI/test-results.json ]; then
+          python3 << 'PYEOF'
+import json
+import sys
+try:
+    with open('src/Nexo.CLI/test-results.json') as f:
+        data = json.load(f)
+    total = data.get('TotalTests', 0)
+    passed = data.get('PassedTests', 0)
+    failed = data.get('FailedTests', 0)
+    duration = data.get('TotalDuration', 'N/A')
+    
+    print(f"- **Total Tests**: {total}")
+    print(f"- **Passed**: {passed}")
+    print(f"- **Failed**: {failed}")
+    print(f"- **Duration**: {duration}")
+    
+    if failed > 0:
+        print(f"\n### Failed Tests")
+        failed_tests = [r for r in data.get('Results', []) if not r.get('Passed', True)]
+        for test in failed_tests[:10]:
+            print(f"- {test.get('TestName', 'Unknown')}: {test.get('ErrorMessage', 'No error message')[:100]}")
+except Exception as e:
+    print(f"Error parsing results: {e}")
+PYEOF
+        else
+          echo "- ⚠️ Test results not available"
+        fi
