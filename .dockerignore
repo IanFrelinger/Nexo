@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Test results
+test-results/
+*.trx
+*.coverage
+
+# Build artifacts
+bin/
+obj/
+artifacts/
+
+# IDE
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD (not needed in container)
+.github/
+
+# Docker files themselves
+.docker/
+docker-compose*.yml
+Dockerfile*
