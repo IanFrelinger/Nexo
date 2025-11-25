@@ -31,12 +31,12 @@ public sealed class ConsoleLogger : ILogger
 
     public void LogWarning(string message)
     {
-        Console.WriteLine($"⚠️  {message}");
+        Console.WriteLine($"[WARN] {message}");
     }
 
     public void LogError(string message)
     {
-        Console.Error.WriteLine($"❌ {message}");
+        Console.Error.WriteLine($"[ERROR] {message}");
     }
 
     public void LogDebug(string message)

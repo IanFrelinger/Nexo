@@ -11,8 +11,8 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
-using Nexo.Demo.CLI.Agents;
-using Nexo.Agents.Dev;
+// using Nexo.Demo.CLI.Agents; // Removed as part of Director Studio cleanup
+// using Nexo.Agents.Dev; // Removed as part of Director Studio cleanup
 
 namespace Nexo.CLI;
 
@@ -229,7 +229,6 @@ static class Program
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentExecutor, Nexo.Infrastructure.Agent.Adapters.AgentExecutorAdapter>();
 
         // Register available agents
-        services.AddTransient<IAgent, DirectorAgent>(sp => new DirectorAgent("director"));
-        services.AddTransient<IAgent, DevDirectorAgent>(sp => new DevDirectorAgent(DevMode.Heal));
+        // Note: Director agents removed as part of Director Studio cleanup
     }
 }

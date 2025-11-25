@@ -17,7 +17,7 @@ internal static class Program
     public static async Task<int> Main(string[] args)
     {
         var logger = new ConsoleLogger();
-        logger.LogInformation("🧪 Nexo CLI Unit Test Runner (Cross-Platform)");
+        logger.LogInformation("Nexo CLI Unit Test Runner (Cross-Platform)");
         logger.LogInformation("==============================================");
         logger.LogInformation("");
 
@@ -171,24 +171,24 @@ static class SummaryPrinter
         var failed = results.Where(r => !r.Success).ToList();
 
         logger.LogInformation("==============================================");
-        logger.LogInformation("📊 Test Summary");
+        logger.LogInformation("Test Summary");
         logger.LogInformation("==============================================");
 
         if (passed.Count > 0)
         {
-            logger.LogInformation("✅ Passed platforms:");
+            logger.LogInformation("Passed platforms:");
             foreach (var result in passed)
             {
-                logger.LogInformation($"   ✓ {result.Platform}");
+                logger.LogInformation($"   - {result.Platform}");
             }
         }
 
         if (failed.Count > 0)
         {
-            logger.LogError("❌ Failed platforms:");
+            logger.LogError("Failed platforms:");
             foreach (var result in failed)
             {
-                logger.LogError($"   ✗ {result.Platform} - {result.Message}");
+                logger.LogError($"   - {result.Platform} - {result.Message}");
                 if (!string.IsNullOrEmpty(result.LogPath))
                 {
                     logger.LogInformation($"   Logs: {result.LogPath}");
@@ -198,7 +198,7 @@ static class SummaryPrinter
         }
 
         logger.LogInformation("");
-        logger.LogInformation("✅ All tests passed on all platforms!");
+        logger.LogInformation("All tests passed on all platforms!");
         logger.LogInformation("");
         logger.LogInformation($"Test results are available in: {resultsDir}");
         return 0;
@@ -334,7 +334,7 @@ abstract class DockerRunnerBase : ITestPlatformRunner
     public async Task<TestRunResult> RunAsync()
     {
         Directory.CreateDirectory(Context.ResultsDir);
-        Context.Logger.LogInformation($"🐳 Running tests in Docker ({PlatformIds.First()})...");
+        Context.Logger.LogInformation($"Running tests in Docker ({PlatformIds.First()})...");
 
         var buildResult = await ProcessRunner.RunAsync(new ProcessStartInfo
         {
@@ -498,7 +498,7 @@ sealed class IosNativeRunner : ITestPlatformRunner
 
     public async Task<TestRunResult> RunAsync()
     {
-        _context.Logger.LogInformation("🍎 Running tests on iOS (macOS native)...");
+        _context.Logger.LogInformation("Running tests on iOS (macOS native)...");
 
         var xcodeResult = await ProcessRunner.RunAsync(new ProcessStartInfo
         {
@@ -542,7 +542,7 @@ sealed class IosNativeRunner : ITestPlatformRunner
 
         var json = JsonSerializer.Serialize(parsed, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(resultsFile, json);
-        var message = $"✅ iOS: {parsed.TotalTests} total, {parsed.PassedTests} passed, {parsed.FailedTests} failed";
+        var message = $"iOS: {parsed.TotalTests} total, {parsed.PassedTests} passed, {parsed.FailedTests} failed";
 
         return parsed.FailedTests == 0
             ? TestRunResult.SuccessResult("ios", message, logsFile, resultsFile)
@@ -566,7 +566,7 @@ sealed class UnityRunner : ITestPlatformRunner
 
     public async Task<TestRunResult> RunAsync()
     {
-        _context.Logger.LogInformation("🎮 Running Unity tests...");
+        _context.Logger.LogInformation("Running Unity tests...");
 
         var unityExe = FindUnityExecutable();
         if (unityExe == null)
@@ -577,7 +577,7 @@ sealed class UnityRunner : ITestPlatformRunner
         var unityProject = FindUnityProject();
         if (unityProject == null)
         {
-            return TestRunResult.Failure("unity", "Unity project not found. Expected 'DirectorStudioUnity' or 'UnityProjects' directory.");
+            return TestRunResult.Failure("unity", "Unity project not found. Unity projects were removed as part of Director Studio cleanup.");
         }
 
         var resultsFile = Path.Combine(_context.ResultsDir, "unity-results.json");
@@ -644,7 +644,7 @@ sealed class UnityRunner : ITestPlatformRunner
 
         var json = JsonSerializer.Serialize(parsedResults, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(resultsFile, json);
-        var message = $"✅ Unity: {parsedResults.TotalTests} total, {parsedResults.PassedTests} passed, {parsedResults.FailedTests} failed";
+        var message = $"Unity: {parsedResults.TotalTests} total, {parsedResults.PassedTests} passed, {parsedResults.FailedTests} failed";
 
         return parsedResults.FailedTests == 0
             ? TestRunResult.SuccessResult("unity", message, logsFile, resultsFile)
@@ -714,11 +714,9 @@ sealed class UnityRunner : ITestPlatformRunner
 
     private string? FindUnityProject()
     {
-        var candidates = new[]
-        {
-            Path.Combine(_context.ProjectRoot, "DirectorStudioUnity"),
-            Path.Combine(_context.ProjectRoot, "UnityProjects", "NexoDirectorDemo")
-        };
+        // Unity projects removed as part of Director Studio cleanup
+        // If Unity testing is needed, add Unity project paths here
+        var candidates = Array.Empty<string>();
 
         foreach (var candidate in candidates)
         {
@@ -913,11 +911,11 @@ try:
                 total = data.get('TotalTests', 0)
                 passed = data.get('PassedTests', 0)
                 failed = data.get('FailedTests', 0)
-                print(f'✅ {PLATFORM}: {total} total, {passed} passed, {failed} failed')
+                print(f'{PLATFORM}: {total} total, {passed} passed, {failed} failed')
                 sys.exit(0 if failed == 0 else 1)
         except Exception:
             continue
-    print('❌ No valid test results found')
+    print('No valid test results found')
     sys.exit(1)
 except Exception as e:
     print(f'Error: {{e}}')

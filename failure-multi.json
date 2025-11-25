@@ -1,9 +1,0 @@
-{
-  "prompt": "test failure case",
-  "seconds": 1,
-  "interactionsTriggered": 0,
-  "sceneLoaded": true,
-  "bootstrapOk": true,
-  "withinTimeBudget": true,
-  "ok": false
-}
