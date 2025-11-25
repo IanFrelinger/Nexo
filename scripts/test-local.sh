@@ -44,9 +44,18 @@ run_tests() {
 import json
 import sys
 import re
+import os
 try:
-    with open('/workspace/test-results/${platform}-results.json', 'r') as f:
+    output_file = '/workspace/test-results/${platform}-results.json'
+    if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+        print('⚠️ Test output file is empty or missing, checking stdout...')
+        # Try to read from the actual test output
+        sys.exit(1)
+    
+    with open(output_file, 'r') as f:
         content = f.read()
+    
+    # Try to find JSON in the content
     matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
     for match in reversed(matches):
         try:
@@ -59,12 +68,43 @@ try:
                 failed = data.get('FailedTests', 0)
                 print(f'✅ ${platform}: {total} total, {passed} passed, {failed} failed')
                 sys.exit(0 if failed == 0 else 1)
-        except:
+        except json.JSONDecodeError:
             continue
+        except Exception as e:
+            print(f'Error processing match: {e}')
+            continue
+    
+    # If no JSON found, check if tests actually passed by looking at the output
+    if 'passed' in content.lower() and 'failed' in content.lower():
+        # Extract numbers from text output as fallback
+        passed_match = re.search(r'(\d+)\s+passed', content, re.IGNORECASE)
+        failed_match = re.search(r'(\d+)\s+failed', content, re.IGNORECASE)
+        total_match = re.search(r'(\d+)\s+total', content, re.IGNORECASE)
+        
+        if passed_match and failed_match:
+            passed = int(passed_match.group(1))
+            failed = int(failed_match.group(1))
+            total = int(total_match.group(1)) if total_match else (passed + failed)
+            
+            # Create a proper JSON result
+            result = {
+                'TotalTests': total,
+                'PassedTests': passed,
+                'FailedTests': failed,
+                'Results': []
+            }
+            with open('/workspace/test-results/${platform}-results.json', 'w') as out:
+                json.dump(result, out, indent=2)
+            print(f'✅ ${platform}: {total} total, {passed} passed, {failed} failed (extracted from text)')
+            sys.exit(0 if failed == 0 else 1)
+    
     print('❌ No valid test results found')
+    print(f'Content preview: {content[:200]}...')
     sys.exit(1)
 except Exception as e:
     print(f'Error: {e}')
+    import traceback
+    traceback.print_exc()
     sys.exit(1)
 PYEOF
         "
