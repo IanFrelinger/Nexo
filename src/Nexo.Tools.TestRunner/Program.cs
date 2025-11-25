@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Nexo.Tools.TestRunner;
 
@@ -15,20 +16,21 @@ internal static class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        Console.WriteLine("🧪 Nexo CLI Unit Test Runner (Cross-Platform)");
-        Console.WriteLine("==============================================");
-        Console.WriteLine();
+        var logger = new ConsoleLogger();
+        logger.LogInformation("🧪 Nexo CLI Unit Test Runner (Cross-Platform)");
+        logger.LogInformation("==============================================");
+        logger.LogInformation("");
 
-        var context = TestContext.Create();
+        var context = TestContext.Create(logger);
         Directory.CreateDirectory(context.ResultsDir);
 
-        var (requestedTargets, includeMobile) = ArgumentParser.Parse(args);
+        var (requestedTargets, includeMobile) = ArgumentParser.Parse(args, logger);
         var registry = RunnerRegistry.Build(includeMobile, context);
         var targets = TargetSelector.ResolveTargets(requestedTargets, includeMobile, registry).ToList();
 
         if (targets.Count == 0)
         {
-            Console.WriteLine("No platforms requested. Use --platform to specify targets.");
+            logger.LogError("No platforms requested. Use --platform to specify targets.");
             return 1;
         }
 
@@ -50,18 +52,19 @@ internal static class Program
 
             try
             {
-                Console.WriteLine($"Testing on {target}...");
-                Console.WriteLine();
+                logger.LogInformation($"Testing on {target}...");
+                logger.LogInformation("");
                 results.Add(await runner.RunAsync());
-                Console.WriteLine();
+                logger.LogInformation("");
             }
             catch (Exception ex)
             {
+                logger.LogError($"Error testing {target}: {ex.Message}");
                 results.Add(TestRunResult.Failure(target, ex.Message));
             }
         }
 
-        return SummaryPrinter.Render(results, context.ResultsDir);
+        return SummaryPrinter.Render(results, context.ResultsDir, logger);
     }
 }
 
@@ -69,7 +72,7 @@ internal static class Program
 
 static class ArgumentParser
 {
-    public static (List<string> requestedTargets, bool includeMobile) Parse(string[] args)
+    public static (List<string> requestedTargets, bool includeMobile) Parse(string[] args, ILogger logger)
     {
         var targets = new List<string>();
         var includeMobile = false;
@@ -94,8 +97,8 @@ static class ArgumentParser
                     }
                     break;
                 default:
-                    Console.WriteLine($"Unknown option: {args[i]}");
-                    PrintUsage();
+                    logger.LogError($"Unknown option: {args[i]}");
+                    PrintUsage(logger);
                     Environment.Exit(1);
                     break;
             }
@@ -109,22 +112,23 @@ static class ArgumentParser
         return (targets, includeMobile);
     }
 
-    private static void PrintUsage()
+    private static void PrintUsage(ILogger logger)
     {
-        Console.WriteLine("Usage: dotnet run -- [options]");
-        Console.WriteLine();
-        Console.WriteLine("Options:");
-        Console.WriteLine("  --all              Run on default desktop platform(s)");
-        Console.WriteLine("  --mobile           Include mobile platforms (iOS, Android)");
-        Console.WriteLine("  --quick            Skip build cache (reserved)");
-        Console.WriteLine("  --platform <name>  Run on specific platform (ubuntu, ios, android)");
-        Console.WriteLine();
-        Console.WriteLine("Examples:");
-        Console.WriteLine("  dotnet run --                    # Linux only");
-        Console.WriteLine("  dotnet run -- --mobile           # Linux + iOS + Android");
-        Console.WriteLine("  dotnet run -- --platform ios     # iOS only");
-        Console.WriteLine("  dotnet run -- --platform android # Android only");
-        Console.WriteLine();
+        logger.LogInformation("Usage: dotnet run -- [options]");
+        logger.LogInformation("");
+        logger.LogInformation("Options:");
+        logger.LogInformation("  --all              Run on default desktop platform(s)");
+        logger.LogInformation("  --mobile           Include mobile platforms (iOS, Android)");
+        logger.LogInformation("  --quick            Skip build cache (reserved)");
+        logger.LogInformation("  --platform <name>  Run on specific platform (ubuntu, ios, android, unity)");
+        logger.LogInformation("");
+        logger.LogInformation("Examples:");
+        logger.LogInformation("  dotnet run --                    # Linux only");
+        logger.LogInformation("  dotnet run -- --mobile           # Linux + iOS + Android");
+        logger.LogInformation("  dotnet run -- --platform ios     # iOS only");
+        logger.LogInformation("  dotnet run -- --platform android # Android only");
+        logger.LogInformation("  dotnet run -- --platform unity    # Unity only");
+        logger.LogInformation("");
     }
 }
 
@@ -161,42 +165,42 @@ static class TargetSelector
 
 static class SummaryPrinter
 {
-    public static int Render(IEnumerable<TestRunResult> results, string resultsDir)
+    public static int Render(IEnumerable<TestRunResult> results, string resultsDir, ILogger logger)
     {
         var passed = results.Where(r => r.Success).ToList();
         var failed = results.Where(r => !r.Success).ToList();
 
-        Console.WriteLine("==============================================");
-        Console.WriteLine("📊 Test Summary");
-        Console.WriteLine("==============================================");
+        logger.LogInformation("==============================================");
+        logger.LogInformation("📊 Test Summary");
+        logger.LogInformation("==============================================");
 
         if (passed.Count > 0)
         {
-            Console.WriteLine("✅ Passed platforms:");
+            logger.LogInformation("✅ Passed platforms:");
             foreach (var result in passed)
             {
-                Console.WriteLine($"   ✓ {result.Platform}");
+                logger.LogInformation($"   ✓ {result.Platform}");
             }
         }
 
         if (failed.Count > 0)
         {
-            Console.WriteLine("❌ Failed platforms:");
+            logger.LogError("❌ Failed platforms:");
             foreach (var result in failed)
             {
-                Console.WriteLine($"   ✗ {result.Platform} - {result.Message}");
+                logger.LogError($"   ✗ {result.Platform} - {result.Message}");
                 if (!string.IsNullOrEmpty(result.LogPath))
                 {
-                    Console.WriteLine($"   Logs: {result.LogPath}");
+                    logger.LogInformation($"   Logs: {result.LogPath}");
                 }
             }
             return 1;
         }
 
-        Console.WriteLine();
-        Console.WriteLine("✅ All tests passed on all platforms!");
-        Console.WriteLine();
-        Console.WriteLine($"Test results are available in: {resultsDir}");
+        logger.LogInformation("");
+        logger.LogInformation("✅ All tests passed on all platforms!");
+        logger.LogInformation("");
+        logger.LogInformation($"Test results are available in: {resultsDir}");
         return 0;
     }
 }
@@ -205,13 +209,13 @@ static class SummaryPrinter
 
 #region Context & runtime info
 
-record TestContext(string ProjectRoot, string ResultsDir, IRuntimeInfo RuntimeInfo)
+record TestContext(string ProjectRoot, string ResultsDir, IRuntimeInfo RuntimeInfo, ILogger Logger)
 {
-    public static TestContext Create()
+    public static TestContext Create(ILogger logger)
     {
         var root = DiscoverProjectRoot();
         var results = Path.Combine(root, "test-results");
-        return new TestContext(root, results, SystemRuntimeInfo.Create());
+        return new TestContext(root, results, SystemRuntimeInfo.Create(), logger);
     }
 
     private static string DiscoverProjectRoot()
@@ -287,7 +291,8 @@ sealed class RunnerRegistry
     {
         var runners = new List<ITestPlatformRunner>
         {
-            new UbuntuDockerRunner(context)
+            new UbuntuDockerRunner(context),
+            new UnityRunner(context)
         };
 
         if (includeMobile)
@@ -329,7 +334,7 @@ abstract class DockerRunnerBase : ITestPlatformRunner
     public async Task<TestRunResult> RunAsync()
     {
         Directory.CreateDirectory(Context.ResultsDir);
-        Console.WriteLine($"🐳 Running tests in Docker ({PlatformIds.First()})...");
+        Context.Logger.LogInformation($"🐳 Running tests in Docker ({PlatformIds.First()})...");
 
         var buildResult = await ProcessRunner.RunAsync(new ProcessStartInfo
         {
@@ -373,10 +378,10 @@ abstract class DockerRunnerBase : ITestPlatformRunner
             };
 
             var runResult = await ProcessRunner.RunAsync(runArgs);
-            Console.WriteLine(runResult.StandardOutput);
+            Context.Logger.LogDebug(runResult.StandardOutput);
             if (!string.IsNullOrWhiteSpace(runResult.StandardError))
             {
-                Console.WriteLine(runResult.StandardError);
+                Context.Logger.LogWarning(runResult.StandardError);
             }
 
             var finalResults = Path.Combine(Context.ResultsDir, $"{PlatformIds.First()}-results.json");
@@ -493,7 +498,7 @@ sealed class IosNativeRunner : ITestPlatformRunner
 
     public async Task<TestRunResult> RunAsync()
     {
-        Console.WriteLine("🍎 Running tests on iOS (macOS native)...");
+        _context.Logger.LogInformation("🍎 Running tests on iOS (macOS native)...");
 
         var xcodeResult = await ProcessRunner.RunAsync(new ProcessStartInfo
         {
@@ -542,6 +547,189 @@ sealed class IosNativeRunner : ITestPlatformRunner
         return parsed.FailedTests == 0
             ? TestRunResult.SuccessResult("ios", message, logsFile, resultsFile)
             : TestRunResult.Failure("ios", message, logsFile);
+    }
+}
+
+sealed class UnityRunner : ITestPlatformRunner
+{
+    private readonly TestContext _context;
+
+    public UnityRunner(TestContext context)
+    {
+        _context = context;
+        PlatformIds = new ReadOnlyCollection<string>(new[] { "unity" });
+    }
+
+    public IReadOnlyCollection<string> PlatformIds { get; }
+    public bool IsMobile => false;
+    public bool IsEnabled => FindUnityExecutable() != null && FindUnityProject() != null;
+
+    public async Task<TestRunResult> RunAsync()
+    {
+        _context.Logger.LogInformation("🎮 Running Unity tests...");
+
+        var unityExe = FindUnityExecutable();
+        if (unityExe == null)
+        {
+            return TestRunResult.Failure("unity", "Unity executable not found. Please install Unity Hub or set UNITY_BIN environment variable.");
+        }
+
+        var unityProject = FindUnityProject();
+        if (unityProject == null)
+        {
+            return TestRunResult.Failure("unity", "Unity project not found. Expected 'DirectorStudioUnity' or 'UnityProjects' directory.");
+        }
+
+        var resultsFile = Path.Combine(_context.ResultsDir, "unity-results.json");
+        var logsFile = Path.Combine(_context.ResultsDir, "unity-logs.txt");
+        var xmlResultsFile = Path.Combine(_context.ResultsDir, "unity-results.xml");
+
+        Directory.CreateDirectory(_context.ResultsDir);
+
+        // Run Unity tests in headless mode
+        // Try PlayMode first, then EditMode
+        var testPlatforms = new[] { "PlayMode", "EditMode" };
+        TestResultParser.TestResults? parsedResults = null;
+        string? lastError = null;
+
+        foreach (var platform in testPlatforms)
+        {
+            var testResult = await ProcessRunner.RunAsync(new ProcessStartInfo
+            {
+                FileName = unityExe,
+                Arguments = $"-batchmode -nographics -projectPath \"{unityProject}\" " +
+                           $"-runTests -testPlatform {platform} " +
+                           $"-testResults \"{xmlResultsFile}\" " +
+                           $"-logFile \"{logsFile}\" " +
+                           $"-quit",
+                WorkingDirectory = _context.ProjectRoot,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            });
+
+            var logContent = $"=== Unity {platform} Test Run ===\n" +
+                            $"Exit Code: {testResult.ExitCode}\n\n" +
+                            $"STDOUT:\n{testResult.StandardOutput}\n\n" +
+                            $"STDERR:\n{testResult.StandardError}\n\n";
+            
+            if (File.Exists(logsFile))
+            {
+                var existingLogs = await File.ReadAllTextAsync(logsFile);
+                logContent = existingLogs + "\n\n" + logContent;
+            }
+            
+            await File.WriteAllTextAsync(logsFile, logContent);
+
+            if (File.Exists(xmlResultsFile))
+            {
+                parsedResults = UnityTestResultParser.ParseXml(xmlResultsFile);
+                if (parsedResults != null && parsedResults.TotalTests > 0)
+                {
+                    break;
+                }
+            }
+
+            lastError = testResult.ExitCode != 0 
+                ? $"Unity {platform} tests failed with exit code {testResult.ExitCode}"
+                : $"Unity {platform} tests produced no results";
+        }
+
+        if (parsedResults == null)
+        {
+            return TestRunResult.Failure("unity", 
+                lastError ?? "Unable to parse Unity test results. Check logs for details.", 
+                logsFile);
+        }
+
+        var json = JsonSerializer.Serialize(parsedResults, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(resultsFile, json);
+        var message = $"✅ Unity: {parsedResults.TotalTests} total, {parsedResults.PassedTests} passed, {parsedResults.FailedTests} failed";
+
+        return parsedResults.FailedTests == 0
+            ? TestRunResult.SuccessResult("unity", message, logsFile, resultsFile)
+            : TestRunResult.Failure("unity", message, logsFile);
+    }
+
+    private string? FindUnityExecutable()
+    {
+        // Check environment variable first
+        var envUnity = Environment.GetEnvironmentVariable("UNITY_BIN");
+        if (!string.IsNullOrEmpty(envUnity) && File.Exists(envUnity))
+        {
+            return envUnity;
+        }
+
+        // Platform-specific discovery
+        if (_context.RuntimeInfo.IsMacOS)
+        {
+            var hubPath = "/Applications/Unity/Hub/Editor";
+            if (Directory.Exists(hubPath))
+            {
+                var versions = Directory.GetDirectories(hubPath)
+                    .OrderByDescending(d => d)
+                    .ToList();
+
+                foreach (var versionDir in versions)
+                {
+                    var unityPath = Path.Combine(versionDir, "Unity.app", "Contents", "MacOS", "Unity");
+                    if (File.Exists(unityPath))
+                    {
+                        return unityPath;
+                    }
+                }
+            }
+        }
+        else if (_context.RuntimeInfo.IsWindows)
+        {
+            var hubPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Unity", "Hub", "Editor");
+            if (Directory.Exists(hubPath))
+            {
+                var versions = Directory.GetDirectories(hubPath)
+                    .OrderByDescending(d => d)
+                    .ToList();
+
+                foreach (var versionDir in versions)
+                {
+                    var unityPath = Path.Combine(versionDir, "Editor", "Unity.exe");
+                    if (File.Exists(unityPath))
+                    {
+                        return unityPath;
+                    }
+                }
+            }
+        }
+        else if (_context.RuntimeInfo.IsLinux)
+        {
+            var hubPath = "/opt/unity/Editor";
+            var unityPath = Path.Combine(hubPath, "Unity");
+            if (File.Exists(unityPath))
+            {
+                return unityPath;
+            }
+        }
+
+        return null;
+    }
+
+    private string? FindUnityProject()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(_context.ProjectRoot, "DirectorStudioUnity"),
+            Path.Combine(_context.ProjectRoot, "UnityProjects", "NexoDirectorDemo")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            var projectVersionFile = Path.Combine(candidate, "ProjectSettings", "ProjectVersion.txt");
+            if (File.Exists(projectVersionFile))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 }
 
@@ -606,6 +794,99 @@ static class TestResultParser
         public int TotalTests { get; set; }
         public int PassedTests { get; set; }
         public int FailedTests { get; set; }
+    }
+}
+
+static class UnityTestResultParser
+{
+    public static TestResultParser.TestResults? ParseXml(string xmlPath)
+    {
+        try
+        {
+            if (!File.Exists(xmlPath))
+            {
+                return null;
+            }
+
+            var doc = XDocument.Load(xmlPath);
+            var root = doc.Root;
+            if (root == null)
+            {
+                return null;
+            }
+
+            // Unity Test Runner XML format: <test-run> with attributes or child elements
+            var testRun = root.Name.LocalName == "test-run" ? root : root.Element("test-run");
+            if (testRun == null)
+            {
+                return null;
+            }
+
+            // Try to get from attributes first (NUnit-style)
+            var totalAttr = testRun.Attribute("total");
+            var passedAttr = testRun.Attribute("passed");
+            var failedAttr = testRun.Attribute("failed");
+
+            if (totalAttr != null && passedAttr != null && failedAttr != null)
+            {
+                if (int.TryParse(totalAttr.Value, out var total) &&
+                    int.TryParse(passedAttr.Value, out var passed) &&
+                    int.TryParse(failedAttr.Value, out var failed))
+                {
+                    return new TestResultParser.TestResults
+                    {
+                        TotalTests = total,
+                        PassedTests = passed,
+                        FailedTests = failed
+                    };
+                }
+            }
+
+            // Try to get from child elements or count test cases
+            var testCases = testRun.Descendants("test-case").ToList();
+            if (testCases.Count > 0)
+            {
+                var passed = testCases.Count(tc => 
+                    tc.Attribute("result")?.Value == "Passed" || 
+                    tc.Attribute("executed")?.Value == "True" && tc.Attribute("success")?.Value == "True");
+                var failed = testCases.Count(tc => 
+                    tc.Attribute("result")?.Value == "Failed" || 
+                    tc.Attribute("executed")?.Value == "True" && tc.Attribute("success")?.Value == "False");
+
+                return new TestResultParser.TestResults
+                {
+                    TotalTests = testCases.Count,
+                    PassedTests = passed,
+                    FailedTests = failed
+                };
+            }
+
+            // Fallback: try to parse summary from test-suite
+            var testSuite = testRun.Element("test-suite");
+            if (testSuite != null)
+            {
+                var total = int.TryParse(testSuite.Attribute("testcasecount")?.Value ?? "0", out var t) ? t : 0;
+                var result = testSuite.Attribute("result")?.Value ?? "Unknown";
+                var passed = result == "Passed" ? total : 0;
+                var failed = result == "Failed" ? total : 0;
+
+                if (total > 0)
+                {
+                    return new TestResultParser.TestResults
+                    {
+                        TotalTests = total,
+                        PassedTests = passed,
+                        FailedTests = failed
+                    };
+                }
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
 

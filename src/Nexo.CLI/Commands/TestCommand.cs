@@ -69,22 +69,22 @@ public class TestCommand
                 {
                     WriteIndented = true
                 };
-                Console.Out.WriteLine(JsonSerializer.Serialize(result, options));
+                _renderer.RenderSuccess(JsonSerializer.Serialize(result, options));
             }
             else
             {
-                Console.Out.WriteLine($"Tests: {result.PassedTests}/{result.TotalTests} passed");
-                Console.Out.WriteLine($"Duration: {result.TotalDuration.TotalMilliseconds}ms");
+                _renderer.RenderSuccess($"Tests: {result.PassedTests}/{result.TotalTests} passed");
+                _renderer.RenderSuccess($"Duration: {result.TotalDuration.TotalMilliseconds}ms");
                 
                 if (result.FailedTests > 0)
                 {
-                    Console.Error.WriteLine("\nFailed tests:");
+                    _renderer.RenderError("\nFailed tests:");
                     foreach (var test in result.Results.Where(r => !r.Passed))
                     {
-                        Console.Error.WriteLine($"  - {test.TestName} ({test.Category})");
+                        _renderer.RenderError($"  - {test.TestName} ({test.Category})");
                         if (!string.IsNullOrEmpty(test.ErrorMessage))
                         {
-                            Console.Error.WriteLine($"    Error: {test.ErrorMessage}");
+                            _renderer.RenderError($"    Error: {test.ErrorMessage}");
                         }
                     }
                 }
