@@ -158,10 +158,30 @@ FAILED_PLATFORMS=()
 PASSED_PLATFORMS=()
 
 for platform in "${PLATFORMS[@]}"; do
-    if run_tests "$platform" "8.0"; then
-        PASSED_PLATFORMS+=("$platform")
+    # Handle iOS and Android separately (they have their own scripts)
+    if [ "$platform" = "ios" ]; then
+        if [[ "$OSTYPE" != "darwin"* ]]; then
+            echo -e "${RED}❌ Skipping iOS (requires macOS)${NC}"
+            FAILED_PLATFORMS+=("$platform")
+            continue
+        fi
+        if "$SCRIPT_DIR/test-ios.sh"; then
+            PASSED_PLATFORMS+=("$platform")
+        else
+            FAILED_PLATFORMS+=("$platform")
+        fi
+    elif [ "$platform" = "android" ]; then
+        if "$SCRIPT_DIR/test-android.sh"; then
+            PASSED_PLATFORMS+=("$platform")
+        else
+            FAILED_PLATFORMS+=("$platform")
+        fi
     else
-        FAILED_PLATFORMS+=("$platform")
+        if run_tests "$platform" "8.0"; then
+            PASSED_PLATFORMS+=("$platform")
+        else
+            FAILED_PLATFORMS+=("$platform")
+        fi
     fi
     echo ""
 done
