@@ -93,6 +93,8 @@ public sealed class ProgressTracker
         var executing = agents.Count(a => a.State == AgentState.Executing);
         var waiting = agents.Count(a => a.State == AgentState.WaitingForDependencies);
         var ready = agents.Count(a => a.State == AgentState.Ready);
+        var stalling = GetStallingAgents().Count;
+        var thrashing = GetThrashingAgents().Count;
 
         return new ProgressSummary
         {
@@ -102,8 +104,29 @@ public sealed class ProgressTracker
             Executing = executing,
             WaitingForDependencies = waiting,
             Ready = ready,
-            ProgressPercentage = agents.Count > 0 ? (double)completed / agents.Count : 0.0
+            ProgressPercentage = agents.Count > 0 ? (double)completed / agents.Count : 0.0,
+            StallingAgents = stalling,
+            ThrashingAgents = thrashing,
+            AverageExecutionTime = CalculateAverageExecutionTime(agents)
         };
+    }
+
+    private TimeSpan? CalculateAverageExecutionTime(IReadOnlyList<AgentContainer> agents)
+    {
+        var completedAgents = _agentProgress.Values
+            .Where(p => agents.Any(a => a.AgentId == p.AgentId && a.State == AgentState.Completed))
+            .ToList();
+
+        if (completedAgents.Count == 0)
+        {
+            return null;
+        }
+
+        var totalDuration = completedAgents
+            .Select(p => (p.LastUpdate - p.FirstSeen).TotalMilliseconds)
+            .Sum();
+
+        return TimeSpan.FromMilliseconds(totalDuration / completedAgents.Count);
     }
 
     /// <summary>
@@ -191,5 +214,8 @@ public sealed record ProgressSummary
     public int WaitingForDependencies { get; init; }
     public int Ready { get; init; }
     public double ProgressPercentage { get; init; }
+    public int StallingAgents { get; init; }
+    public int ThrashingAgents { get; init; }
+    public TimeSpan? AverageExecutionTime { get; init; }
 }
 

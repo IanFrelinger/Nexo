@@ -18,6 +18,11 @@ public abstract class BaseAgent : IAgent
     private DateTimeOffset? _completedAt;
     private object? _output;
 
+    /// <summary>
+    /// Protected logger for derived classes.
+    /// </summary>
+    protected ILogger<BaseAgent> Logger => _logger;
+
     protected BaseAgent(AgentSpawnSpec spec, ILogger<BaseAgent> logger)
     {
         _spec = spec ?? throw new ArgumentNullException(nameof(spec));

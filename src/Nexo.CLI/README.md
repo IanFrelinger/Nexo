@@ -49,6 +49,60 @@ Execute with stdin input:
 cat ./examples/HelloWorld.yaml | nexo pipeline run --stdin
 ```
 
+## Commands
+
+### Orchestration
+
+#### `nexo orchestrate <request>`
+Orchestrate agent execution for a request.
+
+```bash
+nexo orchestrate "build extraction shooter"
+```
+
+### Escalation Management
+
+#### `nexo escalate list`
+List all pending escalations.
+
+```bash
+nexo escalate list
+nexo escalate list --format-json
+nexo escalate list --verbose
+```
+
+#### `nexo escalate show <id>`
+Show details for a specific escalation.
+
+```bash
+nexo escalate show <escalation-id>
+nexo escalate show <escalation-id> --verbose
+```
+
+#### `nexo escalate resolve <id> [--resolution <text>]`
+Resolve an escalation with an optional resolution description.
+
+```bash
+nexo escalate resolve <escalation-id>
+nexo escalate resolve <escalation-id> --resolution "Conflict resolved by merging schemas"
+```
+
+#### `nexo escalate dismiss <id> [--reason <text>]`
+Dismiss an escalation without resolution.
+
+```bash
+nexo escalate dismiss <escalation-id>
+nexo escalate dismiss <escalation-id> --reason "False positive"
+```
+
+#### `nexo escalate list-by-severity <severity>`
+List escalations filtered by severity (Low, Medium, High, Critical).
+
+```bash
+nexo escalate list-by-severity Critical
+nexo escalate list-by-severity High --format-json
+```
+
 ## Features
 
 - AI-enhanced development environment orchestration
@@ -57,6 +111,8 @@ cat ./examples/HelloWorld.yaml | nexo pipeline run --stdin
 - Human-friendly and machine-readable reporting
 - Support for JSON and YAML request formats
 - Comprehensive error handling and recovery
+- Escalation management for conflict resolution
+- Real-time conflict detection and reporting
 
 ## License
 

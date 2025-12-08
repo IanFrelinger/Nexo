@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Orchestration.Agents;
+using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Models;
 using System.Text.Json;
 
@@ -95,6 +96,60 @@ public sealed class ConflictDetector
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Detects resource conflicts by summing requirements across all agents and comparing to budget.
+    /// </summary>
+    public IReadOnlyList<Conflict> DetectResourceConflicts(
+        IReadOnlyList<AgentContainer> agents,
+        ResourceBudget? budget = null)
+    {
+        var conflicts = new List<Conflict>();
+        budget ??= new ResourceBudget
+        {
+            MaxComputeSeconds = 3600,
+            MaxContextTokens = 200000,
+            MaxMemoryMB = 16384
+        };
+
+        // Sum all resource requirements
+        var totalCompute = agents
+            .Select(a => a.Agent.Spec.ResourceRequirements?.EstimatedComputeSeconds ?? 0)
+            .Sum();
+        var totalMemory = agents
+            .Select(a => a.Agent.Spec.ResourceRequirements?.RequiredMemoryMB ?? 0)
+            .Sum();
+        var totalContext = agents
+            .Select(a => a.Agent.Spec.ResourceRequirements?.RequiredContextTokens ?? 0)
+            .Sum();
+
+        var issues = new List<string>();
+        if (budget.MaxComputeSeconds.HasValue && totalCompute > budget.MaxComputeSeconds.Value)
+        {
+            issues.Add($"Total compute time ({totalCompute}s) exceeds budget ({budget.MaxComputeSeconds.Value}s)");
+        }
+        if (budget.MaxMemoryMB.HasValue && totalMemory > budget.MaxMemoryMB.Value)
+        {
+            issues.Add($"Total memory ({totalMemory}MB) exceeds budget ({budget.MaxMemoryMB.Value}MB)");
+        }
+        if (budget.MaxContextTokens.HasValue && totalContext > budget.MaxContextTokens.Value)
+        {
+            issues.Add($"Total context tokens ({totalContext}) exceeds budget ({budget.MaxContextTokens.Value})");
+        }
+
+        if (issues.Count > 0)
+        {
+            conflicts.Add(new Conflict
+            {
+                ConflictType = ConflictType.Resource,
+                AgentIds = agents.Select(a => a.AgentId).ToArray(),
+                Description = $"Resource contention across {agents.Count} agents: {string.Join(", ", issues)}",
+                Severity = ConflictSeverity.Medium
+            });
+        }
+
+        return conflicts;
     }
 
     private Conflict? DetectResourceConflict(AgentContainer agent1, AgentContainer agent2)
@@ -206,10 +261,77 @@ public sealed class ConflictDetector
         return null;
     }
 
+    /// <summary>
+    /// Detects schema incompatibilities by comparing output schemas in detail.
+    /// </summary>
+    public IReadOnlyList<Conflict> DetectSchemaConflicts(IReadOnlyList<AgentContainer> agents)
+    {
+        var conflicts = new List<Conflict>();
+        var schemaGroups = new Dictionary<string, List<AgentContainer>>();
+
+        // Group agents by schema
+        foreach (var agent in agents)
+        {
+            if (!agent.Agent.Spec.OutputSchema.HasValue)
+            {
+                continue;
+            }
+
+            var schemaKey = GetSchemaKey(agent.Agent.Spec.OutputSchema.Value);
+            if (!schemaGroups.ContainsKey(schemaKey))
+            {
+                schemaGroups[schemaKey] = new List<AgentContainer>();
+            }
+            schemaGroups[schemaKey].Add(agent);
+        }
+
+        // Check for incompatibilities between schema groups
+        var schemaList = schemaGroups.Values.ToList();
+        for (int i = 0; i < schemaList.Count; i++)
+        {
+            for (int j = i + 1; j < schemaList.Count; j++)
+            {
+                var group1 = schemaList[i];
+                var group2 = schemaList[j];
+
+                if (!AreSchemasCompatible(
+                    group1[0].Agent.Spec.OutputSchema!.Value,
+                    group2[0].Agent.Spec.OutputSchema!.Value))
+                {
+                    var allAgents = group1.Concat(group2).Select(a => a.AgentId).ToArray();
+                    conflicts.Add(new Conflict
+                    {
+                        ConflictType = ConflictType.Schema,
+                        AgentIds = allAgents,
+                        Description = $"Incompatible schemas: {group1.Count} agents use schema type A, {group2.Count} agents use schema type B",
+                        Severity = ConflictSeverity.High
+                    });
+                }
+            }
+        }
+
+        return conflicts;
+    }
+
+    private static string GetSchemaKey(JsonElement schema)
+    {
+        try
+        {
+            if (schema.TryGetProperty("type", out var type))
+            {
+                return type.GetString() ?? "unknown";
+            }
+            return schema.GetRawText().GetHashCode().ToString();
+        }
+        catch
+        {
+            return schema.GetRawText().GetHashCode().ToString();
+        }
+    }
+
     private static bool AreSchemasCompatible(JsonElement schema1, JsonElement schema2)
     {
-        // Simplified compatibility check - compare top-level structure
-        // In a real implementation, this would do proper JSON schema validation
+        // Enhanced compatibility check - compare structure in detail
         try
         {
             var json1 = schema1.GetRawText();
@@ -225,14 +347,51 @@ public sealed class ConflictDetector
             var doc1 = JsonDocument.Parse(json1);
             var doc2 = JsonDocument.Parse(json2);
 
-            // Basic check: if both have "type" property, compare them
-            if (doc1.RootElement.TryGetProperty("type", out var type1) &&
-                doc2.RootElement.TryGetProperty("type", out var type2))
+            var root1 = doc1.RootElement;
+            var root2 = doc2.RootElement;
+
+            // Check type compatibility
+            if (root1.TryGetProperty("type", out var type1) &&
+                root2.TryGetProperty("type", out var type2))
             {
-                return type1.GetString() == type2.GetString();
+                var type1Str = type1.GetString();
+                var type2Str = type2.GetString();
+                
+                if (type1Str != type2Str)
+                {
+                    // Check if types are compatible (e.g., integer and number)
+                    if (!AreTypesCompatible(type1Str, type2Str))
+                    {
+                        return false;
+                    }
+                }
             }
 
-            // Default to compatible if we can't determine
+            // Check properties compatibility (for object types)
+            if (root1.TryGetProperty("properties", out var props1) &&
+                root2.TryGetProperty("properties", out var props2))
+            {
+                // Get all property names
+                var props1Names = props1.EnumerateObject().Select(p => p.Name).ToHashSet();
+                var props2Names = props2.EnumerateObject().Select(p => p.Name).ToHashSet();
+
+                // Check for required properties conflicts
+                if (root1.TryGetProperty("required", out var required1) &&
+                    root2.TryGetProperty("required", out var required2))
+                {
+                    var req1 = required1.EnumerateArray().Select(e => e.GetString()).ToHashSet();
+                    var req2 = required2.EnumerateArray().Select(e => e.GetString()).ToHashSet();
+
+                    // If one schema requires a property that the other doesn't have, incompatible
+                    if (req1.Any(r => r != null && !props2Names.Contains(r)) ||
+                        req2.Any(r => r != null && !props1Names.Contains(r)))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            // Default to compatible if we can't determine incompatibility
             return true;
         }
         catch
@@ -240,6 +399,29 @@ public sealed class ConflictDetector
             // If we can't parse, assume incompatible
             return false;
         }
+    }
+
+    private static bool AreTypesCompatible(string? type1, string? type2)
+    {
+        if (type1 == type2) return true;
+
+        // Type compatibility matrix
+        var compatibleTypes = new Dictionary<string, HashSet<string>>
+        {
+            ["integer"] = new HashSet<string> { "number" },
+            ["number"] = new HashSet<string> { "integer" },
+            ["string"] = new HashSet<string> { "string" },
+            ["boolean"] = new HashSet<string> { "boolean" },
+            ["array"] = new HashSet<string> { "array" },
+            ["object"] = new HashSet<string> { "object" }
+        };
+
+        if (type1 != null && compatibleTypes.TryGetValue(type1, out var compat))
+        {
+            return compat.Contains(type2 ?? "");
+        }
+
+        return false;
     }
 
     private static bool AreConstraintsContradictory(AgentConstraint c1, AgentConstraint c2)

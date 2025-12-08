@@ -32,6 +32,8 @@ public sealed class ResourceAllocator
 
     /// <summary>
     /// Allocates resources to an agent based on priority.
+    /// Higher priority agents get resources first. If resources are insufficient,
+    /// lower priority agents may be preempted.
     /// </summary>
     public bool TryAllocate(AgentContainer container, out ResourceAllocation? allocation)
     {
@@ -53,7 +55,8 @@ public sealed class ResourceAllocator
                 AgentId = container.AgentId,
                 AllocatedComputeSeconds = 0,
                 AllocatedContextTokens = 0,
-                AllocatedMemoryMB = 0
+                AllocatedMemoryMB = 0,
+                Priority = spec.Priority
             };
             _allocations[container.AgentId] = allocation;
             return true;
@@ -70,15 +73,26 @@ public sealed class ResourceAllocator
             var availableContext = (_budget.MaxContextTokens ?? int.MaxValue) - _allocatedContextTokens;
             var availableMemory = (_budget.MaxMemoryMB ?? int.MaxValue) - _allocatedMemoryMB;
 
+            // If resources are insufficient, try to preempt lower priority agents
             if (requestedCompute > availableCompute ||
                 requestedContext > availableContext ||
                 requestedMemory > availableMemory)
             {
-                _logger.LogWarning(
-                    "Cannot allocate resources for agent {AgentId}: requested ({Compute}s, {Context} tokens, {Memory}MB) exceeds available ({AvailableCompute}s, {AvailableContext} tokens, {AvailableMemory}MB)",
-                    container.AgentId, requestedCompute, requestedContext, requestedMemory,
-                    availableCompute, availableContext, availableMemory);
-                return false;
+                // Try to free resources by preempting lower priority agents
+                var freed = TryPreemptLowerPriority(spec.Priority, requestedCompute, requestedContext, requestedMemory);
+                if (!freed)
+                {
+                    _logger.LogWarning(
+                        "Cannot allocate resources for agent {AgentId} (priority {Priority}): requested ({Compute}s, {Context} tokens, {Memory}MB) exceeds available ({AvailableCompute}s, {AvailableContext} tokens, {AvailableMemory}MB)",
+                        container.AgentId, spec.Priority, requestedCompute, requestedContext, requestedMemory,
+                        availableCompute, availableContext, availableMemory);
+                    return false;
+                }
+
+                // Recalculate available after preemption
+                availableCompute = (_budget.MaxComputeSeconds ?? int.MaxValue) - _allocatedComputeSeconds;
+                availableContext = (_budget.MaxContextTokens ?? int.MaxValue) - _allocatedContextTokens;
+                availableMemory = (_budget.MaxMemoryMB ?? int.MaxValue) - _allocatedMemoryMB;
             }
 
             // Allocate resources
@@ -97,10 +111,58 @@ public sealed class ResourceAllocator
             _allocatedMemoryMB += requestedMemory;
         }
 
-        _logger.LogDebug("Allocated resources to agent {AgentId}: {Compute}s, {Context} tokens, {Memory}MB",
-            container.AgentId, requestedCompute, requestedContext, requestedMemory);
+        _logger.LogDebug("Allocated resources to agent {AgentId} (priority {Priority}): {Compute}s, {Context} tokens, {Memory}MB",
+            container.AgentId, spec.Priority, requestedCompute, requestedContext, requestedMemory);
 
         return true;
+    }
+
+    /// <summary>
+    /// Attempts to free resources by preempting lower priority agents.
+    /// </summary>
+    private bool TryPreemptLowerPriority(
+        int requestingPriority,
+        int neededCompute,
+        int neededContext,
+        int neededMemory)
+    {
+        // Get lower priority allocations sorted by priority (lowest first)
+        var lowerPriorityAllocations = _allocations.Values
+            .Where(a => a.Priority < requestingPriority)
+            .OrderBy(a => a.Priority)
+            .ToList();
+
+        var freedCompute = 0;
+        var freedContext = 0;
+        var freedMemory = 0;
+
+        foreach (var allocation in lowerPriorityAllocations)
+        {
+            if (freedCompute >= neededCompute &&
+                freedContext >= neededContext &&
+                freedMemory >= neededMemory)
+            {
+                break; // Enough resources freed
+            }
+
+            // Preempt this allocation
+            _allocations.TryRemove(allocation.AgentId, out _);
+            freedCompute += allocation.AllocatedComputeSeconds;
+            freedContext += allocation.AllocatedContextTokens;
+            freedMemory += allocation.AllocatedMemoryMB;
+
+            _allocatedComputeSeconds -= allocation.AllocatedComputeSeconds;
+            _allocatedContextTokens -= allocation.AllocatedContextTokens;
+            _allocatedMemoryMB -= allocation.AllocatedMemoryMB;
+
+            _logger.LogInformation(
+                "Preempted agent {AgentId} (priority {Priority}) to free resources for higher priority agent",
+                allocation.AgentId, allocation.Priority);
+        }
+
+        return freedCompute >= neededCompute &&
+               freedContext >= neededContext &&
+               freedMemory >= neededMemory;
     }
 
     /// <summary>

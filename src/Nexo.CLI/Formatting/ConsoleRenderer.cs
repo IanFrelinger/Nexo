@@ -4,6 +4,8 @@ using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Orchestration.Coordination;
+using Nexo.Orchestration.Coordination.Conflicts;
+using Nexo.Orchestration.Metrics;
 
 namespace Nexo.CLI.Formatting;
 
@@ -23,6 +25,12 @@ public interface IConsoleRenderer
     void RenderAgentResult(AgentExecutionResult result, bool json);
     void RenderAgentList(IReadOnlyList<AgentMetadata> agents, bool json);
     void RenderOrchestrationResult(OrchestrationResult result);
+    void RenderEscalations(IReadOnlyList<Escalation> escalations, bool verbose);
+    void RenderEscalationDetails(Escalation escalation, bool verbose);
+    void RenderConflicts(IReadOnlyList<Conflict> conflicts, bool verbose);
+    void RenderPerformanceReport(PerformanceReport report, bool verbose);
+    void RenderAgentMetrics(AgentMetrics metrics, bool verbose);
+    void RenderTraces(IReadOnlyList<TraceSpan> traces, string? correlationId, string? operationName, bool verbose);
     void RenderJson(object data);
     void RenderTable<T>(IEnumerable<T> items);
 }
@@ -227,6 +235,283 @@ public class ConsoleRenderer : IConsoleRenderer
         foreach (var item in items)
         {
             Console.Out.WriteLine(item?.ToString() ?? string.Empty);
+        }
+    }
+
+    public void RenderEscalations(IReadOnlyList<Escalation> escalations, bool verbose)
+    {
+        if (escalations.Count == 0)
+        {
+            Console.Out.WriteLine("No pending escalations.");
+            return;
+        }
+
+        Console.Out.WriteLine($"Found {escalations.Count} escalation(s):");
+        Console.Out.WriteLine();
+
+        foreach (var escalation in escalations)
+        {
+            var severityColor = escalation.Severity switch
+            {
+                EscalationSeverity.Critical => "CRITICAL",
+                EscalationSeverity.High => "HIGH",
+                EscalationSeverity.Medium => "MEDIUM",
+                EscalationSeverity.Low => "LOW",
+                _ => "UNKNOWN"
+            };
+
+            Console.Out.WriteLine($"  [{severityColor}] {escalation.Id}");
+            Console.Out.WriteLine($"    Status: {escalation.Status}");
+            Console.Out.WriteLine($"    Escalated: {escalation.EscalatedAt:yyyy-MM-dd HH:mm:ss} UTC");
+
+            if (escalation.Conflict != null)
+            {
+                Console.Out.WriteLine($"    Conflict Type: {escalation.Conflict.ConflictType}");
+                Console.Out.WriteLine($"    Agents: {string.Join(", ", escalation.Conflict.AgentIds)}");
+                Console.Out.WriteLine($"    Description: {escalation.Conflict.Description}");
+            }
+            else if (!string.IsNullOrWhiteSpace(escalation.Description))
+            {
+                Console.Out.WriteLine($"    Description: {escalation.Description}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(escalation.IssueType))
+            {
+                Console.Out.WriteLine($"    Issue Type: {escalation.IssueType}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(escalation.Context) && verbose)
+            {
+                Console.Out.WriteLine($"    Context: {escalation.Context}");
+            }
+
+            Console.Out.WriteLine();
+        }
+    }
+
+    public void RenderEscalationDetails(Escalation escalation, bool verbose)
+    {
+        var severityColor = escalation.Severity switch
+        {
+            EscalationSeverity.Critical => "CRITICAL",
+            EscalationSeverity.High => "HIGH",
+            EscalationSeverity.Medium => "MEDIUM",
+            EscalationSeverity.Low => "LOW",
+            _ => "UNKNOWN"
+        };
+
+        Console.Out.WriteLine($"Escalation Details");
+        Console.Out.WriteLine($"==================");
+        Console.Out.WriteLine($"ID: {escalation.Id}");
+        Console.Out.WriteLine($"Severity: [{severityColor}]");
+        Console.Out.WriteLine($"Status: {escalation.Status}");
+        Console.Out.WriteLine($"Escalated: {escalation.EscalatedAt:yyyy-MM-dd HH:mm:ss} UTC");
+
+        if (escalation.ResolvedAt.HasValue)
+        {
+            Console.Out.WriteLine($"Resolved: {escalation.ResolvedAt.Value:yyyy-MM-dd HH:mm:ss} UTC");
+        }
+
+        if (!string.IsNullOrWhiteSpace(escalation.Resolution))
+        {
+            Console.Out.WriteLine($"Resolution: {escalation.Resolution}");
+        }
+
+        Console.Out.WriteLine();
+
+        if (escalation.Conflict != null)
+        {
+            Console.Out.WriteLine("Conflict Information:");
+            Console.Out.WriteLine($"  Type: {escalation.Conflict.ConflictType}");
+            Console.Out.WriteLine($"  Severity: {escalation.Conflict.Severity}");
+            Console.Out.WriteLine($"  Agents: {string.Join(", ", escalation.Conflict.AgentIds)}");
+            Console.Out.WriteLine($"  Description: {escalation.Conflict.Description}");
+
+            if (escalation.Conflict.Metadata != null && escalation.Conflict.Metadata.Count > 0 && verbose)
+            {
+                Console.Out.WriteLine("  Metadata:");
+                foreach (var kvp in escalation.Conflict.Metadata)
+                {
+                    Console.Out.WriteLine($"    {kvp.Key}: {kvp.Value}");
+                }
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(escalation.Description))
+        {
+            Console.Out.WriteLine("Issue Information:");
+            Console.Out.WriteLine($"  Type: {escalation.IssueType ?? "Unknown"}");
+            Console.Out.WriteLine($"  Description: {escalation.Description}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(escalation.Context))
+        {
+            Console.Out.WriteLine();
+            Console.Out.WriteLine("Context:");
+            Console.Out.WriteLine($"  {escalation.Context}");
+        }
+    }
+
+    public void RenderConflicts(IReadOnlyList<Conflict> conflicts, bool verbose)
+    {
+        if (conflicts.Count == 0)
+        {
+            Console.Out.WriteLine("No conflicts detected.");
+            return;
+        }
+
+        Console.Out.WriteLine($"Found {conflicts.Count} conflict(s):");
+        Console.Out.WriteLine();
+
+        foreach (var conflict in conflicts)
+        {
+            var severityColor = conflict.Severity switch
+            {
+                ConflictSeverity.Critical => "CRITICAL",
+                ConflictSeverity.High => "HIGH",
+                ConflictSeverity.Medium => "MEDIUM",
+                ConflictSeverity.Low => "LOW",
+                _ => "UNKNOWN"
+            };
+
+            Console.Out.WriteLine($"  [{severityColor}] {conflict.ConflictType}");
+            Console.Out.WriteLine($"    Agents: {string.Join(", ", conflict.AgentIds)}");
+            Console.Out.WriteLine($"    Description: {conflict.Description}");
+
+            if (conflict.Metadata != null && conflict.Metadata.Count > 0 && verbose)
+            {
+                Console.Out.WriteLine("    Metadata:");
+                foreach (var kvp in conflict.Metadata)
+                {
+                    Console.Out.WriteLine($"      {kvp.Key}: {kvp.Value}");
+                }
+            }
+
+            Console.Out.WriteLine();
+        }
+    }
+
+    public void RenderPerformanceReport(PerformanceReport report, bool verbose)
+    {
+        Console.Out.WriteLine("Performance Report");
+        Console.Out.WriteLine("==================");
+        Console.Out.WriteLine($"Generated: {report.GeneratedAt:yyyy-MM-dd HH:mm:ss} UTC");
+        Console.Out.WriteLine();
+
+        // Operations
+        if (report.Operations.Count > 0)
+        {
+            Console.Out.WriteLine("Operations:");
+            Console.Out.WriteLine($"  {"Operation",-30} {"Count",-10} {"Avg (ms)",-12} {"Total (ms)",-12} {"Min (ms)",-10} {"Max (ms)",-10}");
+            Console.Out.WriteLine(new string('-', 90));
+            foreach (var op in report.Operations)
+            {
+                Console.Out.WriteLine($"  {op.OperationName,-30} {op.Count,-10} {op.AverageDuration.TotalMilliseconds:F2,-12} {op.TotalDuration.TotalMilliseconds:F2,-12} {op.MinDuration.TotalMilliseconds:F2,-10} {op.MaxDuration.TotalMilliseconds:F2,-10}");
+            }
+            Console.Out.WriteLine();
+        }
+
+        // Agents
+        if (report.Agents.Count > 0)
+        {
+            Console.Out.WriteLine("Agents:");
+            Console.Out.WriteLine($"  {"Agent ID",-30} {"Domain",-15} {"Count",-8} {"Avg (ms)",-12} {"State",-15} {"Memory (MB)",-12}");
+            Console.Out.WriteLine(new string('-', 100));
+            foreach (var agent in report.Agents)
+            {
+                Console.Out.WriteLine($"  {agent.AgentId,-30} {agent.Domain,-15} {agent.ExecutionCount,-8} {agent.AverageDuration.TotalMilliseconds:F2,-12} {agent.LastState,-15} {agent.AverageResourceUsageMB,-12}");
+            }
+            Console.Out.WriteLine();
+        }
+
+        // Traces
+        if (report.Traces.Count > 0 && verbose)
+        {
+            Console.Out.WriteLine($"Traces ({report.Traces.Count}):");
+            foreach (var trace in report.Traces.OrderBy(t => t.Duration))
+            {
+                var status = trace.Success ? "✓" : "✗";
+                Console.Out.WriteLine($"  {status} {trace.OperationName} ({trace.Duration.TotalMilliseconds:F2}ms)");
+                if (trace.ParentSpanId != null)
+                {
+                    Console.Out.WriteLine($"    Parent: {trace.ParentSpanId}");
+                }
+                if (trace.Tags.Count > 0)
+                {
+                    Console.Out.WriteLine($"    Tags: {string.Join(", ", trace.Tags.Select(t => $"{t.Key}={t.Value}"))}");
+                }
+            }
+            Console.Out.WriteLine();
+        }
+    }
+
+    public void RenderAgentMetrics(AgentMetrics metrics, bool verbose)
+    {
+        Console.Out.WriteLine($"Agent Metrics: {metrics.AgentId}");
+        Console.Out.WriteLine("==============");
+        Console.Out.WriteLine($"Domain: {metrics.Domain}");
+        Console.Out.WriteLine($"Execution Count: {metrics.ExecutionCount}");
+        Console.Out.WriteLine($"Average Duration: {metrics.TotalDuration.TotalMilliseconds / metrics.ExecutionCount:F2}ms");
+        Console.Out.WriteLine($"Min Duration: {metrics.MinDuration.TotalMilliseconds:F2}ms");
+        Console.Out.WriteLine($"Max Duration: {metrics.MaxDuration.TotalMilliseconds:F2}ms");
+        Console.Out.WriteLine($"Last State: {metrics.LastState}");
+        Console.Out.WriteLine($"Total Resource Usage: {metrics.TotalResourceUsageMB}MB");
+        Console.Out.WriteLine($"Total Context Tokens: {metrics.TotalContextTokensUsed}");
+    }
+
+    public void RenderTraces(IReadOnlyList<TraceSpan> traces, string? correlationId, string? operationName, bool verbose)
+    {
+        if (traces.Count == 0)
+        {
+            Console.Out.WriteLine("No traces found.");
+            if (correlationId != null)
+            {
+                Console.Out.WriteLine($"  Correlation ID: {correlationId}");
+            }
+            if (operationName != null)
+            {
+                Console.Out.WriteLine($"  Operation: {operationName}");
+            }
+            return;
+        }
+
+        Console.Out.WriteLine($"Found {traces.Count} trace(s):");
+        if (correlationId != null)
+        {
+            Console.Out.WriteLine($"  Correlation ID: {correlationId}");
+        }
+        if (operationName != null)
+        {
+            Console.Out.WriteLine($"  Operation: {operationName}");
+        }
+        Console.Out.WriteLine();
+
+        foreach (var trace in traces.OrderBy(t => t.StartTime))
+        {
+            var status = trace.Success ? "✓" : "✗";
+            var duration = trace.EndTime.HasValue
+                ? $"({(trace.EndTime.Value - trace.StartTime).TotalMilliseconds:F2}ms)"
+                : "(in progress)";
+            
+            Console.Out.WriteLine($"  {status} {trace.OperationName} {duration}");
+            Console.Out.WriteLine($"    Span ID: {trace.SpanId}");
+            if (trace.ParentSpanId != null)
+            {
+                Console.Out.WriteLine($"    Parent: {trace.ParentSpanId}");
+            }
+            Console.Out.WriteLine($"    Start: {trace.StartTime:yyyy-MM-dd HH:mm:ss.fff} UTC");
+            if (trace.EndTime.HasValue)
+            {
+                Console.Out.WriteLine($"    End: {trace.EndTime.Value:yyyy-MM-dd HH:mm:ss.fff} UTC");
+            }
+            if (trace.Tags.Count > 0 && verbose)
+            {
+                Console.Out.WriteLine($"    Tags:");
+                foreach (var tag in trace.Tags)
+                {
+                    Console.Out.WriteLine($"      {tag.Key}: {tag.Value}");
+                }
+            }
+            Console.Out.WriteLine();
         }
     }
 

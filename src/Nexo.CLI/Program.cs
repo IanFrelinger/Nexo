@@ -160,11 +160,147 @@ static class Program
             root.AddCommand(orchestrateCmd);
         }
 
+        // nexo escalate
+        var escalateCommand = serviceProvider.GetRequiredService<EscalateCommand>();
+        var escalateCmd = new Command("escalate", "Manage escalations and conflicts");
+        
+        // nexo escalate list
+        var escalateListCmd = new Command("list", "List all pending escalations");
+        escalateListCmd.SetHandler(
+            async (bool json, bool verbose) =>
+            {
+                var exitCode = await escalateCommand.ListAsync(json, verbose);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt,
+            verboseOpt);
+        escalateCmd.AddCommand(escalateListCmd);
+
+        // nexo escalate show
+        var escalateShowCmd = new Command("show", "Show details for a specific escalation");
+        escalateShowCmd.AddArgument(new Argument<string>("id", "Escalation ID"));
+        escalateShowCmd.SetHandler(
+            async (string id, bool json, bool verbose) =>
+            {
+                var exitCode = await escalateCommand.ShowAsync(id, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            escalateShowCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+            jsonOpt,
+            verboseOpt);
+        escalateCmd.AddCommand(escalateShowCmd);
+
+        // nexo escalate resolve
+        var escalateResolveCmd = new Command("resolve", "Resolve an escalation");
+        escalateResolveCmd.AddArgument(new Argument<string>("id", "Escalation ID"));
+        escalateResolveCmd.AddOption(new Option<string?>("--resolution", "Resolution description"));
+        escalateResolveCmd.SetHandler(
+            async (string id, string? resolution, bool json, bool verbose) =>
+            {
+                var exitCode = await escalateCommand.ResolveAsync(id, resolution, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            escalateResolveCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+            escalateResolveCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            jsonOpt,
+            verboseOpt);
+        escalateCmd.AddCommand(escalateResolveCmd);
+
+        // nexo escalate dismiss
+        var escalateDismissCmd = new Command("dismiss", "Dismiss an escalation");
+        escalateDismissCmd.AddArgument(new Argument<string>("id", "Escalation ID"));
+        escalateDismissCmd.AddOption(new Option<string?>("--reason", "Dismissal reason"));
+        escalateDismissCmd.SetHandler(
+            async (string id, string? reason, bool json, bool verbose) =>
+            {
+                var exitCode = await escalateCommand.DismissAsync(id, reason, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            escalateDismissCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+            escalateDismissCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            jsonOpt,
+            verboseOpt);
+        escalateCmd.AddCommand(escalateDismissCmd);
+
+        // nexo escalate list-by-severity
+        var escalateListBySeverityCmd = new Command("list-by-severity", "List escalations filtered by severity");
+        escalateListBySeverityCmd.AddArgument(new Argument<string>("severity", "Severity level (Low, Medium, High, Critical)"));
+        escalateListBySeverityCmd.SetHandler(
+            async (string severity, bool json, bool verbose) =>
+            {
+                var exitCode = await escalateCommand.ListBySeverityAsync(severity, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            escalateListBySeverityCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+            jsonOpt,
+            verboseOpt);
+        escalateCmd.AddCommand(escalateListBySeverityCmd);
+
+        // nexo metrics
+        var metricsCommand = serviceProvider.GetRequiredService<MetricsCommand>();
+        var metricsCmd = new Command("metrics", "View orchestration metrics and performance data");
+        
+        // nexo metrics report
+        var metricsReportCmd = new Command("report", "Show performance report");
+        metricsReportCmd.SetHandler(
+            async (bool json, bool verbose) =>
+            {
+                var exitCode = await metricsCommand.ShowReportAsync(json, verbose);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt,
+            verboseOpt);
+        metricsCmd.AddCommand(metricsReportCmd);
+
+        // nexo metrics agent
+        var metricsAgentCmd = new Command("agent", "Show metrics for a specific agent");
+        metricsAgentCmd.AddArgument(new Argument<string>("id", "Agent ID"));
+        metricsAgentCmd.SetHandler(
+            async (string id, bool json, bool verbose) =>
+            {
+                var exitCode = await metricsCommand.ShowAgentAsync(id, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            metricsAgentCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+            jsonOpt,
+            verboseOpt);
+        metricsCmd.AddCommand(metricsAgentCmd);
+
+        // nexo metrics traces
+        var metricsTracesCmd = new Command("traces", "Show trace spans");
+        metricsTracesCmd.AddOption(new Option<string?>("--correlation-id", "Filter by correlation ID"));
+        metricsTracesCmd.AddOption(new Option<string?>("--operation", "Filter by operation name"));
+        metricsTracesCmd.SetHandler(
+            async (string? correlationId, string? operation, bool json, bool verbose) =>
+            {
+                var exitCode = await metricsCommand.ShowTracesAsync(correlationId, operation, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            metricsTracesCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            metricsTracesCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
+            jsonOpt,
+            verboseOpt);
+        metricsCmd.AddCommand(metricsTracesCmd);
+
+        // nexo metrics clear
+        var metricsClearCmd = new Command("clear", "Clear all collected metrics");
+        metricsClearCmd.SetHandler(
+            async (bool json, bool verbose) =>
+            {
+                var exitCode = await metricsCommand.ClearAsync(json, verbose);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt,
+            verboseOpt);
+        metricsCmd.AddCommand(metricsClearCmd);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
         root.AddCommand(configCmd);
         root.AddCommand(testCmd);
+        root.AddCommand(escalateCmd);
+        root.AddCommand(metricsCmd);
 
         return await root.InvokeAsync(args);
     }
@@ -201,6 +337,8 @@ static class Program
         services.AddScoped<ConfigCommand>();
         services.AddScoped<TestCommand>();
         services.AddScoped<OrchestrateCommand>();
+        services.AddScoped<EscalateCommand>();
+        services.AddScoped<MetricsCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

@@ -80,21 +80,64 @@ public sealed class DependencyResolver
 
     /// <summary>
     /// Gets agents that are blocked (waiting for dependencies).
+    /// Includes both direct and transitive dependencies.
     /// </summary>
     public IReadOnlyList<AgentContainer> GetBlockedAgents()
     {
         return _agents.Values
             .Where(container =>
             {
-                var dependencies = container.Agent.Spec.Dependencies;
-                var hasUnresolvedDependencies = dependencies.Any(dep => !_outputs.ContainsKey(dep));
-                return hasUnresolvedDependencies && container.State != AgentState.Completed;
+                // Check if all dependencies (including transitive) are resolved
+                var allResolved = AreAllDependenciesResolved(container.AgentId, new HashSet<string>());
+                return !allResolved && container.State != AgentState.Completed;
             })
             .ToList();
     }
 
     /// <summary>
+    /// Gets the blocking chain for an agent (which dependencies are missing).
+    /// </summary>
+    public IReadOnlyList<string> GetBlockingDependencies(string agentId)
+    {
+        if (!_agents.TryGetValue(agentId, out var container))
+        {
+            return Array.Empty<string>();
+        }
+
+        var blocking = new HashSet<string>();
+        CollectBlockingDependencies(agentId, container.Agent.Spec.Dependencies, blocking, new HashSet<string>());
+        return blocking.ToList();
+    }
+
+    private void CollectBlockingDependencies(
+        string agentId,
+        IReadOnlyList<string> dependencies,
+        HashSet<string> blocking,
+        HashSet<string> visited)
+    {
+        if (visited.Contains(agentId))
+        {
+            return;
+        }
+        visited.Add(agentId);
+
+        foreach (var dep in dependencies)
+        {
+            if (!_outputs.ContainsKey(dep))
+            {
+                blocking.Add(dep);
+            }
+            else if (_agents.TryGetValue(dep, out var depContainer))
+            {
+                // Check transitive dependencies
+                CollectBlockingDependencies(dep, depContainer.Agent.Spec.Dependencies, blocking, visited);
+            }
+        }
+    }
+
+    /// <summary>
     /// Records an agent's output and unblocks dependent agents.
+    /// Handles transitive dependencies by recursively checking if dependents are now ready.
     /// </summary>
     public void RecordOutput(string agentId, object output)
     {
@@ -107,18 +150,96 @@ public sealed class DependencyResolver
 
         _logger.LogDebug("Recorded output for agent {AgentId}, unblocking dependent agents", agentId);
 
-        // Notify dependent agents that this dependency is resolved
+        // Notify direct dependents
         if (_reverseDependencyGraph.TryGetValue(agentId, out var dependents))
         {
+            var newlyUnblocked = new HashSet<string>();
+            
             foreach (var dependentId in dependents)
             {
                 if (_agents.TryGetValue(dependentId, out var dependent))
                 {
+                    // Check if all dependencies are now resolved (including transitive)
+                    if (AreAllDependenciesResolved(dependentId, new HashSet<string>()))
+                    {
+                        var dependencyOutputs = GetDependencyOutputs(dependent.Agent.Spec.Dependencies);
+                        _ = dependent.Agent.WaitForDependenciesAsync(dependencyOutputs);
+                        newlyUnblocked.Add(dependentId);
+                    }
+                }
+            }
+
+            // Handle transitive dependencies - if a dependent became unblocked, check its dependents
+            foreach (var unblockedId in newlyUnblocked)
+            {
+                NotifyTransitiveDependents(unblockedId, new HashSet<string>());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Recursively notifies transitive dependents when an agent becomes unblocked.
+    /// </summary>
+    private void NotifyTransitiveDependents(string agentId, HashSet<string> visited)
+    {
+        if (visited.Contains(agentId))
+        {
+            return; // Prevent infinite recursion
+        }
+        visited.Add(agentId);
+
+        if (!_reverseDependencyGraph.TryGetValue(agentId, out var dependents))
+        {
+            return;
+        }
+
+        foreach (var dependentId in dependents)
+        {
+            if (_agents.TryGetValue(dependentId, out var dependent))
+            {
+                if (AreAllDependenciesResolved(dependentId, new HashSet<string>()))
+                {
                     var dependencyOutputs = GetDependencyOutputs(dependent.Agent.Spec.Dependencies);
                     _ = dependent.Agent.WaitForDependenciesAsync(dependencyOutputs);
+                    NotifyTransitiveDependents(dependentId, visited);
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Checks if all dependencies (including transitive) are resolved for an agent.
+    /// </summary>
+    private bool AreAllDependenciesResolved(string agentId, HashSet<string> visited)
+    {
+        if (visited.Contains(agentId))
+        {
+            return true; // Circular dependency or already checked
+        }
+        visited.Add(agentId);
+
+        if (!_agents.TryGetValue(agentId, out var container))
+        {
+            return false;
+        }
+
+        var dependencies = container.Agent.Spec.Dependencies;
+        foreach (var dep in dependencies)
+        {
+            // Direct dependency must have output
+            if (!_outputs.ContainsKey(dep))
+            {
+                return false;
+            }
+
+            // Recursively check transitive dependencies
+            if (!AreAllDependenciesResolved(dep, visited))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

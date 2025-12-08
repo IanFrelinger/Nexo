@@ -5,6 +5,7 @@ using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Coordination.Conflicts;
 using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
+using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
 using System.Text.Json;
 
@@ -26,6 +27,7 @@ public sealed class Orchestrator
     private readonly OutputIntegrator _outputIntegrator;
     private readonly IAgentBus _agentBus;
     private readonly NegotiationProtocol? _negotiationProtocol;
+    private readonly OrchestrationMetrics? _metrics;
     private readonly ILogger<Orchestrator> _logger;
 
     public Orchestrator(
@@ -40,7 +42,8 @@ public sealed class Orchestrator
         OutputIntegrator outputIntegrator,
         IAgentBus agentBus,
         ILogger<Orchestrator> logger,
-        NegotiationProtocol? negotiationProtocol = null)
+        NegotiationProtocol? negotiationProtocol = null,
+        OrchestrationMetrics? metrics = null)
     {
         _architect = architect ?? throw new ArgumentNullException(nameof(architect));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
@@ -53,6 +56,7 @@ public sealed class Orchestrator
         _outputIntegrator = outputIntegrator ?? throw new ArgumentNullException(nameof(outputIntegrator));
         _agentBus = agentBus ?? throw new ArgumentNullException(nameof(agentBus));
         _negotiationProtocol = negotiationProtocol;
+        _metrics = metrics;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -63,11 +67,25 @@ public sealed class Orchestrator
         string request,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Starting orchestration for request: {Request}", request);
+        var correlationId = Guid.NewGuid().ToString();
+        var rootSpanId = _metrics?.StartSpan("Orchestrate", null, new Dictionary<string, string>
+        {
+            ["correlationId"] = correlationId,
+            ["request"] = request
+        });
+
+        _logger.LogInformation("Starting orchestration for request: {Request} (CorrelationId: {CorrelationId})", request, correlationId);
+
+        using var profiler = _metrics != null
+            ? new PerformanceProfiler("Orchestrate", _metrics, null, new Dictionary<string, object> { ["correlationId"] = correlationId, ["request"] = request })
+            : null;
 
         try
         {
             // Step 1: Decompose request
+            using var decomposeProfiler = _metrics != null
+                ? new PerformanceProfiler("Decompose", _metrics, null)
+                : null;
             var decomposition = await _architect.DecomposeAsync(request, cancellationToken);
             if (!decomposition.IsValid)
             {
@@ -188,11 +206,27 @@ public sealed class Orchestrator
                 // Execute agent
                 try
                 {
+                    var agentStartTime = DateTimeOffset.UtcNow;
                     var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
                         container.Agent.Spec.Dependencies);
                     var output = await _lifecycleManager.ExecuteAgentAsync(agentId, dependencyOutputs, cancellationToken);
+                    var agentDuration = DateTimeOffset.UtcNow - agentStartTime;
+                    
                     outputs[agentId] = output;
                     _dependencyResolver.RecordOutput(agentId, output);
+
+                    // Record agent metrics
+                    if (_metrics != null)
+                    {
+                        var allocation = _resourceAllocator.GetAllocations().FirstOrDefault(a => a.AgentId == agentId);
+                        _metrics.RecordAgentExecution(
+                            agentId,
+                            container.Agent.Spec.Domain,
+                            agentDuration,
+                            container.State,
+                            allocation?.AllocatedMemoryMB,
+                            allocation?.AllocatedContextTokens);
+                    }
 
                     // Publish output message
                     var message = new OutputEmitted
@@ -222,10 +256,23 @@ public sealed class Orchestrator
             }
 
             // Step 5: Integrate outputs
+            using var integrateProfiler = _metrics != null
+                ? new PerformanceProfiler("Integrate", _metrics, null)
+                : null;
             var integratedOutput = _outputIntegrator.Integrate(decomposition.Agents, outputs);
 
             // Step 6: Shutdown all agents
             await _lifecycleManager.ShutdownAllAsync(cancellationToken);
+
+            if (rootSpanId != null)
+            {
+                _metrics?.EndSpan(rootSpanId, integratedOutput.IsValid, new Dictionary<string, string>
+                {
+                    ["agentCount"] = decomposition.Agents.Count.ToString(),
+                    ["conflictCount"] = conflicts.Count.ToString(),
+                    ["escalationCount"] = _escalationManager.GetAllEscalations().Count.ToString()
+                });
+            }
 
             return new OrchestrationResult
             {
@@ -236,11 +283,19 @@ public sealed class Orchestrator
                 ResolvedConflicts = resolvedConflicts,
                 UnresolvedConflicts = unresolvedConflicts,
                 Escalations = _escalationManager.GetAllEscalations(),
-                ProgressSummary = _progressTracker.GetSummary(_lifecycleManager.GetActiveAgents())
+                ProgressSummary = _progressTracker.GetSummary(_lifecycleManager.GetActiveAgents()),
+                CorrelationId = correlationId
             };
         }
         catch (Exception ex)
         {
+            if (rootSpanId != null)
+            {
+                _metrics?.EndSpan(rootSpanId, false, new Dictionary<string, string>
+                {
+                    ["error"] = ex.Message
+                });
+            }
             _logger.LogError(ex, "Orchestration failed");
             throw;
         }
@@ -307,5 +362,6 @@ public sealed record OrchestrationResult
     public IReadOnlyList<Conflict> UnresolvedConflicts { get; init; } = Array.Empty<Conflict>();
     public IReadOnlyList<Escalation> Escalations { get; init; } = Array.Empty<Escalation>();
     public ProgressSummary? ProgressSummary { get; init; }
+    public string? CorrelationId { get; init; }
 }
 
