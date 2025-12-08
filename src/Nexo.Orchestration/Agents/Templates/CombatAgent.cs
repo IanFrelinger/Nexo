@@ -7,10 +7,13 @@ namespace Nexo.Orchestration.Agents;
 /// <summary>
 /// Specialized agent for Combat domain tasks.
 /// </summary>
-public sealed class CombatAgent : BaseAgent
+public sealed class CombatAgent : BaseDomainAgent
 {
-    public CombatAgent(AgentSpawnSpec spec, ILogger<CombatAgent> logger)
-        : base(spec, logger)
+    public CombatAgent(
+        AgentSpawnSpec spec,
+        ILogger<CombatAgent> logger,
+        IModel? model = null)
+        : base(spec, new LoggerAdapter<CombatAgent>(logger), model)
     {
     }
 
@@ -28,13 +31,14 @@ public sealed class CombatAgent : BaseAgent
         return Task.CompletedTask;
     }
 
-    protected override Task<object> OnExecuteAsync(
-        IReadOnlyDictionary<string, object>? dependencyOutputs,
-        CancellationToken cancellationToken)
+    protected override string GetSystemPrompt()
     {
-        // Combat-specific execution logic
-        // In a real implementation, this would use the model to generate combat system designs
-        var result = new
+        return "You are an expert game designer specializing in combat systems. Provide detailed, actionable designs with clear mechanics, balance considerations, and implementation guidance.";
+    }
+
+    protected override object GetMockOutput()
+    {
+        return new
         {
             AgentId = Spec.AgentId,
             Domain = Spec.Domain,
@@ -47,8 +51,6 @@ public sealed class CombatAgent : BaseAgent
                 Balance = "Balanced combat interactions"
             }
         };
-
-        return Task.FromResult<object>(result);
     }
 
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)

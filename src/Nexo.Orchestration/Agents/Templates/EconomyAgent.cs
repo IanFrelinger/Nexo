@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Agents;
@@ -6,10 +7,10 @@ namespace Nexo.Orchestration.Agents;
 /// <summary>
 /// Specialized agent for Economy domain tasks.
 /// </summary>
-public sealed class EconomyAgent : BaseAgent
+public sealed class EconomyAgent : BaseDomainAgent
 {
-    public EconomyAgent(AgentSpawnSpec spec, ILogger<EconomyAgent> logger)
-        : base(spec, logger)
+    public EconomyAgent(AgentSpawnSpec spec, ILogger<EconomyAgent> logger, IModel? model = null)
+        : base(spec, new LoggerAdapter<EconomyAgent>(logger), model)
     {
     }
 
@@ -27,11 +28,14 @@ public sealed class EconomyAgent : BaseAgent
         return Task.CompletedTask;
     }
 
-    protected override Task<object> OnExecuteAsync(
-        IReadOnlyDictionary<string, object>? dependencyOutputs,
-        CancellationToken cancellationToken)
+    protected override string GetSystemPrompt()
     {
-        var result = new
+        return "You are an expert game economist specializing in virtual economies. Provide detailed designs for currency systems, trading mechanics, pricing models, and economic balance.";
+    }
+
+    protected override object GetMockOutput()
+    {
+        return new
         {
             AgentId = Spec.AgentId,
             Domain = Spec.Domain,
@@ -44,8 +48,6 @@ public sealed class EconomyAgent : BaseAgent
                 Pricing = "Established pricing models"
             }
         };
-
-        return Task.FromResult<object>(result);
     }
 
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Agents;
@@ -6,16 +7,15 @@ namespace Nexo.Orchestration.Agents;
 /// <summary>
 /// Specialized agent for Gameplay domain tasks.
 /// </summary>
-public sealed class GameplayAgent : BaseAgent
+public sealed class GameplayAgent : BaseDomainAgent
 {
-    public GameplayAgent(AgentSpawnSpec spec, ILogger<GameplayAgent> logger)
-        : base(spec, logger)
+    public GameplayAgent(AgentSpawnSpec spec, ILogger<GameplayAgent> logger, IModel? model = null)
+        : base(spec, new LoggerAdapter<GameplayAgent>(logger), model)
     {
     }
 
     protected override Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        // Gameplay-specific initialization
         return Task.CompletedTask;
     }
 
@@ -23,15 +23,17 @@ public sealed class GameplayAgent : BaseAgent
         IReadOnlyDictionary<string, object> dependencyOutputs,
         CancellationToken cancellationToken)
     {
-        // Gameplay agents may depend on combat, economy, AI, etc.
         return Task.CompletedTask;
     }
 
-    protected override Task<object> OnExecuteAsync(
-        IReadOnlyDictionary<string, object>? dependencyOutputs,
-        CancellationToken cancellationToken)
+    protected override string GetSystemPrompt()
     {
-        var result = new
+        return "You are an expert game designer specializing in gameplay mechanics. Provide detailed designs for game mechanics, progression systems, player experience, and feature implementation.";
+    }
+
+    protected override object GetMockOutput()
+    {
+        return new
         {
             AgentId = Spec.AgentId,
             Domain = Spec.Domain,
@@ -44,8 +46,6 @@ public sealed class GameplayAgent : BaseAgent
                 Features = "Implemented game features"
             }
         };
-
-        return Task.FromResult<object>(result);
     }
 
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)

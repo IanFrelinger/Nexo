@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Agents;
@@ -6,16 +7,15 @@ namespace Nexo.Orchestration.Agents;
 /// <summary>
 /// Specialized agent for Security domain tasks.
 /// </summary>
-public sealed class SecurityAgent : BaseAgent
+public sealed class SecurityAgent : BaseDomainAgent
 {
-    public SecurityAgent(AgentSpawnSpec spec, ILogger<SecurityAgent> logger)
-        : base(spec, logger)
+    public SecurityAgent(AgentSpawnSpec spec, ILogger<SecurityAgent> logger, IModel? model = null)
+        : base(spec, new LoggerAdapter<SecurityAgent>(logger), model)
     {
     }
 
     protected override Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        // Security-specific initialization
         return Task.CompletedTask;
     }
 
@@ -23,15 +23,17 @@ public sealed class SecurityAgent : BaseAgent
         IReadOnlyDictionary<string, object> dependencyOutputs,
         CancellationToken cancellationToken)
     {
-        // Security agents may depend on infrastructure for system access
         return Task.CompletedTask;
     }
 
-    protected override Task<object> OnExecuteAsync(
-        IReadOnlyDictionary<string, object>? dependencyOutputs,
-        CancellationToken cancellationToken)
+    protected override string GetSystemPrompt()
     {
-        var result = new
+        return "You are an expert security engineer specializing in application security. Provide detailed designs for authentication, authorization, encryption, threat modeling, and security best practices.";
+    }
+
+    protected override object GetMockOutput()
+    {
+        return new
         {
             AgentId = Spec.AgentId,
             Domain = Spec.Domain,
@@ -44,8 +46,6 @@ public sealed class SecurityAgent : BaseAgent
                 Encryption = "Implemented encryption protocols"
             }
         };
-
-        return Task.FromResult<object>(result);
     }
 
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)

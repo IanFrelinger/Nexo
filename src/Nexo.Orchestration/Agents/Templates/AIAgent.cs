@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Agents;
@@ -6,10 +7,10 @@ namespace Nexo.Orchestration.Agents;
 /// <summary>
 /// Specialized agent for AI domain tasks.
 /// </summary>
-public sealed class AIAgent : BaseAgent
+public sealed class AIAgent : BaseDomainAgent
 {
-    public AIAgent(AgentSpawnSpec spec, ILogger<AIAgent> logger)
-        : base(spec, logger)
+    public AIAgent(AgentSpawnSpec spec, ILogger<AIAgent> logger, IModel? model = null)
+        : base(spec, new LoggerAdapter<AIAgent>(logger), model)
     {
     }
 
@@ -27,11 +28,14 @@ public sealed class AIAgent : BaseAgent
         return Task.CompletedTask;
     }
 
-    protected override Task<object> OnExecuteAsync(
-        IReadOnlyDictionary<string, object>? dependencyOutputs,
-        CancellationToken cancellationToken)
+    protected override string GetSystemPrompt()
     {
-        var result = new
+        return "You are an expert AI/ML engineer specializing in game AI. Provide detailed designs for NPC behaviors, pathfinding systems, decision-making algorithms, and AI architecture.";
+    }
+
+    protected override object GetMockOutput()
+    {
+        return new
         {
             AgentId = Spec.AgentId,
             Domain = Spec.Domain,
@@ -44,8 +48,6 @@ public sealed class AIAgent : BaseAgent
                 DecisionMaking = "Implemented decision trees"
             }
         };
-
-        return Task.FromResult<object>(result);
     }
 
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)

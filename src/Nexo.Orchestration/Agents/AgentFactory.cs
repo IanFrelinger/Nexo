@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Agents;
@@ -60,42 +61,48 @@ public sealed class AgentFactory
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<CombatAgent>)) as ILogger<CombatAgent>
             ?? throw new InvalidOperationException("ILogger<CombatAgent> not registered");
-        return new CombatAgent(spec, logger);
+        var model = _serviceProvider.GetService<IModel>();
+        return new CombatAgent(spec, logger, model);
     }
 
     private BaseAgent CreateEconomyAgent(AgentSpawnSpec spec)
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<EconomyAgent>)) as ILogger<EconomyAgent>
             ?? throw new InvalidOperationException("ILogger<EconomyAgent> not registered");
-        return new EconomyAgent(spec, logger);
+        var model = _serviceProvider.GetService<IModel>();
+        return new EconomyAgent(spec, logger, model);
     }
 
     private BaseAgent CreateAIAgent(AgentSpawnSpec spec)
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<AIAgent>)) as ILogger<AIAgent>
             ?? throw new InvalidOperationException("ILogger<AIAgent> not registered");
-        return new AIAgent(spec, logger);
+        var model = _serviceProvider.GetService<IModel>();
+        return new AIAgent(spec, logger, model);
     }
 
     private BaseAgent CreateInfrastructureAgent(AgentSpawnSpec spec)
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<InfrastructureAgent>)) as ILogger<InfrastructureAgent>
             ?? throw new InvalidOperationException("ILogger<InfrastructureAgent> not registered");
-        return new InfrastructureAgent(spec, logger);
+        var model = _serviceProvider.GetService<IModel>();
+        return new InfrastructureAgent(spec, logger, model);
     }
 
     private BaseAgent CreateSecurityAgent(AgentSpawnSpec spec)
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<SecurityAgent>)) as ILogger<SecurityAgent>
             ?? throw new InvalidOperationException("ILogger<SecurityAgent> not registered");
-        return new SecurityAgent(spec, logger);
+        var model = _serviceProvider.GetService<IModel>();
+        return new SecurityAgent(spec, logger, model);
     }
 
     private BaseAgent CreateGameplayAgent(AgentSpawnSpec spec)
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<GameplayAgent>)) as ILogger<GameplayAgent>
             ?? throw new InvalidOperationException("ILogger<GameplayAgent> not registered");
-        return new GameplayAgent(spec, logger);
+        var model = _serviceProvider.GetService<IModel>();
+        return new GameplayAgent(spec, logger, model);
     }
 
     private BaseAgent CreateGenericAgent(AgentSpawnSpec spec)

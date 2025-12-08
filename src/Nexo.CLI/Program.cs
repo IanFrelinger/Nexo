@@ -140,6 +140,24 @@ static class Program
             jsonOpt,
             verboseOpt);
 
+        // nexo orchestrate
+        var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
+        if (orchestrateCommand != null)
+        {
+            var orchestrateCmd = new Command("orchestrate", "Orchestrate agent execution for a request");
+            orchestrateCmd.AddArgument(new Argument<string>("request", "The request to orchestrate"));
+            orchestrateCmd.SetHandler(
+                async (string request, bool json, bool verbose) =>
+                {
+                    var exitCode = await orchestrateCommand.ExecuteAsync(request, json, verbose);
+                    Environment.Exit(exitCode);
+                },
+                orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+                jsonOpt,
+                verboseOpt);
+            root.AddCommand(orchestrateCmd);
+        }
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
@@ -174,6 +192,8 @@ static class Program
         services.AddScoped<ListAgentsCommand>();
         services.AddScoped<ConfigCommand>();
         services.AddScoped<TestCommand>();
+        // Note: OrchestrateCommand registration requires full orchestration DI setup
+        // services.AddScoped<OrchestrateCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

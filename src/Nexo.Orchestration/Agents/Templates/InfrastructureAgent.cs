@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Agents;
@@ -6,16 +7,15 @@ namespace Nexo.Orchestration.Agents;
 /// <summary>
 /// Specialized agent for Infrastructure domain tasks.
 /// </summary>
-public sealed class InfrastructureAgent : BaseAgent
+public sealed class InfrastructureAgent : BaseDomainAgent
 {
-    public InfrastructureAgent(AgentSpawnSpec spec, ILogger<InfrastructureAgent> logger)
-        : base(spec, logger)
+    public InfrastructureAgent(AgentSpawnSpec spec, ILogger<InfrastructureAgent> logger, IModel? model = null)
+        : base(spec, new LoggerAdapter<InfrastructureAgent>(logger), model)
     {
     }
 
     protected override Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        // Infrastructure-specific initialization
         return Task.CompletedTask;
     }
 
@@ -26,11 +26,14 @@ public sealed class InfrastructureAgent : BaseAgent
         return Task.CompletedTask;
     }
 
-    protected override Task<object> OnExecuteAsync(
-        IReadOnlyDictionary<string, object>? dependencyOutputs,
-        CancellationToken cancellationToken)
+    protected override string GetSystemPrompt()
     {
-        var result = new
+        return "You are an expert infrastructure engineer specializing in scalable systems. Provide detailed designs for architecture, deployment pipelines, scaling strategies, and infrastructure patterns.";
+    }
+
+    protected override object GetMockOutput()
+    {
+        return new
         {
             AgentId = Spec.AgentId,
             Domain = Spec.Domain,
@@ -43,8 +46,6 @@ public sealed class InfrastructureAgent : BaseAgent
                 Deployment = "Created deployment pipeline"
             }
         };
-
-        return Task.FromResult<object>(result);
     }
 
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)

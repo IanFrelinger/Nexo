@@ -3,6 +3,7 @@ using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Common.Models;
+using Nexo.Orchestration.Coordination;
 
 namespace Nexo.CLI.Formatting;
 
@@ -21,6 +22,8 @@ public interface IConsoleRenderer
     void RenderValidationResult(ValidationResult result, bool json);
     void RenderAgentResult(AgentExecutionResult result, bool json);
     void RenderAgentList(IReadOnlyList<AgentMetadata> agents, bool json);
+    void RenderOrchestrationResult(OrchestrationResult result);
+    void RenderJson(object data);
     void RenderTable<T>(IEnumerable<T> items);
 }
 
@@ -184,6 +187,38 @@ public class ConsoleRenderer : IConsoleRenderer
                 Console.Error.WriteLine($"Agent '{result.AgentName}' failed: {result.Message}");
             }
         }
+    }
+
+    public void RenderOrchestrationResult(OrchestrationResult result)
+    {
+        if (result.Success)
+        {
+            Console.Out.WriteLine($"Orchestration completed successfully");
+            Console.Out.WriteLine($"  Agents: {result.Decomposition?.Agents.Count ?? 0}");
+            Console.Out.WriteLine($"  Conflicts: {result.Conflicts.Count}");
+            Console.Out.WriteLine($"  Escalations: {result.Escalations.Count}");
+            if (result.ProgressSummary != null)
+            {
+                Console.Out.WriteLine($"  Progress: {result.ProgressSummary.Completed}/{result.ProgressSummary.TotalAgents} agents completed ({result.ProgressSummary.ProgressPercentage:P0})");
+            }
+        }
+        else
+        {
+            Console.Error.WriteLine("Orchestration failed");
+            if (result.Conflicts.Count > 0)
+            {
+                Console.Error.WriteLine($"  Conflicts: {result.Conflicts.Count}");
+            }
+            if (result.Escalations.Count > 0)
+            {
+                Console.Error.WriteLine($"  Escalations: {result.Escalations.Count}");
+            }
+        }
+    }
+
+    public void RenderJson(object data)
+    {
+        Console.Out.WriteLine(JsonSerializer.Serialize(data, _jsonOptions));
     }
 
     public void RenderTable<T>(IEnumerable<T> items)
