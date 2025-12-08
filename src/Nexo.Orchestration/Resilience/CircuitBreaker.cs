@@ -37,69 +37,89 @@ public sealed class CircuitBreaker
     {
         var state = GetOrCreateState(operationKey);
 
-        // Check circuit state
-        if (state.State == CircuitStateType.Open)
+        // Check circuit state with lock
+        lock (state.SyncLock)
         {
-            if (DateTimeOffset.UtcNow - state.LastFailureTime < _timeout)
+            if (state.State == CircuitStateType.Open)
             {
-                _logger?.LogWarning("Circuit breaker {Name} is OPEN for {Operation}. Using fallback.", _name, operationKey);
-                if (fallback != null)
+                if (state.LastFailureTime.HasValue && DateTimeOffset.UtcNow - state.LastFailureTime.Value < _timeout)
                 {
-                    try
+                    _logger?.LogWarning("Circuit breaker {Name} is OPEN for {Operation}. Using fallback.", 
+                        _name, operationKey);
+                    
+                    if (fallback != null)
                     {
-                        return fallback(new InvalidOperationException("Circuit breaker is open"));
+                        try
+                        {
+                            return fallback(new CircuitBreakerOpenException(
+                                $"Circuit breaker {_name} is open for operation {operationKey}"));
+                        }
+                        catch
+                        {
+                            throw new CircuitBreakerOpenException(
+                                $"Circuit breaker {_name} is open for operation {operationKey}");
+                        }
                     }
-                    catch
-                    {
-                        throw new CircuitBreakerOpenException($"Circuit breaker {_name} is open for operation {operationKey}");
-                    }
+                    throw new CircuitBreakerOpenException(
+                        $"Circuit breaker {_name} is open for operation {operationKey}");
                 }
-                throw new CircuitBreakerOpenException($"Circuit breaker {_name} is open for operation {operationKey}");
-            }
-            else
-            {
-                // Timeout expired, attempt half-open
-                state.State = CircuitStateType.HalfOpen;
-                state.ConsecutiveSuccesses = 0;
-                _logger?.LogInformation("Circuit breaker {Name} transitioning to HALF-OPEN for {Operation}", _name, operationKey);
+                else
+                {
+                    // Timeout expired, attempt half-open
+                    state.State = CircuitStateType.HalfOpen;
+                    state.ConsecutiveSuccesses = 0;
+                    _logger?.LogInformation(
+                        "Circuit breaker {Name} transitioning to HALF-OPEN for {Operation}", 
+                        _name, operationKey);
+                }
             }
         }
 
         try
         {
             var result = await operation();
-            
-            // Success - reset failure count
-            state.ConsecutiveFailures = 0;
-            state.LastSuccessTime = DateTimeOffset.UtcNow;
-            
-            if (state.State == CircuitStateType.HalfOpen)
+
+            // Success - update state with lock
+            lock (state.SyncLock)
             {
-                state.ConsecutiveSuccesses++;
-                if (state.ConsecutiveSuccesses >= 2)
+                state.ConsecutiveFailures = 0;
+                state.LastSuccessTime = DateTimeOffset.UtcNow;
+
+                if (state.State == CircuitStateType.HalfOpen)
+                {
+                    state.ConsecutiveSuccesses++;
+                    if (state.ConsecutiveSuccesses >= 2)
+                    {
+                        state.State = CircuitStateType.Closed;
+                        _logger?.LogInformation(
+                            "Circuit breaker {Name} transitioning to CLOSED for {Operation}", 
+                            _name, operationKey);
+                    }
+                }
+                else if (state.State != CircuitStateType.Closed)
                 {
                     state.State = CircuitStateType.Closed;
-                    _logger?.LogInformation("Circuit breaker {Name} transitioning to CLOSED for {Operation}", _name, operationKey);
                 }
-            }
-            else if (state.State != CircuitStateType.Closed)
-            {
-                state.State = CircuitStateType.Closed;
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            state.ConsecutiveFailures++;
-            state.LastFailureTime = DateTimeOffset.UtcNow;
-            state.LastError = ex;
-
-            if (state.ConsecutiveFailures >= _failureThreshold)
+            // Failure - update state with lock
+            lock (state.SyncLock)
             {
-                state.State = CircuitStateType.Open;
-                _logger?.LogError(ex, "Circuit breaker {Name} opened for {Operation} after {Failures} failures",
-                    _name, operationKey, state.ConsecutiveFailures);
+                state.ConsecutiveFailures++;
+                state.LastFailureTime = DateTimeOffset.UtcNow;
+                state.LastError = ex;
+
+                if (state.ConsecutiveFailures >= _failureThreshold)
+                {
+                    state.State = CircuitStateType.Open;
+                    _logger?.LogError(ex, 
+                        "Circuit breaker {Name} opened for {Operation} after {Failures} failures",
+                        _name, operationKey, state.ConsecutiveFailures);
+                }
             }
 
             // Try fallback if available
@@ -133,8 +153,11 @@ public sealed class CircuitBreaker
     public void Open(string operationKey)
     {
         var state = GetOrCreateState(operationKey);
-        state.State = CircuitStateType.Open;
-        state.LastFailureTime = DateTimeOffset.UtcNow;
+        lock (state.SyncLock)
+        {
+            state.State = CircuitStateType.Open;
+            state.LastFailureTime = DateTimeOffset.UtcNow;
+        }
         _logger?.LogWarning("Circuit breaker {Name} manually opened for {Operation}", _name, operationKey);
     }
 
@@ -144,9 +167,12 @@ public sealed class CircuitBreaker
     public void Close(string operationKey)
     {
         var state = GetOrCreateState(operationKey);
-        state.State = CircuitStateType.Closed;
-        state.ConsecutiveFailures = 0;
-        state.ConsecutiveSuccesses = 0;
+        lock (state.SyncLock)
+        {
+            state.State = CircuitStateType.Closed;
+            state.ConsecutiveFailures = 0;
+            state.ConsecutiveSuccesses = 0;
+        }
         _logger?.LogInformation("Circuit breaker {Name} manually closed for {Operation}", _name, operationKey);
     }
 
@@ -181,6 +207,9 @@ internal sealed class CircuitState
     public DateTimeOffset? LastFailureTime { get; set; }
     public DateTimeOffset? LastSuccessTime { get; set; }
     public Exception? LastError { get; set; }
+
+    // Lock for thread-safe state transitions
+    public readonly object SyncLock = new();
 }
 
 /// <summary>

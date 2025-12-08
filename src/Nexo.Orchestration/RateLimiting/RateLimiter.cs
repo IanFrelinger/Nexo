@@ -36,16 +36,22 @@ public sealed class RateLimiter
         var window = GetOrCreateWindow(key);
         var now = DateTimeOffset.UtcNow;
 
-        // Reset window if expired
-        if (now - window.StartTime >= _window)
+        // Reset window if expired (needs synchronization)
+        lock (window.SyncLock)
         {
-            window.StartTime = now;
-            window.RequestCount = 0;
+            if (now - window.StartTime >= _window)
+            {
+                window.Reset(now);
+            }
         }
 
-        // Check if limit exceeded
-        if (window.RequestCount >= _maxRequests)
+        // Atomically increment and check
+        var newCount = window.IncrementAndGet();
+
+        if (newCount > _maxRequests)
         {
+            // Exceeded limit - decrement and reject
+            window.Decrement();
             var retryAfter = _window - (now - window.StartTime);
             _logger?.LogWarning("Rate limit exceeded for {Name} key {Key}. Retry after {RetryAfter}ms",
                 _name, key, retryAfter.TotalMilliseconds);
@@ -58,10 +64,7 @@ public sealed class RateLimiter
             });
         }
 
-        // Increment request count
-        window.RequestCount++;
-        var remaining = _maxRequests - window.RequestCount;
-
+        var remaining = _maxRequests - newCount;
         _logger?.LogDebug("Rate limit permit acquired for {Name} key {Key}. Remaining: {Remaining}",
             _name, key, remaining);
 
@@ -100,25 +103,28 @@ public sealed class RateLimiter
         var window = GetOrCreateWindow(key);
         var now = DateTimeOffset.UtcNow;
 
-        // Reset window if expired
-        if (now - window.StartTime >= _window)
+        // Reset window if expired (needs synchronization)
+        lock (window.SyncLock)
         {
+            if (now - window.StartTime >= _window)
+            {
+                return new RateLimitStatus
+                {
+                    Key = key,
+                    RemainingRequests = _maxRequests,
+                    ResetAfter = TimeSpan.Zero,
+                    Limit = _maxRequests
+                };
+            }
+
             return new RateLimitStatus
             {
                 Key = key,
-                RemainingRequests = _maxRequests,
-                ResetAfter = TimeSpan.Zero,
+                RemainingRequests = Math.Max(0, _maxRequests - window.RequestCount),
+                ResetAfter = _window - (now - window.StartTime),
                 Limit = _maxRequests
             };
         }
-
-        return new RateLimitStatus
-        {
-            Key = key,
-            RemainingRequests = Math.Max(0, _maxRequests - window.RequestCount),
-            ResetAfter = _window - (now - window.StartTime),
-            Limit = _maxRequests
-        };
     }
 
     /// <summary>
@@ -146,8 +152,7 @@ public sealed class RateLimiter
         return _windows.GetOrAdd(key, _ => new RateLimitWindow
         {
             Key = key,
-            StartTime = DateTimeOffset.UtcNow,
-            RequestCount = 0
+            StartTime = DateTimeOffset.UtcNow
         });
     }
 }
@@ -159,7 +164,31 @@ internal sealed class RateLimitWindow
 {
     public required string Key { get; init; }
     public DateTimeOffset StartTime { get; set; }
-    public int RequestCount { get; set; }
+    private int _requestCount;
+
+    // Lock for thread-safe window reset operations
+    public readonly object SyncLock = new();
+
+    public int RequestCount => _requestCount;
+
+    /// <summary>
+    /// Atomically increments the request count and returns the new value.
+    /// </summary>
+    public int IncrementAndGet() => Interlocked.Increment(ref _requestCount);
+
+    /// <summary>
+    /// Atomically decrements the request count.
+    /// </summary>
+    public void Decrement() => Interlocked.Decrement(ref _requestCount);
+
+    /// <summary>
+    /// Resets the window for a new time period.
+    /// </summary>
+    public void Reset(DateTimeOffset newStartTime)
+    {
+        StartTime = newStartTime;
+        Interlocked.Exchange(ref _requestCount, 0);
+    }
 }
 
 /// <summary>

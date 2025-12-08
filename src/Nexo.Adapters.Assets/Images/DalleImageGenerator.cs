@@ -43,6 +43,54 @@ public sealed class DalleImageGenerator : IImageGenerator
         ImageGenerationRequest request,
         CancellationToken cancellationToken = default)
     {
+        const int MaxRetries = 3;
+        var retryDelays = new[] { TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4) };
+
+        Exception? lastException = null;
+
+        for (int attempt = 0; attempt <= MaxRetries; attempt++)
+        {
+            try
+            {
+                return await GenerateInternalAsync(request, cancellationToken);
+            }
+            catch (HttpRequestException ex) when (IsTransientError(ex))
+            {
+                lastException = ex;
+
+                if (attempt < MaxRetries)
+                {
+                    var delay = retryDelays[attempt];
+                    _logger.LogWarning(ex,
+                        "Transient error generating image (attempt {Attempt}/{MaxRetries}). Retrying in {Delay}s",
+                        attempt + 1, MaxRetries, delay.TotalSeconds);
+                    await Task.Delay(delay, cancellationToken);
+                }
+            }
+            catch (Exception ex) when (IsRateLimitError(ex))
+            {
+                lastException = ex;
+
+                if (attempt < MaxRetries)
+                {
+                    // Rate limit - use exponential backoff
+                    var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt + 2)); // 4s, 8s, 16s
+                    _logger.LogWarning(
+                        "Rate limited by DALL-E API (attempt {Attempt}/{MaxRetries}). Retrying in {Delay}s",
+                        attempt + 1, MaxRetries, delay.TotalSeconds);
+                    await Task.Delay(delay, cancellationToken);
+                }
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Failed to generate image after {MaxRetries} retries", lastException);
+    }
+
+    private async Task<GeneratedImage> GenerateInternalAsync(
+        ImageGenerationRequest request,
+        CancellationToken cancellationToken)
+    {
         var payload = new
         {
             model = "dall-e-3",
@@ -90,6 +138,21 @@ public sealed class DalleImageGenerator : IImageGenerator
                 ["model"] = "dall-e-3"
             }
         };
+    }
+
+    private bool IsTransientError(HttpRequestException ex)
+    {
+        // 5xx errors and timeout-related errors are transient
+        return ex.StatusCode >= System.Net.HttpStatusCode.InternalServerError ||
+               ex.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+               ex.Message.Contains("connection", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsRateLimitError(Exception ex)
+    {
+        return ex.Message.Contains("429") ||
+               ex.Message.Contains("rate limit", StringComparison.OrdinalIgnoreCase) ||
+               ex.Message.Contains("too many requests", StringComparison.OrdinalIgnoreCase);
     }
 
     public Task<IReadOnlyList<GeneratedImage>> GenerateVariationsAsync(

@@ -53,29 +53,41 @@ public abstract class BaseAssetAgent : BaseAgent
         IReadOnlyDictionary<string, object>? dependencyOutputs,
         CancellationToken cancellationToken)
     {
+        const int MaxRetries = 2;
+        var retryCount = 0;
+
         // Step 1: Generate asset prompt from spec using LLM
         var prompt = await GenerateAssetPromptAsync(Spec, dependencyOutputs ?? new Dictionary<string, object>(), cancellationToken);
         Logger.LogInformation("Generated asset prompt: {Prompt}", prompt.TextPrompt);
 
-        // Step 2: Generate the asset using provider
-        var asset = await GenerateAssetAsync(prompt, cancellationToken);
-        Logger.LogInformation("Generated asset at: {Path}", asset.FilePath);
+        GeneratedAssetBase asset;
+        AssetValidation validation;
 
-        // Step 3: Validate asset against constraints
-        var validation = await ValidateAssetAsync(asset, Spec.Constraints, cancellationToken);
-        if (!validation.IsValid)
+        do
         {
-            Logger.LogWarning("Asset validation failed: {Failures}",
-                string.Join(", ", validation.FailedChecks));
+            // Step 2: Generate the asset using provider
+            asset = await GenerateAssetAsync(prompt, cancellationToken);
+            Logger.LogInformation("Generated asset at: {Path}", asset.FilePath);
 
-            // Attempt regeneration with refined prompt
-            if (await ShouldRetryAsync(validation, cancellationToken))
+            // Step 3: Validate asset against constraints
+            validation = await ValidateAssetAsync(asset, Spec.Constraints, cancellationToken);
+
+            if (!validation.IsValid)
             {
-                var refinedPrompt = await RefinePromptAsync(prompt, validation, cancellationToken);
-                asset = await GenerateAssetAsync(refinedPrompt, cancellationToken);
-                validation = await ValidateAssetAsync(asset, Spec.Constraints, cancellationToken);
+                Logger.LogWarning("Asset validation failed (attempt {Attempt}): {Failures}",
+                    retryCount + 1, string.Join(", ", validation.FailedChecks));
+
+                if (retryCount < MaxRetries && await ShouldRetryAsync(validation, cancellationToken))
+                {
+                    prompt = await RefinePromptAsync(prompt, validation, cancellationToken);
+                    retryCount++;
+                }
+                else
+                {
+                    break; // Exit retry loop
+                }
             }
-        }
+        } while (!validation.IsValid && retryCount <= MaxRetries);
 
         // Step 4: Store asset and return output
         var storedPath = await AssetStorage.StoreAsync(asset.FilePath, Spec.AgentId, cancellationToken);
@@ -89,7 +101,11 @@ public abstract class BaseAssetAgent : BaseAgent
             MimeType = GetMimeType(asset.FilePath),
             Prompt = prompt,
             Validation = validation,
-            FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0
+            FileSizeBytes = fileInfo.Exists ? fileInfo.Length : 0,
+            Metadata = new Dictionary<string, object>
+            {
+                ["retryCount"] = retryCount
+            }
         };
     }
 
@@ -175,8 +191,48 @@ public abstract class BaseAssetAgent : BaseAgent
 
     private Task<bool> ShouldRetryAsync(AssetValidation validation, CancellationToken ct)
     {
-        // Retry if failures are correctable (not hard constraints)
-        return Task.FromResult(validation.FailedChecks.Count <= 2);
+        // Don't retry if no failures
+        if (!validation.FailedChecks.Any())
+        {
+            return Task.FromResult(false);
+        }
+
+        // Check if failures are recoverable (prompt-correctable issues)
+        var recoverablePatterns = new[]
+        {
+            "style", "mood", "color", "composition", "framing",
+            "lighting", "detail", "quality", "resolution mismatch"
+        };
+
+        var unrecoverablePatterns = new[]
+        {
+            "format not supported", "size exceeds", "invalid file",
+            "api error", "quota exceeded", "authentication"
+        };
+
+        foreach (var failure in validation.FailedChecks)
+        {
+            var lowerFailure = failure.ToLowerInvariant();
+
+            // If any unrecoverable pattern matches, don't retry
+            if (unrecoverablePatterns.Any(p => lowerFailure.Contains(p)))
+            {
+                Logger.LogDebug("Unrecoverable failure detected: {Failure}", failure);
+                return Task.FromResult(false);
+            }
+        }
+
+        // Retry if all failures appear recoverable and count is reasonable
+        var allRecoverable = validation.FailedChecks.All(f =>
+            recoverablePatterns.Any(p => f.ToLowerInvariant().Contains(p)));
+
+        // Allow retry if failures are recoverable OR if there are few enough to try
+        var shouldRetry = allRecoverable || validation.FailedChecks.Count <= 2;
+
+        Logger.LogDebug("Retry decision for {Count} failures: {ShouldRetry}", 
+            validation.FailedChecks.Count, shouldRetry);
+
+        return Task.FromResult(shouldRetry);
     }
 
     private async Task<GenerationPrompt> RefinePromptAsync(

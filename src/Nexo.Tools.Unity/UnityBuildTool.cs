@@ -177,29 +177,87 @@ public sealed class UnityBuildTool : IBuildTool
 
     private string? FindUnityEditor()
     {
-        var paths = new[]
+        // Try macOS paths
+        var macHubPath = "/Applications/Unity/Hub/Editor";
+        if (Directory.Exists(macHubPath))
         {
-            "/Applications/Unity/Hub/Editor/*/Unity.app/Contents/MacOS/Unity",
-            "C:\\Program Files\\Unity\\Hub\\Editor\\*\\Editor\\Unity.exe",
-            "/opt/unity/Editor/Unity"
+            var path = FindLatestUnityInHub(macHubPath, "Unity.app/Contents/MacOS/Unity");
+            if (path != null) return path;
+        }
+
+        // Try Windows paths
+        var windowsHubPaths = new[]
+        {
+            @"C:\Program Files\Unity\Hub\Editor",
+            @"C:\Program Files (x86)\Unity\Hub\Editor",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Unity", "Hub", "Editor")
         };
 
-        foreach (var pattern in paths)
+        foreach (var hubPath in windowsHubPaths)
         {
-            try
+            if (Directory.Exists(hubPath))
             {
-                var dir = Path.GetDirectoryName(pattern);
-                var file = Path.GetFileName(pattern);
-                if (dir != null && Directory.Exists(dir))
+                var path = FindLatestUnityInHub(hubPath, @"Editor\Unity.exe");
+                if (path != null) return path;
+            }
+        }
+
+        // Try Linux paths
+        var linuxPaths = new[]
+        {
+            "/opt/unity/Editor/Unity",
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Unity/Hub/Editor")
+        };
+
+        foreach (var linuxPath in linuxPaths)
+        {
+            if (File.Exists(linuxPath))
+            {
+                return linuxPath;
+            }
+
+            if (Directory.Exists(linuxPath))
+            {
+                var path = FindLatestUnityInHub(linuxPath, "Unity");
+                if (path != null) return path;
+            }
+        }
+
+        // Try environment variable
+        var envPath = Environment.GetEnvironmentVariable("UNITY_EDITOR_PATH");
+        if (!string.IsNullOrEmpty(envPath) && File.Exists(envPath))
+        {
+            return envPath;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Finds the latest Unity version in a Hub installation directory.
+    /// </summary>
+    private string? FindLatestUnityInHub(string hubPath, string relativeExecutablePath)
+    {
+        try
+        {
+            var versionDirs = Directory.GetDirectories(hubPath)
+                .Select(d => new DirectoryInfo(d))
+                .OrderByDescending(d => d.Name) // Version strings sort correctly (2022.3.1f1 > 2021.3.1f1)
+                .ToList();
+
+            foreach (var versionDir in versionDirs)
+            {
+                var executablePath = Path.Combine(versionDir.FullName, relativeExecutablePath);
+                if (File.Exists(executablePath))
                 {
-                    var matches = Directory.GetFiles(dir, file, SearchOption.AllDirectories);
-                    if (matches.Any()) return matches.First();
+                    _logger.LogInformation("Found Unity {Version} at {Path}", versionDir.Name, executablePath);
+                    return executablePath;
                 }
             }
-            catch
-            {
-                // Continue searching
-            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Error searching Unity Hub path {Path}", hubPath);
         }
 
         return null;
