@@ -15,7 +15,7 @@ Nexo is a modern, agent-first development framework built for .NET that provides
 - **Policy Enforcement**: Security and workflow policies with configurable rules
 - **Clean Architecture**: Hexagonal architecture with enforced layering rules
 - **Assembly Analysis**: Advanced .NET assembly analysis, decompilation, and security scanning
-- **TDD Workflows**: Built-in Test-Driven Development support with intelligent agents
+- **TDD Workflows**: Built-in Test-Driven Development support   `with intelligent agents
 - **Quality Gates**: Comprehensive testing, linting, and architectural validation
 - **Contract Testing**: Idempotency, timeout, and policy enforcement testing framework
 - **Fast Development**: Solution filters for rapid iteration and focused builds
@@ -49,9 +49,9 @@ A production-quality demonstration of cross-framework pattern extraction and reu
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                Framework-Specific Renderers                  │
+│                Framework-Specific Renderers                 │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │
-│  │   Avalonia      │  │   Unity Editor  │  │   Future   │  │
+│  │   Avalonia      │  │   Unity Editor  │  │   Future    │  │
 │  │   (XAML)        │  │   (IMGUI)       │  │   (WPF/MAUI)│  │
 │  └─────────────────┘  └─────────────────┘  └─────────────┘  │
 └─────────────────────────────────────────────────────────────┘
@@ -430,6 +430,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 - **[API Reference](docs/api/)**: Complete API documentation
 - **[Examples](src/Nexo.Examples/)**: Working code examples
 - **[Contributing Guide](docs/contributing.md)**: How to contribute to Nexo
+- **[Agent Orchestration Roadmap](docs/AGENT_ORCHESTRATION_ROADMAP.md)**: Multi-phase implementation plan for advanced agent orchestration layer
 
 ⸻
 
@@ -582,6 +583,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ### Planned
 - [ ] Enhanced AI agent capabilities
+- [ ] **Agent Orchestration Layer** - Multi-agent coordination, conflict resolution, and negotiation (see [Agent Orchestration Roadmap](docs/AGENT_ORCHESTRATION_ROADMAP.md))
 - [ ] Web-based development interface
 - [ ] Plugin system for custom tools
 - [ ] Cloud-based agent execution

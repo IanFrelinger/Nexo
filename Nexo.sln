@@ -40,6 +40,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Core.UI.Unity", "src\N
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.UI.Demo.Avalonia", "src\Nexo.UI.Demo.Avalonia\Nexo.UI.Demo.Avalonia.csproj", "{D4E5F6A7-B8C9-0123-DEF1-234567890123}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Orchestration", "src\Nexo.Orchestration\Nexo.Orchestration.csproj", "{4D936C54-C662-4788-9702-0C60DE90B4B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.Orchestration", "src\Nexo.Tests.Orchestration\Nexo.Tests.Orchestration.csproj", "{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -138,6 +142,14 @@ Global
 		{D4E5F6A7-B8C9-0123-DEF1-234567890123}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4E5F6A7-B8C9-0123-DEF1-234567890123}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4E5F6A7-B8C9-0123-DEF1-234567890123}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D936C54-C662-4788-9702-0C60DE90B4B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D936C54-C662-4788-9702-0C60DE90B4B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D936C54-C662-4788-9702-0C60DE90B4B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D936C54-C662-4788-9702-0C60DE90B4B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -163,5 +175,7 @@ Global
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
 		{D4E5F6A7-B8C9-0123-DEF1-234567890123} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
+		{4D936C54-C662-4788-9702-0C60DE90B4B1} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
+		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
 	EndGlobalSection
 EndGlobal
