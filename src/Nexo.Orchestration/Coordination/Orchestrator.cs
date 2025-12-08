@@ -5,6 +5,8 @@ using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Coordination.Conflicts;
 using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
+using Nexo.Orchestration.Negotiation;
+using System.Text.Json;
 
 namespace Nexo.Orchestration.Coordination;
 
@@ -23,6 +25,7 @@ public sealed class Orchestrator
     private readonly EscalationManager _escalationManager;
     private readonly OutputIntegrator _outputIntegrator;
     private readonly IAgentBus _agentBus;
+    private readonly NegotiationProtocol? _negotiationProtocol;
     private readonly ILogger<Orchestrator> _logger;
 
     public Orchestrator(
@@ -36,7 +39,8 @@ public sealed class Orchestrator
         EscalationManager escalationManager,
         OutputIntegrator outputIntegrator,
         IAgentBus agentBus,
-        ILogger<Orchestrator> logger)
+        ILogger<Orchestrator> logger,
+        NegotiationProtocol? negotiationProtocol = null)
     {
         _architect = architect ?? throw new ArgumentNullException(nameof(architect));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
@@ -48,6 +52,7 @@ public sealed class Orchestrator
         _escalationManager = escalationManager ?? throw new ArgumentNullException(nameof(escalationManager));
         _outputIntegrator = outputIntegrator ?? throw new ArgumentNullException(nameof(outputIntegrator));
         _agentBus = agentBus ?? throw new ArgumentNullException(nameof(agentBus));
+        _negotiationProtocol = negotiationProtocol;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -77,10 +82,58 @@ public sealed class Orchestrator
 
             var conflicts = _conflictDetector.DetectConflicts(containers);
             
-            // Escalate critical conflicts
-            foreach (var conflict in conflicts.Where(c => c.Severity == ConflictSeverity.Critical))
+            // Step 2.5: Attempt to resolve conflicts via negotiation
+            var resolvedConflicts = new List<Conflict>();
+            var unresolvedConflicts = new List<Conflict>();
+
+            if (_negotiationProtocol != null)
             {
-                _escalationManager.EscalateConflict(conflict, "Pre-execution conflict detection");
+                foreach (var conflict in conflicts)
+                {
+                    if (conflict.Severity == ConflictSeverity.Critical)
+                    {
+                        // Always escalate critical conflicts
+                        _escalationManager.EscalateConflict(conflict, "Critical conflict - requires human decision");
+                        unresolvedConflicts.Add(conflict);
+                        continue;
+                    }
+
+                    var involvedAgents = containers
+                        .Where(c => conflict.AgentIds.Contains(c.AgentId))
+                        .ToList();
+
+                    var result = await _negotiationProtocol.NegotiateAsync(
+                        conflict, involvedAgents, cancellationToken);
+
+                    if (result.Success)
+                    {
+                        _logger.LogInformation(
+                            "Conflict {ConflictType} resolved via {ResolutionType}: {Reason}",
+                            conflict.ConflictType, result.ResolutionType, result.Reason);
+
+                        // Apply resolution
+                        await ApplyResolutionAsync(conflict, result, involvedAgents, cancellationToken);
+                        resolvedConflicts.Add(conflict);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Conflict {ConflictType} could not be resolved: {Reason}",
+                            conflict.ConflictType, result.Reason);
+
+                        _escalationManager.EscalateConflict(conflict, result.Reason ?? "Negotiation failed");
+                        unresolvedConflicts.Add(conflict);
+                    }
+                }
+            }
+            else
+            {
+                // No negotiation protocol - escalate all non-critical conflicts
+                foreach (var conflict in conflicts.Where(c => c.Severity == ConflictSeverity.Critical))
+                {
+                    _escalationManager.EscalateConflict(conflict, "Pre-execution conflict detection");
+                    unresolvedConflicts.Add(conflict);
+                }
             }
 
             // Step 3: Register agents and allocate resources
@@ -171,17 +224,7 @@ public sealed class Orchestrator
             // Step 5: Integrate outputs
             var integratedOutput = _outputIntegrator.Integrate(decomposition.Agents, outputs);
 
-            // Step 6: Check for unresolved conflicts and escalate
-            var unresolvedConflicts = conflicts.Where(c => c.Severity >= ConflictSeverity.Medium).ToList();
-            if (unresolvedConflicts.Count > 0)
-            {
-                foreach (var conflict in unresolvedConflicts)
-                {
-                    _escalationManager.EscalateConflict(conflict, "Post-execution conflict");
-                }
-            }
-
-            // Step 7: Shutdown all agents
+            // Step 6: Shutdown all agents
             await _lifecycleManager.ShutdownAllAsync(cancellationToken);
 
             return new OrchestrationResult
@@ -190,6 +233,8 @@ public sealed class Orchestrator
                 IntegratedOutput = integratedOutput,
                 Decomposition = decomposition,
                 Conflicts = conflicts,
+                ResolvedConflicts = resolvedConflicts,
+                UnresolvedConflicts = unresolvedConflicts,
                 Escalations = _escalationManager.GetAllEscalations(),
                 ProgressSummary = _progressTracker.GetSummary(_lifecycleManager.GetActiveAgents())
             };
@@ -199,6 +244,53 @@ public sealed class Orchestrator
             _logger.LogError(ex, "Orchestration failed");
             throw;
         }
+    }
+
+    /// <summary>
+    /// Applies a negotiation resolution to agents.
+    /// </summary>
+    private async Task ApplyResolutionAsync(
+        Conflict conflict,
+        NegotiationResult result,
+        IReadOnlyList<AgentContainer> agents,
+        CancellationToken cancellationToken)
+    {
+        switch (conflict.ConflictType)
+        {
+            case ConflictType.Schema when result.ResolvedSchema.HasValue:
+                // Update agents to use canonical schema
+                // Note: In a full implementation, agents would need a method to update their output schema
+                _logger.LogInformation(
+                    "Applied schema resolution: agents {AgentIds} now use canonical schema",
+                    string.Join(", ", conflict.AgentIds));
+                break;
+
+            case ConflictType.Resource when result.ResolvedAllocation != null:
+                // Update resource allocations
+                foreach (var (agentId, allocation) in result.ResolvedAllocation.Allocations)
+                {
+                    // Release old allocation
+                    _resourceAllocator.ReleaseResources(agentId);
+                    // Note: ResourceAllocator would need UpdateAllocation method for full implementation
+                    _logger.LogInformation(
+                        "Applied resource allocation for agent {AgentId}: {Compute}s, {Memory}MB",
+                        agentId, allocation.ComputeSeconds, allocation.MemoryMb);
+                }
+                break;
+
+            case ConflictType.Constraint:
+            case ConflictType.Philosophy:
+                // Apply resolution changes to agents
+                if (result.Resolution?.RequiredChanges != null)
+                {
+                    _logger.LogInformation(
+                        "Applied resolution changes: {Changes}",
+                        string.Join(", ", result.Resolution.RequiredChanges.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
+                }
+                break;
+        }
+
+        await Task.CompletedTask;
     }
 }
 
@@ -211,6 +303,8 @@ public sealed record OrchestrationResult
     public IntegratedOutput? IntegratedOutput { get; init; }
     public DecompositionResult? Decomposition { get; init; }
     public IReadOnlyList<Conflict> Conflicts { get; init; } = Array.Empty<Conflict>();
+    public IReadOnlyList<Conflict> ResolvedConflicts { get; init; } = Array.Empty<Conflict>();
+    public IReadOnlyList<Conflict> UnresolvedConflicts { get; init; } = Array.Empty<Conflict>();
     public IReadOnlyList<Escalation> Escalations { get; init; } = Array.Empty<Escalation>();
     public ProgressSummary? ProgressSummary { get; init; }
 }

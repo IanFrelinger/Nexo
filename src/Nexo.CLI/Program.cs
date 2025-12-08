@@ -11,6 +11,8 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
+using Nexo.Orchestration;
+using Nexo.Adapters.Models;
 // using Nexo.Demo.CLI.Agents; // Removed as part of Director Studio cleanup
 // using Nexo.Agents.Dev; // Removed as part of Director Studio cleanup
 
@@ -185,6 +187,12 @@ static class Program
         // Register configuration service
         services.AddSingleton<Nexo.Core.Application.Configuration.Ports.IConfigurationService, Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>();
 
+        // Register orchestration layer
+        services.AddNexoOrchestration();
+
+        // Register IModel (using EchoModel for now, replace with real LLM adapter later)
+        services.AddSingleton<IModel, EchoModel>();
+
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();
         services.AddScoped<ValidateCommand>();
@@ -192,8 +200,7 @@ static class Program
         services.AddScoped<ListAgentsCommand>();
         services.AddScoped<ConfigCommand>();
         services.AddScoped<TestCommand>();
-        // Note: OrchestrateCommand registration requires full orchestration DI setup
-        // services.AddScoped<OrchestrateCommand>();
+        services.AddScoped<OrchestrateCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

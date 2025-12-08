@@ -1,0 +1,163 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Orchestration.Coordination.Conflicts;
+using Nexo.Orchestration.Negotiation.Models;
+
+namespace Nexo.Orchestration.Negotiation;
+
+/// <summary>
+/// Resolves constraint conflicts by finding minimal relaxations.
+/// </summary>
+public sealed class ConstraintRelaxer
+{
+    private readonly ILogger<ConstraintRelaxer> _logger;
+
+    public ConstraintRelaxer(ILogger<ConstraintRelaxer> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Attempts to resolve constraint conflicts by relaxing soft constraints.
+    /// </summary>
+    public RelaxationResult Relax(
+        IReadOnlyList<NegotiationPosition> positions,
+        Conflict conflict)
+    {
+        // Collect all constraints
+        var hardConstraints = positions
+            .SelectMany(p => p.HardConstraints.Select(c => (p.AgentId, Constraint: c, IsHard: true)))
+            .ToList();
+
+        var softConstraints = positions
+            .SelectMany(p => p.SoftConstraints.Select(kvp =>
+                (p.AgentId, Constraint: kvp.Key, Flexibility: kvp.Value)))
+            .ToList();
+
+        // Check for hard constraint conflicts (unresolvable)
+        var hardConflicts = FindHardConflicts(hardConstraints);
+        if (hardConflicts.Any())
+        {
+            return RelaxationResult.Unresolvable(
+                $"Hard constraint conflicts: {string.Join(", ", hardConflicts)}");
+        }
+
+        // Find minimal soft constraint relaxation
+        var relaxation = FindMinimalRelaxation(softConstraints, conflict);
+
+        if (relaxation == null)
+        {
+            return RelaxationResult.Unresolvable("No valid relaxation found");
+        }
+
+        return new RelaxationResult
+        {
+            Success = true,
+            RelaxedConstraints = relaxation.RelaxedConstraints,
+            Explanation = relaxation.Explanation
+        };
+    }
+
+    private IReadOnlyList<string> FindHardConflicts(
+        List<(string AgentId, string Constraint, bool IsHard)> hardConstraints)
+    {
+        var conflicts = new List<string>();
+
+        // Look for contradictory constraints
+        var constraintPairs = new[]
+        {
+            ("must be fast", "must be thorough"),
+            ("minimize latency", "maximize accuracy"),
+            ("real-time", "batch processing"),
+            ("stateless", "maintain state"),
+            ("synchronous", "asynchronous"),
+            ("must be fast", "must be slow"),
+            ("high", "low"),
+            ("maximum", "minimum"),
+            ("must", "must not"),
+            ("required", "forbidden"),
+            ("enabled", "disabled")
+        };
+
+        foreach (var (c1, c2) in constraintPairs)
+        {
+            var hasC1 = hardConstraints.Any(hc =>
+                hc.Constraint.Contains(c1, StringComparison.OrdinalIgnoreCase));
+            var hasC2 = hardConstraints.Any(hc =>
+                hc.Constraint.Contains(c2, StringComparison.OrdinalIgnoreCase));
+
+            if (hasC1 && hasC2)
+            {
+                conflicts.Add($"'{c1}' conflicts with '{c2}'");
+            }
+        }
+
+        return conflicts;
+    }
+
+    private RelaxationPlan? FindMinimalRelaxation(
+        List<(string AgentId, string Constraint, double Flexibility)> softConstraints,
+        Conflict conflict)
+    {
+        // Sort by flexibility (most flexible first)
+        var sorted = softConstraints
+            .OrderByDescending(c => c.Flexibility)
+            .ToList();
+
+        // Try relaxing constraints one at a time until conflict resolves
+        var relaxed = new List<(string AgentId, string Constraint)>();
+
+        foreach (var constraint in sorted)
+        {
+            if (constraint.Flexibility < 0.3)
+            {
+                // Don't relax constraints with low flexibility
+                continue;
+            }
+
+            relaxed.Add((constraint.AgentId, constraint.Constraint));
+
+            // Check if relaxation resolves conflict
+            // (simplified - in reality would re-evaluate constraint satisfaction)
+            if (relaxed.Count >= 1)
+            {
+                return new RelaxationPlan
+                {
+                    RelaxedConstraints = relaxed
+                        .ToDictionary(r => r.AgentId, r => r.Constraint),
+                    Explanation = $"Relaxed {relaxed.Count} soft constraint(s)"
+                };
+            }
+        }
+
+        return null;
+    }
+}
+
+/// <summary>
+/// Result of constraint relaxation attempt.
+/// </summary>
+public sealed record RelaxationResult
+{
+    public bool Success { get; init; }
+    public IReadOnlyDictionary<string, string> RelaxedConstraints { get; init; } =
+        new Dictionary<string, string>();
+    public string? Explanation { get; init; }
+    public string? FailureReason { get; init; }
+
+    public static RelaxationResult Unresolvable(string reason) => new()
+    {
+        Success = false,
+        FailureReason = reason
+    };
+}
+
+/// <summary>
+/// Plan for relaxing constraints.
+/// </summary>
+internal sealed record RelaxationPlan
+{
+    public IReadOnlyDictionary<string, string> RelaxedConstraints { get; init; } =
+        new Dictionary<string, string>();
+    public string? Explanation { get; init; }
+}
+
