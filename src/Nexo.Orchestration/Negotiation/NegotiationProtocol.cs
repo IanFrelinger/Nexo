@@ -77,28 +77,44 @@ public sealed class NegotiationProtocol
             return Task.FromResult(NegotiationResult.Escalated("Not all involved agents found"));
         }
 
-        var agent1 = involvedAgents[0];
-        var agent2 = involvedAgents[1];
+        // Collect all schemas from involved agents
+        var schemas = involvedAgents
+            .Select(a => a.Agent.Spec.OutputSchema)
+            .Where(s => s.HasValue)
+            .Select(s => s!.Value)
+            .ToList();
 
-        var schema1 = agent1.Agent.Spec.OutputSchema;
-        var schema2 = agent2.Agent.Spec.OutputSchema;
-
-        if (!schema1.HasValue || !schema2.HasValue)
+        if (schemas.Count < 2)
         {
-            return Task.FromResult(NegotiationResult.Escalated("One or both agents missing output schemas"));
+            return Task.FromResult(NegotiationResult.Escalated("Not enough agents with output schemas"));
         }
 
-        var mergedSchema = _schemaAdapter.MergeSchemas(schema1.Value, schema2.Value);
+        // Merge schemas iteratively (N-agent support)
+        JsonElement? mergedSchema = schemas.FirstOrDefault();
+        foreach (var schema in schemas.Skip(1))
+        {
+            if (mergedSchema == null)
+            {
+                break;
+            }
+
+            mergedSchema = _schemaAdapter.MergeSchemas(mergedSchema.Value, schema);
+            if (mergedSchema == null)
+            {
+                _logger.LogWarning("Could not merge schema {SchemaIndex} - incompatible types", schemas.IndexOf(schema) + 1);
+                return Task.FromResult(NegotiationResult.Escalated("Could not merge schemas - incompatible types"));
+            }
+        }
 
         if (mergedSchema == null)
         {
             return Task.FromResult(NegotiationResult.Escalated("Could not merge schemas - incompatible types"));
         }
 
-        _logger.LogInformation("Successfully merged schemas for agents {Agent1} and {Agent2}",
-            agent1.AgentId, agent2.AgentId);
+        _logger.LogInformation("Successfully merged schemas for {Count} agents: {AgentIds}",
+            involvedAgents.Count, string.Join(", ", involvedAgents.Select(a => a.AgentId)));
 
-        return Task.FromResult(NegotiationResult.SchemaResolved(mergedSchema.Value, "Schemas merged into canonical form"));
+        return Task.FromResult(NegotiationResult.SchemaResolved(mergedSchema.Value, $"Schemas merged into canonical form ({schemas.Count} agents)"));
     }
 
     /// <summary>
