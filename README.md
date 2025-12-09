@@ -10,12 +10,18 @@ Nexo is a modern, agent-first development framework built for .NET that provides
 ## Key Features
 
 - **Agent-First Architecture**: AI agents as first-class citizens with cross-platform support
+- **Agent Orchestration Layer**: Multi-agent coordination, conflict resolution, and autonomous negotiation
+- **Advanced Agent Capabilities**: Code generation, security analysis, multi-modal support, and learning/adaptation
+- **Production-Ready Resilience**: Circuit breakers, retry policies, health checks, and rate limiting
+- **Performance & Monitoring**: Comprehensive metrics, distributed tracing, and performance profiling
+- **Asset Generation Pipeline**: Image, audio, and 3D model generation with validation and retry logic
+- **Game Production Pipeline**: Build integration, automated playtesting, and feedback-driven iteration
 - **CLI Tool**: Packable dotnet tool with subcommands, JSON output, and rich help
 - **Development Tools**: Comprehensive tooling for build, test, file operations, and git workflows
 - **Policy Enforcement**: Security and workflow policies with configurable rules
 - **Clean Architecture**: Hexagonal architecture with enforced layering rules
 - **Assembly Analysis**: Advanced .NET assembly analysis, decompilation, and security scanning
-- **TDD Workflows**: Built-in Test-Driven Development support   `with intelligent agents
+- **TDD Workflows**: Built-in Test-Driven Development support with intelligent agents
 - **Quality Gates**: Comprehensive testing, linting, and architectural validation
 - **Contract Testing**: Idempotency, timeout, and policy enforcement testing framework
 - **Fast Development**: Solution filters for rapid iteration and focused builds
@@ -88,6 +94,53 @@ See [DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md) for detailed architecture an
 
 ⸻
 
+## Agent Orchestration Layer
+
+Nexo includes a production-ready agent orchestration system that enables complex multi-agent workflows with automatic coordination, conflict resolution, and autonomous negotiation.
+
+### Core Capabilities
+
+- **Request Decomposition**: Architect Agent automatically breaks down complex requests into agent specifications
+- **Multi-Agent Coordination**: Dependency resolution, execution ordering, and lifecycle management
+- **Conflict Resolution**: Automatic detection and resolution of schema, resource, constraint, and philosophy conflicts
+- **Autonomous Negotiation**: State machine-based negotiation protocol with Pareto optimization and constraint relaxation
+- **Inter-Agent Communication**: Pub/sub messaging bus with schema validation
+- **Resource Management**: Priority-based allocation with preemption support
+- **Progress Tracking**: Convergence detection, thrashing prevention, and stall detection
+- **Human Escalation**: CLI interface for managing escalations requiring human intervention
+
+### Advanced Features
+
+- **Distributed Tracing**: Correlation IDs and span tracking for request tracing
+- **Performance Metrics**: Comprehensive operation and agent execution metrics
+- **Circuit Breakers**: Resilience patterns to prevent cascading failures
+- **Retry Policies**: Multiple retry strategies with exponential backoff
+- **Health Checks**: Component health monitoring with caching
+- **Rate Limiting**: Thread-safe rate limiting for API calls
+- **Configuration Management**: Validation and hot-reload support
+
+### Specialized Agents
+
+- **CodeGenerationAgent**: Multi-language code generation with analysis and optimization
+- **SecurityAnalysisAgent**: Vulnerability scanning and compliance checking
+- **Asset Generation Agents**: Image, audio, and 3D model generation
+- **Build Agents**: Unity build orchestration
+- **Playtest Agents**: AI players, balance analysis, and feedback synthesis
+- **Multi-Modal Agents**: Support for text, image, and audio inputs
+
+### Production Readiness
+
+All orchestration components are:
+- **Thread-Safe**: Tested for concurrent access with comprehensive concurrency tests
+- **Resilient**: Circuit breakers and retry policies for fault tolerance
+- **Observable**: Metrics, tracing, and health checks for monitoring
+- **Configurable**: Hot-reload support and validation
+- **Tested**: 94+ unit tests including concurrency validation
+
+See [Agent Orchestration Roadmap](docs/AGENT_ORCHESTRATION_ROADMAP.md) for detailed implementation information.
+
+⸻
+
 ## Architecture
 
 ### Core Components
@@ -134,7 +187,24 @@ Nexo/
 │   ├── Nexo.Runtime/               # Agent runtime and execution
 │   ├── Nexo.Core.Application/      # Application layer (commands, orchestrators)
 │   ├── Nexo.Core.Domain/           # Domain layer (agents, value objects)
+│   ├── Nexo.Orchestration/          # Agent orchestration layer
+│   │   ├── Architect/               # Request decomposition and validation
+│   │   ├── Agents/                 # Specialized agents (CodeGen, Security, Assets, etc.)
+│   │   ├── Coordination/           # Orchestrator, dependency resolution, conflicts
+│   │   ├── Communication/          # Inter-agent messaging (pub/sub)
+│   │   ├── Negotiation/            # Autonomous conflict resolution
+│   │   ├── Metrics/                # Performance monitoring and tracing
+│   │   ├── Resilience/              # Circuit breakers, retry policies
+│   │   ├── Health/                 # Health check system
+│   │   ├── RateLimiting/           # Rate limiting for API calls
+│   │   ├── Configuration/           # Configuration validation and hot-reload
+│   │   ├── Assets/                 # Asset generation models and ports
+│   │   ├── Build/                  # Build pipeline models
+│   │   └── Playtest/               # Playtesting models and ports
+│   ├── Nexo.Adapters.Assets/        # Asset generation adapters (DALL-E, Suno, etc.)
+│   ├── Nexo.Adapters.Playtest/      # Playtest adapters
 │   ├── Nexo.Tools.Dev/             # Development tools (build, test, git)
+│   ├── Nexo.Tools.Unity/           # Unity build tool
 │   ├── Nexo.Policies.Dev/          # Development policies (security, workflow)
 │   ├── Nexo.Agents.Dev/            # Development agents (TDD, automation)
 │   ├── Nexo.Tools.Assembly/        # Assembly analysis and decompilation
@@ -146,6 +216,7 @@ Nexo/
 │   ├── Nexo.Core.UI.Avalonia/      # Avalonia renderer
 │   ├── Nexo.Core.UI.Unity/         # Unity Editor renderer
 │   ├── Nexo.Tests.Application/     # Application layer tests
+│   ├── Nexo.Tests.Orchestration/    # Orchestration layer tests
 │   ├── Nexo.Tests.CLI/              # CLI E2E tests
 │   ├── Nexo.Tests.Domain/           # Domain layer tests
 │   └── Nexo.Tests.Infrastructure/   # Infrastructure layer tests
@@ -333,6 +404,51 @@ nexo test --filter "Category=Architecture"
 nexo test --format-json
 ```
 
+#### `nexo orchestrate`
+Orchestrate multi-agent workflows with automatic decomposition and coordination.
+
+```bash
+# Orchestrate a complex request
+nexo orchestrate "build extraction shooter game with multiplayer support"
+
+# Get JSON output
+nexo orchestrate "create authentication system" --format-json
+```
+
+#### `nexo escalate`
+Manage human escalations for conflicts and issues requiring intervention.
+
+```bash
+# List all escalations
+nexo escalate list
+
+# Show escalation details
+nexo escalate show <id>
+
+# Resolve an escalation
+nexo escalate resolve <id> --resolution "Fixed manually"
+
+# List by severity
+nexo escalate list-by-severity High
+```
+
+#### `nexo metrics`
+View orchestration metrics and performance data.
+
+```bash
+# Show performance report
+nexo metrics report
+
+# Show metrics for specific agent
+nexo metrics agent <agent-id>
+
+# Show trace spans
+nexo metrics traces --correlation-id <id>
+
+# Clear all metrics
+nexo metrics clear
+```
+
 ### Exit Codes
 
 - `0`: Success
@@ -359,8 +475,44 @@ When using `--format-json`, the CLI outputs structured JSON:
 ### Development Agents
 
 - **TDD Agent**: Implements Test-Driven Development workflows
-- **Code Generation Agent**: Generates code based on specifications
-- **Security Analysis Agent**: Analyzes code for security vulnerabilities
+- **Code Generation Agent**: Multi-language code generation with analysis and optimization
+- **Security Analysis Agent**: Vulnerability scanning and compliance checking
+- **Domain Agents**: Specialized agents for Combat, Economy, AI, Infrastructure, Security, and Gameplay
+
+### Agent Orchestration Layer
+
+Nexo includes a comprehensive orchestration layer for coordinating multiple AI agents:
+
+- **Architect Agent**: Decomposes complex requests into agent specifications
+- **Multi-Agent Coordination**: Dependency resolution, conflict detection, and negotiation
+- **Autonomous Negotiation**: Resolves schema, resource, constraint, and philosophy conflicts
+- **Lifecycle Management**: Agent state management, graceful shutdown, and hot-reload
+- **Inter-Agent Communication**: Pub/sub messaging with schema validation
+- **Resource Allocation**: Priority-based resource management with preemption
+- **Progress Tracking**: Convergence detection, thrashing prevention, and stall detection
+
+### Advanced Agent Capabilities
+
+- **Code Generation**: Multi-language support (C#, Python, JavaScript, TypeScript, Java, Go, Rust, YAML, JSON)
+  - Automatic code analysis (complexity, security, performance)
+  - Code optimization with security fixes
+  - Constraint validation
+- **Security Analysis**: 
+  - Vulnerability scanning (SQL injection, XSS, command injection, hardcoded secrets)
+  - Compliance checking (OWASP Top 10, CWE Top 25, PCI-DSS)
+  - LLM-powered risk assessment
+- **Multi-Modal Support**: Text, image, and audio input processing
+- **Learning & Adaptation**: Execution history tracking, feedback loops, pattern extraction
+- **Capability Discovery**: Centralized registry for finding agents by capability or modality
+
+### Production Features
+
+- **Circuit Breaker**: Prevents cascading failures with Open/Closed/HalfOpen states
+- **Retry Policies**: Multiple strategies (Fixed, Linear, Exponential Backoff, Jittered)
+- **Health Checks**: Component health monitoring with caching
+- **Rate Limiting**: Thread-safe sliding window rate limiting
+- **Distributed Tracing**: Correlation IDs and span tracking
+- **Performance Metrics**: Operation timing, resource usage, and agent execution metrics
 
 ### Agent Capabilities
 
@@ -368,6 +520,7 @@ When using `--format-json`, the CLI outputs structured JSON:
 - **Tool Integration**: Seamless integration with development tools
 - **Policy Enforcement**: Automatic policy compliance checking
 - **Memory Management**: Persistent agent memory and context
+- **Thread-Safe**: All components tested for concurrent access
 
 ⸻
 
@@ -386,6 +539,21 @@ When using `--format-json`, the CLI outputs structured JSON:
 - **AssemblyAnalyzeTool**: Extract assembly metadata and dependencies
 - **AssemblyDecompileTool**: Decompile .NET assemblies to source code
 - **AssemblySecurityScanTool**: Security vulnerability scanning
+
+### Asset Generation Tools
+
+- **Image Generation**: DALL-E 3, Stable Diffusion, Ollama, LocalAI, custom endpoints
+- **Audio Generation**: ElevenLabs, Suno, Bark, local TTS (Piper, Coqui)
+- **3D Model Generation**: Meshy, Tripo, custom endpoints
+- **Local/Self-Hosted Support**: Full support for local and self-hosted models
+
+### Build & Playtest Tools
+
+- **Unity Build Tool**: Automated Unity Editor builds with metrics collection
+- **Game Runner**: Headless game execution for automated playtesting
+- **Telemetry Store**: Event tracking and analysis for game balance
+- **AI Player Agent**: LLM-driven AI players for automated testing
+- **Balance Analyzer**: Statistical analysis of game balance issues
 
 ⸻
 
@@ -427,10 +595,12 @@ When using `--format-json`, the CLI outputs structured JSON:
 ## Documentation
 
 - **[Architecture Guide](docs/architecture.md)**: Detailed architectural patterns
-- **[API Reference](docs/api/)**: Complete API documentation
+- **[API Reference](docs/API_REFERENCE.md)**: Complete API documentation
+- **[Agent Orchestration Roadmap](docs/AGENT_ORCHESTRATION_ROADMAP.md)**: Multi-phase implementation plan for agent orchestration layer
+- **[Agent Development Guide](docs/AGENT_DEVELOPMENT_GUIDE.md)**: How to create and register agents
+- **[Configuration Guide](docs/CONFIGURATION_GUIDE.md)**: Configuration management and validation
 - **[Examples](src/Nexo.Examples/)**: Working code examples
 - **[Contributing Guide](docs/contributing.md)**: How to contribute to Nexo
-- **[Agent Orchestration Roadmap](docs/AGENT_ORCHESTRATION_ROADMAP.md)**: Multi-phase implementation plan for advanced agent orchestration layer
 
 ⸻
 
@@ -438,11 +608,13 @@ When using `--format-json`, the CLI outputs structured JSON:
 
 ### Test Categories
 
-- **Unit Tests**: Individual component testing
+- **Unit Tests**: Individual component testing (94+ tests in orchestration layer)
 - **Integration Tests**: Cross-component testing
+- **Concurrency Tests**: Thread-safety validation for rate limiting and circuit breakers
 - **Architecture Tests**: Architectural rule validation (18 comprehensive tests)
 - **Contract Tests**: Behavioral contracts (idempotency, timeouts, policies)
 - **End-to-End Tests**: Complete workflow testing
+- **Performance Tests**: Load and stress testing for orchestration components
 
 ### Contract Testing
 
@@ -570,26 +742,64 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ### ✅ Completed
 - [x] CLI tool with subcommands and JSON output
 - [x] Contract testing framework
-- [x] Comprehensive test suite (Application, Domain, Infrastructure, CLI)
+- [x] Comprehensive test suite (Application, Domain, Infrastructure, CLI, Orchestration)
 - [x] Architecture validation (18 tests)
 - [x] Quality gates and code analysis
 - [x] Cross-platform test runner (Ubuntu, iOS, Android, Unity)
 - [x] Framework-agnostic UI primitives system
 - [x] Logging abstraction with DI support
+- [x] **Agent Orchestration Layer** - Complete multi-agent coordination system
+  - [x] Architect Agent with domain recognition and RAG
+  - [x] Multi-agent coordination with dependency resolution
+  - [x] Conflict detection and autonomous negotiation protocol
+  - [x] Inter-agent communication with pub/sub messaging
+  - [x] Resource allocation and progress tracking
+  - [x] Escalation management with CLI interface
+- [x] **Advanced Agent Capabilities**
+  - [x] Code generation with multi-language support
+  - [x] Security analysis with vulnerability scanning
+  - [x] Multi-modal agent support (text, image, audio)
+  - [x] Agent learning and adaptation
+  - [x] Capability registry and discovery
+- [x] **Production Readiness**
+  - [x] Circuit breaker pattern for resilience
+  - [x] Retry policies with multiple strategies
+  - [x] Health check system
+  - [x] Rate limiting with thread-safe implementation
+  - [x] Configuration validation and hot-reload
+- [x] **Performance & Monitoring**
+  - [x] Comprehensive metrics collection
+  - [x] Distributed tracing with correlation IDs
+  - [x] Performance profiling and resource tracking
+  - [x] CLI metrics commands
+- [x] **Asset Generation Pipeline**
+  - [x] Image, audio, and 3D model generation
+  - [x] Cloud API integrations (DALL-E, ElevenLabs, Suno, Meshy, etc.)
+  - [x] Local/self-hosted model support
+  - [x] Asset validation and retry logic
+- [x] **Game Production Pipeline**
+  - [x] Unity build integration
+  - [x] Automated playtesting with AI players
+  - [x] Telemetry collection and balance analysis
+  - [x] Feedback-driven iteration loop
+- [x] **Thread-Safety Improvements**
+  - [x] Rate limiter race condition fixes
+  - [x] Circuit breaker thread-safety
+  - [x] Comprehensive concurrency tests
 
 ### In Progress
 - [ ] Advanced contract test implementations
 - [ ] Multi-targeting support (netstandard2.1)
 
 ### Planned
-- [ ] Enhanced AI agent capabilities
-- [ ] **Agent Orchestration Layer** - Multi-agent coordination, conflict resolution, and negotiation (see [Agent Orchestration Roadmap](docs/AGENT_ORCHESTRATION_ROADMAP.md))
 - [ ] Web-based development interface
 - [ ] Plugin system for custom tools
 - [ ] Cloud-based agent execution
 - [ ] dotnet new templates
 - [ ] Integration with popular IDEs
 - [ ] Advanced security scanning features
+- [ ] Enhanced negotiation protocol features
+- [ ] Distributed agent execution
 
 ---
 
