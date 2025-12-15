@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-UNITY="/Applications/Unity/Hub/Editor/6000.2.6f1/Unity.app/Contents/MacOS/Unity"
-PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../DirectorStudioUnity" && pwd)"
-ART="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ART="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJ="${PROJ:-$ART/DirectorStudioUnity}"
+UNITY="${UNITY_BIN:-/Applications/Unity/Hub/Editor/6000.2.6f1/Unity.app/Contents/MacOS/Unity}"
 
 echo "==> Running functional validation on real generated scene..."
 "$UNITY" -batchmode -nographics \

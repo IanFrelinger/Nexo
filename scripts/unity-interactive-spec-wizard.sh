@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-UNITY="/Applications/Unity/Hub/Editor/6000.2.6f1/Unity.app/Contents/MacOS/Unity"
-PROJ="/Users/ianfrelinger/CursorProjects/Nexo/DirectorStudioUnity"
-ART="/Users/ianfrelinger/CursorProjects/Nexo"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ART="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJ="${PROJ:-$ART/DirectorStudioUnity}"
+UNITY="${UNITY_BIN:-/Applications/Unity/Hub/Editor/6000.2.6f1/Unity.app/Contents/MacOS/Unity}"
 mkdir -p "$ART"
 
 echo "🎮 Starting Interactive Game Specification Wizard"
