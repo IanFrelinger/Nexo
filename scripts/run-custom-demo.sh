@@ -4,10 +4,12 @@ set -euo pipefail
 # Run custom game demo with custom assets and configuration
 # Usage: ./scripts/run-custom-demo.sh [config-file] [unity-path]
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ART="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJ="${PROJ:-$ART/DirectorStudioUnity}"
+
 CONFIG="${1:-nexo.custom-demo.json}"
-UNITY_BIN="${2:-/Applications/Unity/Hub/Editor/6000.0.0f1/Unity.app/Contents/MacOS/Unity}"
-PROJ="/Users/ianfrelinger/CursorProjects/Nexo/DirectorStudioUnity"
-ART="/Users/ianfrelinger/CursorProjects/Nexo"
+UNITY_BIN="${2:-${UNITY_BIN:-/Applications/Unity/Hub/Editor/6000.0.0f1/Unity.app/Contents/MacOS/Unity}}"
 
 echo "🎮 Running Custom Game Demo"
 echo "=========================="
