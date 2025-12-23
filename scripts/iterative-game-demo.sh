@@ -149,6 +149,47 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
   
   echo ""
   
+  # Capture Unity logs from generation step
+  GENERATION_LOGS_DIR="$ART/UnityLogs"
+  mkdir -p "$GENERATION_LOGS_DIR"
+  
+  # Find the most recent generation log for this iteration
+  GENERATION_LOG=$(ls -t "$GENERATION_LOGS_DIR"/unity_generation_*.log 2>/dev/null | head -1)
+  GENERATION_ANALYSIS=$(ls -t "$GENERATION_LOGS_DIR"/unity_generation_*_analysis.json 2>/dev/null | head -1)
+  
+  if [[ -n "$GENERATION_LOG" ]] && [[ -f "$GENERATION_LOG" ]]; then
+    echo "📋 Analyzing Unity generation logs..."
+    if [[ -z "$GENERATION_ANALYSIS" ]] || [[ ! -f "$GENERATION_ANALYSIS" ]]; then
+      GENERATION_ANALYSIS="${GENERATION_LOG%.log}_analysis.json"
+      ./scripts/capture-unity-logs.sh "$GENERATION_LOG" "$GENERATION_ANALYSIS" 2>/dev/null || true
+    fi
+    
+    # Check for Unity errors and add to playtest context
+    if [[ -f "$GENERATION_ANALYSIS" ]]; then
+      HAS_ERRORS=$(jq -r '.hasErrors' "$GENERATION_ANALYSIS" 2>/dev/null || echo "false")
+      if [[ "$HAS_ERRORS" == "true" ]]; then
+        ERROR_COUNT=$(jq -r '.errorCount' "$GENERATION_ANALYSIS" 2>/dev/null || echo "0")
+        echo "   ⚠️  Found $ERROR_COUNT Unity error(s) during generation"
+        echo "   These will be included in playtest analysis"
+        
+        # Add Unity errors to generation results if available
+        if [[ -f "$ART/iteration-${ITERATION}-generation-results.json" ]]; then
+          jq --slurpfile unity_logs "$GENERATION_ANALYSIS" '
+            .unityErrors = $unity_logs[0].errors |
+            .unityWarnings = $unity_logs[0].warnings |
+            .unityErrorCount = $unity_logs[0].errorCount |
+            .hasUnityErrors = $unity_logs[0].hasErrors |
+            .unityLogFile = $unity_logs[0].logFile
+          ' "$ART/iteration-${ITERATION}-generation-results.json" > "${ART}/iteration-${ITERATION}-generation-results.json.tmp" && \
+          mv "${ART}/iteration-${ITERATION}-generation-results.json.tmp" "$ART/iteration-${ITERATION}-generation-results.json"
+        fi
+      else
+        echo "   ✅ No Unity errors found during generation"
+      fi
+    fi
+    echo ""
+  fi
+  
   # Step 3: Run comprehensive playtesting
   echo "🤖 Step 2: Running AI playtesting..."
   

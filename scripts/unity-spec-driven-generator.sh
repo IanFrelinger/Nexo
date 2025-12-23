@@ -27,6 +27,14 @@ if [[ ! -f "$SPEC_PATH" ]]; then
   exit 1
 fi
 
+# Create logs directory
+LOGS_DIR="$ART/UnityLogs"
+mkdir -p "$LOGS_DIR"
+
+# Generate unique log file name
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_FILE="$LOGS_DIR/unity_generation_${TIMESTAMP}.log"
+
 "$UNITY" \
   -batchmode -nographics \
   -projectPath "$PROJ" \
@@ -34,8 +42,14 @@ fi
   -specPath "$SPEC_PATH" \
   -includePlaytest "$INCLUDE_PLAYTEST" \
   -results "$RESULTS" \
-  -logFile "$ART/unity-spec-driven-generator.log" \
+  -logFile "$LOG_FILE" \
   -quit
+
+# Analyze logs for errors
+if [[ -f "$LOG_FILE" ]]; then
+  ANALYSIS_FILE="$LOGS_DIR/unity_generation_${TIMESTAMP}_analysis.json"
+  ./scripts/capture-unity-logs.sh "$LOG_FILE" "$ANALYSIS_FILE" 2>/dev/null || true
+fi
 
 echo ""
 echo "📊 Specification-Driven Generation Results:"
