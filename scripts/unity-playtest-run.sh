@@ -18,6 +18,14 @@ echo "⏱️ Duration: ${DURATION}s"
 echo "📊 Results: $RESULTS"
 echo ""
 
+# Create logs directory
+LOGS_DIR="$ART/UnityLogs"
+mkdir -p "$LOGS_DIR"
+
+# Generate unique log file name
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_FILE="$LOGS_DIR/unity_playtest_${TIMESTAMP}.log"
+
 "$UNITY" \
   -batchmode -nographics \
   -projectPath "$PROJ" \
@@ -26,8 +34,14 @@ echo ""
   -testDuration "$DURATION" \
   -enableMetrics true \
   -results "$RESULTS" \
-  -logFile "$ART/unity-playtest.log" \
+  -logFile "$LOG_FILE" \
   -quit
+
+# Analyze logs for errors
+if [[ -f "$LOG_FILE" ]]; then
+  ANALYSIS_FILE="$LOGS_DIR/unity_playtest_${TIMESTAMP}_analysis.json"
+  ./scripts/capture-unity-logs.sh "$LOG_FILE" "$ANALYSIS_FILE" 2>/dev/null || true
+fi
 
 echo ""
 echo "📊 Playtest Results:"
@@ -40,4 +54,11 @@ else
 fi
 
 echo ""
-echo "📋 Log file: $ART/unity-playtest.log"
+if [[ -n "${LOG_FILE:-}" ]] && [[ -f "${LOG_FILE:-}" ]]; then
+  echo "📋 Log file: $LOG_FILE"
+  if [[ -f "${ANALYSIS_FILE:-}" ]]; then
+    echo "📊 Log analysis: $ANALYSIS_FILE"
+  fi
+else
+  echo "📋 Log file: $ART/unity-playtest.log"
+fi
