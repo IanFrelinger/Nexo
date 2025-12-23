@@ -109,29 +109,42 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
   
   # Step 2: Generate game from specification
   echo "🎯 Step 1: Generating game from specification..."
-  ./scripts/unity-spec-driven-generator.sh \
+  
+  # Try Unity-based generation first, fallback to orchestrator
+  if ./scripts/unity-spec-driven-generator.sh \
     "$ART/game-specification.json" \
     "true" \
-    "$ART/iteration-${ITERATION}-generation-results.json"
-  
-  if [[ $? -ne 0 ]]; then
-    echo "❌ Generation failed in iteration $ITERATION"
-    exit 1
+    "$ART/iteration-${ITERATION}-generation-results.json" 2>/dev/null; then
+    echo "✅ Game generated successfully (via Unity)"
+  else
+    echo "⚠️  Unity generation unavailable, using orchestrator..."
+    ./scripts/generate-game-via-orchestrator.sh \
+      "$ART/game-specification.json" \
+      "$ART/Artifacts/iteration-${ITERATION}-generated"
+    
+    # Create results file for consistency
+    if [[ -f "$ART/Artifacts/iteration-${ITERATION}-generated/orchestrator-output.json" ]]; then
+      cp "$ART/Artifacts/iteration-${ITERATION}-generated/orchestrator-output.json" \
+         "$ART/iteration-${ITERATION}-generation-results.json" 2>/dev/null || true
+    fi
   fi
   
-  echo ""
-  echo "✅ Game generated successfully"
   echo ""
   
   # Step 3: Run comprehensive playtesting
   echo "🤖 Step 2: Running AI playtesting..."
-  ./scripts/unity-playtest-run.sh \
+  
+  # Try Unity-based playtesting first, fallback to orchestrator
+  if ./scripts/unity-playtest-run.sh \
     "Test iteration $ITERATION" \
     "30" \
-    "$ART/iteration-${ITERATION}-playtest-results.json"
-  
-  if [[ $? -ne 0 ]]; then
-    echo "⚠️  Playtesting had issues, but continuing..."
+    "$ART/iteration-${ITERATION}-playtest-results.json" 2>/dev/null; then
+    echo "✅ Playtesting completed (via Unity)"
+  else
+    echo "⚠️  Unity playtesting unavailable, using orchestrator..."
+    ./scripts/playtest-via-orchestrator.sh \
+      "$ART/iteration-${ITERATION}-generation-results.json" \
+      "$ART/iteration-${ITERATION}-playtest-results.json"
   fi
   
   echo ""
