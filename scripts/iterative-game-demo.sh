@@ -189,6 +189,10 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
     if [[ "$CONVERGED" != "true" ]] && [[ $ITERATION -lt $MAX_ITERATIONS ]]; then
       echo "🔄 Step 4: Synthesizing feedback and updating specification..."
       
+      # Archive directory for this iteration (define early)
+      ITER_DIR="$ART/Artifacts/iteration-${ITERATION}"
+      mkdir -p "$ITER_DIR"
+      
       # Synthesize feedback from playtest results
       FEEDBACK_FILE="$ART/iteration-${ITERATION}-feedback-synthesis.json"
       ./scripts/synthesize-feedback.sh "$PLAYTEST_RESULTS" "$FEEDBACK_FILE"
