@@ -60,7 +60,7 @@ if command -v jq &> /dev/null; then
   jq -c '{
     synthesisId: (.reportId // "fallback-" + (now | tostring)),
     sourceReportId: (.reportId // "unknown"),
-    generatedAt: (now | toiso8601),
+    generatedAt: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
     changeRequests: (
       (.issues // []) | map({
         requestId: ("req-" + (.issueId // "unknown")),
