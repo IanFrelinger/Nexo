@@ -221,14 +221,14 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
   fi
   
   # Archive this iteration's results
-  ITER_DIR="${ITER_DIR:-$ART/Artifacts/iteration-${ITERATION}}"
+  ITER_DIR="$ART/Artifacts/iteration-${ITERATION}"
   mkdir -p "$ITER_DIR"
   
   if [[ -f "$ART/iteration-${ITERATION}-generation-results.json" ]]; then
-    cp "$ART/iteration-${ITERATION}-generation-results.json" "$ITER_DIR/"
+    cp "$ART/iteration-${ITERATION}-generation-results.json" "$ITER_DIR/" 2>/dev/null || true
   fi
   if [[ -f "$ART/iteration-${ITERATION}-playtest-results.json" ]]; then
-    cp "$ART/iteration-${ITERATION}-playtest-results.json" "$ITER_DIR/"
+    cp "$ART/iteration-${ITERATION}-playtest-results.json" "$ITER_DIR/" 2>/dev/null || true
   fi
   if [[ -f "$ART/iteration-${ITERATION}-feedback-synthesis.json" ]]; then
     cp "$ART/iteration-${ITERATION}-feedback-synthesis.json" "$ITER_DIR/" 2>/dev/null || true
