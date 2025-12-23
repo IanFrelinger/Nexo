@@ -1,0 +1,17 @@
+{
+  "name": "Iterative Game Demo",
+  "version": "1.0.0",
+  "genre": "Action",
+  "description": "A game created through iterative development and AI playtesting",
+  "coreMechanics": {
+    "playerMovement": "Third-person",
+    "combat": "Real-time action",
+    "progression": "Level-based"
+  },
+  "targetPlatform": "PC",
+  "artStyle": "Stylized",
+  "createdAt": "2024-12-22T00:00:00Z",
+  "Gameplay": {
+    "Placeholder Issue": "Improve balance"
+  }
+}

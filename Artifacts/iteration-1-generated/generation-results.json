@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2025-12-23T02:21:35Z",
+  "specification": "/Users/ianfrelinger/CursorProjects/Nexo/game-specification.json",
+  "status": "placeholder",
+  "message": "Nexo CLI not available. Install with: dotnet tool install --global Nexo.CLI",
+  "assets": {
+    "scenes": [],
+    "characters": [],
+    "mechanics": []
+  }
+}
