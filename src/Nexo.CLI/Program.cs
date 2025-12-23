@@ -294,6 +294,14 @@ static class Program
             verboseOpt);
         metricsCmd.AddCommand(metricsClearCmd);
 
+        // nexo unity
+        var unityCmd = UnityCommand.CreateCommand(host.Services, jsonOpt, verboseOpt);
+        root.AddCommand(unityCmd);
+
+        // nexo demo
+        var demoCmd = DemoCommand.CreateCommand(host.Services, jsonOpt, verboseOpt);
+        root.AddCommand(demoCmd);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
@@ -339,6 +347,8 @@ static class Program
         services.AddScoped<OrchestrateCommand>();
         services.AddScoped<EscalateCommand>();
         services.AddScoped<MetricsCommand>();
+        services.AddScoped<UnityCommand>();
+        services.AddScoped<DemoCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

@@ -26,21 +26,43 @@ mkdir -p "$LOGS_DIR"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOG_FILE="$LOGS_DIR/unity_playtest_${TIMESTAMP}.log"
 
-"$UNITY" \
-  -batchmode -nographics \
-  -projectPath "$PROJ" \
-  -executeMethod NexoDirectorStudio.Editor.PlaytestCliRunner.Run \
-  -prompt "$PROMPT" \
-  -testDuration "$DURATION" \
-  -enableMetrics true \
-  -results "$RESULTS" \
-  -logFile "$LOG_FILE" \
-  -quit
-
-# Analyze logs for errors
-if [[ -f "$LOG_FILE" ]]; then
-  ANALYSIS_FILE="$LOGS_DIR/unity_playtest_${TIMESTAMP}_analysis.json"
-  ./scripts/capture-unity-logs.sh "$LOG_FILE" "$ANALYSIS_FILE" 2>/dev/null || true
+# Use Nexo CLI if available, otherwise fallback to direct Unity call
+if command -v nexo &> /dev/null; then
+  UNITY_ARGS=(
+    -prompt "$PROMPT"
+    -testDuration "$DURATION"
+    -enableMetrics true
+    -results "$RESULTS"
+  )
+  
+  if [[ -n "${UNITY_BIN:-}" ]]; then
+    nexo unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
+      --unity-bin "${UNITY_BIN}" \
+      --log-file "$LOG_FILE" \
+      --args "${UNITY_ARGS[@]}"
+  else
+    nexo unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
+      --log-file "$LOG_FILE" \
+      --args "${UNITY_ARGS[@]}"
+  fi
+else
+  echo "⚠️  Nexo CLI not found, using direct Unity call..."
+  "$UNITY" \
+    -batchmode -nographics \
+    -projectPath "$PROJ" \
+    -executeMethod NexoDirectorStudio.Editor.PlaytestCliRunner.Run \
+    -prompt "$PROMPT" \
+    -testDuration "$DURATION" \
+    -enableMetrics true \
+    -results "$RESULTS" \
+    -logFile "$LOG_FILE" \
+    -quit
+  
+  # Analyze logs for errors
+  if [[ -f "$LOG_FILE" ]]; then
+    ANALYSIS_FILE="$LOGS_DIR/unity_playtest_${TIMESTAMP}_analysis.json"
+    ./scripts/capture-unity-logs.sh "$LOG_FILE" "$ANALYSIS_FILE" 2>/dev/null || true
+  fi
 fi
 
 echo ""

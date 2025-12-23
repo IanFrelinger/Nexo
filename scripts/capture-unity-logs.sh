@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Capture and parse Unity console logs/errors
+# Capture and parse Unity console logs/errors using Nexo CLI
 # Usage: ./scripts/capture-unity-logs.sh [log-file] [output-json]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -26,6 +26,13 @@ if [[ -z "$LOG_FILE" ]] || [[ ! -f "$LOG_FILE" ]]; then
   exit 0
 fi
 
+# Use Nexo CLI if available, otherwise fallback to bash implementation
+if command -v nexo &> /dev/null; then
+  nexo unity logs "$LOG_FILE" --output "$OUTPUT_JSON"
+  exit $?
+fi
+
+echo "⚠️  Nexo CLI not found, using fallback bash implementation..."
 echo "📋 Analyzing Unity logs..."
 echo "   Log file: $LOG_FILE"
 echo "   Output: $OUTPUT_JSON"

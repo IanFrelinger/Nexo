@@ -1,0 +1,16 @@
+{
+  "logFile": "/Users/ianfrelinger/CursorProjects/Nexo/UnityLogs/unity_generation_20251222_213319.log",
+  "timestamp": "2025-12-23T02:33:35Z",
+  "errors": [
+    "[Licensing::Module] Error: Access token is unavailable; failed to update",
+    "executeMethod class 'SimpleSpecDrivenGenerator' could not be found."
+  ],
+  "warnings": [],
+  "info": [],
+  "errorCount": 2,
+  "warningCount": 0,
+  "infoCount": 0,
+  "hasErrors": true,
+  "hasWarnings": false,
+  "summary": "Found 2 error(s) and 0 warning(s)"
+}

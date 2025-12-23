@@ -1,6 +1,6 @@
 {
-  "reportId": "placeholder-1766456497",
-  "generatedAt": "2025-12-23T02:21:37Z",
+  "reportId": "placeholder-1766457712",
+  "generatedAt": "2025-12-23T02:41:52Z",
   "status": "placeholder",
   "message": "Nexo CLI not available. Install with: dotnet tool install --global Nexo.CLI",
   "issues": [
