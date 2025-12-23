@@ -124,10 +124,31 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
     
     echo ""
     
-    # Step 5: If not converged and not last iteration, prepare for next iteration
+    # Step 5: Synthesize feedback and apply changes for next iteration
     if [[ "$CONVERGED" != "true" ]] && [[ $ITERATION -lt $MAX_ITERATIONS ]]; then
-      echo "🔄 Step 4: Preparing for next iteration..."
-      echo "   (In a full implementation, feedback would be synthesized and spec updated)"
+      echo "🔄 Step 4: Synthesizing feedback and updating specification..."
+      
+      # Synthesize feedback from playtest results
+      FEEDBACK_FILE="$ART/iteration-${ITERATION}-feedback-synthesis.json"
+      ./scripts/synthesize-feedback.sh "$PLAYTEST_RESULTS" "$FEEDBACK_FILE"
+      
+      if [[ $? -eq 0 ]] && [[ -f "$FEEDBACK_FILE" ]]; then
+        # Apply feedback changes to specification
+        echo "   Applying feedback changes to game specification..."
+        ./scripts/apply-feedback-changes.sh "$FEEDBACK_FILE" "$ART/game-specification.json" "$ART/game-specification.json"
+        
+        if [[ $? -eq 0 ]]; then
+          echo "   ✅ Specification updated with feedback changes"
+          
+          # Archive feedback for this iteration
+          cp "$FEEDBACK_FILE" "$ITER_DIR/feedback-synthesis.json" 2>/dev/null || true
+        else
+          echo "   ⚠️  Failed to apply feedback changes, continuing with current spec"
+        fi
+      else
+        echo "   ⚠️  Feedback synthesis failed, continuing with current spec"
+      fi
+      
       echo "   Waiting ${ITERATION_DELAY}s before next iteration..."
       sleep "$ITERATION_DELAY"
       echo ""
@@ -147,6 +168,9 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
   fi
   if [[ -f "$ART/iteration-${ITERATION}-playtest-results.json" ]]; then
     cp "$ART/iteration-${ITERATION}-playtest-results.json" "$ITER_DIR/"
+  fi
+  if [[ -f "$ART/iteration-${ITERATION}-feedback-synthesis.json" ]]; then
+    cp "$ART/iteration-${ITERATION}-feedback-synthesis.json" "$ITER_DIR/" 2>/dev/null || true
   fi
   
   ((ITERATION++))
