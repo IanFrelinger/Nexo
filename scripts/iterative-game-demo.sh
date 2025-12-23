@@ -186,18 +186,19 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
         else
           echo "✅ No Unity errors found during generation"
         fi
-      
-      # Add Unity errors to generation results if available
-      if [[ -f "$ART/iteration-${ITERATION}-generation-results.json" ]]; then
-        jq --slurpfile unity_logs "$GENERATION_ANALYSIS" '
-          .unityErrors = $unity_logs[0].errors |
-          .unityWarnings = $unity_logs[0].warnings |
-          .unityErrorCount = $unity_logs[0].errorCount |
-          .hasUnityErrors = $unity_logs[0].hasErrors |
-          .unityLogFile = $unity_logs[0].logFile |
-          .generationSuccess = ($unity_logs[0].hasErrors == false)
-        ' "$ART/iteration-${ITERATION}-generation-results.json" > "${ART}/iteration-${ITERATION}-generation-results.json.tmp" && \
-        mv "${ART}/iteration-${ITERATION}-generation-results.json.tmp" "$ART/iteration-${ITERATION}-generation-results.json"
+        
+        # Add Unity errors to generation results if available
+        if [[ -f "$ART/iteration-${ITERATION}-generation-results.json" ]]; then
+          jq --slurpfile unity_logs "$GENERATION_ANALYSIS" '
+            .unityErrors = $unity_logs[0].errors |
+            .unityWarnings = $unity_logs[0].warnings |
+            .unityErrorCount = $unity_logs[0].errorCount |
+            .hasUnityErrors = $unity_logs[0].hasErrors |
+            .unityLogFile = $unity_logs[0].logFile |
+            .generationSuccess = ($unity_logs[0].hasErrors == false)
+          ' "$ART/iteration-${ITERATION}-generation-results.json" > "${ART}/iteration-${ITERATION}-generation-results.json.tmp" && \
+          mv "${ART}/iteration-${ITERATION}-generation-results.json.tmp" "$ART/iteration-${ITERATION}-generation-results.json"
+        fi
       fi
     fi
     echo ""
