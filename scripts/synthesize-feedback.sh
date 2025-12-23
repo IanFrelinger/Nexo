@@ -1,92 +1,63 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Synthesize feedback from playtest results using the orchestrator
-# Usage: ./scripts/synthesize-feedback.sh <playtest-results> [output-file]
+# Synthesize feedback from playtest results using Nexo CLI
+# Usage: ./scripts/synthesize-feedback.sh <playtest-results-path> <output-feedback-path>
+
+PLAYTEST_RESULTS_PATH="$1"
+OUTPUT_FEEDBACK_PATH="$2"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ART="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-PLAYTEST_RESULTS="${1:-}"
-OUTPUT_FILE="${2:-$ART/feedback-synthesis.json}"
-
-if [[ -z "$PLAYTEST_RESULTS" ]]; then
-  echo "Usage: $0 <playtest-results> [output-file]"
-  echo "  playtest-results: Path to playtest results JSON"
-  echo "  output-file: Path to save feedback synthesis (default: \$ART/feedback-synthesis.json)"
-  exit 1
-fi
-
-if [[ ! -f "$PLAYTEST_RESULTS" ]]; then
-  echo "❌ Playtest results file not found: $PLAYTEST_RESULTS"
-  exit 1
-fi
-
 echo "🧠 Synthesizing feedback from playtest results..."
-echo "   Input: $PLAYTEST_RESULTS"
-echo "   Output: $OUTPUT_FILE"
+echo "   Input: $PLAYTEST_RESULTS_PATH"
+echo "   Output: $OUTPUT_FEEDBACK_PATH"
 echo ""
 
-# Use orchestrator to synthesize feedback
-# The orchestrator will decompose the request and run FeedbackSynthesizerAgent
-REQUEST="Synthesize design feedback from playtest results in $PLAYTEST_RESULTS and generate change requests for the game specification"
-
+# Use Nexo CLI if available, otherwise fallback to orchestrator or bash
 if command -v nexo &> /dev/null; then
-  echo "Using Nexo CLI orchestrator..."
-  nexo orchestrate "$REQUEST" --format-json > "$OUTPUT_FILE.tmp"
-  
-  if [[ $? -eq 0 ]] && [[ -f "$OUTPUT_FILE.tmp" ]]; then
-    # Extract feedback synthesis from orchestrator output
-    if command -v jq &> /dev/null; then
-      # Try to extract the FeedbackSynthesis from the orchestrator output
-      jq -r '.data.output // .data // .' "$OUTPUT_FILE.tmp" > "$OUTPUT_FILE" 2>/dev/null || \
-        cp "$OUTPUT_FILE.tmp" "$OUTPUT_FILE"
-    else
-      cp "$OUTPUT_FILE.tmp" "$OUTPUT_FILE"
-    fi
-    rm -f "$OUTPUT_FILE.tmp"
-    
-    if [[ -f "$OUTPUT_FILE" ]] && [[ -s "$OUTPUT_FILE" ]]; then
-      echo "✅ Feedback synthesis saved to: $OUTPUT_FILE"
-      exit 0
-    fi
-  fi
+  nexo demo synthesize-feedback "$PLAYTEST_RESULTS_PATH" "$OUTPUT_FEEDBACK_PATH"
+  exit $?
 fi
 
-# Fallback: Create a simple feedback structure from playtest results
-echo "Using fallback feedback synthesis (extracting from playtest results)..."
-if command -v jq &> /dev/null; then
-  # Extract issues and create basic change requests
-  jq -c '{
-    synthesisId: (.reportId // "fallback-" + (now | tostring)),
-    sourceReportId: (.reportId // "unknown"),
-    generatedAt: (now | strftime("%Y-%m-%dT%H:%M:%SZ")),
-    changeRequests: (
-      (.issues // []) | map({
-        requestId: ("req-" + (.issueId // "unknown")),
-        sourceIssueId: (.issueId // "unknown"),
-        domain: (.affectedDomains[0] // "Gameplay"),
-        changeType: "Modify",
-        targetElement: (.title // "unknown"),
-        proposedValue: ((.suggestedFixes[0].description // "Improve balance")),
-        rationale: (.description // "Address balance issue")
-      })
-    ),
-    iterationRecommendation: {
-      shouldIterate: ((.issues // []) | length > 0),
-      priority: (if ((.issues // []) | length) > 5 then "High" else "Normal" end),
-      estimatedEffort: "PT2H",
-      summary: ("Found " + ((.issues // []) | length | tostring) + " issues requiring changes")
-    }
-  }' "$PLAYTEST_RESULTS" > "$OUTPUT_FILE"
-  
-  if [[ $? -eq 0 ]] && [[ -f "$OUTPUT_FILE" ]]; then
-    echo "✅ Feedback synthesis created from playtest results"
-    echo "   Note: This is a simplified synthesis. For full synthesis, use the orchestrator."
+# Fallback: Try using orchestrator if available
+if command -v nexo &> /dev/null; then
+  # Use orchestrator to synthesize feedback
+  ORCHESTRATION_REQUEST="Synthesize feedback from playtest results in $PLAYTEST_RESULTS_PATH and create design change requests"
+  nexo orchestrate "$ORCHESTRATION_REQUEST" --format-json > "$OUTPUT_FEEDBACK_PATH.orchestration-output.json"
+  if [[ $? -eq 0 ]]; then
+    echo "✅ Feedback synthesis completed via orchestrator"
+    # Extract relevant output
+    jq '.data.output' "$OUTPUT_FEEDBACK_PATH.orchestration-output.json" > "$OUTPUT_FEEDBACK_PATH"
     exit 0
   fi
 fi
 
-echo "❌ Failed to synthesize feedback"
-exit 1
-
+# Fallback: Extract issues from playtest results if orchestrator is not available
+echo "Using fallback feedback synthesis (extracting from playtest results)..."
+if command -v jq &> /dev/null; then
+  # Extract issues and format into a simplified FeedbackSynthesis structure
+  jq -n \
+    --argjson now "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+    --arg reportId "$(jq -r '.reportId // "unknown"' "$PLAYTEST_RESULTS_PATH")" \
+    --argjson issues "$(jq -c '[.issues[] | select(.severity >= 2) | {requestId: (.issueId // "unknown"), sourceIssueId: (.issueId // "unknown"), domain: (.affectedDomains[0] // "Gameplay"), changeType: "Modify", targetElement: "Placeholder Issue", currentValue: "N/A", proposedValue: .title, rationale: .description}]' "$PLAYTEST_RESULTS_PATH")" \
+    '{
+      synthesisId: ( "synth-" + ($now | split("T")[0]) ),
+      sourceReportId: $reportId,
+      generatedAt: $now,
+      changeRequests: $issues,
+      iterationRecommendation: {
+        shouldIterate: ($issues | length > 0),
+        priority: (if ($issues | length > 2) then "High" else "Normal" end),
+        estimatedEffort: "PT1H",
+        summary: ("Synthesized " + ($issues | length | tostring) + " changes from playtest results")
+      }
+    }' > "$OUTPUT_FEEDBACK_PATH"
+  echo "✅ Feedback synthesis created from playtest results"
+  echo "   Note: This is a simplified synthesis. For full synthesis, use the orchestrator."
+  exit 0
+else
+  echo "❌ jq not found. Cannot perform fallback feedback synthesis."
+  exit 1
+fi

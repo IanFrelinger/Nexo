@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Create visible demo assets in Unity project
+# Create visible demo assets in Unity project using Nexo CLI
 # Usage: ./scripts/create-unity-demo-assets.sh [project-path] [iteration-number]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,6 +14,14 @@ echo "============================="
 echo "  Project: $PROJECT_PATH"
 echo "  Iteration: $ITERATION"
 echo ""
+
+# Use Nexo CLI if available, otherwise fallback to bash implementation
+if command -v nexo &> /dev/null; then
+  nexo demo create-assets "$PROJECT_PATH" "$ITERATION"
+  exit $?
+fi
+
+echo "⚠️  Nexo CLI not found, using fallback bash implementation..."
 
 # Create directories
 mkdir -p "$PROJECT_PATH/Assets/GeneratedScenes"

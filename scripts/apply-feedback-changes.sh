@@ -1,40 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Apply feedback changes to game specification
-# Usage: ./scripts/apply-feedback-changes.sh <feedback-file> [spec-file] [output-file]
+# Apply feedback changes to a game specification JSON file using Nexo CLI
+# Usage: ./scripts/apply-feedback-changes.sh <feedback-json-path> <input-spec-path> [output-spec-path]
+
+FEEDBACK_JSON_PATH="$1"
+INPUT_SPEC_PATH="$2"
+OUTPUT_SPEC_PATH="${3:-$INPUT_SPEC_PATH}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ART="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-FEEDBACK_FILE="${1:-}"
-SPEC_FILE="${2:-$ART/game-specification.json}"
-OUTPUT_FILE="${3:-$SPEC_FILE}"
-
-if [[ -z "$FEEDBACK_FILE" ]]; then
-  echo "Usage: $0 <feedback-file> [spec-file] [output-file]"
-  echo "  feedback-file: Path to feedback-synthesis.json"
-  echo "  spec-file: Path to game-specification.json (default: \$ART/game-specification.json)"
-  echo "  output-file: Output path (default: overwrites spec-file)"
-  exit 1
-fi
-
-# Build the tool if needed
-TOOL_DIR="$ART/tools/ApplyFeedbackChanges"
-TOOL_DLL="$TOOL_DIR/bin/Debug/net8.0/ApplyFeedbackChanges.dll"
-
-if [[ ! -f "$TOOL_DLL" ]]; then
-  echo "🔨 Building ApplyFeedbackChanges tool..."
-  dotnet build "$TOOL_DIR/ApplyFeedbackChanges.csproj" -c Debug
-  if [[ $? -ne 0 ]]; then
-    echo "❌ Failed to build tool"
-    exit 1
-  fi
-fi
-
-# Run the tool
 echo "🔄 Applying feedback changes to specification..."
-dotnet "$TOOL_DLL" "$SPEC_FILE" "$FEEDBACK_FILE" "$OUTPUT_FILE"
+echo "  Feedback: $FEEDBACK_JSON_PATH"
+echo "  Input Spec: $INPUT_SPEC_PATH"
+echo "  Output Spec: $OUTPUT_SPEC_PATH"
+echo ""
 
-exit $?
-
+# Use Nexo CLI if available, otherwise fallback to C# tool
+if command -v nexo &> /dev/null; then
+  if [[ "$OUTPUT_SPEC_PATH" != "$INPUT_SPEC_PATH" ]]; then
+    nexo demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH" --output "$OUTPUT_SPEC_PATH"
+  else
+    nexo demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH"
+  fi
+  exit $?
+else
+  echo "⚠️  Nexo CLI not found, using fallback C# tool..."
+  TOOL_DIR="$ART/tools/ApplyFeedbackChanges"
+  
+  # Ensure the tool is built
+  dotnet build "$TOOL_DIR" --configuration Debug --nologo --verbosity quiet
+  
+  # Run the tool
+  dotnet run --project "$TOOL_DIR" -- "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH" "$OUTPUT_SPEC_PATH"
+fi
