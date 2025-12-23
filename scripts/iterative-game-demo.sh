@@ -22,6 +22,7 @@ MIN_QUALITY_SCORE="${MIN_QUALITY_SCORE:-7.0}"
 ITERATION_DELAY="${ITERATION_DELAY:-2}"
 PROJECT_NAME="${PROJECT_NAME:-IterativeGameDemo}"
 OPEN_EDITOR="${OPEN_EDITOR:-true}"
+OPEN_EDITOR_EARLY="${OPEN_EDITOR_EARLY:-true}"
 
 # Update project path if using custom project name
 if [[ "$PROJECT_NAME" != "DirectorStudioUnity" ]]; then
@@ -93,6 +94,19 @@ EOF
   echo ""
 else
   echo "✅ Using existing game specification: $ART/game-specification.json"
+  echo ""
+fi
+
+# Open Unity editor early if requested (so user can watch changes)
+if [[ "$OPEN_EDITOR_EARLY" == "true" ]] && [[ "$OPEN_EDITOR" == "true" ]]; then
+  echo "🚀 Opening Unity Editor to watch changes in real-time..."
+  echo ""
+  ./scripts/open-unity-editor.sh "$PROJ" &
+  EDITOR_PID=$!
+  echo "   Unity Editor PID: $EDITOR_PID"
+  echo "   Editor is opening - you can watch changes as they happen!"
+  echo "   Waiting 3 seconds for editor to initialize..."
+  sleep 3
   echo ""
 fi
 
@@ -272,14 +286,16 @@ echo "   - Check Unity project for generated scenes: $PROJ/Assets/GeneratedScene
 echo "   - Run manual playtest: ./scripts/unity-simple-playtest.sh"
 echo ""
 
-# Open Unity editor if requested
-if [[ "$OPEN_EDITOR" == "true" ]]; then
+# Open Unity editor if requested (and not already opened early)
+if [[ "$OPEN_EDITOR" == "true" ]] && [[ "$OPEN_EDITOR_EARLY" != "true" ]]; then
   echo "🚀 Opening Unity Editor..."
   echo ""
   ./scripts/open-unity-editor.sh "$PROJ"
   echo ""
   echo "✅ Unity Editor should be opening now!"
   echo "   You can explore the generated game in the Unity project."
+elif [[ "$OPEN_EDITOR_EARLY" == "true" ]]; then
+  echo "✅ Unity Editor is already open - check it to see the changes!"
 fi
 echo ""
 
