@@ -213,49 +213,12 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
     echo ""
   fi
   
-  # Capture Unity logs from generation step
-  GENERATION_LOGS_DIR="$ART/UnityLogs"
-  mkdir -p "$GENERATION_LOGS_DIR"
-  
-  # Find the most recent generation log for this iteration
-  GENERATION_LOG=$(ls -t "$GENERATION_LOGS_DIR"/unity_generation_*.log 2>/dev/null | head -1)
-  GENERATION_ANALYSIS=$(ls -t "$GENERATION_LOGS_DIR"/unity_generation_*_analysis.json 2>/dev/null | head -1)
-  
-  if [[ -n "$GENERATION_LOG" ]] && [[ -f "$GENERATION_LOG" ]]; then
-    echo "📋 Analyzing Unity generation logs..."
-    if [[ -z "$GENERATION_ANALYSIS" ]] || [[ ! -f "$GENERATION_ANALYSIS" ]]; then
-      GENERATION_ANALYSIS="${GENERATION_LOG%.log}_analysis.json"
-      ./scripts/capture-unity-logs.sh "$GENERATION_LOG" "$GENERATION_ANALYSIS" 2>/dev/null || true
-    fi
-    
-    # Check for Unity errors and add to playtest context
-    if [[ -f "$GENERATION_ANALYSIS" ]]; then
-      HAS_ERRORS=$(jq -r '.hasErrors' "$GENERATION_ANALYSIS" 2>/dev/null || echo "false")
-      if [[ "$HAS_ERRORS" == "true" ]]; then
-        ERROR_COUNT=$(jq -r '.errorCount' "$GENERATION_ANALYSIS" 2>/dev/null || echo "0")
-        echo "   ⚠️  Found $ERROR_COUNT Unity error(s) during generation"
-        echo "   These will be included in playtest analysis"
-        
-        # Add Unity errors to generation results if available
-        if [[ -f "$ART/iteration-${ITERATION}-generation-results.json" ]]; then
-          jq --slurpfile unity_logs "$GENERATION_ANALYSIS" '
-            .unityErrors = $unity_logs[0].errors |
-            .unityWarnings = $unity_logs[0].warnings |
-            .unityErrorCount = $unity_logs[0].errorCount |
-            .hasUnityErrors = $unity_logs[0].hasErrors |
-            .unityLogFile = $unity_logs[0].logFile
-          ' "$ART/iteration-${ITERATION}-generation-results.json" > "${ART}/iteration-${ITERATION}-generation-results.json.tmp" && \
-          mv "${ART}/iteration-${ITERATION}-generation-results.json.tmp" "$ART/iteration-${ITERATION}-generation-results.json"
-        fi
-      else
-        echo "   ✅ No Unity errors found during generation"
-      fi
-    fi
-    echo ""
-  fi
-  
   # Step 3: Run comprehensive playtesting
   echo "🤖 Step 2: Running AI playtesting..."
+  
+  PLAYTEST_SUCCESS=false
+  PLAYTEST_HAS_ERRORS=false
+  USED_UNITY_PLAYTEST=false
   
   # Try Unity-based playtesting first, fallback to orchestrator
   if ./scripts/unity-playtest-run.sh \
@@ -263,11 +226,97 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
     "30" \
     "$ART/iteration-${ITERATION}-playtest-results.json" 2>/dev/null; then
     echo "✅ Playtesting completed (via Unity)"
+    PLAYTEST_SUCCESS=true
+    USED_UNITY_PLAYTEST=true
   else
     echo "⚠️  Unity playtesting unavailable, using orchestrator..."
+    USED_UNITY_PLAYTEST=false
     ./scripts/playtest-via-orchestrator.sh \
       "$ART/iteration-${ITERATION}-generation-results.json" \
       "$ART/iteration-${ITERATION}-playtest-results.json"
+    if [[ -f "$ART/iteration-${ITERATION}-playtest-results.json" ]]; then
+      PLAYTEST_SUCCESS=true
+    fi
+  fi
+  
+  # Verify Unity logs for errors after playtesting (only if Unity was used)
+  if [[ "$USED_UNITY_PLAYTEST" == "true" ]]; then
+    PLAYTEST_LOGS_DIR="$ART/UnityLogs"
+    mkdir -p "$PLAYTEST_LOGS_DIR"
+    
+    # Find the most recent playtest log for this iteration
+    PLAYTEST_LOG=$(ls -t "$PLAYTEST_LOGS_DIR"/unity_playtest_*.log 2>/dev/null | head -1)
+    PLAYTEST_ANALYSIS=$(ls -t "$PLAYTEST_LOGS_DIR"/unity_playtest_*_analysis.json 2>/dev/null | head -1)
+    
+    if [[ -n "$PLAYTEST_LOG" ]] && [[ -f "$PLAYTEST_LOG" ]]; then
+      echo "📋 Verifying Unity playtest logs for errors..."
+      if [[ -z "$PLAYTEST_ANALYSIS" ]] || [[ ! -f "$PLAYTEST_ANALYSIS" ]]; then
+        PLAYTEST_ANALYSIS="${PLAYTEST_LOG%.log}_analysis.json"
+        ./scripts/capture-unity-logs.sh "$PLAYTEST_LOG" "$PLAYTEST_ANALYSIS" 2>/dev/null || true
+      fi
+      
+      # Check for Unity errors
+      if [[ -f "$PLAYTEST_ANALYSIS" ]]; then
+        HAS_ERRORS=$(jq -r '.hasErrors' "$PLAYTEST_ANALYSIS" 2>/dev/null || echo "false")
+        ERROR_COUNT=$(jq -r '.errorCount' "$PLAYTEST_ANALYSIS" 2>/dev/null || echo "0")
+        
+        if [[ "$HAS_ERRORS" == "true" ]] && [[ "$ERROR_COUNT" -gt 0 ]]; then
+          PLAYTEST_HAS_ERRORS=true
+          echo "❌ Unity playtesting completed with $ERROR_COUNT error(s)"
+          echo "   Errors found:"
+          jq -r '.errors[]' "$PLAYTEST_ANALYSIS" 2>/dev/null | head -3 | while read -r err; do
+            echo "     - $err"
+          done
+          echo ""
+          echo "⚠️  Iteration $ITERATION will be marked as failed due to Unity errors"
+        else
+          echo "✅ No Unity errors found during playtesting"
+        fi
+        
+        # Merge Unity errors into playtest results if available
+        PLAYTEST_RESULTS="$ART/iteration-${ITERATION}-playtest-results.json"
+        if [[ -f "$PLAYTEST_RESULTS" ]]; then
+          jq --slurpfile unity_logs "$PLAYTEST_ANALYSIS" '
+            .unityErrors = $unity_logs[0].errors |
+            .unityWarnings = $unity_logs[0].warnings |
+            .unityErrorCount = $unity_logs[0].errorCount |
+            .hasUnityErrors = $unity_logs[0].hasErrors |
+            .unityLogFile = $unity_logs[0].logFile |
+            .playtestSuccess = ($unity_logs[0].hasErrors == false)
+          ' "$PLAYTEST_RESULTS" > "${PLAYTEST_RESULTS}.tmp" && \
+          mv "${PLAYTEST_RESULTS}.tmp" "$PLAYTEST_RESULTS"
+        fi
+      fi
+      echo ""
+    fi
+  else
+    echo "ℹ️  Unity playtesting not used (orchestrator fallback) - skipping Unity error check"
+    echo ""
+  fi
+  
+  # Determine if iteration passed (no errors in Unity steps that were actually used)
+  ITERATION_PASSED=true
+  if [[ "$USED_UNITY_GENERATION" == "true" ]] && [[ "$GENERATION_HAS_ERRORS" == "true" ]]; then
+    ITERATION_PASSED=false
+  fi
+  if [[ "$USED_UNITY_PLAYTEST" == "true" ]] && [[ "$PLAYTEST_HAS_ERRORS" == "true" ]]; then
+    ITERATION_PASSED=false
+  fi
+  
+  if [[ "$ITERATION_PASSED" == "false" ]]; then
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "❌ ITERATION $ITERATION FAILED - Unity errors detected"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "   Generation errors: $([ "$GENERATION_HAS_ERRORS" == "true" ] && echo "YES" || echo "NO")"
+    echo "   Playtest errors: $([ "$PLAYTEST_HAS_ERRORS" == "true" ] && echo "YES" || echo "NO")"
+    echo ""
+    echo "   Continuing to analyze feedback, but iteration will not be considered successful."
+    echo "   The system will attempt to fix errors in the next iteration."
+    echo ""
+  else
+    echo "✅ Iteration $ITERATION passed - No Unity errors detected"
+    echo ""
   fi
   
   echo ""
