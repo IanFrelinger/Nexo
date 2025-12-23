@@ -143,6 +143,10 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
     fi
   fi
   
+  # Create visible Unity assets for this iteration
+  echo "🎨 Creating visible Unity assets for iteration $ITERATION..."
+  ./scripts/create-unity-demo-assets.sh "$PROJ" "$ITERATION"
+  
   echo ""
   
   # Step 3: Run comprehensive playtesting
