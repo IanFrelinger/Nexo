@@ -264,7 +264,7 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
           PLAYTEST_HAS_ERRORS=true
           echo "❌ Unity playtesting completed with $ERROR_COUNT error(s)"
           echo "   Errors found:"
-          jq -r '.errors[]' "$PLAYTEST_ANALYSIS" 2>/dev/null | head -3 | while read -r err; do
+          jq -r '.errors[]' "$PLAYTEST_ANALYSIS" 2>/dev/null | head -3 | while IFS= read -r err; do
             echo "     - $err"
           done
           echo ""
