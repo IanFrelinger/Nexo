@@ -34,6 +34,9 @@ echo ""
 echo "This demo will iteratively create and test a game, using"
 echo "playtest feedback to improve the design until quality threshold is met."
 echo ""
+echo "⚠️  NOTE: This demo requires Unity Editor scripts from DirectorStudioUnity project."
+echo "   If you're using a fresh Unity project, some features may not be available."
+echo ""
 echo "Configuration:"
 echo "  Max iterations: $MAX_ITERATIONS"
 echo "  Min quality score: $MIN_QUALITY_SCORE"
@@ -62,10 +65,30 @@ fi
 if [[ ! -f "$ART/game-specification.json" ]]; then
   echo "📋 No game specification found. Creating one..."
   echo ""
-  ./scripts/unity-game-spec-wizard.sh
-  if [[ $? -ne 0 ]]; then
-    echo "❌ Failed to create game specification"
-    exit 1
+  
+  # Try Unity wizard first
+  ./scripts/unity-game-spec-wizard.sh || true
+  
+  # If wizard failed (e.g., Unity scripts not available), create a default spec
+  if [[ ! -f "$ART/game-specification.json" ]]; then
+    echo "⚠️  Unity wizard unavailable, creating default game specification..."
+    cat > "$ART/game-specification.json" << 'EOF'
+{
+  "name": "Iterative Game Demo",
+  "version": "1.0.0",
+  "genre": "Action",
+  "description": "A game created through iterative development and AI playtesting",
+  "coreMechanics": {
+    "playerMovement": "Third-person",
+    "combat": "Real-time action",
+    "progression": "Level-based"
+  },
+  "targetPlatform": "PC",
+  "artStyle": "Stylized",
+  "createdAt": "2024-12-22T00:00:00Z"
+}
+EOF
+    echo "✅ Default game specification created"
   fi
   echo ""
 else
