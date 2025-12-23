@@ -392,13 +392,30 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
         echo "   ⚠️  Feedback synthesis failed, continuing with current spec"
       fi
       
-      echo "   Waiting ${ITERATION_DELAY}s before next iteration..."
-      sleep "$ITERATION_DELAY"
-      echo ""
+      # Only proceed to next iteration if current iteration passed
+      if [[ "$ITERATION_PASSED" == "false" ]]; then
+        echo "   ⚠️  Iteration $ITERATION failed - will retry with error fixes"
+        echo "   Waiting ${ITERATION_DELAY}s before next iteration..."
+        sleep "$ITERATION_DELAY"
+        echo ""
+      else
+        echo "   ✅ Iteration $ITERATION passed - proceeding to next iteration"
+        echo "   Waiting ${ITERATION_DELAY}s before next iteration..."
+        sleep "$ITERATION_DELAY"
+        echo ""
+      fi
+    else
+      if [[ "$ITERATION_PASSED" == "false" ]]; then
+        echo "   ⚠️  Iteration $ITERATION failed - stopping due to max iterations"
+      fi
     fi
   else
     echo "⚠️  No playtest results file found at $PLAYTEST_RESULTS"
-    echo "   Continuing to next iteration..."
+    if [[ "$ITERATION_PASSED" == "false" ]]; then
+      echo "   Iteration $ITERATION failed - cannot proceed without results"
+    else
+      echo "   Continuing to next iteration..."
+    fi
     echo ""
   fi
   
