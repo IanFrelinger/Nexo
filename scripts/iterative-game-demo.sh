@@ -20,6 +20,13 @@ mkdir -p "$ART"
 MAX_ITERATIONS="${MAX_ITERATIONS:-5}"
 MIN_QUALITY_SCORE="${MIN_QUALITY_SCORE:-7.0}"
 ITERATION_DELAY="${ITERATION_DELAY:-2}"
+PROJECT_NAME="${PROJECT_NAME:-IterativeGameDemo}"
+OPEN_EDITOR="${OPEN_EDITOR:-true}"
+
+# Update project path if using custom project name
+if [[ "$PROJECT_NAME" != "DirectorStudioUnity" ]]; then
+  PROJ="$ART/$PROJECT_NAME"
+fi
 
 echo "🔄 === ITERATIVE GAME CREATION & TESTING DEMO ==="
 echo "=================================================="
@@ -30,8 +37,26 @@ echo ""
 echo "Configuration:"
 echo "  Max iterations: $MAX_ITERATIONS"
 echo "  Min quality score: $MIN_QUALITY_SCORE"
-echo "  Project: $PROJ"
+echo "  Project name: $PROJECT_NAME"
+echo "  Project path: $PROJ"
+echo "  Open editor: $OPEN_EDITOR"
 echo ""
+
+# Step 0: Create Unity project if it doesn't exist
+if [[ ! -d "$PROJ" ]] || [[ ! -f "$PROJ/ProjectSettings/ProjectSettings.asset" ]]; then
+  echo "📦 Step 0: Creating new Unity project..."
+  echo ""
+  ./scripts/create-unity-project.sh "$PROJECT_NAME" "$PROJ"
+  
+  if [[ $? -ne 0 ]]; then
+    echo "❌ Failed to create Unity project"
+    exit 1
+  fi
+  echo ""
+else
+  echo "✅ Unity project already exists: $PROJ"
+  echo ""
+fi
 
 # Step 1: Ensure we have a game specification
 if [[ ! -f "$ART/game-specification.json" ]]; then
@@ -205,5 +230,16 @@ echo "💡 Next steps:"
 echo "   - Review playtest results: $ART/Artifacts/iteration-*/"
 echo "   - Check Unity project for generated scenes: $PROJ/Assets/GeneratedScenes/"
 echo "   - Run manual playtest: ./scripts/unity-simple-playtest.sh"
+echo ""
+
+# Open Unity editor if requested
+if [[ "$OPEN_EDITOR" == "true" ]]; then
+  echo "🚀 Opening Unity Editor..."
+  echo ""
+  ./scripts/open-unity-editor.sh "$PROJ"
+  echo ""
+  echo "✅ Unity Editor should be opening now!"
+  echo "   You can explore the generated game in the Unity project."
+fi
 echo ""
 
