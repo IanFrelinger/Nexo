@@ -114,6 +114,7 @@ fi
 ITERATION=1
 LAST_QUALITY=0.0
 CONVERGED=false
+ITERATION_PASSED=true  # Will be set per iteration
 
 while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -124,12 +125,16 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
   # Step 2: Generate game from specification
   echo "🎯 Step 1: Generating game from specification..."
   
+  GENERATION_SUCCESS=false
+  GENERATION_HAS_ERRORS=false
+  
   # Try Unity-based generation first, fallback to orchestrator
   if ./scripts/unity-spec-driven-generator.sh \
     "$ART/game-specification.json" \
     "true" \
     "$ART/iteration-${ITERATION}-generation-results.json" 2>/dev/null; then
     echo "✅ Game generated successfully (via Unity)"
+    GENERATION_SUCCESS=true
   else
     echo "⚠️  Unity generation unavailable, using orchestrator..."
     ./scripts/generate-game-via-orchestrator.sh \
@@ -140,14 +145,69 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
     if [[ -f "$ART/Artifacts/iteration-${ITERATION}-generated/orchestrator-output.json" ]]; then
       cp "$ART/Artifacts/iteration-${ITERATION}-generated/orchestrator-output.json" \
          "$ART/iteration-${ITERATION}-generation-results.json" 2>/dev/null || true
+      GENERATION_SUCCESS=true
     fi
   fi
   
-  # Create visible Unity assets for this iteration
-  echo "🎨 Creating visible Unity assets for iteration $ITERATION..."
-  ./scripts/create-unity-demo-assets.sh "$PROJ" "$ITERATION"
+  # Verify Unity logs for errors after generation
+  GENERATION_LOGS_DIR="$ART/UnityLogs"
+  mkdir -p "$GENERATION_LOGS_DIR"
   
-  echo ""
+  # Find the most recent generation log for this iteration
+  GENERATION_LOG=$(ls -t "$GENERATION_LOGS_DIR"/unity_generation_*.log 2>/dev/null | head -1)
+  GENERATION_ANALYSIS=$(ls -t "$GENERATION_LOGS_DIR"/unity_generation_*_analysis.json 2>/dev/null | head -1)
+  
+  if [[ -n "$GENERATION_LOG" ]] && [[ -f "$GENERATION_LOG" ]]; then
+    echo "📋 Verifying Unity generation logs for errors..."
+    if [[ -z "$GENERATION_ANALYSIS" ]] || [[ ! -f "$GENERATION_ANALYSIS" ]]; then
+      GENERATION_ANALYSIS="${GENERATION_LOG%.log}_analysis.json"
+      ./scripts/capture-unity-logs.sh "$GENERATION_LOG" "$GENERATION_ANALYSIS" 2>/dev/null || true
+    fi
+    
+    # Check for Unity errors
+    if [[ -f "$GENERATION_ANALYSIS" ]]; then
+      HAS_ERRORS=$(jq -r '.hasErrors' "$GENERATION_ANALYSIS" 2>/dev/null || echo "false")
+      ERROR_COUNT=$(jq -r '.errorCount' "$GENERATION_ANALYSIS" 2>/dev/null || echo "0")
+      
+      if [[ "$HAS_ERRORS" == "true" ]] && [[ "$ERROR_COUNT" -gt 0 ]]; then
+        GENERATION_HAS_ERRORS=true
+        echo "❌ Unity generation completed with $ERROR_COUNT error(s)"
+        echo "   Errors found:"
+        jq -r '.errors[]' "$GENERATION_ANALYSIS" 2>/dev/null | head -3 | while read -r err; do
+          echo "     - $err"
+        done
+        echo ""
+        echo "⚠️  Iteration $ITERATION will be marked as failed due to Unity errors"
+        echo "   Continuing to capture feedback, but iteration will not be considered successful"
+      else
+        echo "✅ No Unity errors found during generation"
+      fi
+      
+      # Add Unity errors to generation results if available
+      if [[ -f "$ART/iteration-${ITERATION}-generation-results.json" ]]; then
+        jq --slurpfile unity_logs "$GENERATION_ANALYSIS" '
+          .unityErrors = $unity_logs[0].errors |
+          .unityWarnings = $unity_logs[0].warnings |
+          .unityErrorCount = $unity_logs[0].errorCount |
+          .hasUnityErrors = $unity_logs[0].hasErrors |
+          .unityLogFile = $unity_logs[0].logFile |
+          .generationSuccess = ($unity_logs[0].hasErrors == false)
+        ' "$ART/iteration-${ITERATION}-generation-results.json" > "${ART}/iteration-${ITERATION}-generation-results.json.tmp" && \
+        mv "${ART}/iteration-${ITERATION}-generation-results.json.tmp" "$ART/iteration-${ITERATION}-generation-results.json"
+      fi
+    fi
+    echo ""
+  fi
+  
+  # Only create assets if generation was successful and error-free
+  if [[ "$GENERATION_SUCCESS" == "true" ]] && [[ "$GENERATION_HAS_ERRORS" == "false" ]]; then
+    echo "🎨 Creating visible Unity assets for iteration $ITERATION..."
+    ./scripts/create-unity-demo-assets.sh "$PROJ" "$ITERATION"
+    echo ""
+  elif [[ "$GENERATION_HAS_ERRORS" == "true" ]]; then
+    echo "⚠️  Skipping asset creation due to Unity errors"
+    echo ""
+  fi
   
   # Capture Unity logs from generation step
   GENERATION_LOGS_DIR="$ART/UnityLogs"
@@ -245,8 +305,14 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
     echo ""
     
     # Step 5: Synthesize feedback and apply changes for next iteration
+    # Only proceed to next iteration if current iteration passed (no Unity errors)
     if [[ "$CONVERGED" != "true" ]] && [[ $ITERATION -lt $MAX_ITERATIONS ]]; then
-      echo "🔄 Step 4: Synthesizing feedback and updating specification..."
+      if [[ "$ITERATION_PASSED" == "false" ]]; then
+        echo "🔄 Step 4: Synthesizing feedback to fix Unity errors..."
+        echo "   ⚠️  This iteration had Unity errors - feedback will focus on error resolution"
+      else
+        echo "🔄 Step 4: Synthesizing feedback and updating specification..."
+      fi
       
       # Archive directory for this iteration (define early)
       ITER_DIR="$ART/Artifacts/iteration-${ITERATION}"
