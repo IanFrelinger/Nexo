@@ -181,6 +181,9 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
             echo "     - $err"
           done
           echo ""
+          echo "🔧 Attempting to automatically fix syntax errors..."
+          ./scripts/analyze-and-fix-unity-errors.sh "$GENERATION_LOG" "$PROJ" "$GENERATION_ANALYSIS" 2>/dev/null || true
+          echo ""
           echo "⚠️  Iteration $ITERATION will be marked as failed due to Unity errors"
           echo "   Continuing to capture feedback, but iteration will not be considered successful"
         else
@@ -208,6 +211,24 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
   if [[ "$GENERATION_SUCCESS" == "true" ]] && [[ "$GENERATION_HAS_ERRORS" == "false" ]]; then
     echo "🎨 Creating visible Unity assets for iteration $ITERATION..."
     ./scripts/create-unity-demo-assets.sh "$PROJ" "$ITERATION"
+    
+    # Trigger Unity Editor refresh if editor is open
+    if [[ "$OPEN_EDITOR" == "true" ]] && [[ -n "${EDITOR_PID:-}" ]] && kill -0 "$EDITOR_PID" 2>/dev/null; then
+      echo "🔄 Refreshing Unity Editor assets..."
+      # Use Unity CLI to call the asset updater method
+      if command -v nexo &> /dev/null || [[ -f "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
+        if command -v nexo &> /dev/null; then
+          nexo unity run "$PROJ" "NexoDirectorStudio.Editor.IterativeDemoAssetUpdater.UpdateIterationAssets" \
+            --args "-iteration" "$ITERATION" 2>/dev/null || true
+        else
+          dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- unity run "$PROJ" \
+            "NexoDirectorStudio.Editor.IterativeDemoAssetUpdater.UpdateIterationAssets" \
+            --args "-iteration" "$ITERATION" 2>/dev/null || true
+        fi
+      fi
+      # Give Unity time to refresh
+      sleep 2
+    fi
     echo ""
   elif [[ "$GENERATION_HAS_ERRORS" == "true" ]]; then
     echo "⚠️  Skipping asset creation due to Unity errors"
@@ -268,6 +289,9 @@ while [[ $ITERATION -le $MAX_ITERATIONS ]] && [[ "$CONVERGED" != "true" ]]; do
           jq -r '.errors[]' "$PLAYTEST_ANALYSIS" 2>/dev/null | head -3 | while IFS= read -r err; do
             echo "     - $err"
           done
+          echo ""
+          echo "🔧 Attempting to automatically fix syntax errors..."
+          ./scripts/analyze-and-fix-unity-errors.sh "$PLAYTEST_LOG" "$PROJ" "$PLAYTEST_ANALYSIS" 2>/dev/null || true
           echo ""
           echo "⚠️  Iteration $ITERATION will be marked as failed due to Unity errors"
         else

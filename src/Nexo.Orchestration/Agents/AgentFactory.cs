@@ -5,6 +5,8 @@ using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Agents.Assets;
 using Nexo.Orchestration.Agents.Build;
 using Nexo.Orchestration.Agents.Playtest;
+using Nexo.Orchestration.Agents.Unity;
+using Nexo.Orchestration.Agents.Planning;
 using Nexo.Orchestration.Assets.Ports;
 using Nexo.Orchestration.Build.Ports;
 using Nexo.Orchestration.Playtest.Ports;
@@ -53,6 +55,18 @@ public sealed class AgentFactory
         if (IsPlaytestDomain(spec.Domain))
         {
             return CreatePlaytestAgent(spec);
+        }
+
+        // Check if this is a Unity error analysis or code fix agent
+        if (IsUnityErrorDomain(spec.Domain))
+        {
+            return CreateUnityErrorAgent(spec);
+        }
+
+        // Check if this is a planning agent
+        if (IsPlanningDomain(spec.Domain))
+        {
+            return CreatePlanningAgent(spec);
         }
 
         // Create domain-specific agent based on domain
@@ -235,6 +249,52 @@ public sealed class AgentFactory
 
             _ => throw new ArgumentException($"Unknown playtest domain: {spec.Domain}")
         };
+    }
+
+    private bool IsUnityErrorDomain(string domain)
+    {
+        var unityErrorDomains = new[] { "unityerror", "unity-error", "codefix", "code-fix", "syntaxfix", "syntax-fix" };
+        return unityErrorDomains.Contains(domain.ToLowerInvariant());
+    }
+
+    private BaseAgent CreateUnityErrorAgent(AgentSpawnSpec spec)
+    {
+        var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
+            ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
+        var model = _serviceProvider.GetService<IModel>();
+
+        return spec.Domain.ToLowerInvariant() switch
+        {
+            "unityerror" or "unity-error" => new UnityErrorAnalysisAgent(
+                spec,
+                baseLogger,
+                model),
+
+            "codefix" or "code-fix" or "syntaxfix" or "syntax-fix" => new CodeFixAgent(
+                spec,
+                baseLogger,
+                model),
+
+            _ => throw new ArgumentException($"Unknown Unity error domain: {spec.Domain}")
+        };
+    }
+
+    private bool IsPlanningDomain(string domain)
+    {
+        var planningDomains = new[] { "planning", "guide", "assistant", "wizard" };
+        return planningDomains.Contains(domain.ToLowerInvariant());
+    }
+
+    private BaseAgent CreatePlanningAgent(AgentSpawnSpec spec)
+    {
+        var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
+            ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
+        var model = _serviceProvider.GetService<IModel>();
+
+        return new PlanningAgent(
+            spec,
+            baseLogger,
+            model);
     }
 }
 

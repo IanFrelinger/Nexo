@@ -15,9 +15,14 @@ echo "  Project: $PROJECT_PATH"
 echo "  Iteration: $ITERATION"
 echo ""
 
-# Use Nexo CLI if available, otherwise fallback to bash implementation
-if command -v nexo &> /dev/null; then
-  nexo demo create-assets "$PROJECT_PATH" "$ITERATION"
+# Use Nexo CLI if available (check both global install and dotnet run), otherwise fallback to bash implementation
+if command -v nexo &> /dev/null || [[ -f "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
+  # Use dotnet run if nexo not globally installed
+  if command -v nexo &> /dev/null; then
+    nexo demo create-assets "$PROJECT_PATH" "$ITERATION"
+  else
+    dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- demo create-assets "$PROJECT_PATH" "$ITERATION"
+  fi
   exit $?
 fi
 

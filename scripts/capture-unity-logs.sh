@@ -26,9 +26,14 @@ if [[ -z "$LOG_FILE" ]] || [[ ! -f "$LOG_FILE" ]]; then
   exit 0
 fi
 
-# Use Nexo CLI if available, otherwise fallback to bash implementation
-if command -v nexo &> /dev/null; then
-  nexo unity logs "$LOG_FILE" --output "$OUTPUT_JSON"
+# Use Nexo CLI if available (check both global install and dotnet run), otherwise fallback to bash implementation
+if command -v nexo &> /dev/null || [[ -f "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
+  # Use dotnet run if nexo not globally installed
+  if command -v nexo &> /dev/null; then
+    nexo unity logs "$LOG_FILE" --output "$OUTPUT_JSON"
+  else
+    dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- unity logs "$LOG_FILE" --output "$OUTPUT_JSON"
+  fi
   exit $?
 fi
 

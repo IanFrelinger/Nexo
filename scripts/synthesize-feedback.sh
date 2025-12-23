@@ -15,9 +15,14 @@ echo "   Input: $PLAYTEST_RESULTS_PATH"
 echo "   Output: $OUTPUT_FEEDBACK_PATH"
 echo ""
 
-# Use Nexo CLI if available, otherwise fallback to orchestrator or bash
-if command -v nexo &> /dev/null; then
-  nexo demo synthesize-feedback "$PLAYTEST_RESULTS_PATH" "$OUTPUT_FEEDBACK_PATH"
+# Use Nexo CLI if available (check both global install and dotnet run), otherwise fallback to orchestrator or bash
+if command -v nexo &> /dev/null || [[ -f "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
+  # Use dotnet run if nexo not globally installed
+  if command -v nexo &> /dev/null; then
+    nexo demo synthesize-feedback "$PLAYTEST_RESULTS_PATH" "$OUTPUT_FEEDBACK_PATH"
+  else
+    dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- demo synthesize-feedback "$PLAYTEST_RESULTS_PATH" "$OUTPUT_FEEDBACK_PATH"
+  fi
   exit $?
 fi
 
@@ -38,10 +43,14 @@ fi
 echo "Using fallback feedback synthesis (extracting from playtest results)..."
 if command -v jq &> /dev/null; then
   # Extract issues and format into a simplified FeedbackSynthesis structure
+  NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  REPORT_ID=$(jq -r '.reportId // "unknown"' "$PLAYTEST_RESULTS_PATH" 2>/dev/null || echo "unknown")
+  ISSUES_JSON=$(jq -c '[.issues[]? | select(.severity >= 2) | {requestId: (.issueId // "unknown"), sourceIssueId: (.issueId // "unknown"), domain: ((.affectedDomains[0] // "Gameplay")), changeType: "Modify", targetElement: "Placeholder Issue", currentValue: "N/A", proposedValue: (.title // "Improve"), rationale: (.description // "Based on feedback")}]' "$PLAYTEST_RESULTS_PATH" 2>/dev/null || echo "[]")
+  
   jq -n \
-    --argjson now "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-    --arg reportId "$(jq -r '.reportId // "unknown"' "$PLAYTEST_RESULTS_PATH")" \
-    --argjson issues "$(jq -c '[.issues[] | select(.severity >= 2) | {requestId: (.issueId // "unknown"), sourceIssueId: (.issueId // "unknown"), domain: (.affectedDomains[0] // "Gameplay"), changeType: "Modify", targetElement: "Placeholder Issue", currentValue: "N/A", proposedValue: .title, rationale: .description}]' "$PLAYTEST_RESULTS_PATH")" \
+    --arg now "$NOW" \
+    --arg reportId "$REPORT_ID" \
+    --argjson issues "$ISSUES_JSON" \
     '{
       synthesisId: ( "synth-" + ($now | split("T")[0]) ),
       sourceReportId: $reportId,
@@ -54,9 +63,15 @@ if command -v jq &> /dev/null; then
         summary: ("Synthesized " + ($issues | length | tostring) + " changes from playtest results")
       }
     }' > "$OUTPUT_FEEDBACK_PATH"
-  echo "✅ Feedback synthesis created from playtest results"
-  echo "   Note: This is a simplified synthesis. For full synthesis, use the orchestrator."
-  exit 0
+  
+  if [[ $? -eq 0 ]] && [[ -f "$OUTPUT_FEEDBACK_PATH" ]]; then
+    echo "✅ Feedback synthesis created from playtest results"
+    echo "   Note: This is a simplified synthesis. For full synthesis, use the orchestrator."
+    exit 0
+  else
+    echo "❌ Failed to create feedback synthesis"
+    exit 1
+  fi
 else
   echo "❌ jq not found. Cannot perform fallback feedback synthesis."
   exit 1

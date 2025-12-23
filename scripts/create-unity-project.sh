@@ -17,8 +17,8 @@ echo "  Name: $PROJECT_NAME"
 echo "  Path: $PROJECT_PATH"
 echo ""
 
-# Use Nexo CLI if available, otherwise fallback to direct Unity call
-if command -v nexo &> /dev/null; then
+# Use Nexo CLI if available (check both global install and dotnet run), otherwise fallback to direct Unity call
+if command -v nexo &> /dev/null || [[ -f "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
   UNITY_ARGS=()
   if [[ -n "$UNITY_BIN" ]]; then
     UNITY_ARGS+=(--unity-bin "$UNITY_BIN")
@@ -28,7 +28,12 @@ if command -v nexo &> /dev/null; then
     UNITY_ARGS+=(--path "$PROJECT_PATH")
   fi
   
-  nexo unity create "$PROJECT_NAME" "${UNITY_ARGS[@]}"
+  # Use dotnet run if nexo not globally installed
+  if command -v nexo &> /dev/null; then
+    nexo unity create "$PROJECT_NAME" "${UNITY_ARGS[@]}"
+  else
+    dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- unity create "$PROJECT_NAME" "${UNITY_ARGS[@]}"
+  fi
   exit $?
 else
   echo "⚠️  Nexo CLI not found, using direct Unity call..."

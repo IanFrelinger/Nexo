@@ -114,7 +114,29 @@ public class DemoCommand
             {
                 foreach (var issue in issuesArray.OfType<JsonObject>())
                 {
-                    var severity = issue["severity"]?.GetValue<int>() ?? 0;
+                    // Handle both string and int severity values
+                    int severity = 0;
+                    var severityNode = issue["severity"];
+                    if (severityNode != null)
+                    {
+                        if (severityNode.GetValueKind() == JsonValueKind.String)
+                        {
+                            var severityStr = severityNode.GetValue<string>()?.ToLowerInvariant() ?? "";
+                            severity = severityStr switch
+                            {
+                                "low" or "minor" => 1,
+                                "medium" or "moderate" => 2,
+                                "high" or "major" => 3,
+                                "critical" => 4,
+                                _ => 0
+                            };
+                        }
+                        else if (severityNode.GetValueKind() == JsonValueKind.Number)
+                        {
+                            severity = severityNode.GetValue<int>();
+                        }
+                    }
+                    
                     if (severity >= 2) // Only include medium+ severity issues
                     {
                         issues.Add(issue);

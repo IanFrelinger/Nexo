@@ -26,8 +26,8 @@ mkdir -p "$LOGS_DIR"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOG_FILE="$LOGS_DIR/unity_playtest_${TIMESTAMP}.log"
 
-# Use Nexo CLI if available, otherwise fallback to direct Unity call
-if command -v nexo &> /dev/null; then
+# Use Nexo CLI if available (check both global install and dotnet run), otherwise fallback to direct Unity call
+if command -v nexo &> /dev/null || [[ -f "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
   UNITY_ARGS=(
     -prompt "$PROMPT"
     -testDuration "$DURATION"
@@ -35,15 +35,30 @@ if command -v nexo &> /dev/null; then
     -results "$RESULTS"
   )
   
-  if [[ -n "${UNITY_BIN:-}" ]]; then
-    nexo unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
-      --unity-bin "${UNITY_BIN}" \
-      --log-file "$LOG_FILE" \
-      --args "${UNITY_ARGS[@]}"
+  # Use dotnet run if nexo not globally installed
+  if command -v nexo &> /dev/null; then
+    if [[ -n "${UNITY_BIN:-}" ]]; then
+      nexo unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
+        --unity-bin "${UNITY_BIN}" \
+        --log-file "$LOG_FILE" \
+        --args "${UNITY_ARGS[@]}"
+    else
+      nexo unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
+        --log-file "$LOG_FILE" \
+        --args "${UNITY_ARGS[@]}"
+    fi
   else
-    nexo unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
-      --log-file "$LOG_FILE" \
-      --args "${UNITY_ARGS[@]}"
+    # Use dotnet run as fallback
+    if [[ -n "${UNITY_BIN:-}" ]]; then
+      dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
+        --unity-bin "${UNITY_BIN}" \
+        --log-file "$LOG_FILE" \
+        --args "${UNITY_ARGS[@]}"
+    else
+      dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- unity run "$PROJ" "NexoDirectorStudio.Editor.PlaytestCliRunner.Run" \
+        --log-file "$LOG_FILE" \
+        --args "${UNITY_ARGS[@]}"
+    fi
   fi
 else
   echo "⚠️  Nexo CLI not found, using direct Unity call..."

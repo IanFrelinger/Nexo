@@ -17,12 +17,21 @@ echo "  Input Spec: $INPUT_SPEC_PATH"
 echo "  Output Spec: $OUTPUT_SPEC_PATH"
 echo ""
 
-# Use Nexo CLI if available, otherwise fallback to C# tool
-if command -v nexo &> /dev/null; then
-  if [[ "$OUTPUT_SPEC_PATH" != "$INPUT_SPEC_PATH" ]]; then
-    nexo demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH" --output "$OUTPUT_SPEC_PATH"
+# Use Nexo CLI if available (check both global install and dotnet run), otherwise fallback to C# tool
+if command -v nexo &> /dev/null || [[ -f "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
+  # Use dotnet run if nexo not globally installed
+  if command -v nexo &> /dev/null; then
+    if [[ "$OUTPUT_SPEC_PATH" != "$INPUT_SPEC_PATH" ]]; then
+      nexo demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH" --output "$OUTPUT_SPEC_PATH"
+    else
+      nexo demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH"
+    fi
   else
-    nexo demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH"
+    if [[ "$OUTPUT_SPEC_PATH" != "$INPUT_SPEC_PATH" ]]; then
+      dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH" --output "$OUTPUT_SPEC_PATH"
+    else
+      dotnet run --project "$SCRIPT_DIR/../src/Nexo.CLI/Nexo.CLI.csproj" -- demo apply-feedback "$FEEDBACK_JSON_PATH" "$INPUT_SPEC_PATH"
+    fi
   fi
   exit $?
 else
