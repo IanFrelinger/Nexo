@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+body {
+  @apply bg-surface-dark text-slate-50 overflow-hidden;
+}
+
+/* React Flow overrides */
+.react-flow__node {
+  @apply !bg-transparent;
+}
+
+.react-flow__edge-path {
+  @apply stroke-slate-500;
+}
+
+.react-flow__handle {
+  @apply !bg-slate-400 !border-slate-600;
+}
+
+.react-flow__handle-left {
+  @apply !left-[-6px];
+}
+
+.react-flow__handle-right {
+  @apply !right-[-6px];
+}
+
+.react-flow__minimap {
+  @apply !bg-surface !border !border-slate-700 rounded-lg;
+}
+
+.react-flow__controls {
+  @apply !bg-surface !border !border-slate-700 rounded-lg !shadow-lg;
+}
+
+.react-flow__controls-button {
+  @apply !bg-surface !border-slate-700 !fill-slate-400 hover:!bg-surface-light;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-surface-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-600 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-500;
+}
+
+/* Animated edge for running state */
+.animated-edge {
+  stroke-dasharray: 5;
+  animation: flow 1s linear infinite;
+}
