@@ -7,26 +7,26 @@ import MainToolbar from './components/Toolbar/MainToolbar';
 import GuidedMode from './components/GuidedMode/GuidedMode';
 import { HiBookOpen, HiTerminal, HiCog } from 'react-icons/hi';
 import { useOrchestrationStore } from './stores/orchestrationStore';
-import type { AgentNode, DependencyEdge } from './types/workflow';
+import type { RoleDefinition, Relationship } from './types/workflow';
 
 export default function App() {
   const [showLibrary, setShowLibrary] = useState(true);
   const [showProperties, setShowProperties] = useState(true);
   const [showConsole, setShowConsole] = useState(true);
   const [showGuidedMode, setShowGuidedMode] = useState(false);
-  const { nodes, loadWorkflow } = useOrchestrationStore();
+  const { roles, loadWorkflow } = useOrchestrationStore();
 
   // Check if we should show guided mode on mount
   useEffect(() => {
     // Show guided mode if canvas is empty and user hasn't dismissed it
     const hasDismissedGuidedMode = localStorage.getItem('nexo-guided-mode-dismissed') === 'true';
-    if (nodes.length === 0 && !hasDismissedGuidedMode) {
+    if (roles.length === 0 && !hasDismissedGuidedMode) {
       setShowGuidedMode(true);
     }
-  }, []);
+  }, [roles.length]);
 
-  const handleGuidedModeComplete = (workflow: { nodes: AgentNode[]; edges: DependencyEdge[] }) => {
-    loadWorkflow(workflow.nodes, workflow.edges);
+  const handleGuidedModeComplete = (workflow: { roles: RoleDefinition[]; relationships: Relationship[] }) => {
+    loadWorkflow(workflow.roles, workflow.relationships);
     setShowGuidedMode(false);
     localStorage.setItem('nexo-guided-mode-dismissed', 'true');
   };
@@ -63,7 +63,7 @@ export default function App() {
       {showGuidedMode && (
         <GuidedMode onComplete={handleGuidedModeComplete} onSkip={handleGuidedModeSkip} />
       )}
-      <MainToolbar onShowGuidedMode={nodes.length === 0 ? handleShowGuidedMode : undefined} />
+      <MainToolbar onShowGuidedMode={roles.length === 0 ? handleShowGuidedMode : undefined} />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Agent Library */}

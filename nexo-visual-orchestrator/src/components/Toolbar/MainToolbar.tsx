@@ -1,35 +1,22 @@
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useMockExecution } from '../../hooks/useMockExecution';
-import { validateWorkflow } from '../../utils/validation';
-import { getLayoutedElements } from '../../utils/layoutEngine';
 import { HiSparkles } from 'react-icons/hi';
 import { HiFolderOpen, HiSave, HiPlay, HiPause, HiStop, HiRefresh } from 'react-icons/hi';
+import type { Workflow } from '../../types/workflow';
 
 interface MainToolbarProps {
   onShowGuidedMode?: () => void;
 }
 
 export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
-  const { nodes, edges, loadWorkflow, clearWorkflow } = useOrchestrationStore();
+  const { roles, relationships, settings, loadWorkflow, clearWorkflow } = useOrchestrationStore();
   const { status } = useExecutionStore();
   const { execute, pause, cancel } = useMockExecution();
 
   const handleRun = async () => {
-    const workflow = {
-      id: 'current',
-      name: 'Current Workflow',
-      nodes,
-      edges,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const errors = validateWorkflow(workflow);
-    const hasErrors = errors.some((e) => e.severity === 'error');
-
-    if (hasErrors) {
-      alert(`Workflow has errors:\n${errors.map((e) => e.message).join('\n')}`);
+    if (roles.length === 0) {
+      alert('Please add at least one role to the workflow');
       return;
     }
 
@@ -37,11 +24,11 @@ export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
   };
 
   const handleSave = () => {
-    const workflow = {
+    const workflow: Workflow = {
       id: crypto.randomUUID(),
-      name: 'Saved Workflow',
-      nodes,
-      edges,
+      settings,
+      roles,
+      relationships,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -64,15 +51,57 @@ export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
       if (!file) return;
 
       const text = await file.text();
-      const workflow = JSON.parse(text);
-      loadWorkflow(workflow.nodes, workflow.edges);
+      const workflow: Workflow = JSON.parse(text);
+      // Support new format (roles/relationships)
+      if (workflow.roles && workflow.relationships) {
+        loadWorkflow(workflow.roles, workflow.relationships);
+        if (workflow.settings) {
+          useOrchestrationStore.getState().updateSettings(workflow.settings);
+        }
+      } else {
+        alert('This workflow file uses an unsupported format. Please regenerate it using the guided mode.');
+      }
     };
     input.click();
   };
 
   const handleAutoLayout = () => {
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'LR');
-    loadWorkflow(layoutedNodes, layoutedEdges);
+    // Use layout engine for role-based layout
+    if (roles.length === 0) return;
+    
+    // Group by tier for layout
+    const tiers: Record<string, typeof roles> = {
+      strategic: [],
+      tactical: [],
+      execution: [],
+    };
+    
+    roles.forEach(role => {
+      const tier = role.modelConfig.tier;
+      tiers[tier].push(role);
+    });
+    
+    // Layout by tier
+    const centerX = 400;
+    let currentY = 100;
+    
+    const layoutedRoles = roles.map((role) => {
+      const tier = role.modelConfig.tier;
+      const tierIndex = tier === 'strategic' ? 0 : tier === 'tactical' ? 1 : 2;
+      const rolesInTier = tiers[tier];
+      const indexInTier = rolesInTier.indexOf(role);
+      const rolesPerRow = 4;
+      
+      return {
+        ...role,
+        position: {
+          x: centerX + (indexInTier % rolesPerRow - rolesPerRow / 2) * 300,
+          y: currentY + tierIndex * 350 + Math.floor(indexInTier / rolesPerRow) * 320,
+        },
+      };
+    });
+    
+    loadWorkflow(layoutedRoles, relationships);
   };
 
   const isRunning = status === 'running';
@@ -125,7 +154,7 @@ export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
         {!isRunning && !isPaused && (
           <button
             onClick={handleRun}
-            disabled={nodes.length === 0}
+            disabled={roles.length === 0}
             className="px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
             title="Run workflow"
           >

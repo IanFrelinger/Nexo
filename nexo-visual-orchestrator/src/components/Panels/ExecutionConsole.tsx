@@ -4,7 +4,7 @@ import { useOrchestrationStore } from '../../stores/orchestrationStore';
 
 export default function ExecutionConsole() {
   const { logs, status, clearLogs } = useExecutionStore();
-  const selectNode = useOrchestrationStore((s) => s.selectNode);
+  const setSelectedRole = useOrchestrationStore((s) => s.setSelectedRole);
   const [filter, setFilter] = useState<'all' | 'info' | 'warn' | 'error'>('all');
   const consoleRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +82,7 @@ export default function ExecutionConsole() {
               className={`flex gap-2 hover:bg-surface-light rounded px-1 ${
                 log.agentId ? 'cursor-pointer' : ''
               }`}
-              onClick={() => log.agentId && selectNode(log.agentId)}
+              onClick={() => log.agentId && setSelectedRole(log.agentId)}
             >
               <span className="text-slate-500 shrink-0">{formatTime(log.timestamp)}</span>
               <span className={`shrink-0 uppercase ${levelColors[log.level]}`}>

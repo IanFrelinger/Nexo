@@ -1,62 +1,39 @@
 import type { Workflow, WorkflowValidationError } from '../types/workflow';
-import { AGENT_REGISTRY } from './agentRegistry';
 
 export function validateWorkflow(workflow: Workflow): WorkflowValidationError[] {
   const errors: WorkflowValidationError[] = [];
 
-  // Check for architect node
-  const hasArchitect = workflow.nodes.some((n) => n.data.agentType === 'architect');
-  if (!hasArchitect) {
+  // Check for architect role (optional - not all org patterns need it)
+  const hasArchitect = workflow.roles.some((r) => r.name === 'Architect' || r.modelConfig.tier === 'strategic');
+  if (!hasArchitect && workflow.roles.length > 0) {
     errors.push({
       code: 'MISSING_ARCHITECT',
-      message: 'Workflow must have an Architect node as entry point',
-      severity: 'error',
+      message: 'Workflow should have an Architect role as coordinator (optional for federated/swarm patterns)',
+      severity: 'warning',
     });
   }
 
-  // Check for cycles
+  // Check for cycles in delegation relationships
   if (hasCycle(workflow)) {
     errors.push({
       code: 'CYCLE_DETECTED',
-      message: 'Workflow contains a cycle, which is not allowed',
+      message: 'Workflow contains a cycle in delegation relationships',
       severity: 'error',
     });
   }
 
-  // Check required inputs are connected
-  workflow.nodes.forEach((node) => {
-    const agentDef = AGENT_REGISTRY[node.data.agentType];
-    if (!agentDef) return;
+  // Check for disconnected roles
+  workflow.roles.forEach((role) => {
+    if (role.name === 'Architect') return;
 
-    const incomingEdges = workflow.edges.filter((e) => e.target === node.id);
-    const connectedPorts = new Set(incomingEdges.map((e) => e.data?.targetPort));
+    const hasIncoming = workflow.relationships.some((r) => r.targetRoleId === role.id);
+    const hasOutgoing = workflow.relationships.some((r) => r.sourceRoleId === role.id);
 
-    agentDef.inputs
-      .filter((input) => input.required)
-      .forEach((input) => {
-        if (!connectedPorts.has(input.id)) {
-          errors.push({
-            nodeId: node.id,
-            code: 'MISSING_REQUIRED_INPUT',
-            message: `"${node.data.label}" is missing required input "${input.label}"`,
-            severity: 'error',
-          });
-        }
-      });
-  });
-
-  // Check for disconnected nodes (except architect)
-  workflow.nodes.forEach((node) => {
-    if (node.data.agentType === 'architect') return;
-
-    const hasIncoming = workflow.edges.some((e) => e.target === node.id);
-    const hasOutgoing = workflow.edges.some((e) => e.source === node.id);
-
-    if (!hasIncoming && !hasOutgoing) {
+    if (!hasIncoming && !hasOutgoing && workflow.roles.length > 1) {
       errors.push({
-        nodeId: node.id,
-        code: 'DISCONNECTED_NODE',
-        message: `"${node.data.label}" is not connected to the workflow`,
+        roleId: role.id,
+        code: 'DISCONNECTED_ROLE',
+        message: `"${role.name}" is not connected to the workflow`,
         severity: 'warning',
       });
     }
@@ -69,26 +46,29 @@ function hasCycle(workflow: Workflow): boolean {
   const visited = new Set<string>();
   const recursionStack = new Set<string>();
 
-  function dfs(nodeId: string): boolean {
-    visited.add(nodeId);
-    recursionStack.add(nodeId);
+  function dfs(roleId: string): boolean {
+    visited.add(roleId);
+    recursionStack.add(roleId);
 
-    const outgoing = workflow.edges.filter((e) => e.source === nodeId);
-    for (const edge of outgoing) {
-      if (!visited.has(edge.target)) {
-        if (dfs(edge.target)) return true;
-      } else if (recursionStack.has(edge.target)) {
+    const outgoing = workflow.relationships
+      .filter((r) => r.sourceRoleId === roleId && r.type === 'delegates')
+      .map((r) => r.targetRoleId);
+    
+    for (const targetId of outgoing) {
+      if (!visited.has(targetId)) {
+        if (dfs(targetId)) return true;
+      } else if (recursionStack.has(targetId)) {
         return true;
       }
     }
 
-    recursionStack.delete(nodeId);
+    recursionStack.delete(roleId);
     return false;
   }
 
-  for (const node of workflow.nodes) {
-    if (!visited.has(node.id)) {
-      if (dfs(node.id)) return true;
+  for (const role of workflow.roles) {
+    if (!visited.has(role.id)) {
+      if (dfs(role.id)) return true;
     }
   }
 
@@ -99,27 +79,29 @@ export function topologicalSort(workflow: Workflow): string[] {
   const inDegree = new Map<string, number>();
   const adjacency = new Map<string, string[]>();
 
-  workflow.nodes.forEach((node) => {
-    inDegree.set(node.id, 0);
-    adjacency.set(node.id, []);
+  workflow.roles.forEach((role) => {
+    inDegree.set(role.id, 0);
+    adjacency.set(role.id, []);
   });
 
-  workflow.edges.forEach((edge) => {
-    adjacency.get(edge.source)?.push(edge.target);
-    inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
-  });
+  workflow.relationships
+    .filter((r) => r.type === 'delegates')
+    .forEach((rel) => {
+      adjacency.get(rel.sourceRoleId)?.push(rel.targetRoleId);
+      inDegree.set(rel.targetRoleId, (inDegree.get(rel.targetRoleId) || 0) + 1);
+    });
 
   const queue: string[] = [];
-  inDegree.forEach((degree, nodeId) => {
-    if (degree === 0) queue.push(nodeId);
+  inDegree.forEach((degree, roleId) => {
+    if (degree === 0) queue.push(roleId);
   });
 
   const result: string[] = [];
   while (queue.length > 0) {
-    const nodeId = queue.shift()!;
-    result.push(nodeId);
+    const roleId = queue.shift()!;
+    result.push(roleId);
 
-    adjacency.get(nodeId)?.forEach((neighbor) => {
+    adjacency.get(roleId)?.forEach((neighbor) => {
       const newDegree = (inDegree.get(neighbor) || 0) - 1;
       inDegree.set(neighbor, newDegree);
       if (newDegree === 0) queue.push(neighbor);
@@ -128,4 +110,3 @@ export function topologicalSort(workflow: Workflow): string[] {
 
   return result;
 }
-

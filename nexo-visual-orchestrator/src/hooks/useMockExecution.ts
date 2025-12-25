@@ -1,16 +1,17 @@
 import { useCallback } from 'react';
 import { useOrchestrationStore } from '../stores/orchestrationStore';
 import { useExecutionStore } from '../stores/executionStore';
-import { topologicalSort } from '../utils/validation';
 import { nanoid } from 'nanoid';
 
 export function useMockExecution() {
-  const { nodes, edges, setNodeStatus, setNodeOutput, resetAllStatus } = useOrchestrationStore();
+  const { roles, instances, relationships, updateInstance, getInstancesForRole } = useOrchestrationStore();
   const { setStatus, setExecutionId, addLog, reset: resetExecution } = useExecutionStore();
 
   const execute = useCallback(async () => {
     // Reset everything
-    resetAllStatus();
+    instances.forEach((instance) => {
+      updateInstance(instance.id, { status: 'idle', currentTask: null });
+    });
     resetExecution();
 
     const executionId = nanoid(8);
@@ -18,44 +19,44 @@ export function useMockExecution() {
     setStatus('running');
     addLog('info', `Execution ${executionId} started`);
 
-    // Get execution order
-    const workflow = {
-      id: 'mock',
-      name: 'Mock Workflow',
-      nodes,
-      edges,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const order = topologicalSort(workflow);
+    // Simplified execution: iterate through roles
+    for (const role of roles) {
+      const roleInstances = getInstancesForRole(role.id);
+      if (roleInstances.length === 0) continue;
 
-    // Execute each agent in order
-    for (const nodeId of order) {
-      const node = nodes.find((n) => n.id === nodeId);
-      if (!node) continue;
+      // Execute first instance of each role
+      const instance = roleInstances[0];
+      updateInstance(instance.id, { 
+        status: 'busy', 
+        currentTask: {
+          id: nanoid(),
+          description: 'Processing workflow...',
+          priority: 1,
+          assignedAt: new Date().toISOString(),
+        }
+      });
+      addLog('info', `${role.name} (instance #${instance.instanceNumber}) started`, role.id);
 
-      // Start agent
-      setNodeStatus(nodeId, 'running');
-      addLog('info', `${node.data.label} started`, nodeId);
+      // Simulate work
+      await sleep(1000);
 
-      // Simulate progress
-      for (let progress = 0; progress <= 100; progress += 20) {
-        await sleep(300);
-        setNodeStatus(nodeId, 'running', progress);
-      }
-
-      // Simulate completion with mock output
-      const mockOutput = generateMockOutput(node.data.agentType);
-      setNodeOutput(nodeId, mockOutput);
-      setNodeStatus(nodeId, 'completed');
-      addLog('info', `${node.data.label} completed`, nodeId);
+      // Simulate completion
+      updateInstance(instance.id, { 
+        status: 'idle', 
+        currentTask: null,
+        metrics: {
+          ...instance.metrics,
+          tasksCompleted: instance.metrics.tasksCompleted + 1,
+        }
+      });
+      addLog('info', `${role.name} (instance #${instance.instanceNumber}) completed`, role.id);
 
       await sleep(200);
     }
 
     setStatus('completed');
     addLog('info', `Execution ${executionId} completed successfully`);
-  }, [nodes, edges, setNodeStatus, setNodeOutput, resetAllStatus, setStatus, setExecutionId, addLog, resetExecution]);
+  }, [roles, instances, relationships, updateInstance, getInstancesForRole, setStatus, setExecutionId, addLog, resetExecution]);
 
   const pause = useCallback(() => {
     setStatus('paused');
@@ -64,46 +65,16 @@ export function useMockExecution() {
 
   const cancel = useCallback(() => {
     setStatus('idle');
-    resetAllStatus();
+    instances.forEach((instance) => {
+      updateInstance(instance.id, { status: 'idle', currentTask: null });
+    });
     addLog('warn', 'Execution cancelled');
-  }, [setStatus, resetAllStatus, addLog]);
+  }, [setStatus, instances, updateInstance, addLog]);
 
   return { execute, pause, cancel };
 }
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function generateMockOutput(agentType: string): unknown {
-  switch (agentType) {
-    case 'architect':
-      return {
-        gameType: 'extraction-shooter',
-        suggestedAgents: ['combat', 'economy', 'ai-behavior', 'level-design'],
-        scope: 'MVP with core loop',
-      };
-    case 'combat':
-      return {
-        ttk: { min: 0.5, max: 2.0 },
-        weapons: ['rifle', 'pistol', 'shotgun'],
-        damageModel: 'hitzone-based',
-        permadeath: true,
-      };
-    case 'economy':
-      return {
-        currencies: [{ name: 'Credits', maxStack: 1000000 }],
-        lootTables: ['common', 'rare', 'legendary'],
-        extractionBonus: 1.5,
-      };
-    case 'ai-behavior':
-      return {
-        behaviorTree: 'patrol-investigate-engage',
-        difficultyLevels: 3,
-        squadSize: { min: 2, max: 4 },
-      };
-    default:
-      return { status: 'completed', timestamp: new Date().toISOString() };
-  }
 }
 

@@ -1,8 +1,8 @@
 import GuidedModeChat from './GuidedModeChat';
-import type { AgentNode, DependencyEdge } from '../../types/workflow';
+import type { RoleDefinition, Relationship } from '../../types/workflow';
 
 interface GuidedModeProps {
-  onComplete: (workflow: { nodes: AgentNode[]; edges: DependencyEdge[] }) => void;
+  onComplete: (workflow: { roles: RoleDefinition[]; relationships: Relationship[] }) => void;
   onSkip: () => void;
 }
 
