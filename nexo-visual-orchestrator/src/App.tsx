@@ -4,11 +4,41 @@ import AgentLibrary from './components/Panels/AgentLibrary';
 import PropertiesPanel from './components/Panels/PropertiesPanel';
 import ExecutionConsole from './components/Panels/ExecutionConsole';
 import MainToolbar from './components/Toolbar/MainToolbar';
+import GuidedMode from './components/GuidedMode/GuidedMode';
+import { HiBookOpen, HiTerminal, HiCog } from 'react-icons/hi';
+import { useOrchestrationStore } from './stores/orchestrationStore';
+import type { AgentNode, DependencyEdge } from './types/workflow';
 
 export default function App() {
   const [showLibrary, setShowLibrary] = useState(true);
   const [showProperties, setShowProperties] = useState(true);
   const [showConsole, setShowConsole] = useState(true);
+  const [showGuidedMode, setShowGuidedMode] = useState(false);
+  const { nodes, loadWorkflow } = useOrchestrationStore();
+
+  // Check if we should show guided mode on mount
+  useEffect(() => {
+    // Show guided mode if canvas is empty and user hasn't dismissed it
+    const hasDismissedGuidedMode = localStorage.getItem('nexo-guided-mode-dismissed') === 'true';
+    if (nodes.length === 0 && !hasDismissedGuidedMode) {
+      setShowGuidedMode(true);
+    }
+  }, []);
+
+  const handleGuidedModeComplete = (workflow: { nodes: AgentNode[]; edges: DependencyEdge[] }) => {
+    loadWorkflow(workflow.nodes, workflow.edges);
+    setShowGuidedMode(false);
+    localStorage.setItem('nexo-guided-mode-dismissed', 'true');
+  };
+
+  const handleGuidedModeSkip = () => {
+    setShowGuidedMode(false);
+    localStorage.setItem('nexo-guided-mode-dismissed', 'true');
+  };
+
+  const handleShowGuidedMode = () => {
+    setShowGuidedMode(true);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -30,7 +60,10 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-surface-dark">
-      <MainToolbar />
+      {showGuidedMode && (
+        <GuidedMode onComplete={handleGuidedModeComplete} onSkip={handleGuidedModeSkip} />
+      )}
+      <MainToolbar onShowGuidedMode={nodes.length === 0 ? handleShowGuidedMode : undefined} />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Agent Library */}
@@ -51,19 +84,21 @@ export default function App() {
         {!showLibrary && (
           <button
             onClick={() => setShowLibrary(true)}
-            className="p-2 bg-surface border border-slate-700 rounded text-xs hover:bg-surface-light"
+            className="p-2 bg-surface border border-slate-700 rounded text-xs hover:bg-surface-light flex items-center gap-1"
             title="Show Agent Library"
           >
-            Library
+            <HiBookOpen className="w-4 h-4" />
+            <span>Library</span>
           </button>
         )}
         {!showConsole && (
           <button
             onClick={() => setShowConsole(true)}
-            className="p-2 bg-surface border border-slate-700 rounded text-xs hover:bg-surface-light"
+            className="p-2 bg-surface border border-slate-700 rounded text-xs hover:bg-surface-light flex items-center gap-1"
             title="Show Console"
           >
-            Console
+            <HiTerminal className="w-4 h-4" />
+            <span>Console</span>
           </button>
         )}
       </div>
@@ -73,10 +108,11 @@ export default function App() {
         <div className="absolute bottom-52 right-2">
           <button
             onClick={() => setShowProperties(true)}
-            className="p-2 bg-surface border border-slate-700 rounded text-xs hover:bg-surface-light"
+            className="p-2 bg-surface border border-slate-700 rounded text-xs hover:bg-surface-light flex items-center gap-1"
             title="Show Properties"
           >
-            Props
+            <HiCog className="w-4 h-4" />
+            <span>Props</span>
           </button>
         </div>
       )}

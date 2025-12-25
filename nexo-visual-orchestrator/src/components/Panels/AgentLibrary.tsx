@@ -1,6 +1,49 @@
 import { useState } from 'react';
 import { AGENT_CATEGORIES, getAgentsByCategory } from '../../utils/agentRegistry';
 import type { AgentType } from '../../types/agents';
+import {
+  HiOutlineCube,
+  HiOutlinePlay,
+  HiOutlineChartBar,
+  HiOutlineCurrencyDollar,
+  HiOutlineCpuChip,
+  HiOutlineMap,
+  HiOutlineBookOpen,
+  HiOutlinePhoto,
+  HiOutlineMusicalNote,
+  HiOutlineCubeTransparent,
+  HiOutlineArrowPath,
+  HiOutlineBolt,
+  HiOutlineFire,
+  HiOutlineWrenchScrewdriver,
+} from 'react-icons/hi2';
+import { HiX } from 'react-icons/hi';
+import type { IconType } from 'react-icons';
+
+const agentIconMap: Record<string, IconType> = {
+  architect: HiOutlineBolt,
+  combat: HiOutlineFire,
+  economy: HiOutlineCurrencyDollar,
+  'ai-behavior': HiOutlineCpuChip,
+  'level-design': HiOutlineMap,
+  narrative: HiOutlineBookOpen,
+  'image-gen': HiOutlinePhoto,
+  'audio-gen': HiOutlineMusicalNote,
+  'model-3d-gen': HiOutlineCubeTransparent,
+  'unity-build': HiOutlineWrenchScrewdriver,
+  'ai-player': HiOutlinePlay,
+  'balance-analyzer': HiOutlineChartBar,
+  'feedback-synthesizer': HiOutlineArrowPath,
+};
+
+const categoryIconMap: Record<string, IconType> = {
+  architect: HiOutlineBolt,
+  domain: HiOutlineCube,
+  asset: HiOutlinePhoto,
+  build: HiOutlineWrenchScrewdriver,
+  playtest: HiOutlinePlay,
+  analysis: HiOutlineChartBar,
+};
 
 interface AgentLibraryProps {
   onCollapse?: () => void;
@@ -36,7 +79,7 @@ export default function AgentLibrary({ onCollapse }: AgentLibraryProps) {
         <h2 className="font-semibold text-sm">Agent Library</h2>
         {onCollapse && (
           <button onClick={onCollapse} className="text-slate-400 hover:text-slate-200">
-            X
+            <HiX className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -73,7 +116,14 @@ export default function AgentLibrary({ onCollapse }: AgentLibraryProps) {
                 className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-slate-300 hover:bg-surface-light rounded"
               >
                 <span className="text-xs">{isExpanded ? '▼' : '▶'}</span>
-                <span>{category.icon}</span>
+                {(() => {
+                  const CategoryIcon = categoryIconMap[category.id];
+                  return CategoryIcon ? (
+                    <CategoryIcon className="w-4 h-4" />
+                  ) : (
+                    <span>{category.icon}</span>
+                  );
+                })()}
                 <span>{category.label}</span>
                 <span className="ml-auto text-xs text-slate-500">{agents.length}</span>
               </button>
@@ -88,7 +138,14 @@ export default function AgentLibrary({ onCollapse }: AgentLibraryProps) {
                       className="flex items-center gap-2 px-2 py-1.5 bg-surface-dark border border-slate-700 rounded cursor-grab hover:border-slate-500 active:cursor-grabbing"
                       title={agent.description}
                     >
-                      <span>{agent.icon}</span>
+                      {(() => {
+                        const AgentIcon = agentIconMap[agent.type];
+                        return AgentIcon ? (
+                          <AgentIcon className="w-4 h-4" style={{ color: agent.color }} />
+                        ) : (
+                          <span>{agent.icon}</span>
+                        );
+                      })()}
                       <span className="text-sm">{agent.label}</span>
                     </div>
                   ))}

@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { getBezierPath, EdgeLabelRenderer } from 'reactflow';
 import type { EdgeProps } from 'reactflow';
 import type { DependencyEdgeData } from '../../types/workflow';
+import { HiExclamationCircle } from 'react-icons/hi';
 
 function DataFlowEdge({
   id,
@@ -40,12 +41,13 @@ function DataFlowEdge({
       {hasConflict && (
         <EdgeLabelRenderer>
           <div
-            className="absolute bg-orange-500 text-white text-xs px-1 rounded pointer-events-none"
+            className="absolute bg-orange-500 text-white text-xs px-1 rounded pointer-events-none flex items-center gap-0.5"
             style={{
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
             }}
           >
-            CONFLICT
+            <HiExclamationCircle className="w-3 h-3" />
+            <span>CONFLICT</span>
           </div>
         </EdgeLabelRenderer>
       )}

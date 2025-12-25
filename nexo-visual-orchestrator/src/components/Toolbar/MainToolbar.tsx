@@ -3,8 +3,14 @@ import { useExecutionStore } from '../../stores/executionStore';
 import { useMockExecution } from '../../hooks/useMockExecution';
 import { validateWorkflow } from '../../utils/validation';
 import { getLayoutedElements } from '../../utils/layoutEngine';
+import { HiSparkles } from 'react-icons/hi';
+import { HiFolderOpen, HiSave, HiPlay, HiPause, HiStop, HiRefresh } from 'react-icons/hi';
 
-export default function MainToolbar() {
+interface MainToolbarProps {
+  onShowGuidedMode?: () => void;
+}
+
+export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
   const { nodes, edges, loadWorkflow, clearWorkflow } = useOrchestrationStore();
   const { status } = useExecutionStore();
   const { execute, pause, cancel } = useMockExecution();
@@ -78,15 +84,19 @@ export default function MainToolbar() {
       <div className="flex items-center gap-2">
         <button
           onClick={handleLoad}
-          className="px-3 py-1.5 text-sm text-slate-300 hover:bg-surface-light rounded transition-colors"
+          className="px-3 py-1.5 text-sm text-slate-300 hover:bg-surface-light rounded transition-colors flex items-center gap-1.5"
+          title="Open workflow"
         >
-          Open
+          <HiFolderOpen className="w-4 h-4" />
+          <span>Open</span>
         </button>
         <button
           onClick={handleSave}
-          className="px-3 py-1.5 text-sm text-slate-300 hover:bg-surface-light rounded transition-colors"
+          className="px-3 py-1.5 text-sm text-slate-300 hover:bg-surface-light rounded transition-colors flex items-center gap-1.5"
+          title="Save workflow"
         >
-          Save
+          <HiSave className="w-4 h-4" />
+          <span>Save</span>
         </button>
         <div className="w-px h-6 bg-slate-700 mx-2" />
         <button
@@ -95,6 +105,19 @@ export default function MainToolbar() {
         >
           Clear
         </button>
+        {onShowGuidedMode && (
+          <>
+            <div className="w-px h-6 bg-slate-700 mx-2" />
+            <button
+              onClick={onShowGuidedMode}
+              className="px-3 py-1.5 text-sm text-blue-400 hover:bg-surface-light rounded transition-colors flex items-center gap-1.5"
+              title="Start guided setup"
+            >
+              <HiSparkles className="w-4 h-4" />
+              <span>Guided Setup</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Center: Execution controls */}
@@ -103,24 +126,30 @@ export default function MainToolbar() {
           <button
             onClick={handleRun}
             disabled={nodes.length === 0}
-            className="px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            title="Run workflow"
           >
-            Run
+            <HiPlay className="w-4 h-4" />
+            <span>Run</span>
           </button>
         )}
         {isRunning && (
           <>
             <button
               onClick={pause}
-              className="px-4 py-1.5 bg-yellow-600 text-white text-sm font-medium rounded hover:bg-yellow-700 transition-colors"
+              className="px-4 py-1.5 bg-yellow-600 text-white text-sm font-medium rounded hover:bg-yellow-700 transition-colors flex items-center gap-1.5"
+              title="Pause workflow"
             >
-              Pause
+              <HiPause className="w-4 h-4" />
+              <span>Pause</span>
             </button>
             <button
               onClick={cancel}
-              className="px-4 py-1.5 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+              className="px-4 py-1.5 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors flex items-center gap-1.5"
+              title="Stop workflow"
             >
-              Stop
+              <HiStop className="w-4 h-4" />
+              <span>Stop</span>
             </button>
           </>
         )}
@@ -128,15 +157,19 @@ export default function MainToolbar() {
           <>
             <button
               onClick={execute}
-              className="px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors"
+              className="px-4 py-1.5 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors flex items-center gap-1.5"
+              title="Resume workflow"
             >
-              Resume
+              <HiPlay className="w-4 h-4" />
+              <span>Resume</span>
             </button>
             <button
               onClick={cancel}
-              className="px-4 py-1.5 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+              className="px-4 py-1.5 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors flex items-center gap-1.5"
+              title="Stop workflow"
             >
-              Stop
+              <HiStop className="w-4 h-4" />
+              <span>Stop</span>
             </button>
           </>
         )}
@@ -146,9 +179,11 @@ export default function MainToolbar() {
       <div className="flex items-center gap-2">
         <button
           onClick={handleAutoLayout}
-          className="px-3 py-1.5 text-sm text-slate-300 hover:bg-surface-light rounded transition-colors"
+          className="px-3 py-1.5 text-sm text-slate-300 hover:bg-surface-light rounded transition-colors flex items-center gap-1.5"
+          title="Auto-layout nodes"
         >
-          Layout
+          <HiRefresh className="w-4 h-4" />
+          <span>Layout</span>
         </button>
       </div>
     </div>

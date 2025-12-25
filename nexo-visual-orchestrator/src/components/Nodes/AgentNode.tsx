@@ -4,15 +4,55 @@ import type { NodeProps } from 'reactflow';
 import type { AgentNodeData } from '../../types/workflow';
 import { AGENT_REGISTRY } from '../../utils/agentRegistry';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
+import {
+  HiClock,
+  HiLightningBolt,
+  HiCheckCircle,
+  HiXCircle,
+  HiBan,
+  HiExclamationCircle,
+} from 'react-icons/hi';
+import {
+  HiOutlineCurrencyDollar,
+  HiOutlineCpuChip,
+  HiOutlineMap,
+  HiOutlineBookOpen,
+  HiOutlinePhoto,
+  HiOutlineMusicalNote,
+  HiOutlinePlay,
+  HiOutlineChartBar,
+  HiOutlineArrowPath,
+  HiOutlineBolt,
+  HiOutlineFire,
+  HiOutlineWrenchScrewdriver,
+  HiOutlineCubeTransparent,
+} from 'react-icons/hi2';
+import type { IconType } from 'react-icons';
+
+const agentIconMap: Record<string, IconType> = {
+  architect: HiOutlineBolt,
+  combat: HiOutlineFire,
+  economy: HiOutlineCurrencyDollar,
+  'ai-behavior': HiOutlineCpuChip,
+  'level-design': HiOutlineMap,
+  narrative: HiOutlineBookOpen,
+  'image-gen': HiOutlinePhoto,
+  'audio-gen': HiOutlineMusicalNote,
+  'model-3d-gen': HiOutlineCubeTransparent,
+  'unity-build': HiOutlineWrenchScrewdriver,
+  'ai-player': HiOutlinePlay,
+  'balance-analyzer': HiOutlineChartBar,
+  'feedback-synthesizer': HiOutlineArrowPath,
+};
 
 const statusConfig = {
   idle: { border: 'border-slate-600', bg: 'bg-surface', icon: null },
-  pending: { border: 'border-status-pending', bg: 'bg-surface', icon: '[PENDING]' },
-  running: { border: 'border-status-running', bg: 'bg-surface', icon: '[RUNNING]' },
-  completed: { border: 'border-status-completed', bg: 'bg-surface', icon: '[DONE]' },
-  failed: { border: 'border-status-failed', bg: 'bg-surface', icon: '[FAILED]' },
-  cancelled: { border: 'border-slate-600', bg: 'bg-surface', icon: '[CANCELLED]' },
-  conflict: { border: 'border-status-conflict', bg: 'bg-surface', icon: '[CONFLICT]' },
+  pending: { border: 'border-status-pending', bg: 'bg-surface', icon: HiClock },
+  running: { border: 'border-status-running', bg: 'bg-surface', icon: HiLightningBolt },
+  completed: { border: 'border-status-completed', bg: 'bg-surface', icon: HiCheckCircle },
+  failed: { border: 'border-status-failed', bg: 'bg-surface', icon: HiXCircle },
+  cancelled: { border: 'border-slate-600', bg: 'bg-surface', icon: HiBan },
+  conflict: { border: 'border-status-conflict', bg: 'bg-surface', icon: HiExclamationCircle },
 };
 
 function AgentNode({ id, data, selected }: NodeProps<AgentNodeData>) {
@@ -44,11 +84,21 @@ function AgentNode({ id, data, selected }: NodeProps<AgentNodeData>) {
         style={{ backgroundColor: `${agentDef.color}20` }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-lg">{agentDef.icon}</span>
+          {(() => {
+            const IconComponent = agentIconMap[data.agentType];
+            return IconComponent ? (
+              <IconComponent className="w-5 h-5" style={{ color: agentDef.color }} />
+            ) : (
+              <span className="text-lg">{agentDef.icon}</span>
+            );
+          })()}
           <span className="font-medium text-sm text-slate-100">{data.label}</span>
         </div>
         <div className="flex items-center gap-2">
-          {status.icon && <span className="text-sm">{status.icon}</span>}
+          {status.icon && (() => {
+            const StatusIcon = status.icon;
+            return StatusIcon ? <StatusIcon className="w-4 h-4" /> : null;
+          })()}
           <div
             className="w-3 h-3 rounded-full"
             style={{
