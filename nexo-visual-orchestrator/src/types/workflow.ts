@@ -137,6 +137,9 @@ export interface RoleDefinition {
   // Behavior
   autonomyLevel: AutonomyLevel;
   systemPromptTemplate: string;         // Jinja-style template for the system prompt
+  
+  // UI Position (for visual layout)
+  position: { x: number; y: number };
 }
 
 // ============================================================================

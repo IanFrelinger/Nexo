@@ -993,7 +993,19 @@ export function generateWorkflow(
       return null;
     }
     
-    // Position for visual layout (not used in generation, but available for UI)
+    // Calculate position for visual layout
+    const nodeWidth = 288;
+    const nodeHeight = 200;
+    const spacing = 50;
+    const startX = 100;
+    const startY = 100;
+    const nodesPerRow = 4;
+    const row = Math.floor(index / nodesPerRow);
+    const col = index % nodesPerRow;
+    const position = {
+      x: startX + col * (nodeWidth + spacing),
+      y: startY + row * (nodeHeight + spacing),
+    };
     
     return {
       id: `${roleId}-${Date.now()}-${index}`,
@@ -1017,6 +1029,7 @@ export function generateWorkflow(
       scalingConfig,
       autonomyLevel,
       systemPromptTemplate: template.systemPromptTemplate,
+      position,
     } satisfies RoleDefinition;
   }).filter((r): r is RoleDefinition => r !== null);
   

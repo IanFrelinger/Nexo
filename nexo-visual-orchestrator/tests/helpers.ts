@@ -25,21 +25,26 @@ export async function addAgentToCanvas(
   };
   
   const templateId = textToId[agentName] || agentName.toLowerCase().replace(/\s+/g, '-');
-  const finalPosition = position || { x: 400, y: 300 };
+  // Don't provide position - let the component calculate it to avoid overlaps
+  // const finalPosition = position || { x: 400, y: 300 };
   
   // Add role directly via store
   await page.evaluate(
-    ({ templateId, x, y }) => {
+    ({ templateId, providedPosition }) => {
       // Trigger a custom event that the component can listen to
       const event = new CustomEvent('test:addRole', {
-        detail: { templateId, position: { x, y } },
+        detail: { 
+          templateId, 
+          position: providedPosition || undefined, // Only provide if explicitly set
+        },
       });
       window.dispatchEvent(event);
     },
-    { templateId, x: finalPosition.x, y: finalPosition.y }
+    { templateId, providedPosition: position || undefined }
   );
   
-  await page.waitForTimeout(1000);
+  // Wait longer to ensure the role is added and positioned
+  await page.waitForTimeout(2000);
 }
 
 /**

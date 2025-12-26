@@ -73,17 +73,43 @@ export const useOrchestrationStore = create<OrchestrationState>((set, get) => ({
   selectedInstanceId: null,
   selectedRelationshipId: null,
   
+  // Expose store to window for testing
+  ...(typeof window !== 'undefined' ? { __store: { getState: get } } : {}),
+  
   loadWorkflow: (roles, relationships) => {
+    // Ensure all roles have positions
+    const rolesWithPositions = roles.map((role, index) => {
+      if (role.position) {
+        return role;
+      }
+      // Calculate position if missing
+      const nodeWidth = 288;
+      const nodeHeight = 200;
+      const spacing = 50;
+      const startX = 100;
+      const startY = 100;
+      const nodesPerRow = 4;
+      const row = Math.floor(index / nodesPerRow);
+      const col = index % nodesPerRow;
+      return {
+        ...role,
+        position: {
+          x: startX + col * (nodeWidth + spacing),
+          y: startY + row * (nodeHeight + spacing),
+        },
+      };
+    });
+    
     // Initialize with one instance per role (at minInstances)
     const instances: AgentInstance[] = [];
-    roles.forEach(role => {
+    rolesWithPositions.forEach(role => {
       for (let i = 0; i < role.scalingConfig.minInstances; i++) {
         instances.push(createInitialInstance(role.id, i + 1));
       }
     });
     
     set({
-      roles,
+      roles: rolesWithPositions,
       relationships,
       instances,
       selectedRoleId: null,
