@@ -1,6 +1,7 @@
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useMockExecution } from '../../hooks/useMockExecution';
+import { hierarchicalTierLayout } from '../../utils/layoutEngine';
 import { HiSparkles } from 'react-icons/hi';
 import { HiFolderOpen, HiSave, HiPlay, HiPause, HiStop, HiRefresh } from 'react-icons/hi';
 import type { Workflow } from '../../types/workflow';
@@ -66,42 +67,25 @@ export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
   };
 
   const handleAutoLayout = () => {
-    // Use layout engine for role-based layout
+    // Use hierarchical tier-based layout
     if (roles.length === 0) return;
     
-    // Group by tier for layout
-    const tiers: Record<string, typeof roles> = {
-      strategic: [],
-      tactical: [],
-      execution: [],
-    };
+    // Get current roles and relationships from store
+    const currentRoles = roles;
+    const currentRelationships = relationships;
     
-    roles.forEach(role => {
-      const tier = role.modelConfig.tier;
-      tiers[tier].push(role);
-    });
+    // Apply layout - this returns new role objects with updated positions
+    const layoutedRoles = hierarchicalTierLayout(currentRoles);
     
-    // Layout by tier
-    const centerX = 400;
-    let currentY = 100;
+    // Debug: Log layouted positions
+    console.log('Layouted roles positions:', layoutedRoles.map(r => ({
+      id: r.id,
+      tier: r.modelConfig.tier,
+      position: r.position,
+    })));
     
-    const layoutedRoles = roles.map((role) => {
-      const tier = role.modelConfig.tier;
-      const tierIndex = tier === 'strategic' ? 0 : tier === 'tactical' ? 1 : 2;
-      const rolesInTier = tiers[tier];
-      const indexInTier = rolesInTier.indexOf(role);
-      const rolesPerRow = 4;
-      
-      return {
-        ...role,
-        position: {
-          x: centerX + (indexInTier % rolesPerRow - rolesPerRow / 2) * 300,
-          y: currentY + tierIndex * 350 + Math.floor(indexInTier / rolesPerRow) * 320,
-        },
-      };
-    });
-    
-    loadWorkflow(layoutedRoles, relationships);
+    // Load the layouted workflow - positions should already be set correctly by layout function
+    loadWorkflow(layoutedRoles, currentRelationships);
   };
 
   const isRunning = status === 'running';
