@@ -7,6 +7,9 @@ This directory contains Playwright tests for validating the Nexo Visual Orchestr
 - **ui-validation.spec.ts**: Tests for basic UI components, layout, and interactions
 - **workflow-execution.spec.ts**: Tests for workflow execution, status updates, and console logging
 - **agent-interactions.spec.ts**: Tests for agent library, search, configuration, and node management
+- **deck-builder.spec.ts**: Tests for deck builder UI, deck creation, agent management, and deck operations
+- **deck-store.spec.ts**: Tests for deck store persistence, localStorage operations, and state management
+- **deck-integration.spec.ts**: Tests for deck-to-workflow conversion and canvas integration
 
 ## Running Tests
 
@@ -67,6 +70,19 @@ npm run test:debug
 - ✅ Load workflow from JSON
 - ✅ Auto-layout functionality
 - ✅ Panel visibility toggling
+
+### Deck Builder
+- ✅ Deck builder UI and modal
+- ✅ Create, update, and delete decks
+- ✅ Add/remove agents from decks
+- ✅ Agent count management
+- ✅ Deck search and filtering
+- ✅ Deck duplication
+- ✅ Deck sharing (private/shared)
+- ✅ Deck persistence in localStorage
+- ✅ Deck-to-workflow conversion
+- ✅ Loading decks onto canvas
+- ✅ Cross-project deck usage
 
 ## Test Results
 

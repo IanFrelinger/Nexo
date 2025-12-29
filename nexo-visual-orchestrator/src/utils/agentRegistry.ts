@@ -1,4 +1,5 @@
 import type { AgentDefinition, AgentType, AgentCategory } from '../types/agents';
+import { getBehaviorsForAgent } from './behaviorRegistry';
 
 export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
   architect: {
@@ -51,6 +52,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       gameType: 'extraction-shooter',
       maxAgents: 10,
     },
+    behaviors: getBehaviorsForAgent('architect'),
   },
 
   combat: {
@@ -106,6 +108,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       friendlyFire: false,
       healingMechanics: 'items',
     },
+    behaviors: getBehaviorsForAgent('combat'),
   },
 
   economy: {
@@ -157,6 +160,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       trading: true,
       inflationControl: true,
     },
+    behaviors: getBehaviorsForAgent('economy'),
   },
 
   'ai-behavior': {
@@ -202,6 +206,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       difficultyScaling: true,
       squadBehavior: true,
     },
+    behaviors: getBehaviorsForAgent('ai-behavior'),
   },
 
   'level-design': {
@@ -252,6 +257,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       extractionPoints: 3,
       verticalLayers: 2,
     },
+    behaviors: getBehaviorsForAgent('level-design'),
   },
 
   narrative: {
@@ -291,6 +297,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       narrativeDepth: 'moderate',
       dialogueSystem: false,
     },
+    behaviors: getBehaviorsForAgent('narrative'),
   },
 
   'image-gen': {
@@ -346,6 +353,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       size: '1024x1024',
       style: 'vivid',
     },
+    behaviors: getBehaviorsForAgent('image-gen'),
   },
 
   'audio-gen': {
@@ -387,6 +395,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       provider: 'suno',
       duration: 30,
     },
+    behaviors: getBehaviorsForAgent('audio-gen'),
   },
 
   'model-3d-gen': {
@@ -432,6 +441,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       provider: 'meshy',
       format: 'fbx',
     },
+    behaviors: getBehaviorsForAgent('model-3d-gen'),
   },
 
   'unity-build': {
@@ -482,6 +492,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       development: true,
       scenes: '',
     },
+    behaviors: getBehaviorsForAgent('unity-build'),
   },
 
   'ai-player': {
@@ -535,6 +546,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       sessionDuration: 10,
       iterations: 3,
     },
+    behaviors: getBehaviorsForAgent('ai-player'),
   },
 
   'balance-analyzer': {
@@ -582,6 +594,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       categories: ['combat', 'economy', 'progression'],
       confidenceThreshold: 0.7,
     },
+    behaviors: getBehaviorsForAgent('balance-analyzer'),
   },
 
   'feedback-synthesizer': {
@@ -631,6 +644,7 @@ export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
       maxIterations: 3,
       prioritize: 'severity',
     },
+    behaviors: getBehaviorsForAgent('feedback-synthesizer'),
   },
 };
 

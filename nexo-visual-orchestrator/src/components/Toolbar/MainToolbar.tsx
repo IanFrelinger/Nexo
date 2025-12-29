@@ -2,15 +2,16 @@ import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useMockExecution } from '../../hooks/useMockExecution';
 import { hierarchicalTierLayout } from '../../utils/layoutEngine';
-import { HiSparkles } from 'react-icons/hi';
+import { HiSparkles, HiCollection } from 'react-icons/hi';
 import { HiFolderOpen, HiSave, HiPlay, HiPause, HiStop, HiRefresh } from 'react-icons/hi';
 import type { Workflow } from '../../types/workflow';
 
 interface MainToolbarProps {
   onShowGuidedMode?: () => void;
+  onShowDeckBuilder?: () => void;
 }
 
-export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
+export default function MainToolbar({ onShowGuidedMode, onShowDeckBuilder }: MainToolbarProps) {
   const { roles, relationships, settings, loadWorkflow, clearWorkflow } = useOrchestrationStore();
   const { status } = useExecutionStore();
   const { execute, pause, cancel } = useMockExecution();
@@ -128,6 +129,19 @@ export default function MainToolbar({ onShowGuidedMode }: MainToolbarProps) {
             >
               <HiSparkles className="w-4 h-4" />
               <span>Guided Setup</span>
+            </button>
+          </>
+        )}
+        {onShowDeckBuilder && (
+          <>
+            <div className="w-px h-6 bg-slate-700 mx-2" />
+            <button
+              onClick={onShowDeckBuilder}
+              className="px-3 py-1.5 text-sm text-indigo-400 hover:bg-surface-light rounded transition-colors flex items-center gap-1.5"
+              title="Open deck builder"
+            >
+              <HiCollection className="w-4 h-4" />
+              <span>Deck Builder</span>
             </button>
           </>
         )}

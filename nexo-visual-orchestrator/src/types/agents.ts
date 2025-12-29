@@ -45,6 +45,21 @@ export interface ConfigSchema {
   required: string[];
 }
 
+export interface Command {
+  id: string;
+  label: string;
+  description?: string;
+  icon?: string;
+}
+
+export interface Behavior {
+  id: string;
+  label: string;
+  description?: string;
+  icon?: string;
+  commands: Command[];
+}
+
 export interface AgentDefinition {
   type: AgentType;
   category: AgentCategory;
@@ -56,5 +71,6 @@ export interface AgentDefinition {
   outputs: PortDefinition[];
   configSchema: ConfigSchema;
   defaultConfig: Record<string, unknown>;
+  behaviors?: Behavior[];
 }
 
