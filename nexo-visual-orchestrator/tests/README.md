@@ -10,6 +10,7 @@ This directory contains Playwright tests for validating the Nexo Visual Orchestr
 - **deck-builder.spec.ts**: Tests for deck builder UI, deck creation, agent management, and deck operations
 - **deck-store.spec.ts**: Tests for deck store persistence, localStorage operations, and state management
 - **deck-integration.spec.ts**: Tests for deck-to-workflow conversion and canvas integration
+- **custom-agent-library.spec.ts**: Tests for custom agent library, creation, management, and cross-project reuse
 
 ## Running Tests
 
@@ -83,6 +84,18 @@ npm run test:debug
 - ✅ Deck-to-workflow conversion
 - ✅ Loading decks onto canvas
 - ✅ Cross-project deck usage
+
+### Custom Agent Library
+- ✅ Custom agent library UI and panel
+- ✅ Create custom agents based on built-in types
+- ✅ View modes (All, Favorites, Recent)
+- ✅ Search and filter custom agents
+- ✅ Toggle favorite status
+- ✅ Share/unshare agents across projects
+- ✅ Delete and duplicate custom agents
+- ✅ Custom agent persistence in localStorage
+- ✅ Integration with deck builder
+- ✅ Use custom agents in decks
 
 ## Test Results
 

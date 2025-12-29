@@ -34,9 +34,10 @@ const ROLE_CATEGORIES: RoleCategory[] = [
 
 interface AgentLibraryProps {
   onCollapse?: () => void;
+  onShowCustomLibrary?: () => void;
 }
 
-export default function AgentLibrary({ onCollapse }: AgentLibraryProps) {
+export default function AgentLibrary({ onCollapse, onShowCustomLibrary }: AgentLibraryProps) {
   const [search, setSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(ROLE_CATEGORIES.map((c) => c.id))
@@ -63,7 +64,7 @@ export default function AgentLibrary({ onCollapse }: AgentLibraryProps) {
     <div className="w-64 bg-surface border-r border-slate-700 flex flex-col h-full">
       {/* Header */}
       <div className="p-3 border-b border-slate-700 flex items-center justify-between">
-        <h2 className="font-semibold text-sm">Role Library</h2>
+        <h2 className="font-semibold text-sm">Agent Library</h2>
         {onCollapse && (
           <button onClick={onCollapse} className="text-slate-400 hover:text-slate-200">
             <HiX className="w-4 h-4" />
@@ -75,7 +76,7 @@ export default function AgentLibrary({ onCollapse }: AgentLibraryProps) {
       <div className="p-2 border-b border-slate-700">
         <input
           type="text"
-          placeholder="Search roles..."
+          placeholder="Search agents..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full px-3 py-1.5 bg-surface-dark border border-slate-600 rounded text-sm placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
@@ -156,8 +157,21 @@ export default function AgentLibrary({ onCollapse }: AgentLibraryProps) {
 
       {/* Help text */}
       <div className="p-2 border-t border-slate-700 text-xs text-slate-500">
-        Drag roles onto the canvas. Instances spawn automatically based on workload.
+        Drag agent cards onto the canvas to compose commands. Arrange cards to build workflows.
       </div>
+      
+      {/* Link to custom agent library */}
+      {onShowCustomLibrary && (
+        <div className="p-2 border-t border-slate-700">
+          <button
+            onClick={onShowCustomLibrary}
+            className="w-full px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 rounded text-xs font-medium flex items-center justify-center gap-2 border border-indigo-500/30"
+          >
+            <HiIcons.HiCollection className="w-4 h-4" />
+            My Agent Library
+          </button>
+        </div>
+      )}
     </div>
   );
 }

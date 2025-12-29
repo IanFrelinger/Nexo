@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
-import OrchestrationCanvas from './components/Canvas/OrchestrationCanvas';
+import CardCanvas from './components/Canvas/CardCanvas';
 import AgentLibrary from './components/Panels/AgentLibrary';
+import CustomAgentLibrary from './components/Panels/CustomAgentLibrary';
 import PropertiesPanel from './components/Panels/PropertiesPanel';
 import ExecutionConsole from './components/Panels/ExecutionConsole';
 import ViewControls from './components/Panels/ViewControls';
 import MainToolbar from './components/Toolbar/MainToolbar';
 import GuidedMode from './components/GuidedMode/GuidedMode';
+import DeckBuilder from './components/DeckBuilder/DeckBuilder';
 import { HiBookOpen, HiTerminal, HiCog, HiViewGrid } from 'react-icons/hi';
 import { useOrchestrationStore } from './stores/orchestrationStore';
+import { useDeckStore } from './stores/deckStore';
+import { deckToWorkflow } from './types/deck';
+import { ROLE_TEMPLATES } from './data/roleTemplates';
 import type { RoleDefinition, Relationship } from './types/workflow';
 
 export default function App() {
@@ -16,7 +21,10 @@ export default function App() {
   const [showConsole, setShowConsole] = useState(true);
   const [showViewControls, setShowViewControls] = useState(true);
   const [showGuidedMode, setShowGuidedMode] = useState(false);
+  const [showDeckBuilder, setShowDeckBuilder] = useState(false);
+  const [showCustomAgentLibrary, setShowCustomAgentLibrary] = useState(false);
   const { roles, loadWorkflow } = useOrchestrationStore();
+  const { loadDeck } = useDeckStore();
 
   // Check if we should show guided mode on mount
   useEffect(() => {
@@ -42,6 +50,19 @@ export default function App() {
     setShowGuidedMode(true);
   };
 
+  const handleShowDeckBuilder = () => {
+    setShowDeckBuilder(true);
+  };
+
+  const handleDeckLoad = (deckId: string) => {
+    const deck = loadDeck(deckId);
+    if (deck) {
+      const { roles: deckRoles, relationships: deckRelationships } = deckToWorkflow(deck, ROLE_TEMPLATES);
+      loadWorkflow(deckRoles, deckRelationships);
+      setShowDeckBuilder(false);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl/Cmd + S = Save
@@ -57,7 +78,9 @@ export default function App() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   return (
@@ -65,15 +88,42 @@ export default function App() {
       {showGuidedMode && (
         <GuidedMode onComplete={handleGuidedModeComplete} onSkip={handleGuidedModeSkip} />
       )}
-      <MainToolbar onShowGuidedMode={roles.length === 0 ? handleShowGuidedMode : undefined} />
+      {showDeckBuilder && (
+        <DeckBuilder
+          onClose={() => setShowDeckBuilder(false)}
+          onDeckLoad={handleDeckLoad}
+        />
+      )}
+      <MainToolbar
+        onShowGuidedMode={roles.length === 0 ? handleShowGuidedMode : undefined}
+        onShowDeckBuilder={handleShowDeckBuilder}
+      />
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Agent Library */}
-        {showLibrary && <AgentLibrary onCollapse={() => setShowLibrary(false)} />}
+        {/* Left Panel - Agent Library or Custom Agent Library */}
+        {showCustomAgentLibrary ? (
+          <CustomAgentLibrary 
+            onCollapse={() => setShowCustomAgentLibrary(false)}
+            onSelectAgent={(agentId) => {
+              // Handle agent selection - could add to canvas or deck
+              console.log('Selected custom agent:', agentId);
+            }}
+          />
+        ) : (
+          showLibrary && (
+            <AgentLibrary 
+              onCollapse={() => setShowLibrary(false)}
+              onShowCustomLibrary={() => {
+                setShowCustomAgentLibrary(true);
+                setShowLibrary(false);
+              }}
+            />
+          )
+        )}
 
         {/* Center - Canvas */}
         <div className="flex-1 flex flex-col">
-          <OrchestrationCanvas />
+          <CardCanvas />
           {showConsole && <ExecutionConsole />}
         </div>
 

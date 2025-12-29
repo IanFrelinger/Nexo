@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useDeckStore } from '../../stores/deckStore';
+import { useCustomAgentStore } from '../../stores/customAgentStore';
 import { AGENT_REGISTRY } from '../../utils/agentRegistry';
 import { ROLE_TEMPLATES } from '../../data/roleTemplates';
 import type { AgentType } from '../../types/agents';
@@ -39,25 +40,50 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
   const [newDeckDescription, setNewDeckDescription] = useState('');
   const [newDeckTags, setNewDeckTags] = useState<string[]>([]);
 
-  // Get available agents from registry
+  // Get available agents from registry or custom library
   const availableAgents = useMemo(() => {
-    return Object.entries(AGENT_REGISTRY).map(([type, def]) => ({
-      type: type as AgentType,
-      definition: def,
-      template: ROLE_TEMPLATES[type],
-    })).filter(item => item.template);
-  }, []);
+    if (agentSource === 'custom') {
+      return customAgentLibrary.agents.map((customAgent) => {
+        const baseDef = AGENT_REGISTRY[customAgent.baseAgentType];
+        const template = ROLE_TEMPLATES[customAgent.baseAgentType];
+        return {
+          type: customAgent.baseAgentType as AgentType,
+          definition: baseDef,
+          template,
+          customAgent, // Include custom agent config
+          isCustom: true,
+          customId: customAgent.id,
+        };
+      }).filter(item => item.template);
+    } else {
+      return Object.entries(AGENT_REGISTRY).map(([type, def]) => ({
+        type: type as AgentType,
+        definition: def,
+        template: ROLE_TEMPLATES[type],
+        isCustom: false,
+      })).filter(item => item.template);
+    }
+  }, [agentSource, customAgentLibrary.agents]);
 
   // Filter agents by search
   const filteredAgents = useMemo(() => {
     if (!searchQuery) return availableAgents;
     const query = searchQuery.toLowerCase();
-    return availableAgents.filter(
-      (item) =>
-        item.definition.label.toLowerCase().includes(query) ||
-        item.definition.description.toLowerCase().includes(query) ||
-        item.type.toLowerCase().includes(query)
-    );
+    return availableAgents.filter((item) => {
+      const name = (item as any).isCustom && (item as any).customAgent
+        ? (item as any).customAgent.name
+        : item.definition.label;
+      const description = (item as any).isCustom && (item as any).customAgent?.description
+        ? (item as any).customAgent.description
+        : item.definition.description;
+      
+      return (
+        name.toLowerCase().includes(query) ||
+        description.toLowerCase().includes(query) ||
+        item.type.toLowerCase().includes(query) ||
+        ((item as any).customAgent?.tags || []).some((tag: string) => tag.toLowerCase().includes(query))
+      );
+    });
   }, [availableAgents, searchQuery]);
 
   // Get agents in current deck
@@ -323,7 +349,31 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
 
           {/* Right: Agent Library */}
           <div className="w-80 border-l border-slate-700 flex flex-col bg-surface-dark">
-            <div className="p-3 border-b border-slate-700">
+            <div className="p-3 border-b border-slate-700 space-y-2">
+              {/* Agent Source Toggle */}
+              <div className="flex gap-1 bg-slate-800 rounded p-1">
+                <button
+                  onClick={() => setAgentSource('built-in')}
+                  className={`flex-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    agentSource === 'built-in'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  Built-in
+                </button>
+                <button
+                  onClick={() => setAgentSource('custom')}
+                  className={`flex-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    agentSource === 'custom'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  My Agents ({customAgentLibrary.agents.length})
+                </button>
+              </div>
+              
               <input
                 type="text"
                 value={searchQuery}
@@ -335,8 +385,16 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {filteredAgents.map((item) => {
                 const IconComponent = (HiIcons as any)[item.template?.icon] || HiIcons.HiCube;
-                const isInDeck = currentDeck?.agents.some((a) => a.agentType === item.type);
+                // For custom agents, check by customId if available, otherwise by type
+                const isInDeck = currentDeck?.agents.some((a) => 
+                  (item as any).isCustom && (item as any).customId
+                    ? a.agentType === item.type // Match by base type for now
+                    : a.agentType === item.type
+                );
                 const deckAgent = currentDeck?.agents.find((a) => a.agentType === item.type);
+                const displayName = (item as any).isCustom && (item as any).customAgent
+                  ? (item as any).customAgent.name
+                  : item.definition.label;
                 
                 return (
                   <div
@@ -353,14 +411,25 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <h5 className="font-semibold text-white text-sm">{item.definition.label}</h5>
+                          <div className="flex items-center gap-1.5">
+                            <h5 className="font-semibold text-white text-sm">{displayName}</h5>
+                            {(item as any).isCustom && (
+                              <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
+                                Custom
+                              </span>
+                            )}
+                          </div>
                           {isInDeck && (
                             <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">
                               {deckAgent?.count || 1}x
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mb-2 line-clamp-2">{item.definition.description}</p>
+                        <p className="text-xs text-slate-400 mb-2 line-clamp-2">
+                          {(item as any).isCustom && (item as any).customAgent?.description
+                            ? (item as any).customAgent.description
+                            : item.definition.description}
+                        </p>
                         <button
                           onClick={() => {
                             if (isInDeck) {
