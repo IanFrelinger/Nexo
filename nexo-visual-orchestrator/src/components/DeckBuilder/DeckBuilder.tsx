@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { useDeckStore } from '../../stores/deckStore';
 import { useCustomAgentStore } from '../../stores/customAgentStore';
 import type { AgentType } from '../../types/agents';
-import { HiX, HiSave, HiDuplicate, HiTrash, HiShare, HiCheck } from 'react-icons/hi';
 import DeckLibraryPanel from './DeckLibraryPanel';
 import DeckContentsPanel from './DeckContentsPanel';
 import AgentLibraryPanel from './AgentLibraryPanel';
 import CreateDeckModal from './CreateDeckModal';
+import DeckBuilderHeader from './DeckBuilderHeader';
+import DeckBuilderFooter from './DeckBuilderFooter';
 import { useAvailableAgents, useFilteredAgents, useDeckAgents } from './hooks';
 
 interface DeckBuilderProps {
@@ -85,45 +86,12 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-surface border border-slate-700 rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-white">Deck Builder</h2>
-            <p className="text-sm text-slate-400">Build and manage agent decks for your projects</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {currentDeck && (
-              <>
-                <button
-                  onClick={() => setDeckShared(currentDeck.id, !currentDeck.isShared)}
-                  className={`px-3 py-1.5 rounded text-sm flex items-center gap-2 ${
-                    currentDeck.isShared
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : 'bg-slate-700 text-slate-300 border border-slate-600'
-                  }`}
-                >
-                  <HiShare className="w-4 h-4" />
-                  {currentDeck.isShared ? 'Shared' : 'Private'}
-                </button>
-                <button
-                  onClick={() => duplicateDeck(currentDeck.id)}
-                  className="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-sm flex items-center gap-2 hover:bg-slate-600"
-                >
-                  <HiDuplicate className="w-4 h-4" />
-                  Duplicate
-                </button>
-              </>
-            )}
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-slate-700 rounded text-slate-400 hover:text-white"
-              >
-                <HiX className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
+        <DeckBuilderHeader
+          currentDeck={currentDeck}
+          onSetDeckShared={setDeckShared}
+          onDuplicateDeck={duplicateDeck}
+          onClose={onClose}
+        />
 
         <div className="flex-1 flex overflow-hidden">
           <DeckLibraryPanel
@@ -155,44 +123,20 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
           />
         </div>
 
-        {/* Footer Actions */}
-        {currentDeck && (
-          <div className="px-6 py-3 border-t border-slate-700 flex items-center justify-between bg-slate-800/50">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  if (onDeckLoad) {
-                    onDeckLoad(currentDeck.id);
-                  }
-                  if (onClose) {
-                    onClose();
-                  }
-                }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium flex items-center gap-2"
-              >
-                <HiCheck className="w-4 h-4" />
-                Load Deck
-              </button>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded"
-              >
-                Cancel
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                if (confirm(`Delete deck "${currentDeck.name}"?`)) {
-                  deleteDeck(currentDeck.id);
-                }
-              }}
-              className="px-3 py-2 text-red-400 hover:bg-red-500/20 rounded flex items-center gap-2"
-            >
-              <HiTrash className="w-4 h-4" />
-              Delete
-            </button>
-          </div>
-        )}
+        <DeckBuilderFooter
+          currentDeck={currentDeck}
+          onLoadDeck={() => {
+            if (currentDeck) {
+              handleLoadDeck(currentDeck.id);
+            }
+          }}
+          onDeleteDeck={() => {
+            if (currentDeck && confirm(`Delete deck "${currentDeck.name}"?`)) {
+              deleteDeck(currentDeck.id);
+            }
+          }}
+          onClose={onClose}
+        />
       </div>
 
       {/* Create Deck Modal */}
