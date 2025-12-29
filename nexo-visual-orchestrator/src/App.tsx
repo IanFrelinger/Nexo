@@ -3,9 +3,10 @@ import OrchestrationCanvas from './components/Canvas/OrchestrationCanvas';
 import AgentLibrary from './components/Panels/AgentLibrary';
 import PropertiesPanel from './components/Panels/PropertiesPanel';
 import ExecutionConsole from './components/Panels/ExecutionConsole';
+import ViewControls from './components/Panels/ViewControls';
 import MainToolbar from './components/Toolbar/MainToolbar';
 import GuidedMode from './components/GuidedMode/GuidedMode';
-import { HiBookOpen, HiTerminal, HiCog } from 'react-icons/hi';
+import { HiBookOpen, HiTerminal, HiCog, HiViewGrid } from 'react-icons/hi';
 import { useOrchestrationStore } from './stores/orchestrationStore';
 import type { RoleDefinition, Relationship } from './types/workflow';
 
@@ -13,6 +14,7 @@ export default function App() {
   const [showLibrary, setShowLibrary] = useState(true);
   const [showProperties, setShowProperties] = useState(true);
   const [showConsole, setShowConsole] = useState(true);
+  const [showViewControls, setShowViewControls] = useState(true);
   const [showGuidedMode, setShowGuidedMode] = useState(false);
   const { roles, loadWorkflow } = useOrchestrationStore();
 
@@ -79,6 +81,13 @@ export default function App() {
         {showProperties && <PropertiesPanel />}
       </div>
 
+      {/* View Controls (top right, floating) */}
+      {showViewControls && (
+        <div className="absolute top-16 right-4 z-50">
+          <ViewControls onCollapse={() => setShowViewControls(false)} />
+        </div>
+      )}
+
       {/* Panel toggle buttons (bottom left) */}
       <div className="absolute bottom-52 left-2 flex flex-col gap-1">
         {!showLibrary && (
@@ -113,6 +122,18 @@ export default function App() {
           >
             <HiCog className="w-4 h-4" />
             <span>Props</span>
+          </button>
+        </div>
+      )}
+      {!showViewControls && (
+        <div className="absolute top-16 right-2">
+          <button
+            onClick={() => setShowViewControls(true)}
+            className="p-2 bg-surface border border-slate-700 rounded text-xs hover:bg-surface-light flex items-center gap-1"
+            title="Show View Controls"
+          >
+            <HiViewGrid className="w-4 h-4" />
+            <span>View</span>
           </button>
         </div>
       )}

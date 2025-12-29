@@ -16,8 +16,11 @@ import 'reactflow/dist/style.css';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import RoleCard from '../Nodes/RoleCard';
 import RelationshipEdge from '../Edges/RelationshipEdge';
+import TierBands from './TierBands';
 import type { RoleNodeData, RelationshipEdgeData, Relationship, RoleDefinition } from '../../types/workflow';
+import { DEFAULT_MODEL_CONFIGS, DEFAULT_SCALING_CONFIGS } from '../../types/workflow';
 import { ROLE_TEMPLATES } from '../../data/roleTemplates';
+import { constrainToTier, getTierForPosition } from '../../utils/layoutEngine';
 import { nanoid } from 'nanoid';
 
 const nodeTypes = {
@@ -76,6 +79,9 @@ function Flow() {
     instances,
     relationships,
     expandedRoles,
+    collapsedTiers,
+    visibleRelationshipTypes,
+    highlightedPath,
     selectedRoleId,
     selectedRelationshipId,
     setSelectedRole,
@@ -86,6 +92,8 @@ function Flow() {
     spawnInstance,
     terminateInstance,
     getInstancesForRole,
+    highlightPathToArchitect,
+    clearHighlightedPath,
   } = useOrchestrationStore();
 
   // Listen for test events to add roles programmatically
@@ -208,44 +216,61 @@ function Flow() {
 
   // Convert roles to ReactFlow nodes
   // Include position in dependency to ensure nodes update when positions change
+  // Filter by collapsed tiers and highlight path
   const nodes = useMemo(() => {
-    return roles.map((role) => {
-      const roleInstances = getInstancesForRole(role.id);
-      // Ensure position is always set - use stored position or default
-      const position = role.position || { x: 0, y: 0 };
-      return {
-        id: role.id,
-        type: 'role',
-        position, // Use stored position - ReactFlow will respect this
-        data: {
-          role,
-          instances: roleInstances,
-          isExpanded: expandedRoles.has(role.id),
-          onToggleExpand: toggleRoleExpand,
-          onEditRole: (id: string) => {
-            setSelectedRole(id);
-          },
-          onDeleteRole: (id: string) => {
-            removeRole(id);
-          },
-          onSpawnInstance: (roleId: string) => {
-            try {
-              spawnInstance(roleId);
-            } catch (e) {
-              console.error('Failed to spawn instance:', e);
-            }
-          },
-          onTerminateInstance: (instanceId: string) => {
-            terminateInstance(instanceId);
-          },
-        } as RoleNodeData,
-        selected: role.id === selectedRoleId,
-      };
-    });
+    return roles
+      .filter(role => {
+        const tier = role.modelConfig.tier;
+        return !collapsedTiers.has(tier);
+      })
+      .map((role) => {
+        const roleInstances = getInstancesForRole(role.id);
+        // Ensure position is always set - use stored position or default
+        const position = role.position || { x: 0, y: 0 };
+        const isInPath = highlightedPath?.includes(role.id) || false;
+        
+        return {
+          id: role.id,
+          type: 'role',
+          position, // Use stored position - ReactFlow will respect this
+          data: {
+            role,
+            instances: roleInstances,
+            isExpanded: expandedRoles.has(role.id),
+            isHighlighted: isInPath,
+            onToggleExpand: toggleRoleExpand,
+            onEditRole: (id: string) => {
+              setSelectedRole(id);
+              // Highlight path to architect when role is selected
+              highlightPathToArchitect(id);
+            },
+            onDeleteRole: (id: string) => {
+              removeRole(id);
+            },
+            onSpawnInstance: (roleId: string) => {
+              try {
+                spawnInstance(roleId);
+              } catch (e) {
+                console.error('Failed to spawn instance:', e);
+              }
+            },
+            onTerminateInstance: (instanceId: string) => {
+              terminateInstance(instanceId);
+            },
+          } as RoleNodeData,
+          selected: role.id === selectedRoleId,
+          style: isInPath ? {
+            border: '3px solid #fbbf24', // amber-400 for highlighted path
+            borderRadius: '8px',
+          } : undefined,
+        };
+      });
   }, [
     roles.map(r => `${r.id}:${r.position?.x || 0},${r.position?.y || 0}`).join('|'), // Include positions in deps
     instances,
     expandedRoles,
+    collapsedTiers,
+    highlightedPath,
     selectedRoleId,
     getInstancesForRole,
     toggleRoleExpand,
@@ -253,6 +278,7 @@ function Flow() {
     removeRole,
     spawnInstance,
     terminateInstance,
+    highlightPathToArchitect,
   ]);
 
   // Use onInit callback to ensure positions are set correctly after ReactFlow initializes
@@ -280,64 +306,259 @@ function Flow() {
   
   // Also update positions when roles change (not just on init)
   // This ensures ReactFlow nodes always reflect the stored role positions
+  // BUT: Don't override positions during drag operations
   useEffect(() => {
     if (setNodes && roles.length > 0) {
-      // Use requestAnimationFrame to batch updates and avoid conflicts with ReactFlow's internal updates
-      requestAnimationFrame(() => {
-        setNodes((nds: Node[]) => {
-          return nds.map((node) => {
-            const role = roles.find((r) => r.id === node.id);
-            if (role && role.position) {
-              // Always update to ensure position matches role
-              // This is important when roles are added or positions change
-              return {
-                ...node,
-                position: role.position,
-              };
-            }
-            return node;
+      // Check if any node is currently being dragged
+      const currentNodes = getNodes();
+      const isDragging = currentNodes.some(node => node.dragging === true);
+      
+      // Only update if not dragging (to avoid conflicts with drag constraints)
+      if (!isDragging) {
+        // Use requestAnimationFrame to batch updates and avoid conflicts with ReactFlow's internal updates
+        requestAnimationFrame(() => {
+          setNodes((nds: Node[]) => {
+            return nds.map((node) => {
+              const role = roles.find((r) => r.id === node.id);
+              if (role && role.position) {
+                // Constrain position to the role's current tier
+                const constrainedY = constrainToTier(role.modelConfig.tier, role.position.y);
+                const constrainedPosition = {
+                  x: role.position.x,
+                  y: constrainedY,
+                };
+                
+                // Update role position in store if it was constrained
+                if (constrainedY !== role.position.y) {
+                  useOrchestrationStore.getState().updateRole(role.id, {
+                    position: constrainedPosition,
+                  });
+                }
+                
+                // Always update to ensure position matches role (with constraints applied)
+                return {
+                  ...node,
+                  position: constrainedPosition,
+                };
+              }
+              return node;
+            });
           });
         });
-      });
+      }
     }
-  }, [roles.map(r => `${r.id}:${r.position?.x || 0},${r.position?.y || 0}`).join('|'), setNodes]);
+  }, [roles.map(r => `${r.id}:${r.position?.x || 0},${r.position?.y || 0}`).join('|'), setNodes, getNodes]);
 
   // Convert relationships to ReactFlow edges
+  // Filter by visible relationship types and highlight path
   const edges = useMemo(() => {
-    return relationships.map((rel) => ({
-      id: rel.id,
-      source: rel.sourceRoleId,
-      target: rel.targetRoleId,
-      type: 'relationship',
-      data: {
-        relationship: rel,
-        isActive: true,
-        trafficVolume: 1,
-      } as RelationshipEdgeData,
-      // Use different handles for negotiation edges
-      sourceHandle: rel.type === 'negotiates' ? 'negotiate-out' : undefined,
-      targetHandle: rel.type === 'negotiates' ? 'negotiate-in' : undefined,
-      selected: rel.id === selectedRelationshipId,
-    }));
-  }, [relationships, selectedRelationshipId]);
+    return relationships
+      .filter(rel => visibleRelationshipTypes.has(rel.type))
+      .map((rel) => {
+        const isInPath = highlightedPath && (
+          highlightedPath.includes(rel.sourceRoleId) && 
+          highlightedPath.includes(rel.targetRoleId) &&
+          Math.abs(highlightedPath.indexOf(rel.sourceRoleId) - highlightedPath.indexOf(rel.targetRoleId)) === 1
+        );
+        
+        return {
+          id: rel.id,
+          source: rel.sourceRoleId,
+          target: rel.targetRoleId,
+          type: 'relationship',
+          data: {
+            relationship: rel,
+            isActive: true,
+            trafficVolume: 1,
+            isHighlighted: isInPath || false,
+          } as RelationshipEdgeData,
+          // Use different handles for negotiation edges
+          sourceHandle: rel.type === 'negotiates' ? 'negotiate-out' : undefined,
+          targetHandle: rel.type === 'negotiates' ? 'negotiate-in' : undefined,
+          selected: rel.id === selectedRelationshipId,
+          style: isInPath ? {
+            strokeWidth: 4,
+            stroke: '#fbbf24', // amber-400 for highlighted path
+            opacity: 1,
+          } : undefined,
+        };
+      });
+  }, [relationships, selectedRelationshipId, visibleRelationshipTypes, highlightedPath]);
 
   const onNodesChange = useCallback((changes: any) => {
     // Update role positions when nodes are dragged
     changes.forEach((change: any) => {
       if (change.type === 'position' && change.position) {
-        // Update the role's position in the store
-        useOrchestrationStore.getState().updateRole(change.id, {
-          position: change.position,
-        });
+        // Find the role to get its tier
+        const role = roles.find(r => r.id === change.id);
+        if (role) {
+          // Detect which tier the position belongs to (for tier list behavior)
+          const detectedTier = getTierForPosition(change.position.y);
+          
+          // During drag, allow movement between tiers
+          // Constrain to the detected tier (or current tier if outside all tiers)
+          const targetTier = detectedTier || role.modelConfig.tier;
+          const constrainedY = constrainToTier(targetTier, change.position.y);
+          const constrainedPosition = {
+            x: change.position.x, // X can move freely
+            y: constrainedY,
+          };
+          
+          // If position was constrained, we need to override the change
+          if (constrainedY !== change.position.y) {
+            // Modify the change to use constrained position
+            change.position = constrainedPosition;
+          }
+          
+          // Update the role's position in the store
+          // Don't change tier during drag - wait for drag end in onNodeDragStop
+          useOrchestrationStore.getState().updateRole(change.id, {
+            position: constrainedPosition,
+          });
+        } else {
+          // Fallback: update position without constraint if role not found
+          useOrchestrationStore.getState().updateRole(change.id, {
+            position: change.position,
+          });
+        }
       }
       if (change.type === 'select' && change.selected) {
         setSelectedRole(change.id);
+        // Highlight path to architect when role is selected
+        highlightPathToArchitect(change.id);
       }
       if (change.type === 'select' && !change.selected) {
         setSelectedRole(null);
+        clearHighlightedPath();
       }
     });
-  }, [setSelectedRole]);
+  }, [roles, setSelectedRole, highlightPathToArchitect, clearHighlightedPath]);
+
+  // Handle node dragging with real-time constraints
+  // During drag, allow movement but show visual feedback for tier changes
+  const onNodeDrag = useCallback((_event: any, node: Node) => {
+    const role = roles.find(r => r.id === node.id);
+    if (role && node.position) {
+      // During drag, allow movement between tiers (tier list behavior)
+      // We'll finalize the tier change in onNodeDragStop
+      // For now, just ensure position is valid
+      const detectedTier = getTierForPosition(node.position.y);
+      
+      // If moving to a different tier, allow it but constrain to that tier's bounds
+      if (detectedTier && detectedTier !== role.modelConfig.tier) {
+        const constrainedY = constrainToTier(detectedTier, node.position.y);
+        if (constrainedY !== node.position.y && setNodes) {
+          setNodes((nds: Node[]) => {
+            return nds.map((n) => {
+              if (n.id === node.id) {
+                return {
+                  ...n,
+                  position: {
+                    x: node.position.x,
+                    y: constrainedY,
+                  },
+                };
+              }
+              return n;
+            });
+          });
+        }
+      } else {
+        // Still in same tier, constrain to current tier
+        const constrainedY = constrainToTier(role.modelConfig.tier, node.position.y);
+        if (constrainedY !== node.position.y && setNodes) {
+          setNodes((nds: Node[]) => {
+            return nds.map((n) => {
+              if (n.id === node.id) {
+                return {
+                  ...n,
+                  position: {
+                    x: node.position.x,
+                    y: constrainedY,
+                  },
+                };
+              }
+              return n;
+            });
+          });
+        }
+      }
+    }
+  }, [roles, setNodes]);
+
+  // Handle node drag end - implement tier list behavior
+  // When dropped, assign agent to the tier it was dropped in
+  const onNodeDragStop = useCallback((_event: any, node: Node) => {
+    const role = roles.find(r => r.id === node.id);
+    if (role && node.position) {
+      // Detect which tier the node was dropped in
+      const detectedTier = getTierForPosition(node.position.y);
+      
+      if (detectedTier) {
+        // Constrain position to the detected tier's boundaries
+        const constrainedY = constrainToTier(detectedTier, node.position.y);
+        const constrainedPosition = {
+          x: node.position.x,
+          y: constrainedY,
+        };
+        
+        // Update the role with new tier and position
+        const updates: any = {
+          position: constrainedPosition,
+        };
+        
+        // If dropped in a different tier, update the tier assignment
+        if (detectedTier !== role.modelConfig.tier) {
+          // Get default configs for the new tier
+          const newModelConfig = DEFAULT_MODEL_CONFIGS[detectedTier];
+          const newScalingConfig = DEFAULT_SCALING_CONFIGS[detectedTier];
+          
+          updates.modelConfig = {
+            ...newModelConfig,
+            // Preserve some settings from old config
+            preferredProvider: role.modelConfig.preferredProvider,
+            preferredModel: role.modelConfig.preferredModel,
+            fallbackProviders: role.modelConfig.fallbackProviders,
+          };
+          updates.scalingConfig = {
+            ...newScalingConfig,
+            // Preserve min/max instances if they make sense for new tier
+            minInstances: Math.max(newScalingConfig.minInstances, role.scalingConfig.minInstances),
+            maxInstances: Math.min(newScalingConfig.maxInstances, role.scalingConfig.maxInstances),
+          };
+        }
+        
+        // Update the role in the store
+        useOrchestrationStore.getState().updateRole(node.id, updates);
+        
+        // Ensure ReactFlow node position matches constrained position
+        if (constrainedY !== node.position.y && setNodes) {
+          setNodes((nds: Node[]) => {
+            return nds.map((n) => {
+              if (n.id === node.id) {
+                return {
+                  ...n,
+                  position: constrainedPosition,
+                };
+              }
+              return n;
+            });
+          });
+        }
+      } else {
+        // Fallback: constrain to current tier if position is outside all tiers
+        const constrainedY = constrainToTier(role.modelConfig.tier, node.position.y);
+        const constrainedPosition = {
+          x: node.position.x,
+          y: constrainedY,
+        };
+        
+        useOrchestrationStore.getState().updateRole(node.id, {
+          position: constrainedPosition,
+        });
+      }
+    }
+  }, [roles, setNodes]);
 
   const onEdgesChange = useCallback((changes: any) => {
     // Handle edge changes if needed
@@ -366,7 +587,8 @@ function Flow() {
 
   const onPaneClick = useCallback(() => {
     setSelectedRole(null);
-  }, [setSelectedRole]);
+    clearHighlightedPath();
+  }, [setSelectedRole, clearHighlightedPath]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -482,6 +704,8 @@ function Flow() {
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
+        onNodeDrag={onNodeDrag}
+        onNodeDragStop={onNodeDragStop}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onPaneClick={onPaneClick}
@@ -501,6 +725,7 @@ function Flow() {
         nodesConnectable={false}
       >
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#334155" />
+        <TierBands roles={roles} collapsedTiers={collapsedTiers} />
         <Controls className="!bg-surface !border-slate-700" />
         <MiniMap
           nodeColor={(node) => {

@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
+import { constrainToTier, TIER_CONFIGS } from '../utils/layoutEngine';
 import type { 
   RoleDefinition, 
   Relationship, 
@@ -20,6 +21,9 @@ interface OrchestrationState {
   
   // UI State
   expandedRoles: Set<string>;              // Which roles are expanded in the UI
+  collapsedTiers: Set<string>;            // Which tiers are collapsed (strategic, tactical, execution)
+  visibleRelationshipTypes: Set<string>;   // Which relationship types are visible (delegates, reports-to, negotiates, observes)
+  highlightedPath: string[] | null;        // Path from selected role to architect (array of role IDs)
   selectedRoleId: string | null;
   selectedInstanceId: string | null;
   selectedRelationshipId: string | null;
@@ -46,6 +50,12 @@ interface OrchestrationState {
   setSelectedInstance: (id: string | null) => void;
   setSelectedRelationship: (id: string | null) => void;
   
+  // Actions - UI Controls
+  toggleTierCollapse: (tier: string) => void;
+  toggleRelationshipTypeVisibility: (type: string) => void;
+  highlightPathToArchitect: (roleId: string) => void;
+  clearHighlightedPath: () => void;
+  
   // Actions - Settings
   updateSettings: (settings: Partial<WorkflowSettings>) => void;
   clearWorkflow: () => void;
@@ -69,6 +79,9 @@ export const useOrchestrationStore = create<OrchestrationState>((set, get) => ({
   relationships: [],
   settings: defaultSettings,
   expandedRoles: new Set(),
+  collapsedTiers: new Set(),
+  visibleRelationshipTypes: new Set(['delegates', 'reports-to', 'negotiates', 'observes']), // All visible by default
+  highlightedPath: null,
   selectedRoleId: null,
   selectedInstanceId: null,
   selectedRelationshipId: null,
@@ -78,24 +91,49 @@ export const useOrchestrationStore = create<OrchestrationState>((set, get) => ({
   
   loadWorkflow: (roles, relationships) => {
     // Ensure all roles have positions
+    // If a role already has a position (e.g., from layout), preserve it
+    // Only calculate default position if missing
     const rolesWithPositions = roles.map((role, index) => {
-      if (role.position) {
-        return role;
+      // Check if position exists and is valid
+      // Layout function sets positions, so we should preserve them
+      const hasPosition = role.position && 
+                          role.position.x !== undefined && 
+                          role.position.y !== undefined &&
+                          typeof role.position.x === 'number' && 
+                          typeof role.position.y === 'number' &&
+                          !isNaN(role.position.x) && 
+                          !isNaN(role.position.y);
+      
+      if (hasPosition) {
+        // Position exists from layout - preserve it exactly
+        // The layout function should have set positions to tier centers (250, 650, 1050)
+        // But if layout didn't apply, constrain to tier boundaries
+        const constrainedY = constrainToTier(role.modelConfig.tier, role.position.y);
+        // Always use constrained position to ensure it's within tier bounds
+        return {
+          ...role,
+          position: {
+            x: role.position.x,
+            y: constrainedY, // Use constrained Y to ensure it's within tier bounds
+          },
+        };
       }
-      // Calculate position if missing
+      // Calculate position if missing - use tier center as default
+      const tierConfig = TIER_CONFIGS.find(t => t.tier === role.modelConfig.tier);
+      const defaultY = tierConfig?.y || 100;
+      const constrainedY = constrainToTier(role.modelConfig.tier, defaultY);
+      
       const nodeWidth = 288;
-      const nodeHeight = 200;
       const spacing = 50;
       const startX = 100;
-      const startY = 100;
       const nodesPerRow = 4;
-      const row = Math.floor(index / nodesPerRow);
       const col = index % nodesPerRow;
+      
       return {
         ...role,
         position: {
           x: startX + col * (nodeWidth + spacing),
-          y: startY + row * (nodeHeight + spacing),
+          y: constrainedY,
         },
       };
     });
@@ -126,17 +164,74 @@ export const useOrchestrationStore = create<OrchestrationState>((set, get) => ({
       newInstances.push(createInitialInstance(role.id, i + 1));
     }
     
+    // Ensure role has a position - if not, assign default based on tier
+    let roleWithPosition = role;
+    if (!role.position || role.position.x === undefined || role.position.y === undefined) {
+      const tierConfig = TIER_CONFIGS.find(t => t.tier === role.modelConfig.tier);
+      const defaultY = tierConfig?.y || 100;
+      const constrainedY = constrainToTier(role.modelConfig.tier, defaultY);
+      
+      // Calculate default X position
+      const existingRoles = state.roles;
+      const nodeWidth = 288;
+      const spacing = 50;
+      const startX = 100;
+      const col = existingRoles.length % 4;
+      
+      roleWithPosition = {
+        ...role,
+        position: {
+          x: startX + col * (nodeWidth + spacing),
+          y: constrainedY,
+        },
+      };
+    }
+    
     return {
-      roles: [...state.roles, role],
+      roles: [...state.roles, roleWithPosition],
       instances: [...state.instances, ...newInstances],
     };
   }),
   
-  updateRole: (id, updates) => set((state) => ({
-    roles: state.roles.map((r) => 
-      r.id === id ? { ...r, ...updates } : r
-    ),
-  })),
+  updateRole: (id, updates) => set((state) => {
+    const role = state.roles.find(r => r.id === id);
+    if (!role) return state;
+    
+    // Determine the tier to use for constraints
+    // If tier is being updated, use the new tier; otherwise use current tier
+    const targetTier = updates.modelConfig?.tier || role.modelConfig.tier;
+    
+    // If position is being updated, constrain it to tier boundaries
+    let constrainedUpdates = { ...updates };
+    if (updates.position && updates.position.y !== undefined) {
+      // Constrain Y position to the target tier's boundaries
+      const constrainedY = constrainToTier(targetTier, updates.position.y);
+      constrainedUpdates = {
+        ...updates,
+        position: {
+          x: updates.position.x,
+          y: constrainedY,
+        },
+      };
+    }
+    
+    // If tier is being updated, ensure modelConfig is properly merged
+    if (updates.modelConfig) {
+      constrainedUpdates = {
+        ...constrainedUpdates,
+        modelConfig: {
+          ...role.modelConfig,
+          ...updates.modelConfig,
+        },
+      };
+    }
+    
+    return {
+      roles: state.roles.map((r) => 
+        r.id === id ? { ...r, ...constrainedUpdates } : r
+      ),
+    };
+  }),
   
   removeRole: (id) => set((state) => ({
     roles: state.roles.filter((r) => r.id !== id),
@@ -253,6 +348,55 @@ export const useOrchestrationStore = create<OrchestrationState>((set, get) => ({
     selectedInstanceId: null,
   }),
   
+  toggleTierCollapse: (tier) => set((state) => {
+    const newCollapsed = new Set(state.collapsedTiers);
+    if (newCollapsed.has(tier)) {
+      newCollapsed.delete(tier);
+    } else {
+      newCollapsed.add(tier);
+    }
+    return { collapsedTiers: newCollapsed };
+  }),
+  
+  toggleRelationshipTypeVisibility: (type) => set((state) => {
+    const newVisible = new Set(state.visibleRelationshipTypes);
+    if (newVisible.has(type)) {
+      newVisible.delete(type);
+    } else {
+      newVisible.add(type);
+    }
+    return { visibleRelationshipTypes: newVisible };
+  }),
+  
+  highlightPathToArchitect: (roleId) => set((state) => {
+    // Find path from role to architect using reportsTo relationships
+    const path: string[] = [];
+    let currentRoleId: string | null = roleId;
+    const visited = new Set<string>();
+    
+    while (currentRoleId && !visited.has(currentRoleId)) {
+      visited.add(currentRoleId);
+      path.push(currentRoleId);
+      
+      const role = state.roles.find(r => r.id === currentRoleId);
+      if (!role || !role.reportsTo) {
+        break;
+      }
+      
+      // Check if we've reached an architect (or top-level role)
+      if (role.modelConfig.tier === 'strategic' && role.role.toLowerCase().includes('architect')) {
+        path.push(role.reportsTo);
+        break;
+      }
+      
+      currentRoleId = role.reportsTo;
+    }
+    
+    return { highlightedPath: path.length > 1 ? path : null };
+  }),
+  
+  clearHighlightedPath: () => set({ highlightedPath: null }),
+  
   updateSettings: (updates) => set((state) => ({
     settings: { ...state.settings, ...updates },
   })),
@@ -265,6 +409,9 @@ export const useOrchestrationStore = create<OrchestrationState>((set, get) => ({
     selectedInstanceId: null,
     selectedRelationshipId: null,
     expandedRoles: new Set(),
+    collapsedTiers: new Set(),
+    visibleRelationshipTypes: new Set(['delegates', 'reports-to', 'negotiates', 'observes']),
+    highlightedPath: null,
   }),
   
   getInstancesForRole: (roleId) => {

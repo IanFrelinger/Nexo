@@ -91,3 +91,47 @@ export async function dragAgentToCanvas(
   const nodes = page.locator('.react-flow__node');
   await expect(nodes.first()).toBeVisible({ timeout: 5000 });
 }
+
+/**
+ * Helper function to dismiss the guided mode dialog
+ */
+export async function dismissGuidedMode(page: Page) {
+  // Clear local storage to reset guided mode state BEFORE page loads
+  await page.addInitScript(() => {
+    localStorage.setItem('nexo-guided-mode-dismissed', 'true');
+  });
+  
+  // Also set it after page loads
+  await page.evaluate(() => {
+    localStorage.setItem('nexo-guided-mode-dismissed', 'true');
+  });
+  
+  // Wait for page to fully load
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(1000);
+  
+  // Try to find and close the guided mode if it's visible
+  const skipButton = page.locator('button:has-text("Skip"), button:has-text("×"), button:has-text("Close")').first();
+  const isVisible = await skipButton.isVisible().catch(() => false);
+  
+  if (isVisible) {
+    // Use force click to bypass any overlays
+    await skipButton.click({ force: true, timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(500);
+  }
+  
+  // Also try pressing Escape
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
+  
+  // Verify guided mode overlay is gone
+  const overlay = page.locator('.absolute.inset-0.bg-surface-dark.z-50');
+  const overlayVisible = await overlay.isVisible().catch(() => false);
+  
+  if (overlayVisible) {
+    // Force hide by clicking outside or pressing Escape multiple times
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+  }
+}
