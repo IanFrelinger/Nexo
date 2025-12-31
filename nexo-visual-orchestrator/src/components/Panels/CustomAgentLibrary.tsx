@@ -1,16 +1,31 @@
 // src/components/Panels/CustomAgentLibrary.tsx
 
+/**
+ * CustomAgentLibrary Component
+ * 
+ * Sidebar panel displaying the user's custom agent library. Provides functionality
+ * to view, search, filter (all/favorites/recent), and manage custom agents. Supports
+ * creating new custom agents, toggling favorites, sharing, duplicating, and deleting.
+ */
+
 import { useState, useMemo } from 'react';
 import { useCustomAgentStore } from '../../stores/customAgentStore';
-import { HiPlus, HiX, HiClock, HiCollection } from 'react-icons/hi';
+import { HiPlus, HiX, HiClock, HiCollection, HiStar } from 'react-icons/hi';
 import CreateCustomAgentModal from './CreateCustomAgentModal';
 import CustomAgentListItem from './CustomAgentListItem';
 
 interface CustomAgentLibraryProps {
+  /** Callback invoked when the panel should be collapsed */
   onCollapse?: () => void;
+  /** Callback invoked when an agent is selected */
   onSelectAgent?: (agentId: string) => void;
 }
 
+/**
+ * CustomAgentLibrary - Panel for managing custom user-created agents
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function CustomAgentLibrary({ onCollapse, onSelectAgent }: CustomAgentLibraryProps) {
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'all' | 'favorites' | 'recent'>('all');

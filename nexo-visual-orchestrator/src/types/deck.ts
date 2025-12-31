@@ -1,8 +1,24 @@
 // src/types/deck.ts
 
+/**
+ * Deck Type Definitions
+ * 
+ * Type definitions for the agent deck system. Decks are collections of agents
+ * that can be saved, loaded, and reused across projects.
+ * 
+ * Includes:
+ * - DeckAgent: Individual agent entry in a deck with count and configuration
+ * - AgentDeck: Complete deck with metadata, tags, and sharing settings
+ * - DeckTemplate: Predefined deck templates
+ * - deckToWorkflow: Conversion function to transform decks into workflows
+ */
+
 import type { RoleDefinition, Relationship } from './workflow';
 import type { AgentType } from './agents';
 
+/**
+ * Individual agent entry within a deck
+ */
 export interface DeckAgent {
   agentType: AgentType;
   roleId: string; // Reference to the role template
@@ -10,6 +26,9 @@ export interface DeckAgent {
   configuration?: Record<string, unknown>; // Agent-specific configuration
 }
 
+/**
+ * Complete agent deck with metadata and sharing settings
+ */
 export interface AgentDeck {
   id: string;
   name: string;
@@ -28,6 +47,9 @@ export interface AgentDeck {
   };
 }
 
+/**
+ * Predefined deck template for quick deck creation
+ */
 export interface DeckTemplate {
   id: string;
   name: string;
@@ -37,7 +59,12 @@ export interface DeckTemplate {
   recommendedFor?: string[];
 }
 
-// Convert deck to workflow roles
+/**
+ * Converts an agent deck into workflow roles and relationships
+ * @param deck - The agent deck to convert
+ * @param roleTemplates - Template definitions for roles
+ * @returns Object containing roles and relationships for the workflow
+ */
 export function deckToWorkflow(deck: AgentDeck, roleTemplates: Record<string, any>): {
   roles: RoleDefinition[];
   relationships: Relationship[];

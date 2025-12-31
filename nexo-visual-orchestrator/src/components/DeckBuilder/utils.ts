@@ -1,5 +1,14 @@
 // src/components/DeckBuilder/utils.ts
 
+/**
+ * Utility functions for the DeckBuilder component
+ */
+
+/**
+ * Returns Tailwind CSS classes for a given color theme
+ * @param color - Color name (purple, red, yellow, etc.)
+ * @returns Object with background, text, border, and accent color classes
+ */
 export function getColorClasses(color: string) {
   const colorMap: Record<string, { bg: string; text: string; border: string; accent: string }> = {
     purple: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30', accent: 'bg-purple-500/20' },

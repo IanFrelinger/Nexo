@@ -1,5 +1,18 @@
 // src/components/Panels/CreateCustomAgentModal.tsx
 
+/**
+ * CreateCustomAgentModal Component
+ * 
+ * Modal dialog for creating a new custom agent. Allows users to:
+ * - Name the custom agent
+ * - Provide an optional description
+ * - Select a base agent type to inherit from
+ * - Add tags for organization
+ * 
+ * The custom agent is created based on an existing agent type with
+ * configurable overrides.
+ */
+
 import { useState } from 'react';
 import { useCustomAgentStore } from '../../stores/customAgentStore';
 import { AGENT_REGISTRY } from '../../utils/agentRegistry';
@@ -7,10 +20,17 @@ import type { AgentType } from '../../types/agents';
 import { HiX } from 'react-icons/hi';
 
 interface CreateCustomAgentModalProps {
+  /** Callback invoked when the modal is closed */
   onClose: () => void;
+  /** Callback invoked when the agent is successfully created */
   onSave: (agent: any) => void;
 }
 
+/**
+ * CreateCustomAgentModal - Modal for creating custom agents
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function CreateCustomAgentModal({ onClose, onSave }: CreateCustomAgentModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');

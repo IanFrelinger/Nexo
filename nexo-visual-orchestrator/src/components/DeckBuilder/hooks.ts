@@ -1,5 +1,12 @@
 // src/components/DeckBuilder/hooks.ts
 
+/**
+ * Custom hooks for the DeckBuilder component
+ * 
+ * Provides reusable hooks for managing agent data, filtering, and deck agent
+ * transformations used throughout the deck builder interface.
+ */
+
 import { useMemo } from 'react';
 import { useCustomAgentStore } from '../../stores/customAgentStore';
 import { AGENT_REGISTRY } from '../../utils/agentRegistry';
@@ -15,6 +22,11 @@ interface AgentItem {
   customId?: string;
 }
 
+/**
+ * Hook to get available agents based on source type
+ * @param agentSource - 'built-in' for system agents or 'custom' for user-created agents
+ * @returns Array of agent items with definitions and templates
+ */
 export function useAvailableAgents(agentSource: 'built-in' | 'custom') {
   const { library: customAgentLibrary } = useCustomAgentStore();
 
@@ -43,6 +55,12 @@ export function useAvailableAgents(agentSource: 'built-in' | 'custom') {
   }, [agentSource, customAgentLibrary.agents]);
 }
 
+/**
+ * Hook to filter agents based on search query
+ * @param availableAgents - Array of available agents to filter
+ * @param searchQuery - Search string to match against agent names, descriptions, types, and tags
+ * @returns Filtered array of agents matching the search query
+ */
 export function useFilteredAgents(availableAgents: AgentItem[], searchQuery: string) {
   return useMemo(() => {
     if (!searchQuery) return availableAgents;
@@ -65,6 +83,11 @@ export function useFilteredAgents(availableAgents: AgentItem[], searchQuery: str
   }, [availableAgents, searchQuery]);
 }
 
+/**
+ * Hook to transform deck agents into display format with definitions
+ * @param currentDeck - The currently selected deck
+ * @returns Array of deck agents enriched with agent definitions and templates
+ */
 export function useDeckAgents(currentDeck: any) {
   return useMemo(() => {
     if (!currentDeck) return [];

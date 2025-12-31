@@ -1,5 +1,16 @@
 // src/components/Panels/WorkflowSettings.tsx
 
+/**
+ * WorkflowSettings Component
+ * 
+ * Displays and allows editing of global workflow settings:
+ * - Default autonomy level (conservative/balanced/aggressive)
+ * - Conflict resolution strategy
+ * - Global scaling multiplier
+ * 
+ * Shown in the properties panel when no specific item is selected.
+ */
+
 import type { AutonomyLevel, ConflictResolution } from '../../types/workflow';
 
 interface WorkflowSettingsProps {

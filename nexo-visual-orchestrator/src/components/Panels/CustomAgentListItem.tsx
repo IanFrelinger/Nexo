@@ -1,5 +1,13 @@
 // src/components/Panels/CustomAgentListItem.tsx
 
+/**
+ * CustomAgentListItem Component
+ * 
+ * Individual list item displaying a custom agent with its metadata and action buttons.
+ * Shows agent name, description, base agent type, tags, and favorite/share status.
+ * Provides actions for favoriting, duplicating, sharing, and deleting the agent.
+ */
+
 import { HiStar, HiTrash, HiDuplicate, HiShare } from 'react-icons/hi';
 import * as HiIcons from 'react-icons/hi';
 import { AGENT_REGISTRY } from '../../utils/agentRegistry';
@@ -7,15 +15,27 @@ import { ROLE_TEMPLATES } from '../../data/roleTemplates';
 import type { CustomAgentConfig } from '../../types/customAgent';
 
 interface CustomAgentListItemProps {
+  /** The custom agent configuration to display */
   agent: CustomAgentConfig;
+  /** Whether this agent is marked as a favorite */
   isFavorite: boolean;
+  /** Callback to toggle favorite status */
   onToggleFavorite: () => void;
+  /** Callback to delete the agent */
   onDelete: () => void;
+  /** Callback to duplicate the agent */
   onDuplicate: () => void;
+  /** Callback to toggle sharing status */
   onToggleShare: () => void;
+  /** Optional callback when the item is clicked */
   onSelect?: () => void;
 }
 
+/**
+ * CustomAgentListItem - Individual custom agent list item
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function CustomAgentListItem({
   agent,
   isFavorite,

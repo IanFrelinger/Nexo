@@ -1,9 +1,28 @@
 // src/utils/behaviorRegistry.ts
 
+/**
+ * Behavior Registry
+ * 
+ * Registry defining behaviors and their constituent commands for each agent type.
+ * Behaviors represent high-level capabilities (e.g., "Orchestration", "Generation"),
+ * while commands are specific actions within those behaviors (e.g., "Generate Code").
+ * 
+ * Structure:
+ * - COMMANDS: Individual command definitions (reusable across behaviors)
+ * - BEHAVIOR_REGISTRY: Behaviors grouped by agent type, each containing command IDs
+ * 
+ * Used to:
+ * - Display behaviors and commands on agent cards
+ * - Show command composition flow
+ * - Validate agent capabilities
+ */
+
 import type { Behavior, Command } from '../types/agents';
 import * as HiIcons from 'react-icons/hi';
 
-// Common command definitions
+/**
+ * Common command definitions shared across behaviors
+ */
 const COMMANDS: Record<string, Command> = {
   // Design & Planning
   'decompose_request': { id: 'decompose_request', label: 'Decompose Request', description: 'Break down high-level requests into specifications' },

@@ -1,5 +1,13 @@
 // src/components/GuidedMode/GuidedModeChatMessages.tsx
 
+/**
+ * GuidedModeChatMessages Component
+ * 
+ * Renders the chat message history in the guided mode interface. Displays
+ * assistant messages (with avatar), user messages, and a typing indicator
+ * when the assistant is "typing". Supports basic markdown formatting (bold).
+ */
+
 import { HiChat } from 'react-icons/hi';
 
 interface ChatMessage {

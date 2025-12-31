@@ -1,5 +1,14 @@
 // src/components/Cards/AgentCardInstances.tsx
 
+/**
+ * AgentCardInstances Component
+ * 
+ * Instances list section of an agent card (shown when expanded). Displays
+ * all agent instances with their status indicators and provides controls
+ * to spawn new instances or terminate existing ones. Respects scaling
+ * constraints (min/max instances).
+ */
+
 import { HiPlus, HiMinus } from 'react-icons/hi';
 import type { AgentInstance } from '../../types/workflow';
 import { STATUS_STYLES } from './AgentCardConstants';

@@ -1,3 +1,17 @@
+/**
+ * Agent Type Definitions
+ * 
+ * Type definitions for agent system including:
+ * - Agent categories and types
+ * - Port definitions (inputs/outputs)
+ * - Configuration schemas
+ * - Command and behavior structures
+ * - Agent definition interface
+ * 
+ * Used throughout the application for agent registration, UI rendering,
+ * and workflow composition.
+ */
+
 export type AgentCategory =
   | 'architect'
   | 'domain'

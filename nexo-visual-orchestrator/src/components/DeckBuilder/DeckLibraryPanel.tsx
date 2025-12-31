@@ -1,15 +1,32 @@
 // src/components/DeckBuilder/DeckLibraryPanel.tsx
 
+/**
+ * DeckLibraryPanel Component
+ * 
+ * Left sidebar panel displaying the list of all available decks. Shows deck metadata
+ * including name, description, agent count, and tags. Highlights the currently
+ * selected deck and provides a button to create new decks.
+ */
+
 import { HiPlus, HiShare, HiCollection } from 'react-icons/hi';
 import type { AgentDeck } from '../../types/deck';
 
 interface DeckLibraryPanelProps {
+  /** Array of all available decks */
   decks: AgentDeck[];
+  /** Currently selected deck, if any */
   currentDeck: AgentDeck | null;
+  /** Callback invoked when a deck is selected from the list */
   onSelectDeck: (deckId: string) => void;
+  /** Callback invoked when the "New Deck" button is clicked */
   onCreateDeck: () => void;
 }
 
+/**
+ * DeckLibraryPanel - Displays the list of available decks
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function DeckLibraryPanel({
   decks,
   currentDeck,

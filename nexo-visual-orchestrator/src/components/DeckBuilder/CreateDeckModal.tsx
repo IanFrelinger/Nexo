@@ -1,16 +1,36 @@
 // src/components/DeckBuilder/CreateDeckModal.tsx
 
+/**
+ * CreateDeckModal Component
+ * 
+ * Modal dialog for creating a new agent deck. Collects deck name, description, and
+ * optional tags. Validates that a name is provided before allowing creation.
+ */
+
 interface CreateDeckModalProps {
+  /** Current deck name input value */
   deckName: string;
+  /** Current deck description input value */
   deckDescription: string;
+  /** Current deck tags array */
   deckTags: string[];
+  /** Callback to update the deck name */
   onSetDeckName: (name: string) => void;
+  /** Callback to update the deck description */
   onSetDeckDescription: (description: string) => void;
+  /** Callback to update the deck tags */
   onSetDeckTags: (tags: string[]) => void;
+  /** Callback to create the deck with current values */
   onCreateDeck: () => void;
+  /** Callback to close the modal without creating */
   onClose: () => void;
 }
 
+/**
+ * CreateDeckModal - Modal for creating a new deck
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function CreateDeckModal({
   deckName,
   deckDescription,

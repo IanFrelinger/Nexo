@@ -1,15 +1,31 @@
 // src/components/DeckBuilder/DeckBuilderHeader.tsx
 
+/**
+ * DeckBuilderHeader Component
+ * 
+ * Header section of the deck builder modal. Displays the title, description, and
+ * action buttons for the currently selected deck (share toggle, duplicate, close).
+ */
+
 import { HiX, HiShare, HiDuplicate } from 'react-icons/hi';
 import type { AgentDeck } from '../../types/deck';
 
 interface DeckBuilderHeaderProps {
+  /** Currently selected deck, if any */
   currentDeck: AgentDeck | null;
+  /** Callback to toggle the shared status of a deck */
   onSetDeckShared: (deckId: string, isShared: boolean) => void;
+  /** Callback to duplicate the current deck */
   onDuplicateDeck: (deckId: string) => void;
+  /** Callback to close the deck builder modal */
   onClose?: () => void;
 }
 
+/**
+ * DeckBuilderHeader - Header section with title and deck actions
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function DeckBuilderHeader({
   currentDeck,
   onSetDeckShared,

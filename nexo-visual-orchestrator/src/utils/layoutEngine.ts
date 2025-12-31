@@ -1,7 +1,26 @@
+/**
+ * Layout Engine
+ * 
+ * Provides algorithms and utilities for positioning roles on the canvas based
+ * on their tier (strategic, tactical, execution) and relationships.
+ * 
+ * Features:
+ * - Hierarchical tier-based layout (strategic → tactical → execution)
+ * - Tier boundary detection and constraint enforcement
+ * - Dagre-based graph layout for relationship-based positioning
+ * - Position validation and correction
+ * 
+ * Used by:
+ * - Auto-layout functionality
+ * - Drag-and-drop position constraints
+ * - Tier band visualization
+ */
+
 import dagre from 'dagre';
 import type { Node, Edge } from 'reactflow';
 import type { RoleDefinition } from '../types/workflow';
 
+// Layout constants
 const NODE_WIDTH = 288;
 const NODE_HEIGHT = 200;
 const TIER_SPACING = 400; // Vertical space between tiers

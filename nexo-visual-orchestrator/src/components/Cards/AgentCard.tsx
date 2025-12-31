@@ -1,5 +1,16 @@
 // src/components/Cards/AgentCard.tsx
 
+/**
+ * AgentCard Component
+ * 
+ * Main card component representing an agent in the visual orchestrator. Displays
+ * agent information including header (name, role, instance count), description,
+ * behaviors (collapsible), instances list (when expanded), and footer (tier, delete).
+ * 
+ * Supports selection, expansion/collapse, instance spawning/termination, and
+ * positioning on the canvas. Uses memoization for performance optimization.
+ */
+
 import { memo } from 'react';
 import type { RoleDefinition, AgentInstance } from '../../types/workflow';
 import type { AgentDefinition } from '../../types/agents';

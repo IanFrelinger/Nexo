@@ -1,5 +1,19 @@
 // src/stores/orchestrationStore.ts
 
+/**
+ * Orchestration Store
+ * 
+ * Central Zustand store managing the core orchestration state including:
+ * - Roles (agent definitions) and their positions
+ * - Agent instances spawned from roles
+ * - Relationships between roles
+ * - Workflow settings and configuration
+ * - UI state (expanded roles, selected items, visibility toggles)
+ * 
+ * This is the primary state management store for the visual orchestrator,
+ * coordinating between the canvas, properties panel, and other UI components.
+ */
+
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 import { constrainToTier, TIER_CONFIGS } from '../utils/layoutEngine';
@@ -12,6 +26,9 @@ import type {
   TaskAssignment,
 } from '../types/workflow';
 
+/**
+ * Orchestration state interface defining all state and actions
+ */
 interface OrchestrationState {
   // Data
   roles: RoleDefinition[];

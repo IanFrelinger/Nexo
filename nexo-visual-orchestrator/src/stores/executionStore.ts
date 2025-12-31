@@ -1,7 +1,23 @@
+/**
+ * Execution Store
+ * 
+ * Zustand store managing workflow execution state including:
+ * - Execution status (idle, running, paused, completed, error)
+ * - Execution logs with timestamps and levels
+ * - Conflict tracking and resolution
+ * - Execution ID for tracking active runs
+ * 
+ * Used by execution controls, execution console, and conflict resolver
+ * to display real-time execution information and handle conflicts.
+ */
+
 import { create } from 'zustand';
 import type { WorkflowExecutionStatus, LogEntry, ConflictInfo } from '../types/execution';
 import { nanoid } from 'nanoid';
 
+/**
+ * Execution state interface
+ */
 interface ExecutionState {
   status: WorkflowExecutionStatus;
   executionId: string | null;

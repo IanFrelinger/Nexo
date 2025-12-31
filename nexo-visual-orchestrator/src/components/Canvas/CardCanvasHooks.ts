@@ -1,5 +1,18 @@
 // src/components/Canvas/CardCanvasHooks.ts
 
+/**
+ * Card Canvas Hooks
+ * 
+ * Custom React hooks for the card-based canvas functionality:
+ * - useCardDrag: Handles drag-and-drop of agent cards
+ * - useCanvasDrop: Handles dropping new agents onto the canvas
+ * - useConnectionPreview: Shows preview line when creating connections
+ * - useAgentDefinition: Retrieves agent definitions for roles
+ * - useCommandFlow: Calculates command execution flow through agents
+ * 
+ * These hooks encapsulate the complex interaction logic for the card canvas.
+ */
+
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import { ROLE_TEMPLATES } from '../../data/roleTemplates';
@@ -7,6 +20,11 @@ import { AGENT_REGISTRY } from '../../utils/agentRegistry';
 import { nanoid } from 'nanoid';
 import type { RoleDefinition, Relationship } from '../../types/workflow';
 
+/**
+ * Hook for handling card drag operations
+ * @param canvasRef - Reference to the canvas container element
+ * @returns Drag state and handlers
+ */
 export function useCardDrag(canvasRef: React.RefObject<HTMLDivElement>) {
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
@@ -54,6 +72,11 @@ export function useCardDrag(canvasRef: React.RefObject<HTMLDivElement>) {
   };
 }
 
+/**
+ * Hook for handling canvas drop operations (adding new agents)
+ * @param canvasRef - Reference to the canvas container element
+ * @returns Drop handlers
+ */
 export function useCanvasDrop(canvasRef: React.RefObject<HTMLDivElement>) {
   const { addRole } = useOrchestrationStore();
 
@@ -88,6 +111,12 @@ export function useCanvasDrop(canvasRef: React.RefObject<HTMLDivElement>) {
   return { handleCanvasDrop, handleCanvasDragOver };
 }
 
+/**
+ * Hook for connection preview when creating relationships between agents
+ * @param canvasRef - Reference to the canvas container element
+ * @param isConnecting - ID of the source agent being connected, or null
+ * @returns Connection preview state with source and target positions
+ */
 export function useConnectionPreview(
   canvasRef: React.RefObject<HTMLDivElement>,
   isConnecting: string | null
@@ -124,6 +153,10 @@ export function useConnectionPreview(
   return connectionPreview;
 }
 
+/**
+ * Hook for retrieving agent definitions from role definitions
+ * @returns Function that takes a role and returns its agent definition
+ */
 export function useAgentDefinition() {
   return useCallback((role: RoleDefinition) => {
     const baseRoleId = role.id.split('-')[0];
@@ -160,6 +193,13 @@ export function useAgentDefinition() {
   }, []);
 }
 
+/**
+ * Hook for calculating command execution flow through agents
+ * Traces the path from architect through delegation relationships
+ * @param roles - Array of role definitions
+ * @param relationships - Array of relationships between roles
+ * @returns Array of role IDs in execution order, or null if no architect found
+ */
 export function useCommandFlow(roles: RoleDefinition[], relationships: Relationship[]) {
   return useMemo(() => {
     const architect = roles.find(r => r.role.toLowerCase().includes('architect'));

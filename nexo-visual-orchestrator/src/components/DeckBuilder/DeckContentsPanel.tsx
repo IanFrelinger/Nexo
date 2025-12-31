@@ -1,5 +1,14 @@
 // src/components/DeckBuilder/DeckContentsPanel.tsx
 
+/**
+ * DeckContentsPanel Component
+ * 
+ * Center panel displaying the contents of the currently selected deck. Shows deck
+ * metadata (name, description, total agent count) and a list of all agents in the deck
+ * with controls to adjust counts and remove agents. Displays an empty state when no
+ * deck is selected.
+ */
+
 import { HiPlus, HiMinus, HiTrash, HiCollection } from 'react-icons/hi';
 import * as HiIcons from 'react-icons/hi';
 import type { AgentDeck } from '../../types/deck';
@@ -14,14 +23,25 @@ interface DeckAgentItem {
 }
 
 interface DeckContentsPanelProps {
+  /** Currently selected deck, or null if none selected */
   deck: AgentDeck | null;
+  /** Array of agents in the current deck with their definitions */
   deckAgents: DeckAgentItem[];
+  /** Total number of agent instances across all agents in the deck */
   totalAgents: number;
+  /** Callback to update deck metadata (name, description, etc.) */
   onUpdateDeck: (updates: Partial<AgentDeck>) => void;
+  /** Callback to change the count of a specific agent type in the deck */
   onSetCount: (agentType: AgentType, count: number) => void;
+  /** Callback to remove an agent type from the deck */
   onRemoveAgent: (agentType: AgentType) => void;
 }
 
+/**
+ * DeckContentsPanel - Displays and manages the contents of the selected deck
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function DeckContentsPanel({
   deck,
   deckAgents,

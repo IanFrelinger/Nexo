@@ -1,5 +1,22 @@
 // src/components/Canvas/CardCanvas.tsx
 
+/**
+ * CardCanvas Component
+ * 
+ * Main canvas component for the card-based visual orchestrator. Displays agent cards
+ * positioned on a grid background with connection lines between related agents.
+ * 
+ * Features:
+ * - Drag-and-drop agent cards
+ * - Visual connection lines between agents
+ * - Connection preview when creating new relationships
+ * - Command flow indicator showing the execution path
+ * - Empty state when no agents are present
+ * 
+ * Uses custom hooks for drag handling, drop handling, connection preview, and
+ * command flow calculation.
+ */
+
 import { useRef, useMemo, useState } from 'react';
 import { nanoid } from 'nanoid';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
@@ -21,6 +38,10 @@ interface ConnectionLine {
   relationship: Relationship;
 }
 
+/**
+ * CardCanvas - Main canvas for agent card visualization
+ * @returns JSX element
+ */
 export default function CardCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [isConnecting, setIsConnecting] = useState<string | null>(null);

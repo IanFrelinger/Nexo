@@ -1,15 +1,32 @@
 // src/components/DeckBuilder/DeckBuilderFooter.tsx
 
+/**
+ * DeckBuilderFooter Component
+ * 
+ * Footer section of the deck builder modal. Provides action buttons to load the
+ * current deck onto the canvas, cancel/close, and delete the deck. Only visible
+ * when a deck is selected.
+ */
+
 import { HiCheck, HiTrash } from 'react-icons/hi';
 import type { AgentDeck } from '../../types/deck';
 
 interface DeckBuilderFooterProps {
+  /** Currently selected deck, if any */
   currentDeck: AgentDeck | null;
+  /** Callback to load the current deck onto the main canvas */
   onLoadDeck: () => void;
+  /** Callback to delete the current deck (should include confirmation) */
   onDeleteDeck: () => void;
+  /** Callback to close the deck builder modal */
   onClose?: () => void;
 }
 
+/**
+ * DeckBuilderFooter - Footer section with deck actions
+ * @param props - Component props
+ * @returns JSX element or null if no deck selected
+ */
 export default function DeckBuilderFooter({
   currentDeck,
   onLoadDeck,

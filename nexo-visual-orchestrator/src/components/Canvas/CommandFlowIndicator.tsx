@@ -1,5 +1,15 @@
 // src/components/Canvas/CommandFlowIndicator.tsx
 
+/**
+ * CommandFlowIndicator Component
+ * 
+ * Displays a visual indicator at the bottom-left of the canvas showing the
+ * command execution flow. Shows the sequence of agents involved in a command
+ * composition, displayed as a horizontal chain (Agent1 → Agent2 → Agent3).
+ * 
+ * Only visible when there are 2+ agents in the command flow.
+ */
+
 import type { RoleDefinition } from '../../types/workflow';
 
 interface CommandFlowIndicatorProps {

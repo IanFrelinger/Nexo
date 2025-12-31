@@ -1,5 +1,16 @@
 // src/components/Nodes/RoleCardHeader.tsx
 
+/**
+ * RoleCardHeader Component
+ * 
+ * Header section of a role card (ReactFlow node). Displays:
+ * - Role icon and name
+ * - Role type
+ * - Active instance count badge
+ * - Spawn instance button
+ * - Expand/collapse toggle
+ */
+
 import { HiPlus, HiChevronDown, HiChevronUp } from 'react-icons/hi';
 import * as HiIcons from 'react-icons/hi';
 import type { RoleDefinition, AgentInstance } from '../../types/workflow';

@@ -1,5 +1,12 @@
 // src/components/GuidedMode/GuidedModeChatHeader.tsx
 
+/**
+ * GuidedModeChatHeader Component
+ * 
+ * Header section of the guided mode chat interface. Displays the title
+ * "Team Setup" and provides a close/skip button to exit the guided mode.
+ */
+
 import { HiChat, HiX } from 'react-icons/hi';
 
 interface GuidedModeChatHeaderProps {

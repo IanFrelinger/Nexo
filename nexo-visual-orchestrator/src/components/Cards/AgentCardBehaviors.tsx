@@ -1,5 +1,14 @@
 // src/components/Cards/AgentCardBehaviors.tsx
 
+/**
+ * AgentCardBehaviors Component
+ * 
+ * Behaviors section of an agent card. Displays agent behaviors and their
+ * constituent commands. Shows a collapsed summary view (first 2 behaviors,
+ * instance status dots) or an expanded detailed view (all behaviors with
+ * commands, inputs, and outputs).
+ */
+
 import { HiChevronDown, HiChevronUp, HiArrowLeft, HiArrowRight } from 'react-icons/hi';
 import * as HiIcons from 'react-icons/hi';
 import type { Behavior, AgentDefinition } from '../../types/agents';

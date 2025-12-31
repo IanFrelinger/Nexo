@@ -1,5 +1,23 @@
+/**
+ * Validation Utilities
+ * 
+ * Provides workflow validation functions to ensure workflow integrity:
+ * - Architecture validation (presence of architect role)
+ * - Cycle detection in delegation relationships
+ * - Disconnected role detection
+ * - Topological sorting for execution order
+ * 
+ * Used before workflow execution and for displaying validation warnings
+ * in the UI.
+ */
+
 import type { Workflow, WorkflowValidationError } from '../types/workflow';
 
+/**
+ * Validates a workflow and returns a list of validation errors
+ * @param workflow - The workflow to validate
+ * @returns Array of validation errors (warnings and errors)
+ */
 export function validateWorkflow(workflow: Workflow): WorkflowValidationError[] {
   const errors: WorkflowValidationError[] = [];
 
@@ -42,6 +60,11 @@ export function validateWorkflow(workflow: Workflow): WorkflowValidationError[] 
   return errors;
 }
 
+/**
+ * Detects cycles in delegation relationships using DFS
+ * @param workflow - The workflow to check
+ * @returns True if a cycle exists, false otherwise
+ */
 function hasCycle(workflow: Workflow): boolean {
   const visited = new Set<string>();
   const recursionStack = new Set<string>();
@@ -75,6 +98,12 @@ function hasCycle(workflow: Workflow): boolean {
   return false;
 }
 
+/**
+ * Performs topological sort on workflow roles based on delegation relationships
+ * Returns roles in execution order (no role executes before its dependencies)
+ * @param workflow - The workflow to sort
+ * @returns Array of role IDs in topological order
+ */
 export function topologicalSort(workflow: Workflow): string[] {
   const inDegree = new Map<string, number>();
   const adjacency = new Map<string, string[]>();

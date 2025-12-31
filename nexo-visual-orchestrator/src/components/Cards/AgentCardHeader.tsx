@@ -1,5 +1,14 @@
 // src/components/Cards/AgentCardHeader.tsx
 
+/**
+ * AgentCardHeader Component
+ * 
+ * Header section of an agent card displaying:
+ * - Agent icon (color-coded)
+ * - Agent name and role
+ * - Active instance count badge (shows busy/idle status)
+ */
+
 import * as HiIcons from 'react-icons/hi';
 import type { RoleDefinition } from '../../types/workflow';
 import { COLOR_CLASSES } from './AgentCardConstants';

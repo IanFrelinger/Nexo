@@ -1,5 +1,15 @@
 // src/components/Canvas/ConnectionLines.tsx
 
+/**
+ * ConnectionLines Component
+ * 
+ * Renders SVG connection lines between agent cards on the canvas. Displays:
+ * - Existing relationships as dashed indigo lines
+ * - Connection preview (when creating a new relationship) as dashed green line
+ * 
+ * Uses absolute positioning to overlay lines on top of the canvas.
+ */
+
 import type { RoleDefinition, Relationship } from '../../types/workflow';
 
 interface ConnectionLine {

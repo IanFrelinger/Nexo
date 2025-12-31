@@ -1,14 +1,32 @@
 // src/components/Toolbar/FileOperations.tsx
 
+/**
+ * FileOperations Component
+ * 
+ * Toolbar section providing file and workflow management operations:
+ * - Open: Load a workflow from a JSON file
+ * - Save: Export the current workflow to a JSON file
+ * - Clear: Reset the current workflow
+ * - Guided Setup: Open the guided workflow creation wizard
+ * - Deck Builder: Open the agent deck builder
+ */
+
 import { HiFolderOpen, HiSave, HiSparkles, HiCollection } from 'react-icons/hi';
 import type { Workflow } from '../../types/workflow';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 
 interface FileOperationsProps {
+  /** Callback to open guided setup mode */
   onShowGuidedMode?: () => void;
+  /** Callback to open deck builder */
   onShowDeckBuilder?: () => void;
 }
 
+/**
+ * FileOperations - File and workflow management operations
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function FileOperations({ onShowGuidedMode, onShowDeckBuilder }: FileOperationsProps) {
   const { roles, relationships, settings, loadWorkflow, clearWorkflow } = useOrchestrationStore();
 

@@ -1,9 +1,24 @@
+/**
+ * PropertiesPanel Component
+ * 
+ * Right sidebar panel that displays properties and settings based on the current
+ * selection. Acts as a dispatcher that renders different property views:
+ * - WorkflowSettings: When nothing is selected (default)
+ * - RoleProperties: When a role is selected
+ * - InstanceProperties: When an instance is selected
+ * - RelationshipProperties: When a relationship is selected
+ */
+
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import WorkflowSettings from './WorkflowSettings';
 import RoleProperties from './RoleProperties';
 import InstanceProperties from './InstanceProperties';
 import RelationshipProperties from './RelationshipProperties';
 
+/**
+ * PropertiesPanel - Context-aware properties panel
+ * @returns JSX element
+ */
 export default function PropertiesPanel() {
   const {
     roles,

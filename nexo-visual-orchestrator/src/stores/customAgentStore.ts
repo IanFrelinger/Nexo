@@ -1,11 +1,33 @@
 // src/stores/customAgentStore.ts
 
+/**
+ * Custom Agent Store
+ * 
+ * Zustand store with persistence for managing user-created custom agents.
+ * Custom agents are based on built-in agent types but with user-defined
+ * configurations, names, descriptions, and tags.
+ * 
+ * Features:
+ * - Create, update, delete, and duplicate custom agents
+ * - Favorites and recent agents tracking
+ * - Associate agents with projects
+ * - Share agents across projects
+ * - Search and filter by tags or base type
+ * - Persist to localStorage for cross-session persistence
+ * 
+ * Used by the CustomAgentLibrary component and integrated into the
+ * deck builder and agent library.
+ */
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
 import type { CustomAgentConfig, CustomAgentLibrary } from '../types/customAgent';
 import type { AgentType } from '../types/agents';
 
+/**
+ * Custom agent store state interface
+ */
 interface CustomAgentStoreState {
   library: CustomAgentLibrary;
   

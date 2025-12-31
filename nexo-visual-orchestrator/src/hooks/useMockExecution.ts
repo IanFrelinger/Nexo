@@ -1,8 +1,28 @@
+/**
+ * useMockExecution Hook
+ * 
+ * Custom React hook providing mock workflow execution functionality for
+ * development and testing. Simulates workflow execution by:
+ * - Resetting all instances to idle
+ * - Iterating through roles and executing their first instance
+ * - Simulating work with delays
+ * - Updating instance status and metrics
+ * - Logging execution events
+ * 
+ * Provides execute, pause, and cancel functions for controlling execution.
+ * 
+ * @returns Object with execute, pause, and cancel functions
+ */
+
 import { useCallback } from 'react';
 import { useOrchestrationStore } from '../stores/orchestrationStore';
 import { useExecutionStore } from '../stores/executionStore';
 import { nanoid } from 'nanoid';
 
+/**
+ * Hook for mock workflow execution
+ * @returns Execution control functions
+ */
 export function useMockExecution() {
   const { roles, instances, relationships, updateInstance, getInstancesForRole } = useOrchestrationStore();
   const { setStatus, setExecutionId, addLog, reset: resetExecution } = useExecutionStore();

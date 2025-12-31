@@ -1,11 +1,31 @@
 // src/stores/deckStore.ts
 
+/**
+ * Deck Store
+ * 
+ * Zustand store with persistence for managing agent decks. Decks are collections
+ * of agents that can be saved, loaded, and reused across projects.
+ * 
+ * Features:
+ * - Create, update, delete, and duplicate decks
+ * - Add/remove agents from decks with configurable counts
+ * - Associate decks with projects
+ * - Share decks across projects
+ * - Search and filter decks by tags
+ * - Persist to localStorage for cross-session persistence
+ * 
+ * Used by the DeckBuilder component and for loading decks onto the canvas.
+ */
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
 import type { AgentDeck, DeckAgent } from '../types/deck';
 import type { AgentType } from '../types/agents';
 
+/**
+ * Deck store state interface
+ */
 interface DeckStoreState {
   decks: AgentDeck[];
   currentDeck: AgentDeck | null;

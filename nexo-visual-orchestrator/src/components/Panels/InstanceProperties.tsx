@@ -1,5 +1,17 @@
 // src/components/Panels/InstanceProperties.tsx
 
+/**
+ * InstanceProperties Component
+ * 
+ * Properties panel for viewing details of a selected agent instance. Displays:
+ * - Instance number and associated role
+ * - Current status
+ * - Current task (if any)
+ * - Performance metrics (tasks completed, escalated, latency, errors)
+ * 
+ * Read-only view (instances are managed through their parent role).
+ */
+
 import type { AgentInstance, RoleDefinition } from '../../types/workflow';
 
 interface InstancePropertiesProps {

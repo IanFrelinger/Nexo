@@ -1,7 +1,20 @@
 // src/components/Cards/AgentCardConstants.ts
 
+/**
+ * Agent Card Constants
+ * 
+ * Constants for styling agent cards including:
+ * - STATUS_STYLES: Visual styles for different instance statuses
+ * - COLOR_CLASSES: Color theme classes for different agent types
+ * 
+ * Used throughout agent card components for consistent styling.
+ */
+
 import type { InstanceStatus } from '../../types/workflow';
 
+/**
+ * Visual styles for instance status indicators
+ */
 export const STATUS_STYLES: Record<InstanceStatus, { bg: string; pulse: boolean; label: string }> = {
   'initializing': { bg: 'bg-blue-500', pulse: true, label: 'Initializing' },
   'idle': { bg: 'bg-slate-500', pulse: false, label: 'Idle' },
@@ -12,6 +25,9 @@ export const STATUS_STYLES: Record<InstanceStatus, { bg: string; pulse: boolean;
   'error': { bg: 'bg-red-600', pulse: false, label: 'Error' },
 };
 
+/**
+ * Color theme classes for agent types
+ */
 export const COLOR_CLASSES: Record<string, { bg: string; text: string; border: string; accent: string }> = {
   purple: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30', accent: 'bg-purple-500/20' },
   red: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30', accent: 'bg-red-500/20' },

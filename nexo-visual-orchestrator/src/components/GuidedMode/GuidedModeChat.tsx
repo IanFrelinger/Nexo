@@ -1,5 +1,19 @@
 // src/components/GuidedMode/GuidedModeChat.tsx
 
+/**
+ * GuidedModeChat Component
+ * 
+ * Main chat interface for the guided workflow setup wizard. Guides users through
+ * a conversational flow to define their agent team structure by asking questions
+ * about project type, organization pattern, autonomy level, and scaling preferences.
+ * 
+ * Features:
+ * - Typing indicators for realistic chat experience
+ * - Step-by-step question flow
+ * - Interactive option selection
+ * - Automatic workflow generation upon completion
+ */
+
 import { useState, useRef, useEffect } from 'react';
 import type { 
   RoleDefinition, 
@@ -42,7 +56,7 @@ export default function GuidedModeChat({ onComplete, onSkip }: GuidedModeChatPro
     setIsTyping(false);
   };
 
-  const { step, answers, handleOptionSelect } = useGuidedModeSteps(
+  const { answers, handleOptionSelect } = useGuidedModeSteps(
     addMessages,
     setMessages,
     messages

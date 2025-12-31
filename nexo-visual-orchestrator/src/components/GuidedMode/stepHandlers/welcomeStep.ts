@@ -1,5 +1,16 @@
 // src/components/GuidedMode/stepHandlers/welcomeStep.ts
 
+/**
+ * Welcome Step Handler
+ * 
+ * Handles the initial step of the guided workflow setup. Processes the user's
+ * project type selection and transitions to the organization pattern selection.
+ * 
+ * @param optionId - Selected project template ID
+ * @param addMessages - Function to add messages to the chat
+ * @returns Next step and collected answers
+ */
+
 import type { GuidedStep, GuidedAnswers } from '../../../types/workflow';
 import { PROJECT_TEMPLATES, ORG_PATTERNS } from '../../../data/roleTemplates';
 import { 
@@ -26,6 +37,12 @@ const ORG_ICONS: Record<OrgPattern, React.ReactNode> = {
   swarm: <HiSparkles className="w-5 h-5 text-yellow-400" />,
 };
 
+/**
+ * Handles the welcome step of guided mode
+ * @param optionId - Selected project template ID
+ * @param addMessages - Function to add messages to chat
+ * @returns Next step and answers
+ */
 export async function handleWelcomeStep(
   optionId: string,
   addMessages: (messages: ChatMessage[]) => Promise<void>

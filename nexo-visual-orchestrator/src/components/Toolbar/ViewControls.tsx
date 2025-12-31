@@ -1,9 +1,21 @@
 // src/components/Toolbar/ViewControls.tsx
 
+/**
+ * ViewControls Component
+ * 
+ * Toolbar section providing view management operations. Currently provides
+ * an auto-layout button that automatically arranges roles on the canvas
+ * using a hierarchical tier-based layout algorithm.
+ */
+
 import { HiRefresh } from 'react-icons/hi';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import { hierarchicalTierLayout } from '../../utils/layoutEngine';
 
+/**
+ * ViewControls - View management and layout controls
+ * @returns JSX element
+ */
 export default function ViewControls() {
   const { roles, relationships, loadWorkflow } = useOrchestrationStore();
 

@@ -1,5 +1,19 @@
 // src/types/workflow.ts
 
+/**
+ * Workflow Type Definitions
+ * 
+ * Core type definitions for the orchestration workflow system including:
+ * - Model configuration and tier definitions
+ * - Scaling configuration
+ * - Autonomy and authority management
+ * - Role definitions and relationships
+ * - Agent instances and execution state
+ * - Workflow settings and validation
+ * 
+ * These types form the foundation of the orchestration data model.
+ */
+
 // ============================================================================
 // MODEL & PROVIDER TYPES
 // ============================================================================

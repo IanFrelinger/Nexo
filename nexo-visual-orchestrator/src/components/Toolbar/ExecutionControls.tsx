@@ -1,10 +1,24 @@
 // src/components/Toolbar/ExecutionControls.tsx
 
+/**
+ * ExecutionControls Component
+ * 
+ * Toolbar section providing workflow execution controls. Dynamically renders
+ * different button sets based on execution status:
+ * - Idle: Run button
+ * - Running: Pause and Stop buttons
+ * - Paused: Resume and Stop buttons
+ */
+
 import { HiPlay, HiPause, HiStop } from 'react-icons/hi';
 import { useExecutionStore } from '../../stores/executionStore';
 import { useMockExecution } from '../../hooks/useMockExecution';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 
+/**
+ * ExecutionControls - Workflow execution control buttons
+ * @returns JSX element with context-appropriate execution buttons
+ */
 export default function ExecutionControls() {
   const { roles } = useOrchestrationStore();
   const { status } = useExecutionStore();

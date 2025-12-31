@@ -1,5 +1,13 @@
 // src/components/Cards/AgentCardFooter.tsx
 
+/**
+ * AgentCardFooter Component
+ * 
+ * Footer section of an agent card displaying:
+ * - Agent tier information
+ * - Delete button for removing the agent
+ */
+
 import { HiTrash } from 'react-icons/hi';
 import type { RoleDefinition } from '../../types/workflow';
 import { COLOR_CLASSES } from './AgentCardConstants';

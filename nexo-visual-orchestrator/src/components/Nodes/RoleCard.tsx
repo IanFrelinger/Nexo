@@ -1,5 +1,21 @@
 // src/components/Nodes/RoleCard.tsx
 
+/**
+ * RoleCard Component
+ * 
+ * ReactFlow node component representing a role in the orchestration canvas.
+ * Displays role information with connection handles for creating relationships.
+ * 
+ * Features:
+ * - Top/bottom handles for standard relationships (delegates, reports-to)
+ * - Side handles for negotiation relationships
+ * - Expandable/collapsible view
+ * - Color-coded by role type
+ * - Tier-based left border styling
+ * 
+ * Used in the ReactFlow-based OrchestrationCanvas (legacy node-based view).
+ */
+
 import { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
@@ -9,6 +25,11 @@ import RoleCardCollapsed from './RoleCardCollapsed';
 import RoleCardExpanded from './RoleCardExpanded';
 import { COLOR_CLASSES, TIER_BORDERS } from './RoleCardConstants';
 
+/**
+ * RoleCard - ReactFlow node for role visualization
+ * @param props - ReactFlow node props
+ * @returns JSX element
+ */
 function RoleCard({ data, selected }: NodeProps<RoleNodeData>) {
   const { 
     role, 

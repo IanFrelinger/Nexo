@@ -1,5 +1,15 @@
 // src/components/Nodes/RoleCardCollapsed.tsx
 
+/**
+ * RoleCardCollapsed Component
+ * 
+ * Collapsed view of a role card showing a summary:
+ * - Instance status dots (up to 10 visible)
+ * - Owned items summary (first 3 items)
+ * 
+ * Provides a compact view when the card is not expanded.
+ */
+
 import type { RoleDefinition, AgentInstance } from '../../types/workflow';
 import { STATUS_STYLES } from './RoleCardConstants';
 

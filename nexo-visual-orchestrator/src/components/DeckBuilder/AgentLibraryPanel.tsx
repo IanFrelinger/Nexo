@@ -1,5 +1,14 @@
 // src/components/DeckBuilder/AgentLibraryPanel.tsx
 
+/**
+ * AgentLibraryPanel Component
+ * 
+ * Right sidebar panel displaying available agents that can be added to the current deck.
+ * Supports toggling between built-in agents and custom user-created agents, with search
+ * functionality to filter the list. Shows visual indicators for agents already in the
+ * deck and allows adding new agents or increasing counts of existing ones.
+ */
+
 import { HiPlus } from 'react-icons/hi';
 import * as HiIcons from 'react-icons/hi';
 import type { AgentType } from '../../types/agents';
@@ -16,17 +25,31 @@ interface AgentItem {
 }
 
 interface AgentLibraryPanelProps {
+  /** Source of agents to display: 'built-in' or 'custom' */
   agentSource: 'built-in' | 'custom';
+  /** Number of custom agents available */
   customAgentCount: number;
+  /** Current search query for filtering agents */
   searchQuery: string;
+  /** Filtered list of agents to display */
   filteredAgents: AgentItem[];
+  /** Currently selected deck, used to check if agents are already in deck */
   currentDeck: AgentDeck | null;
+  /** Callback to switch between built-in and custom agent sources */
   onSetAgentSource: (source: 'built-in' | 'custom') => void;
+  /** Callback to update the search query */
   onSetSearchQuery: (query: string) => void;
+  /** Callback to add a new agent to the current deck */
   onAddAgent: (agentType: AgentType, roleId: string) => void;
+  /** Callback to increase the count of an agent already in the deck */
   onSetCount: (agentType: AgentType, count: number) => void;
 }
 
+/**
+ * AgentLibraryPanel - Displays available agents for adding to decks
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function AgentLibraryPanel({
   agentSource,
   customAgentCount,

@@ -1,5 +1,13 @@
 // src/components/GuidedMode/GuidedModeChatOptions.tsx
 
+/**
+ * GuidedModeChatOptions Component
+ * 
+ * Renders interactive option buttons for the guided mode chat. Displays
+ * a list of selectable options with labels, descriptions, and optional icons.
+ * Used for user input during the guided workflow setup process.
+ */
+
 import { HiChevronRight } from 'react-icons/hi';
 
 interface ChatOption {

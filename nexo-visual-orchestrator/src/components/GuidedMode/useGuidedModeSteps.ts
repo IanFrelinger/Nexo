@@ -1,5 +1,21 @@
 // src/components/GuidedMode/useGuidedModeSteps.ts
 
+/**
+ * useGuidedModeSteps Hook
+ * 
+ * Custom hook managing the state and flow of the guided workflow setup wizard.
+ * Handles step progression, answer collection, and delegates to individual
+ * step handlers for each phase of the wizard.
+ * 
+ * Steps:
+ * - welcome: Project type selection
+ * - team-structure: Organization pattern selection
+ * - autonomy-level: Autonomy level configuration
+ * - scaling-preference: Scaling preferences
+ * - conflict-resolution: Conflict resolution strategy
+ * - review: Review and create workflow
+ */
+
 import { useState } from 'react';
 import type { 
   GuidedStep, 
@@ -26,6 +42,13 @@ interface ChatMessage {
   }[];
 }
 
+/**
+ * Hook for managing guided mode step progression
+ * @param addMessages - Function to add new messages to the chat
+ * @param setMessages - Function to set the messages array
+ * @param messages - Current messages array
+ * @returns Step state, answers, and option selection handler
+ */
 export function useGuidedModeSteps(
   addMessages: (messages: ChatMessage[]) => Promise<void>,
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,

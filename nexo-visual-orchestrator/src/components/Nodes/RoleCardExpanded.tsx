@@ -1,5 +1,17 @@
 // src/components/Nodes/RoleCardExpanded.tsx
 
+/**
+ * RoleCardExpanded Component
+ * 
+ * Expanded view of a role card showing detailed information:
+ * - Complete list of owned items
+ * - Full instances list with status and current tasks
+ * - Terminate instance controls (for idle instances)
+ * - Scaling configuration summary
+ * 
+ * Provides detailed view when the card is expanded.
+ */
+
 import { HiMinus } from 'react-icons/hi';
 import type { RoleDefinition, AgentInstance } from '../../types/workflow';
 import { STATUS_STYLES } from './RoleCardConstants';

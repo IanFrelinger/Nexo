@@ -1,5 +1,19 @@
 // src/components/Panels/RoleProperties.tsx
 
+/**
+ * RoleProperties Component
+ * 
+ * Properties panel for editing a selected role definition. Allows editing:
+ * - Role name and description
+ * - Model tier (strategic/tactical/execution)
+ * - Scaling configuration (min/max instances, scale to zero)
+ * - Autonomy level
+ * - Owned items (comma-separated list)
+ * - View associated instances
+ * 
+ * Provides a delete button to remove the role from the workflow.
+ */
+
 import * as HiIcons from 'react-icons/hi';
 import type { RoleDefinition, AgentInstance, AutonomyLevel } from '../../types/workflow';
 

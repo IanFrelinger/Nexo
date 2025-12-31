@@ -1,7 +1,21 @@
 // src/components/Nodes/RoleCardConstants.ts
 
+/**
+ * Role Card Constants
+ * 
+ * Constants for styling ReactFlow role card nodes including:
+ * - STATUS_STYLES: Visual styles for instance statuses
+ * - TIER_BORDERS: Left border colors for different tiers
+ * - COLOR_CLASSES: Color theme classes for role types
+ * 
+ * Used in the ReactFlow-based OrchestrationCanvas (legacy node view).
+ */
+
 import type { InstanceStatus } from '../../types/workflow';
 
+/**
+ * Visual styles for instance status indicators
+ */
 export const STATUS_STYLES: Record<InstanceStatus, { bg: string; pulse: boolean }> = {
   'initializing': { bg: 'bg-blue-500', pulse: true },
   'idle': { bg: 'bg-slate-500', pulse: false },
@@ -12,12 +26,18 @@ export const STATUS_STYLES: Record<InstanceStatus, { bg: string; pulse: boolean 
   'error': { bg: 'bg-red-600', pulse: false },
 };
 
+/**
+ * Left border color classes for different model tiers
+ */
 export const TIER_BORDERS: Record<string, string> = {
   'strategic': 'border-l-purple-500',
   'tactical': 'border-l-blue-500',
   'execution': 'border-l-slate-500',
 };
 
+/**
+ * Color theme classes for role types
+ */
 export const COLOR_CLASSES: Record<string, { bg: string; text: string; border: string }> = {
   purple: { bg: 'bg-purple-500/20', text: 'text-purple-400', border: 'border-purple-500/50' },
   red: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/50' },

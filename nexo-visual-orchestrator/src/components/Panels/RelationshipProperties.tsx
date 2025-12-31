@@ -1,5 +1,17 @@
 // src/components/Panels/RelationshipProperties.tsx
 
+/**
+ * RelationshipProperties Component
+ * 
+ * Properties panel for viewing and editing a selected relationship between roles.
+ * Displays:
+ * - Relationship type (delegates, reports-to, negotiates, observes)
+ * - Source and target roles
+ * - Relationship-specific metadata (e.g., negotiation topics)
+ * 
+ * Provides a delete button to remove the relationship.
+ */
+
 import type { Relationship, RoleDefinition } from '../../types/workflow';
 
 interface RelationshipPropertiesProps {

@@ -1,5 +1,23 @@
 // src/components/DeckBuilder/DeckBuilder.tsx
 
+/**
+ * DeckBuilder Component
+ * 
+ * Main orchestrator component for the deck building interface. Provides a three-panel
+ * layout for creating and managing agent decks:
+ * - Left: Deck library (list of all decks)
+ * - Center: Current deck contents and editing
+ * - Right: Agent library (available agents to add)
+ * 
+ * Features:
+ * - Create, edit, and delete decks
+ * - Add/remove agents from decks
+ * - Adjust agent counts within decks
+ * - Toggle between built-in and custom agents
+ * - Search and filter agents
+ * - Load decks onto the main canvas
+ */
+
 import { useState } from 'react';
 import { useDeckStore } from '../../stores/deckStore';
 import { useCustomAgentStore } from '../../stores/customAgentStore';
@@ -13,10 +31,17 @@ import DeckBuilderFooter from './DeckBuilderFooter';
 import { useAvailableAgents, useFilteredAgents, useDeckAgents } from './hooks';
 
 interface DeckBuilderProps {
+  /** Callback invoked when the deck builder is closed */
   onClose?: () => void;
+  /** Callback invoked when a deck is loaded onto the canvas */
   onDeckLoad?: (deckId: string) => void;
 }
 
+/**
+ * DeckBuilder component - Main deck building interface
+ * @param props - Component props
+ * @returns JSX element
+ */
 export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
   const {
     decks,

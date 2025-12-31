@@ -1,6 +1,26 @@
+/**
+ * Agent Registry
+ * 
+ * Central registry of all built-in agent definitions. Each agent type includes:
+ * - Type, category, label, description, icon, color
+ * - Input/output definitions
+ * - Configuration schema for customization
+ * - Default configuration values
+ * - Behaviors (retrieved from behaviorRegistry)
+ * 
+ * This registry is used throughout the application to:
+ * - Display available agents in the library
+ * - Create new role definitions
+ * - Validate agent configurations
+ * - Generate agent cards and UI elements
+ */
+
 import type { AgentDefinition, AgentType, AgentCategory } from '../types/agents';
 import { getBehaviorsForAgent } from './behaviorRegistry';
 
+/**
+ * Registry of all built-in agent definitions keyed by agent type
+ */
 export const AGENT_REGISTRY: Record<AgentType, AgentDefinition> = {
   architect: {
     type: 'architect',
