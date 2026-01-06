@@ -8,6 +8,16 @@ namespace Nexo.Adapters.Assets.Audio;
 
 /// <summary>
 /// ElevenLabs speech synthesis implementation.
+/// 
+/// Provides:
+/// - High-quality speech synthesis via ElevenLabs API
+/// - Voice selection and customization
+/// - Speed and pitch control
+/// - Audio download and local storage
+/// 
+/// Implements IAudioGenerator for use with AudioAssetAgent.
+/// Optimized for speech generation (music/sound effects not supported).
+/// Requires ElevenLabs API key configuration.
 /// </summary>
 public sealed class ElevenLabsAudioGenerator : IAudioGenerator
 {

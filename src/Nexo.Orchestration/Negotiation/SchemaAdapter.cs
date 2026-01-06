@@ -5,6 +5,14 @@ namespace Nexo.Orchestration.Negotiation;
 
 /// <summary>
 /// Adapts and merges JSON schemas to resolve conflicts.
+/// 
+/// Responsibilities:
+/// - Merges two JSON schemas into a canonical form
+/// - Handles compatible types (e.g., number and integer)
+/// - Creates union schemas (oneOf) for incompatible types
+/// - Merges object schemas by combining properties
+/// 
+/// Used by NegotiationProtocol to resolve schema conflicts between agents.
 /// </summary>
 public sealed class SchemaAdapter
 {

@@ -4,6 +4,17 @@ using Nexo.Abstractions;
 
 namespace Nexo.Runtime;
 
+/// <summary>
+/// Engine for evaluating policies on tool calls.
+/// 
+/// Responsibilities:
+/// - Evaluates all registered IPolicy instances for tool call approval
+/// - Signs action deltas with SHA256 hash for integrity verification
+/// - Returns approval status and reason for denials
+/// 
+/// Used by AgentHost to enforce policies before tool execution.
+/// Provides cryptographic signing of action deltas.
+/// </summary>
 public sealed class PolicyEngine
 {
     private readonly IReadOnlyList<IPolicy> _policies;

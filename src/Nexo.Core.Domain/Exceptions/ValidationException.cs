@@ -2,6 +2,12 @@ namespace Nexo.Core.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when validation operations fail.
+/// 
+/// Contains:
+/// - ErrorCode: Structured error code for programmatic handling
+/// - Suggestion: Optional suggestion for resolving the error
+/// 
+/// Used when test validation or architectural validation fails.
 /// </summary>
 public class ValidationException : DomainException
 {

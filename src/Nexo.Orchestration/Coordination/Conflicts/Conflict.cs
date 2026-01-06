@@ -2,6 +2,15 @@ namespace Nexo.Orchestration.Coordination.Conflicts;
 
 /// <summary>
 /// Represents a conflict between agents.
+/// 
+/// Contains:
+/// - Conflict type (Schema, Resource, Constraint, Philosophy)
+/// - Agent IDs involved in the conflict
+/// - Human-readable description
+/// - Severity level (Low, Medium, High, Critical)
+/// - Additional metadata
+/// 
+/// Used by ConflictDetector and NegotiationProtocol to identify and resolve conflicts.
 /// </summary>
 public sealed record Conflict
 {

@@ -5,7 +5,18 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// Represents AI engine type as a value object
+    /// Represents AI engine type as a value object.
+    /// 
+    /// Provides predefined AI engine type values:
+    /// - GPT: GPT-based engine
+    /// - Claude: Claude-based engine
+    /// - Gemini: Gemini-based engine
+    /// - Llama: Llama-based engine
+    /// - Custom: Custom engine
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
+    /// Used to identify the type of AI engine being used.
     /// </summary>
     public sealed class AIEngineType : IEquatable<AIEngineType>
     {

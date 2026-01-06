@@ -13,6 +13,23 @@ namespace Nexo.Orchestration.Coordination;
 
 /// <summary>
 /// Main orchestrator that coordinates the entire agent orchestration flow.
+/// 
+/// Responsibilities:
+/// - Request decomposition via Architect agent
+/// - Agent spawning and lifecycle management
+/// - Dependency resolution and execution ordering
+/// - Conflict detection and resolution
+/// - Resource allocation and scaling
+/// - Progress tracking and reporting
+/// - Escalation management
+/// - Output integration and synthesis
+/// - Metrics collection and distributed tracing
+/// 
+/// The orchestrator follows a multi-phase execution model:
+/// 1. Decomposition: Architect breaks down the request into agent specifications
+/// 2. Spawning: Agents are created based on specifications
+/// 3. Execution: Agents execute in dependency order with conflict resolution
+/// 4. Integration: Outputs are synthesized into final result
 /// </summary>
 public sealed class Orchestrator
 {
@@ -30,6 +47,22 @@ public sealed class Orchestrator
     private readonly OrchestrationMetrics? _metrics;
     private readonly ILogger<Orchestrator> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Orchestrator"/> class.
+    /// </summary>
+    /// <param name="architect">The architect agent for request decomposition.</param>
+    /// <param name="agentFactory">The factory for creating agents.</param>
+    /// <param name="lifecycleManager">The lifecycle manager for agent registration and execution.</param>
+    /// <param name="dependencyResolver">The dependency resolver for managing agent dependencies.</param>
+    /// <param name="conflictDetector">The conflict detector for identifying conflicts between agents.</param>
+    /// <param name="resourceAllocator">The resource allocator for managing agent resources.</param>
+    /// <param name="progressTracker">The progress tracker for monitoring agent execution.</param>
+    /// <param name="escalationManager">The escalation manager for handling unresolved conflicts.</param>
+    /// <param name="outputIntegrator">The output integrator for combining agent outputs.</param>
+    /// <param name="agentBus">The message bus for agent communication.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="negotiationProtocol">Optional negotiation protocol for conflict resolution.</param>
+    /// <param name="metrics">Optional metrics collector for performance tracking.</param>
     public Orchestrator(
         IArchitectAgent architect,
         AgentFactory agentFactory,
@@ -62,7 +95,21 @@ public sealed class Orchestrator
 
     /// <summary>
     /// Orchestrates the complete flow: request → decomposition → agent execution → integration.
+    /// 
+    /// Execution phases:
+    /// 1. Request decomposition by Architect agent
+    /// 2. Agent spawning based on specifications
+    /// 3. Dependency resolution and execution planning
+    /// 4. Parallel agent execution with conflict detection
+    /// 5. Negotiation for conflicts (if enabled)
+    /// 6. Output integration and synthesis
+    /// 7. Result compilation and return
+    /// 
+    /// Includes comprehensive metrics collection, distributed tracing, and error handling.
     /// </summary>
+    /// <param name="request">User request to orchestrate</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Orchestration result with integrated outputs</returns>
     public async Task<OrchestrationResult> OrchestrateAsync(
         string request,
         CancellationToken cancellationToken = default)
@@ -303,7 +350,17 @@ public sealed class Orchestrator
 
     /// <summary>
     /// Applies a negotiation resolution to agents.
+    /// 
+    /// Updates agents based on the resolution type:
+    /// - Schema conflicts: Updates agents to use canonical schema
+    /// - Resource conflicts: Updates resource allocations
+    /// - Constraint/Philosophy conflicts: Applies required changes to agents
     /// </summary>
+    /// <param name="conflict">The conflict that was resolved.</param>
+    /// <param name="result">The negotiation result with the resolution.</param>
+    /// <param name="agents">The agents involved in the conflict.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     private async Task ApplyResolutionAsync(
         Conflict conflict,
         NegotiationResult result,
@@ -351,17 +408,60 @@ public sealed class Orchestrator
 
 /// <summary>
 /// Result of an orchestration run.
+/// 
+/// Contains the complete outcome of an orchestration request, including:
+/// - Success status and integrated output
+/// - Decomposition details
+/// - Conflict information (all, resolved, unresolved)
+/// - Escalations that occurred
+/// - Progress summary
+/// - Correlation ID for tracing
 /// </summary>
 public sealed record OrchestrationResult
 {
+    /// <summary>
+    /// Gets a value indicating whether the orchestration succeeded.
+    /// </summary>
     public bool Success { get; init; }
+
+    /// <summary>
+    /// Gets the integrated output from all agents.
+    /// </summary>
     public IntegratedOutput? IntegratedOutput { get; init; }
+
+    /// <summary>
+    /// Gets the decomposition result from the Architect agent.
+    /// </summary>
     public DecompositionResult? Decomposition { get; init; }
+
+    /// <summary>
+    /// Gets all conflicts detected during orchestration.
+    /// </summary>
     public IReadOnlyList<Conflict> Conflicts { get; init; } = Array.Empty<Conflict>();
+
+    /// <summary>
+    /// Gets conflicts that were successfully resolved.
+    /// </summary>
     public IReadOnlyList<Conflict> ResolvedConflicts { get; init; } = Array.Empty<Conflict>();
+
+    /// <summary>
+    /// Gets conflicts that could not be resolved and were escalated.
+    /// </summary>
     public IReadOnlyList<Conflict> UnresolvedConflicts { get; init; } = Array.Empty<Conflict>();
+
+    /// <summary>
+    /// Gets all escalations that occurred during orchestration.
+    /// </summary>
     public IReadOnlyList<Escalation> Escalations { get; init; } = Array.Empty<Escalation>();
+
+    /// <summary>
+    /// Gets the progress summary for agent execution.
+    /// </summary>
     public ProgressSummary? ProgressSummary { get; init; }
+
+    /// <summary>
+    /// Gets the correlation ID for tracing this orchestration run.
+    /// </summary>
     public string? CorrelationId { get; init; }
 }
 

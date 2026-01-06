@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Configuration;
 
 /// <summary>
 /// Watches configuration files for changes and triggers reload.
+/// 
+/// Responsibilities:
+/// - Monitors configuration files for changes using FileSystemWatcher
+/// - Automatically reloads configuration when files change
+/// - Raises ConfigurationChanged events
+/// - Supports common configuration file names (appsettings.json, nexo.json, etc.)
+/// 
+/// Implements IDisposable for proper cleanup of file watchers.
 /// </summary>
 public sealed class ConfigurationWatcher : IDisposable
 {
@@ -111,6 +119,12 @@ public sealed class ConfigurationWatcher : IDisposable
 
 /// <summary>
 /// Event arguments for configuration change events.
+/// 
+/// Contains:
+/// - File path that changed
+/// - Change type (Created, Changed, Deleted, etc.)
+/// 
+/// Used by ConfigurationWatcher.ConfigurationChanged event.
 /// </summary>
 public sealed class ConfigurationChangedEventArgs : EventArgs
 {

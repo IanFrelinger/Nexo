@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Specialized agent for Gameplay domain tasks.
+/// 
+/// Handles gameplay-related design and implementation:
+/// - Gameplay mechanics design
+/// - Progression systems
+/// - Player experience optimization
+/// - Feature implementation guidance
+/// 
+/// Inherits from BaseDomainAgent for LLM integration and domain-specific prompts.
 /// </summary>
 public sealed class GameplayAgent : BaseDomainAgent
 {

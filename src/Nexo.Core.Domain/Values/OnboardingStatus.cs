@@ -5,7 +5,18 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// OnboardingStatus as a value object
+    /// Represents onboarding status as a value object.
+    /// 
+    /// Provides predefined onboarding status values:
+    /// - Pending: Onboarding is pending
+    /// - InProgress: Onboarding is in progress
+    /// - Completed: Onboarding has been completed
+    /// - Failed: Onboarding has failed
+    /// - Cancelled: Onboarding has been cancelled
+    /// - Paused: Onboarding is paused
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class OnboardingStatus : IEquatable<OnboardingStatus>
     {

@@ -8,6 +8,14 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for listing available agents.
+/// 
+/// Provides the `nexo agent list` command that:
+/// - Lists all available agents from the registry
+/// - Displays agent metadata (name, description, capabilities)
+/// - Outputs in human-readable or JSON format
+/// - Useful for discovering available agents
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class ListAgentsCommand
 {

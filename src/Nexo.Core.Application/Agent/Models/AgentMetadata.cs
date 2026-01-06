@@ -2,6 +2,14 @@ namespace Nexo.Core.Application.Agent.Models;
 
 /// <summary>
 /// Metadata about an agent.
+/// 
+/// Contains:
+/// - Agent name and description
+/// - List of capabilities
+/// - Dictionary of parameters
+/// 
+/// Used by IAgentRegistry to provide information about available agents.
+/// Returned by CLI commands like "list agents".
 /// </summary>
 public record AgentMetadata
 {

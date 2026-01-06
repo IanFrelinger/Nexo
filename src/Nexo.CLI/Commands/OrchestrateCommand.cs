@@ -7,6 +7,14 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for orchestrating agent execution.
+/// 
+/// Provides the `nexo orchestrate` command that:
+/// - Takes a user request as input
+/// - Delegates to Orchestrator for full workflow execution
+/// - Displays progress and results in human-readable or JSON format
+/// - Handles errors and provides appropriate exit codes
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class OrchestrateCommand
 {
@@ -24,6 +32,13 @@ public class OrchestrateCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Executes the orchestrate command.
+    /// </summary>
+    /// <param name="request">User request to orchestrate</param>
+    /// <param name="json">Whether to output JSON format</param>
+    /// <param name="verbose">Whether to show verbose progress output</param>
+    /// <returns>Exit code (0 for success, non-zero for errors)</returns>
     public async Task<int> ExecuteAsync(string request, bool json, bool verbose)
     {
         var correlationId = Guid.NewGuid().ToString();

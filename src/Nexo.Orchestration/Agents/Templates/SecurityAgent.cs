@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Specialized agent for Security domain tasks.
+/// 
+/// Handles security-related design and implementation:
+/// - Authentication and authorization systems
+/// - Encryption protocols
+/// - Threat modeling
+/// - Security best practices
+/// 
+/// Inherits from BaseDomainAgent for LLM integration and domain-specific prompts.
 /// </summary>
 public sealed class SecurityAgent : BaseDomainAgent
 {

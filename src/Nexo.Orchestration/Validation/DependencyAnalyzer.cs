@@ -5,6 +5,13 @@ namespace Nexo.Orchestration.Validation;
 
 /// <summary>
 /// Analyzes dependencies between agents and detects cycles using topological sort.
+/// 
+/// Checks:
+/// - Circular dependencies (cycles in dependency graph)
+/// - Missing dependencies (agents that depend on non-existent agents)
+/// - Dependency graph structure
+/// 
+/// Used by ArchitectAgent to validate decomposition results.
 /// </summary>
 public sealed class DependencyAnalyzer : IValidator
 {

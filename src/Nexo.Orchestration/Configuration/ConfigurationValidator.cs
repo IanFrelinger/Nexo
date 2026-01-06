@@ -7,6 +7,15 @@ namespace Nexo.Orchestration.Configuration;
 
 /// <summary>
 /// Validates orchestration configuration.
+/// 
+/// Responsibilities:
+/// - Validates required settings are present
+/// - Validates numeric ranges (retries, timeouts)
+/// - Validates connection strings and API keys
+/// - Checks for deprecated feature flags
+/// - Returns validation results with errors and warnings
+/// 
+/// Used at startup to ensure configuration is valid before orchestration begins.
 /// </summary>
 public sealed class ConfigurationValidator
 {
@@ -168,6 +177,13 @@ public sealed class ConfigurationValidator
 
 /// <summary>
 /// Result of configuration validation.
+/// 
+/// Contains:
+/// - Whether configuration is valid
+/// - List of configuration errors
+/// - List of configuration warnings
+/// 
+/// Produced by ConfigurationValidator.Validate.
 /// </summary>
 public sealed record ConfigurationValidationResult
 {
@@ -178,6 +194,12 @@ public sealed record ConfigurationValidationResult
 
 /// <summary>
 /// A configuration error.
+/// 
+/// Contains:
+/// - Setting name that has the error
+/// - Error message describing the issue
+/// 
+/// Used by ConfigurationValidator to report validation errors.
 /// </summary>
 public sealed record ConfigurationError
 {
@@ -187,6 +209,12 @@ public sealed record ConfigurationError
 
 /// <summary>
 /// A configuration warning.
+/// 
+/// Contains:
+/// - Setting name that has the warning
+/// - Warning message describing the issue
+/// 
+/// Used by ConfigurationValidator to report validation warnings.
 /// </summary>
 public sealed record ConfigurationWarning
 {

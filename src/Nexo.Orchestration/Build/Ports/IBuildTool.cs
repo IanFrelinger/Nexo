@@ -4,6 +4,14 @@ namespace Nexo.Orchestration.Build.Ports;
 
 /// <summary>
 /// Port for build tools (Unity, Unreal, etc.).
+/// 
+/// Defines the contract for build tool adapters:
+/// - Execute builds with configuration
+/// - Support multiple build targets
+/// - Provide tool identification
+/// 
+/// Implementations (UnityBuildTool, etc.) provide specific build logic.
+/// Used by UnityBuildAgent and other build agents.
 /// </summary>
 public interface IBuildTool
 {

@@ -5,6 +5,13 @@ namespace Nexo.Orchestration.Validation;
 
 /// <summary>
 /// Detects contradictions and conflicts in agent constraints and requirements.
+/// 
+/// Validates:
+/// - Contradictory constraints within agents
+/// - Conflicting resource requirements across agents
+/// - Conflicting output schemas
+/// 
+/// Used by ArchitectAgent to detect constraint conflicts before execution.
 /// </summary>
 public sealed class ConstraintSolver : IValidator
 {

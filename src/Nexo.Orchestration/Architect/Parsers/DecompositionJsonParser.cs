@@ -6,12 +6,24 @@ namespace Nexo.Orchestration.Architect.Parsers;
 
 /// <summary>
 /// Parses JSON output from the model into DecompositionResult.
+/// 
+/// Responsibilities:
+/// - Extracts JSON from markdown code blocks
+/// - Parses JSON into DecompositionResult structure
+/// - Handles parsing errors gracefully
+/// - Validates parsed structure
+/// 
+/// Used by ArchitectAgent to parse LLM output into structured decomposition results.
 /// </summary>
 public sealed class DecompositionJsonParser
 {
     private readonly ILogger<DecompositionJsonParser> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DecompositionJsonParser"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
     public DecompositionJsonParser(ILogger<DecompositionJsonParser> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -24,7 +36,17 @@ public sealed class DecompositionJsonParser
 
     /// <summary>
     /// Parses model output text into a DecompositionResult.
+    /// 
+    /// Process:
+    /// 1. Extracts JSON from markdown code blocks (if present)
+    /// 2. Parses JSON into DecompositionResult structure
+    /// 3. Handles parsing errors gracefully (returns null on failure)
+    /// 
+    /// Returns null if parsing fails or model output is empty.
     /// </summary>
+    /// <param name="modelOutput">The raw text output from the LLM model.</param>
+    /// <param name="originalRequest">The original user request (for context).</param>
+    /// <returns>A DecompositionResult if parsing succeeds, null otherwise.</returns>
     public DecompositionResult? Parse(string modelOutput, string originalRequest)
     {
         if (string.IsNullOrWhiteSpace(modelOutput))

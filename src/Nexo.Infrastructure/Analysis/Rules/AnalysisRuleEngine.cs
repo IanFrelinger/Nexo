@@ -5,6 +5,15 @@ namespace Nexo.Infrastructure.Analysis.Rules;
 
 /// <summary>
 /// Engine for executing multiple analysis rules (Strategy pattern).
+/// 
+/// Responsibilities:
+/// - Executes all registered IAnalysisRule instances on assembly files
+/// - Aggregates violations from all rules
+/// - Handles rule execution failures gracefully
+/// - Logs analysis progress and results
+/// 
+/// Used by AnalysisServiceAdapter to apply analysis rules to discovered assemblies.
+/// Implements the Strategy pattern for extensible rule execution.
 /// </summary>
 public class AnalysisRuleEngine
 {

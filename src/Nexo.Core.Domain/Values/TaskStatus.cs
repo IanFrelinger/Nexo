@@ -5,7 +5,16 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// Defines various statuses that a task can have, indicating its current state in the workflow as a value object
+    /// Defines various statuses that a task can have, indicating its current state in the workflow as a value object.
+    /// 
+    /// Provides predefined status values:
+    /// - Todo: Task is yet to be started or worked on
+    /// - InProgress: Task is currently being worked on
+    /// - Done: Task has been completed and meets all criteria
+    /// - Blocked: Task is blocked and cannot proceed
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class TaskStatus : IEquatable<TaskStatus>
     {

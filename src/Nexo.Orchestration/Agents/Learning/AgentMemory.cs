@@ -5,6 +5,15 @@ namespace Nexo.Orchestration.Agents.Learning;
 
 /// <summary>
 /// Persistent memory for agents to learn from past executions.
+/// 
+/// Responsibilities:
+/// - Records agent execution history (success/failure, duration, errors)
+/// - Records feedback from users or systems
+/// - Extracts learned patterns (success rates, common issues, best practices)
+/// - Maintains execution history (last 100 executions per agent)
+/// 
+/// Enables agents to improve over time by learning from past experiences.
+/// Thread-safe implementation using concurrent collections.
 /// </summary>
 public sealed class AgentMemory
 {
@@ -165,6 +174,14 @@ public sealed class AgentMemory
 
 /// <summary>
 /// Record of an agent execution.
+/// 
+/// Contains:
+/// - Agent ID and execution timestamp
+/// - Duration and success status
+/// - Optional error message
+/// - Optional metadata dictionary
+/// 
+/// Used by AgentMemory to track execution history.
 /// </summary>
 public sealed record ExecutionRecord
 {
@@ -178,6 +195,13 @@ public sealed record ExecutionRecord
 
 /// <summary>
 /// Record of feedback for an agent execution.
+/// 
+/// Contains:
+/// - Agent ID and feedback timestamp
+/// - Rating (1-5 scale)
+/// - Optional comment and execution ID
+/// 
+/// Used by AgentMemory to track user/system feedback.
 /// </summary>
 public sealed record FeedbackRecord
 {
@@ -190,6 +214,13 @@ public sealed record FeedbackRecord
 
 /// <summary>
 /// Patterns learned from agent execution history.
+/// 
+/// Contains:
+/// - Agent ID and execution statistics
+/// - Success rate and average execution time
+/// - Lists of common issues and best practices
+/// 
+/// Used by AgentMemory to provide insights for agent improvement.
 /// </summary>
 public sealed record LearnedPatterns
 {

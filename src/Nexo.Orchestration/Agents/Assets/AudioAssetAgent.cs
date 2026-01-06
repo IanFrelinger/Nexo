@@ -9,6 +9,16 @@ namespace Nexo.Orchestration.Agents.Assets;
 
 /// <summary>
 /// Agent that generates audio assets (music, sound effects, speech).
+/// 
+/// Specialized agent for audio generation that:
+/// - Uses IAudioGenerator to create game audio assets
+/// - Supports multiple audio types (music, sound effects, ambient, voice/speech)
+/// - Handles prompt generation and refinement for audio
+/// - Validates audio constraints (duration, format, sample rate)
+/// - Manages asset storage and retrieval
+/// - Implements retry logic with prompt refinement
+/// 
+/// Inherits from BaseAssetAgent for common asset generation functionality.
 /// </summary>
 public sealed class AudioAssetAgent : BaseAssetAgent
 {

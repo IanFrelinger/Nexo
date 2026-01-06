@@ -6,6 +6,13 @@ namespace Nexo.Orchestration.Validation;
 
 /// <summary>
 /// Validates that agent specifications conform to the expected JSON schema.
+/// 
+/// Checks:
+/// - Required fields (agentId, domain, goal) are present and non-empty
+/// - Field formats and types are correct
+/// - Constraints are properly structured
+/// 
+/// Used by ArchitectAgent to validate decomposition results.
 /// </summary>
 public sealed class SchemaValidator : IValidator
 {

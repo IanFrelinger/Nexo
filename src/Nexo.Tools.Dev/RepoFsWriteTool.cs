@@ -4,6 +4,15 @@ using Nexo.Tools.Dev.Deltas;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>
+/// Tool for writing files to the repository filesystem.
+/// 
+/// Writes content to a file at the specified path relative to the repository root.
+/// Creates parent directories if they don't exist.
+/// Tracks file edits in the action delta with SHA1 hashes and line counts.
+/// 
+/// Implements ITool for use with agent tool execution.
+/// </summary>
 public sealed class RepoFsWriteTool : ITool
 {
     public string Id => "repo.fs.write";

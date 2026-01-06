@@ -4,6 +4,14 @@ namespace Nexo.Core.Application.Testing.Abstractions;
 
 /// <summary>
 /// Base class for unit tests with common assertions.
+/// 
+/// Provides:
+/// - Common assertion methods (AssertTrue, AssertEqual, etc.)
+/// - Exception assertion helpers
+/// - Async assertion support
+/// 
+/// Inherits from TestBase for test discovery and execution.
+/// Used by unit tests throughout the application.
 /// </summary>
 public abstract class UnitTestBase : TestBase
 {

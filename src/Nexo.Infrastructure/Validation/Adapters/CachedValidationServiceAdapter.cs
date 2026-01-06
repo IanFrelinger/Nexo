@@ -10,6 +10,14 @@ namespace Nexo.Infrastructure.Validation.Adapters;
 
 /// <summary>
 /// Decorator for IValidationService that adds caching (Decorator pattern - OCP).
+/// 
+/// Provides caching layer for validation results:
+/// - Generates cache keys from filter + test project modification times
+/// - Caches results for 15 minutes
+/// - Returns cached results when available
+/// - Falls through to inner service on cache miss
+/// 
+/// Implements the Decorator pattern to add caching without modifying the base service.
 /// </summary>
 public class CachedValidationServiceAdapter : IValidationService
 {

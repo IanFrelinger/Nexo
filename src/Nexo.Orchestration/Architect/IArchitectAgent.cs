@@ -4,6 +4,14 @@ using Models;
 
 /// <summary>
 /// Interface for the Architect Agent that decomposes requests into validated agent specifications.
+/// 
+/// The Architect Agent is the entry point of orchestration:
+/// - Takes high-level user requests
+/// - Decomposes them into agent specifications
+/// - Validates specifications
+/// - Returns structured decomposition results
+/// 
+/// Supports context-aware decomposition with examples and domain hints.
 /// </summary>
 public interface IArchitectAgent
 {

@@ -6,6 +6,15 @@ namespace Nexo.Orchestration.Communication;
 
 /// <summary>
 /// In-memory pub/sub message bus for agent communication.
+/// 
+/// Thread-safe implementation of IAgentBus that:
+/// - Stores message history (last 1000 messages)
+/// - Routes messages to matching subscribers
+/// - Supports message type and agent ID filtering
+/// - Handles subscription lifecycle
+/// - Provides message retrieval by agent
+/// 
+/// Uses concurrent collections for thread-safe operations in parallel execution scenarios.
 /// </summary>
 public sealed class AgentBus : IAgentBus
 {
@@ -14,11 +23,25 @@ public sealed class AgentBus : IAgentBus
     private readonly ConcurrentQueue<AgentMessage> _messageHistory = new();
     private readonly object _lock = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AgentBus"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
     public AgentBus(ILogger<AgentBus> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Publishes a message to the bus.
+    /// 
+    /// Stores the message in history (last 1000 messages) and notifies all matching subscribers.
+    /// Subscribers are matched by message type and optional agent ID filter.
+    /// </summary>
+    /// <param name="message">The message to publish.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A task that represents the asynchronous publish operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if message is null.</exception>
     public Task PublishAsync(AgentMessage message, CancellationToken cancellationToken = default)
     {
         if (message == null)
@@ -56,6 +79,18 @@ public sealed class AgentBus : IAgentBus
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Subscribes to messages of a specific type.
+    /// 
+    /// Creates a subscription that will receive messages matching the specified type and optional agent ID filter.
+    /// Returns a disposable token that can be used to unsubscribe.
+    /// </summary>
+    /// <param name="messageType">Type of messages to subscribe to (null for all messages).</param>
+    /// <param name="handler">Handler function to process messages.</param>
+    /// <param name="agentId">Optional agent ID filter (only receive messages for this agent).</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A disposable subscription token that can be used to unsubscribe.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if handler is null.</exception>
     public Task<IDisposable> SubscribeAsync(
         string? messageType,
         Func<AgentMessage, CancellationToken, Task> handler,
@@ -88,6 +123,16 @@ public sealed class AgentBus : IAgentBus
         return Task.FromResult<IDisposable>(new SubscriptionToken(key, subscription.Id, this));
     }
 
+    /// <summary>
+    /// Gets all messages for a specific agent from message history.
+    /// 
+    /// Retrieves messages where the agent is either the sender or receiver,
+    /// optionally filtered by message type.
+    /// </summary>
+    /// <param name="agentId">The ID of the agent to get messages for.</param>
+    /// <param name="messageType">Optional message type filter.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A read-only list of messages for the agent.</returns>
     public Task<IReadOnlyList<AgentMessage>> GetMessagesForAgentAsync(
         string agentId,
         string? messageType = null,
@@ -102,6 +147,15 @@ public sealed class AgentBus : IAgentBus
         return Task.FromResult<IReadOnlyList<AgentMessage>>(messages);
     }
 
+    /// <summary>
+    /// Gets all subscriptions that match a message.
+    /// 
+    /// Matches subscriptions by:
+    /// - Message type (exact match or wildcard "*")
+    /// - Agent ID filter (if specified in message)
+    /// </summary>
+    /// <param name="message">The message to find matching subscriptions for.</param>
+    /// <returns>An enumerable of matching message subscriptions.</returns>
     private IEnumerable<MessageSubscription> GetMatchingSubscriptions(AgentMessage message)
     {
         var subscriptions = new List<MessageSubscription>();
@@ -129,6 +183,11 @@ public sealed class AgentBus : IAgentBus
         return subscriptions;
     }
 
+    /// <summary>
+    /// Unsubscribes a subscription from the bus.
+    /// </summary>
+    /// <param name="key">The subscription key (message type or "*").</param>
+    /// <param name="subscriptionId">The unique subscription ID to unsubscribe.</param>
     internal void Unsubscribe(string key, string subscriptionId)
     {
         if (_subscriptions.TryGetValue(key, out var subscriptions))

@@ -6,6 +6,15 @@ namespace Nexo.Infrastructure.Metrics;
 
 /// <summary>
 /// In-memory metrics collector implementation.
+/// 
+/// Responsibilities:
+/// - Records execution times for operations
+/// - Tracks counter metrics
+/// - Provides metrics snapshots
+/// - Thread-safe implementation using concurrent collections
+/// 
+/// Implements IMetricsCollector for use throughout the application.
+/// Used by orchestration and application layers for metrics collection.
 /// </summary>
 public class MemoryMetricsCollector : IMetricsCollector
 {

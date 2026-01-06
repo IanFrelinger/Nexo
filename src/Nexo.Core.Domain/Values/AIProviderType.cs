@@ -5,7 +5,23 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// AIProviderType as a value object
+    /// Represents AI provider type as a value object.
+    /// 
+    /// Provides predefined AI provider type values:
+    /// - Mock: Mock provider for testing
+    /// - LlamaWebAssembly: Llama running in WebAssembly
+    /// - LlamaNative: Native Llama implementation
+    /// - Llama: Generic Llama provider
+    /// - Ollama: Ollama provider
+    /// - OpenAI: OpenAI provider
+    /// - Anthropic: Anthropic provider
+    /// - AzureOpenAI: Azure OpenAI provider
+    /// - GoogleAI: Google AI provider
+    /// - HuggingFace: HuggingFace provider
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
+    /// Used to identify the AI provider being used for model operations.
     /// </summary>
     public sealed class AIProviderType : IEquatable<AIProviderType>
     {

@@ -9,12 +9,28 @@ namespace Nexo.Orchestration.Agents.Unity;
 
 /// <summary>
 /// Agent that analyzes Unity error logs and identifies syntax errors and issues.
+/// 
+/// Responsibilities:
+/// - Parses Unity compilation logs for errors and warnings
+/// - Identifies C# syntax errors (CS error codes)
+/// - Provides suggested fixes for common errors
+/// - Uses LLM to enhance error analysis when available
+/// - Generates structured UnityErrorAnalysis output
+/// 
+/// Inherits from BaseDomainAgent for LLM integration.
+/// Used in Unity development workflows to diagnose compilation issues.
 /// </summary>
 public class UnityErrorAnalysisAgent : BaseDomainAgent
 {
     private readonly string? _unityLogPath;
     private readonly string? _projectPath;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UnityErrorAnalysisAgent"/> class.
+    /// </summary>
+    /// <param name="spec">The agent's spawn specification.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="model">Optional LLM for enhanced error analysis.</param>
     public UnityErrorAnalysisAgent(
         AgentSpawnSpec spec,
         ILogger<BaseAgent> logger,
@@ -27,6 +43,12 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         _projectPath = ExtractParameter(spec.Description ?? spec.Goal, "projectPath");
     }
 
+    /// <summary>
+    /// Extracts a parameter value from a text string using regex pattern matching.
+    /// </summary>
+    /// <param name="text">The text to search in.</param>
+    /// <param name="key">The parameter key to extract.</param>
+    /// <returns>The extracted parameter value, or null if not found.</returns>
     private string? ExtractParameter(string text, string key)
     {
         if (string.IsNullOrEmpty(text)) return null;
@@ -35,12 +57,21 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         return match.Success ? match.Groups[1].Value : null;
     }
 
+    /// <summary>
+    /// Initializes the Unity Error Analysis Agent.
+    /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     protected override Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Initializing Unity Error Analysis Agent: {AgentId}", Spec.AgentId);
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Handles dependencies being resolved for the Unity Error Analysis Agent.
+    /// </summary>
+    /// <param name="dependencyOutputs">Outputs from upstream agents.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     protected override Task OnDependenciesResolvedAsync(
         IReadOnlyDictionary<string, object> dependencyOutputs,
         CancellationToken cancellationToken)
@@ -49,6 +80,12 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Executes the Unity error analysis, parsing the log file and identifying errors.
+    /// </summary>
+    /// <param name="dependencyOutputs">Optional outputs from upstream agents.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A <see cref="UnityErrorAnalysis"/> object containing parsed errors, warnings, and syntax errors.</returns>
     protected override async Task<object> OnExecuteAsync(
         IReadOnlyDictionary<string, object>? dependencyOutputs,
         CancellationToken cancellationToken)
@@ -96,17 +133,29 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         return analysisResult;
     }
 
+    /// <summary>
+    /// Shuts down the Unity Error Analysis Agent.
+    /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Shutting down Unity Error Analysis Agent: {AgentId}", Spec.AgentId);
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Gets the system prompt for this domain.
+    /// </summary>
+    /// <returns>The system prompt string for Unity error analysis.</returns>
     protected override string GetSystemPrompt()
     {
         return @"You are a Unity error analysis expert. Your role is to analyze Unity compilation errors and provide detailed diagnostics, root cause analysis, and fix suggestions for C# syntax errors in Unity projects.";
     }
 
+    /// <summary>
+    /// Gets mock output when no model is available.
+    /// </summary>
+    /// <returns>An empty <see cref="UnityErrorAnalysis"/> object.</returns>
     protected override object GetMockOutput()
     {
         return new UnityErrorAnalysis
@@ -121,6 +170,12 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         };
     }
 
+    /// <summary>
+    /// Analyzes Unity log content and extracts errors, warnings, and syntax errors.
+    /// </summary>
+    /// <param name="logContent">The full content of the Unity log file.</param>
+    /// <param name="result">The analysis result object to populate.</param>
+    /// <returns>The populated <see cref="UnityErrorAnalysis"/> object.</returns>
     private UnityErrorAnalysis AnalyzeUnityLog(string logContent, UnityErrorAnalysis result)
     {
         var lines = logContent.Split('\n');
@@ -206,6 +261,11 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         return result;
     }
 
+    /// <summary>
+    /// Determines if an error code represents a C# syntax error.
+    /// </summary>
+    /// <param name="errorCode">The C# compiler error code (e.g., "CS1001").</param>
+    /// <returns>True if the error code is a syntax error, false otherwise.</returns>
     private bool IsSyntaxError(string errorCode)
     {
         // Common C# syntax error codes
@@ -223,6 +283,12 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         return syntaxErrorCodes.Contains(errorCode);
     }
 
+    /// <summary>
+    /// Gets a suggested fix for a common C# syntax error code.
+    /// </summary>
+    /// <param name="errorCode">The C# compiler error code.</param>
+    /// <param name="message">The error message.</param>
+    /// <returns>A suggested fix string, or null if no suggestion is available.</returns>
     private string? GetSuggestedFix(string errorCode, string message)
     {
         // Provide basic suggestions for common errors
@@ -295,6 +361,12 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
         };
     }
 
+    /// <summary>
+    /// Enhances error analysis using an LLM to provide more detailed diagnostics and fixes.
+    /// </summary>
+    /// <param name="analysis">The initial analysis result to enhance.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>The enhanced <see cref="UnityErrorAnalysis"/> object.</returns>
     private async Task<UnityErrorAnalysis> EnhanceAnalysisWithLLM(
         UnityErrorAnalysis analysis,
         CancellationToken cancellationToken)
@@ -352,6 +424,12 @@ Format as JSON with structure:
         return analysis;
     }
 
+    /// <summary>
+    /// Extracts a fix suggestion from an LLM response for a specific syntax error.
+    /// </summary>
+    /// <param name="response">The LLM response text.</param>
+    /// <param name="error">The syntax error to extract a fix for.</param>
+    /// <returns>The extracted fix suggestion, or null if not found.</returns>
     private string? ExtractFixFromLLMResponse(string response, SyntaxError error)
     {
         // Simple extraction - look for the error code in the response
@@ -363,6 +441,14 @@ Format as JSON with structure:
 
 /// <summary>
 /// Result of Unity error analysis.
+/// 
+/// Contains:
+/// - Log and project paths
+/// - Lists of errors, warnings, and syntax errors
+/// - Analysis timestamp and error status
+/// - Optional analysis error message
+/// 
+/// Produced by UnityErrorAnalysisAgent during log analysis.
 /// </summary>
 public class UnityErrorAnalysis
 {
@@ -378,6 +464,13 @@ public class UnityErrorAnalysis
 
 /// <summary>
 /// Represents a Unity compilation error.
+/// 
+/// Contains:
+/// - File path, line number, and column
+/// - Error code and message
+/// - Full error line text
+/// 
+/// Extracted from Unity compilation logs by UnityErrorAnalysisAgent.
 /// </summary>
 public class UnityError
 {
@@ -391,6 +484,12 @@ public class UnityError
 
 /// <summary>
 /// Represents a Unity compilation warning.
+/// 
+/// Contains:
+/// - File path, line number, and column
+/// - Warning code and message
+/// 
+/// Extracted from Unity compilation logs by UnityErrorAnalysisAgent.
 /// </summary>
 public class UnityWarning
 {
@@ -403,6 +502,14 @@ public class UnityWarning
 
 /// <summary>
 /// Represents a syntax error that can be automatically fixed.
+/// 
+/// Contains:
+/// - File path, line number, and column
+/// - Error code and message
+/// - Optional suggested fix
+/// 
+/// Used by CodeFixAgent to automatically fix syntax errors.
+/// Extracted from Unity compilation logs by UnityErrorAnalysisAgent.
 /// </summary>
 public class SyntaxError
 {

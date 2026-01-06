@@ -5,6 +5,12 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Generic agent implementation for domains without specialized agents.
+/// 
+/// Provides a fallback agent for domains that don't have specialized implementations.
+/// Returns placeholder results based on agent specifications.
+/// 
+/// Used by AgentFactory when no specialized agent matches the domain.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public sealed class GenericAgent : BaseAgent
 {

@@ -8,6 +8,15 @@ namespace Nexo.Adapters.Assets.Models3D;
 
 /// <summary>
 /// Meshy AI 3D model generation implementation.
+/// 
+/// Provides:
+/// - Text-to-3D and image-to-3D generation via Meshy AI API
+/// - Multiple quality levels and art styles
+/// - Async generation with polling
+/// - Model download and local storage
+/// 
+/// Implements IModel3DGenerator for use with Model3DAssetAgent.
+/// Requires Meshy API key configuration.
 /// </summary>
 public sealed class MeshyModelGenerator : IModel3DGenerator
 {

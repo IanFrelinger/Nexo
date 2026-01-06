@@ -8,6 +8,14 @@ namespace Nexo.Infrastructure.Configuration;
 
 /// <summary>
 /// Infrastructure adapter for configuration management.
+/// 
+/// Implements IConfigurationService port from Application layer. Provides:
+/// - Configuration loading from JSON file (~/.nexo/config.json)
+/// - Configuration saving with validation
+/// - Default configuration fallback
+/// - Error handling for invalid configurations
+/// 
+/// Part of the Infrastructure layer, implementing the hexagonal architecture pattern.
 /// </summary>
 public class ConfigurationServiceAdapter : IConfigurationService
 {

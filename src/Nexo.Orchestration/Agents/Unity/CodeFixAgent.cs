@@ -9,11 +9,27 @@ namespace Nexo.Orchestration.Agents.Unity;
 
 /// <summary>
 /// Agent that automatically fixes C# syntax errors in Unity scripts.
+/// 
+/// Responsibilities:
+/// - Receives syntax errors from UnityErrorAnalysisAgent
+/// - Applies automatic fixes for common C# syntax errors
+/// - Uses LLM for complex error fixes when available
+/// - Updates Unity script files with fixes
+/// - Reports fixed files and failed fixes
+/// 
+/// Inherits from BaseDomainAgent for LLM integration.
+/// Used in Unity development workflows to automatically fix compilation errors.
 /// </summary>
 public class CodeFixAgent : BaseDomainAgent
 {
     private readonly string? _projectPath;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CodeFixAgent"/> class.
+    /// </summary>
+    /// <param name="spec">The agent's spawn specification.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="model">Optional LLM for complex error fixes.</param>
     public CodeFixAgent(
         AgentSpawnSpec spec,
         ILogger<BaseAgent> logger,
@@ -24,6 +40,12 @@ public class CodeFixAgent : BaseDomainAgent
         _projectPath = ExtractParameter(spec.Description ?? spec.Goal, "projectPath");
     }
 
+    /// <summary>
+    /// Extracts a parameter value from a text string using regex pattern matching.
+    /// </summary>
+    /// <param name="text">The text to search in.</param>
+    /// <param name="key">The parameter key to extract.</param>
+    /// <returns>The extracted parameter value, or null if not found.</returns>
     private string? ExtractParameter(string text, string key)
     {
         if (string.IsNullOrEmpty(text)) return null;
@@ -32,12 +54,21 @@ public class CodeFixAgent : BaseDomainAgent
         return match.Success ? match.Groups[1].Value : null;
     }
 
+    /// <summary>
+    /// Initializes the Code Fix Agent.
+    /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     protected override Task OnInitializeAsync(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Initializing Code Fix Agent: {AgentId}", Spec.AgentId);
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Handles dependencies being resolved for the Code Fix Agent.
+    /// </summary>
+    /// <param name="dependencyOutputs">Outputs from upstream agents, expected to contain a <see cref="UnityErrorAnalysis"/>.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     protected override Task OnDependenciesResolvedAsync(
         IReadOnlyDictionary<string, object> dependencyOutputs,
         CancellationToken cancellationToken)
@@ -46,6 +77,12 @@ public class CodeFixAgent : BaseDomainAgent
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Executes the code fixing process, applying fixes to Unity script files.
+    /// </summary>
+    /// <param name="dependencyOutputs">Optional outputs from upstream agents, expected to contain a <see cref="UnityErrorAnalysis"/> with syntax errors.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A <see cref="CodeFixResult"/> object containing fixed files and failure information.</returns>
     protected override async Task<object> OnExecuteAsync(
         IReadOnlyDictionary<string, object>? dependencyOutputs,
         CancellationToken cancellationToken)
@@ -118,17 +155,29 @@ public class CodeFixAgent : BaseDomainAgent
         return result;
     }
 
+    /// <summary>
+    /// Shuts down the Code Fix Agent.
+    /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     protected override Task OnShutdownAsync(CancellationToken cancellationToken)
     {
         Logger.LogInformation("Shutting down Code Fix Agent: {AgentId}", Spec.AgentId);
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Gets the system prompt for this domain.
+    /// </summary>
+    /// <returns>The system prompt string for C# code fixing.</returns>
     protected override string GetSystemPrompt()
     {
         return @"You are a C# code fixing expert specializing in Unity development. Your role is to automatically fix syntax errors in C# code, ensuring the fixes are correct, maintain code style, and preserve functionality.";
     }
 
+    /// <summary>
+    /// Gets mock output when no model is available.
+    /// </summary>
+    /// <returns>An empty <see cref="CodeFixResult"/> object.</returns>
     protected override object GetMockOutput()
     {
         return new CodeFixResult
@@ -139,6 +188,11 @@ public class CodeFixAgent : BaseDomainAgent
         };
     }
 
+    /// <summary>
+    /// Resolves a relative file path to an absolute path within the Unity project.
+    /// </summary>
+    /// <param name="relativePath">The relative file path from the Unity log.</param>
+    /// <returns>The resolved absolute file path, or null if not found.</returns>
     private string? ResolveFilePath(string relativePath)
     {
         if (Path.IsPathRooted(relativePath))
@@ -164,6 +218,13 @@ public class CodeFixAgent : BaseDomainAgent
         return null;
     }
 
+    /// <summary>
+    /// Fixes a syntax error in a file by applying rule-based or LLM-based fixes.
+    /// </summary>
+    /// <param name="fileContent">The current file content.</param>
+    /// <param name="error">The syntax error to fix.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>The fixed file content.</returns>
     private async Task<string> FixSyntaxError(string fileContent, SyntaxError error, CancellationToken cancellationToken)
     {
         var lines = fileContent.Split('\n');
@@ -322,6 +383,13 @@ public class CodeFixAgent : BaseDomainAgent
         return line;
     }
 
+    /// <summary>
+    /// Attempts to fix a syntax error using an LLM when rule-based fixes are not available.
+    /// </summary>
+    /// <param name="line">The line of code containing the error.</param>
+    /// <param name="error">The syntax error to fix.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>The fixed line of code, or null if fixing failed.</returns>
     private async Task<string?> FixWithLLM(string line, SyntaxError error, CancellationToken cancellationToken)
     {
         if (Model == null) return null;
@@ -353,6 +421,13 @@ Provide only the fixed line of code, nothing else.";
 
 /// <summary>
 /// Result of code fixing operation.
+/// 
+/// Contains:
+/// - List of successfully fixed file paths
+/// - List of failed fixes with error messages
+/// - Total count of fixed errors
+/// 
+/// Produced by CodeFixAgent after applying fixes to Unity scripts.
 /// </summary>
 public class CodeFixResult
 {

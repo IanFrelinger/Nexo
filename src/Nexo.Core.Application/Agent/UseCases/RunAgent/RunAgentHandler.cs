@@ -8,7 +8,15 @@ using Nexo.Core.Domain.Exceptions;
 namespace Nexo.Core.Application.Agent.UseCases.RunAgent;
 
 /// <summary>
-/// Handler for running agent actions.
+/// MediatR handler for running agent actions.
+/// 
+/// Responsibilities:
+/// - Executes agents via IAgentExecutor
+/// - Records execution metrics (duration, success/failure counts)
+/// - Handles timeouts and exceptions
+/// - Logs execution details
+/// 
+/// Part of the Application layer's use case pattern, following CQRS principles.
 /// </summary>
 public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionResult>
 {
@@ -26,6 +34,14 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
         _metricsCollector = metricsCollector;
     }
 
+    /// <summary>
+    /// Handles the RunAgentCommand by executing the specified agent.
+    /// </summary>
+    /// <param name="request">Command containing agent name and optional input file</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Agent execution result with success status, output, and duration</returns>
+    /// <exception cref="AgentExecutionException">Thrown when agent execution fails</exception>
+    /// <exception cref="TimeoutException">Thrown when agent execution times out</exception>
     public async Task<AgentExecutionResult> Handle(
         RunAgentCommand request,
         CancellationToken cancellationToken)

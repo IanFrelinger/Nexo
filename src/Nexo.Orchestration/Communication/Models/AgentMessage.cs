@@ -4,6 +4,21 @@ namespace Nexo.Orchestration.Communication.Models;
 
 /// <summary>
 /// Base class for all agent messages.
+/// 
+/// Contains:
+/// - Message identification (ID, type, timestamp)
+/// - Sender and receiver agent IDs
+/// - Message payload (JSON)
+/// 
+/// Derived message types:
+/// - OutputEmitted: Agent produced output
+/// - DependencyResolved: Dependency became available
+/// - AgentStateChanged: Agent state transition
+/// - AgentError: Agent encountered an error
+/// - DataRequest: Request for data from another agent
+/// - DataResponse: Response to a DataRequest
+/// 
+/// Used by IAgentBus for inter-agent communication.
 /// </summary>
 public abstract record AgentMessage
 {
@@ -40,6 +55,9 @@ public abstract record AgentMessage
 
 /// <summary>
 /// Message emitted when an agent produces output.
+/// 
+/// Contains the output produced by the agent and its schema identifier.
+/// Used to notify dependent agents that output is available.
 /// </summary>
 public sealed record OutputEmitted : AgentMessage
 {
@@ -61,6 +79,9 @@ public sealed record OutputEmitted : AgentMessage
 
 /// <summary>
 /// Message emitted when a dependency is resolved.
+/// 
+/// Contains the dependency agent ID and its output.
+/// Used to notify waiting agents that their dependencies are ready.
 /// </summary>
 public sealed record DependencyResolved : AgentMessage
 {
@@ -82,6 +103,9 @@ public sealed record DependencyResolved : AgentMessage
 
 /// <summary>
 /// Message emitted when an agent state changes.
+/// 
+/// Contains the new and previous state of the agent.
+/// Used to notify other agents about state transitions.
 /// </summary>
 public sealed record AgentStateChanged : AgentMessage
 {
@@ -103,6 +127,9 @@ public sealed record AgentStateChanged : AgentMessage
 
 /// <summary>
 /// Message emitted when an agent encounters an error.
+/// 
+/// Contains error message, type, and optional stack trace.
+/// Used to notify other agents and the orchestrator about failures.
 /// </summary>
 public sealed record AgentError : AgentMessage
 {
@@ -129,6 +156,9 @@ public sealed record AgentError : AgentMessage
 
 /// <summary>
 /// Message for requesting data from another agent.
+/// 
+/// Contains the type of data requested and optional filter criteria.
+/// Used for direct agent-to-agent data requests.
 /// </summary>
 public sealed record DataRequest : AgentMessage
 {
@@ -150,6 +180,9 @@ public sealed record DataRequest : AgentMessage
 
 /// <summary>
 /// Response to a DataRequest.
+/// 
+/// Contains the original request message ID and the requested data.
+/// Used to respond to DataRequest messages.
 /// </summary>
 public sealed record DataResponse : AgentMessage
 {

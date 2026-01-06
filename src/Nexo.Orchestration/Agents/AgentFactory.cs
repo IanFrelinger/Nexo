@@ -15,12 +15,25 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Factory for creating specialized agents from AgentSpawnSpec.
+/// 
+/// Responsibilities:
+/// - Creates appropriate agent type based on domain (assets, build, playtest, Unity, etc.)
+/// - Resolves dependencies from service provider
+/// - Instantiates domain-specific agents (ImageAssetAgent, UnityBuildAgent, etc.)
+/// - Falls back to PlanningAgent for unknown domains
+/// 
+/// Uses dependency injection to resolve agent dependencies (loggers, adapters, etc.).
 /// </summary>
 public sealed class AgentFactory
 {
     private readonly ILogger<AgentFactory> _logger;
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AgentFactory"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     public AgentFactory(ILogger<AgentFactory> logger, IServiceProvider serviceProvider)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -29,7 +42,17 @@ public sealed class AgentFactory
 
     /// <summary>
     /// Creates a BaseAgent instance from an AgentSpawnSpec.
+    /// 
+    /// Determines agent type based on domain and creates appropriate specialized agent:
+    /// - Asset domains → ImageAssetAgent, AudioAssetAgent, Model3DAssetAgent
+    /// - Build domains → UnityBuildAgent
+    /// - Playtest domains → AIPlayerAgent, BalanceAnalyzerAgent, FeedbackSynthesizerAgent
+    /// - Unity domains → UnityErrorAnalysisAgent, CodeFixAgent
+    /// - Unknown domains → PlanningAgent (generic fallback)
     /// </summary>
+    /// <param name="spec">Agent spawn specification from Architect</param>
+    /// <returns>Specialized agent instance</returns>
+    /// <exception cref="ArgumentNullException">Thrown if spec is null</exception>
     public BaseAgent CreateAgent(AgentSpawnSpec spec)
     {
         if (spec == null)
@@ -86,7 +109,13 @@ public sealed class AgentFactory
 
     /// <summary>
     /// Creates an AgentContainer wrapping the agent.
+    /// 
+    /// Convenience method that creates both the agent and its container in one call.
+    /// The container provides additional lifecycle management and execution coordination.
     /// </summary>
+    /// <param name="spec">Agent spawn specification from Architect.</param>
+    /// <returns>An AgentContainer wrapping the created agent.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if required services are not registered.</exception>
     public AgentContainer CreateContainer(AgentSpawnSpec spec)
     {
         var agent = CreateAgent(spec);

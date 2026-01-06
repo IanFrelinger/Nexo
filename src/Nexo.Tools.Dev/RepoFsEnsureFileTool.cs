@@ -4,6 +4,15 @@ using Nexo.Tools.Dev.Deltas;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>
+/// Tool for ensuring a file exists with specified content.
+/// 
+/// Creates a file with the specified content if it doesn't exist.
+/// If the file already exists, no changes are made.
+/// Tracks file creation in the action delta with SHA1 hashes.
+/// 
+/// Implements ITool for use with agent tool execution.
+/// </summary>
 public sealed class RepoFsEnsureFileTool : ITool
 {
     public string Id => "repo.fs.ensure_file";

@@ -10,6 +10,15 @@ namespace Nexo.Orchestration.Agents.MultiModal;
 
 /// <summary>
 /// Base agent that supports multiple input modalities (text, image, audio).
+/// 
+/// Provides functionality for:
+/// - Processing multi-modal inputs from dependencies
+/// - Extracting text, image, and audio data
+/// - Building prompts that include multi-modal content
+/// - Format detection and normalization
+/// 
+/// Derived agents can handle tasks requiring multiple input types simultaneously.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public abstract class MultiModalAgentBase : BaseAgent
 {
@@ -181,6 +190,13 @@ public abstract class MultiModalAgentBase : BaseAgent
 
 /// <summary>
 /// Multi-modal input containing text, images, and audio.
+/// 
+/// Contains:
+/// - List of text inputs
+/// - List of image inputs with source, data, and format
+/// - List of audio inputs with source, data, and format
+/// 
+/// Used by MultiModalAgentBase to process multi-modal content.
 /// </summary>
 public sealed record MultiModalInput
 {
@@ -191,6 +207,13 @@ public sealed record MultiModalInput
 
 /// <summary>
 /// Image input data.
+/// 
+/// Contains:
+/// - Source identifier (e.g., dependency key)
+/// - Image data (base64 or URL)
+/// - Image format (e.g., "png", "jpg")
+/// 
+/// Used by MultiModalAgentBase to represent image inputs.
 /// </summary>
 public sealed record ImageInput
 {
@@ -201,6 +224,13 @@ public sealed record ImageInput
 
 /// <summary>
 /// Audio input data.
+/// 
+/// Contains:
+/// - Source identifier (e.g., dependency key)
+/// - Audio data (base64 or URL)
+/// - Audio format (e.g., "wav", "mp3")
+/// 
+/// Used by MultiModalAgentBase to represent audio inputs.
 /// </summary>
 public sealed record AudioInput
 {
@@ -211,6 +241,14 @@ public sealed record AudioInput
 
 /// <summary>
 /// Processor for multi-modal inputs.
+/// 
+/// Responsibilities:
+/// - Extracts features from images (OCR, object detection)
+/// - Transcribes audio to text
+/// - Normalizes and validates inputs
+/// 
+/// Used by MultiModalAgentBase to process multi-modal content.
+/// Currently a placeholder - future implementation would perform actual processing.
 /// </summary>
 public sealed class MultiModalProcessor
 {

@@ -4,6 +4,14 @@ namespace Nexo.Core.Application.Analysis.Models;
 
 /// <summary>
 /// Result of an analysis operation.
+/// 
+/// Contains:
+/// - Whether violations were found
+/// - List of violations
+/// - Total violation count
+/// 
+/// Produced by IAnalysisService after analyzing code/assemblies.
+/// Used by CLI commands to display analysis results.
 /// </summary>
 public record AnalysisResult
 {
@@ -14,6 +22,14 @@ public record AnalysisResult
 
 /// <summary>
 /// Represents a single violation found during analysis.
+/// 
+/// Contains:
+/// - Rule that was violated
+/// - Human-readable message
+/// - File path and line number (if applicable)
+/// - Severity level (RiskLevel)
+/// 
+/// Used to report specific issues found during code analysis.
 /// </summary>
 public record Violation
 {

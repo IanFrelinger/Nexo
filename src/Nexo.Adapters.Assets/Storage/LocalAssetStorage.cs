@@ -7,6 +7,16 @@ namespace Nexo.Adapters.Assets.Storage;
 
 /// <summary>
 /// Local filesystem-based asset storage implementation.
+/// 
+/// Responsibilities:
+/// - Stores generated assets in local filesystem
+/// - Organizes assets by agent ID
+/// - Supports file and directory storage
+/// - Provides asset retrieval by ID
+/// - Handles asset deletion
+/// 
+/// Implements IAssetStorage for use with asset generation agents.
+/// Uses configuration for storage path (defaults to ~/.local/share/Nexo/Assets).
 /// </summary>
 public sealed class LocalAssetStorage : IAssetStorage
 {

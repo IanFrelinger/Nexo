@@ -10,7 +10,16 @@ namespace Nexo.Adapters.Assets.Audio;
 
 /// <summary>
 /// Suno AI music generation implementation.
-/// Note: Suno API may require authentication and has rate limits.
+/// 
+/// Provides:
+/// - Music and sound effect generation via Suno AI API
+/// - Genre and BPM parameters
+/// - Audio download and local storage
+/// 
+/// Implements IAudioGenerator for use with AudioAssetAgent.
+/// Does not support speech synthesis (use ElevenLabs for voice).
+/// API key is optional (some endpoints may not require auth).
+/// Note: Suno API may have rate limits.
 /// </summary>
 public sealed class SunoAudioGenerator : IAudioGenerator
 {

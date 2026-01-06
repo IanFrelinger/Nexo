@@ -2,6 +2,15 @@ namespace Nexo.Orchestration.Build.Models;
 
 /// <summary>
 /// Output from a build execution.
+/// 
+/// Contains:
+/// - Build identification and success status
+/// - Target platform
+/// - Artifact path and duration
+/// - Errors and warnings
+/// - Build metrics (size, counts, compile times)
+/// 
+/// Used by build agents to return build execution results.
 /// </summary>
 public sealed record BuildOutput
 {

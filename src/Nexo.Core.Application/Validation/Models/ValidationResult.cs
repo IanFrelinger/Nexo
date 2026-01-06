@@ -2,6 +2,15 @@ namespace Nexo.Core.Application.Validation.Models;
 
 /// <summary>
 /// Result of a validation operation.
+/// 
+/// Contains:
+/// - Whether validation passed
+/// - Summary message
+/// - Test execution statistics (run, passed, failed)
+/// - Optional list of individual test results
+/// 
+/// Produced by IValidationService after running validation tests.
+/// Used by CLI commands to display validation results.
 /// </summary>
 public record ValidationResult
 {
@@ -15,6 +24,13 @@ public record ValidationResult
 
 /// <summary>
 /// Represents a single test result.
+/// 
+/// Contains:
+/// - Test name and category
+/// - Whether the test passed
+/// - Optional message and error details
+/// 
+/// Used to report individual test execution outcomes.
 /// </summary>
 public record TestResult
 {

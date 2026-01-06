@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Specialized agent for Economy domain tasks.
+/// 
+/// Handles economy-related design and implementation:
+/// - Currency systems
+/// - Trading mechanics
+/// - Pricing models
+/// - Economic balance
+/// 
+/// Inherits from BaseDomainAgent for LLM integration and domain-specific prompts.
 /// </summary>
 public sealed class EconomyAgent : BaseDomainAgent
 {

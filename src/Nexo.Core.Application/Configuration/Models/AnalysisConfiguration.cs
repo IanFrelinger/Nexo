@@ -2,6 +2,15 @@ namespace Nexo.Core.Application.Configuration.Models;
 
 /// <summary>
 /// Configuration for analysis operations.
+/// 
+/// Contains:
+/// - Enabled analysis rules
+/// - Rule-specific settings
+/// - Complexity thresholds
+/// - Feature flags for security scanning and code quality
+/// 
+/// Used by IAnalysisService to configure analysis behavior.
+/// Part of NexoConfiguration.
 /// </summary>
 public record AnalysisConfiguration
 {

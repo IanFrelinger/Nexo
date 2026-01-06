@@ -6,6 +6,15 @@ namespace Nexo.Orchestration.Health;
 
 /// <summary>
 /// Health check service for monitoring agent and system health.
+/// 
+/// Responsibilities:
+/// - Registers and manages health checks
+/// - Performs health checks with caching
+/// - Provides health reports for all components
+/// - Tracks agent health via AgentHealthCheck
+/// 
+/// Thread-safe implementation using concurrent collections.
+/// Used by orchestration system to monitor component health.
 /// </summary>
 public sealed class HealthCheckService
 {
@@ -115,6 +124,12 @@ public sealed class HealthCheckService
 
 /// <summary>
 /// Interface for health checks.
+/// 
+/// Defines the contract for health check implementations:
+/// - CheckAsync method that returns HealthStatus
+/// 
+/// Implementations (AgentHealthCheck, etc.) provide specific health checking logic.
+/// Used by HealthCheckService to monitor component health.
 /// </summary>
 public interface IHealthCheck
 {
@@ -123,6 +138,13 @@ public interface IHealthCheck
 
 /// <summary>
 /// Health status of a component.
+/// 
+/// Contains:
+/// - Component name and health status (healthy/unhealthy)
+/// - Status string and optional message
+/// - Timestamp and optional details dictionary
+/// 
+/// Used by IHealthCheck to report component health.
 /// </summary>
 public sealed record HealthStatus
 {
@@ -136,6 +158,12 @@ public sealed record HealthStatus
 
 /// <summary>
 /// Overall health report.
+/// 
+/// Contains:
+/// - Overall healthy status (true if all components are healthy)
+/// - Timestamp and list of individual component statuses
+/// 
+/// Produced by HealthCheckService.CheckAllAsync.
 /// </summary>
 public sealed record HealthReport
 {
@@ -146,6 +174,14 @@ public sealed record HealthReport
 
 /// <summary>
 /// Health check for an agent.
+/// 
+/// Responsibilities:
+/// - Checks agent state and health status
+/// - Returns HealthStatus based on agent state
+/// - Includes agent details in health status
+/// 
+/// Implements IHealthCheck for agent health monitoring.
+/// Used by HealthCheckService to monitor agent health.
 /// </summary>
 public sealed class AgentHealthCheck : IHealthCheck
 {

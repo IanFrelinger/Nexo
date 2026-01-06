@@ -4,6 +4,15 @@ namespace Nexo.Orchestration.Playtest.Ports;
 
 /// <summary>
 /// Port for running games in headless mode for playtesting.
+/// 
+/// Defines the contract for game runner adapters:
+/// - Start/stop game sessions
+/// - Get current game state
+/// - Execute actions in the game
+/// - Monitor game status
+/// 
+/// Implementations provide game engine-specific logic for headless execution.
+/// Used by AIPlayerAgent for automated playtesting.
 /// </summary>
 public interface IGameRunner
 {
@@ -35,6 +44,17 @@ public interface IGameRunner
 
 /// <summary>
 /// Current state of the game.
+/// 
+/// Contains:
+/// - Game over status
+/// - Player health and position
+/// - Current objective
+/// - Currency and equipped weapon
+/// - Nearby enemies and items
+/// - Available actions
+/// 
+/// Returned by IGameRunner to represent current game state.
+/// Used by AIPlayerAgent to make decisions.
 /// </summary>
 public sealed record GameState
 {

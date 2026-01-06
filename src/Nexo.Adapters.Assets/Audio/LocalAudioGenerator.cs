@@ -10,7 +10,15 @@ namespace Nexo.Adapters.Assets.Audio;
 
 /// <summary>
 /// Local/self-hosted audio generation adapter.
-/// Supports Bark local, Piper TTS, Coqui TTS, and custom endpoints.
+/// 
+/// Supports multiple local audio generation providers:
+/// - Bark (local instance)
+/// - Piper TTS
+/// - Coqui TTS
+/// - Custom HTTP endpoints
+/// 
+/// Implements IAudioGenerator for use with AudioAssetAgent.
+/// Provides retry logic and error handling for local generation.
 /// </summary>
 public sealed class LocalAudioGenerator : IAudioGenerator
 {
@@ -342,6 +350,14 @@ public sealed class LocalAudioGenerator : IAudioGenerator
 
 /// <summary>
 /// Supported local audio generation providers.
+/// 
+/// Defines local audio generation options:
+/// - Bark: Bark AI (local instance) for music, sound effects, and speech
+/// - Piper: Piper TTS (text-to-speech only)
+/// - Coqui: Coqui TTS (text-to-speech only)
+/// - Custom: Custom endpoint (OpenAI-compatible format)
+/// 
+/// Used by LocalAudioGenerator to select the provider.
 /// </summary>
 public enum LocalAudioProvider
 {

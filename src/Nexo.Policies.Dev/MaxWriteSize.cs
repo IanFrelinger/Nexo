@@ -3,6 +3,15 @@ using Nexo.Abstractions;
 
 namespace Nexo.Policies.Dev;
 
+/// <summary>
+/// Development policy that limits the maximum size of file writes.
+/// 
+/// Prevents tool calls from writing files larger than the specified limit (default: 200KB).
+/// Helps prevent accidental large file writes that could impact performance.
+/// 
+/// Implements IPolicy for use with PolicyEngine.
+/// Checks "repo.fs.write" tool calls for content size.
+/// </summary>
 public sealed class MaxWriteSize : IPolicy
 {
     private readonly int _maxBytes;

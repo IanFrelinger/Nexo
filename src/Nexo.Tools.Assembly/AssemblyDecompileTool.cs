@@ -3,6 +3,15 @@ using System.Text.Json;
 
 namespace Nexo.Tools.Assembly;
 
+/// <summary>
+/// Tool for decompiling .NET assemblies (stub implementation).
+/// 
+/// Currently provides a placeholder implementation that writes a stub file.
+/// Future implementation would perform actual decompilation.
+/// 
+/// Implements ITool for use with agent toolboxes.
+/// Used by agents to decompile .NET assemblies.
+/// </summary>
 public sealed class AssemblyDecompileTool : ITool
 {
     public string Id => "assembly.decompile";

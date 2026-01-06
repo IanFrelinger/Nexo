@@ -4,6 +4,14 @@ using Nexo.Tools.Dev.Deltas;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>
+/// Tool for updating documentation files.
+/// 
+/// Appends entries to CHANGELOG.md in the repository root.
+/// Each entry is timestamped and formatted as a changelog item.
+/// 
+/// Implements ITool for use with agent tool execution.
+/// </summary>
 public sealed class DocsUpdateTool : ITool
 {
     public string Id => "docs.update";

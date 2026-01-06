@@ -4,6 +4,13 @@ namespace Nexo.Orchestration.Agents.Security;
 
 /// <summary>
 /// Checks code and artifacts for compliance with security standards.
+/// 
+/// Supports multiple compliance standards:
+/// - OWASP Top 10 (injection, cryptographic failures)
+/// - CWE Top 25 (SQL injection, etc.)
+/// - PCI-DSS (cardholder data protection)
+/// 
+/// Used by SecurityAnalysisAgent for compliance validation.
 /// </summary>
 public sealed class ComplianceChecker
 {

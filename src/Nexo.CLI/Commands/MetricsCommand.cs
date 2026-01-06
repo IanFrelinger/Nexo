@@ -6,6 +6,14 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for viewing orchestration metrics and performance data.
+/// 
+/// Provides the `nexo metrics` command with subcommands:
+/// - report: Show comprehensive performance report
+/// - agent: Show metrics for a specific agent
+/// - traces: Show distributed trace spans with optional filtering
+/// - clear: Clear all collected metrics
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class MetricsCommand
 {

@@ -10,6 +10,15 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for analyzing code and assemblies.
+/// 
+/// Provides the `nexo analyze` command that:
+/// - Analyzes code and assemblies in the specified directory
+/// - Detects violations using analysis rules
+/// - Displays results in human-readable or JSON format
+/// - Shows progress updates (if verbose)
+/// - Handles errors and provides appropriate exit codes
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class AnalyzeCommand
 {
@@ -27,6 +36,13 @@ public class AnalyzeCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Executes the analyze command.
+    /// </summary>
+    /// <param name="path">Directory path to analyze</param>
+    /// <param name="json">Whether to output JSON format</param>
+    /// <param name="verbose">Whether to show verbose progress output</param>
+    /// <returns>Exit code (0 for success, non-zero for errors)</returns>
     public async Task<int> ExecuteAsync(DirectoryInfo path, bool json, bool verbose)
     {
         var correlationId = Guid.NewGuid().ToString();

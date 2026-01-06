@@ -6,11 +6,24 @@ namespace Nexo.Orchestration.Coordination;
 
 /// <summary>
 /// Integrates outputs from multiple agents into a unified result.
+/// 
+/// Responsibilities:
+/// - Groups agent outputs by domain
+/// - Merges outputs from agents in the same domain
+/// - Handles output format conversion and validation
+/// - Creates integrated output structure
+/// - Reports integration errors
+/// 
+/// Used by Orchestrator to synthesize final results from all agent outputs.
 /// </summary>
 public sealed class OutputIntegrator
 {
     private readonly ILogger<OutputIntegrator> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OutputIntegrator"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
     public OutputIntegrator(ILogger<OutputIntegrator> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -18,7 +31,20 @@ public sealed class OutputIntegrator
 
     /// <summary>
     /// Integrates outputs from multiple agents based on their specifications.
+    /// 
+    /// Process:
+    /// 1. Groups outputs by domain
+    /// 2. Merges outputs within each domain
+    /// 3. Validates outputs against schemas
+    /// 4. Checks cross-domain consistency
+    /// 5. Validates required fields from constraints
+    /// 
+    /// Returns an IntegratedOutput with integrated results, raw outputs, and any errors.
     /// </summary>
+    /// <param name="agentSpecs">The list of agent spawn specifications.</param>
+    /// <param name="agentOutputs">Dictionary mapping agent IDs to their outputs.</param>
+    /// <returns>An <see cref="IntegratedOutput"/> containing integrated results and validation information.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if agentSpecs or agentOutputs is null.</exception>
     public IntegratedOutput Integrate(
         IReadOnlyList<AgentSpawnSpec> agentSpecs,
         IReadOnlyDictionary<string, object> agentOutputs)
@@ -90,6 +116,15 @@ public sealed class OutputIntegrator
         return result with { ValidationErrors = validationErrors };
     }
 
+    /// <summary>
+    /// Integrates outputs from multiple agents within the same domain.
+    /// 
+    /// If there's only one output, returns it directly.
+    /// If there are multiple outputs, combines them into a dictionary keyed by agent ID.
+    /// </summary>
+    /// <param name="domain">The domain name.</param>
+    /// <param name="domainOutputs">List of agent specs and their outputs for this domain.</param>
+    /// <returns>The integrated domain output (single output or combined dictionary).</returns>
     private object IntegrateDomainOutputs(string domain, List<(AgentSpawnSpec Spec, object Output)> domainOutputs)
     {
         // Simple integration: combine outputs into a domain-specific structure
@@ -110,6 +145,18 @@ public sealed class OutputIntegrator
         return combined;
     }
 
+    /// <summary>
+    /// Validates the integrated output against agent specifications.
+    /// 
+    /// Checks:
+    /// - All agents have outputs
+    /// - Outputs conform to declared schemas
+    /// - Cross-domain consistency
+    /// - Required fields from constraints
+    /// </summary>
+    /// <param name="result">The integrated output to validate.</param>
+    /// <param name="agentSpecs">The agent specifications to validate against.</param>
+    /// <returns>A list of validation error messages (empty if valid).</returns>
     private List<string> ValidateIntegration(IntegratedOutput result, IReadOnlyList<AgentSpawnSpec> agentSpecs)
     {
         var errors = new List<string>();
@@ -318,6 +365,11 @@ public sealed class OutputIntegrator
         return errors;
     }
 
+    /// <summary>
+    /// Gets the JSON type string for a JsonElement.
+    /// </summary>
+    /// <param name="element">The JSON element to get the type for.</param>
+    /// <returns>The type string (e.g., "string", "number", "object", "array", "boolean", "null").</returns>
     private string GetJsonType(JsonElement element)
     {
         return element.ValueKind switch
@@ -332,6 +384,16 @@ public sealed class OutputIntegrator
         };
     }
 
+    /// <summary>
+    /// Determines if two JSON types are compatible.
+    /// 
+    /// Compatible pairs:
+    /// - number and integer are compatible
+    /// - Same types are compatible
+    /// </summary>
+    /// <param name="actualType">The actual type.</param>
+    /// <param name="expectedType">The expected type.</param>
+    /// <returns>True if the types are compatible, false otherwise.</returns>
     private bool AreTypesCompatible(string actualType, string expectedType)
     {
         if (actualType == expectedType) return true;
@@ -345,6 +407,11 @@ public sealed class OutputIntegrator
         };
     }
 
+    /// <summary>
+    /// Extracts all keys from a JSON object recursively.
+    /// </summary>
+    /// <param name="obj">The object to extract keys from.</param>
+    /// <returns>A set of all keys found in the object (including nested keys with dot notation).</returns>
     private HashSet<string> ExtractKeys(object obj)
     {
         var keys = new HashSet<string>();
@@ -360,6 +427,16 @@ public sealed class OutputIntegrator
         return keys;
     }
 
+    /// <summary>
+    /// Recursively extracts keys from a JSON element.
+    /// 
+    /// For objects, extracts property names.
+    /// For arrays, includes index notation (e.g., "key[0]").
+    /// Uses dot notation for nested keys (e.g., "parent.child").
+    /// </summary>
+    /// <param name="element">The JSON element to extract keys from.</param>
+    /// <param name="keys">The set to populate with extracted keys.</param>
+    /// <param name="prefix">The prefix for nested keys (empty for root).</param>
     private void ExtractKeysRecursive(JsonElement element, HashSet<string> keys, string prefix)
     {
         switch (element.ValueKind)
@@ -387,6 +464,15 @@ public sealed class OutputIntegrator
 
 /// <summary>
 /// Integrated output from multiple agents.
+/// 
+/// Contains:
+/// - Integrated results organized by domain
+/// - Raw outputs from individual agents
+/// - Integration and validation errors
+/// - Integration timestamp
+/// - Validity flag
+/// 
+/// Produced by OutputIntegrator.Integrate() after merging and validating agent outputs.
 /// </summary>
 public sealed record IntegratedOutput
 {

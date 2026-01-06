@@ -5,8 +5,21 @@ using UnityEngine;
 
 namespace Nexo.Core.UI.Unity.Frameworks.Unity;
 
+/// <summary>
+/// Renders a <see cref="ButtonPrimitive"/> into a Unity IMGUI button.
+/// 
+/// This renderer translates framework-agnostic button primitives into
+/// Unity's immediate mode GUI system, maintaining consistent styling
+/// and behavior across platforms.
+/// </summary>
 public static class UnityButtonRenderer
 {
+    /// <summary>
+    /// Renders a button primitive as a Unity IMGUI button.
+    /// </summary>
+    /// <param name="primitive">The button primitive to render.</param>
+    /// <param name="options">Optional Unity layout options.</param>
+    /// <returns>True if the button was clicked, false otherwise.</returns>
     public static bool Render(ButtonPrimitive primitive, params GUILayoutOption[] options)
     {
         GUIStyle style = GetButtonStyle(primitive);

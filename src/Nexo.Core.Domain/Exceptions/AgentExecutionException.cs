@@ -2,6 +2,13 @@ namespace Nexo.Core.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when agent execution fails.
+/// 
+/// Contains:
+/// - AgentName: Name of the agent that failed
+/// - ErrorCode: Structured error code for programmatic handling
+/// - Suggestion: Optional suggestion for resolving the error
+/// 
+/// Used throughout the application layer when agent execution encounters errors.
 /// </summary>
 public class AgentExecutionException : DomainException
 {

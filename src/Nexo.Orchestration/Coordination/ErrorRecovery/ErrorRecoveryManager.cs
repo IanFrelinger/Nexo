@@ -6,6 +6,15 @@ namespace Nexo.Orchestration.Coordination.ErrorRecovery;
 
 /// <summary>
 /// Manages error recovery and retry logic for agents.
+/// 
+/// Responsibilities:
+/// - Attempts to recover from agent failures
+/// - Implements retry logic with exponential backoff
+/// - Tracks retry attempts and failure history
+/// - Determines if recovery is possible
+/// 
+/// Used by Orchestrator to handle transient agent failures.
+/// Provides automatic recovery for recoverable errors.
 /// </summary>
 public sealed class ErrorRecoveryManager
 {
@@ -14,6 +23,12 @@ public sealed class ErrorRecoveryManager
     private readonly int _maxRetries;
     private readonly TimeSpan _retryDelay;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ErrorRecoveryManager"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="maxRetries">Maximum number of retry attempts (default: 3).</param>
+    /// <param name="retryDelay">Base delay between retries (default: 5 seconds). Uses exponential backoff.</param>
     public ErrorRecoveryManager(
         ILogger<ErrorRecoveryManager> logger,
         int maxRetries = 3,
@@ -26,7 +41,18 @@ public sealed class ErrorRecoveryManager
 
     /// <summary>
     /// Attempts to recover from an agent failure.
+    /// 
+    /// Implements retry logic with exponential backoff:
+    /// - Tracks retry count per agent
+    /// - Determines if error is recoverable
+    /// - Calculates exponential backoff delay
+    /// - Returns recovery result indicating if retry should occur
     /// </summary>
+    /// <param name="container">The agent container that failed.</param>
+    /// <param name="exception">The exception that caused the failure.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A <see cref="RecoveryResult"/> indicating whether recovery is possible and when to retry.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if container is null.</exception>
     public async Task<RecoveryResult> RecoverAsync(
         AgentContainer container,
         Exception exception,
@@ -111,6 +137,7 @@ public sealed class ErrorRecoveryManager
     /// <summary>
     /// Resets retry information for an agent (after successful execution).
     /// </summary>
+    /// <param name="agentId">The ID of the agent whose retry info should be reset.</param>
     public void ResetRetryInfo(string agentId)
     {
         _retryInfo.Remove(agentId);
@@ -120,11 +147,26 @@ public sealed class ErrorRecoveryManager
     /// <summary>
     /// Gets retry information for an agent.
     /// </summary>
+    /// <param name="agentId">The ID of the agent to get retry info for.</param>
+    /// <returns>The <see cref="RetryInfo"/> for the agent, or null if not found.</returns>
     public RetryInfo? GetRetryInfo(string agentId)
     {
         return _retryInfo.TryGetValue(agentId, out var info) ? info : null;
     }
 
+    /// <summary>
+    /// Determines if an exception represents a recoverable error.
+    /// 
+    /// Non-recoverable errors include:
+    /// - ArgumentNullException, InvalidOperationException, NotSupportedException
+    /// 
+    /// Recoverable errors include:
+    /// - TimeoutException
+    /// - Network/connection errors
+    /// - Most other exceptions (default to recoverable)
+    /// </summary>
+    /// <param name="exception">The exception to check.</param>
+    /// <returns>True if the error is recoverable, false otherwise.</returns>
     private static bool IsRecoverableError(Exception exception)
     {
         // Non-recoverable errors
@@ -160,6 +202,14 @@ public sealed class ErrorRecoveryManager
 
 /// <summary>
 /// Result of a recovery attempt.
+/// 
+/// Contains:
+/// - Success status
+/// - Whether retry should occur
+/// - Retry delay duration
+/// - Reason for the result
+/// 
+/// Returned by ErrorRecoveryManager.RecoverAsync().
 /// </summary>
 public sealed record RecoveryResult
 {
@@ -171,6 +221,14 @@ public sealed record RecoveryResult
 
 /// <summary>
 /// Information about retry attempts for an agent.
+/// 
+/// Contains:
+/// - Agent ID
+/// - Retry count
+/// - Last error encountered
+/// - Last retry attempt timestamp
+/// 
+/// Tracked by ErrorRecoveryManager to manage retry state per agent.
 /// </summary>
 public sealed class RetryInfo
 {

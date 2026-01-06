@@ -10,6 +10,16 @@ namespace Nexo.Orchestration.Agents.Playtest;
 
 /// <summary>
 /// Analyzes playtest telemetry to identify balance issues.
+/// 
+/// Responsibilities:
+/// - Analyzes playtest sessions from ITelemetryStore
+/// - Identifies balance issues (overpowered/underpowered mechanics)
+/// - Uses LLM (IModel) for advanced analysis
+/// - Generates balance reports with severity ratings
+/// - Provides recommendations for fixes
+/// 
+/// Used in automated playtesting to detect game balance problems.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public sealed class BalanceAnalyzerAgent : BaseAgent
 {

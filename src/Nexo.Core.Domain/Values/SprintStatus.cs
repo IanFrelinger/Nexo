@@ -5,7 +5,17 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// Represents sprint status as a value object
+    /// Represents sprint status as a value object.
+    /// 
+    /// Provides predefined sprint status values:
+    /// - Planning: Sprint is in planning phase
+    /// - Active: Sprint is currently active
+    /// - Completed: Sprint has been completed
+    /// - Closed: Sprint has been closed
+    /// - Cancelled: Sprint has been cancelled
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+/// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class SprintStatus : IEquatable<SprintStatus>
     {

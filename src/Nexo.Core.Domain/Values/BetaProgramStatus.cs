@@ -5,7 +5,17 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// BetaProgramStatus as a value object
+    /// Represents beta program status as a value object.
+    /// 
+    /// Provides predefined beta program status values:
+    /// - Pending: Beta program is pending
+    /// - Active: Beta program is active
+    /// - Paused: Beta program is paused
+    /// - Completed: Beta program has been completed
+    /// - Cancelled: Beta program has been cancelled
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class BetaProgramStatus : IEquatable<BetaProgramStatus>
     {

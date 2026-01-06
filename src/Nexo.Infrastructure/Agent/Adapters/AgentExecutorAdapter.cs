@@ -14,7 +14,14 @@ namespace Nexo.Infrastructure.Agent.Adapters;
 
 /// <summary>
 /// Infrastructure adapter for executing agent actions.
-/// Implements IAgentExecutor port from Application layer.
+/// 
+/// Implements IAgentExecutor port from Application layer. Provides:
+/// - Agent discovery from service provider
+/// - Toolbox setup with available tools
+/// - Agent execution with policy enforcement
+/// - Error handling and result formatting
+/// 
+/// Part of the Infrastructure layer, implementing the hexagonal architecture pattern.
 /// </summary>
 public class AgentExecutorAdapter : IAgentExecutor
 {

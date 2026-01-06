@@ -6,6 +6,15 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Monitors health and status of agents.
+/// 
+/// Responsibilities:
+/// - Registers agents for health monitoring
+/// - Periodically checks agent health status
+/// - Tracks agent state and health transitions
+/// - Provides health status queries
+/// 
+/// Used by LifecycleManager to monitor agent health.
+/// Thread-safe implementation using concurrent collections.
 /// </summary>
 public sealed class HealthMonitor
 {
@@ -13,6 +22,11 @@ public sealed class HealthMonitor
     private readonly ConcurrentDictionary<string, AgentHealthStatus> _agentHealth = new();
     private readonly Timer? _healthCheckTimer;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HealthMonitor"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="healthCheckInterval">Interval between health checks (default: 30 seconds).</param>
     public HealthMonitor(ILogger<HealthMonitor> logger, TimeSpan? healthCheckInterval = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -23,7 +37,10 @@ public sealed class HealthMonitor
 
     /// <summary>
     /// Registers an agent for health monitoring.
+    /// 
+    /// Adds the agent to the health monitoring dictionary and starts tracking its health status.
     /// </summary>
+    /// <param name="container">The agent container to monitor.</param>
     public void RegisterAgent(AgentContainer container)
     {
         _agentHealth[container.AgentId] = new AgentHealthStatus
@@ -40,7 +57,10 @@ public sealed class HealthMonitor
 
     /// <summary>
     /// Unregisters an agent from health monitoring.
+    /// 
+    /// Removes the agent from the health monitoring dictionary.
     /// </summary>
+    /// <param name="agentId">The ID of the agent to unregister.</param>
     public void UnregisterAgent(string agentId)
     {
         _agentHealth.TryRemove(agentId, out _);
@@ -50,6 +70,8 @@ public sealed class HealthMonitor
     /// <summary>
     /// Gets the health status of an agent.
     /// </summary>
+    /// <param name="agentId">The ID of the agent to get health status for.</param>
+    /// <returns>The agent health status, or null if the agent is not registered.</returns>
     public AgentHealthStatus? GetHealthStatus(string agentId)
     {
         return _agentHealth.TryGetValue(agentId, out var status) ? status : null;
@@ -58,6 +80,7 @@ public sealed class HealthMonitor
     /// <summary>
     /// Gets health status of all registered agents.
     /// </summary>
+    /// <returns>A read-only list of all agent health statuses.</returns>
     public IReadOnlyList<AgentHealthStatus> GetAllHealthStatuses()
     {
         return _agentHealth.Values.ToList();
@@ -65,7 +88,10 @@ public sealed class HealthMonitor
 
     /// <summary>
     /// Gets agents with unhealthy status.
+    /// 
+    /// Returns all agents that have AgentHealth.Unhealthy status.
     /// </summary>
+    /// <returns>A read-only list of unhealthy agent health statuses.</returns>
     public IReadOnlyList<AgentHealthStatus> GetUnhealthyAgents()
     {
         return _agentHealth.Values

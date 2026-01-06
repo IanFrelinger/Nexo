@@ -5,6 +5,14 @@ using System.Text;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>
+/// Tool for building .NET projects using dotnet CLI.
+/// 
+/// Executes `dotnet build -c Release` in the specified root directory.
+/// Returns build exit code, stdout, and stderr in the tool result.
+/// 
+/// Implements ITool for use with agent tool execution.
+/// </summary>
 public sealed class DotnetBuildTool : ITool
 {
     public string Id => "dotnet.build";

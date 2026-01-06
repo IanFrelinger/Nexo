@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Specialized agent for AI domain tasks.
+/// 
+/// Handles AI/ML-related design and implementation:
+/// - NPC behaviors
+/// - Pathfinding systems
+/// - Decision-making algorithms
+/// - AI architecture
+/// 
+/// Inherits from BaseDomainAgent for LLM integration and domain-specific prompts.
 /// </summary>
 public sealed class AIAgent : BaseDomainAgent
 {

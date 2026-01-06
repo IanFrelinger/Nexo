@@ -3,6 +3,14 @@ using Nexo.Tools.Dev.Deltas;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>
+/// Tool for recording pseudo-commits (demo purposes).
+/// 
+/// Appends commit messages to a COMMIT_LOG.txt file in the repository root.
+/// Used for demonstration purposes to track changes without actual git commits.
+/// 
+/// Implements ITool for use with agent tool execution.
+/// </summary>
 public sealed class RepoGitCommitTool : ITool
 {
     public string Id => "repo.git.commit";

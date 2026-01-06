@@ -2,6 +2,10 @@ namespace Nexo.Core.Domain.Exceptions;
 
 /// <summary>
 /// Base class for all domain exceptions.
+/// 
+/// Provides a common base for all domain-specific exceptions, following
+/// the Domain-Driven Design pattern. All domain exceptions inherit from
+/// this class to enable consistent exception handling across the domain layer.
 /// </summary>
 public abstract class DomainException : Exception
 {

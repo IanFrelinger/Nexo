@@ -10,7 +10,14 @@ namespace Nexo.Infrastructure.Analysis.Adapters;
 
 /// <summary>
 /// Infrastructure adapter for code/assembly analysis.
-/// Implements IAnalysisService port from Application layer.
+/// 
+/// Implements IAnalysisService port from Application layer. Provides:
+/// - Assembly discovery and scanning
+/// - Rule-based analysis using AnalysisRuleEngine
+/// - Violation detection and reporting
+/// - Progress tracking for long-running operations
+/// 
+/// Part of the Infrastructure layer, implementing the hexagonal architecture pattern.
 /// </summary>
 public class AnalysisServiceAdapter : IAnalysisService
 {

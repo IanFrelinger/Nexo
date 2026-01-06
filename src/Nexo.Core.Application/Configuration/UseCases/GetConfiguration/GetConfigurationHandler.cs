@@ -6,7 +6,14 @@ using Nexo.Core.Application.Configuration.Ports;
 namespace Nexo.Core.Application.Configuration.UseCases.GetConfiguration;
 
 /// <summary>
-/// Handler for getting configuration.
+/// MediatR handler for getting configuration.
+/// 
+/// Responsibilities:
+/// - Loads configuration from IConfigurationService
+/// - Returns current NexoConfiguration settings
+/// - Logs configuration loading operations
+/// 
+/// Part of the Application layer's use case pattern, following CQRS principles.
 /// </summary>
 public class GetConfigurationHandler : IRequestHandler<GetConfigurationQuery, NexoConfiguration>
 {

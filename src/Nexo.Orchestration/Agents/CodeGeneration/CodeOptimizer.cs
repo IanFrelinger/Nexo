@@ -4,6 +4,14 @@ namespace Nexo.Orchestration.Agents.CodeGeneration;
 
 /// <summary>
 /// Optimizes generated code for performance, readability, and best practices.
+/// 
+/// Responsibilities:
+/// - Fixes security issues (replaces hardcoded secrets with configuration)
+/// - Fixes performance issues (replaces blocking sleep with async alternatives)
+/// - Reduces complexity when too high
+/// - Applies general optimizations (whitespace, indentation)
+/// 
+/// Used by CodeGenerationAgent to improve generated code quality.
 /// </summary>
 public sealed class CodeOptimizer
 {

@@ -11,6 +11,11 @@ public sealed class DecompositionExampleSeeder
     private readonly DecompositionRetriever _retriever;
     private readonly ILogger<DecompositionExampleSeeder> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DecompositionExampleSeeder"/> class.
+    /// </summary>
+    /// <param name="retriever">The decomposition retriever for storing examples.</param>
+    /// <param name="logger">The logger instance.</param>
     public DecompositionExampleSeeder(
         DecompositionRetriever retriever,
         ILogger<DecompositionExampleSeeder> logger)
@@ -21,7 +26,16 @@ public sealed class DecompositionExampleSeeder
 
     /// <summary>
     /// Seeds initial decomposition examples into the cache.
+    /// 
+    /// Creates and stores 20 example decompositions covering various domains:
+    /// - Game systems (combat, economy, AI, gameplay)
+    /// - Infrastructure and security
+    /// - Social and progression features
+    /// 
+    /// These examples are used for RAG retrieval to improve decomposition quality.
     /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A task that represents the asynchronous seeding operation.</returns>
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         var examples = CreateInitialExamples();

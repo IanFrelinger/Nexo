@@ -10,7 +10,15 @@ namespace Nexo.Adapters.Assets.Images;
 
 /// <summary>
 /// Local/self-hosted image generation adapter.
-/// Supports Stable Diffusion (Automatic1111/ComfyUI), Ollama, LocalAI, and custom endpoints.
+/// 
+/// Supports multiple local image generation providers:
+/// - Stable Diffusion (Automatic1111/ComfyUI)
+/// - Ollama
+/// - LocalAI
+/// - Custom HTTP endpoints
+/// 
+/// Implements IImageGenerator for use with ImageAssetAgent.
+/// Provides retry logic and error handling for local generation.
 /// </summary>
 public sealed class LocalImageGenerator : IImageGenerator
 {
@@ -343,6 +351,14 @@ public sealed class LocalImageGenerator : IImageGenerator
 
 /// <summary>
 /// Supported local image generation providers.
+/// 
+/// Defines local image generation options:
+/// - StableDiffusion: Stable Diffusion (Automatic1111 or ComfyUI)
+/// - Ollama: Ollama (requires image generation model)
+/// - LocalAI: LocalAI (OpenAI-compatible)
+/// - Custom: Custom endpoint (OpenAI-compatible format)
+/// 
+/// Used by LocalImageGenerator to select the provider.
 /// </summary>
 public enum LocalImageProvider
 {

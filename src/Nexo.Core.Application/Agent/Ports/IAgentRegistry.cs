@@ -4,6 +4,14 @@ namespace Nexo.Core.Application.Agent.Ports;
 
 /// <summary>
 /// Port for agent registry services.
+/// 
+/// Defines the contract for discovering and querying available agents:
+/// - Get all registered agents
+/// - Get metadata for a specific agent
+/// - Discover agents from assemblies
+/// 
+/// Implementations (AgentRegistryAdapter) provide agent discovery and metadata.
+/// Used by CLI commands to list available agents.
 /// </summary>
 public interface IAgentRegistry
 {

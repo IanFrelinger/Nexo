@@ -8,6 +8,16 @@ namespace Nexo.Orchestration.Agents.Playtest;
 
 /// <summary>
 /// Synthesizes playtest feedback into actionable design changes.
+/// 
+/// Responsibilities:
+/// - Processes playtest reports and balance issues
+/// - Generates design change requests using LLM (IModel)
+/// - Maps issues to affected domains
+/// - Creates actionable recommendations
+/// - Synthesizes feedback into structured change requests
+/// 
+/// Used in automated playtesting to convert analysis into design improvements.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public sealed class FeedbackSynthesizerAgent : BaseAgent
 {
@@ -182,6 +192,14 @@ public sealed class FeedbackSynthesizerAgent : BaseAgent
 
 /// <summary>
 /// Result of feedback synthesis.
+/// 
+/// Contains:
+/// - Synthesis ID and source report ID
+/// - Generation timestamp
+/// - List of design change requests
+/// - Optional iteration recommendation
+/// 
+/// Produced by FeedbackSynthesizerAgent after processing playtest feedback.
 /// </summary>
 public sealed record FeedbackSynthesis
 {
@@ -194,6 +212,14 @@ public sealed record FeedbackSynthesis
 
 /// <summary>
 /// A request to change a design element.
+/// 
+/// Contains:
+/// - Request ID and source issue ID
+/// - Domain, change type, and target element
+/// - Current and proposed values
+/// - Rationale for the change
+/// 
+/// Used by FeedbackSynthesizerAgent to specify design changes.
 /// </summary>
 public sealed record DesignChangeRequest
 {
@@ -209,6 +235,13 @@ public sealed record DesignChangeRequest
 
 /// <summary>
 /// Recommendation for iteration.
+/// 
+/// Contains:
+/// - Whether iteration is recommended
+/// - Priority level and estimated effort
+/// - Optional summary text
+/// 
+/// Used by FeedbackSynthesizerAgent to recommend next steps.
 /// </summary>
 public sealed record IterationRecommendation
 {
@@ -220,11 +253,26 @@ public sealed record IterationRecommendation
 
 /// <summary>
 /// Types of design changes.
+/// 
+/// Defines change types:
+/// - Modify: Change an existing element
+/// - Add: Add a new element
+/// - Remove: Remove an element
+/// 
+/// Used by DesignChangeRequest to specify the type of change.
 /// </summary>
 public enum ChangeType { Modify, Add, Remove }
 
 /// <summary>
 /// Priority levels for iteration.
+/// 
+/// Defines priority levels:
+/// - Low: Low priority iteration
+/// - Normal: Normal priority iteration
+/// - High: High priority iteration
+/// - Critical: Critical priority iteration
+/// 
+/// Used by IterationRecommendation to indicate iteration priority.
 /// </summary>
 public enum IterationPriority { Low, Normal, High, Critical }
 

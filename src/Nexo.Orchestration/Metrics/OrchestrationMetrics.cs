@@ -8,6 +8,16 @@ namespace Nexo.Orchestration.Metrics;
 
 /// <summary>
 /// Enhanced metrics collector for orchestration-specific metrics.
+/// 
+/// Responsibilities:
+/// - Records operation execution times and counts
+/// - Tracks agent execution metrics (duration, state, resource usage)
+/// - Manages distributed tracing spans
+/// - Generates performance reports
+/// - Integrates with base IMetricsCollector for standard metrics
+/// 
+/// Thread-safe implementation using concurrent collections.
+/// Used throughout orchestration for comprehensive metrics collection.
 /// </summary>
 public sealed class OrchestrationMetrics
 {
@@ -249,6 +259,13 @@ public sealed class OrchestrationMetrics
 
 /// <summary>
 /// Metrics for a specific operation.
+/// 
+/// Contains:
+/// - Operation name
+/// - Duration statistics (total, min, max, count)
+/// - Optional metadata dictionary
+/// 
+/// Used internally by OrchestrationMetrics to track operation performance.
 /// </summary>
 internal sealed class OperationMetrics
 {
@@ -262,6 +279,14 @@ internal sealed class OperationMetrics
 
 /// <summary>
 /// Metrics for agent execution.
+/// 
+/// Contains:
+/// - Agent ID and domain
+/// - Execution statistics (count, duration min/max/total)
+/// - Last execution state
+/// - Resource usage (memory, context tokens)
+/// 
+/// Used by OrchestrationMetrics to track agent performance.
 /// </summary>
 public sealed class AgentMetrics
 {
@@ -278,6 +303,14 @@ public sealed class AgentMetrics
 
 /// <summary>
 /// Trace span for distributed tracing.
+/// 
+/// Contains:
+/// - Span identification (ID, parent ID, operation name)
+/// - Timing information (start, end, duration)
+/// - Success status and optional error message
+/// - Tags dictionary for additional metadata
+/// 
+/// Used by OrchestrationMetrics for distributed tracing.
 /// </summary>
 public sealed class TraceSpan
 {
@@ -293,6 +326,13 @@ public sealed class TraceSpan
 
 /// <summary>
 /// Performance report containing all collected metrics.
+/// 
+/// Contains:
+/// - Generation timestamp
+/// - Lists of operation reports, agent reports, and trace spans
+/// 
+/// Produced by OrchestrationMetrics.GetPerformanceReport.
+/// Used for performance analysis and reporting.
 /// </summary>
 public sealed record PerformanceReport
 {
@@ -304,6 +344,13 @@ public sealed record PerformanceReport
 
 /// <summary>
 /// Report for a single operation.
+/// 
+/// Contains:
+/// - Operation name and execution count
+/// - Duration statistics (total, average, min, max)
+/// - Optional metadata dictionary
+/// 
+/// Used by PerformanceReport to report operation metrics.
 /// </summary>
 public sealed record OperationReport
 {
@@ -318,6 +365,13 @@ public sealed record OperationReport
 
 /// <summary>
 /// Report for agent execution.
+/// 
+/// Contains:
+/// - Agent ID and domain
+/// - Execution statistics (count, duration min/max/average)
+/// - Resource usage averages (memory, context tokens)
+/// 
+/// Used by PerformanceReport to report agent metrics.
 /// </summary>
 public sealed record AgentReport
 {

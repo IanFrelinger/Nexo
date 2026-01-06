@@ -5,7 +5,18 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// Represents AI confidence level as a value object
+    /// Represents AI confidence level as a value object.
+    /// 
+    /// Provides predefined AI confidence level values:
+    /// - VeryLow: Very low confidence
+    /// - Low: Low confidence
+    /// - Medium: Medium confidence
+    /// - High: High confidence
+    /// - VeryHigh: Very high confidence
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
+    /// Used to represent confidence scores from AI/ML operations.
     /// </summary>
     public sealed class AIConfidenceLevel : IEquatable<AIConfidenceLevel>
     {

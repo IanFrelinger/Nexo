@@ -3,6 +3,16 @@ using Nexo.Abstractions;
 
 namespace Nexo.Policies.Dev;
 
+/// <summary>
+/// Development policy that restricts file operations to allowlisted paths.
+/// 
+/// Only allows file writes and search/replace operations in:
+/// - src/ directory
+/// - tests/ directory
+/// 
+/// Prevents modifications to other parts of the codebase.
+/// Implements IPolicy for use with PolicyEngine.
+/// </summary>
 public sealed class PathAllowlist : IPolicy
 {
     private static readonly string[] Allowed = { "src/", "tests/" };

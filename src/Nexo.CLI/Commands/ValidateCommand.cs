@@ -10,6 +10,15 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for running validation tests.
+/// 
+/// Provides the `nexo validate` command that:
+/// - Runs architecture and contract validation tests
+/// - Supports optional test filtering
+/// - Displays results in human-readable or JSON format
+/// - Shows progress updates (if verbose)
+/// - Handles errors and provides appropriate exit codes
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class ValidateCommand
 {

@@ -2,6 +2,15 @@ namespace Nexo.Orchestration.Assets.Ports;
 
 /// <summary>
 /// Port for storing and retrieving generated assets.
+/// 
+/// Defines the contract for asset storage adapters:
+/// - Store individual asset files
+/// - Store directories of assets
+/// - Retrieve assets by ID
+/// - Delete assets
+/// 
+/// Implementations (LocalAssetStorage, etc.) provide specific storage logic.
+/// Used by asset generation agents to persist generated assets.
 /// </summary>
 public interface IAssetStorage
 {

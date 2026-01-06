@@ -10,6 +10,14 @@ namespace Nexo.Infrastructure.Analysis.Adapters;
 
 /// <summary>
 /// Decorator for IAnalysisService that adds caching (Decorator pattern - OCP).
+/// 
+/// Provides caching layer for analysis results:
+/// - Generates cache keys from path + file modification times
+/// - Caches results for 30 minutes
+/// - Returns cached results when available
+/// - Falls through to inner service on cache miss
+/// 
+/// Implements the Decorator pattern to add caching without modifying the base service.
 /// </summary>
 public class CachedAnalysisServiceAdapter : IAnalysisService
 {

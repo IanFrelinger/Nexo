@@ -8,6 +8,15 @@ namespace Nexo.Orchestration.Coordination;
 
 /// <summary>
 /// Resolves dependencies between agents and manages execution order.
+/// 
+/// Responsibilities:
+/// - Maintains dependency graph (forward and reverse)
+/// - Tracks agent outputs for dependency resolution
+/// - Determines which agents are ready to execute
+/// - Notifies agents when dependencies are satisfied
+/// - Handles circular dependency detection
+/// 
+/// Uses concurrent collections for thread-safe operations in parallel execution scenarios.
 /// </summary>
 public sealed class DependencyResolver
 {
@@ -17,6 +26,10 @@ public sealed class DependencyResolver
     private readonly ConcurrentDictionary<string, HashSet<string>> _dependencyGraph = new();
     private readonly ConcurrentDictionary<string, HashSet<string>> _reverseDependencyGraph = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DependencyResolver"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
     public DependencyResolver(ILogger<DependencyResolver> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -24,7 +37,12 @@ public sealed class DependencyResolver
 
     /// <summary>
     /// Registers an agent and builds the dependency graph.
+    /// 
+    /// Updates both forward dependency graph (agent → dependencies) and
+    /// reverse dependency graph (dependency → dependents) for efficient lookups.
     /// </summary>
+    /// <param name="container">Agent container to register</param>
+    /// <exception cref="ArgumentNullException">Thrown if container is null</exception>
     public void RegisterAgent(AgentContainer container)
     {
         if (container == null)
@@ -60,7 +78,12 @@ public sealed class DependencyResolver
 
     /// <summary>
     /// Gets agents that are ready to execute (all dependencies resolved).
+    /// 
+    /// An agent is ready if:
+    /// - All its dependencies have outputs recorded
+    /// - The agent is in Ready or Executing state (not Failed/Completed/Terminated)
     /// </summary>
+    /// <returns>A read-only list of agent containers that are ready to execute.</returns>
     public IReadOnlyList<AgentContainer> GetReadyAgents()
     {
         return _agents.Values
@@ -82,6 +105,7 @@ public sealed class DependencyResolver
     /// Gets agents that are blocked (waiting for dependencies).
     /// Includes both direct and transitive dependencies.
     /// </summary>
+    /// <returns>A read-only list of agent containers that are blocked waiting for dependencies.</returns>
     public IReadOnlyList<AgentContainer> GetBlockedAgents()
     {
         return _agents.Values
@@ -97,6 +121,8 @@ public sealed class DependencyResolver
     /// <summary>
     /// Gets the blocking chain for an agent (which dependencies are missing).
     /// </summary>
+    /// <param name="agentId">The ID of the agent to check.</param>
+    /// <returns>A read-only list of agent IDs that are blocking this agent's execution.</returns>
     public IReadOnlyList<string> GetBlockingDependencies(string agentId)
     {
         if (!_agents.TryGetValue(agentId, out var container))
@@ -109,6 +135,13 @@ public sealed class DependencyResolver
         return blocking.ToList();
     }
 
+    /// <summary>
+    /// Recursively collects blocking dependencies for an agent.
+    /// </summary>
+    /// <param name="agentId">The agent ID to check.</param>
+    /// <param name="dependencies">The list of dependencies to check.</param>
+    /// <param name="blocking">The set to populate with blocking dependency IDs.</param>
+    /// <param name="visited">The set of already visited agent IDs to prevent cycles.</param>
     private void CollectBlockingDependencies(
         string agentId,
         IReadOnlyList<string> dependencies,
@@ -139,6 +172,10 @@ public sealed class DependencyResolver
     /// Records an agent's output and unblocks dependent agents.
     /// Handles transitive dependencies by recursively checking if dependents are now ready.
     /// </summary>
+    /// <param name="agentId">The ID of the agent that produced the output.</param>
+    /// <param name="output">The output object produced by the agent.</param>
+    /// <exception cref="ArgumentException">Thrown if agentId is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if output is null.</exception>
     public void RecordOutput(string agentId, object output)
     {
         if (string.IsNullOrWhiteSpace(agentId))
@@ -180,6 +217,8 @@ public sealed class DependencyResolver
     /// <summary>
     /// Recursively notifies transitive dependents when an agent becomes unblocked.
     /// </summary>
+    /// <param name="agentId">The agent ID that became unblocked.</param>
+    /// <param name="visited">The set of already visited agent IDs to prevent infinite recursion.</param>
     private void NotifyTransitiveDependents(string agentId, HashSet<string> visited)
     {
         if (visited.Contains(agentId))
@@ -210,6 +249,9 @@ public sealed class DependencyResolver
     /// <summary>
     /// Checks if all dependencies (including transitive) are resolved for an agent.
     /// </summary>
+    /// <param name="agentId">The agent ID to check.</param>
+    /// <param name="visited">The set of already visited agent IDs to prevent cycles.</param>
+    /// <returns>True if all dependencies are resolved, false otherwise.</returns>
     private bool AreAllDependenciesResolved(string agentId, HashSet<string> visited)
     {
         if (visited.Contains(agentId))
@@ -245,6 +287,8 @@ public sealed class DependencyResolver
     /// <summary>
     /// Gets outputs for all dependencies of an agent.
     /// </summary>
+    /// <param name="dependencies">The list of dependency agent IDs.</param>
+    /// <returns>A dictionary mapping dependency agent IDs to their outputs.</returns>
     public IReadOnlyDictionary<string, object> GetDependencyOutputs(IReadOnlyList<string> dependencies)
     {
         var result = new Dictionary<string, object>();
@@ -260,7 +304,11 @@ public sealed class DependencyResolver
 
     /// <summary>
     /// Gets the execution order (topological sort) for all agents.
+    /// 
+    /// Performs a topological sort of the dependency graph to determine
+    /// the order in which agents should be executed. Detects and logs circular dependencies.
     /// </summary>
+    /// <returns>A read-only list of agent IDs in execution order.</returns>
     public IReadOnlyList<string> GetExecutionOrder()
     {
         var result = new List<string>();
@@ -309,6 +357,8 @@ public sealed class DependencyResolver
     /// <summary>
     /// Checks if all dependencies for an agent are resolved.
     /// </summary>
+    /// <param name="agentId">The ID of the agent to check.</param>
+    /// <returns>True if all dependencies are resolved, false otherwise.</returns>
     public bool AreDependenciesResolved(string agentId)
     {
         if (!_agents.TryGetValue(agentId, out var container))
@@ -320,8 +370,9 @@ public sealed class DependencyResolver
     }
 
     /// <summary>
-    /// Gets all resolved outputs.
+    /// Gets all resolved outputs from all agents.
     /// </summary>
+    /// <returns>A dictionary mapping agent IDs to their outputs.</returns>
     public IReadOnlyDictionary<string, object> GetAllOutputs()
     {
         return _outputs;

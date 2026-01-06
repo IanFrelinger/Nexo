@@ -2,6 +2,16 @@ namespace Nexo.Orchestration.Architect.Models;
 
 /// <summary>
 /// Result of decomposing a request into agent specifications.
+/// 
+/// Contains:
+/// - List of agent specifications to spawn
+/// - Original request that was decomposed
+/// - Reasoning/explanation for the decomposition
+/// - Confidence score (0.0 to 1.0)
+/// - Validation errors (if any)
+/// 
+/// Produced by ArchitectAgent during request decomposition.
+/// Used by Orchestrator to spawn and execute agents.
 /// </summary>
 public sealed record DecompositionResult
 {
@@ -38,6 +48,14 @@ public sealed record DecompositionResult
 
 /// <summary>
 /// Represents a validation error found during decomposition validation.
+/// 
+/// Contains:
+/// - Error type (Schema, Dependency, Coverage, Constraint)
+/// - Human-readable error message
+/// - Agent ID where error occurred (if applicable)
+/// - Severity level (Info, Warning, Error)
+/// 
+/// Used by validators to report issues with decomposition results.
 /// </summary>
 public sealed record ValidationError
 {
@@ -64,6 +82,13 @@ public sealed record ValidationError
 
 /// <summary>
 /// Severity level of a validation error.
+/// 
+/// Defines the severity of validation issues:
+/// - Info: Informational message (not an error)
+/// - Warning: Should be addressed but doesn't block execution
+/// - Error: Blocks execution
+/// 
+/// Used by ValidationError to indicate issue severity.
 /// </summary>
 public enum ValidationSeverity
 {

@@ -9,6 +9,13 @@ namespace Nexo.Infrastructure.Agent.Adapters;
 
 /// <summary>
 /// Infrastructure adapter for agent registry.
+/// 
+/// Implements IAgentRegistry port from Application layer. Provides:
+/// - Agent discovery from service provider
+/// - Agent metadata extraction (name, description, capabilities, parameters)
+/// - Agent lookup by name
+/// 
+/// Part of the Infrastructure layer, implementing the hexagonal architecture pattern.
 /// </summary>
 public class AgentRegistryAdapter : IAgentRegistry
 {

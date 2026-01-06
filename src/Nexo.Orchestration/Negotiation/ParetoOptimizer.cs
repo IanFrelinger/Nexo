@@ -7,6 +7,14 @@ namespace Nexo.Orchestration.Negotiation;
 
 /// <summary>
 /// Resolves resource conflicts by finding Pareto-optimal allocations.
+/// 
+/// Responsibilities:
+/// - Finds Pareto-optimal resource allocations (no agent can improve without another getting worse)
+/// - Generates Pareto frontier (set of optimal allocations)
+/// - Identifies tradeoffs between allocations
+/// - Recommends best allocation based on priorities
+/// 
+/// Used by NegotiationProtocol to resolve resource conflicts between agents.
 /// </summary>
 public sealed class ParetoOptimizer
 {

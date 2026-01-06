@@ -2,6 +2,14 @@ namespace Nexo.Orchestration.Assets.Ports;
 
 /// <summary>
 /// Port for image generation services.
+/// 
+/// Defines the contract for image generation adapters:
+/// - Generate images from text prompts
+/// - Generate image variations
+/// - Support multiple sizes and styles
+/// 
+/// Implementations (DalleImageGenerator, LocalImageGenerator, etc.) provide
+/// specific image generation logic. Used by ImageAssetAgent.
 /// </summary>
 public interface IImageGenerator
 {
@@ -33,6 +41,14 @@ public interface IImageGenerator
 
 /// <summary>
 /// Request for image generation.
+/// 
+/// Contains:
+/// - Text prompt for image generation
+/// - Optional negative prompt
+/// - Image size and style
+/// - Optional seed and guidance scale
+/// 
+/// Used by IImageGenerator to generate images.
 /// </summary>
 public sealed record ImageGenerationRequest
 {
@@ -46,6 +62,14 @@ public sealed record ImageGenerationRequest
 
 /// <summary>
 /// Generated image result.
+/// 
+/// Contains:
+/// - File path where the image is stored
+/// - Image size and MIME type
+/// - Optional seed used for generation
+/// - Optional metadata dictionary
+/// 
+/// Returned by IImageGenerator after successful generation.
 /// </summary>
 public sealed record GeneratedImage
 {
@@ -59,6 +83,14 @@ public sealed record GeneratedImage
 
 /// <summary>
 /// Standard image sizes for generation.
+/// 
+/// Defines common image dimensions:
+/// - Square formats (256x256, 512x512, 1024x1024)
+/// - Portrait format (768x1024)
+/// - Landscape format (1024x768)
+/// - Wide format (1920x1080)
+/// 
+/// Used by IImageGenerator to specify output dimensions.
 /// </summary>
 public enum ImageSize
 {

@@ -4,6 +4,15 @@ namespace Nexo.Orchestration.Agents.CodeGeneration;
 
 /// <summary>
 /// Analyzes generated code for quality, security, and performance issues.
+/// 
+/// Responsibilities:
+/// - Calculates cyclomatic complexity
+/// - Detects security vulnerabilities (hardcoded secrets, dangerous functions)
+/// - Identifies performance issues (blocking operations)
+/// - Flags code quality issues (excessive length, complexity)
+/// - Provides line-level issue reporting
+/// 
+/// Used by CodeGenerationAgent to validate and improve generated code.
 /// </summary>
 public sealed class CodeAnalyzer
 {

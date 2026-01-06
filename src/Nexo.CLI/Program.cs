@@ -18,8 +18,28 @@ using Nexo.Adapters.Models;
 
 namespace Nexo.CLI;
 
+/// <summary>
+/// Main entry point for the Nexo CLI application.
+/// 
+/// Provides command-line interface for:
+/// - Code analysis and validation
+/// - Agent execution and orchestration
+/// - Test execution
+/// - Configuration management
+/// - Escalation and conflict resolution
+/// - Metrics and performance monitoring
+/// - Unity integration
+/// 
+/// Uses System.CommandLine for command parsing and Microsoft.Extensions.Hosting
+/// for dependency injection and service configuration.
+/// </summary>
 static class Program
 {
+    /// <summary>
+    /// Main entry point for the CLI application.
+    /// </summary>
+    /// <param name="args">Command-line arguments</param>
+    /// <returns>Exit code (0 for success, non-zero for errors)</returns>
     static async Task<int> Main(string[] args)
     {
         // Build host with dependency injection
@@ -313,6 +333,18 @@ static class Program
         return await root.InvokeAsync(args);
     }
 
+    /// <summary>
+    /// Configures dependency injection services for the application.
+    /// 
+    /// Registers:
+    /// - MediatR for command/query handling
+    /// - FluentValidation for request validation
+    /// - Application services (analysis, validation, agent execution)
+    /// - Infrastructure adapters with caching decorators
+    /// - Orchestration layer components
+    /// - CLI command handlers
+    /// </summary>
+    /// <param name="services">Service collection to configure</param>
     private static void ConfigureServices(IServiceCollection services)
     {
         // Register MediatR

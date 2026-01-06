@@ -8,6 +8,15 @@ namespace Nexo.Adapters.Assets.Models3D;
 
 /// <summary>
 /// Tripo AI 3D model generation implementation.
+/// 
+/// Provides:
+/// - Text-to-3D and image-to-3D generation via Tripo AI API
+/// - Multiple quality levels and formats
+/// - Async generation with polling
+/// - Model download and local storage
+/// 
+/// Implements IModel3DGenerator for use with Model3DAssetAgent.
+/// Requires Tripo API key configuration.
 /// </summary>
 public sealed class TripoModelGenerator : IModel3DGenerator
 {

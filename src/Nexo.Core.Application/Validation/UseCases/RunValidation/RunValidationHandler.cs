@@ -8,7 +8,15 @@ using Nexo.Core.Domain.Exceptions;
 namespace Nexo.Core.Application.Validation.UseCases.RunValidation;
 
 /// <summary>
-/// Handler for running validation tests.
+/// MediatR handler for running validation tests.
+/// 
+/// Responsibilities:
+/// - Executes validation tests via IValidationService
+/// - Records execution metrics (duration, test counts, pass/fail rates)
+/// - Handles errors and exceptions
+/// - Logs validation progress and results
+/// 
+/// Part of the Application layer's use case pattern, following CQRS principles.
 /// </summary>
 public class RunValidationHandler : IRequestHandler<RunValidationCommand, ValidationResult>
 {
@@ -26,6 +34,12 @@ public class RunValidationHandler : IRequestHandler<RunValidationCommand, Valida
         _metricsCollector = metricsCollector;
     }
 
+    /// <summary>
+    /// Handles the RunValidationCommand by running validation tests.
+    /// </summary>
+    /// <param name="request">Command containing optional test filter and progress callback</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Validation result with test counts and pass/fail status</returns>
     public async Task<ValidationResult> Handle(
         RunValidationCommand request,
         CancellationToken cancellationToken)

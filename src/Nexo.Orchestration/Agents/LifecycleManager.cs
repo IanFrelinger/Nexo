@@ -5,6 +5,16 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Manages agent lifecycle: initialization, execution, and graceful shutdown.
+/// 
+/// Responsibilities:
+/// - Registers and initializes agents
+/// - Executes agents with dependency outputs
+/// - Shuts down agents gracefully
+/// - Supports hot-reload of agent definitions
+/// - Tracks active agents
+/// - Integrates with HealthMonitor for health tracking
+/// 
+/// Used by Orchestrator to manage the lifecycle of all spawned agents.
 /// </summary>
 public sealed class LifecycleManager
 {
@@ -13,6 +23,11 @@ public sealed class LifecycleManager
     private readonly HealthMonitor _healthMonitor;
     private readonly CancellationTokenSource _shutdownCts = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LifecycleManager"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="healthMonitor">The health monitor for tracking agent health.</param>
     public LifecycleManager(ILogger<LifecycleManager> logger, HealthMonitor healthMonitor)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -21,7 +36,14 @@ public sealed class LifecycleManager
 
     /// <summary>
     /// Registers and initializes an agent.
+    /// 
+    /// Registers the agent in the active agents dictionary, initializes it,
+    /// and registers it with the health monitor for health tracking.
     /// </summary>
+    /// <param name="container">The agent container to register.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>The registered agent container.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if container is null.</exception>
     public async Task<AgentContainer> RegisterAgentAsync(
         AgentContainer container,
         CancellationToken cancellationToken = default)
@@ -51,7 +73,15 @@ public sealed class LifecycleManager
 
     /// <summary>
     /// Executes an agent with dependency outputs.
+    /// 
+    /// Executes the agent's ExecuteAsync method with the provided dependency outputs.
+    /// The agent must be registered before execution.
     /// </summary>
+    /// <param name="agentId">The ID of the agent to execute.</param>
+    /// <param name="dependencyOutputs">Optional dictionary of dependency agent IDs to their outputs.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>The agent's execution output.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if agent is not registered.</exception>
     public async Task<object> ExecuteAgentAsync(
         string agentId,
         IReadOnlyDictionary<string, object>? dependencyOutputs = null,
@@ -79,7 +109,14 @@ public sealed class LifecycleManager
 
     /// <summary>
     /// Shuts down an agent gracefully.
+    /// 
+    /// Calls the agent's ShutdownAsync method, removes it from active agents,
+    /// and unregisters it from the health monitor. If graceful shutdown fails,
+    /// the agent is force-terminated.
     /// </summary>
+    /// <param name="agentId">The ID of the agent to shutdown.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A task that represents the asynchronous shutdown operation.</returns>
     public async Task ShutdownAgentAsync(string agentId, CancellationToken cancellationToken = default)
     {
         if (!_activeAgents.TryGetValue(agentId, out var container))
@@ -110,7 +147,12 @@ public sealed class LifecycleManager
 
     /// <summary>
     /// Shuts down all agents gracefully.
+    /// 
+    /// Shuts down all registered agents in parallel using Task.WhenAll.
+    /// Used during system shutdown or cleanup operations.
     /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A task that represents the asynchronous shutdown operation.</returns>
     public async Task ShutdownAllAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Shutting down all agents ({Count} agents)", _activeAgents.Count);
@@ -126,7 +168,10 @@ public sealed class LifecycleManager
 
     /// <summary>
     /// Gets all active agents.
+    /// 
+    /// Returns a snapshot of all currently registered agents.
     /// </summary>
+    /// <returns>A read-only list of all active agent containers.</returns>
     public IReadOnlyList<AgentContainer> GetActiveAgents()
     {
         return _activeAgents.Values.ToList();
@@ -135,6 +180,8 @@ public sealed class LifecycleManager
     /// <summary>
     /// Gets an active agent by ID.
     /// </summary>
+    /// <param name="agentId">The ID of the agent to retrieve.</param>
+    /// <returns>The agent container if found, null otherwise.</returns>
     public AgentContainer? GetAgent(string agentId)
     {
         return _activeAgents.TryGetValue(agentId, out var container) ? container : null;
@@ -142,7 +189,14 @@ public sealed class LifecycleManager
 
     /// <summary>
     /// Hot-reloads an agent definition (replaces existing agent with new spec).
+    /// 
+    /// Shuts down the old agent (if it exists) and registers the new agent.
+    /// Useful for updating agent behavior without restarting the entire system.
     /// </summary>
+    /// <param name="newContainer">The new agent container to replace the old one.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>The newly registered agent container.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if newContainer is null.</exception>
     public async Task<AgentContainer> HotReloadAgentAsync(
         AgentContainer newContainer,
         CancellationToken cancellationToken = default)

@@ -10,6 +10,14 @@ namespace Nexo.Orchestration.Negotiation;
 
 /// <summary>
 /// Generates creative resolutions for philosophy conflicts using LLM.
+/// 
+/// Responsibilities:
+/// - Synthesizes creative resolutions using LLM (IModel)
+/// - Caches synthesis results for similar conflicts
+/// - Generates proposed resolutions that satisfy all parties
+/// - Provides fallback synthesis when LLM unavailable
+/// 
+/// Used by NegotiationProtocol to resolve philosophy conflicts between agents.
 /// </summary>
 public sealed class SynthesisEngine
 {

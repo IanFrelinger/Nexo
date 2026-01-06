@@ -2,6 +2,15 @@ namespace Nexo.Orchestration.Playtest.Models;
 
 /// <summary>
 /// A balance issue identified from playtest analysis.
+/// 
+/// Contains:
+/// - Issue identification, category, and severity
+/// - Title and description
+/// - Statistical evidence supporting the issue
+/// - Suggested fixes from AI analysis
+/// - Affected domains that should address the issue
+/// 
+/// Used by BalanceAnalyzerAgent to report game balance problems.
 /// </summary>
 public sealed record BalanceIssue
 {

@@ -5,6 +5,15 @@ namespace Nexo.Orchestration.Negotiation;
 
 /// <summary>
 /// Result of a negotiation attempt.
+/// 
+/// Represents the outcome of conflict negotiation:
+/// - Success status and resolution type
+/// - Resolved artifacts (schemas, resource allocations)
+/// - Proposed resolutions
+/// - Reason for result
+/// - Number of negotiation rounds required
+/// 
+/// Used by NegotiationProtocol to communicate negotiation outcomes.
 /// </summary>
 public sealed record NegotiationResult
 {
@@ -59,6 +68,14 @@ public sealed record NegotiationResult
 
 /// <summary>
 /// Type of resolution achieved.
+/// 
+/// Defines resolution types:
+/// - Automatic: Resolved automatically without agent input
+/// - Negotiated: Resolved through agent negotiation
+/// - Synthesized: Resolved through creative synthesis
+/// - Escalated: Could not be resolved - escalated to human
+/// 
+/// Used by NegotiationResult to indicate how a conflict was resolved.
 /// </summary>
 public enum ResolutionType
 {

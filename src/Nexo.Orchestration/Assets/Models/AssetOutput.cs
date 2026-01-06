@@ -4,6 +4,16 @@ namespace Nexo.Orchestration.Assets.Models;
 
 /// <summary>
 /// Output from an asset generation agent.
+/// 
+/// Contains:
+/// - Asset identification and type
+/// - File path and MIME type
+/// - Generation prompt used
+/// - Validation results against constraints
+/// - Metadata from generation service
+/// - File size and generation timestamp
+/// 
+/// Used by asset generation agents to return generated asset information.
 /// </summary>
 public sealed record AssetOutput
 {

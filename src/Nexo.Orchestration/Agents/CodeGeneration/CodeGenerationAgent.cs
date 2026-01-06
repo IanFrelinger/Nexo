@@ -10,6 +10,18 @@ namespace Nexo.Orchestration.Agents.CodeGeneration;
 
 /// <summary>
 /// Agent specialized for code generation in multiple programming languages.
+/// 
+/// Responsibilities:
+/// - Generates code from requirements using LLM (IModel)
+/// - Supports multiple languages (C#, Python, JavaScript, etc.)
+/// - Analyzes generated code for quality, security, and performance
+/// - Optimizes code based on analysis results
+/// - Validates code against constraints
+/// - Extracts requirements from agent specifications
+/// - Gathers context from dependency outputs
+/// 
+/// Uses CodeAnalyzer and CodeOptimizer for code quality improvements.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public sealed class CodeGenerationAgent : BaseAgent
 {

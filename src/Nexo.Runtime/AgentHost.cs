@@ -2,6 +2,18 @@ using Nexo.Abstractions;
 
 namespace Nexo.Runtime;
 
+/// <summary>
+/// Host for executing agents in a simulation step.
+/// 
+/// Responsibilities:
+/// - Executes all registered agents in a single simulation step
+/// - Applies policies to approve/reject tool calls
+/// - Invokes approved tool calls via IToolbox
+/// - Merges action deltas from all agents
+/// - Records policy denials in agent memory
+/// 
+/// Used for agent execution in simulation environments.
+/// </summary>
 public sealed class AgentHost
 {
     private readonly IReadOnlyList<IAgent> _agents;

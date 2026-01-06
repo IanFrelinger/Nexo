@@ -5,7 +5,17 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// Represents method visibility as a value object
+    /// Represents method visibility as a value object.
+    /// 
+    /// Provides predefined method visibility values:
+    /// - Public: Public method
+    /// - Private: Private method
+    /// - Protected: Protected method
+    /// - Internal: Internal method
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
+    /// Used in code analysis and reflection operations.
     /// </summary>
     public sealed class MethodVisibility : IEquatable<MethodVisibility>
     {

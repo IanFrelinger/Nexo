@@ -4,6 +4,15 @@ namespace Nexo.Orchestration.Agents.Capabilities;
 
 /// <summary>
 /// Registry for agent capabilities and discovery.
+/// 
+/// Responsibilities:
+/// - Registers agent capabilities (capabilities, modalities, languages)
+/// - Finds agents by capability type
+/// - Finds agents by supported input modality
+/// - Provides capability lookup and discovery
+/// 
+/// Thread-safe implementation using concurrent collections.
+/// Used for agent discovery and capability-based routing.
 /// </summary>
 public sealed class AgentCapabilityRegistry
 {
@@ -56,6 +65,16 @@ public sealed class AgentCapabilityRegistry
 
 /// <summary>
 /// Capabilities of an agent.
+/// 
+/// Contains:
+/// - Agent ID and domain
+/// - List of capabilities (e.g., "image_generation", "code_analysis")
+/// - Supported input modalities (text, image, audio)
+/// - Supported programming languages
+/// - Whether the agent supports learning
+/// - Optional metadata dictionary
+/// 
+/// Used by AgentCapabilityRegistry to track agent capabilities.
 /// </summary>
 public sealed record AgentCapability
 {

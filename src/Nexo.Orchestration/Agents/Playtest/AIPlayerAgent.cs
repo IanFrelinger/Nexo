@@ -10,6 +10,16 @@ namespace Nexo.Orchestration.Agents.Playtest;
 
 /// <summary>
 /// AI-driven player that makes gameplay decisions using LLM reasoning.
+/// 
+/// Responsibilities:
+/// - Simulates player behavior using LLM (IModel)
+/// - Makes gameplay decisions based on game state
+/// - Executes actions via IGameRunner
+/// - Records telemetry for analysis
+/// - Supports different player profiles (casual, competitive, etc.)
+/// 
+/// Used in automated playtesting to generate realistic player behavior.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public sealed class AIPlayerAgent : BaseAgent
 {

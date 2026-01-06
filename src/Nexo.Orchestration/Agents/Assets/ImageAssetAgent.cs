@@ -8,7 +8,16 @@ using System.Text.RegularExpressions;
 namespace Nexo.Orchestration.Agents.Assets;
 
 /// <summary>
-/// Agent that generates image assets.
+/// Agent that generates image assets for games.
+/// 
+/// Specialized agent for image generation that:
+/// - Uses IImageGenerator to create game assets
+/// - Handles prompt generation and refinement
+/// - Manages asset storage and retrieval
+/// - Supports various image sizes and styles
+/// - Implements retry logic and validation
+/// 
+/// Inherits from BaseAssetAgent for common asset generation functionality.
 /// </summary>
 public sealed class ImageAssetAgent : BaseAssetAgent
 {

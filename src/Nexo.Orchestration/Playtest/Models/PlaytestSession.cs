@@ -2,6 +2,14 @@ namespace Nexo.Orchestration.Playtest.Models;
 
 /// <summary>
 /// Represents a playtest session with AI players.
+/// 
+/// Contains:
+/// - Session identification and configuration
+/// - Start/end times and status
+/// - AI player sessions and actions
+/// - Playtest metrics
+/// 
+/// Used by playtest agents to track and analyze playtest sessions.
 /// </summary>
 public sealed record PlaytestSession
 {

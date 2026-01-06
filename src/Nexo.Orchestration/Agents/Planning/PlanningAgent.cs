@@ -8,6 +8,15 @@ namespace Nexo.Orchestration.Agents.Planning;
 
 /// <summary>
 /// Agent that guides users through the iterative game development process by asking questions.
+/// 
+/// Responsibilities:
+/// - Presents structured questions to gather requirements
+/// - Collects user responses iteratively
+/// - Generates recommendations based on responses
+/// - Provides planning guidance for game development
+/// 
+/// Uses a question-based workflow to help users define their game development needs.
+/// Inherits from BaseDomainAgent for LLM integration.
 /// </summary>
 public class PlanningAgent : BaseDomainAgent
 {
@@ -263,6 +272,12 @@ Format as JSON:
 
 /// <summary>
 /// Represents a planning question.
+/// 
+/// Contains:
+/// - Question ID, text, and category
+/// - Optional list of answer options
+/// 
+/// Used by PlanningAgent to guide users through game development planning.
 /// </summary>
 public class PlanningQuestion
 {
@@ -274,6 +289,14 @@ public class PlanningQuestion
 
 /// <summary>
 /// Response from the planning agent.
+/// 
+/// Contains:
+/// - Response type (Question, Recommendation, Error)
+/// - Optional question or recommendation text
+/// - Lists of recommended features, iteration priorities, and considerations
+/// - Progress indicator and context dictionary
+/// 
+/// Used by PlanningAgent to communicate with users.
 /// </summary>
 public class PlanningResponse
 {
@@ -289,6 +312,13 @@ public class PlanningResponse
 
 /// <summary>
 /// Type of planning response.
+/// 
+/// Defines response types:
+/// - Question: Agent is asking a question
+/// - Recommendation: Agent is providing a recommendation
+/// - Error: An error occurred
+/// 
+/// Used by PlanningResponse to indicate the type of response.
 /// </summary>
 public enum PlanningResponseType
 {

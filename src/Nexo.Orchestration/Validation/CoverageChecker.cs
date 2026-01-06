@@ -6,6 +6,13 @@ namespace Nexo.Orchestration.Validation;
 
 /// <summary>
 /// Checks that all requirements from the original request are covered by at least one agent's goal.
+/// 
+/// Validates:
+/// - All key requirements from the original request are addressed
+/// - Agent goals and descriptions cover the requirements
+/// - No requirements are left uncovered
+/// 
+/// Used by ArchitectAgent to ensure complete decomposition coverage.
 /// </summary>
 public sealed class CoverageChecker : IValidator
 {

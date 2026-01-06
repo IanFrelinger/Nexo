@@ -4,6 +4,14 @@ namespace Nexo.Infrastructure.Analysis.Rules;
 
 /// <summary>
 /// Interface for analysis rules following Strategy pattern (OCP).
+/// 
+/// Defines the contract for analysis rules that can be applied to assemblies.
+/// Each rule analyzes an assembly file and returns a list of violations.
+/// 
+/// Implementations (e.g., SecurityAnalysisRule, CodeQualityRule) provide
+/// specific analysis logic. Rules are registered with AnalysisRuleEngine.
+/// 
+/// Follows Open/Closed Principle - new rules can be added without modifying existing code.
 /// </summary>
 public interface IAnalysisRule
 {

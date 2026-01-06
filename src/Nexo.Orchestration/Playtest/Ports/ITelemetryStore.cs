@@ -4,6 +4,14 @@ namespace Nexo.Orchestration.Playtest.Ports;
 
 /// <summary>
 /// Port for storing and retrieving telemetry events.
+/// 
+/// Defines the contract for telemetry storage adapters:
+/// - Store telemetry events from playtest sessions
+/// - Retrieve events by session ID and type
+/// - Clear session data
+/// 
+/// Implementations (InMemoryTelemetryStore, etc.) provide specific storage logic.
+/// Used by playtest agents to record and analyze gameplay telemetry.
 /// </summary>
 public interface ITelemetryStore
 {

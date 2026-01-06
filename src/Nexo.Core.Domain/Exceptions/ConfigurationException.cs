@@ -2,6 +2,12 @@ namespace Nexo.Core.Domain.Exceptions;
 
 /// <summary>
 /// Exception thrown when configuration operations fail.
+/// 
+/// Contains:
+/// - ErrorCode: Structured error code for programmatic handling
+/// - Suggestion: Optional suggestion for resolving the error
+/// 
+/// Used when configuration loading, saving, or validation fails.
 /// </summary>
 public class ConfigurationException : DomainException
 {

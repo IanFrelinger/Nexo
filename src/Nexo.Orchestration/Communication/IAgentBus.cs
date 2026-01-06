@@ -4,6 +4,14 @@ namespace Nexo.Orchestration.Communication;
 
 /// <summary>
 /// Interface for pub/sub messaging between agents.
+/// 
+/// Provides asynchronous communication between agents:
+/// - Publish messages to the bus
+/// - Subscribe to message types
+/// - Filter messages by agent ID
+/// - Retrieve message history
+/// 
+/// Enables loose coupling and event-driven communication patterns.
 /// </summary>
 public interface IAgentBus
 {

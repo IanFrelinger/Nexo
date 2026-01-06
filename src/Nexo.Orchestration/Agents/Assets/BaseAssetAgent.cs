@@ -10,7 +10,17 @@ using System.Text.RegularExpressions;
 namespace Nexo.Orchestration.Agents.Assets;
 
 /// <summary>
-/// Base class for agents that generate binary assets.
+/// Base class for agents that generate binary assets (images, audio, 3D models).
+/// 
+/// Provides common functionality for asset generation:
+/// - Prompt generation using LLM
+/// - Asset generation via provider adapters
+/// - Asset validation against constraints
+/// - Retry logic with prompt refinement
+/// - Asset storage and metadata management
+/// 
+/// Derived classes (ImageAssetAgent, AudioAssetAgent, Model3DAssetAgent) implement
+/// asset-type-specific generation and validation logic.
 /// </summary>
 public abstract class BaseAssetAgent : BaseAgent
 {

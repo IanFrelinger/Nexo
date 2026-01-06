@@ -2,6 +2,14 @@ namespace Nexo.Core.Application.Common.Ports;
 
 /// <summary>
 /// Port for collecting execution metrics and telemetry.
+/// 
+/// Defines the contract for metrics collection:
+/// - Record execution times
+/// - Increment counters
+/// - Get metrics snapshots
+/// 
+/// Implementations (MemoryMetricsCollector, etc.) provide specific metrics storage.
+/// Used throughout the application for performance monitoring and telemetry.
 /// </summary>
 public interface IMetricsCollector
 {

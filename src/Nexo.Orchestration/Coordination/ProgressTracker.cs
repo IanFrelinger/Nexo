@@ -7,6 +7,15 @@ namespace Nexo.Orchestration.Coordination;
 
 /// <summary>
 /// Tracks progress of agent execution and detects issues like thrashing and stalling.
+/// 
+/// Responsibilities:
+/// - Monitors agent state transitions
+/// - Detects stalling (agents stuck in same state too long)
+/// - Detects thrashing (excessive state transitions)
+/// - Provides progress summaries for reporting
+/// - Tracks agent health and execution metrics
+/// 
+/// Thread-safe implementation using concurrent collections.
 /// </summary>
 public sealed class ProgressTracker
 {
@@ -16,6 +25,10 @@ public sealed class ProgressTracker
     private readonly TimeSpan _stallThreshold = TimeSpan.FromMinutes(5);
     private readonly int _thrashingThreshold = 5;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProgressTracker"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
     public ProgressTracker(ILogger<ProgressTracker> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -23,7 +36,12 @@ public sealed class ProgressTracker
 
     /// <summary>
     /// Records progress for an agent.
+    /// 
+    /// Updates agent state history and checks for stalling and thrashing issues.
+    /// Thread-safe operation using concurrent collections.
     /// </summary>
+    /// <param name="container">The agent container to record progress for.</param>
+    /// <exception cref="ArgumentNullException">Thrown if container is null.</exception>
     public void RecordProgress(AgentContainer container)
     {
         if (container == null)
@@ -75,6 +93,8 @@ public sealed class ProgressTracker
     /// <summary>
     /// Checks if the system has converged (all agents completed or failed).
     /// </summary>
+    /// <param name="agents">The list of agent containers to check.</param>
+    /// <returns>True if all agents are in Completed, Failed, or Terminated state, false otherwise.</returns>
     public bool HasConverged(IReadOnlyList<AgentContainer> agents)
     {
         return agents.All(container =>
@@ -85,7 +105,15 @@ public sealed class ProgressTracker
 
     /// <summary>
     /// Gets progress summary for all agents.
+    /// 
+    /// Calculates statistics including:
+    /// - Counts by state (completed, failed, executing, waiting, ready)
+    /// - Progress percentage
+    /// - Stalling and thrashing agent counts
+    /// - Average execution time
     /// </summary>
+    /// <param name="agents">The list of agent containers to summarize.</param>
+    /// <returns>A <see cref="ProgressSummary"/> object containing aggregated progress statistics.</returns>
     public ProgressSummary GetSummary(IReadOnlyList<AgentContainer> agents)
     {
         var completed = agents.Count(a => a.State == AgentState.Completed);
@@ -111,6 +139,11 @@ public sealed class ProgressTracker
         };
     }
 
+    /// <summary>
+    /// Calculates the average execution time for completed agents.
+    /// </summary>
+    /// <param name="agents">The list of agent containers to calculate from.</param>
+    /// <returns>The average execution time, or null if no agents have completed.</returns>
     private TimeSpan? CalculateAverageExecutionTime(IReadOnlyList<AgentContainer> agents)
     {
         var completedAgents = _agentProgress.Values
@@ -131,7 +164,11 @@ public sealed class ProgressTracker
 
     /// <summary>
     /// Gets agents that are stalling (no progress for threshold time).
+    /// 
+    /// An agent is considered stalling if it's in Executing state and hasn't updated
+    /// for longer than the stall threshold (default: 5 minutes).
     /// </summary>
+    /// <returns>A read-only list of agent IDs that are stalling.</returns>
     public IReadOnlyList<string> GetStallingAgents()
     {
         var now = DateTimeOffset.UtcNow;
@@ -144,7 +181,11 @@ public sealed class ProgressTracker
 
     /// <summary>
     /// Gets agents that are thrashing (repeated state oscillation).
+    /// 
+    /// An agent is considered thrashing if it has oscillated between states
+    /// more than the thrashing threshold (default: 5) times.
     /// </summary>
+    /// <returns>A read-only list of agent IDs that are thrashing.</returns>
     public IReadOnlyList<string> GetThrashingAgents()
     {
         return _stateHistory
@@ -153,6 +194,11 @@ public sealed class ProgressTracker
             .ToList();
     }
 
+    /// <summary>
+    /// Checks if an agent is thrashing and logs a warning if detected.
+    /// </summary>
+    /// <param name="agentId">The ID of the agent to check.</param>
+    /// <param name="history">The state history for the agent.</param>
     private void CheckThrashing(string agentId, List<AgentState> history)
     {
         if (IsThrashing(history))
@@ -161,6 +207,14 @@ public sealed class ProgressTracker
         }
     }
 
+    /// <summary>
+    /// Determines if a state history indicates thrashing behavior.
+    /// 
+    /// Thrashing is detected when the same state appears repeatedly
+    /// (more than the threshold) in recent history.
+    /// </summary>
+    /// <param name="history">The state history to analyze.</param>
+    /// <returns>True if thrashing is detected, false otherwise.</returns>
     private bool IsThrashing(List<AgentState> history)
     {
         if (history.Count < _thrashingThreshold * 2)
@@ -176,6 +230,11 @@ public sealed class ProgressTracker
         return stateCounts.Values.Any(count => count >= _thrashingThreshold);
     }
 
+    /// <summary>
+    /// Checks if an agent is stalling and logs a warning if detected.
+    /// </summary>
+    /// <param name="agentId">The ID of the agent to check.</param>
+    /// <param name="progress">The progress information for the agent.</param>
     private void CheckStalling(string agentId, AgentProgress progress)
     {
         if (progress.CurrentState == AgentState.Executing)
@@ -192,6 +251,13 @@ public sealed class ProgressTracker
 
 /// <summary>
 /// Progress information for an agent.
+/// 
+/// Contains:
+/// - Agent ID
+/// - First seen and last update timestamps
+/// - Current state and health
+/// 
+/// Tracked by ProgressTracker to monitor agent execution progress.
 /// </summary>
 public sealed class AgentProgress
 {
@@ -203,7 +269,15 @@ public sealed class AgentProgress
 }
 
 /// <summary>
-/// Summary of overall progress.
+/// Summary of overall progress across all agents.
+/// 
+/// Contains:
+/// - Agent counts by state (total, completed, failed, executing, waiting, ready)
+/// - Progress percentage
+/// - Stalling and thrashing agent counts
+/// - Average execution time
+/// 
+/// Generated by ProgressTracker.GetSummary() for reporting and monitoring.
 /// </summary>
 public sealed record ProgressSummary
 {

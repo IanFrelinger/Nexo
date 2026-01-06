@@ -4,6 +4,14 @@ using Nexo.Tools.Dev.Deltas;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>
+/// Tool for running .NET tests using dotnet CLI.
+/// 
+/// Executes `dotnet test --logger trx --no-build` in the specified root directory.
+/// Returns test exit code, stdout, and stderr in the tool result.
+/// 
+/// Implements ITool for use with agent tool execution.
+/// </summary>
 public sealed class DotnetTestTool : ITool
 {
     public string Id => "dotnet.test";

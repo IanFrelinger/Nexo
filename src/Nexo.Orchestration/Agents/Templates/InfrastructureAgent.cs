@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Specialized agent for Infrastructure domain tasks.
+/// 
+/// Handles infrastructure-related design and implementation:
+/// - System architecture design
+/// - Deployment pipelines
+/// - Scaling strategies
+/// - Infrastructure patterns
+/// 
+/// Inherits from BaseDomainAgent for LLM integration and domain-specific prompts.
 /// </summary>
 public sealed class InfrastructureAgent : BaseDomainAgent
 {

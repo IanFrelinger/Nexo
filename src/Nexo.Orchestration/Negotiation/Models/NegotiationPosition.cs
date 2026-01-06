@@ -4,6 +4,15 @@ namespace Nexo.Orchestration.Negotiation.Models;
 
 /// <summary>
 /// Represents an agent's position in a negotiation.
+/// 
+/// Contains:
+/// - Primary goal and underlying goals (why it matters)
+/// - Hard constraints (cannot be violated)
+/// - Soft constraints with flexibility scores (can be relaxed)
+/// - Resource requirements
+/// - Overall flexibility score
+/// 
+/// Used by NegotiationProtocol to understand each agent's requirements and constraints.
 /// </summary>
 public sealed record NegotiationPosition
 {
@@ -45,6 +54,13 @@ public sealed record NegotiationPosition
 
 /// <summary>
 /// Result of impact analysis for a single agent.
+/// 
+/// Contains:
+/// - Agent ID
+/// - Impact score if this agent yields (0-1, lower = less impact = should yield first)
+/// - Description of what happens if this agent yields
+/// 
+/// Used by negotiation strategies to determine which agent should yield.
 /// </summary>
 public sealed record ImpactAnalysis
 {
@@ -63,6 +79,14 @@ public sealed record ImpactAnalysis
 
 /// <summary>
 /// A proposed resolution to a conflict.
+/// 
+/// Contains:
+/// - Proposer ID and description
+/// - Required changes from each agent (agentId → required changes)
+/// - Resolved artifact (schema, resource allocation, etc.)
+/// - Confidence that this resolution will work (0-1)
+/// 
+/// Used by NegotiationProtocol to propose conflict resolutions.
 /// </summary>
 public sealed record ProposedResolution
 {

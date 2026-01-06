@@ -2,6 +2,15 @@ namespace Nexo.Core.Domain.Exceptions;
 
 /// <summary>
 /// Error codes for better error identification and troubleshooting.
+/// 
+/// Provides structured error codes organized by domain:
+/// - Analysis errors (1000-1999): Code/assembly analysis failures
+/// - Validation errors (2000-2999): Test and validation failures
+/// - Agent errors (3000-3999): Agent execution failures
+/// - Configuration errors (4000-4999): Configuration management failures
+/// - General errors (5000-5999): General application errors
+/// 
+/// Used throughout the domain layer for consistent error identification.
 /// </summary>
 public static class ErrorCodes
 {

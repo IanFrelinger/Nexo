@@ -4,6 +4,14 @@ namespace Nexo.Adapters.Assets.Audio;
 
 /// <summary>
 /// Echo/placeholder audio generator for testing (doesn't actually generate audio).
+/// 
+/// Provides:
+/// - Placeholder audio generation for testing
+/// - Mock implementation of IAudioGenerator
+/// - Support for speech generation with duration estimation
+/// 
+/// Used for testing and development when real audio generation is not needed.
+/// Implements IAudioGenerator for use with AudioAssetAgent.
 /// </summary>
 public sealed class EchoAudioGenerator : IAudioGenerator
 {

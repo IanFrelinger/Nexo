@@ -2,6 +2,16 @@ using Nexo.Abstractions;
 
 namespace Nexo.Policies.Dev;
 
+/// <summary>
+/// Development policy that requires builds and tests to pass before allowing commits.
+/// 
+/// Prevents commits when:
+/// - Last build was not successful
+/// - Last test run was not successful
+/// 
+/// Implements IPolicy for use with PolicyEngine.
+/// Used in development environments to enforce quality gates.
+/// </summary>
 public sealed class BuildMustPassBeforeCommit : IPolicy
 {
     public bool Approve(ToolCall call, WorldSnapshot s, out string reason)

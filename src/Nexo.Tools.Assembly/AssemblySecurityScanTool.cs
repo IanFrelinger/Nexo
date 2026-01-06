@@ -3,6 +3,15 @@ using System.Text.Json;
 
 namespace Nexo.Tools.Assembly;
 
+/// <summary>
+/// Tool for security scanning .NET assemblies (stub implementation).
+/// 
+/// Currently provides a placeholder implementation that returns empty findings.
+/// Future implementation would perform actual security scanning.
+/// 
+/// Implements ITool for use with agent toolboxes.
+/// Used by agents to scan assemblies for security vulnerabilities.
+/// </summary>
 public sealed class AssemblySecurityScanTool : ITool
 {
     public string Id => "assembly.security_scan";

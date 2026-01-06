@@ -4,6 +4,14 @@ using Nexo.Tools.Dev.Deltas;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>
+/// Tool for performing search and replace operations within files.
+/// 
+/// Searches for a string and replaces it with another string in a UTF-8 encoded file.
+/// Tracks file edits in the action delta with SHA1 hashes and line counts.
+/// 
+/// Implements ITool for use with agent tool execution.
+/// </summary>
 public sealed class RepoFsSearchReplaceTool : ITool
 {
     public string Id => "repo.fs.search_replace";

@@ -10,6 +10,17 @@ namespace Nexo.Orchestration.Agents.Security;
 
 /// <summary>
 /// Agent specialized for security analysis and vulnerability scanning.
+/// 
+/// Responsibilities:
+/// - Scans code and artifacts for vulnerabilities using VulnerabilityScanner
+/// - Checks compliance with security standards using ComplianceChecker
+/// - Performs advanced security analysis using LLM (IModel)
+/// - Generates comprehensive security reports
+/// - Validates security constraints
+/// - Calculates risk scores based on findings
+/// 
+/// Uses VulnerabilityScanner and ComplianceChecker for automated analysis.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public sealed class SecurityAnalysisAgent : BaseAgent
 {

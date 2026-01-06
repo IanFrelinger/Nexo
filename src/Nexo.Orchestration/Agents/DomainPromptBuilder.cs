@@ -5,9 +5,32 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Builds domain-specific prompts for agent execution.
+/// 
+/// Responsibilities:
+/// - Builds execution prompts from AgentSpawnSpec
+/// - Includes goal, description, and constraints
+/// - Incorporates dependency outputs from other agents
+/// - Formats output schema requirements
+/// 
+/// Used by BaseDomainAgent to generate prompts for LLM-based agents.
 /// </summary>
 public sealed class DomainPromptBuilder
 {
+    /// <summary>
+    /// Builds an execution prompt for a domain agent.
+    /// 
+    /// Creates a comprehensive prompt that includes:
+    /// - Agent role and domain
+    /// - Goal and description
+    /// - Constraints (with mandatory indicators)
+    /// - Dependency outputs from other agents
+    /// - Expected output schema
+    /// 
+    /// Used by BaseDomainAgent to generate prompts for LLM-based agents.
+    /// </summary>
+    /// <param name="spec">The agent spawn specification.</param>
+    /// <param name="dependencyOutputs">Optional dictionary of dependency agent IDs to their outputs.</param>
+    /// <returns>The formatted execution prompt string.</returns>
     public string BuildExecutionPrompt(
         AgentSpawnSpec spec,
         IReadOnlyDictionary<string, object>? dependencyOutputs = null)

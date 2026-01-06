@@ -5,6 +5,18 @@ using UnityEngine;
 
 namespace Nexo.Core.UI.Unity.Frameworks.Unity;
 
+/// <summary>
+/// Unity Editor window demonstrating the framework-agnostic design system primitives.
+/// 
+/// This demo window showcases:
+/// - Button variants (Primary, Secondary, Success, Warning, Danger, Info)
+/// - Input types and states (Text, Password, Email, with validation)
+/// - Card layouts (Simple, with footer, complex multi-section)
+/// - Architecture overview (Design Tokens, Primitives, Renderers)
+/// - Key metrics (Code reuse, development time, cost savings)
+/// 
+/// Accessible via Unity menu: "Forge/Design System Demo"
+/// </summary>
 public class PrimitivesDemoWindow : EditorWindow
 {
     private Vector2 scrollPosition;
@@ -12,6 +24,9 @@ public class PrimitivesDemoWindow : EditorWindow
     private string _passwordInput = "";
     private string _emailInput = "";
 
+    /// <summary>
+    /// Shows the design system demo window.
+    /// </summary>
     [MenuItem("Forge/Design System Demo")]
     public static void ShowWindow()
     {

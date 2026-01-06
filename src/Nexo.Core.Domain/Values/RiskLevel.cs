@@ -5,7 +5,16 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// RiskLevel as a value object
+    /// Represents risk level as a value object.
+    /// 
+    /// Provides predefined risk level values:
+    /// - Low: Low risk level
+    /// - Medium: Medium risk level
+    /// - High: High risk level
+    /// - Critical: Critical risk level
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class RiskLevel : IEquatable<RiskLevel>
     {

@@ -9,6 +9,16 @@ namespace Nexo.Tools.Unity;
 
 /// <summary>
 /// Unity build tool implementation.
+/// 
+/// Responsibilities:
+/// - Builds Unity projects for multiple platforms (Windows, macOS, Linux, iOS, Android, WebGL)
+/// - Executes Unity Editor in batch mode
+/// - Parses build logs for success/failure
+/// - Handles build configuration (development, scenes, output path)
+/// - Provides build output with artifacts and metadata
+/// 
+/// Implements IBuildTool for use with UnityBuildAgent.
+/// Requires Unity Editor installation and configuration.
 /// </summary>
 public sealed class UnityBuildTool : IBuildTool
 {

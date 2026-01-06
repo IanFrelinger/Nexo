@@ -9,6 +9,14 @@ namespace Nexo.Infrastructure.Analysis.Rules;
 
 /// <summary>
 /// Analysis rule for code quality metrics (cyclomatic complexity, maintainability).
+/// 
+/// Responsibilities:
+/// - Analyzes code quality metrics using AssemblyAnalyzeTool
+/// - Detects high cyclomatic complexity
+/// - Reports maintainability issues as violations
+/// 
+/// Implements IAnalysisRule for use with AnalysisRuleEngine.
+/// Used by AnalysisServiceAdapter to assess code quality in assemblies.
 /// </summary>
 public class CodeQualityRule : IAnalysisRule
 {

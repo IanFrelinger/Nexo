@@ -5,6 +5,15 @@ namespace Nexo.Core.Application.Behaviors;
 
 /// <summary>
 /// MediatR pipeline behavior for FluentValidation.
+/// 
+/// Responsibilities:
+/// - Validates requests using FluentValidation validators
+/// - Runs all registered validators in parallel
+/// - Throws ValidationException if validation fails
+/// - Allows request to proceed if validation passes
+/// 
+/// Used in MediatR pipeline to automatically validate all requests.
+/// Implements IPipelineBehavior for MediatR integration.
 /// </summary>
 public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>

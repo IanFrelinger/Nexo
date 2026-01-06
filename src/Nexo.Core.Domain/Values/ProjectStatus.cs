@@ -5,7 +5,22 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// Represents project status as a value object
+    /// Represents project status as a value object.
+    /// 
+    /// Provides predefined project status values:
+    /// - NotInitialized: Project has not been initialized
+    /// - Planning: Project is in planning phase
+    /// - Initialized: Project has been initialized
+    /// - Active: Project is actively being developed
+    /// - Running: Project is currently running
+    /// - Stopped: Project has been stopped
+    /// - OnHold: Project is temporarily on hold
+    /// - Failed: Project has failed
+    /// - Completed: Project has been completed
+    /// - Cancelled: Project has been cancelled
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class ProjectStatus : IEquatable<ProjectStatus>
     {

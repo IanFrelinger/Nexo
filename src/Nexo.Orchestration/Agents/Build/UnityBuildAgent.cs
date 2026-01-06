@@ -10,6 +10,15 @@ namespace Nexo.Orchestration.Agents.Build;
 
 /// <summary>
 /// Agent that builds Unity projects.
+/// 
+/// Specialized agent for Unity build operations that:
+/// - Executes Unity builds via IBuildTool
+/// - Integrates generated assets into builds
+/// - Supports multiple build targets (Windows, macOS, Linux, etc.)
+/// - Manages build configuration and output
+/// - Handles build errors and validation
+/// 
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public sealed class UnityBuildAgent : BaseAgent
 {

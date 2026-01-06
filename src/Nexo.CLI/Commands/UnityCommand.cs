@@ -8,6 +8,15 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// Command handler for Unity-related operations.
+/// 
+/// Provides CLI commands for:
+/// - Creating new Unity projects
+/// - Opening Unity Editor
+/// - Building Unity projects
+/// - Running Unity tests
+/// - Unity-specific orchestration operations
+/// 
+/// Integrates with Unity build tools and test runners.
 /// </summary>
 public class UnityCommand
 {

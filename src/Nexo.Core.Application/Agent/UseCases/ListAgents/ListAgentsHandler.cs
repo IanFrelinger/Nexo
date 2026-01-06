@@ -6,7 +6,14 @@ using Nexo.Core.Application.Agent.Ports;
 namespace Nexo.Core.Application.Agent.UseCases.ListAgents;
 
 /// <summary>
-/// Handler for listing available agents.
+/// MediatR handler for listing available agents.
+/// 
+/// Responsibilities:
+/// - Retrieves agent metadata from IAgentRegistry
+/// - Returns list of available agents with their capabilities
+/// - Logs agent discovery operations
+/// 
+/// Part of the Application layer's use case pattern, following CQRS principles.
 /// </summary>
 public class ListAgentsHandler : IRequestHandler<ListAgentsQuery, IReadOnlyList<AgentMetadata>>
 {

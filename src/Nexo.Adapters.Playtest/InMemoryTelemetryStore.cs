@@ -6,6 +6,14 @@ namespace Nexo.Adapters.Playtest;
 
 /// <summary>
 /// In-memory telemetry store implementation for testing.
+/// 
+/// Responsibilities:
+/// - Stores telemetry events in memory (organized by session)
+/// - Retrieves events by session ID and type
+/// - Clears session data
+/// 
+/// Implements ITelemetryStore for use with playtest agents.
+/// Used for testing and development (production would use persistent storage).
 /// </summary>
 public sealed class InMemoryTelemetryStore : ITelemetryStore
 {

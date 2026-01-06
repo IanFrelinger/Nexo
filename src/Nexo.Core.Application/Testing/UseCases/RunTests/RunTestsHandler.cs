@@ -7,7 +7,15 @@ using Nexo.Core.Application.Testing.UseCases.RunTests;
 namespace Nexo.Core.Application.Testing.UseCases.RunTests;
 
 /// <summary>
-/// Handler for running tests.
+/// MediatR handler for running tests.
+/// 
+/// Responsibilities:
+/// - Executes test suites via ITestRunner
+/// - Supports optional test filtering
+/// - Tracks test execution progress
+/// - Logs test results and metrics
+/// 
+/// Part of the Application layer's use case pattern, following CQRS principles.
 /// </summary>
 public class RunTestsHandler : IRequestHandler<RunTestsCommand, TestExecutionResult>
 {

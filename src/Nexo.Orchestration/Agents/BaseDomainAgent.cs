@@ -6,6 +6,16 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Base class for domain agents with LLM integration.
+/// 
+/// Provides common functionality for domain-specific agents:
+/// - LLM integration via IModel
+/// - Domain-specific prompt building via DomainPromptBuilder
+/// - Structured output generation (JSON parsing with fallback)
+/// - Mock output generation when LLM is unavailable
+/// 
+/// Derived classes (GameplayAgent, SecurityAgent, etc.) implement domain-specific
+/// system prompts and mock outputs.
+/// Inherits from BaseAgent for lifecycle management.
 /// </summary>
 public abstract class BaseDomainAgent : BaseAgent
 {

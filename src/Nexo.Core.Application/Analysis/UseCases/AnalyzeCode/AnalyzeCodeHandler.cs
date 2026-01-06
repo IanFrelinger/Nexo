@@ -8,7 +8,15 @@ using Nexo.Core.Domain.Exceptions;
 namespace Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 
 /// <summary>
-/// Handler for analyzing code and assemblies.
+/// MediatR handler for analyzing code and assemblies.
+/// 
+/// Responsibilities:
+/// - Executes code analysis via IAnalysisService
+/// - Records execution metrics (duration, violation counts)
+/// - Handles errors and exceptions
+/// - Logs analysis progress and results
+/// 
+/// Part of the Application layer's use case pattern, following CQRS principles.
 /// </summary>
 public class AnalyzeCodeHandler : IRequestHandler<AnalyzeCodeCommand, AnalysisResult>
 {
@@ -26,6 +34,12 @@ public class AnalyzeCodeHandler : IRequestHandler<AnalyzeCodeCommand, AnalysisRe
         _metricsCollector = metricsCollector;
     }
 
+    /// <summary>
+    /// Handles the AnalyzeCodeCommand by analyzing the specified directory.
+    /// </summary>
+    /// <param name="request">Command containing path to analyze and progress callback</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Analysis result with violations and metrics</returns>
     public async Task<AnalysisResult> Handle(
         AnalyzeCodeCommand request,
         CancellationToken cancellationToken)

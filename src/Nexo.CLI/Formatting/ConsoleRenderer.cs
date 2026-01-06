@@ -11,6 +11,16 @@ namespace Nexo.CLI.Formatting;
 
 /// <summary>
 /// Host-specific console renderer for CLI output.
+/// 
+/// Provides methods for rendering various types of output to the console:
+/// - Success/error messages
+/// - Progress indicators
+/// - Analysis, validation, and agent execution results
+/// - Orchestration results, escalations, and conflicts
+/// - Performance reports, metrics, and traces
+/// - JSON output and tables
+/// 
+/// Used by CLI commands to provide consistent, formatted output.
 /// </summary>
 public interface IConsoleRenderer
 {
@@ -37,6 +47,12 @@ public interface IConsoleRenderer
 
 /// <summary>
 /// Console renderer implementation.
+/// 
+/// Provides concrete implementation of IConsoleRenderer for rendering CLI output.
+/// Supports both human-readable and JSON output formats.
+/// Handles formatting of complex objects (results, metrics, traces) for console display.
+/// 
+/// Used throughout the CLI layer for all console output operations.
 /// </summary>
 public class ConsoleRenderer : IConsoleRenderer
 {

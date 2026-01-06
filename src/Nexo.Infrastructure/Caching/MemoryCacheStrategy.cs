@@ -6,6 +6,15 @@ namespace Nexo.Infrastructure.Caching;
 
 /// <summary>
 /// In-memory cache implementation using ConcurrentDictionary.
+/// 
+/// Responsibilities:
+/// - Stores cached values in memory with expiration support
+/// - Thread-safe implementation using concurrent collections
+/// - Automatic expiration of expired entries
+/// - Cache management (get, set, remove, clear)
+/// 
+/// Implements ICacheStrategy for use with cached service adapters.
+/// Used by CachedAnalysisServiceAdapter and CachedValidationServiceAdapter.
 /// </summary>
 public class MemoryCacheStrategy : ICacheStrategy
 {

@@ -7,6 +7,15 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for managing escalations and conflicts.
+/// 
+/// Provides the `nexo escalate` command with subcommands:
+/// - list: List all pending escalations
+/// - show: Show details for a specific escalation
+/// - resolve: Resolve an escalation with optional resolution description
+/// - dismiss: Dismiss an escalation with optional reason
+/// - list-by-severity: Filter escalations by severity level
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class EscalateCommand
 {

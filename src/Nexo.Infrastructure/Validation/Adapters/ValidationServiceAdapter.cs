@@ -12,7 +12,14 @@ namespace Nexo.Infrastructure.Validation.Adapters;
 
 /// <summary>
 /// Infrastructure adapter for running validation tests.
-/// Implements IValidationService port from Application layer.
+/// 
+/// Implements IValidationService port from Application layer. Provides:
+/// - Test project discovery
+/// - Test execution via dotnet test
+/// - Test result parsing using ITestResultParser
+/// - Progress tracking for test execution
+/// 
+/// Part of the Infrastructure layer, implementing the hexagonal architecture pattern.
 /// </summary>
 public class ValidationServiceAdapter : IValidationService
 {

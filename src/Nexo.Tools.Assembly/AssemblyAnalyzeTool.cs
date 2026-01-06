@@ -4,6 +4,16 @@ using System.Text.Json;
 
 namespace Nexo.Tools.Assembly;
 
+/// <summary>
+/// Tool for analyzing .NET assemblies.
+/// 
+/// Provides:
+/// - Assembly metadata extraction (name, version, culture, flags)
+/// - Basic assembly information retrieval
+/// 
+/// Implements ITool for use with agent toolboxes.
+/// Used by agents to analyze .NET assemblies.
+/// </summary>
 public sealed class AssemblyAnalyzeTool : ITool
 {
     public string Id => "assembly.analyze";

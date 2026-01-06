@@ -5,7 +5,17 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// HealthStatus as a value object
+    /// Represents health status as a value object.
+    /// 
+    /// Provides predefined health status values:
+    /// - Critical: Critical health status
+    /// - Poor: Poor health status
+    /// - Fair: Fair health status
+    /// - Good: Good health status
+    /// - Excellent: Excellent health status
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class HealthStatus : IEquatable<HealthStatus>
     {

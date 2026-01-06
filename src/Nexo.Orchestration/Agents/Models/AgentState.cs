@@ -2,6 +2,19 @@ namespace Nexo.Orchestration.Agents.Models;
 
 /// <summary>
 /// Represents the lifecycle state of an agent.
+/// 
+/// Defines the possible states an agent can be in during its lifecycle:
+/// - Created: Agent created but not started
+/// - Initializing: Agent is initializing
+/// - WaitingForDependencies: Agent waiting for dependencies
+/// - Ready: Agent ready to execute
+/// - Executing: Agent currently executing
+/// - Completed: Agent completed successfully
+/// - Failed: Agent execution failed
+/// - ShuttingDown: Agent is shutting down
+/// - Terminated: Agent has been terminated
+/// 
+/// Used by BaseAgent and AgentContainer to track agent lifecycle.
 /// </summary>
 public enum AgentState
 {

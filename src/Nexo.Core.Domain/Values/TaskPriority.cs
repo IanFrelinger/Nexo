@@ -5,7 +5,18 @@ using System.Linq;
 namespace Nexo.Core.Domain.Values
 {
     /// <summary>
-    /// Represents the priority level of a task as a value object
+    /// Represents the priority level of a task as a value object.
+    /// 
+    /// Provides predefined priority levels:
+    /// - Low: Low priority task
+    /// - Medium: Medium priority task
+    /// - High: High priority task
+    /// - Critical: Critical priority task
+    /// - Urgent: Urgent priority task
+    /// 
+    /// Implements IEquatable for value-based equality comparison.
+    /// Supports comparison operators (>, <, >=, <=) for priority ordering.
+    /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class TaskPriority : IEquatable<TaskPriority>
     {

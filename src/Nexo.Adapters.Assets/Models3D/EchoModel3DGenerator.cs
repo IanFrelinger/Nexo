@@ -4,6 +4,15 @@ namespace Nexo.Adapters.Assets.Models3D;
 
 /// <summary>
 /// Echo/placeholder 3D model generator for testing (doesn't actually generate models).
+/// 
+/// Provides:
+/// - Placeholder 3D model generation for testing
+/// - Mock implementation of IModel3DGenerator
+/// - Support for text-to-3D and image-to-3D
+/// - Polygon count estimation based on quality
+/// 
+/// Used for testing and development when real 3D model generation is not needed.
+/// Implements IModel3DGenerator for use with Model3DAssetAgent.
 /// </summary>
 public sealed class EchoModel3DGenerator : IModel3DGenerator
 {

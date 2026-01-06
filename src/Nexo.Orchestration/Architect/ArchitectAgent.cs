@@ -9,6 +9,18 @@ namespace Nexo.Orchestration.Architect;
 
 /// <summary>
 /// Architect Agent that decomposes requests into validated agent specifications.
+/// 
+/// Implementation of IArchitectAgent that:
+/// - Uses LLM (IModel) to decompose requests
+/// - Retrieves similar examples for context
+/// - Recognizes domains from request text
+/// - Validates decomposition results
+/// - Self-corrects invalid decompositions (up to MaxCorrectionAttempts)
+/// - Builds structured prompts for LLM
+/// - Parses JSON responses into AgentSpawnSpec objects
+/// 
+/// The first agent in the orchestration flow, responsible for breaking down
+/// user requests into executable agent specifications.
 /// </summary>
 public sealed class ArchitectAgent : IArchitectAgent
 {
@@ -21,6 +33,16 @@ public sealed class ArchitectAgent : IArchitectAgent
     private readonly ILogger<ArchitectAgent> _logger;
     private const int MaxCorrectionAttempts = 3;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ArchitectAgent"/> class.
+    /// </summary>
+    /// <param name="model">The LLM model for decomposition.</param>
+    /// <param name="retriever">The retriever for similar decomposition examples.</param>
+    /// <param name="domainRecognizer">The domain recognizer for extracting domain hints.</param>
+    /// <param name="validators">The validators for validating decomposition results.</param>
+    /// <param name="promptBuilder">The prompt builder for constructing LLM prompts.</param>
+    /// <param name="parser">The JSON parser for parsing decomposition results.</param>
+    /// <param name="logger">The logger instance.</param>
     public ArchitectAgent(
         IModel model,
         DecompositionRetriever retriever,
@@ -39,11 +61,38 @@ public sealed class ArchitectAgent : IArchitectAgent
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Decomposes a request into agent specifications.
+    /// 
+    /// Convenience overload that creates context automatically by retrieving similar examples
+    /// and recognizing domains from the request.
+    /// </summary>
+    /// <param name="request">The user request to decompose.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A <see cref="DecompositionResult"/> containing agent specifications.</returns>
     public async Task<DecompositionResult> DecomposeAsync(string request, CancellationToken cancellationToken = default)
     {
         return await DecomposeAsync(request, null, cancellationToken);
     }
 
+    /// <summary>
+    /// Decomposes a request into agent specifications with optional context.
+    /// 
+    /// Process:
+    /// 1. Retrieves similar examples and recognizes domains (if context not provided)
+    /// 2. Builds prompts for LLM
+    /// 3. Calls LLM to generate decomposition
+    /// 4. Parses JSON response
+    /// 5. Validates decomposition using all validators
+    /// 6. Self-corrects if validation fails (up to MaxCorrectionAttempts)
+    /// 
+    /// Returns the decomposition result, which may contain validation errors if self-correction fails.
+    /// </summary>
+    /// <param name="request">The user request to decompose.</param>
+    /// <param name="context">Optional decomposition context with similar examples and domain hints.</param>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
+    /// <returns>A <see cref="DecompositionResult"/> containing agent specifications and validation errors.</returns>
+    /// <exception cref="ArgumentException">Thrown if request is null or empty.</exception>
     public async Task<DecompositionResult> DecomposeAsync(
         string request,
         DecompositionContext? context,

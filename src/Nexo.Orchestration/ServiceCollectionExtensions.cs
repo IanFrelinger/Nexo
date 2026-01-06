@@ -17,6 +17,16 @@ namespace Nexo.Orchestration;
 
 /// <summary>
 /// Extension methods for registering orchestration services.
+/// 
+/// Provides dependency injection registration for all orchestration components:
+/// - Architect services (decomposition, validation)
+/// - Agent services (factory, lifecycle, health)
+/// - Communication services (message bus, channels)
+/// - Coordination services (dependency resolution, conflict detection, etc.)
+/// - Negotiation services (schema adapter, Pareto optimizer, etc.)
+/// - Metrics and orchestrator
+/// 
+/// Call AddNexoOrchestration() to register all orchestration services.
 /// </summary>
 public static class ServiceCollectionExtensions
 {

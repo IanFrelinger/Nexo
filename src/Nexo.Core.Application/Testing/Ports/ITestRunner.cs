@@ -5,6 +5,14 @@ namespace Nexo.Core.Application.Testing.Ports;
 
 /// <summary>
 /// Port for running tests.
+/// 
+/// Defines the contract for test execution:
+/// - Run all tests or tests matching a filter
+/// - Report progress through IProgress&lt;ProgressReport&gt;
+/// - Returns TestExecutionResult with aggregated results
+/// 
+/// Implementations (TestRunnerAdapter) provide test discovery and execution.
+/// Used by CLI commands to run tests.
 /// </summary>
 public interface ITestRunner
 {

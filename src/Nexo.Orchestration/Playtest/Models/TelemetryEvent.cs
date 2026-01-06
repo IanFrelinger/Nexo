@@ -2,6 +2,13 @@ namespace Nexo.Orchestration.Playtest.Models;
 
 /// <summary>
 /// A telemetry event from game execution.
+/// 
+/// Represents a single event captured during playtesting:
+/// - Event identification and type
+/// - Session and player information
+/// - Timestamp and event data
+/// 
+/// Used by playtest agents to record gameplay events for analysis.
 /// </summary>
 public sealed record TelemetryEvent
 {

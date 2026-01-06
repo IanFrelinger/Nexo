@@ -9,6 +9,15 @@ namespace Nexo.Infrastructure.Testing;
 
 /// <summary>
 /// Infrastructure adapter for test discovery and execution.
+/// 
+/// Implements ITestRunner port from Application layer. Provides:
+/// - Test discovery via reflection (scans assemblies for TestBase subclasses)
+/// - Test filtering by name or category
+/// - Test execution with setup/cleanup lifecycle
+/// - Progress tracking for test execution
+/// - Result aggregation and reporting
+/// 
+/// Part of the Infrastructure layer, implementing the hexagonal architecture pattern.
 /// </summary>
 public class TestRunnerAdapter : ITestRunner
 {

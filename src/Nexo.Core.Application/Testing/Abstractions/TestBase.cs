@@ -4,6 +4,14 @@ namespace Nexo.Core.Application.Testing.Abstractions;
 
 /// <summary>
 /// Base class for all tests in the Nexo framework.
+/// 
+/// Provides:
+/// - Test name and category (derived from type)
+/// - Abstract ExecuteAsync method for test logic
+/// - Virtual SetupAsync and CleanupAsync hooks
+/// 
+/// Used by ITestRunner to discover and execute tests.
+/// All test classes should inherit from this base class.
 /// </summary>
 public abstract class TestBase
 {

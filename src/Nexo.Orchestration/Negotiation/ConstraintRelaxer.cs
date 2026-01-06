@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Negotiation;
 
 /// <summary>
 /// Resolves constraint conflicts by finding minimal relaxations.
+/// 
+/// Responsibilities:
+/// - Identifies hard constraint conflicts (unresolvable)
+/// - Finds minimal soft constraint relaxations
+/// - Evaluates constraint flexibility scores
+/// - Generates relaxation plans
+/// 
+/// Used by NegotiationProtocol to resolve constraint conflicts between agents.
 /// </summary>
 public sealed class ConstraintRelaxer
 {

@@ -4,6 +4,14 @@ namespace Nexo.Adapters.Assets.Images;
 
 /// <summary>
 /// Echo/placeholder image generator for testing (doesn't actually generate images).
+/// 
+/// Provides:
+/// - Placeholder image generation for testing
+/// - Mock implementation of IImageGenerator
+/// - Support for image variations
+/// 
+/// Used for testing and development when real image generation is not needed.
+/// Implements IImageGenerator for use with ImageAssetAgent.
 /// </summary>
 public sealed class EchoImageGenerator : IImageGenerator
 {

@@ -2,6 +2,16 @@ namespace Nexo.Core.Application.Agent.Models;
 
 /// <summary>
 /// Result of an agent execution.
+/// 
+/// Contains:
+/// - Agent name and execution status
+/// - Success/failure indication
+/// - Result message
+/// - Execution timestamp and duration
+/// - Optional output data
+/// 
+/// Produced by IAgentExecutor after executing an agent.
+/// Used by CLI commands to display agent execution results.
 /// </summary>
 public record AgentExecutionResult
 {

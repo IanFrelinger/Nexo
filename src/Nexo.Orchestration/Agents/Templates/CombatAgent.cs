@@ -6,6 +6,14 @@ namespace Nexo.Orchestration.Agents;
 
 /// <summary>
 /// Specialized agent for Combat domain tasks.
+/// 
+/// Handles combat-related design and implementation:
+/// - Weapon systems
+/// - Damage mechanics
+/// - Combat balance
+/// - Actionable combat system designs
+/// 
+/// Inherits from BaseDomainAgent for LLM integration and domain-specific prompts.
 /// </summary>
 public sealed class CombatAgent : BaseDomainAgent
 {

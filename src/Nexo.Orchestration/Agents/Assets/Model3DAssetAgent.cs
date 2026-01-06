@@ -8,7 +8,18 @@ using System.Text.RegularExpressions;
 namespace Nexo.Orchestration.Agents.Assets;
 
 /// <summary>
-/// Agent that generates 3D model assets.
+/// Agent that generates 3D model assets for games.
+/// 
+/// Specialized agent for 3D model generation that:
+/// - Uses IModel3DGenerator to create game 3D assets
+/// - Supports multiple formats (GLB, GLTF, FBX, OBJ, USD)
+/// - Handles prompt generation and refinement for 3D models
+/// - Validates model constraints (format, polygon count, textures)
+/// - Supports image-to-3D generation from reference images
+/// - Manages asset storage and retrieval
+/// - Implements retry logic with prompt refinement
+/// 
+/// Inherits from BaseAssetAgent for common asset generation functionality.
 /// </summary>
 public sealed class Model3DAssetAgent : BaseAssetAgent
 {

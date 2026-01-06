@@ -5,8 +5,21 @@ using UnityEngine;
 
 namespace Nexo.Core.UI.Unity.Frameworks.Unity;
 
+/// <summary>
+/// Renders an <see cref="InputPrimitive"/> into a Unity IMGUI input field.
+/// 
+/// This renderer translates framework-agnostic input primitives into
+/// Unity's immediate mode GUI system, supporting various input types
+/// (text, password, email, etc.) with validation states and helper text.
+/// </summary>
 public static class UnityInputRenderer
 {
+    /// <summary>
+    /// Renders an input primitive as a Unity IMGUI input field.
+    /// </summary>
+    /// <param name="primitive">The input primitive to render.</param>
+    /// <param name="options">Optional Unity layout options.</param>
+    /// <returns>The current value of the input field.</returns>
     public static string Render(InputPrimitive primitive, params GUILayoutOption[] options)
     {
         GUIStyle fieldStyle = GetFieldStyle(primitive);

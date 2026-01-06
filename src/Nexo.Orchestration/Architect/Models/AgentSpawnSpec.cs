@@ -4,6 +4,17 @@ namespace Nexo.Orchestration.Architect.Models;
 
 /// <summary>
 /// Specification for spawning a specialized agent to handle a specific task.
+/// 
+/// Contains:
+/// - Agent identification (ID, domain, goal, description)
+/// - Dependencies on other agents
+/// - Output schema requirements
+/// - Constraints (performance, security, etc.)
+/// - Resource requirements (compute, context, memory)
+/// - Priority level
+/// 
+/// Created by ArchitectAgent during request decomposition.
+/// Used by AgentFactory to instantiate specialized agents.
 /// </summary>
 public sealed record AgentSpawnSpec
 {
@@ -55,6 +66,13 @@ public sealed record AgentSpawnSpec
 
 /// <summary>
 /// Represents a constraint that an agent must satisfy.
+/// 
+/// Contains:
+/// - Constraint type (Performance, Security, Compatibility, etc.)
+/// - Human-readable description
+/// - Whether the constraint is mandatory or optional
+/// 
+/// Used to specify requirements that agents must meet during execution.
 /// </summary>
 public sealed record AgentConstraint
 {
@@ -76,6 +94,13 @@ public sealed record AgentConstraint
 
 /// <summary>
 /// Resource requirements for an agent.
+/// 
+/// Contains:
+/// - Estimated compute time in seconds
+/// - Required context window size in tokens
+/// - Memory requirements in MB
+/// 
+/// Used by ResourceAllocator to allocate resources to agents.
 /// </summary>
 public sealed record ResourceRequirements
 {

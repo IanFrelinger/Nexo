@@ -9,6 +9,15 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for running agent actions.
+/// 
+/// Provides the `nexo agent` command that:
+/// - Executes individual agents by name
+/// - Supports optional input files
+/// - Displays results in human-readable or JSON format
+/// - Shows progress updates (if verbose)
+/// - Handles errors and provides appropriate exit codes
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class AgentCommand
 {

@@ -8,6 +8,15 @@ namespace Nexo.Adapters.Assets.Images;
 
 /// <summary>
 /// DALL-E image generator implementation using OpenAI API.
+/// 
+/// Provides:
+/// - Integration with OpenAI DALL-E API
+/// - Retry logic for transient errors
+/// - Image download and local storage
+/// - Support for multiple image sizes and styles
+/// 
+/// Implements IImageGenerator for use with ImageAssetAgent.
+/// Requires OpenAI API key configuration.
 /// </summary>
 public sealed class DalleImageGenerator : IImageGenerator
 {

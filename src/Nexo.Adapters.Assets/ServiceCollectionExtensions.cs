@@ -8,6 +8,14 @@ namespace Nexo.Adapters.Assets;
 
 /// <summary>
 /// Extension methods for registering asset generation adapters.
+/// 
+/// Provides dependency injection registration for asset generators:
+/// - Image generators (DALL-E, Local, Echo)
+/// - Audio generators (Suno, Bark, ElevenLabs, Local, Echo)
+/// - 3D model generators (Meshy, Tripo, Local, Echo)
+/// 
+/// Call AddAssetGenerators() with configuration options to register generators.
+/// Defaults to Echo (placeholder) generators if not configured.
 /// </summary>
 public static class ServiceCollectionExtensions
 {

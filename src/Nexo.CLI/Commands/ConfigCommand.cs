@@ -9,6 +9,14 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// CLI command for managing configuration.
+/// 
+/// Provides the `nexo config` command that:
+/// - Displays current configuration settings
+/// - Shows analysis, validation, and agent settings
+/// - Outputs in human-readable or JSON format
+/// - Useful for debugging and configuration verification
+/// 
+/// Part of the CLI layer, following the command pattern for user interactions.
 /// </summary>
 public class ConfigCommand
 {

@@ -9,7 +9,15 @@ namespace Nexo.Adapters.Assets.Models3D;
 
 /// <summary>
 /// Local/self-hosted 3D model generation adapter.
-/// Supports custom endpoints and local 3D generation services.
+/// 
+/// Supports:
+/// - Custom HTTP endpoints for local 3D generation
+/// - Text-to-3D and image-to-3D generation
+/// - Multiple formats (GLB, GLTF, FBX, OBJ, USD)
+/// - Texture generation
+/// 
+/// Implements IModel3DGenerator for use with Model3DAssetAgent.
+/// Provides retry logic and error handling for local generation.
 /// </summary>
 public sealed class LocalModel3DGenerator : IModel3DGenerator
 {

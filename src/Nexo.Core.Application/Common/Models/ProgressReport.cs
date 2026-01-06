@@ -2,6 +2,15 @@ namespace Nexo.Core.Application.Common.Models;
 
 /// <summary>
 /// Represents a progress update for long-running operations.
+/// 
+/// Contains:
+/// - Progress percentage (0-100)
+/// - Status message
+/// - Step information (current/total)
+/// - Additional metadata
+/// 
+/// Used by services to report progress to callers.
+/// Supports IProgress&lt;ProgressReport&gt; pattern.
 /// </summary>
 public record ProgressReport
 {

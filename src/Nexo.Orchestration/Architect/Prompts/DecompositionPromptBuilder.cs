@@ -5,12 +5,24 @@ namespace Nexo.Orchestration.Architect.Prompts;
 
 /// <summary>
 /// Builds prompts for the Architect Agent to decompose requests.
+/// 
+/// Responsibilities:
+/// - Builds system prompts for decomposition
+/// - Builds user prompts with request, context, and examples
+/// - Includes domain hints and resource budgets
+/// - Formats prompts for LLM consumption
+/// 
+/// Used by ArchitectAgent to generate prompts for request decomposition.
 /// </summary>
 public sealed class DecompositionPromptBuilder
 {
     /// <summary>
     /// Builds the system prompt for decomposition.
+    /// 
+    /// Creates a comprehensive system prompt that instructs the LLM on how to decompose
+    /// requests into agent specifications, including guidelines and output format.
     /// </summary>
+    /// <returns>The system prompt string.</returns>
     public string BuildSystemPrompt()
     {
         return """
@@ -63,7 +75,18 @@ public sealed class DecompositionPromptBuilder
 
     /// <summary>
     /// Builds the user prompt with request and context.
+    /// 
+    /// Includes:
+    /// - The original request
+    /// - Similar examples (if available)
+    /// - Domain hints (if available)
+    /// - Resource budget constraints (if available)
+    /// 
+    /// Used for initial decomposition attempts.
     /// </summary>
+    /// <param name="request">The user request to decompose.</param>
+    /// <param name="context">Optional decomposition context with examples and hints.</param>
+    /// <returns>The formatted user prompt string.</returns>
     public string BuildUserPrompt(string request, DecompositionContext? context = null)
     {
         var sb = new StringBuilder();
@@ -113,7 +136,19 @@ public sealed class DecompositionPromptBuilder
 
     /// <summary>
     /// Builds a correction prompt when validation fails.
+    /// 
+    /// Creates a prompt that:
+    /// - Explains that the previous decomposition had validation errors
+    /// - Lists all validation errors with details
+    /// - Includes the previous decomposition for reference
+    /// - Asks for a corrected decomposition
+    /// 
+    /// Used in the self-correction loop of ArchitectAgent.
     /// </summary>
+    /// <param name="originalRequest">The original user request.</param>
+    /// <param name="failedResult">The failed decomposition result.</param>
+    /// <param name="errors">The list of validation errors.</param>
+    /// <returns>The formatted correction prompt string.</returns>
     public string BuildCorrectionPrompt(string originalRequest, DecompositionResult failedResult, IReadOnlyList<ValidationError> errors)
     {
         var sb = new StringBuilder();

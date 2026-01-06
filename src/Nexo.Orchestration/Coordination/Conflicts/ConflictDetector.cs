@@ -8,11 +8,24 @@ namespace Nexo.Orchestration.Coordination.Conflicts;
 
 /// <summary>
 /// Detects conflicts between agents using four conflict types.
+/// 
+/// Conflict types detected:
+/// 1. Schema conflicts: Incompatible data schemas between agents
+/// 2. Resource conflicts: Competing for the same resources (files, APIs, etc.)
+/// 3. Constraint conflicts: Conflicting constraints or requirements
+/// 4. Philosophy conflicts: Fundamental design or approach disagreements
+/// 
+/// Performs pairwise analysis of all agents to identify potential conflicts
+/// that may require negotiation or escalation.
 /// </summary>
 public sealed class ConflictDetector
 {
     private readonly ILogger<ConflictDetector> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConflictDetector"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
     public ConflictDetector(ILogger<ConflictDetector> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -20,7 +33,12 @@ public sealed class ConflictDetector
 
     /// <summary>
     /// Detects all conflicts between agents.
+    /// 
+    /// Performs pairwise analysis of all agents checking for all four conflict types.
+    /// Returns a list of all detected conflicts that may require resolution.
     /// </summary>
+    /// <param name="agents">List of agent containers to analyze</param>
+    /// <returns>List of detected conflicts</returns>
     public IReadOnlyList<Conflict> DetectConflicts(IReadOnlyList<AgentContainer> agents)
     {
         var conflicts = new List<Conflict>();
@@ -69,6 +87,14 @@ public sealed class ConflictDetector
         return conflicts;
     }
 
+    /// <summary>
+    /// Detects schema conflicts between two agents.
+    /// 
+    /// Checks if both agents have output schemas and if they are incompatible.
+    /// </summary>
+    /// <param name="agent1">The first agent container.</param>
+    /// <param name="agent2">The second agent container.</param>
+    /// <returns>A <see cref="Conflict"/> if a schema conflict is detected, null otherwise.</returns>
     private Conflict? DetectSchemaConflict(AgentContainer agent1, AgentContainer agent2)
     {
         var spec1 = agent1.Agent.Spec;
@@ -100,7 +126,12 @@ public sealed class ConflictDetector
 
     /// <summary>
     /// Detects resource conflicts by summing requirements across all agents and comparing to budget.
+    /// 
+    /// Checks if total resource requirements (compute, memory, context) exceed the budget.
     /// </summary>
+    /// <param name="agents">The list of agent containers to check.</param>
+    /// <param name="budget">Optional resource budget. If not provided, uses default values.</param>
+    /// <returns>A read-only list of detected resource conflicts.</returns>
     public IReadOnlyList<Conflict> DetectResourceConflicts(
         IReadOnlyList<AgentContainer> agents,
         ResourceBudget? budget = null)
@@ -152,6 +183,14 @@ public sealed class ConflictDetector
         return conflicts;
     }
 
+    /// <summary>
+    /// Detects resource conflicts between two agents.
+    /// 
+    /// Checks if combined resource requirements exceed reasonable thresholds.
+    /// </summary>
+    /// <param name="agent1">The first agent container.</param>
+    /// <param name="agent2">The second agent container.</param>
+    /// <returns>A <see cref="Conflict"/> if a resource conflict is detected, null otherwise.</returns>
     private Conflict? DetectResourceConflict(AgentContainer agent1, AgentContainer agent2)
     {
         var reqs1 = agent1.Agent.Spec.ResourceRequirements;
@@ -200,6 +239,15 @@ public sealed class ConflictDetector
         return null;
     }
 
+    /// <summary>
+    /// Detects constraint conflicts between two agents.
+    /// 
+    /// Checks if constraints from different agents contradict each other
+    /// (e.g., "must be fast" vs "must be slow").
+    /// </summary>
+    /// <param name="agent1">The first agent container.</param>
+    /// <param name="agent2">The second agent container.</param>
+    /// <returns>A <see cref="Conflict"/> if a constraint conflict is detected, null otherwise.</returns>
     private Conflict? DetectConstraintConflict(AgentContainer agent1, AgentContainer agent2)
     {
         var constraints1 = agent1.Agent.Spec.Constraints;
@@ -226,6 +274,15 @@ public sealed class ConflictDetector
         return null;
     }
 
+    /// <summary>
+    /// Detects philosophy conflicts between two agents.
+    /// 
+    /// Uses keyword analysis to detect opposing design philosophies
+    /// (e.g., performance vs quality, simplicity vs complexity).
+    /// </summary>
+    /// <param name="agent1">The first agent container.</param>
+    /// <param name="agent2">The second agent container.</param>
+    /// <returns>A <see cref="Conflict"/> if a philosophy conflict is detected, null otherwise.</returns>
     private Conflict? DetectPhilosophyConflict(AgentContainer agent1, AgentContainer agent2)
     {
         var goal1 = agent1.Agent.Spec.Goal.ToLowerInvariant();
@@ -313,6 +370,13 @@ public sealed class ConflictDetector
         return conflicts;
     }
 
+    /// <summary>
+    /// Generates a key for a JSON schema to group similar schemas.
+    /// 
+    /// Uses the schema type if available, otherwise uses a hash of the schema text.
+    /// </summary>
+    /// <param name="schema">The JSON schema element.</param>
+    /// <returns>A string key representing the schema.</returns>
     private static string GetSchemaKey(JsonElement schema)
     {
         try
@@ -329,6 +393,17 @@ public sealed class ConflictDetector
         }
     }
 
+    /// <summary>
+    /// Determines if two JSON schemas are compatible.
+    /// 
+    /// Checks:
+    /// - Type compatibility (including integer/number compatibility)
+    /// - Required properties compatibility
+    /// - Property structure compatibility
+    /// </summary>
+    /// <param name="schema1">The first schema to compare.</param>
+    /// <param name="schema2">The second schema to compare.</param>
+    /// <returns>True if the schemas are compatible, false otherwise.</returns>
     private static bool AreSchemasCompatible(JsonElement schema1, JsonElement schema2)
     {
         // Enhanced compatibility check - compare structure in detail
@@ -401,6 +476,16 @@ public sealed class ConflictDetector
         }
     }
 
+    /// <summary>
+    /// Determines if two JSON schema types are compatible.
+    /// 
+    /// Compatible pairs:
+    /// - integer and number are compatible
+    /// - Same types are compatible
+    /// </summary>
+    /// <param name="type1">The first type.</param>
+    /// <param name="type2">The second type.</param>
+    /// <returns>True if the types are compatible, false otherwise.</returns>
     private static bool AreTypesCompatible(string? type1, string? type2)
     {
         if (type1 == type2) return true;
@@ -424,6 +509,14 @@ public sealed class ConflictDetector
         return false;
     }
 
+    /// <summary>
+    /// Determines if two constraints are contradictory.
+    /// 
+    /// Checks for explicit opposite keywords (e.g., "fast" vs "slow", "high" vs "low").
+    /// </summary>
+    /// <param name="c1">The first constraint.</param>
+    /// <param name="c2">The second constraint.</param>
+    /// <returns>True if the constraints are contradictory, false otherwise.</returns>
     private static bool AreConstraintsContradictory(AgentConstraint c1, AgentConstraint c2)
     {
         // Check for explicit contradictions
@@ -452,6 +545,18 @@ public sealed class ConflictDetector
         return false;
     }
 
+    /// <summary>
+    /// Detects the design philosophy from an agent's goal using keyword matching.
+    /// 
+    /// Philosophy categories:
+    /// - performance: fast, quick, efficient, optimize
+    /// - quality: thorough, comprehensive, detailed, polish
+    /// - simplicity: simple, minimal, clean, straightforward
+    /// - complexity: complex, advanced, sophisticated, feature-rich
+    /// </summary>
+    /// <param name="goal">The agent's goal text to analyze.</param>
+    /// <param name="philosophyKeywords">Dictionary mapping philosophy names to keyword arrays.</param>
+    /// <returns>The detected philosophy name, or "neutral" if none detected.</returns>
     private static string DetectPhilosophy(string goal, Dictionary<string, string[]> philosophyKeywords)
     {
         foreach (var (philosophy, keywords) in philosophyKeywords)

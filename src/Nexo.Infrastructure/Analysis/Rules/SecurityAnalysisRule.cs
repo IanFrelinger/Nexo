@@ -9,6 +9,14 @@ namespace Nexo.Infrastructure.Analysis.Rules;
 
 /// <summary>
 /// Analysis rule for security scanning.
+/// 
+/// Responsibilities:
+/// - Scans assemblies for security vulnerabilities using AssemblySecurityScanTool
+/// - Reports security findings as violations
+/// - Assigns high severity to security issues
+/// 
+/// Implements IAnalysisRule for use with AnalysisRuleEngine.
+/// Used by AnalysisServiceAdapter to detect security issues in assemblies.
 /// </summary>
 public class SecurityAnalysisRule : IAnalysisRule
 {

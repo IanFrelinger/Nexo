@@ -5,6 +5,14 @@ namespace Nexo.Orchestration.Metrics;
 
 /// <summary>
 /// Performance profiler for tracking execution time and resource usage.
+/// 
+/// Implements IDisposable pattern for automatic timing:
+/// - Starts stopwatch on creation
+/// - Records operation metrics on disposal
+/// - Supports metadata attachment
+/// 
+/// Usage: `using var profiler = new PerformanceProfiler("OperationName", metrics);`
+/// Automatically records duration when disposed.
 /// </summary>
 public sealed class PerformanceProfiler : IDisposable
 {
@@ -59,6 +67,13 @@ public sealed class PerformanceProfiler : IDisposable
 
 /// <summary>
 /// Resource usage tracker for monitoring memory and CPU usage.
+/// 
+/// Responsibilities:
+/// - Gets current memory usage in MB
+/// - Gets current CPU time
+/// - Tracks process resource consumption
+/// 
+/// Used for monitoring resource usage during orchestration.
 /// </summary>
 public sealed class ResourceUsageTracker
 {

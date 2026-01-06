@@ -8,6 +8,15 @@ namespace Nexo.Adapters.Assets.Audio;
 
 /// <summary>
 /// Bark AI audio generation implementation (supports music, sound effects, and speech).
+/// 
+/// Provides:
+/// - Integration with Bark AI API
+/// - Support for music, sound effects, and speech generation
+/// - Genre and BPM parameters for music
+/// - Audio download and local storage
+/// 
+/// Implements IAudioGenerator for use with AudioAssetAgent.
+/// API key is optional (Bark may have open endpoints).
 /// </summary>
 public sealed class BarkAudioGenerator : IAudioGenerator
 {

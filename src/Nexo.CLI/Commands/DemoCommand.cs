@@ -9,7 +9,14 @@ using Nexo.Orchestration.Agents.Playtest;
 namespace Nexo.CLI.Commands;
 
 /// <summary>
-/// Command handler for demo operations (iterative game creation, feedback synthesis, etc.)
+/// Command handler for demo operations (iterative game creation, feedback synthesis, etc.).
+/// 
+/// Provides CLI commands for:
+/// - Synthesizing feedback from playtest results
+/// - Applying feedback changes to game specifications
+/// - Iterative game development workflows
+/// 
+/// Used for demonstration and testing of the orchestration system.
 /// </summary>
 public class DemoCommand
 {
