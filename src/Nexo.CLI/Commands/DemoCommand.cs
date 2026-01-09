@@ -79,9 +79,34 @@ public class DemoCommand
            jsonOpt,
            verboseOpt);
 
+        // nexo demo --interactive (or nexo demo interactive)
+        var interactiveCmd = new Command("interactive", "Run the Nexo interactive demo showing dual implementations");
+        var interactiveOfflineOpt = new Option<bool>("--offline", "Run in offline mode (no network calls)");
+        interactiveCmd.AddOption(interactiveOfflineOpt);
+        interactiveCmd.SetHandler(async (bool offline, bool json, bool verbose) =>
+        {
+            // Launch the demo application
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = $"run --project src/Nexo.Demo.Visual -- --interactive" + (offline ? " --offline" : ""),
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
+            
+            process.Start();
+            await process.WaitForExitAsync();
+            Environment.Exit(process.ExitCode);
+        }, interactiveOfflineOpt, jsonOpt, verboseOpt);
+
         demoCmd.AddCommand(synthesizeCmd);
         demoCmd.AddCommand(applyCmd);
         demoCmd.AddCommand(assetsCmd);
+        demoCmd.AddCommand(interactiveCmd);
 
         return demoCmd;
     }

@@ -2,248 +2,324 @@
 
 ## Overview
 
-Nexo follows a clean, agent-first architecture with strict layering rules and comprehensive validation. This document outlines the architectural patterns, design principles, and enforcement mechanisms.
+Nexo follows a hexagonal (ports & adapters) architecture with clean separation between domain logic, application services, and infrastructure concerns.
 
-## Architectural Principles
+---
 
-### 1. Agent-First Design
-- **AI agents are first-class citizens** in the system
-- **Cross-platform support** for Windows, macOS, Linux
-- **Agent orchestration** for complex workflows
-- **Policy enforcement** for security and compliance
+## Core Concepts
 
-### 2. Clean Architecture
-- **Hexagonal architecture** with clear layer separation
-- **Dependency inversion** with interfaces and abstractions
-- **Single responsibility** for each component
-- **Composition over inheritance**
+### The Three-Layer Composition Model
 
-### 3. Type-Safe Design
-- **Value objects** instead of enums for domain concepts
-- **Generic interfaces** for type safety
-- **Immutable data structures** where possible
-- **Strong typing** throughout the system
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         COMPOSITION HIERARCHY                               │
+│                                                                             │
+│   AGENT          →  Persona with memory, constraints, platform bindings     │
+│   (uses behaviors)                                                          │
+│                                                                             │
+│   BEHAVIOR       →  Composed workflow solving a use case                    │
+│   (uses bricks)     Steps with input/output mapping, failure policies       │
+│                                                                             │
+│   BRICK          →  Atomic unit with dual implementation                    │
+│                     ⚙️ Deterministic | 🤖 Agentic                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-## Layer Architecture
+### Processing Brick
 
-### Presentation Layer
-- **Nexo.CLI**: Packable dotnet tool with subcommands and JSON output
-- **Nexo.Demo.DevCLI**: Demo application
-- **Web UI**: Future web interface
+The fundamental building block. Every brick encapsulates:
 
-### Application Layer
-- **Commands**: Business operations and use cases
-- **Orchestrators**: Complex workflow coordination
-- **Services**: Application services and coordination
-
-### Domain Layer
-- **Agents**: AI agent implementations
-- **Value Objects**: Domain concepts and types
-- **Entities**: Core business entities
-
-### Infrastructure Layer
-- **Tools**: External tool integrations
-- **Policies**: Security and workflow policies
-- **Runtime**: Agent execution environment
-
-## Core Components
-
-### Abstractions (`Nexo.Abstractions`)
-Core interfaces and contracts that define the system:
+1. **Domain Knowledge**: Standards, rules, reference data, learned patterns
+2. **Interface**: Typed inputs and outputs
+3. **Dual Implementations**: Deterministic and/or Agentic
+4. **Selector Logic**: Runtime decision for which implementation to use
 
 ```csharp
-public interface IAgent
+public abstract class Brick
 {
-    string Name { get; }
-    Task<AgentActions> ThinkAsync(AgentObservation obs, IToolbox tools, IAgentMemory mem, CancellationToken ct);
-}
-
-public interface ITool
-{
-    string Id { get; }
-    ToolSchema Schema { get; }
-    Task<ToolResult> InvokeAsync(ToolCall toolCall, WorldSnapshot s, CancellationToken ct);
-}
-
-public interface IPolicy
-{
-    bool Approve(ToolCall toolCall, WorldSnapshot s, out string reason);
+    public string Id { get; init; }
+    public string Name { get; init; }
+    public DomainKnowledge DomainKnowledge { get; init; }
+    public BrickInterface Interface { get; init; }
+    public BrickImplementations Implementations { get; init; }
+    public ImplementationSelector? Selector { get; init; }
+    
+    public abstract Task<BrickOutput> ExecuteAsync(
+        BrickInput input,
+        ImplementationType implementation,
+        IExecutionContext context,
+        CancellationToken ct = default);
 }
 ```
 
-### Runtime (`Nexo.Runtime`)
-Agent execution environment and runtime services:
+### Domain Knowledge
 
-- **AgentHost**: Manages agent lifecycle and execution
-- **PolicyEngine**: Enforces policies during tool execution
-- **CapabilityRegistry**: Manages available tools and capabilities
-- **InMemoryAgentMemory**: Provides agent memory persistence
-
-### Development Tools (`Nexo.Tools.Dev`)
-Comprehensive development tooling:
-
-- **DotnetBuildTool**: Execute build commands
-- **DotnetTestTool**: Run test suites
-- **RepoFsEnsureFileTool**: File creation for TDD
-- **RepoGitCommitTool**: Git operations
-
-### Development Policies (`Nexo.Policies.Dev`)
-Security and workflow policies:
-
-- **PathAllowlist**: File path restrictions
-- **MaxWriteSize**: File size limits
-- **BuildMustPassBeforeCommit**: Build validation
-
-### Development Agents (`Nexo.Agents.Dev`)
-AI agents for development workflows:
-
-- **DevDirectorAgent**: Orchestrates development processes
-- **TDD Workflows**: Test-driven development support
-- **Heal/Extend Modes**: Different operational modes
-
-## Architectural Validation
-
-### Layering Rules
-Strict dependency rules enforced by architecture tests:
-
-```
-Nexo.Abstractions → (no dependencies on other Nexo assemblies)
-Nexo.Runtime, Nexo.Tools.*, Nexo.Policies.* → depend only on Abstractions
-Nexo.Core.* (Application/Domain) → compose, but no back-refs to CLI/Runtime/Tools
-Nexo.Demo.* / Nexo.Examples → leaf nodes only
-```
-
-### Single Ownership Rules
-- **One ICommand interface** in `*.Application.Interfaces`
-- **One AgentFactory class** in `*.Application.Agents`
-- **One GenericCommandOrchestrator** (no domain-specific orchestrators)
-
-### Type System Rules
-- **No enums in Domain/Shared** layers
-- **Use value objects** derived from `BaseTypeValue`
-- **Type-safe interfaces** with generics
-
-### Examples Isolation
-- **Nexo.Examples** is non-packable (`<IsPackable>false</IsPackable>`)
-- **No project references** to Examples
-- **Simplified classes** marked as internal
-
-## Quality Gates
-
-### Architecture Tests
-Automated validation of architectural rules:
+What makes bricks valuable and reusable:
 
 ```csharp
-[Fact]
-public void ShouldHaveOnlyOneICommandInterface()
+public class DomainKnowledge
 {
-    // Ensures single ICommand interface
-}
-
-[Fact]
-public void ShouldNotHaveDuplicatePublicTypeNames()
-{
-    // Prevents duplicate type names across assemblies
+    // Industry standards (e.g., "OWASP Top 10 2023", "CVSS 3.1")
+    public IReadOnlyList<string> Standards { get; init; }
+    
+    // Codified detection patterns
+    public IReadOnlyList<DomainRule> Rules { get; init; }
+    
+    // Reference data paths (lookup tables, configs)
+    public IReadOnlyDictionary<string, string> ReferenceData { get; init; }
+    
+    // Patterns learned from past usage
+    public IReadOnlyList<LearnedPattern> LearnedPatterns { get; init; }
+    
+    // Usage statistics for learning
+    public long ExecutionCount { get; set; }
 }
 ```
 
-### Public API Protection
-- **Microsoft.CodeAnalysis.PublicApiAnalyzers** on `Nexo.Abstractions`
-- **PublicAPI.Shipped.txt** tracks current API surface
-- **PublicAPI.Unshipped.txt** tracks API changes
+### Implementation Selector
 
-### Commit Hygiene
-- **Conventional commits** format enforcement
-- **Commitlint** validation in CI
-- **Automated checks** for commit message format
-
-## Design Patterns
-
-### Command Pattern
-All operations are implemented as commands:
+Runtime logic for choosing between implementations:
 
 ```csharp
-public interface ICommand<TInput, TOutput>
+public class ImplementationSelector
 {
-    Task<OperationResult<TOutput>> ExecuteAsync(TInput input, CancellationToken cancellationToken);
+    // Conditions that prefer deterministic (e.g., "environment.airGapped")
+    public IReadOnlyList<string> PreferDeterministic { get; init; }
+    
+    // Conditions that prefer agentic (e.g., "input.complexity > 0.8")
+    public IReadOnlyList<string> PreferAgentic { get; init; }
+    
+    public ImplementationType Select(IExecutionContext context)
+    {
+        // Air-gapped environments always use deterministic
+        if (context.IsAirGapped)
+            return ImplementationType.Deterministic;
+        
+        // High-complexity inputs benefit from AI
+        if (context.InputComplexity > 0.8 && HasAgentic)
+            return ImplementationType.Agentic;
+        
+        // Default based on availability
+        return HasDeterministic 
+            ? ImplementationType.Deterministic 
+            : ImplementationType.Agentic;
+    }
 }
 ```
 
-### Orchestrator Pattern
-Complex workflows are orchestrated:
+---
+
+## Project Structure
+
+```
+Nexo/
+├── src/
+│   ├── Nexo.Abstractions/           # Core interfaces and contracts
+│   ├── Nexo.Core.Domain/            # Domain layer (bricks, behaviors, agents)
+│   ├── Nexo.Core.Application/       # Application layer (commands, orchestrators)
+│   ├── Nexo.Runtime/                # Execution engine
+│   │
+│   ├── Nexo.Orchestration/          # Multi-agent coordination
+│   │   ├── Architect/               # Request decomposition
+│   │   ├── Coordination/            # Dependency resolution, conflicts
+│   │   ├── Communication/           # Inter-agent messaging
+│   │   ├── Negotiation/             # Autonomous conflict resolution
+│   │   ├── Resilience/              # Circuit breakers, retry policies
+│   │   └── Metrics/                 # Performance monitoring
+│   │
+│   ├── Nexo.Adapters.*/             # Infrastructure adapters
+│   │   ├── Nexo.Adapters.OpenAI/
+│   │   ├── Nexo.Adapters.Azure/
+│   │   ├── Nexo.Adapters.Ollama/
+│   │   └── Nexo.Adapters.Assets/
+│   │
+│   ├── Nexo.Tools.*/                # Development tools
+│   ├── Nexo.Policies.*/             # Policy enforcement
+│   │
+│   ├── Nexo.Core.UI/                # Framework-agnostic UI primitives
+│   ├── Nexo.Core.UI.Avalonia/       # Avalonia renderer
+│   ├── Nexo.Core.UI.Unity/          # Unity Editor renderer
+│   │
+│   ├── Nexo.CLI/                    # Command-line interface
+│   ├── Nexo.Demo.Visual/            # Interactive demo application
+│   │
+│   └── Nexo.Tests.*/                # Test projects
+│
+├── docs/                            # Documentation
+├── scripts/                         # Build and deployment scripts
+└── tools/                           # Development utilities
+```
+
+---
+
+## Layering Rules
+
+### Dependency Direction
+
+```
+Presentation (CLI, Web, Unity)
+      │
+      ▼
+Application (Commands, Orchestrators)
+      │
+      ▼
+Domain (Bricks, Behaviors, Agents)
+      │
+      ▼
+Abstractions (Interfaces, Contracts)
+      ▲
+      │
+Infrastructure (Adapters, Tools, Policies)
+```
+
+### Enforced Constraints
+
+1. **Domain has no infrastructure dependencies**
+2. **Adapters implement abstractions only**
+3. **Application orchestrates domain and adapters**
+4. **Presentation consumes application services**
+
+---
+
+## Resilience Patterns
+
+### Circuit Breaker
+
+Prevents cascading failures when external services fail:
 
 ```csharp
-public class GenericCommandOrchestrator : IOrchestrator
+public class CircuitBreaker
 {
-    // Coordinates multiple commands and policies
+    public CircuitState State { get; private set; }
+    public int FailureThreshold { get; init; } = 5;
+    public TimeSpan RecoveryTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    
+    public async Task<T> ExecuteAsync<T>(Func<Task<T>> action)
+    {
+        if (State == CircuitState.Open)
+            throw new CircuitOpenException();
+        
+        try
+        {
+            var result = await action();
+            OnSuccess();
+            return result;
+        }
+        catch
+        {
+            OnFailure();
+            throw;
+        }
+    }
 }
 ```
 
-### Factory Pattern
-Object creation is centralized:
+### Retry Policies
+
+Multiple strategies for handling transient failures:
+
+- **Fixed Delay**: Constant wait between retries
+- **Linear Backoff**: Linearly increasing delays
+- **Exponential Backoff**: Exponentially increasing delays
+- **Jittered Backoff**: Exponential with random jitter
+
+---
+
+## Provider Abstraction
+
+### Supported Providers
+
+| Provider | Type | Air-Gap Compatible |
+|----------|------|-------------------|
+| OpenAI | Cloud | ❌ |
+| Azure OpenAI | Cloud | ❌ |
+| Anthropic | Cloud | ❌ |
+| Ollama | Local | ✅ |
+| LocalAI | Local | ✅ |
+| LM Studio | Local | ✅ |
+
+### Provider Factory
 
 ```csharp
-public class AgentFactory
+public interface IProviderFactory
 {
-    public IAgent CreateAgent(AgentType type, AgentConfiguration config);
+    ILLMProvider Create(string providerName);
+    ILLMProvider CreateForEnvironment(IExecutionContext context);
 }
+
+// Automatic provider selection based on environment
+var provider = factory.CreateForEnvironment(context);
+// Returns Ollama if air-gapped, preferred cloud provider otherwise
 ```
 
-### Policy Pattern
-Cross-cutting concerns are handled by policies:
+---
+
+## Event System
+
+### Execution Events
+
+All brick and behavior executions emit events for observability:
 
 ```csharp
-public interface IPolicy
-{
-    bool Approve(ToolCall toolCall, WorldSnapshot snapshot, out string reason);
-}
+public abstract record ExecutionEvent(string CorrelationId, DateTimeOffset Timestamp);
+
+public record BrickStartedEvent(
+    string CorrelationId,
+    string BrickId,
+    ImplementationType Implementation
+) : ExecutionEvent;
+
+public record BrickCompletedEvent(
+    string CorrelationId,
+    string BrickId,
+    TimeSpan Duration,
+    ExecutionMetrics Metrics
+) : ExecutionEvent;
+
+public record ProviderSwitchedEvent(
+    string CorrelationId,
+    string FromProvider,
+    string ToProvider,
+    string Reason
+) : ExecutionEvent;
 ```
 
-## Best Practices
+---
 
-### Code Organization
-- **Maximum 200 lines per class**
-- **Single responsibility principle**
-- **Clear naming conventions**
-- **Comprehensive documentation**
-
-### Testing Strategy
-- **Unit tests** for individual components
-- **Integration tests** for cross-component functionality
-- **Architecture tests** (18 comprehensive tests) for rule validation
-- **Contract tests** for behavioral guarantees (idempotency, timeouts, policies)
-- **End-to-end tests** for complete workflows
+## Testing Strategy
 
 ### Test Categories
-- **Architecture**: Layering rules, single ownership, type-value system
-- **Contract**: Idempotency, timeout enforcement, policy compliance
-- **Integration**: Cross-component testing with real dependencies
-- **E2E**: Complete workflow testing from CLI to agents
 
-### Error Handling
-- **OperationResult<T>** for consistent error handling
-- **Structured logging** throughout the system
-- **Graceful degradation** when possible
+| Category | Purpose | Count |
+|----------|---------|-------|
+| Unit | Individual component behavior | 94+ |
+| Integration | Cross-component interaction | 20+ |
+| Architecture | Layering and dependency rules | 18 |
+| Contract | Behavioral guarantees | 15+ |
+| Concurrency | Thread-safety validation | 10+ |
 
-### Performance
-- **Async/await** for I/O operations
-- **Cancellation token** support
-- **Memory-efficient** data structures
-- **Lazy loading** where appropriate
+### Architecture Tests
 
-## Future Considerations
+Enforced via ArchUnitNET:
 
-### Scalability
-- **Microservices architecture** support
-- **Distributed agent execution**
-- **Cloud-native deployment**
+```csharp
+[Fact]
+public void Domain_Should_Not_Depend_On_Infrastructure()
+{
+    var rule = Types()
+        .That().ResideInNamespace("Nexo.Core.Domain")
+        .Should().NotDependOnAny(
+            Types().That().ResideInNamespace("Nexo.Adapters.*"));
+    
+    rule.Check(Architecture);
+}
+```
 
-### Extensibility
-- **Plugin system** for custom tools
-- **Custom policy** implementations
-- **Agent capability** extensions
+---
 
-### Monitoring
-- **Health checks** for all components
-- **Metrics collection** and reporting
-- **Distributed tracing** support
+## Next Steps
+
+- [Quick Start Guide](QUICK_START.md) - Get running in 5 minutes
+- [Defense Deployment](DEFENSE_DEPLOYMENT.md) - Air-gap and compliance
+- [API Reference](API_REFERENCE.md) - Complete API documentation
