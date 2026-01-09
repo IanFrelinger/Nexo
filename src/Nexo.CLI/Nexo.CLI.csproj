@@ -47,7 +47,6 @@
     <ProjectReference Include="../Nexo.Core/Nexo.Core.csproj" />
     <ProjectReference Include="../Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="../Nexo.Orchestration/Nexo.Orchestration.csproj" />
-    <ProjectReference Include="../Nexo.Demo.CLI/Nexo.Demo.CLI.csproj" />
     <ProjectReference Include="../Nexo.Agents.Dev/Nexo.Agents.Dev.csproj" />
     <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
     <ProjectReference Include="../Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />

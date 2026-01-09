@@ -13,8 +13,6 @@ using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
 using Nexo.Orchestration;
 using Nexo.Adapters.Models;
-// using Nexo.Demo.CLI.Agents; // Removed as part of Director Studio cleanup
-// using Nexo.Agents.Dev; // Removed as part of Director Studio cleanup
 
 namespace Nexo.CLI;
 
@@ -436,6 +434,5 @@ static class Program
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentExecutor, Nexo.Infrastructure.Agent.Adapters.AgentExecutorAdapter>();
 
         // Register available agents
-        // Note: Director agents removed as part of Director Studio cleanup
     }
 }

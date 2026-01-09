@@ -577,7 +577,7 @@ sealed class UnityRunner : ITestPlatformRunner
         var unityProject = FindUnityProject();
         if (unityProject == null)
         {
-            return TestRunResult.Failure("unity", "Unity project not found. Unity projects were removed as part of Director Studio cleanup.");
+            return TestRunResult.Failure("unity", "Unity project not found.");
         }
 
         var resultsFile = Path.Combine(_context.ResultsDir, "unity-results.json");
@@ -714,8 +714,7 @@ sealed class UnityRunner : ITestPlatformRunner
 
     private string? FindUnityProject()
     {
-        // Unity projects removed as part of Director Studio cleanup
-        // If Unity testing is needed, add Unity project paths here
+        // Unity project support - add Unity project paths here if needed
         var candidates = Array.Empty<string>();
 
         foreach (var candidate in candidates)
