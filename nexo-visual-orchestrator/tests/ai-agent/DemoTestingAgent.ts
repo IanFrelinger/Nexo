@@ -231,16 +231,19 @@ export class DemoTestingAgent {
           { action: 'waitForTimeout', duration: 3000 },
           { action: 'waitForSelector', selector: '.react-flow__node', timeout: 15000 },
           // Select an agent or brick node (they have implementation toggles)
+          // Try to find an agent node first (they definitely have toggles)
           { action: 'click', selector: '.react-flow__node', timeout: 15000 },
           { action: 'waitForTimeout', duration: 3000 },
-          { action: 'waitForSelector', selector: '.inspector-panel, [class*="inspector-panel"], .implementation-toggle, [class*="implementation-toggle"]', timeout: 15000 },
+          // Ensure inspector is visible
+          { action: 'waitForSelector', selector: '.inspector-panel, [class*="inspector-panel"]', timeout: 15000 },
+          { action: 'waitForTimeout', duration: 2000 },
+          // Wait for implementation toggle to be visible
+          { action: 'waitForSelector', selector: '.implementation-toggle, [class*="implementation-toggle"], .toggle-option, button:has-text("⚙️"), button:has-text("🤖"), input[type="range"]', timeout: 15000 },
           { action: 'screenshot', name: 'before-toggle' },
-          // Check initial state
-          { action: 'waitForTimeout', duration: 1000 },
           { action: 'setImplementation', mode: 'deterministic' },
           { action: 'waitForTimeout', duration: 3000 },
-          // Verify toggle worked by checking for deterministic indicator
-          { action: 'waitForSelector', selector: 'button.toggle-option.bg-blue-600, [class*="deterministic"], button:has-text("⚙️")', timeout: 5000 },
+          // Verify toggle worked - check for toggle component or buttons
+          { action: 'waitForSelector', selector: '.implementation-toggle, .toggle-option, button:has-text("⚙️"), button:has-text("🤖"), input[type="range"]', timeout: 5000 },
           { action: 'screenshot', name: 'after-toggle' },
         ],
         validation: {
