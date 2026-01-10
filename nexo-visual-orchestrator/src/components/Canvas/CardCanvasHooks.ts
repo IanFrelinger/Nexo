@@ -13,10 +13,11 @@
  * These hooks encapsulate the complex interaction logic for the card canvas.
  */
 
-import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import { ROLE_TEMPLATES } from '../../data/roleTemplates';
 import { AGENT_REGISTRY } from '../../utils/agentRegistry';
+import { DEFAULT_MODEL_CONFIGS, DEFAULT_SCALING_CONFIGS } from '../../types/workflow';
 import { nanoid } from 'nanoid';
 import type { RoleDefinition, Relationship } from '../../types/workflow';
 
@@ -94,9 +95,29 @@ export function useCanvasDrop(canvasRef: React.RefObject<HTMLDivElement>) {
     const x = e.clientX - canvasRect.left - 160;
     const y = e.clientY - canvasRect.top - 100;
 
+    // Convert RoleTemplate to RoleDefinition
     const newRole: RoleDefinition = {
-      ...template,
       id: nanoid(),
+      name: template.name,
+      role: template.role,
+      description: template.description,
+      icon: template.icon,
+      color: template.color,
+      owns: [...template.owns],
+      capabilities: [...template.capabilities],
+      autonomyBounds: template.autonomyBounds.map(b => ({ ...b })),
+      escalationRules: template.escalationTriggers.map((trigger) => ({
+        trigger,
+        escalateTo: 'architect',
+        timeout: 300,
+      })),
+      reportsTo: null,
+      canDelegateTo: [],
+      negotiatesWith: [],
+      modelConfig: DEFAULT_MODEL_CONFIGS[template.tier],
+      scalingConfig: DEFAULT_SCALING_CONFIGS[template.tier],
+      autonomyLevel: 'balanced',
+      systemPromptTemplate: template.systemPromptTemplate,
       position: { x: Math.max(0, x), y: Math.max(0, y) },
     };
 
@@ -181,15 +202,20 @@ export function useAgentDefinition() {
       'feedback': 'feedback-synthesizer',
     };
 
-    let agentType = roleToAgentMap[baseRoleId];
+    let agentType: keyof typeof AGENT_REGISTRY | undefined = roleToAgentMap[baseRoleId];
     
     if (!agentType) {
-      agentType = Object.keys(AGENT_REGISTRY).find(
+      const foundKey = Object.keys(AGENT_REGISTRY).find(
         key => AGENT_REGISTRY[key as keyof typeof AGENT_REGISTRY].label.toLowerCase() === role.name.toLowerCase()
       ) as keyof typeof AGENT_REGISTRY | undefined;
+      agentType = foundKey;
     }
     
-    return agentType ? AGENT_REGISTRY[agentType] : undefined;
+    if (!agentType) {
+      return undefined;
+    }
+    
+    return AGENT_REGISTRY[agentType];
   }, []);
 }
 

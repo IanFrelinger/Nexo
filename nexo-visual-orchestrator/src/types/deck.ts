@@ -107,7 +107,7 @@ export function deckToWorkflow(deck: AgentDeck, roleTemplates: Record<string, an
           sourceRoleId: architect.id,
           targetRoleId: role.id,
           type: 'delegates',
-          description: 'Delegation from architect',
+          metadata: { label: 'Delegation from architect' },
         });
       }
     });

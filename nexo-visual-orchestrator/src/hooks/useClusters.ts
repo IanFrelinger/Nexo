@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api, type Cluster, type ClusterDetail, type CreateClusterRequest } from '../api/client';
+import { api, type CreateClusterRequest } from '../api/client';
 
 export function useClusters(tag?: string, scope?: string) {
   return useQuery({

@@ -70,12 +70,12 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
   const availableAgents = useAvailableAgents(agentSource);
   const filteredAgents = useFilteredAgents(availableAgents, searchQuery);
   const deckAgents = useDeckAgents(currentDeck);
-  const totalAgents = deckAgents.reduce((sum, agent) => sum + agent.count, 0);
+  const totalAgents = deckAgents.reduce((sum: number, agent: any) => sum + agent.count, 0);
 
   const handleCreateDeck = () => {
     if (!newDeckName.trim()) return;
     
-    const deck = createDeck(newDeckName.trim(), newDeckDescription.trim() || undefined, newDeckTags);
+    createDeck(newDeckName.trim(), newDeckDescription.trim() || undefined, newDeckTags);
     setNewDeckName('');
     setNewDeckDescription('');
     setNewDeckTags([]);
@@ -84,8 +84,8 @@ export default function DeckBuilder({ onClose, onDeckLoad }: DeckBuilderProps) {
 
   const handleAddAgent = (agentType: AgentType, roleId: string) => {
     if (!currentDeck) {
-      const deck = createDeck('New Deck');
-      addAgentToDeck(deck.id, { agentType, roleId, count: 1 });
+      const newDeck = createDeck('New Deck');
+      addAgentToDeck(newDeck.id, { agentType, roleId, count: 1 });
     } else {
       addAgentToDeck(currentDeck.id, { agentType, roleId, count: 1 });
     }

@@ -11,7 +11,7 @@
  * - Deck Builder: Open the agent deck builder
  */
 
-import { HiFolderOpen, HiSave, HiSparkles, HiCollection } from 'react-icons/hi';
+import { HiFolderOpen, HiSave, HiSparkles, HiCollection, HiCode } from 'react-icons/hi';
 import type { Workflow } from '../../types/workflow';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 
@@ -20,6 +20,8 @@ interface FileOperationsProps {
   onShowGuidedMode?: () => void;
   /** Callback to open deck builder */
   onShowDeckBuilder?: () => void;
+  /** Callback to open workflow composer */
+  onShowWorkflowComposer?: () => void;
 }
 
 /**
@@ -27,7 +29,7 @@ interface FileOperationsProps {
  * @param props - Component props
  * @returns JSX element
  */
-export default function FileOperations({ onShowGuidedMode, onShowDeckBuilder }: FileOperationsProps) {
+export default function FileOperations({ onShowGuidedMode, onShowDeckBuilder, onShowWorkflowComposer }: FileOperationsProps) {
   const { roles, relationships, settings, loadWorkflow, clearWorkflow } = useOrchestrationStore();
 
   const handleSave = () => {
@@ -119,6 +121,19 @@ export default function FileOperations({ onShowGuidedMode, onShowDeckBuilder }: 
           >
             <HiCollection className="w-4 h-4" />
             <span>Deck Builder</span>
+          </button>
+        </>
+      )}
+      {onShowWorkflowComposer && (
+        <>
+          <div className="w-px h-6 bg-slate-700 mx-2" />
+          <button
+            onClick={onShowWorkflowComposer}
+            className="px-3 py-1.5 text-sm text-purple-400 hover:bg-surface-light rounded transition-colors flex items-center gap-1.5"
+            title="Open workflow composer (drag-and-drop workflow builder)"
+          >
+            <HiCode className="w-4 h-4" />
+            <span>Workflow Composer</span>
           </button>
         </>
       )}

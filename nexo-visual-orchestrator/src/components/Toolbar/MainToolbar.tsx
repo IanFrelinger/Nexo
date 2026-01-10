@@ -16,6 +16,8 @@ interface MainToolbarProps {
   onShowGuidedMode?: () => void;
   /** Callback to open the deck builder */
   onShowDeckBuilder?: () => void;
+  /** Callback to open the workflow composer */
+  onShowWorkflowComposer?: () => void;
 }
 
 /**
@@ -23,12 +25,13 @@ interface MainToolbarProps {
  * @param props - Component props
  * @returns JSX element
  */
-export default function MainToolbar({ onShowGuidedMode, onShowDeckBuilder }: MainToolbarProps) {
+export default function MainToolbar({ onShowGuidedMode, onShowDeckBuilder, onShowWorkflowComposer }: MainToolbarProps) {
   return (
     <div className="h-12 bg-surface border-b border-slate-700 flex items-center justify-between px-4">
       <FileOperations 
         onShowGuidedMode={onShowGuidedMode}
         onShowDeckBuilder={onShowDeckBuilder}
+        onShowWorkflowComposer={onShowWorkflowComposer}
       />
       <ExecutionControls />
       <ViewControls />

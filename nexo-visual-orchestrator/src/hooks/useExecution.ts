@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ExecutionSocket, ExecutionEventHandler } from '../api/executionSocket';
+import { ExecutionSocket } from '../api/executionSocket';
+import type { ExecutionEventHandler } from '../api/executionSocket';
 
 interface ExecutionState {
   status: 'idle' | 'running' | 'complete' | 'error';

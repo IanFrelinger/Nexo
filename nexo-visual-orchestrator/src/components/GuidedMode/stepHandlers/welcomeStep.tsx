@@ -1,4 +1,4 @@
-// src/components/GuidedMode/stepHandlers/welcomeStep.ts
+// src/components/GuidedMode/stepHandlers/welcomeStep.tsx
 
 /**
  * Welcome Step Handler
@@ -11,6 +11,7 @@
  * @returns Next step and collected answers
  */
 
+import React from 'react';
 import type { GuidedStep, GuidedAnswers } from '../../../types/workflow';
 import { PROJECT_TEMPLATES, ORG_PATTERNS } from '../../../data/roleTemplates';
 import { 

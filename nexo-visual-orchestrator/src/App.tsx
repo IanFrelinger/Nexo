@@ -8,6 +8,7 @@ import ViewControls from './components/Panels/ViewControls';
 import MainToolbar from './components/Toolbar/MainToolbar';
 import GuidedMode from './components/GuidedMode/GuidedMode';
 import DeckBuilder from './components/DeckBuilder/DeckBuilder';
+import { WorkflowComposer } from './components/WorkflowComposer/WorkflowComposer';
 import { HiBookOpen, HiTerminal, HiCog, HiViewGrid } from 'react-icons/hi';
 import { useOrchestrationStore } from './stores/orchestrationStore';
 import { useDeckStore } from './stores/deckStore';
@@ -23,6 +24,7 @@ export default function App() {
   const [showGuidedMode, setShowGuidedMode] = useState(false);
   const [showDeckBuilder, setShowDeckBuilder] = useState(false);
   const [showCustomAgentLibrary, setShowCustomAgentLibrary] = useState(false);
+  const [showWorkflowComposer, setShowWorkflowComposer] = useState(false);
   const { roles, loadWorkflow } = useOrchestrationStore();
   const { loadDeck } = useDeckStore();
 
@@ -83,6 +85,23 @@ export default function App() {
     };
   }, []);
 
+  // Show workflow composer if enabled
+  if (showWorkflowComposer) {
+    return (
+      <div className="h-screen">
+        <div className="absolute top-2 left-2 z-50">
+          <button
+            onClick={() => setShowWorkflowComposer(false)}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded text-white text-sm"
+          >
+            ← Back to Orchestrator
+          </button>
+        </div>
+        <WorkflowComposer />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-surface-dark">
       {showGuidedMode && (
@@ -97,6 +116,7 @@ export default function App() {
       <MainToolbar
         onShowGuidedMode={roles.length === 0 ? handleShowGuidedMode : undefined}
         onShowDeckBuilder={handleShowDeckBuilder}
+        onShowWorkflowComposer={() => setShowWorkflowComposer(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">

@@ -49,7 +49,7 @@ export function ClusterInspector({ clusterId, instanceId }: Props) {
   );
 }
 
-function OverviewTab({ cluster, instanceId }: { cluster: any; instanceId?: string }) {
+function OverviewTab({ cluster }: { cluster: any; instanceId?: string }) {
   return (
     <div className="overview-tab space-y-4">
       <section>
@@ -85,7 +85,7 @@ function OverviewTab({ cluster, instanceId }: { cluster: any; instanceId?: strin
   );
 }
 
-function BricksTab({ cluster, instanceId }: { cluster: any; instanceId?: string }) {
+function BricksTab({ cluster }: { cluster: any; instanceId?: string }) {
   return (
     <div className="bricks-tab">
       <p className="text-sm text-slate-400 mb-4">
@@ -105,7 +105,7 @@ function BricksTab({ cluster, instanceId }: { cluster: any; instanceId?: string 
                 current={brick.defaultImplementation}
                 hasDeterministic={true}
                 hasAgentic={true}
-                onChange={(impl) => {
+                onChange={(_impl) => {
                   // TODO: Update instance implementation
                 }}
               />

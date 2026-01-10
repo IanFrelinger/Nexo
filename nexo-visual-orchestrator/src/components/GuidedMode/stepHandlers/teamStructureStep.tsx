@@ -1,5 +1,6 @@
-// src/components/GuidedMode/stepHandlers/teamStructureStep.ts
+// src/components/GuidedMode/stepHandlers/teamStructureStep.tsx
 
+import React from 'react';
 import type { GuidedStep, GuidedAnswers, OrgPattern } from '../../../types/workflow';
 import { ORG_PATTERNS } from '../../../data/roleTemplates';
 import { HiShieldCheck, HiScale, HiLightningBolt } from 'react-icons/hi';

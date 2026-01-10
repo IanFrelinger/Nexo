@@ -115,10 +115,11 @@ export function useTestRoleAddition(addRole: (role: RoleDefinition) => void) {
   }, [addRole]);
 }
 
-export function useWindowExposure(getNodes: () => any) {
+export function useWindowExposure() {
+  const { getNodes } = useReactFlow();
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).__REACT_FLOW_INSTANCE__ = { getNodes };
+      (window as any).__REACT_FLOW_INSTANCE__ = { getNodes: getNodes };
       const storeWrapper = {
         getState: () => {
           try {

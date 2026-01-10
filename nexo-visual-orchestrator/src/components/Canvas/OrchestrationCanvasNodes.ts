@@ -2,8 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Node } from 'reactflow';
-import type { RoleDefinition, Relationship } from '../../types/workflow';
-import type { RoleNodeData } from '../../types/workflow';
+import type { RoleDefinition, RoleNodeData } from '../../types/workflow';
 
 export function useOrchestrationNodes(
   roles: RoleDefinition[],

@@ -18,7 +18,6 @@
  */
 
 import { useRef, useMemo, useState } from 'react';
-import { nanoid } from 'nanoid';
 import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import AgentCard from '../Cards/AgentCard';
 import ConnectionLines from './ConnectionLines';
@@ -44,26 +43,24 @@ interface ConnectionLine {
  */
 export default function CardCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [isConnecting, setIsConnecting] = useState<string | null>(null);
+  const [isConnecting] = useState<string | null>(null);
 
   const {
     roles,
-    instances,
     relationships,
     expandedRoles,
     selectedRoleId,
     setSelectedRole,
     removeRole,
-    addRelationship,
     toggleRoleExpand,
     spawnInstance,
     terminateInstance,
     getInstancesForRole,
   } = useOrchestrationStore();
 
-  const { draggedCardId, handleCardDragStart, handleCardDrag, handleCardDragEnd } = useCardDrag(canvasRef);
-  const { handleCanvasDrop, handleCanvasDragOver } = useCanvasDrop(canvasRef);
-  const connectionPreview = useConnectionPreview(canvasRef, isConnecting);
+  const { draggedCardId, handleCardDragStart, handleCardDrag, handleCardDragEnd } = useCardDrag(canvasRef as React.RefObject<HTMLDivElement>);
+  const { handleCanvasDrop, handleCanvasDragOver } = useCanvasDrop(canvasRef as React.RefObject<HTMLDivElement>);
+  const connectionPreview = useConnectionPreview(canvasRef as React.RefObject<HTMLDivElement>, isConnecting);
   const getAgentDefinition = useAgentDefinition();
   const commandFlow = useCommandFlow(roles, relationships);
 
@@ -87,27 +84,7 @@ export default function CardCanvas() {
     return lines;
   }, [relationships, roles]);
 
-  const handleConnectStart = (agentId: string) => {
-    setIsConnecting(agentId);
-  };
-
-  const handleConnectEnd = (targetAgentId: string) => {
-    if (!isConnecting || isConnecting === targetAgentId) {
-      setIsConnecting(null);
-      return;
-    }
-
-    const newRelationship: Relationship = {
-      id: nanoid(),
-      sourceRoleId: isConnecting,
-      targetRoleId: targetAgentId,
-      type: 'delegates',
-      description: 'Agent delegation',
-    };
-
-    addRelationship(newRelationship);
-    setIsConnecting(null);
-  };
+  // Connection handlers removed - not currently used in the UI
 
   return (
     <div

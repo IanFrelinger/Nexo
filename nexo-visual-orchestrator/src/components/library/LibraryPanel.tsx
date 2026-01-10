@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useBricks, useClusters } from '../../hooks/useCatalog';
-import { useClusters as useClustersHook } from '../../hooks/useClusters';
+import { useBricks } from '../../hooks/useCatalog';
+import { useClusters } from '../../hooks/useClusters';
 import { BrickCard } from './BrickCard';
 import { ClusterCard } from './ClusterCard';
 
@@ -11,20 +11,20 @@ export function LibraryPanel() {
   const [search, setSearch] = useState('');
   
   const { data: bricks } = useBricks();
-  const { data: clusters } = useClustersHook();
+  const { data: clusters } = useClusters();
   
-  const filteredBricks = bricks?.filter(b => 
+  const filteredBricks = bricks?.filter((b: any) => 
     b.name.toLowerCase().includes(search.toLowerCase()) ||
     b.description.toLowerCase().includes(search.toLowerCase())
   );
   
-  const filteredClusters = clusters?.filter(c =>
+  const filteredClusters = clusters?.filter((c: any) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
+    c.tags.some((t: any) => t.toLowerCase().includes(search.toLowerCase()))
   );
   
-  const combos = filteredClusters?.filter(c => c.brickCount < 10) ?? [];
-  const decks = filteredClusters?.filter(c => c.brickCount >= 10) ?? [];
+  const combos = filteredClusters?.filter((c: any) => c.brickCount < 10) ?? [];
+  const decks = filteredClusters?.filter((c: any) => c.brickCount >= 10) ?? [];
   
   return (
     <div className="library-panel flex flex-col h-full bg-slate-900 text-white">
@@ -78,7 +78,7 @@ export function LibraryPanel() {
         
         {tab === 'combos' && (
           <div className="library-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {combos.map(cluster => (
+            {combos.map((cluster: any) => (
               <ClusterCard key={cluster.id} cluster={cluster} />
             ))}
           </div>
@@ -86,7 +86,7 @@ export function LibraryPanel() {
         
         {tab === 'decks' && (
           <div className="library-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {decks.map(cluster => (
+            {decks.map((cluster: any) => (
               <ClusterCard key={cluster.id} cluster={cluster} />
             ))}
           </div>

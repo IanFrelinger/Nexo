@@ -1,20 +1,46 @@
+import { useState } from 'react';
+import type { WorkflowDefinition } from '../types/workflowComposer';
+
+interface NexoClient {
+  executeWorkflow: (workflow: WorkflowDefinition) => Promise<{
+    correlationId: string;
+    nodeStates: Record<string, any>;
+    metrics: any;
+  }>;
+}
+
 /**
  * useNexoClient Hook
  * 
- * Placeholder hook for future integration with the Nexo backend service.
- * Will provide WebSocket connection management and real-time communication
- * with the orchestration engine.
+ * Provides client for executing workflows via the Nexo backend.
  * 
- * TODO: Implement WebSocket connection hook
- * - Establish connection to Nexo backend
- * - Handle real-time execution updates
- * - Manage connection lifecycle
- * - Provide execution control methods
- * 
- * @returns Client instance or null if not implemented
+ * TODO: Implement WebSocket connection for real-time updates
  */
 export function useNexoClient() {
-  // TODO: Implement WebSocket connection hook
-  return null;
+  const [client] = useState<NexoClient | null>(() => {
+    // In production, this would connect to the actual backend API
+    // For now, return a mock client
+    return {
+      executeWorkflow: async (_workflow: WorkflowDefinition) => {
+        // Mock execution - in production, this would call the backend
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return {
+          correlationId: crypto.randomUUID(),
+          nodeStates: {},
+          metrics: {
+            totalDuration: 0,
+            nodesExecuted: 0,
+            deterministicBricks: 0,
+            agenticBricks: 0,
+            totalTokensUsed: 0,
+            cacheHits: 0,
+          },
+        };
+      },
+    };
+  });
+  
+  return { client };
 }
 

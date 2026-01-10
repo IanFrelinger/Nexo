@@ -7,7 +7,6 @@ import ReactFlow, {
   Controls,
   MiniMap,
   ReactFlowProvider,
-  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -15,7 +14,7 @@ import { useOrchestrationStore } from '../../stores/orchestrationStore';
 import RoleCard from '../Nodes/RoleCard';
 import RelationshipEdge from '../Edges/RelationshipEdge';
 import TierBands from './TierBands';
-import type { RoleNodeData, RelationshipEdgeData } from '../../types/workflow';
+import type { RoleNodeData } from '../../types/workflow';
 import { useTestRoleAddition, useWindowExposure } from './OrchestrationCanvasHooks';
 import { useOrchestrationNodes } from './OrchestrationCanvasNodes';
 import { useOrchestrationEdges } from './OrchestrationCanvasEdges';
@@ -34,7 +33,6 @@ const edgeTypes = {
 
 function Flow() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { getNodes } = useReactFlow();
   
   const {
     roles,
@@ -59,7 +57,7 @@ function Flow() {
   } = useOrchestrationStore();
 
   useTestRoleAddition(addRole);
-  useWindowExposure(getNodes);
+  useWindowExposure();
 
   const nodes = useOrchestrationNodes(
     roles,
@@ -92,7 +90,7 @@ function Flow() {
     clearHighlightedPath,
   );
   const { onEdgesChange, onConnect } = useEdgeHandlers(addRelationship);
-  const { onDragOver, onDrop } = useDropHandler(reactFlowWrapper, addRole);
+  const { onDragOver, onDrop } = useDropHandler(reactFlowWrapper as React.RefObject<HTMLDivElement>, addRole);
 
   const onPaneClick = useCallback(() => {
     setSelectedRole(null);

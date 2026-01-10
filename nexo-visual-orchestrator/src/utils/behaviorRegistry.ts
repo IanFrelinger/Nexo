@@ -18,7 +18,6 @@
  */
 
 import type { Behavior, Command } from '../types/agents';
-import * as HiIcons from 'react-icons/hi';
 
 /**
  * Common command definitions shared across behaviors

@@ -55,7 +55,7 @@ export interface CustomAgentLibrary {
  */
 export function customAgentToRole(
   customAgent: CustomAgentConfig,
-  baseAgentDef: AgentDefinition,
+  _baseAgentDef: AgentDefinition,
   roleTemplate: any
 ): RoleDefinition {
   // Start with the role template

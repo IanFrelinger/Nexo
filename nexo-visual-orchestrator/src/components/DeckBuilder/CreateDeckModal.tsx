@@ -34,10 +34,10 @@ interface CreateDeckModalProps {
 export default function CreateDeckModal({
   deckName,
   deckDescription,
-  deckTags,
+  deckTags: _deckTags,
   onSetDeckName,
   onSetDeckDescription,
-  onSetDeckTags,
+  onSetDeckTags: _onSetDeckTags,
   onCreateDeck,
   onClose,
 }: CreateDeckModalProps) {

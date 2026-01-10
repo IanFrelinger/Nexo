@@ -1,5 +1,6 @@
-// src/components/GuidedMode/stepHandlers/autonomyLevelStep.ts
+// src/components/GuidedMode/stepHandlers/autonomyLevelStep.tsx
 
+import React from 'react';
 import type { GuidedStep, GuidedAnswers, AutonomyLevel } from '../../../types/workflow';
 import { HiTrendingDown, HiSwitchHorizontal, HiTrendingUp } from 'react-icons/hi';
 

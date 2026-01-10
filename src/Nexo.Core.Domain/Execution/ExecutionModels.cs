@@ -1,7 +1,18 @@
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Workflows;
 
-namespace Nexo.Infrastructure.Execution;
+namespace Nexo.Core.Domain.Execution;
+
+/// <summary>
+/// Result of executing a behavior.
+/// </summary>
+public class BehaviorResult
+{
+    public bool Success { get; init; }
+    public Dictionary<string, object> Outputs { get; init; } = new();
+    public IReadOnlyList<string> Errors { get; init; } = [];
+    public TimeSpan Duration { get; init; }
+}
 
 /// <summary>
 /// Options for behavior execution.
@@ -29,4 +40,3 @@ public class ExecutionOptions
     public IReadOnlyDictionary<string, ImplementationType> BrickOverrides { get; init; } 
         = new Dictionary<string, ImplementationType>();
 }
-

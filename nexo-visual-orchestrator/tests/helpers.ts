@@ -101,10 +101,16 @@ export async function dismissGuidedMode(page: Page) {
     localStorage.setItem('nexo-guided-mode-dismissed', 'true');
   });
   
-  // Also set it after page loads
-  await page.evaluate(() => {
-    localStorage.setItem('nexo-guided-mode-dismissed', 'true');
-  });
+  // Also set it after page loads (with error handling)
+  try {
+    await page.evaluate(() => {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('nexo-guided-mode-dismissed', 'true');
+      }
+    });
+  } catch (e) {
+    // localStorage might not be available in some contexts
+  }
   
   // Wait for page to fully load
   await page.waitForLoadState('networkidle');

@@ -92,7 +92,7 @@ export function useDeckAgents(currentDeck: any) {
   return useMemo(() => {
     if (!currentDeck) return [];
     return currentDeck.agents.map((deckAgent: any) => {
-      const agentDef = AGENT_REGISTRY[deckAgent.agentType];
+      const agentDef = AGENT_REGISTRY[deckAgent.agentType as keyof typeof AGENT_REGISTRY];
       const template = ROLE_TEMPLATES[deckAgent.roleId];
       return {
         ...deckAgent,
