@@ -102,13 +102,17 @@ export class DemoTestingAgent {
           { action: 'waitForSelector', selector: 'button:has-text("Workflow Composer")', timeout: 15000 },
           { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 15000 },
           { action: 'waitForTimeout', duration: 3000 },
-          { action: 'click', selector: 'button:has-text("Library"), button:has-text("◀ Library")', timeout: 10000 },
+          // Library panel is visible by default, but ensure it's open
+          { action: 'waitForSelector', selector: '.library-panel, [class*="library-panel"]', timeout: 10000 },
+          // If library button exists and panel is closed, click to open
+          { action: 'click', selector: 'button:has-text("▶ Library"), button:has-text("Library")', timeout: 5000 },
           { action: 'waitForTimeout', duration: 2000 },
-          { action: 'waitForSelector', selector: '[class*="library"], [class*="Library"]', timeout: 10000 },
+          // Wait for library tabs to be visible
+          { action: 'waitForSelector', selector: '.library-tabs, [class*="library-tabs"], button:has-text("Agents"), button:has-text("Bricks")', timeout: 10000 },
           { action: 'screenshot', name: 'library-panel' },
         ],
         validation: {
-          type: 'visual',
+          type: 'state',
           criteria: [
             'Library panel is accessible',
             'Items show implementation indicators if visible',
@@ -212,19 +216,24 @@ export class DemoTestingAgent {
           { action: 'loadWorkflow', workflow: 'security-pipeline' },
           { action: 'waitForTimeout', duration: 3000 },
           { action: 'waitForSelector', selector: '.react-flow__node', timeout: 15000 },
+          // Select an agent or brick node (they have implementation toggles)
           { action: 'click', selector: '.react-flow__node', timeout: 15000 },
-          { action: 'waitForTimeout', duration: 2000 },
-          { action: 'waitForSelector', selector: '[class*="inspector"], [class*="Inspector"], [class*="implementation-toggle"]', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 3000 },
+          { action: 'waitForSelector', selector: '.inspector-panel, [class*="inspector-panel"], .implementation-toggle, [class*="implementation-toggle"]', timeout: 15000 },
           { action: 'screenshot', name: 'before-toggle' },
+          // Check initial state
+          { action: 'waitForTimeout', duration: 1000 },
           { action: 'setImplementation', mode: 'deterministic' },
-          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForTimeout', duration: 3000 },
+          // Verify toggle worked by checking for deterministic indicator
+          { action: 'waitForSelector', selector: 'button.toggle-option.bg-blue-600, [class*="deterministic"], button:has-text("⚙️")', timeout: 5000 },
           { action: 'screenshot', name: 'after-toggle' },
         ],
         validation: {
-          type: 'visual',
+          type: 'state',
           criteria: [
-            'Implementation indicator changes',
-            'Node visual state updates',
+            '⚙️ Deterministic indicator is visible or toggle state changed',
+            'Implementation toggle button state updated',
           ],
         },
       },
