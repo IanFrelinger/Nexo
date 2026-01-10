@@ -121,9 +121,11 @@ export class DemoTestingAgent {
           { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
           { action: 'waitForTimeout', duration: 2000 },
           { action: 'click', selector: 'button:has-text("Samples"), button:has-text("📋")', timeout: 5000 },
-          { action: 'waitForTimeout', duration: 1000 },
-          { action: 'click', selector: 'text=Security Scanning Pipeline', timeout: 5000 },
+          { action: 'waitForTimeout', duration: 1500 },
+          { action: 'waitForSelector', selector: '.sample-workflows', timeout: 5000 },
+          { action: 'click', selector: '.workflow-name:has-text("Security Scanning Pipeline"), button.workflow-card:has-text("Security Scanning Pipeline")', timeout: 5000 },
           { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForSelector', selector: '.react-flow__node', timeout: 10000 },
           { action: 'screenshot', name: 'sample-workflow-loaded' },
         ],
         validation: {
@@ -157,6 +159,7 @@ export class DemoTestingAgent {
           { action: 'waitForTimeout', duration: 2000 },
           { action: 'loadWorkflow', workflow: 'security-pipeline' },
           { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForSelector', selector: '.react-flow__node', timeout: 10000 },
           { action: 'screenshot', name: 'workflow-loaded' },
         ],
         validation: {
@@ -177,8 +180,9 @@ export class DemoTestingAgent {
           { action: 'waitForTimeout', duration: 2000 },
           { action: 'loadWorkflow', workflow: 'security-pipeline' },
           { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForSelector', selector: '.react-flow__node', timeout: 10000 },
           { action: 'click', selector: '.react-flow__node', timeout: 10000 },
-          { action: 'waitForTimeout', duration: 500 },
+          { action: 'waitForTimeout', duration: 1000 },
           { action: 'screenshot', name: 'node-selected' },
         ],
         validation: {
@@ -199,11 +203,12 @@ export class DemoTestingAgent {
           { action: 'waitForTimeout', duration: 2000 },
           { action: 'loadWorkflow', workflow: 'security-pipeline' },
           { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForSelector', selector: '.react-flow__node', timeout: 10000 },
           { action: 'click', selector: '.react-flow__node', timeout: 10000 },
-          { action: 'waitForTimeout', duration: 500 },
+          { action: 'waitForTimeout', duration: 1000 },
           { action: 'screenshot', name: 'before-toggle' },
           { action: 'setImplementation', mode: 'deterministic' },
-          { action: 'waitForTimeout', duration: 500 },
+          { action: 'waitForTimeout', duration: 1000 },
           { action: 'screenshot', name: 'after-toggle' },
         ],
         validation: {
@@ -252,8 +257,9 @@ export class DemoTestingAgent {
           { action: 'waitForTimeout', duration: 2000 },
           { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
           { action: 'waitForTimeout', duration: 2000 },
-          { action: 'click', selector: 'button[title*="framework"], button[title*="Framework"], [class*="sidebar-toggle"]', timeout: 10000 },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'click', selector: 'button.sidebar-toggle, button[title*="framework"], button[title*="Framework"], button[title*="Show framework state"]', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForSelector', selector: '.framework-sidebar, [class*="framework-sidebar"]', timeout: 5000 },
           { action: 'screenshot', name: 'framework-sidebar' },
         ],
         validation: {
@@ -503,7 +509,8 @@ export class DemoTestingAgent {
         
       case 'waitForSelector':
         if (step.selector) {
-          await this.page.waitForSelector(step.selector, { timeout: 5000 }).catch(() => {});
+          const timeout = (step as any).timeout || 5000;
+          await this.page.waitForSelector(step.selector, { timeout }).catch(() => {});
         }
         break;
         

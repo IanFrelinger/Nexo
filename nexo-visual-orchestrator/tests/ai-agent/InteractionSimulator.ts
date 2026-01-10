@@ -5,25 +5,59 @@ import * as path from 'path';
 export class InteractionSimulator {
   async loadWorkflow(page: Page, workflowId: string): Promise<void> {
     // Try clicking sample workflow button first
-    const sampleButton = page.locator(`button:has-text("Samples"), button:has-text("📋")`);
-    const sampleVisible = await sampleButton.isVisible({ timeout: 2000 }).catch(() => false);
+    const sampleButton = page.locator('button:has-text("Samples"), button:has-text("📋")').first();
+    const sampleVisible = await sampleButton.isVisible({ timeout: 5000 }).catch(() => false);
     
     if (sampleVisible) {
       await sampleButton.click();
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1000);
       
-      // Look for the workflow card
-      const workflowCard = page.locator(`text=${workflowId}, [class*="workflow-card"]`).first();
-      const cardVisible = await workflowCard.isVisible({ timeout: 2000 }).catch(() => false);
+      // Wait for the sample panel to appear
+      await page.waitForSelector('.sample-workflows', { timeout: 5000 }).catch(() => {});
       
-      if (cardVisible) {
-        await workflowCard.click();
+      // Look for the workflow card by name (matching the sample workflow names)
+      const workflowNameMap: Record<string, string> = {
+        'security-pipeline': 'Security Scanning Pipeline',
+        'simple-pipeline': 'Simple Pipeline',
+        'ai-code-review': 'AI Code Review',
+      };
+      
+      const workflowName = workflowNameMap[workflowId] || workflowId;
+      
+      // Try multiple selectors for the workflow card
+      const selectors = [
+        `.workflow-name:has-text("${workflowName}")`,
+        `.workflow-card:has-text("${workflowName}")`,
+        `button.workflow-card:has-text("${workflowName}")`,
+        `text=${workflowName}`,
+      ];
+      
+      let clicked = false;
+      for (const selector of selectors) {
+        try {
+          const card = page.locator(selector).first();
+          const visible = await card.isVisible({ timeout: 2000 });
+          if (visible) {
+            await card.click();
+            clicked = true;
+            break;
+          }
+        } catch (e) {
+          // Try next selector
+        }
+      }
+      
+      if (clicked) {
+        // Wait for panel to close and nodes to appear
         await page.waitForTimeout(1000);
+        // Wait for nodes to appear on canvas
+        await page.waitForSelector('.react-flow__node', { timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(500);
         return;
       }
     }
     
-    // Fallback: Load from fixtures
+    // Fallback: Load from fixtures via window injection
     const workflow = await this.getWorkflowFixture(workflowId);
     await page.evaluate((wf) => {
       // @ts-ignore - window.loadWorkflow might be defined by the app
@@ -31,11 +65,15 @@ export class InteractionSimulator {
       if (win.loadWorkflow) {
         win.loadWorkflow(wf);
       } else {
-        console.warn('loadWorkflow not available, using fallback');
+        // Try to find and trigger the load function
+        const event = new CustomEvent('loadWorkflow', { detail: wf });
+        window.dispatchEvent(event);
       }
     }, workflow);
     
-    await page.waitForTimeout(500); // Allow render
+    await page.waitForTimeout(1000); // Allow render
+    // Wait for nodes to appear
+    await page.waitForSelector('.react-flow__node', { timeout: 5000 }).catch(() => {});
   }
   
   async dragFromLibrary(
