@@ -11,7 +11,10 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "test:demo": "ts-node --esm tests/ai-agent/run-tests.ts",
+    "test:demo:headed": "ts-node --esm tests/ai-agent/run-tests.ts --headed",
+    "test:demo:ci": "ts-node --esm tests/ai-agent/run-tests.ts --output=./ci-results"
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",
@@ -29,6 +32,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
@@ -43,6 +47,7 @@
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.2.4"
