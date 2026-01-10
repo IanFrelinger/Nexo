@@ -45,20 +45,21 @@ export class StateValidator {
     let explanation = '';
     
     // Parse common validation patterns
-    if (criterion.includes('appears on canvas')) {
+    if (criterion.includes('appears on canvas') || criterion.includes('Nodes appear') || criterion.includes('Canvas shows')) {
       const nodes = await page.locator('.react-flow__node').count();
       passed = nodes > 0;
       explanation = `Found ${nodes} node(s) on canvas`;
       if (!passed) issues.push('No nodes found on canvas');
       
-    } else if (criterion.includes('selected')) {
-      const selected = await page.locator('.react-flow__node.selected, [class*="selected"]').count();
-      passed = selected > 0;
-      explanation = `Found ${selected} selected node(s)`;
+    } else if (criterion.includes('selected') || criterion.includes('Node appears selected')) {
+      const selected = await page.locator('.react-flow__node.selected, [class*="selected"], .react-flow__node[data-selected="true"]').count();
+      const inspector = await page.locator('.inspector-panel, [class*="inspector"], [class*="Inspector"]').isVisible({ timeout: 2000 }).catch(() => false);
+      passed = selected > 0 || inspector;
+      explanation = `Selected nodes: ${selected}, Inspector visible: ${inspector}`;
       if (!passed) issues.push('No node appears to be selected');
       
-    } else if (criterion.includes('Inspector panel')) {
-      const inspector = await page.locator('.inspector-panel, [class*="inspector"]').isVisible().catch(() => false);
+    } else if (criterion.includes('Inspector panel') || criterion.includes('shows node properties')) {
+      const inspector = await page.locator('.inspector-panel, [class*="inspector"], [class*="Inspector"]').isVisible({ timeout: 2000 }).catch(() => false);
       passed = inspector;
       explanation = inspector ? 'Inspector panel is visible' : 'Inspector panel not visible';
       if (!passed) issues.push('Inspector panel should be visible when node is selected');

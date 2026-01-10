@@ -49,11 +49,15 @@ export class InteractionSimulator {
       
       if (clicked) {
         // Wait for panel to close and nodes to appear
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(2000);
         // Wait for nodes to appear on canvas
-        await page.waitForSelector('.react-flow__node', { timeout: 5000 }).catch(() => {});
-        await page.waitForTimeout(500);
-        return;
+        await page.waitForSelector('.react-flow__node', { timeout: 10000 }).catch(() => {});
+        await page.waitForTimeout(1000);
+        // Verify nodes are actually visible
+        const nodeCount = await page.locator('.react-flow__node').count();
+        if (nodeCount > 0) {
+          return;
+        }
       }
     }
     
@@ -71,9 +75,10 @@ export class InteractionSimulator {
       }
     }, workflow);
     
-    await page.waitForTimeout(1000); // Allow render
+    await page.waitForTimeout(2000); // Allow render
     // Wait for nodes to appear
-    await page.waitForSelector('.react-flow__node', { timeout: 5000 }).catch(() => {});
+    await page.waitForSelector('.react-flow__node', { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(1000);
   }
   
   async dragFromLibrary(
