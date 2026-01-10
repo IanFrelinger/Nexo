@@ -1,5 +1,17 @@
 import { DemoTestingAgent } from './DemoTestingAgent';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env.local or .env
+const envLocalPath = path.join(process.cwd(), '.env.local');
+const envPath = path.join(process.cwd(), '.env');
+
+if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath });
+} else if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -12,7 +24,6 @@ async function main() {
   };
   
   // Create screenshot directory
-  const fs = await import('fs');
   if (!fs.existsSync(config.screenshotDir)) {
     fs.mkdirSync(config.screenshotDir, { recursive: true });
   }

@@ -19,9 +19,18 @@ npm install
 ```
 
 2. Set your Anthropic API key (optional - will use fallback mode if not set):
-```bash
-export ANTHROPIC_API_KEY=your-key-here
-```
+
+   Option 1: Create `.env.local` file (recommended):
+   ```bash
+   echo "ANTHROPIC_API_KEY=your-key-here" > .env.local
+   ```
+   
+   Option 2: Set as environment variable:
+   ```bash
+   export ANTHROPIC_API_KEY=your-key-here
+   ```
+   
+   Get your API key from: https://console.anthropic.com/
 
 ## Usage
 
