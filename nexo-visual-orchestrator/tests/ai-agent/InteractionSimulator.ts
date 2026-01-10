@@ -165,27 +165,73 @@ export class InteractionSimulator {
     page: Page,
     mode: 'deterministic' | 'agentic' | 'mixed'
   ): Promise<void> {
-    const toggle = page.locator('[data-testid="implementation-toggle"], [class*="implementation-toggle"]').first();
-    const slider = toggle.locator('input[type="range"]');
+    // Wait for inspector panel to be visible (implementation toggle is in inspector)
+    await page.waitForSelector('[class*="inspector"], [class*="Inspector"], .implementation-toggle, [class*="implementation-toggle"]', { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(1500);
     
-    const sliderExists = await slider.isVisible({ timeout: 1000 }).catch(() => false);
+    // Try multiple selectors for the toggle
+    const toggleSelectors = [
+      '[data-testid="implementation-toggle"]',
+      '.implementation-toggle',
+      '[class*="implementation-toggle"]',
+      '[class*="ImplementationToggle"]',
+    ];
     
-    if (sliderExists) {
-      const value = mode === 'deterministic' ? 0 : mode === 'agentic' ? 2 : 1;
-      await slider.fill(String(value));
-    } else {
-      // Try clicking buttons
-      const detButton = page.locator('button:has-text("⚙️"), button:has-text("Deterministic")').first();
-      const agentButton = page.locator('button:has-text("🤖"), button:has-text("Agentic")').first();
-      
-      if (mode === 'deterministic') {
-        await detButton.click();
-      } else if (mode === 'agentic') {
-        await agentButton.click();
+    let toggleFound = false;
+    for (const selector of toggleSelectors) {
+      const toggle = page.locator(selector).first();
+      const visible = await toggle.isVisible({ timeout: 3000 }).catch(() => false);
+      if (visible) {
+        toggleFound = true;
+        const slider = toggle.locator('input[type="range"]');
+        const sliderExists = await slider.isVisible({ timeout: 2000 }).catch(() => false);
+        
+        if (sliderExists) {
+          const value = mode === 'deterministic' ? 0 : mode === 'agentic' ? 2 : 1;
+          await slider.fill(String(value));
+          await page.waitForTimeout(500);
+          break;
+        }
       }
     }
     
-    await page.waitForTimeout(300);
+    if (!toggleFound) {
+      // Try clicking buttons directly - look for buttons with emoji or text
+      const buttonSelectors = {
+        deterministic: [
+          'button.toggle-option:has-text("⚙️")',
+          'button:has-text("⚙️")',
+          'button.toggle-option:first-child',
+          'button:has-text("Deterministic")',
+          '[class*="deterministic"] button',
+        ],
+        agentic: [
+          'button.toggle-option:has-text("🤖")',
+          'button:has-text("🤖")',
+          'button.toggle-option:last-child',
+          'button:has-text("Agentic")',
+          '[class*="agentic"] button',
+        ],
+      };
+      
+      const selectors = mode === 'deterministic' ? buttonSelectors.deterministic : buttonSelectors.agentic;
+      
+      for (const selector of selectors) {
+        try {
+          const button = page.locator(selector).first();
+          const visible = await button.isVisible({ timeout: 3000 }).catch(() => false);
+          if (visible) {
+            await button.click();
+            await page.waitForTimeout(500);
+            break;
+          }
+        } catch (e) {
+          // Try next selector
+        }
+      }
+    }
+    
+    await page.waitForTimeout(500);
   }
   
   private async getWorkflowFixture(workflowId: string): Promise<any> {

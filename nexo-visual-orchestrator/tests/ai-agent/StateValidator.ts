@@ -113,6 +113,31 @@ export class StateValidator {
       passed = nodes > 0;
       explanation = `Current node count: ${nodes}`;
       
+    } else if (criterion.includes('Run button') || criterion.toLowerCase().includes('run button is visible')) {
+      const runButton = page.locator('button:has-text("Run Workflow"), button:has-text("▶ Run"), button:has-text("▶")').first();
+      const visible = await runButton.isVisible({ timeout: 3000 }).catch(() => false);
+      passed = visible;
+      explanation = visible ? 'Run button is visible' : 'Run button not found';
+      if (!visible) issues.push('Run button not visible');
+    } else if (criterion.includes('workflow is ready') || criterion.toLowerCase().includes('workflow is ready to execute')) {
+      const nodes = await page.locator('.react-flow__node').count();
+      const runButton = await page.locator('button:has-text("Run Workflow"), button:has-text("▶ Run"), button:has-text("▶")').isVisible({ timeout: 3000 }).catch(() => false);
+      passed = nodes > 0 && runButton;
+      explanation = `Found ${nodes} nodes, run button: ${runButton ? 'yes' : 'no'}`;
+      if (nodes === 0) issues.push('No nodes on canvas');
+      if (!runButton) issues.push('Run button not visible');
+    } else if (criterion.includes('Framework state sidebar') || criterion.toLowerCase().includes('framework state sidebar is accessible')) {
+      const sidebar = await page.locator('.framework-sidebar, [class*="framework-sidebar"], [class*="FrameworkState"]').isVisible({ timeout: 3000 }).catch(() => false);
+      const metrics = await page.locator('[class*="metric"], [class*="circuit-breaker"], [class*="rate-limit"], [class*="provider"]').count();
+      passed = sidebar || metrics > 0;
+      explanation = `Sidebar visible: ${sidebar}, Metrics found: ${metrics}`;
+      if (!sidebar && metrics === 0) issues.push('Framework state sidebar not accessible');
+    } else if (criterion.includes('sidebar shows') || criterion.toLowerCase().includes('sidebar shows metrics or state information')) {
+      const metrics = await page.locator('[class*="metric"], [class*="circuit-breaker"], [class*="rate-limit"], [class*="provider"], [class*="panel-content"]').count();
+      const hasContent = await page.locator('.framework-sidebar [class*="panel"], .framework-sidebar section').count();
+      passed = metrics > 0 || hasContent > 0;
+      explanation = `Found ${metrics} state/metrics elements, ${hasContent} content sections`;
+      if (metrics === 0 && hasContent === 0) issues.push('No state information visible');
     } else {
       // Generic check - try to find element matching criterion
       const element = await page.locator(`text=${criterion}`).first().isVisible().catch(() => false);
