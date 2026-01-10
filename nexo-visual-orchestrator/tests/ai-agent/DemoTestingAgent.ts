@@ -35,12 +35,26 @@ export class DemoTestingAgent {
     this.browser = await chromium.launch({
       headless: this.config.headless,
       args: ['--disable-gpu', '--no-sandbox'],
+      slowMo: this.config.headless ? 0 : 100, // Slow down actions in headed mode so user can see
     });
     
     this.page = await this.browser.newPage();
     await this.page.setViewportSize({ width: 1920, height: 1080 });
     
+    // Enable console logging to see what's happening in the browser
+    this.page.on('console', msg => {
+      if (msg.type() === 'error') {
+        console.log(`[Browser Console] ${msg.text()}`);
+      }
+    });
+    
+    // Log page errors
+    this.page.on('pageerror', error => {
+      console.log(`[Page Error] ${error.message}`);
+    });
+    
     console.log('🤖 Demo Testing Agent initialized');
+    console.log(`📍 Connecting to: ${this.config.baseUrl}`);
   }
   
   async runAllTests(): Promise<TestReport> {

@@ -13,8 +13,11 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:demo": "tsx tests/ai-agent/run-tests.ts",
-    "test:demo:headed": "tsx tests/ai-agent/run-tests.ts --headed",
-    "test:demo:ci": "tsx tests/ai-agent/run-tests.ts --output=./ci-results"
+    "test:demo:headed": "tsx tests/ai-agent/run-tests.ts",
+    "test:demo:headless": "tsx tests/ai-agent/run-tests.ts --headless",
+    "test:demo:ci": "tsx tests/ai-agent/run-tests.ts --headless --output=./ci-results",
+    "test:live": "tsx tests/ai-agent/run-tests.ts",
+    "test:live:headless": "tsx tests/ai-agent/run-tests.ts --headless"
   },
   "dependencies": {
     "@microsoft/signalr": "^10.0.0",

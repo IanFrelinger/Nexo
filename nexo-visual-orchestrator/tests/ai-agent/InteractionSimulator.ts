@@ -86,18 +86,40 @@ export class InteractionSimulator {
     nodeType: string,
     itemId: string
   ): Promise<void> {
-    const libraryItem = page.locator(
-      `[data-testid="library-item-${itemId}"], [class*="library-item"]:has-text("${itemId}")`
-    );
+    // First, ensure library panel is visible
+    const libraryPanel = page.locator('.library-panel, [class*="library-panel"]');
+    const isVisible = await libraryPanel.isVisible({ timeout: 3000 }).catch(() => false);
     
-    const itemVisible = await libraryItem.isVisible({ timeout: 2000 }).catch(() => false);
+    if (!isVisible) {
+      // Try to open library panel
+      const libraryButton = page.locator('button:has-text("▶ Library"), button:has-text("Library")');
+      const buttonVisible = await libraryButton.isVisible({ timeout: 2000 }).catch(() => false);
+      if (buttonVisible) {
+        await libraryButton.click();
+        await page.waitForTimeout(1000);
+      }
+    }
+    
+    // Find the library item
+    const libraryItem = page.locator(
+      `[data-testid="library-item-${itemId}"], [class*="library-item"]:has-text("${itemId}"), .library-item:has-text("${itemId}")`
+    ).first();
+    
+    const itemVisible = await libraryItem.isVisible({ timeout: 3000 }).catch(() => false);
     
     if (!itemVisible) {
-      // Try alternative selector
-      const altItem = page.locator(`text=${itemId}`).first();
-      await altItem.hover();
+      // Try alternative selector - look for any library item that might match
+      const altItem = page.locator(`.library-item, [class*="library-item"]`).first();
+      const altVisible = await altItem.isVisible({ timeout: 2000 }).catch(() => false);
+      if (altVisible) {
+        await altItem.hover();
+        await page.waitForTimeout(500);
+      } else {
+        throw new Error(`Library item "${itemId}" not found`);
+      }
     } else {
       await libraryItem.hover();
+      await page.waitForTimeout(500);
     }
     
     await page.mouse.down();
