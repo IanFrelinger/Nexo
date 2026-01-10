@@ -18,6 +18,8 @@
     "@tanstack/react-query": "^5.90.16",
     "@types/dagre": "^0.7.53",
     "dagre": "^0.8.5",
+    "framer-motion": "^12.25.0",
+    "lucide-react": "^0.562.0",
     "nanoid": "^5.1.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

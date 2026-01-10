@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
+import { ExecutionOverlay } from '../ExecutionOverlay';
 
 interface AgentNodeData {
   agentId: string;
@@ -49,16 +50,20 @@ export const AgentNode: React.FC<NodeProps<AgentNodeData>> = memo(({ data, selec
   const allBricks = behaviors.flatMap(b => b.bricks);
   const distribution = calculateDistribution(allBricks, brickOverrides);
   
+  const statusClass = executionState?.status === 'running' ? 'running' :
+                     executionState?.status === 'completed' ? 'complete' :
+                     executionState?.status === 'failed' ? 'failed' : '';
+
   return (
-    <div className={`agent-node min-w-[200px] bg-slate-800 rounded-lg border-2 ${
+    <div className={`agent-node min-w-[200px] bg-slate-800 rounded-lg border-2 relative ${
       selected ? 'border-blue-500' : 'border-slate-700'
-    } ${
-      executionState?.status === 'running' ? 'node-running shadow-lg shadow-blue-500/50' : ''
-    } ${
-      executionState?.status === 'completed' ? 'border-green-500' : ''
-    } ${
-      executionState?.status === 'failed' ? 'border-red-500' : ''
-    }`}>
+    } ${statusClass}`}>
+      <ExecutionOverlay
+        status={executionState?.status || 'waiting'}
+        progress={executionState?.progress}
+        currentBrick={executionState?.currentBrick}
+        implementation={executionState?.currentImplementation}
+      />
       {/* Input handles */}
       {data.inputs?.map((input, i) => (
         <Handle

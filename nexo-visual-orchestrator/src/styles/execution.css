@@ -1,0 +1,112 @@
+/* Execution state styles */
+
+/* Running node pulse */
+.react-flow__node.running {
+  animation: node-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes node-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.4);
+  }
+}
+
+/* Complete node */
+.react-flow__node.complete {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Failed node */
+.react-flow__node.failed {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* Progress bar inside node */
+.node-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #1e1e1e;
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+}
+
+.node-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  transition: width 0.3s ease;
+}
+
+/* Current brick indicator */
+.current-brick-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #3b82f6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+/* Execution overlay */
+.execution-overlay {
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pulse-border {
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Animated edge styles */
+.react-flow__edge.active {
+  stroke: #3b82f6;
+  stroke-width: 3;
+}
+
+.react-flow__edge.complete {
+  stroke: #10b981;
+  stroke-width: 2;
+}
+
+.react-flow__edge.inactive {
+  stroke: #6b7280;
+  stroke-width: 2;
+}
+
+/* Data flow animation */
+@keyframes data-flow {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+.data-flow-indicator {
+  r: 4;
+  fill: #3b82f6;
+  animation: data-flow 1s linear infinite;
+}

@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
+import { ExecutionOverlay } from '../ExecutionOverlay';
 
 interface BrickNodeData {
   brickId: string;
@@ -31,12 +32,18 @@ export const BrickNode: React.FC<NodeProps<BrickNodeData>> = memo(({ data, selec
   const implColor = implementation === 'Deterministic' ? 'blue' : 
                    implementation === 'Agentic' ? 'purple' : 'slate';
   
+  const statusClass = executionState?.status === 'running' ? 'running' :
+                     executionState?.status === 'completed' ? 'complete' :
+                     executionState?.status === 'failed' ? 'failed' : '';
+
   return (
-    <div className={`brick-node min-w-[180px] bg-slate-800 rounded-lg border-2 ${
+    <div className={`brick-node min-w-[180px] bg-slate-800 rounded-lg border-2 relative ${
       selected ? 'border-blue-500' : `border-${implColor}-600`
-    } ${
-      executionState?.status === 'running' ? 'node-running shadow-lg' : ''
-    }`}>
+    } ${statusClass}`}>
+      <ExecutionOverlay
+        status={executionState?.status || 'waiting'}
+        progress={executionState?.progress}
+      />
       {/* Input handles */}
       {data.inputs?.map((input, i) => (
         <Handle

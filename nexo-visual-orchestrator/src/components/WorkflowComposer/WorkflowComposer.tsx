@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import ReactFlow, {
   addEdge,
   useNodesState,
@@ -14,6 +14,8 @@ import 'reactflow/dist/style.css';
 import { LibraryPanel } from './LibraryPanel';
 import { InspectorPanel } from './InspectorPanel';
 import { ExecutionPanel } from './ExecutionPanel';
+import { FrameworkStateSidebar } from './FrameworkStateSidebar';
+import { SampleWorkflowPanel } from './SampleWorkflowPanel';
 import { AgentNode } from './nodes/AgentNode';
 import { BrickNode } from './nodes/BrickNode';
 import { ClusterNode } from './nodes/ClusterNode';
@@ -23,8 +25,10 @@ import { TransformNode } from './nodes/TransformNode';
 import { ConditionalNode } from './nodes/ConditionalNode';
 import { AnimatedEdge } from './edges/AnimatedEdge';
 import { useWorkflowExecution } from '../../hooks/useWorkflowExecution';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { workflowToNodes, workflowToEdges } from '../../utils/workflowConverter';
 import type { WorkflowDefinition } from '../../types/workflowComposer';
+import '../../styles/execution.css';
 
 const nodeTypes: NodeTypes = {
   agent: AgentNode,
@@ -68,8 +72,60 @@ export const WorkflowComposer: React.FC<WorkflowComposerProps> = ({
   const [showLibrary, setShowLibrary] = useState(true);
   const [showInspector, setShowInspector] = useState(true);
   const [showExecution, setShowExecution] = useState(false);
+  const [showFrameworkState, setShowFrameworkState] = useState(false);
+  const [showSampleWorkflows, setShowSampleWorkflows] = useState(false);
   
   const { execute, executionState } = useWorkflowExecution();
+  
+  const handleRunWorkflow = useCallback(async () => {
+    setShowExecution(true);
+    await execute(workflow);
+  }, [workflow, execute]);
+  
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onRun: handleRunWorkflow,
+    enabled: !showSampleWorkflows,
+  });
+  
+  // Mock framework state (in production, this would come from execution events)
+  const frameworkState = useMemo(() => ({
+    circuitBreakers: [
+      { name: 'OpenAI', state: 'closed' as const, failures: 0, threshold: 5 },
+      { name: 'Ollama', state: 'closed' as const, failures: 0, threshold: 5 },
+    ],
+    rateLimits: [
+      { name: 'API', current: 80, max: 100 },
+    ],
+    metrics: executionState?.metrics ? {
+      deterministicTime: executionState.metrics.totalDuration * 0.2,
+      agenticTime: executionState.metrics.totalDuration * 0.8,
+      deterministicCount: executionState.metrics.deterministicBricks,
+      agenticCount: executionState.metrics.agenticBricks,
+      cacheHits: executionState.metrics.cacheHits,
+      cacheMisses: executionState.metrics.nodesExecuted - executionState.metrics.cacheHits,
+      estimatedSavings: executionState.metrics.cacheHits * 0.05,
+    } : {
+      deterministicTime: 0,
+      agenticTime: 0,
+      deterministicCount: 0,
+      agenticCount: 0,
+      cacheHits: 0,
+      cacheMisses: 0,
+      estimatedSavings: 0,
+    },
+    providers: [
+      { name: 'OpenAI', status: 'active' as const, latency: 450, calls: 2, cost: 0.12 },
+      { name: 'Ollama', status: 'standby' as const, calls: 0, cost: 0 },
+    ],
+  }), [executionState]);
+  
+  const handleLoadSampleWorkflow = useCallback((workflow: WorkflowDefinition) => {
+    setWorkflow(workflow);
+    setNodes(workflowToNodes(workflow));
+    setEdges(workflowToEdges(workflow));
+    onWorkflowChange?.(workflow);
+  }, [onWorkflowChange]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -139,11 +195,6 @@ export const WorkflowComposer: React.FC<WorkflowComposerProps> = ({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const handleRunWorkflow = useCallback(async () => {
-    setShowExecution(true);
-    await execute(workflow);
-  }, [workflow, execute]);
-
   // Apply execution state to nodes/edges
   const styledNodes = applyExecutionState(nodes, executionState);
   const styledEdges = applyExecutionStateToEdges(edges, executionState);
@@ -173,6 +224,13 @@ export const WorkflowComposer: React.FC<WorkflowComposerProps> = ({
             {showInspector ? '◀' : '▶'} Inspector
           </button>
           <div className="flex-1" />
+          <button
+            onClick={() => setShowSampleWorkflows(true)}
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+            title="Load sample workflow"
+          >
+            📋 Samples
+          </button>
           <button
             onClick={handleRunWorkflow}
             className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded font-medium"
@@ -230,6 +288,19 @@ export const WorkflowComposer: React.FC<WorkflowComposerProps> = ({
         <ExecutionPanel
           executionState={executionState}
           onClose={() => setShowExecution(false)}
+        />
+      )}
+      
+      <FrameworkStateSidebar
+        state={frameworkState}
+        isOpen={showFrameworkState}
+        onToggle={() => setShowFrameworkState(!showFrameworkState)}
+      />
+      
+      {showSampleWorkflows && (
+        <SampleWorkflowPanel
+          onLoadWorkflow={handleLoadSampleWorkflow}
+          onClose={() => setShowSampleWorkflows(false)}
         />
       )}
     </div>
@@ -311,7 +382,15 @@ function applyExecutionState(
   
   return nodes.map(node => {
     const nodeState = state.nodeStates?.[node.id];
-    if (!nodeState) return node;
+    if (!nodeState) {
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          executionState: { status: 'waiting' as const },
+        },
+      };
+    }
     
     return {
       ...node,

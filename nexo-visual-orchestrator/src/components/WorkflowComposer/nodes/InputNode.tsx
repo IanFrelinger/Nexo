@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
+import { ExecutionOverlay } from '../ExecutionOverlay';
 
 interface InputNodeData {
   type: 'File' | 'Content' | 'Webhook' | 'Database';
@@ -8,6 +9,12 @@ interface InputNodeData {
   content?: string;
   webhookUrl?: string;
   outputs?: NodePort[];
+  executionState?: NodeExecutionState;
+}
+
+interface NodeExecutionState {
+  status: 'waiting' | 'running' | 'completed' | 'failed';
+  progress?: number;
 }
 
 interface NodePort {
@@ -17,10 +24,18 @@ interface NodePort {
 }
 
 export const InputNode: React.FC<NodeProps<InputNodeData>> = memo(({ data, selected }) => {
+  const statusClass = data.executionState?.status === 'running' ? 'running' :
+                     data.executionState?.status === 'completed' ? 'complete' :
+                     data.executionState?.status === 'failed' ? 'failed' : '';
+
   return (
-    <div className={`input-node min-w-[160px] bg-slate-800 rounded-lg border-2 ${
+    <div className={`input-node min-w-[160px] bg-slate-800 rounded-lg border-2 relative ${
       selected ? 'border-blue-500' : 'border-green-600'
-    }`}>
+    } ${statusClass}`}>
+      <ExecutionOverlay
+        status={data.executionState?.status || 'waiting'}
+        progress={data.executionState?.progress}
+      />
       {/* Header */}
       <div className="node-header p-3 bg-green-900/30 rounded-t-lg flex items-center gap-2 border-b border-slate-700">
         <span className="node-icon text-xl">📥</span>

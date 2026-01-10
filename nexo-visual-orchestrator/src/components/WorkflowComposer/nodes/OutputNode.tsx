@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
 import type { NodeProps } from 'reactflow';
+import { ExecutionOverlay } from '../ExecutionOverlay';
 
 interface OutputNodeData {
   type: 'Display' | 'File' | 'Webhook' | 'Database';
@@ -8,6 +9,12 @@ interface OutputNodeData {
   filePath?: string;
   webhookUrl?: string;
   inputs?: NodePort[];
+  executionState?: NodeExecutionState;
+}
+
+interface NodeExecutionState {
+  status: 'waiting' | 'running' | 'completed' | 'failed';
+  progress?: number;
 }
 
 interface NodePort {
@@ -17,10 +24,18 @@ interface NodePort {
 }
 
 export const OutputNode: React.FC<NodeProps<OutputNodeData>> = memo(({ data, selected }) => {
+  const statusClass = data.executionState?.status === 'running' ? 'running' :
+                     data.executionState?.status === 'completed' ? 'complete' :
+                     data.executionState?.status === 'failed' ? 'failed' : '';
+
   return (
-    <div className={`output-node min-w-[160px] bg-slate-800 rounded-lg border-2 ${
+    <div className={`output-node min-w-[160px] bg-slate-800 rounded-lg border-2 relative ${
       selected ? 'border-blue-500' : 'border-orange-600'
-    }`}>
+    } ${statusClass}`}>
+      <ExecutionOverlay
+        status={data.executionState?.status || 'waiting'}
+        progress={data.executionState?.progress}
+      />
       {/* Input handle */}
       {data.inputs?.map((input, i) => (
         <Handle
