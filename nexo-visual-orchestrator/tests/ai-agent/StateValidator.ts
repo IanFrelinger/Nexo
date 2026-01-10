@@ -53,15 +53,18 @@ export class StateValidator {
       
     } else if (criterion.includes('selected') || criterion.includes('Node appears selected')) {
       const selected = await page.locator('.react-flow__node.selected, [class*="selected"], .react-flow__node[data-selected="true"]').count();
-      const inspector = await page.locator('.inspector-panel, [class*="inspector"], [class*="Inspector"]').isVisible({ timeout: 2000 }).catch(() => false);
-      passed = selected > 0 || inspector;
-      explanation = `Selected nodes: ${selected}, Inspector visible: ${inspector}`;
+      const inspector = await page.locator('.inspector-panel, [class*="inspector-panel"], [class*="Inspector"]').isVisible({ timeout: 3000 }).catch(() => false);
+      const inspectorHeader = await page.locator('.inspector-header, [class*="inspector-header"]').isVisible({ timeout: 2000 }).catch(() => false);
+      passed = selected > 0 || inspector || inspectorHeader;
+      explanation = `Selected nodes: ${selected}, Inspector visible: ${inspector || inspectorHeader}`;
       if (!passed) issues.push('No node appears to be selected');
       
-    } else if (criterion.includes('Inspector panel') || criterion.includes('shows node properties')) {
-      const inspector = await page.locator('.inspector-panel, [class*="inspector"], [class*="Inspector"]').isVisible({ timeout: 2000 }).catch(() => false);
-      passed = inspector;
-      explanation = inspector ? 'Inspector panel is visible' : 'Inspector panel not visible';
+    } else if (criterion.includes('Inspector panel') || criterion.includes('shows node properties') || criterion.toLowerCase().includes('inspector panel shows node properties or is accessible')) {
+      const inspector = await page.locator('.inspector-panel, [class*="inspector-panel"], [class*="Inspector"]').isVisible({ timeout: 3000 }).catch(() => false);
+      const inspectorHeader = await page.locator('.inspector-header, [class*="inspector-header"]').isVisible({ timeout: 2000 }).catch(() => false);
+      const inspectorContent = await page.locator('.inspector-content, [class*="inspector-content"]').isVisible({ timeout: 2000 }).catch(() => false);
+      passed = inspector || inspectorHeader || inspectorContent;
+      explanation = (inspector || inspectorHeader || inspectorContent) ? 'Inspector panel is visible' : 'Inspector panel not visible';
       if (!passed) issues.push('Inspector panel should be visible when node is selected');
       
     } else if (criterion.includes('Connection line')) {

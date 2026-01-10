@@ -98,9 +98,13 @@ export class DemoTestingAgent {
         description: 'Verify all node categories are visible',
         steps: [
           { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 3000 },
+          { action: 'waitForSelector', selector: 'button:has-text("Workflow Composer")', timeout: 15000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 15000 },
+          { action: 'waitForTimeout', duration: 3000 },
+          { action: 'click', selector: 'button:has-text("Library"), button:has-text("◀ Library")', timeout: 10000 },
           { action: 'waitForTimeout', duration: 2000 },
-          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
-          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForSelector', selector: '[class*="library"], [class*="Library"]', timeout: 10000 },
           { action: 'screenshot', name: 'library-panel' },
         ],
         validation: {
@@ -184,7 +188,8 @@ export class DemoTestingAgent {
           { action: 'waitForTimeout', duration: 3000 },
           { action: 'waitForSelector', selector: '.react-flow__node', timeout: 15000 },
           { action: 'click', selector: '.react-flow__node', timeout: 15000 },
-          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'waitForTimeout', duration: 3000 },
+          { action: 'waitForSelector', selector: '.inspector-panel, [class*="inspector-panel"], [class*="Inspector"]', timeout: 15000 },
           { action: 'screenshot', name: 'node-selected' },
         ],
         validation: {
