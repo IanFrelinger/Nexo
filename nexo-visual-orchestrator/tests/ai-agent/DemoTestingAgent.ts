@@ -77,8 +77,10 @@ export class DemoTestingAgent {
         name: 'Initial Load - Empty Canvas',
         description: 'Verify the composer loads with correct layout',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'screenshot', name: 'initial-load' },
         ],
         validation: {
@@ -95,8 +97,10 @@ export class DemoTestingAgent {
         name: 'Library Panel - All Categories',
         description: 'Verify all node categories are visible',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'screenshot', name: 'library-panel' },
         ],
         validation: {
@@ -112,12 +116,14 @@ export class DemoTestingAgent {
         name: 'Sample Workflow Loaded',
         description: 'Verify sample workflow renders correctly',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Samples"), button:has-text("📋")', timeout: 5000 },
           { action: 'waitForTimeout', duration: 1000 },
-          { action: 'click', selector: 'button:has-text("Samples"), button:has-text("📋")' },
-          { action: 'waitForTimeout', duration: 500 },
-          { action: 'click', selector: 'text=Security Scanning Pipeline' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'click', selector: 'text=Security Scanning Pipeline', timeout: 5000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'screenshot', name: 'sample-workflow-loaded' },
         ],
         validation: {
@@ -145,10 +151,12 @@ export class DemoTestingAgent {
         name: 'Load Sample Workflow',
         description: 'Verify sample workflow can be loaded',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'loadWorkflow', workflow: 'security-pipeline' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'screenshot', name: 'workflow-loaded' },
         ],
         validation: {
@@ -163,11 +171,13 @@ export class DemoTestingAgent {
         name: 'Select Node',
         description: 'Verify nodes can be selected',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'loadWorkflow', workflow: 'security-pipeline' },
-          { action: 'waitForTimeout', duration: 1000 },
-          { action: 'click', selector: '.react-flow__node' },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: '.react-flow__node', timeout: 10000 },
           { action: 'waitForTimeout', duration: 500 },
           { action: 'screenshot', name: 'node-selected' },
         ],
@@ -183,11 +193,13 @@ export class DemoTestingAgent {
         name: 'Toggle Implementation',
         description: 'Verify implementation can be toggled',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'loadWorkflow', workflow: 'security-pipeline' },
-          { action: 'waitForTimeout', duration: 1000 },
-          { action: 'click', selector: '.react-flow__node' },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: '.react-flow__node', timeout: 10000 },
           { action: 'waitForTimeout', duration: 500 },
           { action: 'screenshot', name: 'before-toggle' },
           { action: 'setImplementation', mode: 'deterministic' },
@@ -236,10 +248,12 @@ export class DemoTestingAgent {
         name: 'Framework State Sidebar',
         description: 'Verify framework state sidebar can be opened',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button[title*="framework"], button[title*="Framework"], [class*="sidebar-toggle"]', timeout: 10000 },
           { action: 'waitForTimeout', duration: 1000 },
-          { action: 'click', selector: 'button[title*="framework"], button[title*="Framework"]' },
-          { action: 'waitForTimeout', duration: 500 },
           { action: 'screenshot', name: 'framework-sidebar' },
         ],
         validation: {
@@ -295,10 +309,12 @@ export class DemoTestingAgent {
         name: 'Keyboard Navigation',
         description: 'Verify app is keyboard navigable',
         steps: [
-          { action: 'click', selector: 'button:has-text("Workflow Composer")' },
-          { action: 'waitForTimeout', duration: 1000 },
+          { action: 'navigate', url: this.config.baseUrl },
+          { action: 'waitForTimeout', duration: 2000 },
+          { action: 'click', selector: 'button:has-text("Workflow Composer")', timeout: 10000 },
+          { action: 'waitForTimeout', duration: 2000 },
           { action: 'press', key: 'Tab' },
-          { action: 'waitForTimeout', duration: 300 },
+          { action: 'waitForTimeout', duration: 500 },
           { action: 'screenshot', name: 'keyboard-focus' },
         ],
         validation: {
@@ -404,9 +420,16 @@ export class DemoTestingAgent {
     if (!this.page) throw new Error('Page not initialized');
     
     switch (step.action) {
+      case 'navigate':
+        if ((step as any).url) {
+          await this.page.goto((step as any).url, { waitUntil: 'networkidle' });
+        }
+        break;
+        
       case 'click':
         if (step.selector) {
-          await this.page.click(step.selector, { timeout: 5000 }).catch(() => {
+          const timeout = step.timeout || 5000;
+          await this.page.click(step.selector, { timeout }).catch(() => {
             // Try with force if normal click fails
             return this.page!.click(step.selector!, { force: true, timeout: 2000 });
           });

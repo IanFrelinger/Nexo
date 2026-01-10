@@ -58,7 +58,7 @@ export class VisualEvaluator {
     
     try {
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-sonnet',
         max_tokens: 2000,
         messages: [
           {
@@ -209,7 +209,7 @@ Respond in JSON format as specified.
     
     try {
       const response = await this.client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-sonnet',
         max_tokens: 2000,
         messages: [
           {
