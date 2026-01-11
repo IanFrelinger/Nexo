@@ -48,7 +48,7 @@ public class ExportController : ControllerBase
             IncludeFallbacks = request.IncludeFallbacks,
             Output = new OutputConfig
             {
-                Format = Enum.Parse<OutputFormat>(request.OutputFormat, ignoreCase: true),
+                Format = Enum.Parse<Nexo.Core.Domain.Export.OutputFormat>(request.OutputFormat, ignoreCase: true),
                 Namespace = request.Namespace ?? "Generated"
             }
         };
@@ -71,7 +71,7 @@ public class ExportController : ControllerBase
         {
             Mode = Enum.Parse<ExportMode>(request.Mode, ignoreCase: true),
             Target = Enum.Parse<ExportTarget>(request.Target, ignoreCase: true),
-            Output = new OutputConfig { Format = OutputFormat.Zip }
+            Output = new OutputConfig { Format = Nexo.Core.Domain.Export.OutputFormat.Zip }
         };
         
         var result = await _exporter.ExportAsync(workflow, config, ct);
@@ -112,7 +112,7 @@ public class ExportController : ControllerBase
                 Name = i.Name,
                 Parameters = i.Parameters,
                 ImplementationOverrides = i.ImplementationOverrides
-                    .ToDictionary(kv => kv.Key, kv => Enum.Parse<ImplementationType>(kv.Value, ignoreCase: true))
+                    .ToDictionary(kv => kv.Key, kv => Enum.Parse<Nexo.Core.Domain.Bricks.ImplementationType>(kv.Value, ignoreCase: true))
             }).ToList(),
             Connections = request.Connections.Select(c => new WorkflowConnection
             {

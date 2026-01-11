@@ -3,8 +3,10 @@ import { VisualEvaluator } from './VisualEvaluator';
 import { InteractionSimulator } from './InteractionSimulator';
 import { StateValidator } from './StateValidator';
 import { ReportGenerator } from './ReportGenerator';
+import { VirtualUserExplorer } from './VirtualUserExplorer';
 import { dismissGuidedMode } from '../helpers';
 import type { TestScenario, TestResult, TestReport, TestStep, EvaluationResult } from './types';
+import type { ExplorationResult } from './VirtualUserExplorer';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -15,8 +17,10 @@ export class DemoTestingAgent {
   private interactionSimulator: InteractionSimulator;
   private stateValidator: StateValidator;
   private reportGenerator: ReportGenerator;
+  private virtualUserExplorer: VirtualUserExplorer | null = null;
   
   private results: TestResult[] = [];
+  private explorationResults: ExplorationResult[] = [];
   private performanceMetrics: Map<string, any> = new Map();
   
   constructor(private config: {
@@ -29,6 +33,19 @@ export class DemoTestingAgent {
     this.interactionSimulator = new InteractionSimulator();
     this.stateValidator = new StateValidator();
     this.reportGenerator = new ReportGenerator(config.screenshotDir);
+  }
+  
+  /**
+   * Initialize virtual user explorer after page is ready
+   */
+  private initializeVirtualUserExplorer(): void {
+    if (this.page) {
+      this.virtualUserExplorer = new VirtualUserExplorer(
+        this.page,
+        this.visualEvaluator,
+        this.config.screenshotDir
+      );
+    }
   }
   
   async initialize(): Promise<void> {
@@ -55,6 +72,9 @@ export class DemoTestingAgent {
     
     console.log('🤖 Demo Testing Agent initialized');
     console.log(`📍 Connecting to: ${this.config.baseUrl}`);
+    
+    // Initialize virtual user explorer once page is ready
+    this.initializeVirtualUserExplorer();
   }
   
   async runAllTests(): Promise<TestReport> {
@@ -75,12 +95,87 @@ export class DemoTestingAgent {
     await this.runPerformanceTests();
     await this.runAccessibilityTests();
     
+    // Run virtual user exploration journeys
+    await this.runVirtualUserJourneys();
+    
     // Generate report
-    const report = await this.reportGenerator.generate(this.results);
+    const report = await this.reportGenerator.generate(this.results, this.explorationResults);
     
     console.log('\n📊 Test run complete. Report generated.');
     
     return report;
+  }
+  
+  /**
+   * Run virtual user exploration journeys
+   * Acts like real users exploring the frontend
+   */
+  private async runVirtualUserJourneys(): Promise<void> {
+    if (!this.virtualUserExplorer) {
+      console.log('⚠️  Virtual user explorer not initialized');
+      return;
+    }
+    
+    console.log('\n🧑 Running Virtual User Journeys...');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    // Navigate to fresh state
+    await this.page!.goto(this.config.baseUrl);
+    await dismissGuidedMode(this.page!);
+    await this.page!.waitForLoadState('networkidle');
+    await this.page!.waitForTimeout(2000);
+    
+    // Run different user journeys
+    const journeys: Array<'new-user' | 'power-user' | 'explorer'> = ['new-user', 'power-user', 'explorer'];
+    
+    for (const journey of journeys) {
+      // Reset to fresh state for each journey
+      await this.page!.goto(this.config.baseUrl);
+      await dismissGuidedMode(this.page!);
+      await this.page!.waitForLoadState('networkidle');
+      await this.page!.waitForTimeout(2000);
+      
+      const result = await this.virtualUserExplorer.exploreUserJourney(journey);
+      this.explorationResults.push(result);
+      
+      // Convert exploration result to test result for reporting
+      this.results.push({
+        scenario: `Virtual User: ${journey}`,
+        passed: result.score >= 0.7,
+        score: result.score,
+        duration: result.duration,
+        screenshots: result.steps
+          .filter(s => s.screenshot)
+          .map(s => s.screenshot!),
+        evaluation: {
+          score: result.score,
+          summary: `Found ${result.visualIssues.length} visual issue(s) during ${journey} journey`,
+          criteriaResults: result.visualIssues.map(issue => ({
+            criterion: issue.step,
+            passed: issue.severity === 'low',
+            explanation: issue.issue,
+            issues: [issue.issue],
+          })),
+          recommendations: result.visualIssues
+            .filter(i => i.severity === 'high' || i.severity === 'medium')
+            .map(i => `Fix ${i.severity} issue in ${i.step}: ${i.issue}`),
+        },
+        error: result.visualIssues.length > 0 
+          ? `${result.visualIssues.length} visual issue(s) found`
+          : null,
+      });
+    }
+    
+    // Summary
+    const totalIssues = this.explorationResults.reduce((sum, r) => sum + r.visualIssues.length, 0);
+    const highIssues = this.explorationResults
+      .flatMap(r => r.visualIssues)
+      .filter(i => i.severity === 'high').length;
+    
+    console.log(`\n📊 Virtual User Exploration Summary:`);
+    console.log(`   Total visual issues found: ${totalIssues}`);
+    console.log(`   High severity issues: ${highIssues}`);
+    console.log(`   Average journey score: ${(this.explorationResults.reduce((sum, r) => sum + r.score, 0) / this.explorationResults.length).toFixed(2)}`);
   }
   
   private async runVisualTests(): Promise<void> {

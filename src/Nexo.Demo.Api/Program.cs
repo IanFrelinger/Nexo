@@ -31,10 +31,14 @@ builder.Services.AddSingleton<IExecutionStateManager, ExecutionStateManager>();
 builder.Services.AddSingleton<OWASPScannerBrick>();
 
 // Register registries with demo data
-var bricks = new List<Brick>
+// Note: We'll build the brick list after the service provider is built
+var bricksFactory = new Func<IServiceProvider, List<Brick>>(sp =>
 {
-    builder.Services.BuildServiceProvider().GetRequiredService<OWASPScannerBrick>()
-};
+    return new List<Brick>
+    {
+        sp.GetRequiredService<OWASPScannerBrick>()
+    };
+});
 
 var behaviors = new List<Behavior>
 {
@@ -62,11 +66,11 @@ var behaviors = new List<Behavior>
             }
         ],
         Inputs = [
-            new BehaviorParameter("code", "string", Required: true, Description: "Source code to scan"),
-            new BehaviorParameter("language", "string", Required: false, Description: "Programming language")
+            new BehaviorParameter("code", "string", required: true, description: "Source code to scan"),
+            new BehaviorParameter("language", "string", required: false, description: "Programming language")
         ],
         Outputs = [
-            new BehaviorParameter("findings", "SecurityFinding[]", Required: false, Description: "Detected vulnerabilities")
+            new BehaviorParameter("findings", "SecurityFinding[]", required: false, description: "Detected vulnerabilities")
         ]
     }
 };
@@ -92,7 +96,7 @@ var agents = new List<AgentCard>
     }
 };
 
-builder.Services.AddSingleton<IBrickRegistry>(sp => new BrickRegistry(bricks));
+builder.Services.AddSingleton<IBrickRegistry>(sp => new BrickRegistry(bricksFactory(sp)));
 builder.Services.AddSingleton<IBehaviorRegistry>(sp => new BehaviorRegistry(behaviors));
 builder.Services.AddSingleton<IAgentRegistry>(sp => new AgentRegistry(agents));
 
@@ -102,8 +106,9 @@ builder.Services.AddScoped<IBehaviorExecutor, BehaviorExecutor>();
 var app = builder.Build();
 
 // Configure pipeline
-app.UseCors();
 app.UseRouting();
+app.UseCors();
+app.UseAuthorization();
 app.MapControllers();
 app.MapHub<ExecutionHub>("/hubs/execution");
 

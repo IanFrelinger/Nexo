@@ -32,7 +32,7 @@ public class ClusterController : ControllerBase
         [FromQuery] string? tag = null,
         [FromQuery] string? scope = null)
     {
-        var clusters = _clusterRegistry.GetAll();
+        var clusters = _clusterRegistry.GetAll().AsEnumerable();
         
         if (tag is not null)
             clusters = clusters.Where(c => c.Tags.Contains(tag));

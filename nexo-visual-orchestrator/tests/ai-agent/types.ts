@@ -25,6 +25,7 @@ export interface TestStep {
   label?: string;
   steps?: TestStep[];
   timeout?: number;
+  url?: string;
 }
 
 export interface ValidationConfig {

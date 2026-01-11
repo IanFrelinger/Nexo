@@ -103,7 +103,7 @@ public class WorkflowExporter : IWorkflowExporter
         });
         
         // Generate project files if needed
-        if (config.Output.Format == OutputFormat.Project)
+        if (config.Output.Format == Nexo.Core.Domain.Export.OutputFormat.Project)
         {
             files.AddRange(GenerateProjectFiles(config.Target, config.Output.Namespace));
         }

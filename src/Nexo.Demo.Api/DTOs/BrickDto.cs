@@ -91,8 +91,8 @@ public class LearnedPatternDto
 
 public class BrickInterfaceDto
 {
-    public IReadOnlyList<BrickInputDto> Inputs { get; init; } = [];
-    public IReadOnlyList<BrickOutputDto> Outputs { get; init; } = [];
+    public IReadOnlyList<BrickInputDefinitionDto> Inputs { get; init; } = [];
+    public IReadOnlyList<BrickOutputDefinitionDto> Outputs { get; init; } = [];
     
     public static BrickInterfaceDto FromDomain(BrickInterface iface)
     {

@@ -5,11 +5,55 @@ AI-powered testing agent for the Nexo visual workflow composer demo. **Tests aga
 ## Overview
 
 This testing agent uses a combination of:
+- **Virtual User Exploration** - Acts like a real user, exploring the UI organically and validating visual appearance at each step
 - **Visual regression testing** - Screenshot comparison with LLM evaluation
 - **Interaction testing** - Real user actions (click, drag, type)
 - **Accessibility testing** - ARIA labels, keyboard navigation
 - **Performance testing** - Load times, frame rates
 - **State validation** - Framework state updates
+
+## Virtual User Mode
+
+The agent now includes a **Virtual User Explorer** that acts like a real user navigating through your frontend:
+
+### User Journeys
+
+1. **New User Journey** - Discovers features organically:
+   - Finds main entry points
+   - Explores canvas area
+   - Discovers library panel
+   - Tries loading samples
+   - Explores nodes and inspector
+
+2. **Power User Journey** - Uses advanced features:
+   - Loads complex workflows
+   - Explores implementation toggles
+   - Tests execution features
+   - Explores framework state
+
+3. **Explorer Journey** - Random exploration:
+   - Clicks around like a curious user
+   - Discovers features by chance
+   - Validates UI doesn't break
+
+### Visual Validation
+
+At each step, the virtual user:
+- Takes screenshots
+- Uses LLM (Claude) to validate visual appearance
+- Checks for:
+  - Professional and polished appearance
+  - No broken layouts or images
+  - Clear visual hierarchy
+  - Appropriate UI responses
+  - Error states and edge cases
+
+### Human-like Behavior
+
+- Randomized delays between actions (1-3 seconds)
+- Natural exploration patterns
+- Discovers features organically
+- Reports visual issues with severity levels
 
 ## Quick Start
 

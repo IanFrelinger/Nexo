@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { TestReport, TestResult } from './types';
+import type { ExplorationResult } from './VirtualUserExplorer';
 
 export class ReportGenerator {
   constructor(private screenshotDir: string) {
@@ -10,7 +11,7 @@ export class ReportGenerator {
     }
   }
   
-  async generate(results: TestResult[]): Promise<TestReport> {
+  async generate(results: TestResult[], explorationResults: ExplorationResult[] = []): Promise<TestReport> {
     const passed = results.filter(r => r.passed).length;
     const failed = results.filter(r => !r.passed).length;
     const totalScore = results.length > 0 
@@ -31,11 +32,11 @@ export class ReportGenerator {
     };
     
     // Generate HTML report
-    await this.generateHtmlReport(report);
+    await this.generateHtmlReport(report, explorationResults);
     
     // Generate JSON report
     const jsonPath = path.join(this.screenshotDir, 'report.json');
-    fs.writeFileSync(jsonPath, JSON.stringify(report, null, 2));
+    fs.writeFileSync(jsonPath, JSON.stringify({ ...report, explorationResults }, null, 2));
     
     return report;
   }
@@ -52,7 +53,7 @@ export class ReportGenerator {
     return Array.from(recommendations);
   }
   
-  private async generateHtmlReport(report: TestReport): Promise<void> {
+  private async generateHtmlReport(report: TestReport, explorationResults: ExplorationResult[] = []): Promise<void> {
     const html = `
 <!DOCTYPE html>
 <html>
@@ -199,6 +200,41 @@ export class ReportGenerator {
       ` : ''}
     </div>
   `).join('')}
+  
+  ${explorationResults.length > 0 ? `
+    <h2>🧑 Virtual User Exploration</h2>
+    ${explorationResults.map(exp => `
+      <div class="result ${exp.score >= 0.7 ? 'pass' : 'fail'}">
+        <div class="result-header">
+          <h3>${exp.journey} Journey</h3>
+          <span>Score: ${(exp.score * 100).toFixed(0)}% | ${exp.steps.length} steps | ${exp.visualIssues.length} issues</span>
+        </div>
+        <p>Duration: ${(exp.duration / 1000).toFixed(1)}s</p>
+        
+        ${exp.visualIssues.length > 0 ? `
+          <div class="criteria-list">
+            <h4>Visual Issues Found:</h4>
+            ${exp.visualIssues.map(issue => `
+              <div class="criterion ${issue.severity === 'low' ? 'pass' : 'fail'}">
+                <strong>[${issue.severity.toUpperCase()}]</strong> ${issue.step}: ${issue.issue}
+                ${issue.screenshot ? `<br><img src="${path.relative(this.screenshotDir, issue.screenshot)}" alt="Issue screenshot" style="max-height: 150px; margin-top: 5px;">` : ''}
+              </div>
+            `).join('')}
+          </div>
+        ` : '<p>✅ No visual issues found!</p>'}
+        
+        ${exp.steps.filter(s => s.screenshot).length > 0 ? `
+          <div class="screenshots">
+            <h4>Journey Screenshots:</h4>
+            ${exp.steps.filter(s => s.screenshot).map(s => {
+              const relativePath = path.relative(this.screenshotDir, s.screenshot!);
+              return `<img src="${relativePath}" alt="${s.description}" title="${s.description}">`;
+            }).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `).join('')}
+  ` : ''}
   
   ${report.recommendations.length > 0 ? `
     <div class="recommendations">
