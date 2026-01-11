@@ -1,0 +1,968 @@
+{
+  "timestamp": "2026-01-11T01:19:08.944Z",
+  "summary": {
+    "total": 13,
+    "passed": 8,
+    "failed": 5,
+    "score": 0.726923076923077,
+    "duration": 425537
+  },
+  "results": [
+    {
+      "scenario": "Initial Load - Empty Canvas",
+      "passed": true,
+      "score": 1,
+      "duration": 15211,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/initial-load.png"
+      ],
+      "evaluation": {
+        "score": 1,
+        "summary": "The visual workflow composer UI meets all evaluation criteria excellently. The interface presents a clean, professional layout with a well-organized library panel, empty canvas ready for workflow creation, comprehensive toolbar, and stable loading state.",
+        "criteriaResults": [
+          {
+            "criterion": "Library panel visible on left or toggleable",
+            "passed": true,
+            "explanation": "A comprehensive library panel is visible on the left side containing Agents, Bricks, and Clusters sections. The Security Agent is currently selected and visible with its description. The panel includes a search bar and appears fully functional.",
+            "issues": []
+          },
+          {
+            "criterion": "Canvas area is centered and empty",
+            "passed": true,
+            "explanation": "The main canvas area takes up the center-right portion of the interface and appears completely empty, ready for workflow composition. The canvas has a dark background and appropriate spacing.",
+            "issues": []
+          },
+          {
+            "criterion": "Toolbar visible at top",
+            "passed": true,
+            "explanation": "A complete toolbar is present at the top with navigation (Back to Orchestrator), view toggles (Library, Inspector), action buttons (Samples, Run Workflow, Save), and user controls. All elements appear properly styled and accessible.",
+            "issues": []
+          },
+          {
+            "criterion": "No loading spinners or error states",
+            "passed": true,
+            "explanation": "The interface shows no loading indicators, spinners, or error messages. All UI elements appear fully loaded and in their normal state.",
+            "issues": []
+          }
+        ],
+        "recommendations": [
+          "Consider adding subtle visual cues on the empty canvas to guide new users on how to start creating workflows",
+          "The canvas area could benefit from a subtle grid or drop zone indicators to enhance user experience",
+          "Consider adding tooltips or help text for the various toolbar buttons to improve discoverability"
+        ]
+      },
+      "error": null
+    },
+    {
+      "scenario": "Library Panel - All Categories",
+      "passed": false,
+      "score": 0,
+      "duration": 12587,
+      "screenshots": [],
+      "evaluation": null,
+      "error": "page.click: Timeout 2000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"▶ Library\")')\n"
+    },
+    {
+      "scenario": "Sample Workflow Loaded",
+      "passed": true,
+      "score": 1,
+      "duration": 18243,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/sample-workflow-loaded.png"
+      ],
+      "evaluation": {
+        "score": 1,
+        "summary": "The visual workflow composer UI demonstrates excellent functionality across all evaluation criteria. The interface clearly displays a security scanning workflow with proper node visibility, clear connection pathways, and logical positioning that follows standard workflow design patterns.",
+        "criteriaResults": [
+          {
+            "criterion": "Nodes are visible on canvas",
+            "passed": true,
+            "explanation": "All nodes are clearly visible with distinct visual styling. There are 5 nodes total: INPUT (green), Dependency Scanner, OWASP Scanner, Report Generator, and OUTPUT (orange). Each node has appropriate icons and labels.",
+            "issues": []
+          },
+          {
+            "criterion": "Connections between nodes are visible",
+            "passed": true,
+            "explanation": "Connection lines are visible between nodes, showing the workflow flow from INPUT through the scanners to Report Generator and finally to OUTPUT. The connections use consistent visual styling with blue/purple gradient lines.",
+            "issues": []
+          },
+          {
+            "criterion": "Nodes are properly positioned",
+            "passed": true,
+            "explanation": "Nodes are well-positioned in a logical left-to-right workflow arrangement. INPUT is on the left, processing nodes (scanners) are in the middle, Report Generator follows, and OUTPUT is on the right. There's adequate spacing between nodes and no overlapping.",
+            "issues": []
+          }
+        ],
+        "recommendations": [
+          "The current implementation is solid. Minor enhancements could include adding connection line labels to show data flow types or adding visual indicators for node execution status."
+        ]
+      },
+      "error": null
+    },
+    {
+      "scenario": "Load Sample Workflow",
+      "passed": true,
+      "score": 1,
+      "duration": 13750,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/workflow-loaded.png"
+      ],
+      "evaluation": {
+        "score": 1,
+        "summary": "2/2 criteria passed",
+        "criteriaResults": [
+          {
+            "criterion": "Nodes appear on canvas",
+            "passed": true,
+            "explanation": "Found 5 node(s) on canvas",
+            "issues": []
+          },
+          {
+            "criterion": "Canvas shows workflow structure",
+            "passed": true,
+            "explanation": "Found 5 node(s) on canvas",
+            "issues": []
+          }
+        ],
+        "recommendations": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "Select Node",
+      "passed": true,
+      "score": 1,
+      "duration": 16857,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/node-selected.png"
+      ],
+      "evaluation": {
+        "score": 1,
+        "summary": "2/2 criteria passed",
+        "criteriaResults": [
+          {
+            "criterion": "Node appears selected",
+            "passed": true,
+            "explanation": "Selected nodes: 2, Inspector visible: true",
+            "issues": []
+          },
+          {
+            "criterion": "Inspector panel shows node properties or is accessible",
+            "passed": true,
+            "explanation": "Inspector panel is visible",
+            "issues": []
+          }
+        ],
+        "recommendations": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "Toggle Implementation",
+      "passed": false,
+      "score": 0,
+      "duration": 70928,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/before-toggle.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/after-toggle.png"
+      ],
+      "evaluation": null,
+      "error": "locator.count: Unexpected token \"=\" while parsing css selector \"label:has-text(\"Implementation Mode\"), text=\"Implementation Mode\"\". Did you mean to CSS.escape it?"
+    },
+    {
+      "scenario": "Execution Button Visible",
+      "passed": true,
+      "score": 1,
+      "duration": 13739,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/execution-ready.png"
+      ],
+      "evaluation": {
+        "score": 1,
+        "summary": "2/2 criteria passed",
+        "criteriaResults": [
+          {
+            "criterion": "Run button is visible",
+            "passed": true,
+            "explanation": "Run button is visible",
+            "issues": []
+          },
+          {
+            "criterion": "Workflow is ready to execute",
+            "passed": true,
+            "explanation": "Found 5 nodes, run button: yes",
+            "issues": []
+          }
+        ],
+        "recommendations": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "Framework State Sidebar",
+      "passed": true,
+      "score": 1,
+      "duration": 9676,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/framework-sidebar.png"
+      ],
+      "evaluation": {
+        "score": 1,
+        "summary": "2/2 criteria passed",
+        "criteriaResults": [
+          {
+            "criterion": "Framework state sidebar is accessible",
+            "passed": true,
+            "explanation": "Sidebar visible: true, Metrics found: 3",
+            "issues": []
+          },
+          {
+            "criterion": "Sidebar shows metrics or state information",
+            "passed": true,
+            "explanation": "Found 4 state/metrics elements, 3 content sections",
+            "issues": []
+          }
+        ],
+        "recommendations": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "Initial Load Time",
+      "passed": true,
+      "score": 0.9,
+      "duration": 1,
+      "screenshots": [],
+      "evaluation": {
+        "score": 0.9,
+        "summary": "Load time: 30ms (threshold: 5000ms)",
+        "criteriaResults": [
+          {
+            "criterion": "Load time within threshold",
+            "passed": true,
+            "explanation": "30ms",
+            "issues": []
+          }
+        ],
+        "recommendations": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "Keyboard Navigation",
+      "passed": true,
+      "score": 1,
+      "duration": 5172,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/keyboard-focus.png"
+      ],
+      "evaluation": {
+        "score": 1,
+        "summary": "2/2 accessibility criteria passed",
+        "criteriaResults": [
+          {
+            "criterion": "Focus indicator is visible or elements are focusable",
+            "passed": true,
+            "explanation": "Found 19 focusable elements",
+            "issues": []
+          },
+          {
+            "criterion": "Tab navigation works",
+            "passed": true,
+            "explanation": "Found 19 focusable elements",
+            "issues": []
+          }
+        ],
+        "recommendations": []
+      },
+      "error": null
+    },
+    {
+      "scenario": "Virtual User: new-user",
+      "passed": false,
+      "score": 0.5,
+      "duration": 87414,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-0-initial-load.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-discover-main-features.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-explore-canvas.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-discover-library.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-try-samples.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-explore-nodes.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-discover-inspector.png"
+      ],
+      "evaluation": {
+        "score": 0.5,
+        "summary": "Found 10 visual issue(s) during new-user journey",
+        "criteriaResults": [
+          {
+            "criterion": "discover-library",
+            "passed": true,
+            "explanation": "The library currently shows 'No custom agents yet' with a placeholder state, but this actually demonstrates good UX for empty states. However, without populated items, we cannot fully assess the visual clarity of actual library items when present.",
+            "issues": [
+              "The library currently shows 'No custom agents yet' with a placeholder state, but this actually demonstrates good UX for empty states. However, without populated items, we cannot fully assess the visual clarity of actual library items when present."
+            ]
+          },
+          {
+            "criterion": "try-samples",
+            "passed": true,
+            "explanation": "No sample workflows are visible or accessible in the current interface. The main workspace shows 'No agents yet' and instructs users to 'Drag agents from the library to start composing commands', but there are no sample workflows provided to help users get started.",
+            "issues": [
+              "No sample workflows are visible or accessible in the current interface. The main workspace shows 'No agents yet' and instructs users to 'Drag agents from the library to start composing commands', but there are no sample workflows provided to help users get started."
+            ]
+          },
+          {
+            "criterion": "try-samples",
+            "passed": true,
+            "explanation": "There is no sample selection UI present in the interface. The left panel shows 'My Agent Library' with 'No custom agents yet' and no samples or templates section is visible.",
+            "issues": [
+              "There is no sample selection UI present in the interface. The left panel shows 'My Agent Library' with 'No custom agents yet' and no samples or templates section is visible."
+            ]
+          },
+          {
+            "criterion": "try-samples",
+            "passed": true,
+            "explanation": "Cannot evaluate sample loading functionality as no samples are available or accessible in the current interface.",
+            "issues": [
+              "Cannot evaluate sample loading functionality as no samples are available or accessible in the current interface."
+            ]
+          },
+          {
+            "criterion": "explore-nodes",
+            "passed": true,
+            "explanation": "There are no workflow nodes present in the canvas area. The main canvas displays 'No agents yet' with instructions to drag agents from the library to start composing commands.",
+            "issues": [
+              "There are no workflow nodes present in the canvas area. The main canvas displays 'No agents yet' with instructions to drag agents from the library to start composing commands."
+            ]
+          },
+          {
+            "criterion": "explore-nodes",
+            "passed": true,
+            "explanation": "No nodes are present in the workflow canvas, so there are no icons or labels to evaluate for readability.",
+            "issues": [
+              "No nodes are present in the workflow canvas, so there are no icons or labels to evaluate for readability."
+            ]
+          },
+          {
+            "criterion": "explore-nodes",
+            "passed": true,
+            "explanation": "No connections can be evaluated as there are no nodes present in the workflow canvas.",
+            "issues": [
+              "No connections can be evaluated as there are no nodes present in the workflow canvas."
+            ]
+          },
+          {
+            "criterion": "discover-inspector",
+            "passed": true,
+            "explanation": "Cannot verify this criterion because there are no nodes present in the workflow. The main canvas shows 'No agents yet' and instructs to drag agents from the library to start composing commands.",
+            "issues": [
+              "Cannot verify this criterion because there are no nodes present in the workflow. The main canvas shows 'No agents yet' and instructs to drag agents from the library to start composing commands."
+            ]
+          },
+          {
+            "criterion": "discover-inspector",
+            "passed": true,
+            "explanation": "Cannot assess what information the inspector shows since no nodes are selected and no inspector panel is currently visible. The right panel shows workflow settings instead of node-specific inspector content.",
+            "issues": [
+              "Cannot assess what information the inspector shows since no nodes are selected and no inspector panel is currently visible. The right panel shows workflow settings instead of node-specific inspector content."
+            ]
+          },
+          {
+            "criterion": "discover-inspector",
+            "passed": true,
+            "explanation": "Cannot locate any implementation toggle in the current interface. The right panel shows workflow settings (Default Autonomy Level, Conflict Resolution, Global Scaling Multiplier) but no implementation toggle is visible.",
+            "issues": [
+              "Cannot locate any implementation toggle in the current interface. The right panel shows workflow settings (Default Autonomy Level, Conflict Resolution, Global Scaling Multiplier) but no implementation toggle is visible."
+            ]
+          }
+        ],
+        "recommendations": []
+      },
+      "error": "10 visual issue(s) found"
+    },
+    {
+      "scenario": "Virtual User: power-user",
+      "passed": false,
+      "score": 0.5499999999999999,
+      "duration": 54509,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-0-initial-load.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-load-complex-workflow.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-explore-implementations.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-test-execution.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-explore-framework-state.png"
+      ],
+      "evaluation": {
+        "score": 0.5499999999999999,
+        "summary": "Found 7 visual issue(s) during power-user journey",
+        "criteriaResults": [
+          {
+            "criterion": "load-complex-workflow",
+            "passed": true,
+            "explanation": "The workflow canvas is empty with a message 'No agents yet' indicating no workflow has been loaded or created. Cannot assess complex workflow loading capabilities.",
+            "issues": [
+              "The workflow canvas is empty with a message 'No agents yet' indicating no workflow has been loaded or created. Cannot assess complex workflow loading capabilities."
+            ]
+          },
+          {
+            "criterion": "load-complex-workflow",
+            "passed": true,
+            "explanation": "No nodes are present on the canvas to evaluate rendering. The agent library shows available node types but none are instantiated in the workflow area.",
+            "issues": [
+              "No nodes are present on the canvas to evaluate rendering. The agent library shows available node types but none are instantiated in the workflow area."
+            ]
+          },
+          {
+            "criterion": "load-complex-workflow",
+            "passed": true,
+            "explanation": "No connections exist to evaluate since there are no nodes on the canvas. Cannot assess connection visibility or rendering.",
+            "issues": [
+              "No connections exist to evaluate since there are no nodes on the canvas. Cannot assess connection visibility or rendering."
+            ]
+          },
+          {
+            "criterion": "explore-implementations",
+            "passed": true,
+            "explanation": "No implementation toggles are visible in the current interface. The Agent Library shows various agent types but no toggle mechanisms for switching between different implementations of the same functionality.",
+            "issues": [
+              "No implementation toggles are visible in the current interface. The Agent Library shows various agent types but no toggle mechanisms for switching between different implementations of the same functionality."
+            ]
+          },
+          {
+            "criterion": "explore-implementations",
+            "passed": true,
+            "explanation": "Cannot evaluate toggle states as no toggles are present in the interface. The current UI shows agent selection but no implementation switching mechanisms.",
+            "issues": [
+              "Cannot evaluate toggle states as no toggles are present in the interface. The current UI shows agent selection but no implementation switching mechanisms."
+            ]
+          },
+          {
+            "criterion": "explore-implementations",
+            "passed": false,
+            "explanation": "Cannot evaluate switching functionality as no implementation toggle mechanisms are available in the current interface.",
+            "issues": [
+              "Cannot evaluate switching functionality as no implementation toggle mechanisms are available in the current interface."
+            ]
+          },
+          {
+            "criterion": "explore-framework-state",
+            "passed": true,
+            "explanation": "There are no visible metrics displayed in the current interface. The console shows 'No logs yet' and the main canvas area shows 'No agents yet', indicating no workflow execution data or performance metrics are currently available.",
+            "issues": [
+              "There are no visible metrics displayed in the current interface. The console shows 'No logs yet' and the main canvas area shows 'No agents yet', indicating no workflow execution data or performance metrics are currently available."
+            ]
+          }
+        ],
+        "recommendations": [
+          "Fix medium issue in explore-implementations: Cannot evaluate switching functionality as no implementation toggle mechanisms are available in the current interface."
+        ]
+      },
+      "error": "7 visual issue(s) found"
+    },
+    {
+      "scenario": "Virtual User: explorer",
+      "passed": false,
+      "score": 0.5,
+      "duration": 107450,
+      "screenshots": [
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-0-initial-load.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-random-click-0.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-random-click-1.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-random-click-2.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-random-click-4.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-random-click-5.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-random-click-6.png",
+        "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-7-random-click-7.png"
+      ],
+      "evaluation": {
+        "score": 0.5,
+        "summary": "Found 10 visual issue(s) during explorer journey",
+        "criteriaResults": [
+          {
+            "criterion": "random-click-0",
+            "passed": true,
+            "explanation": "Cannot verify if clicking 'Guided Setup' works correctly as there is no visible 'Guided Setup' button or element in the current screenshot. The interface shows a 'Team Setup' modal with various game template options, but no 'Guided Setup' functionality is apparent.",
+            "issues": [
+              "Cannot verify if clicking 'Guided Setup' works correctly as there is no visible 'Guided Setup' button or element in the current screenshot. The interface shows a 'Team Setup' modal with various game template options, but no 'Guided Setup' functionality is apparent."
+            ]
+          },
+          {
+            "criterion": "random-click-1",
+            "passed": true,
+            "explanation": "Cannot verify click functionality from static screenshot. The UI shows the option is present and appears clickable (has hover/selection styling), but actual click behavior cannot be tested without interaction capability.",
+            "issues": [
+              "Cannot verify click functionality from static screenshot. The UI shows the option is present and appears clickable (has hover/selection styling), but actual click behavior cannot be tested without interaction capability."
+            ]
+          },
+          {
+            "criterion": "random-click-2",
+            "passed": true,
+            "explanation": "Cannot verify click functionality from a static screenshot. The Story-Driven RPG option is visible and appears to be a selectable item in the Team Setup interface, but without interaction or multiple screenshots showing before/after states, it's impossible to confirm if clicking works correctly.",
+            "issues": [
+              "Cannot verify click functionality from a static screenshot. The Story-Driven RPG option is visible and appears to be a selectable item in the Team Setup interface, but without interaction or multiple screenshots showing before/after states, it's impossible to confirm if clicking works correctly."
+            ]
+          },
+          {
+            "criterion": "random-click-2",
+            "passed": true,
+            "explanation": "Cannot assess UI responsiveness from a single static screenshot. While the interface appears well-structured with clear visual hierarchy and proper spacing, there's no way to evaluate how the UI responds to user interactions, state changes, or dynamic updates.",
+            "issues": [
+              "Cannot assess UI responsiveness from a single static screenshot. While the interface appears well-structured with clear visual hierarchy and proper spacing, there's no way to evaluate how the UI responds to user interactions, state changes, or dynamic updates."
+            ]
+          },
+          {
+            "criterion": "random-click-4",
+            "passed": true,
+            "explanation": "The specified UI element is not visible in the provided screenshot. The interface shows a Team Setup dialog with team configuration options, but no extraction shooter-related content.",
+            "issues": [
+              "The specified UI element is not visible in the provided screenshot. The interface shows a Team Setup dialog with team configuration options, but no extraction shooter-related content."
+            ]
+          },
+          {
+            "criterion": "random-click-4",
+            "passed": true,
+            "explanation": "Cannot evaluate UI responsiveness since the target element for interaction is not present in the current view.",
+            "issues": [
+              "Cannot evaluate UI responsiveness since the target element for interaction is not present in the current view."
+            ]
+          },
+          {
+            "criterion": "random-click-5",
+            "passed": true,
+            "explanation": "Cannot verify click functionality from a static screenshot. The Story-Driven RPG option is visible and appears to be a selectable item in the Team Setup menu, but actual click behavior cannot be tested without interaction.",
+            "issues": [
+              "Cannot verify click functionality from a static screenshot. The Story-Driven RPG option is visible and appears to be a selectable item in the Team Setup menu, but actual click behavior cannot be tested without interaction."
+            ]
+          },
+          {
+            "criterion": "random-click-5",
+            "passed": true,
+            "explanation": "Cannot assess UI responsiveness from a static image. The interface appears well-structured with multiple team setup options displayed in a modal dialog, but dynamic behavior cannot be evaluated.",
+            "issues": [
+              "Cannot assess UI responsiveness from a static image. The interface appears well-structured with multiple team setup options displayed in a modal dialog, but dynamic behavior cannot be evaluated."
+            ]
+          },
+          {
+            "criterion": "random-click-6",
+            "passed": true,
+            "explanation": "Cannot locate the specified element in the current UI. The screenshot shows a Team Setup dialog with team configuration options, but no element matching 'Extraction ShooterTarkov-style extraction shooter with loot, combat, and AI enemies' is visible.",
+            "issues": [
+              "Cannot locate the specified element in the current UI. The screenshot shows a Team Setup dialog with team configuration options, but no element matching 'Extraction ShooterTarkov-style extraction shooter with loot, combat, and AI enemies' is visible."
+            ]
+          },
+          {
+            "criterion": "random-click-7",
+            "passed": true,
+            "explanation": "The specified UI element is not present in the current screenshot. The interface shows a Team Setup dialog with team structure options, but no RPG-related content is visible.",
+            "issues": [
+              "The specified UI element is not present in the current screenshot. The interface shows a Team Setup dialog with team structure options, but no RPG-related content is visible."
+            ]
+          }
+        ],
+        "recommendations": []
+      },
+      "error": "10 visual issue(s) found"
+    }
+  ],
+  "recommendations": [
+    "Consider adding subtle visual cues on the empty canvas to guide new users on how to start creating workflows",
+    "The canvas area could benefit from a subtle grid or drop zone indicators to enhance user experience",
+    "Consider adding tooltips or help text for the various toolbar buttons to improve discoverability",
+    "The current implementation is solid. Minor enhancements could include adding connection line labels to show data flow types or adding visual indicators for node execution status.",
+    "Fix medium issue in explore-implementations: Cannot evaluate switching functionality as no implementation toggle mechanisms are available in the current interface."
+  ],
+  "explorationResults": [
+    {
+      "journey": "new-user",
+      "steps": [
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: initial-load",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-0-initial-load.png",
+          "visualValidation": [
+            "Page loads without errors",
+            "Main UI elements are visible",
+            "No broken images or layout issues",
+            "Professional and polished appearance"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: discover-main-features",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-discover-main-features.png",
+          "visualValidation": [
+            "Find and click main navigation buttons",
+            "Look for \"Workflow Composer\" or similar",
+            "Check for help or tutorial buttons"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: explore-canvas",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-explore-canvas.png",
+          "visualValidation": [
+            "Canvas area is visible and accessible",
+            "Empty state is clear and inviting",
+            "Toolbar or controls are visible"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: discover-library",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-discover-library.png",
+          "visualValidation": [
+            "Library panel is discoverable",
+            "Library items are visually clear",
+            "Categories or tabs are organized"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: try-samples",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-try-samples.png",
+          "visualValidation": [
+            "Sample workflows are accessible",
+            "Sample selection UI is clear",
+            "Loading a sample works smoothly"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: explore-nodes",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-explore-nodes.png",
+          "visualValidation": [
+            "Nodes are visually clear and distinct",
+            "Node icons or labels are readable",
+            "Connections between nodes are visible"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: discover-inspector",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-discover-inspector.png",
+          "visualValidation": [
+            "Inspector panel appears when node is selected",
+            "Inspector shows relevant information",
+            "Implementation toggle is discoverable"
+          ]
+        }
+      ],
+      "visualIssues": [
+        {
+          "step": "discover-library",
+          "issue": "The library currently shows 'No custom agents yet' with a placeholder state, but this actually demonstrates good UX for empty states. However, without populated items, we cannot fully assess the visual clarity of actual library items when present.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-discover-library.png"
+        },
+        {
+          "step": "try-samples",
+          "issue": "No sample workflows are visible or accessible in the current interface. The main workspace shows 'No agents yet' and instructs users to 'Drag agents from the library to start composing commands', but there are no sample workflows provided to help users get started.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-try-samples.png"
+        },
+        {
+          "step": "try-samples",
+          "issue": "There is no sample selection UI present in the interface. The left panel shows 'My Agent Library' with 'No custom agents yet' and no samples or templates section is visible.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-try-samples.png"
+        },
+        {
+          "step": "try-samples",
+          "issue": "Cannot evaluate sample loading functionality as no samples are available or accessible in the current interface.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-try-samples.png"
+        },
+        {
+          "step": "explore-nodes",
+          "issue": "There are no workflow nodes present in the canvas area. The main canvas displays 'No agents yet' with instructions to drag agents from the library to start composing commands.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-explore-nodes.png"
+        },
+        {
+          "step": "explore-nodes",
+          "issue": "No nodes are present in the workflow canvas, so there are no icons or labels to evaluate for readability.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-explore-nodes.png"
+        },
+        {
+          "step": "explore-nodes",
+          "issue": "No connections can be evaluated as there are no nodes present in the workflow canvas.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-explore-nodes.png"
+        },
+        {
+          "step": "discover-inspector",
+          "issue": "Cannot verify this criterion because there are no nodes present in the workflow. The main canvas shows 'No agents yet' and instructs to drag agents from the library to start composing commands.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-discover-inspector.png"
+        },
+        {
+          "step": "discover-inspector",
+          "issue": "Cannot assess what information the inspector shows since no nodes are selected and no inspector panel is currently visible. The right panel shows workflow settings instead of node-specific inspector content.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-discover-inspector.png"
+        },
+        {
+          "step": "discover-inspector",
+          "issue": "Cannot locate any implementation toggle in the current interface. The right panel shows workflow settings (Default Autonomy Level, Conflict Resolution, Global Scaling Multiplier) but no implementation toggle is visible.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-discover-inspector.png"
+        }
+      ],
+      "score": 0.5,
+      "duration": 87414
+    },
+    {
+      "journey": "power-user",
+      "steps": [
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: initial-load",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-0-initial-load.png",
+          "visualValidation": [
+            "Page loads without errors",
+            "Main UI elements are visible",
+            "No broken images or layout issues",
+            "Professional and polished appearance"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: load-complex-workflow",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-load-complex-workflow.png",
+          "visualValidation": [
+            "Complex workflows load correctly",
+            "All nodes render properly",
+            "Connections are visible"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: explore-implementations",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-explore-implementations.png",
+          "visualValidation": [
+            "Implementation toggles are accessible",
+            "Toggle states are visually clear",
+            "Switching implementations works smoothly"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: test-execution",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-test-execution.png",
+          "visualValidation": [
+            "Run button is accessible",
+            "Execution UI is clear",
+            "Framework state is accessible"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: explore-framework-state",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-explore-framework-state.png",
+          "visualValidation": [
+            "Framework state sidebar is accessible",
+            "Metrics are displayed clearly",
+            "State information is organized"
+          ]
+        }
+      ],
+      "visualIssues": [
+        {
+          "step": "load-complex-workflow",
+          "issue": "The workflow canvas is empty with a message 'No agents yet' indicating no workflow has been loaded or created. Cannot assess complex workflow loading capabilities.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-load-complex-workflow.png"
+        },
+        {
+          "step": "load-complex-workflow",
+          "issue": "No nodes are present on the canvas to evaluate rendering. The agent library shows available node types but none are instantiated in the workflow area.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-load-complex-workflow.png"
+        },
+        {
+          "step": "load-complex-workflow",
+          "issue": "No connections exist to evaluate since there are no nodes on the canvas. Cannot assess connection visibility or rendering.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-load-complex-workflow.png"
+        },
+        {
+          "step": "explore-implementations",
+          "issue": "No implementation toggles are visible in the current interface. The Agent Library shows various agent types but no toggle mechanisms for switching between different implementations of the same functionality.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-explore-implementations.png"
+        },
+        {
+          "step": "explore-implementations",
+          "issue": "Cannot evaluate toggle states as no toggles are present in the interface. The current UI shows agent selection but no implementation switching mechanisms.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-explore-implementations.png"
+        },
+        {
+          "step": "explore-implementations",
+          "issue": "Cannot evaluate switching functionality as no implementation toggle mechanisms are available in the current interface.",
+          "severity": "medium",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-explore-implementations.png"
+        },
+        {
+          "step": "explore-framework-state",
+          "issue": "There are no visible metrics displayed in the current interface. The console shows 'No logs yet' and the main canvas area shows 'No agents yet', indicating no workflow execution data or performance metrics are currently available.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-explore-framework-state.png"
+        }
+      ],
+      "score": 0.5499999999999999,
+      "duration": 54509
+    },
+    {
+      "journey": "explorer",
+      "steps": [
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: initial-load",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-0-initial-load.png",
+          "visualValidation": [
+            "Page loads without errors",
+            "Main UI elements are visible",
+            "No broken images or layout issues",
+            "Professional and polished appearance"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: random-click-0",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-random-click-0.png",
+          "visualValidation": [
+            "Clicking \"Guided Setup\" works correctly",
+            "UI responds appropriately",
+            "No errors or broken states"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: random-click-1",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-random-click-1.png",
+          "visualValidation": [
+            "Clicking \"Experimental / JamFast iteration, emergent design, minimal process\" works correctly",
+            "UI responds appropriately",
+            "No errors or broken states"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: random-click-2",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-random-click-2.png",
+          "visualValidation": [
+            "Clicking \"Story-Driven RPGNarrative-focused RPG with crafting, trading, and character progression\" works correctly",
+            "UI responds appropriately",
+            "No errors or broken states"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: random-click-4",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-random-click-4.png",
+          "visualValidation": [
+            "Clicking \"Extraction ShooterTarkov-style extraction shooter with loot, combat, and AI enemies\" works correctly",
+            "UI responds appropriately",
+            "No errors or broken states"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: random-click-5",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-random-click-5.png",
+          "visualValidation": [
+            "Clicking \"Story-Driven RPGNarrative-focused RPG with crafting, trading, and character progression\" works correctly",
+            "UI responds appropriately",
+            "No errors or broken states"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: random-click-6",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-random-click-6.png",
+          "visualValidation": [
+            "Clicking \"Extraction ShooterTarkov-style extraction shooter with loot, combat, and AI enemies\" works correctly",
+            "UI responds appropriately",
+            "No errors or broken states"
+          ]
+        },
+        {
+          "action": "screenshot",
+          "description": "Captured screenshot: random-click-7",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-7-random-click-7.png",
+          "visualValidation": [
+            "Clicking \"Story-Driven RPGNarrative-focused RPG with crafting, trading, and character progression\" works correctly",
+            "UI responds appropriately",
+            "No errors or broken states"
+          ]
+        }
+      ],
+      "visualIssues": [
+        {
+          "step": "random-click-0",
+          "issue": "Cannot verify if clicking 'Guided Setup' works correctly as there is no visible 'Guided Setup' button or element in the current screenshot. The interface shows a 'Team Setup' modal with various game template options, but no 'Guided Setup' functionality is apparent.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-1-random-click-0.png"
+        },
+        {
+          "step": "random-click-1",
+          "issue": "Cannot verify click functionality from static screenshot. The UI shows the option is present and appears clickable (has hover/selection styling), but actual click behavior cannot be tested without interaction capability.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-2-random-click-1.png"
+        },
+        {
+          "step": "random-click-2",
+          "issue": "Cannot verify click functionality from a static screenshot. The Story-Driven RPG option is visible and appears to be a selectable item in the Team Setup interface, but without interaction or multiple screenshots showing before/after states, it's impossible to confirm if clicking works correctly.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-random-click-2.png"
+        },
+        {
+          "step": "random-click-2",
+          "issue": "Cannot assess UI responsiveness from a single static screenshot. While the interface appears well-structured with clear visual hierarchy and proper spacing, there's no way to evaluate how the UI responds to user interactions, state changes, or dynamic updates.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-3-random-click-2.png"
+        },
+        {
+          "step": "random-click-4",
+          "issue": "The specified UI element is not visible in the provided screenshot. The interface shows a Team Setup dialog with team configuration options, but no extraction shooter-related content.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-random-click-4.png"
+        },
+        {
+          "step": "random-click-4",
+          "issue": "Cannot evaluate UI responsiveness since the target element for interaction is not present in the current view.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-4-random-click-4.png"
+        },
+        {
+          "step": "random-click-5",
+          "issue": "Cannot verify click functionality from a static screenshot. The Story-Driven RPG option is visible and appears to be a selectable item in the Team Setup menu, but actual click behavior cannot be tested without interaction.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-random-click-5.png"
+        },
+        {
+          "step": "random-click-5",
+          "issue": "Cannot assess UI responsiveness from a static image. The interface appears well-structured with multiple team setup options displayed in a modal dialog, but dynamic behavior cannot be evaluated.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-5-random-click-5.png"
+        },
+        {
+          "step": "random-click-6",
+          "issue": "Cannot locate the specified element in the current UI. The screenshot shows a Team Setup dialog with team configuration options, but no element matching 'Extraction ShooterTarkov-style extraction shooter with loot, combat, and AI enemies' is visible.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-6-random-click-6.png"
+        },
+        {
+          "step": "random-click-7",
+          "issue": "The specified UI element is not present in the current screenshot. The interface shows a Team Setup dialog with team structure options, but no RPG-related content is visible.",
+          "severity": "low",
+          "screenshot": "/Users/ianfrelinger/CursorProjects/Nexo/nexo-visual-orchestrator/test-results/demo-tests/virtual-user-7-random-click-7.png"
+        }
+      ],
+      "score": 0.5,
+      "duration": 107450
+    }
+  ]
+}

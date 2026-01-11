@@ -36,7 +36,7 @@ Thumbs.db
 
 # Test results
 TestResults/
-test-results/
+# test-results/  # Temporarily enabled to commit test reports
 test-reports/
 *.trx
 *.coverage
