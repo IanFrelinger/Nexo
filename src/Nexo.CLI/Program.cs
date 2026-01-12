@@ -12,7 +12,6 @@ using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
 using Nexo.Orchestration;
-using Nexo.Adapters.Models;
 
 namespace Nexo.CLI;
 

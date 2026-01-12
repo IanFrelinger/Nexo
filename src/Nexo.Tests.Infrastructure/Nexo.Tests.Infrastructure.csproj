@@ -16,6 +16,8 @@
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Application\Nexo.Tests.Application.csproj" />
     <ProjectReference Include="..\Nexo.Demo.Bricks\Nexo.Demo.Bricks.csproj" />
+    <ProjectReference Include="..\Nexo.Agents.UniversalTester\Nexo.Agents.UniversalTester.csproj" />
+    <ProjectReference Include="..\Nexo.Agents.AutonomousDev\Nexo.Agents.AutonomousDev.csproj" />
   </ItemGroup>
 
 </Project>

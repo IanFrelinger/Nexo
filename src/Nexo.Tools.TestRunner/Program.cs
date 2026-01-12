@@ -16,6 +16,12 @@ internal static class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        // Check if we should run agent smoke tests
+        if (args.Length > 0 && args[0] == "--agent-smoke-tests")
+        {
+            return await RunAgentSmokeTests.RunAsync(args.Skip(1).ToArray());
+        }
+
         var logger = new ConsoleLogger();
         logger.LogInformation("Nexo CLI Unit Test Runner (Cross-Platform)");
         logger.LogInformation("==============================================");
