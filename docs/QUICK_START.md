@@ -30,17 +30,20 @@ Build succeeded.
 
 ---
 
-## Step 2: Run the Interactive Demo
+## Step 2: Run the CLI Demo
 
 ```bash
-dotnet run --project src/Nexo.Demo.Visual
+# Test an application with Universal Testing Agent
+dotnet run --project src/Nexo.CLI -- demo test "https://example.com" "Test the application"
+
+# Or build a feature with Autonomous Development Agent
+dotnet run --project src/Nexo.CLI -- demo dev "Add a feature" "./MyProject"
 ```
 
-This launches a visual interface where you can:
-1. See bricks on a canvas
-2. Toggle between ⚙️ and 🤖 implementations
-3. Execute behaviors and watch events stream
-4. Switch between online and offline modes
+The CLI demos showcase:
+1. Universal Testing Agent - AI-powered testing for any application
+2. Autonomous Development Agent - Build features with mock user testing
+3. Beautiful CLI output with progress indicators and color-coded results
 
 ---
 
@@ -69,7 +72,7 @@ nexo analyze --format-json
 
 ### Using the Demo UI
 
-1. Launch the demo: `dotnet run --project src/Nexo.Demo.Visual`
+1. Launch the demo: `dotnet run --project src/Nexo.CLI -- demo test "https://example.com" "Test the application"`
 2. Find the "OWASP Scanner" brick
 3. Click the implementation toggle: ⚙️ ↔ 🤖
 4. Run the behavior

@@ -366,6 +366,9 @@ static class Program
 
         // Register IModel (using EchoModel for now, replace with real LLM adapter later)
         services.AddSingleton<IModel, EchoModel>();
+        
+        // Register IProviderFactory for agent execution
+        services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
 
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();
@@ -378,7 +381,12 @@ static class Program
         services.AddScoped<EscalateCommand>();
         services.AddScoped<MetricsCommand>();
         services.AddScoped<UnityCommand>();
-        services.AddScoped<DemoCommand>();
+        services.AddScoped<DemoCommand>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<DemoCommand>>();
+            var providerFactory = sp.GetRequiredService<IProviderFactory>();
+            return new DemoCommand(logger, providerFactory);
+        });
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

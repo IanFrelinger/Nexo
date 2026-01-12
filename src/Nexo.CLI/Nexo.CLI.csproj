@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -48,10 +48,16 @@
     <ProjectReference Include="../Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="../Nexo.Orchestration/Nexo.Orchestration.csproj" />
     <ProjectReference Include="../Nexo.Agents.Dev/Nexo.Agents.Dev.csproj" />
+    <ProjectReference Include="../Nexo.Agents.UniversalTester/Nexo.Agents.UniversalTester.csproj" />
+    <ProjectReference Include="../Nexo.Agents.AutonomousDev/Nexo.Agents.AutonomousDev.csproj" />
     <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
     <ProjectReference Include="../Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />
     <ProjectReference Include="../Nexo.Tests.Application/Nexo.Tests.Application.csproj" />
     <ProjectReference Include="../Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console" />
   </ItemGroup>
 
 </Project>

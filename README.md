@@ -38,12 +38,13 @@ git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
 dotnet build
 
-# Run the interactive demo
-dotnet run --project src/Nexo.Demo.Visual
+# Run CLI demo commands
+dotnet run --project src/Nexo.CLI -- demo test "https://example.com" "Test the application"
 
-# Or use the CLI
+# Or install as global tool
 dotnet tool install --global Nexo.CLI
-nexo demo --interactive
+nexo demo test "https://example.com" "Test the application"
+nexo demo dev "Add a feature" "./MyProject"
 ```
 
 **See it in action:** [Quick Start Guide](docs/QUICK_START.md) | [Architecture Overview](docs/ARCHITECTURE.md)

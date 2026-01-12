@@ -1,484 +1,407 @@
 using System.CommandLine;
-using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.Orchestration.Agents.Playtest;
+using Nexo.Agents.AutonomousDev;
+using Nexo.Agents.AutonomousDev.Configuration;
+using Nexo.Agents.AutonomousDev.Models;
+using Nexo.Agents.UniversalTester;
+using Nexo.Agents.UniversalTester.Configuration;
+using Nexo.Agents.UniversalTester.Models;
+using Nexo.Core.Domain.Execution;
+using Nexo.Infrastructure.Execution;
+using Spectre.Console;
 
 namespace Nexo.CLI.Commands;
 
 /// <summary>
-/// Command handler for demo operations (iterative game creation, feedback synthesis, etc.).
-/// 
-/// Provides CLI commands for:
-/// - Synthesizing feedback from playtest results
-/// - Applying feedback changes to game specifications
-/// - Iterative game development workflows
-/// 
-/// Used for demonstration and testing of the orchestration system.
+/// Command handler for demo operations showcasing Universal Testing Agent and Autonomous Development Agent.
 /// </summary>
 public class DemoCommand
 {
     private readonly ILogger<DemoCommand> _logger;
-
-    public DemoCommand(ILogger<DemoCommand> logger)
+    private readonly IProviderFactory _providerFactory;
+    
+    public DemoCommand(ILogger<DemoCommand> logger, IProviderFactory providerFactory)
     {
         _logger = logger;
+        _providerFactory = providerFactory;
     }
-
+    
     /// <summary>
     /// Creates the demo command group with all subcommands.
     /// </summary>
     public static Command CreateCommand(IServiceProvider serviceProvider, Option<bool> jsonOpt, Option<bool> verboseOpt)
     {
-        var demoCmd = new Command("demo", "Demo operations for iterative game development");
-
+        var demoCmd = new Command("demo", "Demo operations for Universal Testing and Autonomous Development");
+        
         var logger = serviceProvider.GetRequiredService<ILogger<DemoCommand>>();
-        var command = new DemoCommand(logger);
-
-        // nexo demo synthesize-feedback
-        var synthesizeCmd = new Command("synthesize-feedback", "Synthesize feedback from playtest results");
-        synthesizeCmd.AddArgument(new Argument<FileInfo>("playtest-results", "Path to playtest results JSON"));
-        synthesizeCmd.AddArgument(new Argument<FileInfo>("output", "Path to output feedback synthesis JSON"));
-        synthesizeCmd.SetHandler(async (FileInfo playtestResults, FileInfo output, bool json, bool verbose) =>
+        var providerFactory = serviceProvider.GetRequiredService<IProviderFactory>();
+        var command = new DemoCommand(logger, providerFactory);
+        
+        // nexo demo test - Universal Testing Agent
+        var testCmd = new Command("test", "Run Universal Testing Agent to test any application");
+        testCmd.AddArgument(new Argument<string>("target", "Target to test (URL, file path, API endpoint, etc.)"));
+        testCmd.AddArgument(new Argument<string>("goal", "Testing goal in natural language"));
+        testCmd.AddOption(new Option<string?>("--type", "Target type (WebApp, Game, Api, Cli, DesktopApp, Auto)"));
+        testCmd.AddOption(new Option<string?>("--depth", "Testing depth (Quick, Standard, Thorough, Exhaustive)"));
+        testCmd.AddOption(new Option<string?>("--max-duration", "Maximum duration (e.g., '10m', '1h')"));
+        testCmd.AddOption(new Option<string?>("--output", "Output file for test report"));
+        
+        var testTargetArg = testCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException();
+        var testGoalArg = testCmd.Arguments[1] as Argument<string> ?? throw new InvalidOperationException();
+        var testTypeOpt = testCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException();
+        var testDepthOpt = testCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException();
+        var testDurationOpt = testCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException();
+        var testOutputOpt = testCmd.Options[3] as Option<string?> ?? throw new InvalidOperationException();
+        
+        testCmd.SetHandler(async (string target, string goal, string? type, string? depth, string? maxDuration, string? output, bool json, bool verbose) =>
         {
-            var exitCode = await command.SynthesizeFeedbackAsync(playtestResults, output, json, verbose);
+            var exitCode = await command.RunUniversalTestAsync(target, goal, type, depth, maxDuration, output, json, verbose);
             Environment.Exit(exitCode);
-        }, synthesizeCmd.Arguments[0] as Argument<FileInfo> ?? throw new InvalidOperationException(),
-           synthesizeCmd.Arguments[1] as Argument<FileInfo> ?? throw new InvalidOperationException(),
-           jsonOpt,
-           verboseOpt);
-
-        // nexo demo apply-feedback
-        var applyCmd = new Command("apply-feedback", "Apply feedback changes to game specification");
-        applyCmd.AddArgument(new Argument<FileInfo>("feedback", "Path to feedback synthesis JSON"));
-        applyCmd.AddArgument(new Argument<FileInfo>("spec", "Path to game specification JSON"));
-        applyCmd.AddOption(new Option<FileInfo?>("--output", "Output path (defaults to overwriting spec file)"));
-        var applyOutputOpt = applyCmd.Options[0] as Option<FileInfo?> ?? throw new InvalidOperationException();
-        applyCmd.SetHandler(async (FileInfo feedback, FileInfo spec, FileInfo? output, bool json, bool verbose) =>
+        }, testTargetArg, testGoalArg, testTypeOpt, testDepthOpt, testDurationOpt, testOutputOpt, jsonOpt, verboseOpt);
+        
+        // nexo demo dev - Autonomous Development Agent
+        var devCmd = new Command("dev", "Run Autonomous Development Agent to build features autonomously");
+        devCmd.AddArgument(new Argument<string>("task", "Development task in natural language"));
+        devCmd.AddArgument(new Argument<string>("project-path", "Path to the project"));
+        devCmd.AddOption(new Option<string?>("--type", "Project type (UnityGame, DotNetApp, ReactApp, etc.)"));
+        devCmd.AddOption(new Option<string?>("--acceptance", "Acceptance criteria"));
+        devCmd.AddOption(new Option<int>("--max-iterations", () => 10, "Maximum iterations"));
+        devCmd.AddOption(new Option<string?>("--persona", "Test persona (Novice, Average, PowerUser, Adversarial, etc.)"));
+        devCmd.AddOption(new Option<string?>("--autonomy", "Autonomy level (Supervised, SemiAutonomous, FullyAutonomous)"));
+        devCmd.AddOption(new Option<string?>("--output", "Output file for session report"));
+        
+        var devTaskArg = devCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException();
+        var devPathArg = devCmd.Arguments[1] as Argument<string> ?? throw new InvalidOperationException();
+        var devTypeOpt = devCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException();
+        var devAcceptanceOpt = devCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException();
+        var devIterationsOpt = devCmd.Options[2] as Option<int> ?? throw new InvalidOperationException();
+        var devPersonaOpt = devCmd.Options[3] as Option<string?> ?? throw new InvalidOperationException();
+        var devAutonomyOpt = devCmd.Options[4] as Option<string?> ?? throw new InvalidOperationException();
+        var devOutputOpt = devCmd.Options[5] as Option<string?> ?? throw new InvalidOperationException();
+        
+        devCmd.SetHandler(async (string task, string projectPath, string? type, string? acceptance, int maxIterations, string? persona, string? autonomy, string? output, bool json, bool verbose) =>
         {
-            var exitCode = await command.ApplyFeedbackAsync(feedback, spec, output ?? spec, json, verbose);
+            var exitCode = await command.RunAutonomousDevAsync(task, projectPath, type, acceptance, maxIterations, persona, autonomy, output, json, verbose);
             Environment.Exit(exitCode);
-        }, applyCmd.Arguments[0] as Argument<FileInfo> ?? throw new InvalidOperationException(),
-           applyCmd.Arguments[1] as Argument<FileInfo> ?? throw new InvalidOperationException(),
-           applyOutputOpt,
-           jsonOpt,
-           verboseOpt);
-
-        // nexo demo create-assets
-        var assetsCmd = new Command("create-assets", "Create Unity demo assets for an iteration");
-        assetsCmd.AddArgument(new Argument<DirectoryInfo>("project", "Path to Unity project"));
-        assetsCmd.AddArgument(new Argument<int>("iteration", "Iteration number"));
-        assetsCmd.SetHandler(async (DirectoryInfo project, int iteration, bool json, bool verbose) =>
-        {
-            var exitCode = await command.CreateUnityAssetsAsync(project, iteration, json, verbose);
-            Environment.Exit(exitCode);
-        }, assetsCmd.Arguments[0] as Argument<DirectoryInfo> ?? throw new InvalidOperationException(),
-           assetsCmd.Arguments[1] as Argument<int> ?? throw new InvalidOperationException(),
-           jsonOpt,
-           verboseOpt);
-
-        // nexo demo --interactive (or nexo demo interactive)
-        var interactiveCmd = new Command("interactive", "Run the Nexo interactive demo showing dual implementations");
-        var interactiveOfflineOpt = new Option<bool>("--offline", "Run in offline mode (no network calls)");
-        interactiveCmd.AddOption(interactiveOfflineOpt);
-        interactiveCmd.SetHandler(async (bool offline, bool json, bool verbose) =>
-        {
-            // Launch the demo application
-            var process = new System.Diagnostics.Process
-            {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "dotnet",
-                    Arguments = $"run --project src/Nexo.Demo.Visual -- --interactive" + (offline ? " --offline" : ""),
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                }
-            };
-            
-            process.Start();
-            await process.WaitForExitAsync();
-            Environment.Exit(process.ExitCode);
-        }, interactiveOfflineOpt, jsonOpt, verboseOpt);
-
-        demoCmd.AddCommand(synthesizeCmd);
-        demoCmd.AddCommand(applyCmd);
-        demoCmd.AddCommand(assetsCmd);
-        demoCmd.AddCommand(interactiveCmd);
-
+        }, devTaskArg, devPathArg, devTypeOpt, devAcceptanceOpt, devIterationsOpt, devPersonaOpt, devAutonomyOpt, devOutputOpt, jsonOpt, verboseOpt);
+        
+        demoCmd.AddCommand(testCmd);
+        demoCmd.AddCommand(devCmd);
+        
         return demoCmd;
     }
-
-    public async Task<int> SynthesizeFeedbackAsync(FileInfo playtestResults, FileInfo output, bool json, bool verbose)
+    
+    public async Task<int> RunUniversalTestAsync(
+        string target,
+        string goal,
+        string? type,
+        string? depth,
+        string? maxDuration,
+        string? output,
+        bool json,
+        bool verbose)
     {
         try
         {
-            if (!playtestResults.Exists)
+            if (!json)
             {
-                _logger.LogError("Playtest results file not found: {Path}", playtestResults.FullName);
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { error = "Playtest results file not found", path = playtestResults.FullName }));
-                }
-                return 1;
+                AnsiConsole.Write(new FigletText("Universal Tester").Color(Color.Blue));
+                AnsiConsole.MarkupLine("[grey]AI-powered testing for any application[/]");
+                AnsiConsole.WriteLine();
             }
-
-            _logger.LogInformation("Synthesizing feedback from playtest results: {Path}", playtestResults.FullName);
-
-            var playtestJson = await File.ReadAllTextAsync(playtestResults.FullName);
-            var playtestData = JsonNode.Parse(playtestJson);
-
-            if (playtestData == null)
+            
+            var config = new UniversalTesterConfig
             {
-                _logger.LogError("Invalid JSON in playtest results file");
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { error = "Invalid JSON in playtest results" }));
-                }
-                return 1;
-            }
-
-            // Extract issues from playtest results
-            var issues = new List<JsonObject>();
-            if (playtestData["issues"] is JsonArray issuesArray)
-            {
-                foreach (var issue in issuesArray.OfType<JsonObject>())
-                {
-                    // Handle both string and int severity values
-                    int severity = 0;
-                    var severityNode = issue["severity"];
-                    if (severityNode != null)
-                    {
-                        if (severityNode.GetValueKind() == JsonValueKind.String)
-                        {
-                            var severityStr = severityNode.GetValue<string>()?.ToLowerInvariant() ?? "";
-                            severity = severityStr switch
-                            {
-                                "low" or "minor" => 1,
-                                "medium" or "moderate" => 2,
-                                "high" or "major" => 3,
-                                "critical" => 4,
-                                _ => 0
-                            };
-                        }
-                        else if (severityNode.GetValueKind() == JsonValueKind.Number)
-                        {
-                            severity = severityNode.GetValue<int>();
-                        }
-                    }
-                    
-                    if (severity >= 2) // Only include medium+ severity issues
-                    {
-                        issues.Add(issue);
-                    }
-                }
-            }
-
-            // Create change requests from issues
-            var changeRequests = new List<JsonObject>();
-            foreach (var issue in issues)
-            {
-                var changeRequest = new JsonObject
-                {
-                    ["requestId"] = issue["issueId"]?.GetValue<string>() ?? Guid.NewGuid().ToString(),
-                    ["sourceIssueId"] = issue["issueId"]?.GetValue<string>() ?? "unknown",
-                    ["domain"] = (issue["affectedDomains"] as JsonArray)?.FirstOrDefault()?.GetValue<string>() ?? "Gameplay",
-                    ["changeType"] = "Modify",
-                    ["targetElement"] = "Placeholder Issue",
-                    ["currentValue"] = "N/A",
-                    ["proposedValue"] = issue["title"]?.GetValue<string>() ?? "Improve based on feedback",
-                    ["rationale"] = issue["description"]?.GetValue<string>() ?? "Based on playtest feedback"
-                };
-                changeRequests.Add(changeRequest);
-            }
-
-            var synthesis = new JsonObject
-            {
-                ["synthesisId"] = $"synth-{DateTime.UtcNow:yyyy-MM-dd}",
-                ["sourceReportId"] = playtestData["reportId"]?.GetValue<string>() ?? "unknown",
-                ["generatedAt"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                ["changeRequests"] = new JsonArray(changeRequests.ToArray()),
-                ["iterationRecommendation"] = new JsonObject
-                {
-                    ["shouldIterate"] = changeRequests.Count > 0,
-                    ["priority"] = changeRequests.Count > 2 ? "High" : "Normal",
-                    ["estimatedEffort"] = "PT1H",
-                    ["summary"] = $"Synthesized {changeRequests.Count} changes from playtest results"
-                }
+                Target = target,
+                Goal = goal,
+                TargetType = ParseTargetType(type),
+                Depth = ParseTestingDepth(depth),
+                MaxDuration = ParseDuration(maxDuration)
             };
-
-            var outputJson = synthesis.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(output.FullName, outputJson);
-
+            
+            if (!json)
+            {
+                AnsiConsole.MarkupLine($"[bold]Target:[/] {target}");
+                AnsiConsole.MarkupLine($"[bold]Goal:[/] {goal}");
+                AnsiConsole.MarkupLine($"[bold]Type:[/] {config.TargetType}");
+                AnsiConsole.MarkupLine($"[bold]Depth:[/] {config.Depth}");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]Starting test session...[/]");
+            }
+            
+            var context = CreateExecutionContext();
+            var tester = new UniversalTesterAgent(_providerFactory, _logger);
+            
+            var report = await tester.ExecuteAsync(config, context, CancellationToken.None);
+            
             if (json)
             {
-                Console.WriteLine(outputJson);
+                var jsonOutput = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+                Console.WriteLine(jsonOutput);
+                
+                if (!string.IsNullOrEmpty(output))
+                {
+                    await File.WriteAllTextAsync(output, jsonOutput);
+                }
             }
             else
             {
-                _logger.LogInformation("Feedback synthesis created: {Count} change requests", changeRequests.Count);
-                _logger.LogInformation("Output saved to: {Path}", output.FullName);
+                DisplayTestReport(report);
+                
+                if (!string.IsNullOrEmpty(output))
+                {
+                    var jsonOutput = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+                    await File.WriteAllTextAsync(output, jsonOutput);
+                    AnsiConsole.MarkupLine($"[green]✓[/] Report saved to: {output}");
+                }
             }
-
-            return 0;
+            
+            return report.Summary.OverallScore >= 80 ? 0 : 1;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error synthesizing feedback");
+            _logger.LogError(ex, "Error running universal test");
             if (json)
             {
                 Console.WriteLine(JsonSerializer.Serialize(new { error = ex.Message }));
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]✗[/] Error: {ex.Message}");
             }
             return 1;
         }
     }
-
-    public async Task<int> ApplyFeedbackAsync(FileInfo feedback, FileInfo spec, FileInfo output, bool json, bool verbose)
+    
+    public async Task<int> RunAutonomousDevAsync(
+        string task,
+        string projectPath,
+        string? type,
+        string? acceptance,
+        int maxIterations,
+        string? persona,
+        string? autonomy,
+        string? output,
+        bool json,
+        bool verbose)
     {
         try
         {
-            if (!feedback.Exists)
+            if (!json)
             {
-                _logger.LogError("Feedback file not found: {Path}", feedback.FullName);
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { error = "Feedback file not found", path = feedback.FullName }));
-                }
-                return 1;
+                AnsiConsole.Write(new FigletText("Autonomous Dev").Color(Color.Green));
+                AnsiConsole.MarkupLine("[grey]AI-driven development with mock user testing[/]");
+                AnsiConsole.WriteLine();
             }
-
-            if (!spec.Exists)
+            
+            var config = new DevTaskConfig
             {
-                _logger.LogError("Specification file not found: {Path}", spec.FullName);
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { error = "Specification file not found", path = spec.FullName }));
-                }
-                return 1;
-            }
-
-            _logger.LogInformation("Applying feedback changes to specification: {Path}", spec.FullName);
-
-            var feedbackJson = await File.ReadAllTextAsync(feedback.FullName);
-            var feedbackData = JsonNode.Parse(feedbackJson);
-
-            if (feedbackData == null)
+                Task = task,
+                ProjectPath = projectPath,
+                ProjectType = ParseProjectType(type),
+                AcceptanceCriteria = acceptance,
+                MaxIterations = maxIterations,
+                TestPersona = ParsePersona(persona),
+                Autonomy = ParseAutonomy(autonomy)
+            };
+            
+            if (!json)
             {
-                _logger.LogError("Invalid JSON in feedback file");
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { error = "Invalid JSON in feedback file" }));
-                }
-                return 1;
+                AnsiConsole.MarkupLine($"[bold]Task:[/] {task}");
+                AnsiConsole.MarkupLine($"[bold]Project:[/] {projectPath}");
+                AnsiConsole.MarkupLine($"[bold]Persona:[/] {config.TestPersona}");
+                AnsiConsole.MarkupLine($"[bold]Autonomy:[/] {config.Autonomy}");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]Starting autonomous development...[/]");
             }
-
-            var specJson = await File.ReadAllTextAsync(spec.FullName);
-            var specNode = JsonNode.Parse(specJson)?.AsObject();
-
-            if (specNode == null)
-            {
-                _logger.LogError("Invalid JSON in specification file");
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { error = "Invalid JSON in specification file" }));
-                }
-                return 1;
-            }
-
-            var changeRequests = feedbackData["changeRequests"] as JsonArray;
-            if (changeRequests == null || changeRequests.Count == 0)
-            {
-                _logger.LogInformation("No change requests found in feedback");
-                await File.WriteAllTextAsync(output.FullName, specJson);
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { success = true, changesApplied = 0 }));
-                }
-                return 0;
-            }
-
-            int applied = 0;
-            int skipped = 0;
-
-            foreach (var changeNode in changeRequests.OfType<JsonObject>())
-            {
-                var domain = changeNode["domain"]?.GetValue<string>() ?? "";
-                var changeType = changeNode["changeType"]?.GetValue<string>() ?? "Modify";
-                var targetElement = changeNode["targetElement"]?.GetValue<string>() ?? "";
-                var proposedValue = changeNode["proposedValue"]?.GetValue<string>() ?? "";
-
-                if (string.IsNullOrEmpty(domain) || string.IsNullOrEmpty(targetElement))
-                {
-                    skipped++;
-                    continue;
-                }
-
-                // Get or create domain object
-                if (!specNode.TryGetPropertyValue(domain, out var domainNode) || domainNode is not JsonObject domainObj)
-                {
-                    if (changeType == "Add")
-                    {
-                        domainObj = new JsonObject();
-                        specNode[domain] = domainObj;
-                    }
-                    else
-                    {
-                        skipped++;
-                        continue;
-                    }
-                }
-
-                // Apply change
-                switch (changeType)
-                {
-                    case "Modify":
-                    case "Add":
-                        domainObj[targetElement] = JsonValue.Create(proposedValue);
-                        applied++;
-                        if (!json)
-                        {
-                            _logger.LogInformation("✅ Applied: {ChangeType} {Domain}.{Target} = {Value}", changeType, domain, targetElement, proposedValue);
-                        }
-                        break;
-                    case "Remove":
-                        if (domainObj.Remove(targetElement))
-                        {
-                            applied++;
-                            if (!json)
-                            {
-                                _logger.LogInformation("✅ Removed: {Domain}.{Target}", domain, targetElement);
-                            }
-                        }
-                        else
-                        {
-                            skipped++;
-                        }
-                        break;
-                }
-            }
-
-            var updatedJson = specNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(output.FullName, updatedJson);
-
+            
+            var context = CreateExecutionContext();
+            var tester = new UniversalTesterAgent(_providerFactory, _logger);
+            var devAgent = new AutonomousDevAgent(_providerFactory, tester, _logger);
+            
+            var session = await devAgent.ExecuteAsync(config, context, CancellationToken.None);
+            
             if (json)
             {
-                Console.WriteLine(JsonSerializer.Serialize(new { success = true, changesApplied = applied, changesSkipped = skipped }));
+                var jsonOutput = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
+                Console.WriteLine(jsonOutput);
+                
+                if (!string.IsNullOrEmpty(output))
+                {
+                    await File.WriteAllTextAsync(output, jsonOutput);
+                }
             }
             else
             {
-                _logger.LogInformation("📊 Summary: {Applied} changes applied, {Skipped} skipped", applied, skipped);
-                _logger.LogInformation("💾 Updated specification saved to: {Path}", output.FullName);
+                DisplayDevSession(session);
+                
+                if (!string.IsNullOrEmpty(output))
+                {
+                    var jsonOutput = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
+                    await File.WriteAllTextAsync(output, jsonOutput);
+                    AnsiConsole.MarkupLine($"[green]✓[/] Session report saved to: {output}");
+                }
             }
-
-            return 0;
+            
+            return session.Status == Models.SessionStatus.Completed ? 0 : 1;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error applying feedback changes");
+            _logger.LogError(ex, "Error running autonomous dev");
             if (json)
             {
                 Console.WriteLine(JsonSerializer.Serialize(new { error = ex.Message }));
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]✗[/] Error: {ex.Message}");
             }
             return 1;
         }
     }
-
-    public Task<int> CreateUnityAssetsAsync(DirectoryInfo project, int iteration, bool json, bool verbose)
+    
+    private static TargetType ParseTargetType(string? type)
     {
-        try
+        if (string.IsNullOrEmpty(type)) return TargetType.Auto;
+        return Enum.TryParse<TargetType>(type, true, out var result) ? result : TargetType.Auto;
+    }
+    
+    private static TestingDepth ParseTestingDepth(string? depth)
+    {
+        if (string.IsNullOrEmpty(depth)) return TestingDepth.Standard;
+        return Enum.TryParse<TestingDepth>(depth, true, out var result) ? result : TestingDepth.Standard;
+    }
+    
+    private static TimeSpan ParseDuration(string? duration)
+    {
+        if (string.IsNullOrEmpty(duration)) return TimeSpan.FromMinutes(10);
+        
+        if (duration.EndsWith("m", StringComparison.OrdinalIgnoreCase))
         {
-            if (!project.Exists)
-            {
-                _logger.LogError("Unity project not found: {Path}", project.FullName);
-                if (json)
-                {
-                    Console.WriteLine(JsonSerializer.Serialize(new { error = "Project not found", path = project.FullName }));
-                }
-                return Task.FromResult(1);
-            }
-
-            var assetsDir = Path.Combine(project.FullName, "Assets");
-            var iterationDir = Path.Combine(assetsDir, $"Iteration{iteration}");
-            var scriptsDir = Path.Combine(assetsDir, "Scripts");
-
-            Directory.CreateDirectory(iterationDir);
-            Directory.CreateDirectory(scriptsDir);
-
-            var sceneName = $"Iteration{iteration}Scene";
-            var scenePath = Path.Combine(iterationDir, $"{sceneName}.unity");
-            var scriptName = $"Iteration{iteration}Demo";
-            var scriptPath = Path.Combine(scriptsDir, $"{scriptName}.cs");
-            var readmePath = Path.Combine(iterationDir, "README.txt");
-
-            // Create minimal Unity scene file
-            var sceneContent = @"%YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
---- !u!29 &1
-SceneSettings:
-  m_ObjectHideFlags: 0
-  m_PVSData: 
-  m_PVSObjectsArray: []
-  m_PVSCellCount: 0
-";
-
-            // Create simple C# script
-            var scriptContent = $@"using UnityEngine;
-
-public class {scriptName} : MonoBehaviour
-{{
-    void Start()
-    {{
-        Debug.Log(""Iteration {iteration} Demo - Created by Nexo"");
-    }}
-}}
-";
-
-            // Create README
-            var readmeContent = $@"Iteration {iteration} Assets
-Created: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC
-
-This iteration was created by the Nexo iterative game development demo.
-";
-
-            File.WriteAllText(scenePath, sceneContent);
-            File.WriteAllText(scriptPath, scriptContent);
-            File.WriteAllText(readmePath, readmeContent);
-
-            if (json)
-            {
-                Console.WriteLine(JsonSerializer.Serialize(new
-                {
-                    success = true,
-                    iteration = iteration,
-                    assets = new
-                    {
-                        scene = scenePath,
-                        script = scriptPath,
-                        readme = readmePath
-                    }
-                }));
-            }
-            else
-            {
-                _logger.LogInformation("✅ Created Unity assets for iteration {Iteration}:", iteration);
-                _logger.LogInformation("   Scene: {Scene}", scenePath);
-                _logger.LogInformation("   Script: {Script}", scriptPath);
-                _logger.LogInformation("   README: {Readme}", readmePath);
-            }
-
-            return Task.FromResult(0);
+            if (int.TryParse(duration[..^1], out var minutes))
+                return TimeSpan.FromMinutes(minutes);
         }
-        catch (Exception ex)
+        else if (duration.EndsWith("h", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogError(ex, "Error creating Unity assets");
-            if (json)
+            if (int.TryParse(duration[..^1], out var hours))
+                return TimeSpan.FromHours(hours);
+        }
+        
+        return TimeSpan.FromMinutes(10);
+    }
+    
+    private static ProjectType ParseProjectType(string? type)
+    {
+        if (string.IsNullOrEmpty(type)) return ProjectType.Auto;
+        return Enum.TryParse<ProjectType>(type, true, out var result) ? result : ProjectType.Auto;
+    }
+    
+    private static MockUserPersona ParsePersona(string? persona)
+    {
+        if (string.IsNullOrEmpty(persona)) return MockUserPersona.Average;
+        return Enum.TryParse<MockUserPersona>(persona, true, out var result) ? result : MockUserPersona.Average;
+    }
+    
+    private static AutonomyLevel ParseAutonomy(string? autonomy)
+    {
+        if (string.IsNullOrEmpty(autonomy)) return AutonomyLevel.Supervised;
+        return Enum.TryParse<AutonomyLevel>(autonomy, true, out var result) ? result : AutonomyLevel.Supervised;
+    }
+    
+    private static IExecutionContext CreateExecutionContext()
+    {
+        return new ExecutionContext
+        {
+            AgentId = "demo-agent",
+            BehaviorId = "demo-behavior",
+            IsAirGapped = false,
+            AuditMode = false,
+            Provider = "openai",
+            Variables = new Dictionary<string, object>()
+        };
+    }
+    
+    private static void DisplayTestReport(TestReport report)
+    {
+        var summary = report.Summary;
+        
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Rule("[bold]Test Report[/]").RuleStyle("green"));
+        
+        var scoreColor = summary.OverallScore >= 90 ? "green" : summary.OverallScore >= 70 ? "yellow" : "red";
+        AnsiConsole.MarkupLine($"[bold]Overall Score:[/] [{scoreColor}]{summary.OverallScore:F0}%[/]");
+        AnsiConsole.MarkupLine($"[bold]Duration:[/] {summary.Duration.TotalMinutes:F1} minutes");
+        AnsiConsole.MarkupLine($"[bold]Tests:[/] {summary.Passed}/{summary.TotalTests} passed");
+        AnsiConsole.MarkupLine($"[bold]Issues:[/] {summary.Failed} failed, {summary.Warnings} warnings");
+        AnsiConsole.WriteLine();
+        
+        if (summary.KeyFindings.Count > 0)
+        {
+            AnsiConsole.MarkupLine("[bold]Key Findings:[/]");
+            foreach (var finding in summary.KeyFindings)
             {
-                Console.WriteLine(JsonSerializer.Serialize(new { error = ex.Message }));
+                AnsiConsole.MarkupLine($"  • {finding}");
             }
-            return Task.FromResult(1);
+            AnsiConsole.WriteLine();
+        }
+        
+        if (summary.Recommendations.Count > 0)
+        {
+            AnsiConsole.MarkupLine("[bold]Recommendations:[/]");
+            foreach (var rec in summary.Recommendations)
+            {
+                AnsiConsole.MarkupLine($"  → {rec}");
+            }
+        }
+    }
+    
+    private static void DisplayDevSession(DevelopmentSession session)
+    {
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Rule("[bold]Development Session[/]").RuleStyle("green"));
+        
+        var statusColor = session.Status switch
+        {
+            Models.SessionStatus.Completed => "green",
+            Models.SessionStatus.Partial => "yellow",
+            Models.SessionStatus.Failed => "red",
+            _ => "grey"
+        };
+        
+        AnsiConsole.MarkupLine($"[bold]Status:[/] [{statusColor}]{session.Status}[/]");
+        AnsiConsole.MarkupLine($"[bold]Duration:[/] {(session.EndTime - session.StartTime).TotalMinutes:F1} minutes");
+        AnsiConsole.MarkupLine($"[bold]Iterations:[/] {session.Iterations.Count}");
+        
+        if (session.Specification != null)
+        {
+            AnsiConsole.MarkupLine($"[bold]Feature:[/] {session.Specification.Summary}");
+        }
+        
+        AnsiConsole.WriteLine();
+        
+        if (session.Iterations.Count > 0)
+        {
+            var table = new Table();
+            table.AddColumn("Iteration");
+            table.AddColumn("Score");
+            table.AddColumn("Issues");
+            table.AddColumn("Status");
+            
+            foreach (var iteration in session.Iterations)
+            {
+                var score = iteration.Feedback.AcceptanceScore;
+                var scoreColor = score >= 90 ? "green" : score >= 70 ? "yellow" : "red";
+                table.AddRow(
+                    iteration.Number.ToString(),
+                    $"[{scoreColor}]{score:F0}%[/]",
+                    iteration.Feedback.Issues.Count.ToString(),
+                    iteration.Feedback.OverallSuccess ? "[green]✓[/]" : "[red]✗[/]"
+                );
+            }
+            
+            AnsiConsole.Write(table);
         }
     }
 }
-
