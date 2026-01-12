@@ -1,4 +1,4 @@
-.PHONY: demo demo-test demo-dev demo-fresh package-cli build test
+.PHONY: build test demo-test demo-dev demo-fresh package-cli
 
 build:
 	dotnet build
@@ -6,19 +6,39 @@ build:
 test:
 	dotnet test
 
-# Run Universal Testing Agent demo
+# CLI demos
 demo-test:
-	dotnet run --project src/Nexo.CLI -- demo test "https://example.com" "Test the application"
+	dotnet run --project src/Nexo.CLI -- demo test \
+		--target "https://httpbin.org/html" \
+		--goal "Verify page structure and content" \
+		--depth quick
 
-# Run Autonomous Development Agent demo
 demo-dev:
-	dotnet run --project src/Nexo.CLI -- demo dev "Add a feature" "./MyProject"
+	dotnet run --project src/Nexo.CLI -- demo dev \
+		--project ./examples/sample-project \
+		--task "Add input validation" \
+		--max-iterations 3 \
+		--autonomy supervised
 
 # Build and run demo
 demo-fresh: build demo-test
 
-# Package CLI for distribution
+# Package CLI as single-file executable
 package-cli:
-	dotnet publish src/Nexo.CLI -c Release -r linux-x64 --self-contained -o ./artifacts/cli-linux
-	dotnet publish src/Nexo.CLI -c Release -r win-x64 --self-contained -o ./artifacts/cli-win
-	dotnet publish src/Nexo.CLI -c Release -r osx-x64 --self-contained -o ./artifacts/cli-osx
+	dotnet publish src/Nexo.CLI -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o dist/linux
+	dotnet publish src/Nexo.CLI -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o dist/windows
+	dotnet publish src/Nexo.CLI -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o dist/macos
+
+# Run specific agent demos
+demo-test-game:
+	dotnet run --project src/Nexo.CLI -- demo test \
+		--target "./examples/SampleGame/SampleGame.exe" \
+		--goal "Play through tutorial, find bugs" \
+		--persona adversarial \
+		--depth thorough
+
+demo-test-api:
+	dotnet run --project src/Nexo.CLI -- demo test \
+		--target "api://https://jsonplaceholder.typicode.com" \
+		--goal "Test CRUD operations on /posts endpoint" \
+		--depth standard

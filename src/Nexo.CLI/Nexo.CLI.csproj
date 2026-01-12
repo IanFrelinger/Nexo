@@ -56,8 +56,5 @@
     <ProjectReference Include="../Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj" />
   </ItemGroup>
   
-  <ItemGroup>
-    <PackageReference Include="Spectre.Console" />
-  </ItemGroup>
 
 </Project>
