@@ -21,13 +21,13 @@ public class UniversalTestCommand : Command
     {
         var targetOption = new Option<string>(
             "--target",
-            "What to test (URL, executable path, api://, cli://)")
-        { IsRequired = true };
+            () => "cli://dotnet --version",
+            "What to test (URL, executable path, api://, cli://). Defaults to an offline CLI target.");
         
         var goalOption = new Option<string>(
             "--goal",
-            "What to test for (natural language)")
-        { IsRequired = true };
+            () => "Verify the command runs and returns output",
+            "What to test for (natural language). Defaults to an offline-friendly goal.");
         
         var depthOption = new Option<string>(
             "--depth",
@@ -52,6 +52,11 @@ public class UniversalTestCommand : Command
             "--mode",
             () => "mixed",
             "Execution mode: deterministic, agentic, mixed");
+
+        var providerOption = new Option<string>(
+            "--provider",
+            () => "offline",
+            "LLM provider: offline, mock-json, mock, openai, azure, ollama (offline providers work air-gapped)");
         
         var verboseOption = new Option<bool>(
             "--verbose",
@@ -70,6 +75,7 @@ public class UniversalTestCommand : Command
         AddOption(durationOption);
         AddOption(outputOption);
         AddOption(modeOption);
+        AddOption(providerOption);
         AddOption(verboseOption);
         AddOption(jsonOption);
         
@@ -82,9 +88,10 @@ public class UniversalTestCommand : Command
             var maxDuration = ctx.ParseResult.GetValueForOption(durationOption) ?? "10m";
             var output = ctx.ParseResult.GetValueForOption(outputOption);
             var mode = ctx.ParseResult.GetValueForOption(modeOption) ?? "mixed";
+            var provider = ctx.ParseResult.GetValueForOption(providerOption) ?? "offline";
             var verbose = ctx.ParseResult.GetValueForOption(verboseOption);
             var json = ctx.ParseResult.GetValueForOption(jsonOption);
-            await ExecuteAsync(target, goal, depth, persona, maxDuration, output, mode, verbose, json);
+            await ExecuteAsync(target, goal, depth, persona, maxDuration, output, mode, provider, verbose, json);
         });
     }
     
@@ -96,6 +103,7 @@ public class UniversalTestCommand : Command
         string maxDuration,
         FileInfo? output,
         string mode,
+        string provider,
         bool verbose,
         bool json)
     {
@@ -109,6 +117,7 @@ public class UniversalTestCommand : Command
             console.WritePair("Depth", depth);
             console.WritePair("Persona", persona);
             console.WritePair("Mode", mode);
+            console.WritePair("Provider", provider);
             console.WriteLine();
         }
         
@@ -131,7 +140,7 @@ public class UniversalTestCommand : Command
             var agent = new UniversalTesterAgent(providerFactory, agentLogger);
             
             // Create execution context
-            var context = CreateExecutionContext(mode);
+            var context = CreateExecutionContext(mode, provider);
             
             // Set up progress reporting
             if (!json && console != null)
@@ -346,7 +355,7 @@ public class UniversalTestCommand : Command
         return services.BuildServiceProvider();
     }
     
-    private static IExecutionContext CreateExecutionContext(string mode)
+    private static IExecutionContext CreateExecutionContext(string mode, string provider)
     {
         return new Nexo.Infrastructure.Execution.ExecutionContext
         {
@@ -354,7 +363,9 @@ public class UniversalTestCommand : Command
             BehaviorId = "demo-test-behavior",
             IsAirGapped = mode == "deterministic",
             AuditMode = false,
-            Provider = mode == "deterministic" ? "none" : "openai",
+            Provider = string.IsNullOrWhiteSpace(provider)
+                ? (mode == "deterministic" ? "offline" : "offline")
+                : provider,
             Variables = new Dictionary<string, object>()
         };
     }

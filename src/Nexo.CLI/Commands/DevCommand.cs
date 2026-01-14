@@ -22,13 +22,13 @@ public class AutonomousDevCommand : Command
     {
         var projectOption = new Option<DirectoryInfo>(
             "--project",
-            "Path to the project to modify")
-        { IsRequired = true };
+            () => new DirectoryInfo(Directory.GetCurrentDirectory()),
+            "Path to the project to modify (defaults to current directory)");
         
         var taskOption = new Option<string>(
             "--task",
-            "What to build (natural language)")
-        { IsRequired = true };
+            () => "Create/update NEXO_AGENT_NOTES.md with a short demo note (safe, non-breaking change).",
+            "What to build (natural language; defaults to a safe demo task)");
         
         var specOption = new Option<FileInfo?>(
             "--spec",
@@ -56,6 +56,30 @@ public class AutonomousDevCommand : Command
         var outputOption = new Option<FileInfo?>(
             "--output",
             "Session output file path");
+
+        var resumeOption = new Option<FileInfo?>(
+            "--resume",
+            "Resume from a previously saved session JSON file");
+
+        var testTargetOption = new Option<string?>(
+            "--test-target",
+            () => "cli://dotnet --version",
+            "Target for the Universal Tester (defaults to an offline CLI target)");
+
+        var providerOption = new Option<string>(
+            "--provider",
+            () => "offline",
+            "LLM provider: offline, mock-json, mock, openai, azure, ollama (offline providers work air-gapped)");
+
+        var yesOption = new Option<bool>(
+            "--yes",
+            () => false,
+            "Auto-approve all prompts (non-interactive)");
+
+        var assumeDefaultsOption = new Option<bool>(
+            "--assume-defaults",
+            () => true,
+            "When prompted for open questions/clarifications, proceed with defaults/assumptions");
         
         var dryRunOption = new Option<bool>(
             "--dry-run",
@@ -80,6 +104,11 @@ public class AutonomousDevCommand : Command
         AddOption(autonomyOption);
         AddOption(personaOption);
         AddOption(outputOption);
+        AddOption(resumeOption);
+        AddOption(testTargetOption);
+        AddOption(providerOption);
+        AddOption(yesOption);
+        AddOption(assumeDefaultsOption);
         AddOption(dryRunOption);
         AddOption(verboseOption);
         AddOption(jsonOption);
@@ -94,10 +123,16 @@ public class AutonomousDevCommand : Command
             var autonomy = ctx.ParseResult.GetValueForOption(autonomyOption) ?? "supervised";
             var testPersona = ctx.ParseResult.GetValueForOption(personaOption) ?? "average";
             var output = ctx.ParseResult.GetValueForOption(outputOption);
+            var resume = ctx.ParseResult.GetValueForOption(resumeOption);
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOption);
             var verbose = ctx.ParseResult.GetValueForOption(verboseOption);
             var json = ctx.ParseResult.GetValueForOption(jsonOption);
-            await ExecuteAsync(project, task, spec, acceptance, maxIterations, autonomy, testPersona, output, dryRun, verbose, json);
+            var testTarget = ctx.ParseResult.GetValueForOption(testTargetOption);
+            var provider = ctx.ParseResult.GetValueForOption(providerOption) ?? "offline";
+            var yes = ctx.ParseResult.GetValueForOption(yesOption);
+            var assumeDefaults = ctx.ParseResult.GetValueForOption(assumeDefaultsOption);
+
+            await ExecuteAsync(project, task, spec, acceptance, maxIterations, autonomy, testPersona, output, resume, testTarget, provider, yes, assumeDefaults, dryRun, verbose, json);
         });
     }
     
@@ -110,6 +145,11 @@ public class AutonomousDevCommand : Command
         string autonomy,
         string testPersona,
         FileInfo? output,
+        FileInfo? resume,
+        string? testTarget,
+        string provider,
+        bool yes,
+        bool assumeDefaults,
         bool dryRun,
         bool verbose,
         bool json)
@@ -124,12 +164,26 @@ public class AutonomousDevCommand : Command
             console.WritePair("Autonomy", autonomy);
             console.WritePair("Max Iterations", maxIterations.ToString());
             console.WritePair("Test Persona", testPersona);
+            console.WritePair("Test Target", testTarget ?? "(auto)");
+            console.WritePair("Provider", provider);
             if (dryRun) console.WriteColoredLine("DRY RUN MODE", ConsoleColor.Yellow);
             console.WriteLine();
         }
         
         try
         {
+            DevelopmentSession? resumeSession = null;
+            if (resume != null && resume.Exists)
+            {
+                var resumeJson = await File.ReadAllTextAsync(resume.FullName);
+                resumeSession = JsonSerializer.Deserialize<DevelopmentSession>(resumeJson);
+                if (!json && console != null && resumeSession != null)
+                {
+                    console.WritePair("Resuming session", resume.FullName);
+                    console.WritePair("Resumed iterations", resumeSession.Iterations.Count.ToString());
+                }
+            }
+
             // Load spec file if provided
             string? detailedSpec = null;
             if (spec != null && spec.Exists)
@@ -150,7 +204,8 @@ public class AutonomousDevCommand : Command
                 AcceptanceCriteria = acceptance,
                 MaxIterations = maxIterations,
                 Autonomy = ParseAutonomy(autonomy),
-                TestPersona = ParsePersona(testPersona)
+                TestPersona = ParsePersona(testPersona),
+                TestTarget = testTarget
             };
             
             // Create console first (needed for approval callback)
@@ -166,18 +221,25 @@ public class AutonomousDevCommand : Command
             var agentLogger = loggerFactory.CreateLogger<AutonomousDevAgent>();
             var providerFactory = services.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
             var tester = new UniversalTesterAgent(providerFactory, testerLogger);
+
+            // Session persistence: if output provided, snapshot session as it progresses.
+            // If resuming and output not specified, default to writing back to the resume file.
+            var effectiveOutput = output ?? resume;
+            ISessionStore? sessionStore = effectiveOutput != null
+                ? new DevSessionFileStore(effectiveOutput)
+                : null;
             
             // Create approval callback for supervised mode
             IApprovalCallback? approvalCallback = null;
             if (config.Autonomy == AutonomyLevel.Supervised && console != null)
             {
-                approvalCallback = new DevCommandApprovalCallback(console);
+                approvalCallback = new DevCommandApprovalCallback(console, yes, assumeDefaults);
             }
             
-            var agent = new AutonomousDevAgent(providerFactory, tester, agentLogger, approvalCallback);
+            var agent = new AutonomousDevAgent(providerFactory, tester, agentLogger, approvalCallback, sessionStore);
             
             // Create execution context
-            var context = CreateExecutionContext();
+            var context = CreateExecutionContext(provider);
             
             if (dryRun)
             {
@@ -198,7 +260,9 @@ public class AutonomousDevCommand : Command
             }
             
             // Run the agent
-            var session = await agent.ExecuteAsync(config, context, CancellationToken.None);
+            var session = resumeSession != null
+                ? await agent.ExecuteAsync(config, context, resumeSession, CancellationToken.None)
+                : await agent.ExecuteAsync(config, context, CancellationToken.None);
             
             // Display final results
             if (json)
@@ -349,7 +413,7 @@ public class AutonomousDevCommand : Command
         return services.BuildServiceProvider();
     }
     
-    private static IExecutionContext CreateExecutionContext()
+    private static IExecutionContext CreateExecutionContext(string provider)
     {
         return new Nexo.Infrastructure.Execution.ExecutionContext
         {
@@ -357,7 +421,7 @@ public class AutonomousDevCommand : Command
             BehaviorId = "demo-dev-behavior",
             IsAirGapped = false,
             AuditMode = false,
-            Provider = "openai",
+            Provider = string.IsNullOrWhiteSpace(provider) ? "offline" : provider,
             Variables = new Dictionary<string, object>()
         };
     }

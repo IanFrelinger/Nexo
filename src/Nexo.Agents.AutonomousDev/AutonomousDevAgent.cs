@@ -20,17 +20,20 @@ public class AutonomousDevAgent
     private readonly UniversalTesterAgent _tester;
     private readonly ILogger<AutonomousDevAgent>? _logger;
     private readonly IApprovalCallback? _approvalCallback;
+    private readonly ISessionStore? _sessionStore;
     
     public AutonomousDevAgent(
         IProviderFactory providerFactory,
         UniversalTesterAgent tester,
         ILogger<AutonomousDevAgent>? logger = null,
-        IApprovalCallback? approvalCallback = null)
+        IApprovalCallback? approvalCallback = null,
+        ISessionStore? sessionStore = null)
     {
         _providerFactory = providerFactory;
         _tester = tester;
         _logger = logger;
         _approvalCallback = approvalCallback;
+        _sessionStore = sessionStore;
     }
     
     /// <summary>
@@ -40,6 +43,27 @@ public class AutonomousDevAgent
         DevTaskConfig config,
         IExecutionContext context,
         CancellationToken ct = default)
+    {
+        return await ExecuteInternalAsync(config, context, resumeSession: null, ct);
+    }
+
+    /// <summary>
+    /// Executes a development task, resuming from a previously saved session (best-effort).
+    /// </summary>
+    public Task<DevelopmentSession> ExecuteAsync(
+        DevTaskConfig config,
+        IExecutionContext context,
+        DevelopmentSession resumeSession,
+        CancellationToken ct = default)
+    {
+        return ExecuteInternalAsync(config, context, resumeSession, ct);
+    }
+
+    private async Task<DevelopmentSession> ExecuteInternalAsync(
+        DevTaskConfig config,
+        IExecutionContext context,
+        DevelopmentSession? resumeSession,
+        CancellationToken ct)
     {
         _logger?.LogInformation("Starting autonomous development: {Task}", config.Task);
         
@@ -61,29 +85,42 @@ public class AutonomousDevAgent
         var testBrick = new TestingBrick(_tester, _providerFactory, loggerFactory.CreateLogger<TestingBrick>());
         var analysisBrick = new AnalysisBrick(_providerFactory, loggerFactory.CreateLogger<AnalysisBrick>());
         
-        // Session state
-        var session = new DevelopmentSession
+        // Session state (resume if provided)
+        var session = resumeSession ?? new DevelopmentSession
         {
             Task = config.Task,
             ProjectPath = config.ProjectPath,
-            StartTime = DateTime.UtcNow
+            StartTime = DateTime.UtcNow,
+            Status = SessionStatus.InProgress,
+            EndTime = DateTime.MinValue
         };
+        session = session with { Status = SessionStatus.InProgress };
+        await PersistAsync(session, ct);
         
         // ======== PHASE 1: UNDERSTAND ========
         _logger?.LogInformation("Phase 1: Understanding requirements...");
-        
-        var specInput = new BrickInput();
-        specInput.Set("task", config.Task);
-        if (!string.IsNullOrEmpty(config.DetailedSpec))
-            specInput.Set("detailedSpec", config.DetailedSpec);
-        specInput.Set("references", config.References ?? Array.Empty<string>());
-        if (!string.IsNullOrEmpty(config.AcceptanceCriteria))
-            specInput.Set("acceptanceCriteria", config.AcceptanceCriteria);
-        specInput.Set("project", project);
-        
-        var specResult = await specBrick.ExecuteAsync(specInput, ImplementationType.Agentic, context, ct);
-        var specification = specResult.Get<Specification>("specification");
-        session = session with { Specification = specification };
+
+        Specification specification;
+        if (session.Specification != null)
+        {
+            specification = session.Specification;
+        }
+        else
+        {
+            var specInput = new BrickInput();
+            specInput.Set("task", config.Task);
+            if (!string.IsNullOrEmpty(config.DetailedSpec))
+                specInput.Set("detailedSpec", config.DetailedSpec);
+            specInput.Set("references", config.References ?? Array.Empty<string>());
+            if (!string.IsNullOrEmpty(config.AcceptanceCriteria))
+                specInput.Set("acceptanceCriteria", config.AcceptanceCriteria);
+            specInput.Set("project", project);
+            
+            var specResult = await specBrick.ExecuteAsync(specInput, ImplementationType.Agentic, context, ct);
+            specification = specResult.Get<Specification>("specification");
+            session = session with { Specification = specification };
+            await PersistAsync(session, ct);
+        }
         
         // Check for open questions
         if (specification.OpenQuestions.Count > 0 && config.Autonomy == AutonomyLevel.Supervised)
@@ -106,15 +143,24 @@ public class AutonomousDevAgent
         
         // ======== PHASE 2: PLAN ========
         _logger?.LogInformation("Phase 2: Creating development plan...");
-        
-        var planInput = new BrickInput();
-        planInput.Set("specification", specification);
-        planInput.Set("project", project);
-        planInput.Set("testPersona", config.TestPersona);
-        
-        var planResult = await planBrick.ExecuteAsync(planInput, ImplementationType.Agentic, context, ct);
-        var plan = planResult.Get<DevelopmentPlan>("plan");
-        session = session with { Plan = plan };
+
+        DevelopmentPlan plan;
+        if (session.Plan != null)
+        {
+            plan = session.Plan;
+        }
+        else
+        {
+            var planInput = new BrickInput();
+            planInput.Set("specification", specification);
+            planInput.Set("project", project);
+            planInput.Set("testPersona", config.TestPersona);
+            
+            var planResult = await planBrick.ExecuteAsync(planInput, ImplementationType.Agentic, context, ct);
+            plan = planResult.Get<DevelopmentPlan>("plan");
+            session = session with { Plan = plan };
+            await PersistAsync(session, ct);
+        }
         
         // Request approval for plan in supervised mode
         if (config.Autonomy == AutonomyLevel.Supervised && _approvalCallback != null)
@@ -127,38 +173,57 @@ public class AutonomousDevAgent
         }
         
         // ======== PHASE 3: ITERATION LOOP ========
-        var currentArtifacts = new List<GeneratedArtifact>();
-        TestFeedback? lastFeedback = null;
+        var previousArtifacts = session.Iterations.SelectMany(i => i.Artifacts).ToList();
+        TestFeedback? lastFeedback = session.Iterations.LastOrDefault()?.Feedback;
         
-        for (int iteration = 1; iteration <= config.MaxIterations; iteration++)
+        var startIteration = session.Iterations.Count + 1;
+        for (int iteration = startIteration; iteration <= config.MaxIterations; iteration++)
         {
             _logger?.LogInformation("=== Iteration {Iteration} of {Max} ===", iteration, config.MaxIterations);
             
+            var iterationArtifacts = new List<GeneratedArtifact>();
+
             // ---- GENERATE ----
             _logger?.LogInformation("Generating code...");
             
-            foreach (var task in plan.Tasks.Where(t => t.Status == Nexo.Agents.AutonomousDev.Models.TaskStatus.Pending))
+            var updatedTasks = plan.Tasks.ToList();
+            for (var taskIndex = 0; taskIndex < updatedTasks.Count; taskIndex++)
             {
+                var task = updatedTasks[taskIndex];
+                if (task.Status != Nexo.Agents.AutonomousDev.Models.TaskStatus.Pending) continue;
+
                 var genInput = new BrickInput();
                 genInput.Set("task", task);
                 genInput.Set("plan", plan);
                 genInput.Set("project", project);
-                genInput.Set("previousArtifacts", currentArtifacts.ToArray());
+                genInput.Set("previousArtifacts", previousArtifacts.ToArray());
                 if (lastFeedback != null)
                     genInput.Set("previousFeedback", lastFeedback);
                 
                 var genResult = await genBrick.ExecuteAsync(genInput, ImplementationType.Agentic, context, ct);
                 var artifacts = genResult.Get<GeneratedArtifact[]>("artifacts");
-                currentArtifacts.AddRange(artifacts);
+                iterationArtifacts.AddRange(artifacts);
+                previousArtifacts.AddRange(artifacts);
+
+                // Mark task complete for this iteration
+                updatedTasks[taskIndex] = task with
+                {
+                    Status = Nexo.Agents.AutonomousDev.Models.TaskStatus.Completed,
+                    Attempts = task.Attempts + 1
+                };
             }
+            
+            plan = plan with { Tasks = updatedTasks };
+            session = session with { Plan = plan };
+            await PersistAsync(session, ct);
             
             // ---- INTEGRATE ----
             _logger?.LogInformation("Applying changes...");
             
             // Request approval before applying changes in supervised mode
-            if (config.Autonomy == AutonomyLevel.Supervised && _approvalCallback != null && currentArtifacts.Count > 0)
+            if (config.Autonomy == AutonomyLevel.Supervised && _approvalCallback != null && iterationArtifacts.Count > 0)
             {
-                var approved = await _approvalCallback.ApproveChangesAsync(currentArtifacts, ct);
+                var approved = await _approvalCallback.ApproveChangesAsync(iterationArtifacts, ct);
                 if (!approved)
                 {
                     _logger?.LogInformation("Changes not approved, skipping iteration");
@@ -167,7 +232,7 @@ public class AutonomousDevAgent
             }
             
             var intInput = new BrickInput();
-            intInput.Set("artifacts", currentArtifacts.ToArray());
+            intInput.Set("artifacts", iterationArtifacts.ToArray());
             intInput.Set("project", project);
             intInput.Set("createBackup", iteration == 1);
             
@@ -235,9 +300,10 @@ public class AutonomousDevAgent
                 {
                     Number = iteration,
                     Feedback = lastFeedback,
-                    Artifacts = currentArtifacts.ToList()
+                    Artifacts = iterationArtifacts.ToList()
                 }).ToList()
             };
+            await PersistAsync(session, ct);
             
             _logger?.LogInformation("Test results: Score={Score}%, Issues={Issues}",
                 lastFeedback.AcceptanceScore, lastFeedback.Issues.Count);
@@ -249,7 +315,7 @@ public class AutonomousDevAgent
             analysisInput.Set("feedback", lastFeedback);
             analysisInput.Set("specification", specification);
             analysisInput.Set("plan", plan);
-            analysisInput.Set("currentArtifacts", currentArtifacts.ToArray());
+            analysisInput.Set("currentArtifacts", previousArtifacts.ToArray());
             analysisInput.Set("currentIteration", iteration);
             analysisInput.Set("maxIterations", config.MaxIterations);
             
@@ -278,6 +344,8 @@ public class AutonomousDevAgent
                     {
                         Tasks = UpdateTasksWithFixes(plan.Tasks, decision.PlannedFixes)
                     };
+                    session = session with { Plan = plan };
+                    await PersistAsync(session, ct);
                     break;
                     
                 case DecisionType.NeedsClarification:
@@ -310,6 +378,19 @@ public class AutonomousDevAgent
         
         // Ran out of iterations
         return session with { EndTime = DateTime.UtcNow, Status = SessionStatus.MaxIterations };
+    }
+
+    private async Task PersistAsync(DevelopmentSession session, CancellationToken ct)
+    {
+        if (_sessionStore == null) return;
+        try
+        {
+            await _sessionStore.SaveAsync(session, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to persist development session");
+        }
     }
     
     private static IProjectAdapter CreateProjectAdapter(string path, ProjectType? type)

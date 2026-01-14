@@ -10,10 +10,14 @@ namespace Nexo.CLI.Commands;
 public class DevCommandApprovalCallback : IApprovalCallback
 {
     private readonly CliConsole _console;
+    private readonly bool _yes;
+    private readonly bool _assumeDefaults;
     
-    public DevCommandApprovalCallback(CliConsole console)
+    public DevCommandApprovalCallback(CliConsole console, bool yes = false, bool assumeDefaults = true)
     {
         _console = console;
+        _yes = yes;
+        _assumeDefaults = assumeDefaults;
     }
     
     public Task<bool> ApproveOpenQuestionsAsync(Specification specification, CancellationToken ct = default)
@@ -32,7 +36,8 @@ public class DevCommandApprovalCallback : IApprovalCallback
         _console.WriteLine();
         _console.WriteLine("Please provide answers or press Enter to skip (agent will proceed with assumptions).");
         
-        // Use CliConsole prompt method
+        if (_yes) return Task.FromResult(true);
+        if (_assumeDefaults) return Task.FromResult(true);
         return Task.FromResult(_console.PromptYesNo("Proceed with assumptions?", defaultValue: true));
     }
     
@@ -59,7 +64,7 @@ public class DevCommandApprovalCallback : IApprovalCallback
         _console.WriteLine();
         _console.WriteColored("Do you want to proceed with this plan? (y/n): ", ConsoleColor.Cyan);
         
-        // Use CliConsole prompt method
+        if (_yes) return Task.FromResult(true);
         return Task.FromResult(_console.PromptYesNo("Proceed with this plan?", defaultValue: true));
     }
     
@@ -85,7 +90,7 @@ public class DevCommandApprovalCallback : IApprovalCallback
         _console.WriteLine();
         _console.WriteColored("Do you want to apply these changes? (y/n): ", ConsoleColor.Cyan);
         
-        // Use CliConsole prompt method
+        if (_yes) return Task.FromResult(true);
         return Task.FromResult(_console.PromptYesNo("Apply these changes?", defaultValue: true));
     }
     
@@ -98,7 +103,7 @@ public class DevCommandApprovalCallback : IApprovalCallback
         _console.WriteLine();
         _console.WriteColored("Please provide clarification (or press Enter to skip): ", ConsoleColor.Cyan);
         
-        // Use CliConsole prompt method
+        if (_assumeDefaults) return Task.FromResult<string?>(null);
         var response = _console.Prompt("Clarification: ");
         return Task.FromResult(string.IsNullOrWhiteSpace(response) ? null : response);
     }

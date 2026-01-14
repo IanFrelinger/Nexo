@@ -358,21 +358,8 @@ static class Program
         // Register orchestration layer
         services.AddNexoOrchestration();
 
-        // Register IModel (using EchoModel for now, replace with real LLM adapter later)
-        // Note: EchoModel is in Nexo.Adapters.Models which may not be referenced
-        // For now, we'll skip this registration if the assembly isn't available
-        try
-        {
-            var echoModelType = Type.GetType("Nexo.Adapters.Models.EchoModel, Nexo.Adapters.Models");
-            if (echoModelType != null)
-            {
-                services.AddSingleton(typeof(Nexo.Abstractions.IModel), echoModelType);
-            }
-        }
-        catch
-        {
-            // EchoModel not available, skip registration
-        }
+        // Register IModel (EchoModel placeholder)
+        services.AddSingleton<Nexo.Abstractions.IModel, Nexo.Adapters.Models.EchoModel>();
         
         // Register IProviderFactory for agent execution
         services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
