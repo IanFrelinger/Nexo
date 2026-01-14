@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -10,6 +11,7 @@ namespace Nexo.Infrastructure.Execution;
 public class ProviderFactory : IProviderFactory
 {
     private readonly ILogger<ProviderFactory> _logger;
+    private static readonly HttpClient Http = new();
     private readonly HashSet<string> _availableProviders = new()
     {
         // Real providers (may be wired later)
@@ -31,7 +33,23 @@ public class ProviderFactory : IProviderFactory
     
     public bool IsProviderAvailable(string provider)
     {
-        return _availableProviders.Contains(provider.ToLowerInvariant());
+        provider = (provider ?? "").Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(provider)) return false;
+
+        if (!_availableProviders.Contains(provider)) return false;
+
+        // Offline/demo providers are always available
+        if (provider is "mock" or "offline" or "mock-json" or "echo") return true;
+
+        return provider switch
+        {
+            "openai" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENAI_API_KEY")),
+            "azure" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT"))
+                       && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY"))
+                       && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")),
+            "ollama" => true, // local service may or may not be running; caller can try
+            _ => false
+        };
     }
     
     public async Task<string> ExecuteLLMAsync(
@@ -53,16 +71,171 @@ public class ProviderFactory : IProviderFactory
             return GenerateMockJsonResponse(systemPrompt, userPrompt);
         }
         
-        // For now, treat unimplemented "real" providers as offline-safe to avoid breaking demos.
-        // This keeps agentic flows functional in air-gapped environments.
-        if (provider is "openai" or "azure" or "ollama")
+        // Real providers (best-effort). If not configured or call fails, fall back to mock-json.
+        if (provider is "openai")
         {
-            _logger.LogWarning("Provider {Provider} not wired; falling back to mock-json response", provider);
-            return GenerateMockJsonResponse(systemPrompt, userPrompt);
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                _logger.LogWarning("OPENAI_API_KEY not set; falling back to mock-json response");
+                return GenerateMockJsonResponse(systemPrompt, userPrompt);
+            }
+
+            try
+            {
+                return await ExecuteOpenAiAsync(apiKey, systemPrompt, userPrompt, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "OpenAI call failed; falling back to mock-json response");
+                return GenerateMockJsonResponse(systemPrompt, userPrompt);
+            }
+        }
+
+        if (provider is "azure")
+        {
+            var endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+            var apiKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
+            var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT");
+            if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(deployment))
+            {
+                _logger.LogWarning("Azure OpenAI env vars not set (AZURE_OPENAI_ENDPOINT/AZURE_OPENAI_API_KEY/AZURE_OPENAI_DEPLOYMENT); falling back to mock-json response");
+                return GenerateMockJsonResponse(systemPrompt, userPrompt);
+            }
+
+            try
+            {
+                return await ExecuteAzureOpenAiAsync(endpoint, apiKey, deployment, systemPrompt, userPrompt, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Azure OpenAI call failed; falling back to mock-json response");
+                return GenerateMockJsonResponse(systemPrompt, userPrompt);
+            }
+        }
+
+        if (provider is "ollama")
+        {
+            try
+            {
+                return await ExecuteOllamaAsync(systemPrompt, userPrompt, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Ollama call failed; falling back to mock-json response");
+                return GenerateMockJsonResponse(systemPrompt, userPrompt);
+            }
         }
 
         _logger.LogWarning("Unknown provider {Provider}; falling back to mock-json response", provider);
         return GenerateMockJsonResponse(systemPrompt, userPrompt);
+    }
+
+    private async Task<string> ExecuteOpenAiAsync(string apiKey, string systemPrompt, string userPrompt, CancellationToken ct)
+    {
+        var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
+        var url = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com/v1/chat/completions";
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+        var payload = new
+        {
+            model,
+            messages = new[]
+            {
+                new { role = "system", content = systemPrompt ?? "" },
+                new { role = "user", content = userPrompt ?? "" }
+            },
+            temperature = 0.2
+        };
+
+        req.Content = new StringContent(JsonSerializer.Serialize(payload));
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        using var resp = await Http.SendAsync(req, ct);
+        var body = await resp.Content.ReadAsStringAsync(ct);
+        resp.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return content ?? throw new InvalidOperationException("OpenAI response content was null");
+    }
+
+    private async Task<string> ExecuteAzureOpenAiAsync(string endpoint, string apiKey, string deployment, string systemPrompt, string userPrompt, CancellationToken ct)
+    {
+        endpoint = endpoint.TrimEnd('/');
+        var apiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ?? "2024-06-01";
+        var url = $"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={apiVersion}";
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url);
+        req.Headers.Add("api-key", apiKey);
+
+        var payload = new
+        {
+            messages = new[]
+            {
+                new { role = "system", content = systemPrompt ?? "" },
+                new { role = "user", content = userPrompt ?? "" }
+            },
+            temperature = 0.2
+        };
+
+        req.Content = new StringContent(JsonSerializer.Serialize(payload));
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        using var resp = await Http.SendAsync(req, ct);
+        var body = await resp.Content.ReadAsStringAsync(ct);
+        resp.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return content ?? throw new InvalidOperationException("Azure OpenAI response content was null");
+    }
+
+    private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    {
+        var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
+        var model = Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1";
+        var url = $"{baseUrl.TrimEnd('/')}/api/chat";
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url);
+
+        var payload = new
+        {
+            model,
+            stream = false,
+            messages = new[]
+            {
+                new { role = "system", content = systemPrompt ?? "" },
+                new { role = "user", content = userPrompt ?? "" }
+            }
+        };
+
+        req.Content = new StringContent(JsonSerializer.Serialize(payload));
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        using var resp = await Http.SendAsync(req, ct);
+        var body = await resp.Content.ReadAsStringAsync(ct);
+        resp.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return content ?? throw new InvalidOperationException("Ollama response content was null");
     }
 
     private static string GenerateMockJsonResponse(string systemPrompt, string userPrompt)

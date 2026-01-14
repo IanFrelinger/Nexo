@@ -21,6 +21,12 @@ internal static class Program
         {
             return await RunAgentSmokeTests.RunAsync(args.Skip(1).ToArray());
         }
+        
+        // Check if we should run CLI demo E2E tests
+        if (args.Length > 0 && args[0] == "--cli-demo-e2e")
+        {
+            return await RunCliDemoE2ETests.RunAsync(args.Skip(1).ToArray());
+        }
 
         var logger = new ConsoleLogger();
         logger.LogInformation("Nexo CLI Unit Test Runner (Cross-Platform)");
