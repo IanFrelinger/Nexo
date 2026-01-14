@@ -149,10 +149,19 @@ static class Program
         // This was removed when we renamed TestCommand to UniversalTestCommand
         // The old test command was for running unit tests, not the Universal Testing Agent
         // For now, use "nexo demo test" for Universal Testing Agent
-        // var testCommand = serviceProvider.GetRequiredService<TestCommand>();
-        // var testCmd = new Command("test", "Run tests");
-        // testCmd.AddOption(new Option<string?>("--filter", "Filter tests by name or category"));
-        // testCmd.SetHandler(...);
+        var testCommand = serviceProvider.GetRequiredService<TestCommand>();
+        var testCmd = new Command("test", "Run internal unit/integration tests (framework test runner)");
+        var filterOpt = new Option<string?>("--filter", "Filter tests by name or category");
+        testCmd.AddOption(filterOpt);
+        testCmd.SetHandler(
+            async (string? filter, bool json, bool verbose) =>
+            {
+                var exitCode = await testCommand.ExecuteAsync(filter, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            filterOpt,
+            jsonOpt,
+            verboseOpt);
 
         // nexo orchestrate
         var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
@@ -318,7 +327,7 @@ static class Program
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
         root.AddCommand(configCmd);
-        // root.AddCommand(testCmd); // TODO: Re-implement test runner command
+        root.AddCommand(testCmd);
         root.AddCommand(escalateCmd);
         root.AddCommand(metricsCmd);
 
@@ -370,7 +379,7 @@ static class Program
         services.AddScoped<AgentCommand>();
         services.AddScoped<ListAgentsCommand>();
         services.AddScoped<ConfigCommand>();
-        // services.AddScoped<TestCommand>(); // TODO: Re-implement test runner command
+        services.AddScoped<TestCommand>();
         services.AddScoped<OrchestrateCommand>();
         services.AddScoped<EscalateCommand>();
         services.AddScoped<MetricsCommand>();
