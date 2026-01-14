@@ -42,7 +42,7 @@ internal static class Program
         var context = TestContext.Create(logger);
         Directory.CreateDirectory(context.ResultsDir);
 
-        var (requestedTargets, includeMobile) = ArgumentParser.Parse(args, logger);
+        var (requestedTargets, includeMobile, strict) = ArgumentParser.Parse(args, logger);
         var registry = RunnerRegistry.Build(includeMobile, context);
         var targets = TargetSelector.ResolveTargets(requestedTargets, includeMobile, registry).ToList();
 
@@ -58,13 +58,17 @@ internal static class Program
             var runner = registry.Resolve(target);
             if (runner is null)
             {
-                results.Add(TestRunResult.Failure(target, $"Unknown or unsupported platform '{target}'"));
+                results.Add(strict
+                    ? TestRunResult.Failure(target, $"Unknown or unsupported platform '{target}'")
+                    : TestRunResult.SkippedResult(target, $"Unknown or unsupported platform '{target}'"));
                 continue;
             }
 
             if (!runner.IsEnabled)
             {
-                results.Add(TestRunResult.Failure(target, $"Platform '{target}' is not supported on this host"));
+                results.Add(strict
+                    ? TestRunResult.Failure(target, $"Platform '{target}' is not supported on this host")
+                    : TestRunResult.SkippedResult(target, $"Platform '{target}' is not supported on this host"));
                 continue;
             }
 
@@ -90,10 +94,11 @@ internal static class Program
 
 static class ArgumentParser
 {
-    public static (List<string> requestedTargets, bool includeMobile) Parse(string[] args, ILogger logger)
+    public static (List<string> requestedTargets, bool includeMobile, bool strict) Parse(string[] args, ILogger logger)
     {
         var targets = new List<string>();
         var includeMobile = false;
+        var strict = string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase);
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -104,6 +109,12 @@ static class ArgumentParser
                     break;
                 case "--mobile":
                     includeMobile = true;
+                    break;
+                case "--strict":
+                    strict = true;
+                    break;
+                case "--no-strict":
+                    strict = false;
                     break;
                 case "--quick":
                     // Reserved for future quick mode support.
@@ -127,7 +138,7 @@ static class ArgumentParser
             targets.Add("ubuntu");
         }
 
-        return (targets, includeMobile);
+        return (targets, includeMobile, strict);
     }
 
     private static void PrintUsage(ILogger logger)
@@ -137,6 +148,8 @@ static class ArgumentParser
         logger.LogInformation("Options:");
         logger.LogInformation("  --all              Run on default desktop platform(s)");
         logger.LogInformation("  --mobile           Include mobile platforms (iOS, Android)");
+        logger.LogInformation("  --strict           Treat unsupported platforms as failures (default in CI)");
+        logger.LogInformation("  --no-strict        Skip unsupported platforms (default locally)");
         logger.LogInformation("  --quick            Skip build cache (reserved)");
         logger.LogInformation("  --platform <name>  Run on specific platform (ubuntu, ios, android, unity)");
         logger.LogInformation("");
@@ -185,8 +198,9 @@ static class SummaryPrinter
 {
     public static int Render(IEnumerable<TestRunResult> results, string resultsDir, ILogger logger)
     {
-        var passed = results.Where(r => r.Success).ToList();
-        var failed = results.Where(r => !r.Success).ToList();
+        var passed = results.Where(r => r.Status == TestRunStatus.Passed).ToList();
+        var skipped = results.Where(r => r.Status == TestRunStatus.Skipped).ToList();
+        var failed = results.Where(r => r.Status == TestRunStatus.Failed).ToList();
 
         logger.LogInformation("==============================================");
         logger.LogInformation("Test Summary");
@@ -198,6 +212,15 @@ static class SummaryPrinter
             foreach (var result in passed)
             {
                 logger.LogInformation($"   - {result.Platform}");
+            }
+        }
+
+        if (skipped.Count > 0)
+        {
+            logger.LogInformation("Skipped platforms:");
+            foreach (var result in skipped)
+            {
+                logger.LogInformation($"   - {result.Platform} - {result.Message}");
             }
         }
 
@@ -216,7 +239,9 @@ static class SummaryPrinter
         }
 
         logger.LogInformation("");
-        logger.LogInformation("All tests passed on all platforms!");
+        logger.LogInformation(skipped.Count > 0
+            ? "All supported platform tests passed (some platforms were skipped)!"
+            : "All tests passed on all platforms!");
         logger.LogInformation("");
         logger.LogInformation($"Test results are available in: {resultsDir}");
         return 0;
@@ -347,7 +372,7 @@ abstract class DockerRunnerBase : ITestPlatformRunner
 
     public IReadOnlyCollection<string> PlatformIds { get; }
     public bool IsMobile { get; }
-    public virtual bool IsEnabled => File.Exists(DockerfilePath);
+    public virtual bool IsEnabled => File.Exists(DockerfilePath) && DockerAvailability.IsUsable();
 
     public async Task<TestRunResult> RunAsync()
     {
@@ -461,6 +486,39 @@ abstract class DockerRunnerBase : ITestPlatformRunner
         catch
         {
             // ignore cleanup issues
+        }
+    }
+}
+
+static class DockerAvailability
+{
+    public static bool IsUsable()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = "info",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+
+            using var p = Process.Start(psi);
+            if (p == null) return false;
+
+            if (!p.WaitForExit(2000))
+            {
+                try { p.Kill(entireProcessTree: true); } catch { /* ignore */ }
+                return false;
+            }
+
+            return p.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
         }
     }
 }
@@ -752,13 +810,23 @@ sealed class UnityRunner : ITestPlatformRunner
 
 #region Result & parsing helpers
 
-record TestRunResult(string Platform, bool Success, string Message, string? LogPath, string? ResultPath)
+record TestRunResult(string Platform, TestRunStatus Status, string Message, string? LogPath, string? ResultPath)
 {
     public static TestRunResult SuccessResult(string platform, string message, string? logPath = null, string? resultPath = null)
-        => new(platform, true, message, logPath, resultPath);
+        => new(platform, TestRunStatus.Passed, message, logPath, resultPath);
 
     public static TestRunResult Failure(string platform, string message, string? logPath = null)
-        => new(platform, false, message, logPath, null);
+        => new(platform, TestRunStatus.Failed, message, logPath, null);
+
+    public static TestRunResult SkippedResult(string platform, string message)
+        => new(platform, TestRunStatus.Skipped, message, null, null);
+}
+
+enum TestRunStatus
+{
+    Passed,
+    Failed,
+    Skipped
 }
 
 static class TestResultParser
