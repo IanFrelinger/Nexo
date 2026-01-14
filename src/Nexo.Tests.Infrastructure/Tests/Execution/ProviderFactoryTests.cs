@@ -3,6 +3,7 @@ using Moq;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 using Nexo.Infrastructure.Execution;
+using System.Text.Json;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
@@ -55,11 +56,29 @@ public class ProviderFactoryTests : UnitTestBase
         var mockLogger = new Mock<ILogger<ProviderFactory>>();
         var factory = new ProviderFactory(mockLogger.Object);
         
-        AssertTrue(factory.IsProviderAvailable("openai"));
-        AssertTrue(factory.IsProviderAvailable("azure"));
         AssertTrue(factory.IsProviderAvailable("ollama"));
         AssertTrue(factory.IsProviderAvailable("mock"));
+        AssertTrue(factory.IsProviderAvailable("offline"));
+        AssertTrue(factory.IsProviderAvailable("mock-json"));
+        AssertTrue(factory.IsProviderAvailable("echo"));
         AssertFalse(factory.IsProviderAvailable("unknown"));
+
+        // Real providers depend on environment configuration; validate behavior is env-sensitive.
+        WithEnv("OPENAI_API_KEY", null, () =>
+        {
+            AssertFalse(factory.IsProviderAvailable("openai"));
+        });
+
+        WithEnv("AZURE_OPENAI_ENDPOINT", null, () =>
+        {
+            WithEnv("AZURE_OPENAI_API_KEY", null, () =>
+            {
+                WithEnv("AZURE_OPENAI_DEPLOYMENT", null, () =>
+                {
+                    AssertFalse(factory.IsProviderAvailable("azure"));
+                });
+            });
+        });
         
         await Task.CompletedTask;
     }
@@ -77,19 +96,66 @@ public class ProviderFactoryTests : UnitTestBase
             CancellationToken.None);
         
         AssertNotNull(result);
-        AssertTrue(result.Contains("Mock LLM response"));
+        AssertTrue(IsJsonObject(result), "mock provider should return JSON");
         
-        await AssertThrowsAsync<NotImplementedException>(async () =>
+        // openai should never throw just because it's not configured; it should fall back to mock-json.
+        WithEnv("OPENAI_API_KEY", null, async () =>
         {
-            await factory.ExecuteLLMAsync(
+            var openAiResult = await factory.ExecuteLLMAsync(
                 "openai",
                 "Test",
                 "Test",
                 new { },
                 CancellationToken.None);
-        });
+            AssertNotNull(openAiResult);
+            AssertTrue(IsJsonObject(openAiResult), "openai should fall back to JSON when not configured");
+        }).GetAwaiter().GetResult();
         
         await Task.CompletedTask;
+    }
+
+    private static bool IsJsonObject(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var trimmed = text.Trim();
+        if (!trimmed.StartsWith('{') || !trimmed.EndsWith('}')) return false;
+        try
+        {
+            using var _ = JsonDocument.Parse(trimmed);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void WithEnv(string key, string? value, Action action)
+    {
+        var old = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, value);
+            action();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, old);
+        }
+    }
+
+    private static async Task WithEnv(string key, string? value, Func<Task> action)
+    {
+        var old = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, value);
+            await action();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, old);
+        }
     }
 }
 

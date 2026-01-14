@@ -20,9 +20,10 @@ public class DesktopAdapter : ITargetAdapter
     private Process? _process;
     private readonly ILogger<DesktopAdapter>? _logger;
     private readonly List<string> _errors = new();
+    private ITargetAdapter? _platformAdapter;
     
     public TargetType TargetType => TargetType.DesktopApp;
-    public bool IsConnected { get; private set; }
+    public bool IsConnected => _platformAdapter?.IsConnected ?? (_process != null && !_process.HasExited);
     
     public DesktopAdapter(ILogger<DesktopAdapter>? logger = null)
     {
@@ -31,6 +32,16 @@ public class DesktopAdapter : ITargetAdapter
     
     public async Task ConnectAsync(string target, CancellationToken ct = default)
     {
+        // If we're on Windows and the Windows automation adapter is available, delegate to it.
+        if (OperatingSystem.IsWindows())
+        {
+            var delegated = await TryConnectWindowsAdapterAsync(target, ct);
+            if (delegated)
+            {
+                return;
+            }
+        }
+
         try
         {
             // Parse target format: "process://Notepad" or file path
@@ -69,8 +80,6 @@ public class DesktopAdapter : ITargetAdapter
                 throw new FileNotFoundException($"Target not found: {target}");
             }
             
-            IsConnected = _process != null && !_process.HasExited;
-            
             if (!IsConnected)
             {
                 _errors.Add("Process exited immediately after launch");
@@ -87,15 +96,23 @@ public class DesktopAdapter : ITargetAdapter
     
     public Task DisconnectAsync(CancellationToken ct = default)
     {
+        if (_platformAdapter != null)
+        {
+            var adapter = _platformAdapter;
+            _platformAdapter = null;
+            return adapter.DisconnectAsync(ct);
+        }
+
         // Don't kill the process - it might be user's application
         // Just mark as disconnected
-        IsConnected = false;
         _process = null;
         return Task.CompletedTask;
     }
     
     public Task<byte[]?> CaptureScreenshotAsync(CancellationToken ct = default)
     {
+        if (_platformAdapter != null) return _platformAdapter.CaptureScreenshotAsync(ct);
+
         // TODO: Implement screenshot capture using platform-specific APIs
         // Windows: BitBlt or GDI+
         // macOS: CGWindowListCreateImage
@@ -106,18 +123,24 @@ public class DesktopAdapter : ITargetAdapter
     
     public Task<string?> GetStructureAsync(CancellationToken ct = default)
     {
+        if (_platformAdapter != null) return _platformAdapter.GetStructureAsync(ct);
+
         // TODO: Implement UI tree extraction using UI Automation
         return Task.FromResult<string?>(null);
     }
     
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default)
     {
+        if (_platformAdapter != null) return _platformAdapter.GetAccessibilityTreeAsync(ct);
+
         // TODO: Implement accessibility tree using platform APIs
         return Task.FromResult<string?>(null);
     }
     
     public Task<IReadOnlyList<InteractiveElement>> GetInteractiveElementsAsync(CancellationToken ct = default)
     {
+        if (_platformAdapter != null) return _platformAdapter.GetInteractiveElementsAsync(ct);
+
         // TODO: Implement element discovery using UI Automation
         _logger?.LogWarning("Interactive element discovery not implemented for desktop apps");
         return Task.FromResult<IReadOnlyList<InteractiveElement>>(Array.Empty<InteractiveElement>());
@@ -125,6 +148,8 @@ public class DesktopAdapter : ITargetAdapter
     
     public Task<string?> ExecuteActionAsync(TestAction action, CancellationToken ct = default)
     {
+        if (_platformAdapter != null) return _platformAdapter.ExecuteActionAsync(action, ct);
+
         // TODO: Implement action execution using UI Automation
         // This requires:
         // - Finding elements by automation ID, name, or coordinates
@@ -159,13 +184,15 @@ public class DesktopAdapter : ITargetAdapter
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
     public Task<IReadOnlyList<string>> GetErrorsAsync(CancellationToken ct = default) =>
-        Task.FromResult<IReadOnlyList<string>>(_errors);
+        _platformAdapter != null ? _platformAdapter.GetErrorsAsync(ct) : Task.FromResult<IReadOnlyList<string>>(_errors);
     
     public Task<IReadOnlyList<string>> GetWarningsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
     public Task<PerformanceMetrics?> GetPerformanceAsync(CancellationToken ct = default)
     {
+        if (_platformAdapter != null) return _platformAdapter.GetPerformanceAsync(ct);
+
         if (_process != null && !_process.HasExited)
         {
             try
@@ -190,6 +217,8 @@ public class DesktopAdapter : ITargetAdapter
     
     public Task<string?> GetWindowTitleAsync(CancellationToken ct = default)
     {
+        if (_platformAdapter != null) return _platformAdapter.GetWindowTitleAsync(ct);
+
         if (_process != null && !_process.HasExited)
         {
             try
@@ -211,5 +240,30 @@ public class DesktopAdapter : ITargetAdapter
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync();
+    }
+
+    private async Task<bool> TryConnectWindowsAdapterAsync(string target, CancellationToken ct)
+    {
+        try
+        {
+            // Load optional windows adapter assembly if present.
+            // Assembly: Nexo.Agents.UniversalTester.Windows
+            var typeName = "Nexo.Agents.UniversalTester.Windows.Adapters.WindowsDesktopAdapter, Nexo.Agents.UniversalTester.Windows";
+            var type = Type.GetType(typeName);
+            if (type == null) return false;
+
+            var adapter = Activator.CreateInstance(type) as ITargetAdapter;
+            if (adapter == null) return false;
+
+            await adapter.ConnectAsync(target, ct);
+            _platformAdapter = adapter;
+            _logger?.LogInformation("Using Windows desktop UI automation adapter");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Windows desktop automation adapter failed; falling back");
+            return false;
+        }
     }
 }

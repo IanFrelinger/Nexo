@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -33,6 +33,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Orchestration", "src\Nexo.Orchestration\Nexo.Orchestration.csproj", "{4D936C54-C662-4788-9702-0C60DE90B4B1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.Orchestration", "src\Nexo.Tests.Orchestration\Nexo.Tests.Orchestration.csproj", "{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Agents.UniversalTester.Windows", "src\Nexo.Agents.UniversalTester.Windows\Nexo.Agents.UniversalTester.Windows.csproj", "{F36B3F6E-FBEB-427F-86A9-5C9362433B64}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tools.GamePluginMock", "src\Nexo.Tools.GamePluginMock\Nexo.Tools.GamePluginMock.csproj", "{8FD1EF7F-3CF7-41FD-8EA6-EC6B1E954F47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -120,6 +124,14 @@ Global
 		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F36B3F6E-FBEB-427F-86A9-5C9362433B64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F36B3F6E-FBEB-427F-86A9-5C9362433B64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F36B3F6E-FBEB-427F-86A9-5C9362433B64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F36B3F6E-FBEB-427F-86A9-5C9362433B64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FD1EF7F-3CF7-41FD-8EA6-EC6B1E954F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FD1EF7F-3CF7-41FD-8EA6-EC6B1E954F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FD1EF7F-3CF7-41FD-8EA6-EC6B1E954F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FD1EF7F-3CF7-41FD-8EA6-EC6B1E954F47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,5 +154,7 @@ Global
 		{D2E3F4A5-B6C7-8901-F789-012345678901} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
 		{4D936C54-C662-4788-9702-0C60DE90B4B1} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
 		{153EFFE9-0EF3-46F5-B3EB-BAC3DDDC506E} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
+		{F36B3F6E-FBEB-427F-86A9-5C9362433B64} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
+		{8FD1EF7F-3CF7-41FD-8EA6-EC6B1E954F47} = {C7EC5422-B477-4777-8081-3E9C63DF85C4}
 	EndGlobalSection
 EndGlobal

@@ -28,6 +28,12 @@ internal static class Program
             return await RunCliDemoE2ETests.RunAsync(args.Skip(1).ToArray());
         }
 
+        // Check if we should run GameAdapter mock plugin tests
+        if (args.Length > 0 && args[0] == "--game-adapter-mock")
+        {
+            return await RunGameAdapterMockTests.RunAsync(args.Skip(1).ToArray());
+        }
+
         var logger = new ConsoleLogger();
         logger.LogInformation("Nexo CLI Unit Test Runner (Cross-Platform)");
         logger.LogInformation("==============================================");

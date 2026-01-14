@@ -88,3 +88,7 @@ backup/
 **/obj/
 /test-reports/
 appsettings.local.json
+
+# Nexo CLI demo generated outputs
+/Artifacts/demo-dev-session.json
+/NEXO_AGENT_NOTES.md

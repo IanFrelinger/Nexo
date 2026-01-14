@@ -20,6 +20,9 @@ public class GameAdapter : ITargetAdapter
     private StreamReader? _reader;
     private StreamWriter? _writer;
     private readonly ILogger<GameAdapter>? _logger;
+    private string _host = "localhost";
+    private int _port = 9999;
+    private bool _handshakeAttempted;
     
     public TargetType TargetType => TargetType.Game;
     public bool IsConnected => _gameConnection?.Connected ?? false;
@@ -31,13 +34,15 @@ public class GameAdapter : ITargetAdapter
     
     public async Task ConnectAsync(string target, CancellationToken ct = default)
     {
+        ParseTarget(target);
+
         // Launch game if it's an executable path
         if (File.Exists(target))
         {
             _gameProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = target,
-                Arguments = "--nexo-test-mode --nexo-port=9999"
+                Arguments = $"--nexo-test-mode --nexo-port={_port}"
             });
             
             // Wait for game to start
@@ -48,11 +53,13 @@ public class GameAdapter : ITargetAdapter
         _gameConnection = new TcpClient();
         try
         {
-            await _gameConnection.ConnectAsync("localhost", 9999, ct);
+            await _gameConnection.ConnectAsync(_host, _port, ct);
             var stream = _gameConnection.GetStream();
             _reader = new StreamReader(stream);
             _writer = new StreamWriter(stream) { AutoFlush = true };
-            _logger?.LogInformation("Connected to game at {Target}", target);
+            _logger?.LogInformation("Connected to game plugin at {Host}:{Port}", _host, _port);
+
+            await TryHandshakeAsync(ct);
         }
         catch (Exception ex)
         {
@@ -77,7 +84,7 @@ public class GameAdapter : ITargetAdapter
         
         try
         {
-            await _writer.WriteLineAsync("SCREENSHOT");
+            await SendAsync("SCREENSHOT", ct);
             var response = await _reader!.ReadLineAsync(ct);
             
             if (response?.StartsWith("DATA:") == true)
@@ -99,7 +106,7 @@ public class GameAdapter : ITargetAdapter
         
         try
         {
-            await _writer.WriteLineAsync("GAMESTATE");
+            await SendAsync("GAMESTATE", ct);
             var json = await _reader!.ReadLineAsync(ct);
             
             return json != null ? JsonSerializer.Deserialize<GameState>(json) : null;
@@ -116,7 +123,7 @@ public class GameAdapter : ITargetAdapter
         
         try
         {
-            await _writer.WriteLineAsync("PLAYERSTATE");
+            await SendAsync("PLAYERSTATE", ct);
             var json = await _reader!.ReadLineAsync(ct);
             
             return json != null ? JsonSerializer.Deserialize<PlayerState>(json) : null;
@@ -133,7 +140,7 @@ public class GameAdapter : ITargetAdapter
         
         try
         {
-            await _writer.WriteLineAsync("INTERACTABLES");
+            await SendAsync("INTERACTABLES", ct);
             var json = await _reader!.ReadLineAsync(ct);
             
             return json != null 
@@ -168,7 +175,7 @@ public class GameAdapter : ITargetAdapter
             
             if (command == null) return $"Unsupported: {action.Type}";
             
-            await _writer.WriteLineAsync(command);
+            await SendAsync(command, ct);
             return await _reader!.ReadLineAsync(ct);
         }
         catch (Exception ex)
@@ -232,5 +239,55 @@ public class GameAdapter : ITargetAdapter
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync();
+    }
+
+    private void ParseTarget(string target)
+    {
+        // Supports:
+        // - file path to game executable
+        // - tcp://host:port
+        // - game://host:port
+        if (target.StartsWith("tcp://", StringComparison.OrdinalIgnoreCase) ||
+            target.StartsWith("game://", StringComparison.OrdinalIgnoreCase))
+        {
+            if (Uri.TryCreate(target, UriKind.Absolute, out var uri))
+            {
+                _host = string.IsNullOrWhiteSpace(uri.Host) ? "localhost" : uri.Host;
+                _port = uri.Port > 0 ? uri.Port : 9999;
+            }
+        }
+        else
+        {
+            _host = "localhost";
+            _port = 9999;
+        }
+    }
+
+    private async Task TryHandshakeAsync(CancellationToken ct)
+    {
+        if (_handshakeAttempted || _writer == null) return;
+        _handshakeAttempted = true;
+
+        try
+        {
+            await SendAsync("HELLO", ct);
+            var line = await _reader!.ReadLineAsync(ct);
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                _logger?.LogInformation("Game plugin handshake: {Line}", line);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "Game plugin handshake failed (non-fatal)");
+        }
+    }
+
+    private async Task SendAsync(string line, CancellationToken ct)
+    {
+        // Basic cancellation-friendly send wrapper.
+        ct.ThrowIfCancellationRequested();
+        await _writer!.WriteLineAsync(line);
+        ct.ThrowIfCancellationRequested();
     }
 }
