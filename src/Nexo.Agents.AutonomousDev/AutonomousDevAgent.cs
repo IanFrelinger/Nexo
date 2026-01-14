@@ -19,15 +19,18 @@ public class AutonomousDevAgent
     private readonly IProviderFactory _providerFactory;
     private readonly UniversalTesterAgent _tester;
     private readonly ILogger<AutonomousDevAgent>? _logger;
+    private readonly IApprovalCallback? _approvalCallback;
     
     public AutonomousDevAgent(
         IProviderFactory providerFactory,
         UniversalTesterAgent tester,
-        ILogger<AutonomousDevAgent>? logger = null)
+        ILogger<AutonomousDevAgent>? logger = null,
+        IApprovalCallback? approvalCallback = null)
     {
         _providerFactory = providerFactory;
         _tester = tester;
         _logger = logger;
+        _approvalCallback = approvalCallback;
     }
     
     /// <summary>
@@ -86,7 +89,19 @@ public class AutonomousDevAgent
         if (specification.OpenQuestions.Count > 0 && config.Autonomy == AutonomyLevel.Supervised)
         {
             _logger?.LogWarning("Open questions need resolution");
-            return session with { Status = SessionStatus.AwaitingInput, EndTime = DateTime.UtcNow };
+            
+            if (_approvalCallback != null)
+            {
+                var approved = await _approvalCallback.ApproveOpenQuestionsAsync(specification, ct);
+                if (!approved)
+                {
+                    return session with { Status = SessionStatus.AwaitingInput, EndTime = DateTime.UtcNow };
+                }
+            }
+            else
+            {
+                return session with { Status = SessionStatus.AwaitingInput, EndTime = DateTime.UtcNow };
+            }
         }
         
         // ======== PHASE 2: PLAN ========
@@ -100,6 +115,16 @@ public class AutonomousDevAgent
         var planResult = await planBrick.ExecuteAsync(planInput, ImplementationType.Agentic, context, ct);
         var plan = planResult.Get<DevelopmentPlan>("plan");
         session = session with { Plan = plan };
+        
+        // Request approval for plan in supervised mode
+        if (config.Autonomy == AutonomyLevel.Supervised && _approvalCallback != null)
+        {
+            var approved = await _approvalCallback.ApprovePlanAsync(plan, ct);
+            if (!approved)
+            {
+                return session with { Status = SessionStatus.AwaitingInput, EndTime = DateTime.UtcNow };
+            }
+        }
         
         // ======== PHASE 3: ITERATION LOOP ========
         var currentArtifacts = new List<GeneratedArtifact>();
@@ -129,6 +154,17 @@ public class AutonomousDevAgent
             
             // ---- INTEGRATE ----
             _logger?.LogInformation("Applying changes...");
+            
+            // Request approval before applying changes in supervised mode
+            if (config.Autonomy == AutonomyLevel.Supervised && _approvalCallback != null && currentArtifacts.Count > 0)
+            {
+                var approved = await _approvalCallback.ApproveChangesAsync(currentArtifacts, ct);
+                if (!approved)
+                {
+                    _logger?.LogInformation("Changes not approved, skipping iteration");
+                    continue;
+                }
+            }
             
             var intInput = new BrickInput();
             intInput.Set("artifacts", currentArtifacts.ToArray());
@@ -246,6 +282,19 @@ public class AutonomousDevAgent
                     
                 case DecisionType.NeedsClarification:
                     _logger?.LogWarning("Need human input");
+                    
+                    if (_approvalCallback != null && config.Autonomy == AutonomyLevel.Supervised)
+                    {
+                        var clarification = await _approvalCallback.GetClarificationAsync(decision.Reasoning, ct);
+                        if (string.IsNullOrEmpty(clarification))
+                        {
+                            return session with { Status = SessionStatus.AwaitingInput, EndTime = DateTime.UtcNow };
+                        }
+                        // Use clarification to update plan (simplified - in production would be more sophisticated)
+                        _logger?.LogInformation("Received clarification, continuing...");
+                        continue;
+                    }
+                    
                     return session with { Status = SessionStatus.AwaitingInput, EndTime = DateTime.UtcNow };
                     
                 case DecisionType.Stuck:
@@ -270,7 +319,9 @@ public class AutonomousDevAgent
         
         return projectType switch
         {
-            ProjectType.DotNetApp or ProjectType.DotNetApi => new GenericProjectAdapter(path, loggerFactory.CreateLogger<GenericProjectAdapter>()),
+            ProjectType.UnityGame => new UnityProjectAdapter(path, loggerFactory.CreateLogger<UnityProjectAdapter>()),
+            ProjectType.DotNetApp or ProjectType.DotNetApi => new DotNetProjectAdapter(path, loggerFactory.CreateLogger<DotNetProjectAdapter>()),
+            ProjectType.ReactApp or ProjectType.VueApp or ProjectType.NextJs => new WebProjectAdapter(path, loggerFactory.CreateLogger<WebProjectAdapter>()),
             _ => new GenericProjectAdapter(path, loggerFactory.CreateLogger<GenericProjectAdapter>())
         };
     }

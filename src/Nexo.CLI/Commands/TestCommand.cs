@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,9 +15,9 @@ namespace Nexo.CLI.Commands;
 /// <summary>
 /// Command for running the Universal Testing Agent.
 /// </summary>
-public class TestCommand : Command
+public class UniversalTestCommand : Command
 {
-    public TestCommand() : base("test", "Run Universal Testing Agent to test any application")
+    public UniversalTestCommand() : base("test", "Run Universal Testing Agent to test any application")
     {
         var targetOption = new Option<string>(
             "--target",
@@ -72,9 +73,19 @@ public class TestCommand : Command
         AddOption(verboseOption);
         AddOption(jsonOption);
         
-        this.SetHandler(ExecuteAsync,
-            targetOption, goalOption, depthOption, personaOption,
-            durationOption, outputOption, modeOption, verboseOption, jsonOption);
+        this.SetHandler(async (InvocationContext ctx) =>
+        {
+            var target = ctx.ParseResult.GetValueForOption(targetOption)!;
+            var goal = ctx.ParseResult.GetValueForOption(goalOption)!;
+            var depth = ctx.ParseResult.GetValueForOption(depthOption) ?? "standard";
+            var persona = ctx.ParseResult.GetValueForOption(personaOption) ?? "average";
+            var maxDuration = ctx.ParseResult.GetValueForOption(durationOption) ?? "10m";
+            var output = ctx.ParseResult.GetValueForOption(outputOption);
+            var mode = ctx.ParseResult.GetValueForOption(modeOption) ?? "mixed";
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOption);
+            var json = ctx.ParseResult.GetValueForOption(jsonOption);
+            await ExecuteAsync(target, goal, depth, persona, maxDuration, output, mode, verbose, json);
+        });
     }
     
     private async Task ExecuteAsync(
@@ -114,9 +125,10 @@ public class TestCommand : Command
             
             // Create services and agent
             var services = BuildServices(mode);
-            var logger = services.GetRequiredService<ILogger<TestCommand>>();
+            var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+            var agentLogger = loggerFactory.CreateLogger<UniversalTesterAgent>();
             var providerFactory = services.GetRequiredService<IProviderFactory>();
-            var agent = new UniversalTesterAgent(providerFactory, logger);
+            var agent = new UniversalTesterAgent(providerFactory, agentLogger);
             
             // Create execution context
             var context = CreateExecutionContext(mode);
@@ -329,14 +341,14 @@ public class TestCommand : Command
         services.AddLogging(b => b.AddConsole());
         
         // Always register IProviderFactory (it handles deterministic mode internally)
-        services.AddSingleton<IProviderFactory, ProviderFactory>();
+        services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
         
         return services.BuildServiceProvider();
     }
     
     private static IExecutionContext CreateExecutionContext(string mode)
     {
-        return new ExecutionContext
+        return new Nexo.Infrastructure.Execution.ExecutionContext
         {
             AgentId = "demo-test-agent",
             BehaviorId = "demo-test-behavior",

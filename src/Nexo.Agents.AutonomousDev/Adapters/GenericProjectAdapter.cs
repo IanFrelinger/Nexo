@@ -9,7 +9,7 @@ namespace Nexo.Agents.AutonomousDev.Adapters;
 /// </summary>
 public class GenericProjectAdapter : IProjectAdapter
 {
-    private readonly string _projectPath;
+    protected readonly string _projectPath;
     private readonly ILogger<GenericProjectAdapter>? _logger;
     
     public GenericProjectAdapter(string projectPath, ILogger<GenericProjectAdapter>? logger = null)
@@ -18,7 +18,7 @@ public class GenericProjectAdapter : IProjectAdapter
         _logger = logger;
     }
     
-    public Task InitializeAsync(CancellationToken ct = default)
+    public virtual Task InitializeAsync(CancellationToken ct = default)
     {
         if (!Directory.Exists(_projectPath))
             throw new DirectoryNotFoundException($"Project path not found: {_projectPath}");
@@ -27,7 +27,7 @@ public class GenericProjectAdapter : IProjectAdapter
         return Task.CompletedTask;
     }
     
-    public Task<ProjectContext> GetProjectContextAsync(CancellationToken ct = default)
+    public virtual Task<ProjectContext> GetProjectContextAsync(CancellationToken ct = default)
     {
         var keyFiles = new List<string>();
         
@@ -117,7 +117,7 @@ public class GenericProjectAdapter : IProjectAdapter
         return Task.FromResult(File.Exists(fullPath));
     }
     
-    public async Task<BuildResult> BuildAsync(bool fullRebuild, CancellationToken ct = default)
+    public virtual async Task<BuildResult> BuildAsync(bool fullRebuild, CancellationToken ct = default)
     {
         // Try to detect build command
         var buildCommand = DetectBuildCommand();
@@ -208,7 +208,7 @@ public class GenericProjectAdapter : IProjectAdapter
         return backupPath;
     }
     
-    public Task<string> GetTestTargetAsync(CancellationToken ct = default)
+    public virtual Task<string> GetTestTargetAsync(CancellationToken ct = default)
     {
         // Try to infer from project type
         // For now, return a placeholder

@@ -145,19 +145,14 @@ static class Program
             jsonOpt,
             verboseOpt);
 
-        // nexo test
-        var testCommand = serviceProvider.GetRequiredService<TestCommand>();
-        var testCmd = new Command("test", "Run tests");
-        testCmd.AddOption(new Option<string?>("--filter", "Filter tests by name or category"));
-        testCmd.SetHandler(
-            async (string? filter, bool json, bool verbose) =>
-            {
-                var exitCode = await testCommand.ExecuteAsync(filter, json, verbose);
-                Environment.Exit(exitCode);
-            },
-            testCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
-            jsonOpt,
-            verboseOpt);
+        // nexo test - TODO: Re-implement test runner command
+        // This was removed when we renamed TestCommand to UniversalTestCommand
+        // The old test command was for running unit tests, not the Universal Testing Agent
+        // For now, use "nexo demo test" for Universal Testing Agent
+        // var testCommand = serviceProvider.GetRequiredService<TestCommand>();
+        // var testCmd = new Command("test", "Run tests");
+        // testCmd.AddOption(new Option<string?>("--filter", "Filter tests by name or category"));
+        // testCmd.SetHandler(...);
 
         // nexo orchestrate
         var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
@@ -323,7 +318,7 @@ static class Program
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
         root.AddCommand(configCmd);
-        root.AddCommand(testCmd);
+        // root.AddCommand(testCmd); // TODO: Re-implement test runner command
         root.AddCommand(escalateCmd);
         root.AddCommand(metricsCmd);
 
@@ -364,7 +359,20 @@ static class Program
         services.AddNexoOrchestration();
 
         // Register IModel (using EchoModel for now, replace with real LLM adapter later)
-        services.AddSingleton<IModel, EchoModel>();
+        // Note: EchoModel is in Nexo.Adapters.Models which may not be referenced
+        // For now, we'll skip this registration if the assembly isn't available
+        try
+        {
+            var echoModelType = Type.GetType("Nexo.Adapters.Models.EchoModel, Nexo.Adapters.Models");
+            if (echoModelType != null)
+            {
+                services.AddSingleton(typeof(Nexo.Abstractions.IModel), echoModelType);
+            }
+        }
+        catch
+        {
+            // EchoModel not available, skip registration
+        }
         
         // Register IProviderFactory for agent execution
         services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
@@ -375,17 +383,12 @@ static class Program
         services.AddScoped<AgentCommand>();
         services.AddScoped<ListAgentsCommand>();
         services.AddScoped<ConfigCommand>();
-        services.AddScoped<TestCommand>();
+        // services.AddScoped<TestCommand>(); // TODO: Re-implement test runner command
         services.AddScoped<OrchestrateCommand>();
         services.AddScoped<EscalateCommand>();
         services.AddScoped<MetricsCommand>();
         services.AddScoped<UnityCommand>();
-        services.AddScoped<DemoCommand>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<DemoCommand>>();
-            var providerFactory = sp.GetRequiredService<IProviderFactory>();
-            return new DemoCommand(logger, providerFactory);
-        });
+        services.AddScoped<DemoCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

@@ -17,8 +17,8 @@ public class DemoCommand
         var demoCmd = new Command("demo", "Demo operations for Universal Testing and Autonomous Development");
         
         // Use the new command classes
-        demoCmd.AddCommand(new TestCommand());
-        demoCmd.AddCommand(new DevCommand());
+        demoCmd.AddCommand(new UniversalTestCommand());
+        demoCmd.AddCommand(new AutonomousDevCommand());
         
         return demoCmd;
     }

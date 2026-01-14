@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,9 +16,9 @@ namespace Nexo.CLI.Commands;
 /// <summary>
 /// Command for running the Autonomous Development Agent.
 /// </summary>
-public class DevCommand : Command
+public class AutonomousDevCommand : Command
 {
-    public DevCommand() : base("dev", "Run Autonomous Development Agent to build features autonomously")
+    public AutonomousDevCommand() : base("dev", "Run Autonomous Development Agent to build features autonomously")
     {
         var projectOption = new Option<DirectoryInfo>(
             "--project",
@@ -83,9 +84,21 @@ public class DevCommand : Command
         AddOption(verboseOption);
         AddOption(jsonOption);
         
-        this.SetHandler(ExecuteAsync,
-            projectOption, taskOption, specOption, acceptanceOption,
-            iterationsOption, autonomyOption, personaOption, outputOption, dryRunOption, verboseOption, jsonOption);
+        this.SetHandler(async (InvocationContext ctx) =>
+        {
+            var project = ctx.ParseResult.GetValueForOption(projectOption)!;
+            var task = ctx.ParseResult.GetValueForOption(taskOption)!;
+            var spec = ctx.ParseResult.GetValueForOption(specOption);
+            var acceptance = ctx.ParseResult.GetValueForOption(acceptanceOption);
+            var maxIterations = ctx.ParseResult.GetValueForOption(iterationsOption);
+            var autonomy = ctx.ParseResult.GetValueForOption(autonomyOption) ?? "supervised";
+            var testPersona = ctx.ParseResult.GetValueForOption(personaOption) ?? "average";
+            var output = ctx.ParseResult.GetValueForOption(outputOption);
+            var dryRun = ctx.ParseResult.GetValueForOption(dryRunOption);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOption);
+            var json = ctx.ParseResult.GetValueForOption(jsonOption);
+            await ExecuteAsync(project, task, spec, acceptance, maxIterations, autonomy, testPersona, output, dryRun, verbose, json);
+        });
     }
     
     private async Task ExecuteAsync(
@@ -140,12 +153,28 @@ public class DevCommand : Command
                 TestPersona = ParsePersona(testPersona)
             };
             
+            // Create console first (needed for approval callback)
+            if (console == null && !json)
+            {
+                console = new CliConsole(verbose);
+            }
+            
             // Create services and agent
             var services = BuildServices();
-            var logger = services.GetRequiredService<ILogger<DevCommand>>();
-            var providerFactory = services.GetRequiredService<IProviderFactory>();
-            var tester = new UniversalTesterAgent(providerFactory, logger);
-            var agent = new AutonomousDevAgent(providerFactory, tester, logger);
+            var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+            var testerLogger = loggerFactory.CreateLogger<UniversalTesterAgent>();
+            var agentLogger = loggerFactory.CreateLogger<AutonomousDevAgent>();
+            var providerFactory = services.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
+            var tester = new UniversalTesterAgent(providerFactory, testerLogger);
+            
+            // Create approval callback for supervised mode
+            IApprovalCallback? approvalCallback = null;
+            if (config.Autonomy == AutonomyLevel.Supervised && console != null)
+            {
+                approvalCallback = new DevCommandApprovalCallback(console);
+            }
+            
+            var agent = new AutonomousDevAgent(providerFactory, tester, agentLogger, approvalCallback);
             
             // Create execution context
             var context = CreateExecutionContext();
@@ -194,7 +223,7 @@ public class DevCommand : Command
                 }
             }
             
-            Environment.ExitCode = session.Status == Models.SessionStatus.Completed ? 0 : 1;
+            Environment.ExitCode = session.Status == SessionStatus.Completed ? 0 : 1;
         }
         catch (Exception ex)
         {
@@ -216,17 +245,17 @@ public class DevCommand : Command
         
         var statusColor = session.Status switch
         {
-            Models.SessionStatus.Completed => ConsoleColor.Green,
-            Models.SessionStatus.Partial => ConsoleColor.Yellow,
-            Models.SessionStatus.Failed => ConsoleColor.Red,
+            SessionStatus.Completed => ConsoleColor.Green,
+            SessionStatus.Partial => ConsoleColor.Yellow,
+            SessionStatus.Failed => ConsoleColor.Red,
             _ => ConsoleColor.Gray
         };
         
         var statusText = session.Status switch
         {
-            Models.SessionStatus.Completed => "✅ Development Complete!",
-            Models.SessionStatus.Partial => "⚠️ Partial Success",
-            Models.SessionStatus.Failed => "❌ Development Failed",
+            SessionStatus.Completed => "✅ Development Complete!",
+            SessionStatus.Partial => "⚠️ Partial Success",
+            SessionStatus.Failed => "❌ Development Failed",
             _ => "⏸️ Development Stopped"
         };
         
@@ -315,14 +344,14 @@ public class DevCommand : Command
         var services = new ServiceCollection();
         
         services.AddLogging(b => b.AddConsole());
-        services.AddSingleton<IProviderFactory, ProviderFactory>();
+        services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
         
         return services.BuildServiceProvider();
     }
     
     private static IExecutionContext CreateExecutionContext()
     {
-        return new ExecutionContext
+        return new Nexo.Infrastructure.Execution.ExecutionContext
         {
             AgentId = "demo-dev-agent",
             BehaviorId = "demo-dev-behavior",
