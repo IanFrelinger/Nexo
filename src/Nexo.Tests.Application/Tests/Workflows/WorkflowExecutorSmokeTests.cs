@@ -305,7 +305,8 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                     Id = "brick-1",
                     Name = "Test Brick",
                     BrickId = "test-brick",
-                    Implementation = ImplementationType.Deterministic,
+                    // Auto will pick the brick default (agentic), then should fall back to deterministic on failure.
+                    Implementation = ImplementationType.Auto,
                     Inputs = new List<NodePort>(),
                     Outputs = new List<NodePort>
                     {
@@ -327,6 +328,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertTrue(result.NodeResults.ContainsKey("brick-1"));
         var nodeResult = result.NodeResults["brick-1"];
         AssertTrue(nodeResult.Outputs.ContainsKey("result"));
+        AssertEqual("brick-output", nodeResult.Outputs["result"]);
     }
 
     private async Task TestWorkflowValidation()
@@ -557,10 +559,17 @@ public class TestBrickForWorkflow : Brick
                     Deterministic = true,
                     RequiresNetwork = false
                 }
+            },
+            Agentic = new AgenticImplementation
+            {
+                Id = "test-agentic",
+                Name = "Test Agentic",
+                Description = "Always throws to force fallback in tests"
             }
         };
         
-        DefaultImplementation = ImplementationType.Deterministic;
+        DefaultImplementation = ImplementationType.Agentic;
+        FallbackChain = new[] { ImplementationType.Agentic, ImplementationType.Deterministic };
     }
     
     public override async Task<BrickOutput> ExecuteAsync(
@@ -570,6 +579,10 @@ public class TestBrickForWorkflow : Brick
         CancellationToken cancellationToken = default)
     {
         await Task.Delay(10, cancellationToken);
+        if (implementation == ImplementationType.Agentic)
+        {
+            throw new InvalidOperationException("Agentic implementation failed (test)");
+        }
         var output = new BrickOutput
         {
             Summary = "Brick executed"

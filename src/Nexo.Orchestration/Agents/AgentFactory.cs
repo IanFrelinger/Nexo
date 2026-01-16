@@ -7,6 +7,7 @@ using Nexo.Orchestration.Agents.Build;
 using Nexo.Orchestration.Agents.Playtest;
 using Nexo.Orchestration.Agents.Unity;
 using Nexo.Orchestration.Agents.Planning;
+using Nexo.Orchestration.Models;
 using Nexo.Orchestration.Assets.Ports;
 using Nexo.Orchestration.Build.Ports;
 using Nexo.Orchestration.Playtest.Ports;
@@ -128,7 +129,7 @@ public sealed class AgentFactory
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<CombatAgent>)) as ILogger<CombatAgent>
             ?? throw new InvalidOperationException("ILogger<CombatAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         return new CombatAgent(spec, logger, model);
     }
 
@@ -136,7 +137,7 @@ public sealed class AgentFactory
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<EconomyAgent>)) as ILogger<EconomyAgent>
             ?? throw new InvalidOperationException("ILogger<EconomyAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         return new EconomyAgent(spec, logger, model);
     }
 
@@ -144,7 +145,7 @@ public sealed class AgentFactory
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<AIAgent>)) as ILogger<AIAgent>
             ?? throw new InvalidOperationException("ILogger<AIAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         return new AIAgent(spec, logger, model);
     }
 
@@ -152,7 +153,7 @@ public sealed class AgentFactory
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<InfrastructureAgent>)) as ILogger<InfrastructureAgent>
             ?? throw new InvalidOperationException("ILogger<InfrastructureAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         return new InfrastructureAgent(spec, logger, model);
     }
 
@@ -160,7 +161,7 @@ public sealed class AgentFactory
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<SecurityAgent>)) as ILogger<SecurityAgent>
             ?? throw new InvalidOperationException("ILogger<SecurityAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         return new SecurityAgent(spec, logger, model);
     }
 
@@ -168,7 +169,7 @@ public sealed class AgentFactory
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<GameplayAgent>)) as ILogger<GameplayAgent>
             ?? throw new InvalidOperationException("ILogger<GameplayAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         return new GameplayAgent(spec, logger, model);
     }
 
@@ -187,7 +188,7 @@ public sealed class AgentFactory
 
     private BaseAgent CreateAssetAgent(AgentSpawnSpec spec)
     {
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         var storage = _serviceProvider.GetRequiredService<IAssetStorage>();
         var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
             ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
@@ -253,8 +254,7 @@ public sealed class AgentFactory
     {
         var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
             ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>()
-            ?? throw new InvalidOperationException("IModel not registered for playtest agents");
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
 
         return spec.Domain.ToLowerInvariant() switch
         {
@@ -290,7 +290,7 @@ public sealed class AgentFactory
     {
         var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
             ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
 
         return spec.Domain.ToLowerInvariant() switch
         {
@@ -318,12 +318,24 @@ public sealed class AgentFactory
     {
         var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
             ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
-        var model = _serviceProvider.GetService<IModel>();
+        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
 
         return new PlanningAgent(
             spec,
             baseLogger,
             model);
+    }
+
+    private IModel WrapModel(AgentSpawnSpec spec, IModel? model)
+    {
+        var logger = _serviceProvider.GetService(typeof(ILogger<OrchestrationHotSwappableModel>)) as ILogger<OrchestrationHotSwappableModel>
+            ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<OrchestrationHotSwappableModel>.Instance;
+        var baseModel = new OrchestrationHotSwappableModel(model, logger);
+
+        var accessor = _serviceProvider.GetService(typeof(IOrchestrationRuntimeSpecAccessor)) as IOrchestrationRuntimeSpecAccessor;
+        var runtime = accessor?.Current.Resolve(spec.AgentId, spec.Domain) ?? new ModelRuntimeSpec();
+
+        return new AgentScopedModel(baseModel, spec.AgentId, spec.Domain, runtime);
     }
 }
 

@@ -1,0 +1,122 @@
+using System.Text.Json;
+
+namespace Nexo.CLI.Demo.SelfExtend.Pipeline;
+
+public sealed record SelfExtendRuntimeConfig
+{
+    /// <summary>
+    /// Provider name for LLM steps/planner. Examples: "openai", "azure", "ollama", "mock-json", "offline".
+    /// </summary>
+    public string Provider { get; init; } = "offline";
+
+    /// <summary>
+    /// Preference for selectable steps/planner: "llm" or "deterministic".
+    /// </summary>
+    public string Prefer { get; init; } = "llm";
+
+    /// <summary>
+    /// Optional: use an LLM to decide which plan stage to run next.
+    /// </summary>
+    public bool PlannerUsesLlm { get; init; } = false;
+
+    /// <summary>
+    /// Steps are defined once and referenced by id in stages.
+    /// </summary>
+    public required Dictionary<string, StepSpec> Steps { get; init; }
+
+    /// <summary>
+    /// Ordered stages; planner decides which stage to emit next.
+    /// </summary>
+    public required List<StageSpec> Stages { get; init; }
+
+    public static SelfExtendRuntimeConfig Default()
+    {
+        return new SelfExtendRuntimeConfig
+        {
+            Provider = "offline",
+            Prefer = "llm",
+            PlannerUsesLlm = false,
+            Steps = new Dictionary<string, StepSpec>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["write_command_bad"] = new StepSpec
+                {
+                    Kind = "write_command",
+                    Prefer = "deterministic",
+                    Args = new Dictionary<string, JsonElement>
+                    {
+                        ["message"] = JsonSerializer.SerializeToElement("TODO: fix me")
+                    },
+                    Implementations = new List<ImplSpec>
+                    {
+                        new() { Type = "llm" },
+                        new() { Type = "deterministic" }
+                    }
+                },
+                ["write_command_good"] = new StepSpec
+                {
+                    Kind = "write_command",
+                    Implementations = new List<ImplSpec>
+                    {
+                        new() { Type = "llm" },
+                        new() { Type = "deterministic" }
+                    }
+                },
+                ["build"] = new StepSpec
+                {
+                    Kind = "dotnet_build",
+                    Implementations = new List<ImplSpec> { new() { Type = "deterministic" } }
+                },
+                ["verify"] = new StepSpec
+                {
+                    Kind = "verify_command",
+                    Implementations = new List<ImplSpec> { new() { Type = "deterministic" } }
+                }
+            },
+            Stages = new List<StageSpec>
+            {
+                new()
+                {
+                    Name = "red",
+                    When = "always",
+                    StepIds = new List<string> { "write_command_bad", "build", "verify" }
+                },
+                new()
+                {
+                    Name = "green",
+                    When = "if_last_test_failed",
+                    StepIds = new List<string> { "write_command_good", "verify" }
+                }
+            }
+        };
+    }
+}
+
+public sealed record StageSpec
+{
+    public required string Name { get; init; }
+    /// <summary>
+    /// "always", "if_last_test_failed", "if_last_test_ok"
+    /// </summary>
+    public string When { get; init; } = "always";
+    public required List<string> StepIds { get; init; }
+}
+
+public sealed record StepSpec
+{
+    public required string Kind { get; init; }
+    /// <summary>
+    /// Optional override: "llm" or "deterministic" for this step only.
+    /// </summary>
+    public string? Prefer { get; init; }
+    public Dictionary<string, JsonElement>? Args { get; init; }
+    public required List<ImplSpec> Implementations { get; init; }
+}
+
+public sealed record ImplSpec
+{
+    /// <summary>
+    /// "llm" or "deterministic"
+    /// </summary>
+    public required string Type { get; init; }
+}
+

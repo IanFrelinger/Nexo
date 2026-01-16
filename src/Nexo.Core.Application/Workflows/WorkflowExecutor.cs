@@ -228,20 +228,35 @@ public class WorkflowExecutor
         {
             throw new InvalidOperationException($"Brick not found: {node.BrickId}");
         }
-        
-        var implementation = node.Implementation == ImplementationType.Auto
-            ? brick.DefaultImplementation
-            : node.Implementation;
-        
-        _events.OnNext(new BrickImplementationSelectedEvent(
-            context.CorrelationId, node.Id, brick.Name, implementation));
-        
+
+        // Use the same swap-on-failure/fallback semantics as BehaviorExecutor.
+        var preferred = node.Implementation == ImplementationType.Auto ? brick.DefaultImplementation : node.Implementation;
+        var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
+
         var brickInput = new BrickInput(inputs);
-        var result = await brick.ExecuteAsync(
-            brickInput,
-            implementation,
-            context.ExecutionContext,
-            ct);
+        BrickOutput? result = null;
+        Exception? last = null;
+
+        foreach (var impl in chain)
+        {
+            _events.OnNext(new BrickImplementationSelectedEvent(
+                context.CorrelationId, node.Id, brick.Name, impl));
+
+            try
+            {
+                result = await brick.ExecuteAsync(brickInput, impl, context.ExecutionContext, ct);
+                break;
+            }
+            catch (Exception ex)
+            {
+                last = ex;
+            }
+        }
+
+        if (result == null)
+        {
+            throw last ?? new InvalidOperationException("Brick execution failed");
+        }
         
         return new NodeResult
         {
@@ -249,6 +264,35 @@ public class WorkflowExecutor
             Success = true,
             Outputs = new Dictionary<string, object>(result.ToDictionary())
         };
+    }
+
+    private static IReadOnlyList<ImplementationType> BuildBrickExecutionChain(
+        Brick brick,
+        ImplementationType preferred,
+        IExecutionContext ctx)
+    {
+        if (ctx.IsAirGapped)
+        {
+            return brick.Implementations.HasDeterministic ? new[] { ImplementationType.Deterministic } : Array.Empty<ImplementationType>();
+        }
+
+        var chain = new List<ImplementationType>();
+        if (preferred != ImplementationType.Auto) chain.Add(preferred);
+        foreach (var f in brick.FallbackChain)
+        {
+            if (!chain.Contains(f)) chain.Add(f);
+        }
+        if (chain.Count == 0) chain.Add(brick.DefaultImplementation);
+
+        bool Available(ImplementationType t) => t switch
+        {
+            ImplementationType.Deterministic => brick.Implementations.HasDeterministic,
+            // Provider availability is enforced by the brick/provider path itself; on failure we fall back.
+            ImplementationType.Agentic => brick.Implementations.HasAgentic,
+            _ => false
+        };
+
+        return chain.Where(Available).ToList();
     }
     
     private Task<NodeResult> ExecuteClusterNodeAsync(

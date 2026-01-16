@@ -12,6 +12,7 @@ using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
 using Nexo.Orchestration;
+using Nexo.Orchestration.Models;
 
 namespace Nexo.CLI;
 
@@ -169,13 +170,43 @@ static class Program
         {
             var orchestrateCmd = new Command("orchestrate", "Orchestrate agent execution for a request");
             orchestrateCmd.AddArgument(new Argument<string>("request", "The request to orchestrate"));
+
+            var runtimeSpecOpt = new Option<FileInfo?>(
+                name: "--runtime-spec",
+                description: "Runtime spec JSON file (model routing per domain/agent)");
+            var runtimeSpecJsonOpt = new Option<string?>(
+                name: "--runtime-spec-json",
+                description: "Runtime spec JSON string (model routing per domain/agent)");
+            var preferModelOpt = new Option<string?>(
+                name: "--prefer-model",
+                description: "Override model preference: agentic|deterministic|auto");
+            var providerOpt = new Option<string?>(
+                name: "--provider",
+                description: "Override model provider (openai/azure/ollama/offline/mock-json/...)");
+
+            orchestrateCmd.AddOption(runtimeSpecOpt);
+            orchestrateCmd.AddOption(runtimeSpecJsonOpt);
+            orchestrateCmd.AddOption(preferModelOpt);
+            orchestrateCmd.AddOption(providerOpt);
+
             orchestrateCmd.SetHandler(
-                async (string request, bool json, bool verbose) =>
+                async (string request, FileInfo? runtimeSpec, string? runtimeSpecJson, string? preferModel, string? provider, bool json, bool verbose) =>
                 {
-                    var exitCode = await orchestrateCommand.ExecuteAsync(request, json, verbose);
+                    var exitCode = await orchestrateCommand.ExecuteAsync(
+                        request,
+                        runtimeSpec?.FullName,
+                        runtimeSpecJson,
+                        preferModel,
+                        provider,
+                        json,
+                        verbose);
                     Environment.Exit(exitCode);
                 },
                 orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+                runtimeSpecOpt,
+                runtimeSpecJsonOpt,
+                preferModelOpt,
+                providerOpt,
                 jsonOpt,
                 verboseOpt);
             root.AddCommand(orchestrateCmd);
@@ -367,8 +398,30 @@ static class Program
         // Register orchestration layer
         services.AddNexoOrchestration();
 
-        // Register IModel (EchoModel placeholder)
-        services.AddSingleton<Nexo.Abstractions.IModel, Nexo.Adapters.Models.EchoModel>();
+        // Register base IModel as hot-swappable (provider-backed with deterministic fallback),
+        // then wrap it with OrchestrationRuntimeModelDecorator so `nexo orchestrate --runtime-spec`
+        // can affect Architect/Negotiation without changing callsites.
+        services.AddSingleton<Nexo.Infrastructure.Execution.Models.HotSwappableModel>(sp =>
+        {
+            var providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
+            var providerBacked = new Nexo.Infrastructure.Execution.Models.ProviderBackedModel(
+                providerFactory,
+                sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.Models.ProviderBackedModel>>());
+
+            return new Nexo.Infrastructure.Execution.Models.HotSwappableModel(
+                providerBacked,
+                sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.Models.HotSwappableModel>>());
+        });
+
+        services.AddSingleton<Nexo.Abstractions.IModel>(sp =>
+        {
+            var accessor = sp.GetRequiredService<IOrchestrationRuntimeSpecAccessor>();
+            var inner = sp.GetRequiredService<Nexo.Infrastructure.Execution.Models.HotSwappableModel>();
+            return new OrchestrationRuntimeModelDecorator(
+                inner,
+                accessor,
+                sp.GetRequiredService<ILogger<OrchestrationRuntimeModelDecorator>>());
+        });
         
         // Register IProviderFactory for agent execution
         services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();

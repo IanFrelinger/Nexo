@@ -243,6 +243,51 @@ public class ProviderFactory : IProviderFactory
         systemPrompt ??= "";
         userPrompt ??= "";
 
+        // Orchestration: Architect decomposition schema
+        if (systemPrompt.Contains("Architect Agent that decomposes complex requests", StringComparison.OrdinalIgnoreCase))
+        {
+            var request =
+                Regex.Match(userPrompt, @"^\s*Request:\s*(?<req>.+?)\s*$", RegexOptions.Multiline).Groups["req"].Value.Trim();
+            if (string.IsNullOrWhiteSpace(request))
+            {
+                request = Regex.Match(userPrompt, @"^\s*Original request:\s*(?<req>.+?)\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)
+                    .Groups["req"].Value.Trim();
+            }
+            if (string.IsNullOrWhiteSpace(request))
+            {
+                request = "request";
+            }
+
+            // Minimal, schema-compliant decomposition with one agent.
+            // This keeps orchestration functional in offline/demo mode without network access.
+            var agent = new Dictionary<string, object?>
+            {
+                ["agentId"] = "gameplay-1",
+                ["domain"] = "Gameplay",
+                ["goal"] = $"Handle request: {request}",
+                ["description"] = "Offline/mock decomposition (single-agent). Expand domains when using a real provider.",
+                ["dependencies"] = Array.Empty<string>(),
+                // IMPORTANT: omit outputSchema entirely (null triggers schema validation errors downstream)
+                ["constraints"] = Array.Empty<object>(),
+                ["resourceRequirements"] = new
+                {
+                    estimatedComputeSeconds = 30,
+                    requiredContextTokens = 1000,
+                    requiredMemoryMB = 256
+                },
+                ["priority"] = 1
+            };
+
+            var obj = new Dictionary<string, object?>
+            {
+                ["agents"] = new[] { agent },
+                ["reasoning"] = "Offline/mock-json provider produced a minimal valid decomposition.",
+                ["confidence"] = 0.55
+            };
+
+            return JsonSerializer.Serialize(obj);
+        }
+
         // Universal Tester bricks
         if (systemPrompt.Contains("universal testing agent analyzing", StringComparison.OrdinalIgnoreCase))
         {

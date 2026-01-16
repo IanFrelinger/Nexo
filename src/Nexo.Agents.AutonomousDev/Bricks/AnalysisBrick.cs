@@ -45,6 +45,20 @@ public class AnalysisBrick : Brick
         
         Implementations = new BrickImplementations
         {
+            Deterministic = new DeterministicImplementation
+            {
+                Id = "analysis-deterministic",
+                Name = "Heuristic Analysis",
+                Description = "Decides next steps using simple rules",
+                Executor = "RuleEngineExecutor",
+                Characteristics = new ImplementationCharacteristics
+                {
+                    Latency = "< 50ms",
+                    Deterministic = true,
+                    RequiresNetwork = false,
+                    ResourceUsage = ResourceUsage.Low
+                }
+            },
             Agentic = new AgenticImplementation
             {
                 Id = "analysis-agentic",
@@ -68,6 +82,7 @@ public class AnalysisBrick : Brick
         };
         
         DefaultImplementation = ImplementationType.Agentic;
+        FallbackChain = new[] { ImplementationType.Agentic, ImplementationType.Deterministic };
     }
     
     public override async Task<BrickOutput> ExecuteAsync(
@@ -110,6 +125,37 @@ public class AnalysisBrick : Brick
                     AbortReason = "Maximum iterations reached"
                 },
                 Summary = "Max iterations reached"
+            };
+        }
+
+        // Deterministic fallback: if we have actionable items, iterate once; else abort.
+        if (implementation == ImplementationType.Deterministic || context.IsAirGapped)
+        {
+            var deterministicDecision = new IterationDecision
+            {
+                Decision = feedback.ActionableItems.Count > 0 ? DecisionType.Iterate : DecisionType.Stuck,
+                Reasoning = feedback.ActionableItems.Count > 0
+                    ? "Deterministic: actionable items exist; iterate once."
+                    : "Deterministic: no actionable items; cannot proceed.",
+                PlannedFixes = feedback.ActionableItems
+                    .Take(3)
+                    .Select((i, idx) => new PlannedFix
+                    {
+                        Description = i.SuggestedAction,
+                        ApproachDescription = i.Problem,
+                        IssueId = $"issue{idx + 1}",
+                        FilesToModify = i.AffectedFiles ?? Array.Empty<string>(),
+                        ConfidenceInFix = 0.7
+                    })
+                    .ToList(),
+                Confidence = 0.75,
+                EstimatedRemainingIterations = 1
+            };
+
+            return new BrickOutput
+            {
+                ["decision"] = deterministicDecision,
+                Summary = $"Decision (deterministic): {deterministicDecision.Decision} - {deterministicDecision.Reasoning}"
             };
         }
         

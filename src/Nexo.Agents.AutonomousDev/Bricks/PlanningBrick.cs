@@ -43,6 +43,20 @@ public class PlanningBrick : Brick
         
         Implementations = new BrickImplementations
         {
+            Deterministic = new DeterministicImplementation
+            {
+                Id = "planning-deterministic",
+                Name = "Heuristic Planning",
+                Description = "Creates a minimal safe plan without LLM",
+                Executor = "RuleEngineExecutor",
+                Characteristics = new ImplementationCharacteristics
+                {
+                    Latency = "< 100ms",
+                    Deterministic = true,
+                    RequiresNetwork = false,
+                    ResourceUsage = ResourceUsage.Low
+                }
+            },
             Agentic = new AgenticImplementation
             {
                 Id = "planning-agentic",
@@ -66,6 +80,7 @@ public class PlanningBrick : Brick
         };
         
         DefaultImplementation = ImplementationType.Agentic;
+        FallbackChain = new[] { ImplementationType.Agentic, ImplementationType.Deterministic };
     }
     
     public override async Task<BrickOutput> ExecuteAsync(
@@ -77,6 +92,16 @@ public class PlanningBrick : Brick
         var specification = input.Get<Specification>("specification");
         var project = input.Get<IProjectAdapter>("project");
         var testPersona = input.Get<MockUserPersona>("testPersona");
+
+        if (implementation == ImplementationType.Deterministic || context.IsAirGapped)
+        {
+            var deterministicPlan = BuildDeterministicPlan(specification);
+            return new BrickOutput
+            {
+                ["plan"] = deterministicPlan,
+                Summary = $"Plan (deterministic): {deterministicPlan.Tasks.Count} task(s)"
+            };
+        }
         
         var relevantCode = await project.GetRelevantCodeAsync(specification.AffectedAreas.ToArray(), cancellationToken);
         
@@ -95,6 +120,47 @@ public class PlanningBrick : Brick
         {
             ["plan"] = plan,
             Summary = $"Plan: {plan.Tasks.Count} tasks, {plan.EstimatedDuration.TotalMinutes:F1} min estimated"
+        };
+    }
+
+    private static DevelopmentPlan BuildDeterministicPlan(Specification spec)
+    {
+        // Minimal safe plan: make a small change + build.
+        var specId = $"spec:{(spec.Summary ?? "").GetHashCode():x}";
+        return new DevelopmentPlan
+        {
+            SpecificationId = specId,
+            Tasks = new List<DevelopmentTask>
+            {
+                new()
+                {
+                    Id = "task1",
+                    Title = "Apply safe demo change",
+                    Description = "Create/update a small non-breaking doc file (deterministic fallback).",
+                    Type = TaskType.ModifyFile,
+                    Steps = new List<string> { "Write demo note file", "Build project" },
+                    TargetFiles = new List<string> { "NEXO_AGENT_NOTES.md" },
+                    VerificationMethod = "dotnet build succeeds"
+                }
+            },
+            Dependencies = new List<TaskDependency>(),
+            PlannedChanges = new List<PlannedFileChange>
+            {
+                new()
+                {
+                    FilePath = "NEXO_AGENT_NOTES.md",
+                    ChangeType = FileChangeType.Modify,
+                    Description = "Add deterministic plan note"
+                }
+            },
+            TestStrategy = new TestingStrategy
+            {
+                TestCases = new List<string> { "Build succeeds" },
+                Persona = MockUserPersona.Average,
+                UserFlows = new List<string>(),
+                MinimumPassRate = 0.9
+            },
+            EstimatedDuration = TimeSpan.FromMinutes(1)
         };
     }
     

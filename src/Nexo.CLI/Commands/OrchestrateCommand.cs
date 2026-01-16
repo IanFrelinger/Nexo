@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.Orchestration.Coordination;
+using Nexo.Orchestration.Models;
 
 namespace Nexo.CLI.Commands;
 
@@ -21,15 +22,18 @@ public class OrchestrateCommand
     private readonly Orchestrator _orchestrator;
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<OrchestrateCommand> _logger;
+    private readonly IOrchestrationRuntimeSpecAccessor _runtime;
 
     public OrchestrateCommand(
         Orchestrator orchestrator,
         IConsoleRenderer renderer,
-        ILogger<OrchestrateCommand> logger)
+        ILogger<OrchestrateCommand> logger,
+        IOrchestrationRuntimeSpecAccessor runtime)
     {
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
     }
 
     /// <summary>
@@ -39,7 +43,17 @@ public class OrchestrateCommand
     /// <param name="json">Whether to output JSON format</param>
     /// <param name="verbose">Whether to show verbose progress output</param>
     /// <returns>Exit code (0 for success, non-zero for errors)</returns>
-    public async Task<int> ExecuteAsync(string request, bool json, bool verbose)
+    public Task<int> ExecuteAsync(string request, bool json, bool verbose)
+        => ExecuteAsync(request, runtimeSpecPath: null, runtimeSpecJson: null, preferModel: null, provider: null, json, verbose);
+
+    public async Task<int> ExecuteAsync(
+        string request,
+        string? runtimeSpecPath,
+        string? runtimeSpecJson,
+        string? preferModel,
+        string? provider,
+        bool json,
+        bool verbose)
     {
         var correlationId = Guid.NewGuid().ToString();
         using var scope = _logger.BeginScope(new Dictionary<string, object>
@@ -54,6 +68,17 @@ public class OrchestrateCommand
 
         try
         {
+            var spec = OrchestrationRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
+            if (!string.IsNullOrWhiteSpace(preferModel))
+            {
+                spec = spec with { Model = spec.Model with { Prefer = preferModel!.Trim() } };
+            }
+            if (!string.IsNullOrWhiteSpace(provider))
+            {
+                spec = spec with { Model = spec.Model with { Provider = provider!.Trim() } };
+            }
+
+            using var _ = _runtime.Begin(spec);
             var result = await _orchestrator.OrchestrateAsync(request);
 
             if (json)

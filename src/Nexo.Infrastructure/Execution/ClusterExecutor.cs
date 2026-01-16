@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Behaviors;
@@ -92,8 +93,16 @@ public class ClusterExecutor : IClusterExecutor
                 continue;
             }
             
-            // Determine implementation
-            var impl = DetermineImplementation(brick, instance, step.LocalId, clusterBrick, context);
+            // Determine implementation chain (swap on failure)
+            var preferred = DetermineImplementation(brick, instance, step.LocalId, clusterBrick, context);
+            var chain = BuildChain(brick, preferred, context);
+            if (chain.Count == 0)
+            {
+                yield return new StepErrorEvent(step.LocalId, "No available implementation");
+                if (cluster.Interface.FailurePolicy == FailurePolicy.Abort)
+                    yield break;
+                continue;
+            }
             
             // Build brick input from connections and parameters
             var brickInput = BuildBrickInput(step, cluster, resolvedParams, brickOutputs);
@@ -108,62 +117,69 @@ public class ClusterExecutor : IClusterExecutor
                 }
             }
             
-            yield return new StepStartedEvent(
-                step.LocalId,
-                brick.Id,
-                brick.Name,
-                impl,
-                false,
-                stepIndex,
-                plan.Steps.Count);
-            
-            // Check cache outside try-catch
-            var cacheKey = ComputeCacheKey(brick.Id, brickInput, impl);
-            var cached = await _semanticCache.GetAsync(cacheKey, ct);
-            
             BrickOutput? output = null;
             string? error = null;
-            
-            if (cached != null)
+            var usedFallback = false;
+
+            foreach (var impl in chain)
             {
-                output = cached;
-                yield return new CacheHitEvent(step.LocalId, cacheKey);
-            }
-            else
-            {
-                try
+                var sw = Stopwatch.StartNew();
+
+                yield return new StepStartedEvent(
+                    step.LocalId,
+                    brick.Id,
+                    brick.Name,
+                    impl,
+                    usedFallback,
+                    stepIndex,
+                    plan.Steps.Count);
+
+                // Check cache outside try-catch
+                var cacheKey = ComputeCacheKey(brick.Id, brickInput, impl);
+                var cached = await _semanticCache.GetAsync(cacheKey, ct);
+
+                if (cached != null)
                 {
-                    output = await brick.ExecuteAsync(brickInput, impl, context, ct);
-                    await _semanticCache.SetAsync(cacheKey, output, ct);
+                    output = cached;
+                    yield return new CacheHitEvent(step.LocalId, cacheKey);
                 }
-                catch (Exception ex)
+                else
                 {
-                    error = ex.Message;
-                    _logger.LogError(ex, "Error executing brick {BrickId} in cluster {ClusterId}", 
-                        clusterBrick.BrickId, instance.ClusterId);
+                    try
+                    {
+                        output = await brick.ExecuteAsync(brickInput, impl, context, ct);
+                        await _semanticCache.SetAsync(cacheKey, output, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        output = null;
+                        error = ex.Message;
+                        _logger.LogError(ex, "Error executing brick {BrickId} in cluster {ClusterId} with {Impl}",
+                            clusterBrick.BrickId, instance.ClusterId, impl);
+                    }
                 }
+
+                sw.Stop();
+
+                if (output != null)
+                {
+                    brickOutputs[step.LocalId] = output;
+                    yield return new StepCompletedEvent(step.LocalId, brick.Id, impl, sw.ElapsedMilliseconds, output.Summary);
+                    error = null;
+                    break;
+                }
+
+                yield return new StepErrorEvent(step.LocalId, error ?? "Brick failed", sw.ElapsedMilliseconds);
+                usedFallback = true;
             }
-            
-            if (error != null)
+
+            if (error != null && output == null)
             {
-                yield return new StepErrorEvent(step.LocalId, error);
-                
                 if (cluster.Interface.FailurePolicy == FailurePolicy.Abort)
                 {
                     yield return new BehaviorCancelledEvent(instance.InstanceId);
                     yield break;
                 }
-            }
-            else if (output != null)
-            {
-                brickOutputs[step.LocalId] = output;
-                
-                yield return new StepCompletedEvent(
-                    step.LocalId,
-                    brick.Id,
-                    impl,
-                    0, // TODO: measure latency
-                    output.Summary);
             }
         }
         
@@ -174,6 +190,29 @@ public class ClusterExecutor : IClusterExecutor
             instance.InstanceId,
             true,
             clusterOutput);
+    }
+
+    private static IReadOnlyList<ImplementationType> BuildChain(Brick brick, ImplementationType preferred, IExecutionContext ctx)
+    {
+        if (ctx.IsAirGapped)
+        {
+            return brick.Implementations.HasDeterministic ? new[] { ImplementationType.Deterministic } : Array.Empty<ImplementationType>();
+        }
+
+        var chain = new List<ImplementationType>();
+        if (preferred != ImplementationType.Auto) chain.Add(preferred);
+        foreach (var f in brick.FallbackChain)
+        {
+            if (!chain.Contains(f)) chain.Add(f);
+        }
+        if (chain.Count == 0) chain.Add(brick.DefaultImplementation);
+
+        return chain.Where(t => t switch
+        {
+            ImplementationType.Deterministic => brick.Implementations.HasDeterministic,
+            ImplementationType.Agentic => brick.Implementations.HasAgentic,
+            _ => false
+        }).ToList();
     }
     
     /// <summary>

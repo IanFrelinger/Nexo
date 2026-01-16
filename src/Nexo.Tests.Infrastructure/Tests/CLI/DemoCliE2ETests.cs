@@ -39,6 +39,7 @@ public sealed class DemoCliE2ETests : UnitTestBase
 
             await TestDemoTestOfflineAsync(cancellationToken);
             await TestDemoDevOfflineAndResumeAsync(cancellationToken);
+            await TestDemoSelfExtendAsync(cancellationToken);
 
             return new TestResult
             {
@@ -117,6 +118,34 @@ public sealed class DemoCliE2ETests : UnitTestBase
             ct);
         AssertEqual(0, resumeCode, $"demo dev --resume should exit 0. stderr: {resumeErr}");
     }
+
+    private async Task TestDemoSelfExtendAsync(CancellationToken ct)
+    {
+        var (code, stdout, stderr) = await RunDotnetAsync(
+            workingDir: _repoRoot!,
+            args: "run --project src/Nexo.CLI -- demo self-extend --format-json --max-phases 5",
+            ct);
+        AssertEqual(0, code, $"demo self-extend should exit 0. stderr: {stderr}");
+
+        var json = ExtractJsonObject(stdout);
+        using var doc = JsonDocument.Parse(json);
+        AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean(), "self-extend ok should be true");
+
+        var command = doc.RootElement.GetProperty("command").GetString();
+        AssertNotNull(command, "Command should be present");
+
+        // `command` is emitted like "demo hello-gen-xxxx"
+        var (cmdCode, cmdOut, cmdErr) = await RunDotnetAsync(
+            workingDir: _repoRoot!,
+            args: $"run --project src/Nexo.CLI -- {command} --format-json",
+            ct);
+        AssertEqual(0, cmdCode, $"generated command should exit 0. stderr: {cmdErr}");
+
+        var cmdJson = ExtractJsonObject(cmdOut);
+        using var cmdDoc = JsonDocument.Parse(cmdJson);
+        AssertTrue(cmdDoc.RootElement.GetProperty("ok").GetBoolean(), "generated command ok should be true");
+    }
+
 
     private static string FindRepoRoot()
     {

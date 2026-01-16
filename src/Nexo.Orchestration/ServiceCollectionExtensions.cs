@@ -12,6 +12,7 @@ using Nexo.Orchestration.Coordination.ErrorRecovery;
 using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
 using Nexo.Orchestration.Validation;
+using Nexo.Orchestration.Models;
 
 namespace Nexo.Orchestration;
 
@@ -35,6 +36,8 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddNexoOrchestration(this IServiceCollection services)
     {
+        services.AddSingleton<IOrchestrationRuntimeSpecAccessor, OrchestrationRuntimeSpecAccessor>();
+
         // Architect
         services.AddSingleton<DomainRecognizer>();
         services.AddSingleton<DecompositionRetriever>();

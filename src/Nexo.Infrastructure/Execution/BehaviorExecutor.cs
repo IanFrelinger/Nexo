@@ -6,6 +6,7 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
+using Nexo.Core.Domain.Workflows;
 
 namespace Nexo.Infrastructure.Execution;
 
@@ -109,88 +110,92 @@ public class BehaviorExecutor : IBehaviorExecutor
                 continue;
             }
             
-            // Determine implementation
-            var implementation = ResolveImplementation(step, brick, context);
-            var usedFallback = false;
-            
-            // Check if implementation is available
-            if (!IsImplementationAvailable(brick, implementation, context))
-            {
-                var fallback = GetFallbackImplementation(brick, context);
-                if (fallback == null)
-                {
-                    yield return new StepErrorEvent(step.Id, "No available implementation");
-                    if (behavior.OnStepFailure == FailurePolicy.Abort)
-                        yield break;
-                    continue;
-                }
-                implementation = fallback.Value;
-                usedFallback = true;
-            }
-            
-            yield return new StepStartedEvent(
-                step.Id, 
-                brick.Id, 
-                brick.Name, 
-                implementation,
-                usedFallback,
-                stepIndex,
-                behavior.Steps.Count);
-            
-            var stopwatch = Stopwatch.StartNew();
-            
-            // Map inputs
+            // Map inputs once per step (implementation swapping should use same inputs).
             var brickInput = MapInputs(step.InputMapping, context);
-            
-            // Check semantic cache
-            var cacheKey = ComputeCacheKey(brick.Id, brickInput, implementation);
-            var cached = await _semanticCache.GetAsync(cacheKey, cancellationToken);
-            
-            BrickOutput? output = null;
-            string? error = null;
-            
-            if (cached != null)
+
+            // Determine implementation chain (preference + fallback), filtering for availability.
+            var chain = ResolveImplementationChain(step, brick, behavior, options, context);
+            if (chain.Count == 0)
             {
-                output = cached;
-                yield return new CacheHitEvent(step.Id, cacheKey);
-            }
-            else
-            {
-                try
-                {
-                    // Execute brick
-                    output = await brick.ExecuteAsync(brickInput, implementation, context, cancellationToken);
-                    
-                    // Cache result
-                    await _semanticCache.SetAsync(cacheKey, output, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    error = ex.Message;
-                    _logger.LogError(ex, "Error executing step {StepId}", step.Id);
-                }
-            }
-            
-            stopwatch.Stop();
-            
-            if (error != null)
-            {
-                yield return new StepErrorEvent(step.Id, error, stopwatch.ElapsedMilliseconds);
-                
+                yield return new StepErrorEvent(step.Id, "No available implementation");
                 if (behavior.OnStepFailure == FailurePolicy.Abort)
                     yield break;
+                continue;
             }
-            else if (output != null)
+
+            BrickOutput? output = null;
+            string? error = null;
+            var usedFallback = false;
+
+            foreach (var implementation in chain)
             {
-                // Map outputs to context
-                MapOutputs(step.OutputMapping, output, context);
-                
-                yield return new StepCompletedEvent(
+                yield return new StepStartedEvent(
                     step.Id,
                     brick.Id,
+                    brick.Name,
                     implementation,
-                    stopwatch.ElapsedMilliseconds,
-                    output.Summary);
+                    usedFallback,
+                    stepIndex,
+                    behavior.Steps.Count);
+
+                var stopwatch = Stopwatch.StartNew();
+
+                var cacheKey = ComputeCacheKey(brick.Id, brickInput, implementation);
+                var cached = await _semanticCache.GetAsync(cacheKey, cancellationToken);
+
+                if (cached != null)
+                {
+                    output = cached;
+                    yield return new CacheHitEvent(step.Id, cacheKey);
+                }
+                else
+                {
+                    try
+                    {
+                        output = await brick.ExecuteAsync(brickInput, implementation, context, cancellationToken);
+                        await _semanticCache.SetAsync(cacheKey, output, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        output = null;
+                        error = ex.Message;
+                        _logger.LogError(ex, "Error executing step {StepId} with {Implementation}", step.Id, implementation);
+                    }
+                }
+
+                stopwatch.Stop();
+
+                if (output != null)
+                {
+                    // Map outputs to context
+                    MapOutputs(step.OutputMapping, output, context);
+
+                    yield return new StepCompletedEvent(
+                        step.Id,
+                        brick.Id,
+                        implementation,
+                        stopwatch.ElapsedMilliseconds,
+                        output.Summary);
+
+                    error = null;
+                    break;
+                }
+
+                // failed this implementation
+                yield return new StepErrorEvent(step.Id, error ?? "Step failed", stopwatch.ElapsedMilliseconds);
+
+                if (!options.SwapOnFailure)
+                {
+                    break;
+                }
+
+                usedFallback = true;
+            }
+
+            if (error != null && output == null)
+            {
+                if (behavior.OnStepFailure == FailurePolicy.Abort)
+                    yield break;
             }
             
             stepIndex++;
@@ -205,18 +210,52 @@ public class BehaviorExecutor : IBehaviorExecutor
             context.Variables);
     }
     
-    private ImplementationType ResolveImplementation(
-        BehaviorStep step, 
-        Brick brick, 
+    private IReadOnlyList<ImplementationType> ResolveImplementationChain(
+        BehaviorStep step,
+        Brick brick,
+        Behavior behavior,
+        ExecutionOptions options,
         ExecutionContext context)
     {
+        // Always force deterministic in air-gapped.
+        if (options.IsAirGapped || context.IsAirGapped)
+        {
+            return IsImplementationAvailable(brick, ImplementationType.Deterministic, context)
+                ? new[] { ImplementationType.Deterministic }
+                : Array.Empty<ImplementationType>();
+        }
+
+        // Behavior mode override
+        var mode = options.BehaviorOverrides.TryGetValue(behavior.Id, out var m) ? m : options.ImplementationMode;
+
+        // Highest priority: explicit step implementation.
         if (step.Implementation != ImplementationType.Auto)
-            return step.Implementation;
-        
-        if (brick.Selector != null)
-            return brick.Selector.Select(context);
-        
-        return brick.DefaultImplementation;
+        {
+            return BuildChain(step.Implementation, options, brick, context);
+        }
+
+        // Next: per-brick override (by brick id).
+        if (options.BrickOverrides.TryGetValue(brick.Id, out var forced))
+        {
+            return BuildChain(forced, options, brick, context);
+        }
+
+        // Next: runtime per-brick prefer/fallback.
+        if (options.BrickRuntime.TryGetValue(brick.Id, out var runtimeSpec))
+        {
+            var preferred = PreferToImplementation(runtimeSpec.Prefer, brick, context, mode);
+            return BuildChain(preferred, options, brick, context, runtimeSpec);
+        }
+
+        // Global mode-based selection.
+        var selected = mode switch
+        {
+            ImplementationMode.DeterministicOnly => ImplementationType.Deterministic,
+            ImplementationMode.AgenticPreferred => ImplementationType.Agentic,
+            _ => brick.Selector != null ? brick.Selector.Select(context) : brick.DefaultImplementation
+        };
+
+        return BuildChain(selected, options, brick, context);
     }
     
     private bool IsImplementationAvailable(
@@ -234,14 +273,50 @@ public class BehaviorExecutor : IBehaviorExecutor
         };
     }
     
-    private ImplementationType? GetFallbackImplementation(Brick brick, ExecutionContext context)
+    private IReadOnlyList<ImplementationType> BuildChain(
+        ImplementationType first,
+        ExecutionOptions options,
+        Brick brick,
+        ExecutionContext context,
+        BrickRuntimeSpec? runtimeSpec = null)
     {
-        foreach (var fallback in brick.FallbackChain)
+        var chain = new List<ImplementationType>();
+        if (first != ImplementationType.Auto) chain.Add(first);
+
+        var fallbacks = runtimeSpec?.Fallback ?? brick.FallbackChain;
+        foreach (var f in fallbacks)
         {
-            if (IsImplementationAvailable(brick, fallback, context))
-                return fallback;
+            if (!chain.Contains(f)) chain.Add(f);
         }
-        return null;
+
+        // If initial was Auto, use brick default.
+        if (chain.Count == 0)
+        {
+            chain.Add(brick.DefaultImplementation);
+            foreach (var f in brick.FallbackChain)
+            {
+                if (!chain.Contains(f)) chain.Add(f);
+            }
+        }
+
+        return chain.Where(t => IsImplementationAvailable(brick, t, context)).ToList();
+    }
+
+    private static ImplementationType PreferToImplementation(
+        string? prefer,
+        Brick brick,
+        ExecutionContext context,
+        ImplementationMode mode)
+    {
+        var p = (prefer ?? "auto").Trim().ToLowerInvariant();
+        return p switch
+        {
+            "deterministic" => ImplementationType.Deterministic,
+            "agentic" => ImplementationType.Agentic,
+            _ => mode == ImplementationMode.DeterministicOnly
+                ? ImplementationType.Deterministic
+                : (brick.Selector != null ? brick.Selector.Select(context) : brick.DefaultImplementation)
+        };
     }
     
     private static bool EvaluateCondition(string condition, ExecutionContext context)

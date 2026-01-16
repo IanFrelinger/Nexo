@@ -36,7 +36,7 @@ Thumbs.db
 
 # Test results
 TestResults/
-# test-results/  # Temporarily enabled to commit test reports
+test-results/
 test-reports/
 *.trx
 *.coverage
@@ -92,3 +92,9 @@ appsettings.local.json
 # Nexo CLI demo generated outputs
 /Artifacts/demo-dev-session.json
 /NEXO_AGENT_NOTES.md
+
+# Demo: self-extension generated code (kept out of git)
+/src/Nexo.CLI/Commands/DemoGenerated/
+/src/Nexo.Tests.CLI/Tests/Commands/DemoGenerated/
+/src/Nexo.Tests.Infrastructure/Tests/DemoGenerated/
+

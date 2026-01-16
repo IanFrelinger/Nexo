@@ -44,6 +44,20 @@ public class UnderstandingBrick : Brick
         
         Implementations = new BrickImplementations
         {
+            Deterministic = new DeterministicImplementation
+            {
+                Id = "understanding-deterministic",
+                Name = "Heuristic Understanding",
+                Description = "Uses simple heuristics from perception to propose actions",
+                Executor = "RuleEngineExecutor",
+                Characteristics = new ImplementationCharacteristics
+                {
+                    Latency = "< 50ms",
+                    Deterministic = true,
+                    RequiresNetwork = false,
+                    ResourceUsage = ResourceUsage.Low
+                }
+            },
             Agentic = new AgenticImplementation
             {
                 Id = "understanding-agentic",
@@ -79,22 +93,66 @@ public class UnderstandingBrick : Brick
         var goal = input.Get<string>("goal");
         var constraints = input.Get<string[]>("constraints", Array.Empty<string>()) ?? Array.Empty<string>();
         var actionHistory = input.Get<TestAction[]>("actionHistory", Array.Empty<TestAction>()) ?? Array.Empty<TestAction>();
-        
+
+        if (implementation == ImplementationType.Deterministic || context.IsAirGapped)
+        {
+            var understanding = BuildDeterministicUnderstanding(perception, goal);
+            return new BrickOutput
+            {
+                ["understanding"] = understanding,
+                Summary = $"Understood (deterministic): {understanding.ScreenType}, {understanding.AvailableActions.Count} actions available"
+            };
+        }
+
         var prompt = BuildUnderstandingPrompt(perception, goal, constraints, actionHistory);
-        
+
         var response = await _providerFactory.ExecuteLLMAsync(
             context.Provider,
             "You are a universal testing agent analyzing an application.",
             prompt,
             new { },
             cancellationToken);
-        
-        var understanding = ParseUnderstanding(response, perception);
+
+        var understandingAgentic = ParseUnderstanding(response, perception);
         
         return new BrickOutput
         {
-            ["understanding"] = understanding,
-            Summary = $"Understood: {understanding.ScreenType}, {understanding.AvailableActions.Count} actions available"
+            ["understanding"] = understandingAgentic,
+            Summary = $"Understood: {understandingAgentic.ScreenType}, {understandingAgentic.AvailableActions.Count} actions available"
+        };
+    }
+
+    private static Understanding BuildDeterministicUnderstanding(PerceptionState perception, string goal)
+    {
+        // Minimal deterministic summary, prioritizing known interactive elements.
+        var screenType = !string.IsNullOrWhiteSpace(perception.CurrentUrl) ? "Web"
+            : perception.GameState != null ? "Game"
+            : "Unknown";
+
+        var actions = perception.InteractiveElements
+            .Take(40)
+            .Select(el => new AvailableAction
+            {
+                Id = el.Id,
+                Description = el.Label ?? el.Description ?? el.Id,
+                Type = "click",
+                Target = el.Id,
+                RelevanceToGoal = 0.5,
+                ExplorationValue = 0.5,
+                RiskLevel = 0.1
+            })
+            .ToList();
+
+        return new Understanding
+        {
+            ScreenType = screenType,
+            CurrentContext = $"Deterministic analysis ({screenType}). Goal: {goal}",
+            CurrentObjective = "Explore available actions",
+            ProgressPercent = 0,
+            Confidence = 0.6,
+            AvailableActions = actions,
+            Issues = Array.Empty<DetectedIssue>(),
+            UnexploredAreas = Array.Empty<string>()
         };
     }
     

@@ -45,6 +45,20 @@ public class SpecificationBrick : Brick
         
         Implementations = new BrickImplementations
         {
+            Deterministic = new DeterministicImplementation
+            {
+                Id = "specification-deterministic",
+                Name = "Heuristic Specification",
+                Description = "Creates a minimal spec from inputs without LLM",
+                Executor = "RuleEngineExecutor",
+                Characteristics = new ImplementationCharacteristics
+                {
+                    Latency = "< 100ms",
+                    Deterministic = true,
+                    RequiresNetwork = false,
+                    ResourceUsage = ResourceUsage.Low
+                }
+            },
             Agentic = new AgenticImplementation
             {
                 Id = "specification-agentic",
@@ -68,6 +82,7 @@ public class SpecificationBrick : Brick
         };
         
         DefaultImplementation = ImplementationType.Agentic;
+        FallbackChain = new[] { ImplementationType.Agentic, ImplementationType.Deterministic };
     }
     
     public override async Task<BrickOutput> ExecuteAsync(
@@ -81,6 +96,16 @@ public class SpecificationBrick : Brick
         var references = input.Get<string[]>("references", Array.Empty<string>()) ?? Array.Empty<string>();
         var acceptanceCriteria = input.Get<string?>("acceptanceCriteria", null);
         var project = input.Get<IProjectAdapter>("project");
+
+        if (implementation == ImplementationType.Deterministic || context.IsAirGapped)
+        {
+            var deterministicSpec = BuildDeterministicSpec(task, acceptanceCriteria);
+            return new BrickOutput
+            {
+                ["specification"] = deterministicSpec,
+                Summary = $"Specification (deterministic): {deterministicSpec.Summary} ({deterministicSpec.ChangeType}, complexity: {deterministicSpec.EstimatedComplexity})"
+            };
+        }
         
         // Get project context
         var projectContext = await project.GetProjectContextAsync(cancellationToken);
@@ -100,6 +125,35 @@ public class SpecificationBrick : Brick
         {
             ["specification"] = spec,
             Summary = $"Specification: {spec.Summary} ({spec.ChangeType}, complexity: {spec.EstimatedComplexity})"
+        };
+    }
+
+    private static Specification BuildDeterministicSpec(string task, string? acceptanceCriteria)
+    {
+        return new Specification
+        {
+            Summary = task.Length > 120 ? task[..120] + "…" : task,
+            ChangeType = ChangeType.Test,
+            FunctionalRequirements = new List<Requirement>
+            {
+                new() { Id = "req1", Description = "Make a small safe change.", Priority = RequirementPriority.Must, IsMandatory = true }
+            },
+            NonFunctionalRequirements = new List<Requirement>(),
+            AcceptanceCriteria = new List<AcceptanceCriterion>
+            {
+                new()
+                {
+                    Id = "ac1",
+                    Description = string.IsNullOrWhiteSpace(acceptanceCriteria) ? "Project builds successfully." : acceptanceCriteria!,
+                    TestDescription = "Run build successfully",
+                    IsAutomatable = true
+                }
+            },
+            AffectedAreas = new List<string> { "." },
+            Risks = new List<string> { "Deterministic spec is coarse; wire agentic mode for richer planning." },
+            EstimatedComplexity = 1,
+            Confidence = 0.7,
+            OpenQuestions = new List<string>()
         };
     }
     

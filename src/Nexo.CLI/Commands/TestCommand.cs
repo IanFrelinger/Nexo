@@ -57,6 +57,21 @@ public class UniversalTestCommand : Command
             "--provider",
             () => "offline",
             "LLM provider: offline, mock-json, mock, openai, azure, ollama (offline providers work air-gapped)");
+
+        var specPathOption = new Option<string?>(
+            "--agent-spec",
+            () => null,
+            "Universal tester runtime spec JSON path (per-brick implementation + fallback)");
+
+        var specJsonOption = new Option<string?>(
+            "--agent-spec-json",
+            () => null,
+            "Universal tester runtime spec JSON string (per-brick implementation + fallback)");
+
+        var preferOption = new Option<string?>(
+            "--prefer",
+            () => null,
+            "Override global preference (agentic|deterministic|auto). Per-brick spec can override this.");
         
         var verboseOption = new Option<bool>(
             "--verbose",
@@ -76,6 +91,9 @@ public class UniversalTestCommand : Command
         AddOption(outputOption);
         AddOption(modeOption);
         AddOption(providerOption);
+        AddOption(specPathOption);
+        AddOption(specJsonOption);
+        AddOption(preferOption);
         AddOption(verboseOption);
         AddOption(jsonOption);
         
@@ -89,9 +107,12 @@ public class UniversalTestCommand : Command
             var output = ctx.ParseResult.GetValueForOption(outputOption);
             var mode = ctx.ParseResult.GetValueForOption(modeOption) ?? "mixed";
             var provider = ctx.ParseResult.GetValueForOption(providerOption) ?? "offline";
+            var specPath = ctx.ParseResult.GetValueForOption(specPathOption);
+            var specJson = ctx.ParseResult.GetValueForOption(specJsonOption);
+            var prefer = ctx.ParseResult.GetValueForOption(preferOption);
             var verbose = ctx.ParseResult.GetValueForOption(verboseOption);
             var json = ctx.ParseResult.GetValueForOption(jsonOption);
-            await ExecuteAsync(target, goal, depth, persona, maxDuration, output, mode, provider, verbose, json);
+            await ExecuteAsync(target, goal, depth, persona, maxDuration, output, mode, provider, specPath, specJson, prefer, verbose, json);
         });
     }
     
@@ -104,6 +125,9 @@ public class UniversalTestCommand : Command
         FileInfo? output,
         string mode,
         string provider,
+        string? agentSpecPath,
+        string? agentSpecJson,
+        string? preferOverride,
         bool verbose,
         bool json)
     {
@@ -141,6 +165,14 @@ public class UniversalTestCommand : Command
             
             // Create execution context
             var context = CreateExecutionContext(mode, provider);
+
+            // Load runtime config (per-brick impl + fallback), allow CLI override of global prefer.
+            var runtime = Nexo.Agents.UniversalTester.Configuration.UniversalTesterRuntimeConfigLoader
+                .Load(agentSpecPath, agentSpecJson);
+            if (!string.IsNullOrWhiteSpace(preferOverride))
+            {
+                runtime = runtime with { Prefer = preferOverride!.Trim() };
+            }
             
             // Set up progress reporting
             if (!json && console != null)
@@ -149,7 +181,7 @@ public class UniversalTestCommand : Command
             }
             
             // Run the agent
-            var report = await agent.ExecuteAsync(config, context, CancellationToken.None);
+            var report = await agent.ExecuteAsync(config, context, runtime, CancellationToken.None);
             
             if (!json && console != null)
             {

@@ -19,7 +19,29 @@ public class DemoCommand
         // Use the new command classes
         demoCmd.AddCommand(new UniversalTestCommand());
         demoCmd.AddCommand(new AutonomousDevCommand());
-        
+        demoCmd.AddCommand(new DemoSelfExtendCommand());
+
+        // Auto-register demo-generated commands if any are present.
+        // These are created by `nexo demo self-extend` and are intentionally ignored by git.
+        foreach (var type in typeof(DemoCommand).Assembly.GetTypes())
+        {
+            if (type.IsAbstract) continue;
+            if (type.Namespace != "Nexo.CLI.Commands.DemoGenerated") continue;
+            if (!typeof(Command).IsAssignableFrom(type)) continue;
+
+            try
+            {
+                if (Activator.CreateInstance(type) is Command cmd)
+                {
+                    demoCmd.AddCommand(cmd);
+                }
+            }
+            catch
+            {
+                // ignore broken demo-generated commands
+            }
+        }
+
         return demoCmd;
     }
 }

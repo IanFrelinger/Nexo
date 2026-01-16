@@ -39,4 +39,16 @@ public class ExecutionOptions
     /// </summary>
     public IReadOnlyDictionary<string, ImplementationType> BrickOverrides { get; init; } 
         = new Dictionary<string, ImplementationType>();
+
+    /// <summary>
+    /// Runtime per-brick preferences + fallback chains (hot-swappable implementations).
+    /// Keyed by brick id.
+    /// </summary>
+    public IReadOnlyDictionary<string, BrickRuntimeSpec> BrickRuntime { get; init; }
+        = new Dictionary<string, BrickRuntimeSpec>();
+
+    /// <summary>
+    /// If true, a brick step that fails (throws) will be retried using the fallback chain.
+    /// </summary>
+    public bool SwapOnFailure { get; init; } = true;
 }

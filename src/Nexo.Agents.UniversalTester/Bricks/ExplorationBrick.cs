@@ -92,7 +92,7 @@ public class ExplorationBrick : Brick
         
         if (implementation == ImplementationType.Deterministic)
         {
-            return ExecuteDeterministic(understanding);
+            return ExecuteDeterministic(understanding, depth, actionHistory);
         }
         
         // Agentic mode
@@ -116,9 +116,17 @@ public class ExplorationBrick : Brick
         };
     }
     
-    private static BrickOutput ExecuteDeterministic(Understanding understanding)
+    private static BrickOutput ExecuteDeterministic(Understanding understanding, TestingDepth depth, TestAction[] actionHistory)
     {
         var actions = understanding.AvailableActions;
+        var maxSteps = depth switch
+        {
+            TestingDepth.Quick => 10,
+            TestingDepth.Standard => 30,
+            TestingDepth.Thorough => 80,
+            TestingDepth.Exhaustive => 150,
+            _ => 30
+        };
         
         if (!actions.Any())
         {
@@ -134,7 +142,7 @@ public class ExplorationBrick : Brick
             {
                 ["nextAction"] = waitAction,
                 ["reasoning"] = "No actions available",
-                ["shouldStop"] = understanding.ProgressPercent >= 100,
+                ["shouldStop"] = true,
                 Summary = "Waiting - no actions"
             };
         }
@@ -155,8 +163,10 @@ public class ExplorationBrick : Brick
         return new BrickOutput
         {
             ["nextAction"] = testAction,
-            ["reasoning"] = $"Selected highest scoring action (score: {best.Score:F2})",
-            ["shouldStop"] = understanding.ProgressPercent >= 100,
+            ["reasoning"] = actionHistory.Length >= maxSteps
+                ? $"Reached deterministic step cap ({maxSteps})"
+                : $"Selected highest scoring action (score: {best.Score:F2})",
+            ["shouldStop"] = understanding.ProgressPercent >= 100 || actionHistory.Length >= maxSteps,
             Summary = $"Selected: {testAction.Description}"
         };
     }

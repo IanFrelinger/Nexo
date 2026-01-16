@@ -1,5 +1,6 @@
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Behaviors;
+using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
 
 namespace Nexo.Infrastructure.Execution;
