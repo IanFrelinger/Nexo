@@ -23,6 +23,8 @@ public sealed class SelfExtendToolRuntime
         _tools.Register(new RepoFsSearchReplaceTool());
         _tools.Register(new DotnetBuildTool());
         _tools.Register(new DotnetTestTool());
+        _tools.Register(new DotnetRunTool());
+        _tools.Register(new RoslynAnalyzeTool());
 
         _policies = new PolicyEngine(new IPolicy[]
         {

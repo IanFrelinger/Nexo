@@ -63,9 +63,11 @@ public sealed class SelfExtendStepFactory : ISelfExtendStepFactory
 
             ("dotnet_build", "deterministic") => new DotnetBuildCommand(_rt),
 
-            ("nexo_test", "deterministic") => new RunNexoTestCommand(filter: GetFilterArg(spec)),
+            ("nexo_test", "deterministic") => new RunNexoTestCommand(_rt, filter: GetFilterArg(spec)),
 
-            ("verify_command", "deterministic") => new VerifyGeneratedCommandCommand(),
+            ("roslyn_analyze", "deterministic") => new RoslynAnalyzeGeneratedCommandCommand(_rt),
+
+            ("verify_command", "deterministic") => new VerifyGeneratedCommandCommand(_rt),
 
             _ => throw new InvalidOperationException($"Unknown step kind '{spec.Kind}' / impl '{type}'")
         };

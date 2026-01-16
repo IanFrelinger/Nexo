@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
+using Nexo.Infrastructure.IO;
 using Nexo.Orchestration.Architect.Models;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -118,7 +119,7 @@ public class CodeFixAgent : BaseDomainAgent
         foreach (var fileGroup in errorsByFile)
         {
             var filePath = ResolveFilePath(fileGroup.Key);
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            if (string.IsNullOrEmpty(filePath) || !new FileInfo(filePath).Exists)
             {
                 Logger.LogWarning("File not found: {FilePath}", fileGroup.Key);
                 result.FailedFixes.Add($"{fileGroup.Key}: File not found");
@@ -127,7 +128,7 @@ public class CodeFixAgent : BaseDomainAgent
 
             try
             {
-                var fileContent = await File.ReadAllTextAsync(filePath, cancellationToken);
+                var fileContent = await TextFile.ReadAllTextAsync(filePath, cancellationToken);
                 var originalContent = fileContent;
                 var errorsInFile = fileGroup.OrderByDescending(e => e.LineNumber).ToList();
 
@@ -139,7 +140,7 @@ public class CodeFixAgent : BaseDomainAgent
 
                 if (fileContent != originalContent)
                 {
-                    await File.WriteAllTextAsync(filePath, fileContent, cancellationToken);
+                    await TextFile.WriteAllTextAsync(filePath, fileContent, cancellationToken);
                     result.FixedFiles.Add(filePath);
                     result.TotalFixed += errorsInFile.Count;
                     Logger.LogInformation("Fixed {Count} errors in {FilePath}", errorsInFile.Count, filePath);
@@ -203,14 +204,14 @@ public class CodeFixAgent : BaseDomainAgent
         if (!string.IsNullOrEmpty(_projectPath))
         {
             var fullPath = Path.Combine(_projectPath, "Assets", relativePath);
-            if (File.Exists(fullPath))
+            if (new FileInfo(fullPath).Exists)
             {
                 return fullPath;
             }
         }
 
         // Try to find the file in current directory or common Unity paths
-        if (File.Exists(relativePath))
+        if (new FileInfo(relativePath).Exists)
         {
             return relativePath;
         }

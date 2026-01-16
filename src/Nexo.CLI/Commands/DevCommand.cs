@@ -9,6 +9,7 @@ using Nexo.Agents.AutonomousDev.Models;
 using Nexo.Agents.UniversalTester;
 using Nexo.CLI.Output;
 using Nexo.Core.Domain.Execution;
+using Nexo.Infrastructure.IO;
 using Nexo.Infrastructure.Execution;
 
 namespace Nexo.CLI.Commands;
@@ -22,7 +23,7 @@ public class AutonomousDevCommand : Command
     {
         var projectOption = new Option<DirectoryInfo>(
             "--project",
-            () => new DirectoryInfo(Directory.GetCurrentDirectory()),
+            () => new DirectoryInfo(Environment.CurrentDirectory),
             "Path to the project to modify (defaults to current directory)");
         
         var taskOption = new Option<string>(
@@ -175,7 +176,7 @@ public class AutonomousDevCommand : Command
             DevelopmentSession? resumeSession = null;
             if (resume != null && resume.Exists)
             {
-                var resumeJson = await File.ReadAllTextAsync(resume.FullName);
+                var resumeJson = await TextFile.ReadAllTextAsync(resume.FullName);
                 resumeSession = JsonSerializer.Deserialize<DevelopmentSession>(resumeJson);
                 if (!json && console != null && resumeSession != null)
                 {
@@ -188,7 +189,7 @@ public class AutonomousDevCommand : Command
             string? detailedSpec = null;
             if (spec != null && spec.Exists)
             {
-                detailedSpec = await File.ReadAllTextAsync(spec.FullName);
+                detailedSpec = await TextFile.ReadAllTextAsync(spec.FullName);
                 if (!json && console != null)
                 {
                     console.WritePair("Spec loaded", spec.Name);
@@ -272,7 +273,7 @@ public class AutonomousDevCommand : Command
                 
                 if (output != null)
                 {
-                    await File.WriteAllTextAsync(output.FullName, jsonOutput);
+                    await TextFile.WriteAllTextAsync(output.FullName, jsonOutput);
                 }
             }
             else if (console != null)
@@ -282,7 +283,7 @@ public class AutonomousDevCommand : Command
                 if (output != null)
                 {
                     var jsonOutput = JsonSerializer.Serialize(session, new JsonSerializerOptions { WriteIndented = true });
-                    await File.WriteAllTextAsync(output.FullName, jsonOutput);
+                    await TextFile.WriteAllTextAsync(output.FullName, jsonOutput);
                     console.WriteSuccess($"Session saved to {output.FullName}");
                 }
             }

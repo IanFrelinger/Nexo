@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Nexo.Core.Application.Interfaces;
 
@@ -10,16 +9,29 @@ namespace Nexo.CLI.Demo.SelfExtend.Pipeline.Steps;
 /// </summary>
 public sealed class RunNexoTestCommand : ICommand<SelfExtendContext, SelfExtendContext>
 {
+    private readonly SelfExtendToolRuntime _rt;
     private readonly string _filter;
 
-    public RunNexoTestCommand(string filter) => _filter = filter;
+    public RunNexoTestCommand(SelfExtendToolRuntime rt, string filter)
+    {
+        _rt = rt;
+        _filter = filter;
+    }
 
     public async ValueTask<SelfExtendContext> ExecuteAsync(SelfExtendContext input, CancellationToken ct)
     {
-        var (exitCode, stdout, stderr) = await RunDotnetAsync(
-            input.RepoRoot,
-            $"run --project src/Nexo.CLI -- test --format-json --filter \"{_filter}\"",
-            ct);
+        var result = await _rt.InvokeAsync(input, "dotnet.run", new
+        {
+            root = input.RepoRoot,
+            args = $"run --project src/Nexo.CLI -- test --format-json --filter \"{_filter}\"",
+            timeoutSeconds = 1200
+        }, ct);
+
+        var payloadJson = JsonSerializer.Serialize(result.Payload);
+        using var payloadDoc = JsonDocument.Parse(payloadJson);
+        var exitCode = payloadDoc.RootElement.TryGetProperty("exitCode", out var ec) ? ec.GetInt32() : -1;
+        var stdout = payloadDoc.RootElement.TryGetProperty("stdout", out var so) ? so.GetString() ?? "" : "";
+        var stderr = payloadDoc.RootElement.TryGetProperty("stderr", out var se) ? se.GetString() ?? "" : "";
 
         // CLI may print logs + JSON; extract the JSON object containing TotalTests.
         var json = ExtractJsonObject(stdout);
@@ -41,30 +53,6 @@ public sealed class RunNexoTestCommand : ICommand<SelfExtendContext, SelfExtendC
         });
 
         return input;
-    }
-
-    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunDotnetAsync(string workingDir, string args, CancellationToken ct)
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = args,
-            WorkingDirectory = workingDir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet process");
-        var stdoutTask = p.StandardOutput.ReadToEndAsync();
-        var stderrTask = p.StandardError.ReadToEndAsync();
-
-        await p.WaitForExitAsync(ct);
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-
-        return (p.ExitCode, stdout, stderr);
     }
 
     private static string ExtractJsonObject(string text)

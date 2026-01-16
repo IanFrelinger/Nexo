@@ -103,7 +103,7 @@ public sealed class DemoSelfExtendCommand : Command
         string? preferOverride,
         CancellationToken ct)
     {
-        var repoRoot = Directory.GetCurrentDirectory();
+        var repoRoot = Environment.CurrentDirectory;
         var console = json ? null : new CliConsole(verbose);
 
         var spec = new SelfExtendSpec
@@ -182,6 +182,7 @@ public sealed class DemoSelfExtendCommand : Command
                 catch (Exception ex)
                 {
                     overallOk = false;
+                    ctxObj.LastTestOk = false;
                     ctxObj.History.Add(new { iteration, step = step.GetType().Name, ok = false, exception = ex.Message });
                     if (!json && console != null) console.WriteError($"{step.GetType().Name} threw: {ex.Message}");
                     break;
@@ -194,6 +195,7 @@ public sealed class DemoSelfExtendCommand : Command
                 if (!result.Success)
                 {
                     overallOk = false;
+                    ctxObj.LastTestOk = false;
                     ctxObj.History.Add(new { iteration, step = step.GetType().Name, ok = false, error = result.Message });
                     if (!json && console != null) console.WriteError($"{step.GetType().Name} failed: {result.Message}");
                     break;

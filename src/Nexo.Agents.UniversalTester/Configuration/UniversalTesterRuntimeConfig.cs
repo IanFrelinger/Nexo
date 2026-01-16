@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Nexo.Core.Domain.Bricks;
 
 namespace Nexo.Agents.UniversalTester.Configuration;
@@ -39,37 +38,3 @@ public sealed record UniversalTesterRuntimeConfig
         };
     }
 }
-
-public static class UniversalTesterRuntimeConfigLoader
-{
-    public static UniversalTesterRuntimeConfig Load(string? filePath, string? json)
-    {
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            return Deserialize(json);
-        }
-
-        if (!string.IsNullOrWhiteSpace(filePath))
-        {
-            var text = File.ReadAllText(filePath);
-            return Deserialize(text);
-        }
-
-        return UniversalTesterRuntimeConfig.Default();
-    }
-
-    private static UniversalTesterRuntimeConfig Deserialize(string json)
-    {
-        var cfg = JsonSerializer.Deserialize<UniversalTesterRuntimeConfig>(
-            json,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-                AllowTrailingCommas = true
-            });
-
-        return cfg ?? throw new InvalidOperationException("Failed to parse universal tester runtime config JSON");
-    }
-}
-

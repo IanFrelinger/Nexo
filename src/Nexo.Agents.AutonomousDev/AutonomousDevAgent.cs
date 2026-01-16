@@ -395,7 +395,7 @@ public class AutonomousDevAgent
     
     private static IProjectAdapter CreateProjectAdapter(string path, ProjectType? type)
     {
-        var projectType = type ?? InferProjectType(path);
+        var projectType = type ?? ProjectTypeDetector.InferProjectType(path);
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         
         return projectType switch
@@ -405,14 +405,6 @@ public class AutonomousDevAgent
             ProjectType.ReactApp or ProjectType.VueApp or ProjectType.NextJs => new WebProjectAdapter(path, loggerFactory.CreateLogger<WebProjectAdapter>()),
             _ => new GenericProjectAdapter(path, loggerFactory.CreateLogger<GenericProjectAdapter>())
         };
-    }
-    
-    private static ProjectType InferProjectType(string path)
-    {
-        if (Directory.Exists(Path.Combine(path, "Assets", "Scenes"))) return ProjectType.UnityGame;
-        if (Directory.GetFiles(path, "*.csproj", SearchOption.TopDirectoryOnly).Any()) return ProjectType.DotNetApp;
-        if (File.Exists(Path.Combine(path, "package.json"))) return ProjectType.ReactApp;
-        return ProjectType.Generic;
     }
     
     private static IReadOnlyList<DevelopmentTask> UpdateTasksWithFixes(

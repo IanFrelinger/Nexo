@@ -135,15 +135,17 @@ public sealed class UnityBuildAgent : BaseAgent
         CancellationToken cancellationToken)
     {
         var assetsPath = Path.Combine(projectPath, "Assets", "Generated");
-        Directory.CreateDirectory(assetsPath);
+        var assetsDir = new DirectoryInfo(assetsPath);
+        if (!assetsDir.Exists) assetsDir.Create();
 
         foreach (var asset in manifest.Assets)
         {
             var destPath = Path.Combine(assetsPath, asset.AssetType.ToString(),
                 Path.GetFileName(asset.FilePath));
-            Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+            var destDir = new DirectoryInfo(Path.GetDirectoryName(destPath)!);
+            if (!destDir.Exists) destDir.Create();
 
-            File.Copy(asset.FilePath, destPath, overwrite: true);
+            new FileInfo(asset.FilePath).CopyTo(destPath, overwrite: true);
 
             Logger.LogDebug("Imported asset: {Source} → {Dest}", asset.FilePath, destPath);
         }

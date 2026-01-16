@@ -7,6 +7,7 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -57,6 +58,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var mockBricks = new Mock<IBrickRegistry>();
         var mockBehaviors = new Mock<IBehaviorRegistry>();
         var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
         var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
 
         var executor = new WorkflowExecutor(
@@ -64,6 +66,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            mockFs.Object,
             mockLogger.Object);
 
         var workflow = new WorkflowDefinition
@@ -128,6 +131,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var mockBricks = new Mock<IBrickRegistry>();
         var mockBehaviors = new Mock<IBehaviorRegistry>();
         var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
         var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
 
         var executor = new WorkflowExecutor(
@@ -135,6 +139,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            mockFs.Object,
             mockLogger.Object);
 
         var tempFile = Path.GetTempFileName();
@@ -142,6 +147,10 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
 
         try
         {
+            mockFs
+                .Setup(f => f.ReadAllTextAsync(tempFile, It.IsAny<CancellationToken>()))
+                .ReturnsAsync("test file content");
+
             var workflow = new WorkflowDefinition
             {
                 Id = "test-workflow",
@@ -209,6 +218,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         mockBehaviors.Setup(b => b.GetBehavior("test-behavior")).Returns(behavior);
 
         var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
         var events = new List<ExecutionEvent>
         {
             new BehaviorStartedEvent("test-behavior", "Test Behavior", DateTime.UtcNow),
@@ -231,6 +241,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            mockFs.Object,
             mockLogger.Object);
 
         var workflow = new WorkflowDefinition
@@ -285,6 +296,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
 
         var mockBehaviors = new Mock<IBehaviorRegistry>();
         var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
         var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
 
         var executor = new WorkflowExecutor(
@@ -292,6 +304,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            mockFs.Object,
             mockLogger.Object);
 
         var workflow = new WorkflowDefinition
@@ -338,6 +351,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var mockBricks = new Mock<IBrickRegistry>();
         var mockBehaviors = new Mock<IBehaviorRegistry>();
         var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
         var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
 
         var executor = new WorkflowExecutor(
@@ -345,6 +359,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            mockFs.Object,
             mockLogger.Object);
 
         // Create workflow with cycle (should fail validation)
@@ -410,6 +425,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var mockBricks = new Mock<IBrickRegistry>();
         var mockBehaviors = new Mock<IBehaviorRegistry>();
         var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
         var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
 
         var executor = new WorkflowExecutor(
@@ -417,6 +433,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            mockFs.Object,
             mockLogger.Object);
 
         // Create linear workflow: input -> node1 -> node2 -> output
@@ -478,6 +495,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var mockBricks = new Mock<IBrickRegistry>();
         var mockBehaviors = new Mock<IBehaviorRegistry>();
         var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
         var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
 
         var executor = new WorkflowExecutor(
@@ -485,6 +503,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            mockFs.Object,
             mockLogger.Object);
 
         var workflow = new WorkflowDefinition

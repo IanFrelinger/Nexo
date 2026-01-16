@@ -60,7 +60,7 @@ public sealed class Model3DAssetAgent : BaseAssetAgent
             : null;
 
         Generated3DModel result;
-        if (!string.IsNullOrEmpty(referenceImage) && File.Exists(referenceImage))
+        if (!string.IsNullOrEmpty(referenceImage) && new FileInfo(referenceImage).Exists)
         {
             result = await _model3DGenerator.GenerateFromImageAsync(referenceImage, request, cancellationToken);
         }

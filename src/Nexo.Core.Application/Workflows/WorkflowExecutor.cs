@@ -1,6 +1,7 @@
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
@@ -19,6 +20,7 @@ public class WorkflowExecutor
     private readonly IBrickRegistry _bricks;
     private readonly IBehaviorRegistry _behaviors;
     private readonly IBehaviorExecutor _behaviorExecutor;
+    private readonly ITextFileSystem _fs;
     private readonly ILogger<WorkflowExecutor> _logger;
     private readonly Subject<WorkflowExecutionEvent> _events = new();
     
@@ -29,12 +31,14 @@ public class WorkflowExecutor
         IBrickRegistry bricks,
         IBehaviorRegistry behaviors,
         IBehaviorExecutor behaviorExecutor,
+        ITextFileSystem fs,
         ILogger<WorkflowExecutor> logger)
     {
         _agents = agents;
         _bricks = bricks;
         _behaviors = behaviors;
         _behaviorExecutor = behaviorExecutor;
+        _fs = fs;
         _logger = logger;
     }
     
@@ -135,7 +139,7 @@ public class WorkflowExecutor
             case InputType.File:
                 if (node.FilePath != null)
                 {
-                    data = await File.ReadAllTextAsync(node.FilePath, ct);
+                    data = await _fs.ReadAllTextAsync(node.FilePath, ct);
                 }
                 break;
             case InputType.Content:
@@ -338,7 +342,7 @@ public class WorkflowExecutor
                 if (node.FilePath != null && data != null)
                 {
                     var content = SerializeOutput(data, node.Format);
-                    await File.WriteAllTextAsync(node.FilePath, content, ct);
+                    await _fs.WriteAllTextAsync(node.FilePath, content, ct);
                 }
                 break;
             case OutputType.Webhook:

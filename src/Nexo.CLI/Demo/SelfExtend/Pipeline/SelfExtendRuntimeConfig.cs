@@ -66,6 +66,11 @@ public sealed record SelfExtendRuntimeConfig
                     Kind = "dotnet_build",
                     Implementations = new List<ImplSpec> { new() { Type = "deterministic" } }
                 },
+                ["analyze"] = new StepSpec
+                {
+                    Kind = "roslyn_analyze",
+                    Implementations = new List<ImplSpec> { new() { Type = "deterministic" } }
+                },
                 ["verify"] = new StepSpec
                 {
                     Kind = "verify_command",
@@ -78,13 +83,13 @@ public sealed record SelfExtendRuntimeConfig
                 {
                     Name = "red",
                     When = "always",
-                    StepIds = new List<string> { "write_command_bad", "build", "verify" }
+                    StepIds = new List<string> { "write_command_bad", "analyze", "build", "verify" }
                 },
                 new()
                 {
                     Name = "green",
                     When = "if_last_test_failed",
-                    StepIds = new List<string> { "write_command_good", "verify" }
+                    StepIds = new List<string> { "write_command_good", "analyze", "build", "verify" }
                 }
             }
         };

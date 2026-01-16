@@ -7,7 +7,9 @@ using Nexo.Agents.UniversalTester;
 using Nexo.Agents.UniversalTester.Configuration;
 using Nexo.Agents.UniversalTester.Models;
 using Nexo.CLI.Output;
+using Nexo.CLI.Runtime;
 using Nexo.Core.Domain.Execution;
+using Nexo.Infrastructure.IO;
 using Nexo.Infrastructure.Execution;
 
 namespace Nexo.CLI.Commands;
@@ -167,8 +169,7 @@ public class UniversalTestCommand : Command
             var context = CreateExecutionContext(mode, provider);
 
             // Load runtime config (per-brick impl + fallback), allow CLI override of global prefer.
-            var runtime = Nexo.Agents.UniversalTester.Configuration.UniversalTesterRuntimeConfigLoader
-                .Load(agentSpecPath, agentSpecJson);
+            var runtime = UniversalTesterRuntimeConfigLoader.Load(agentSpecPath, agentSpecJson);
             if (!string.IsNullOrWhiteSpace(preferOverride))
             {
                 runtime = runtime with { Prefer = preferOverride!.Trim() };
@@ -195,7 +196,7 @@ public class UniversalTestCommand : Command
                 
                 if (output != null)
                 {
-                    await File.WriteAllTextAsync(output.FullName, jsonOutput);
+                    await TextFile.WriteAllTextAsync(output.FullName, jsonOutput);
                 }
             }
             else if (console != null)
@@ -287,7 +288,7 @@ public class UniversalTestCommand : Command
             _ => JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true })
         };
         
-        await File.WriteAllTextAsync(output.FullName, content);
+        await TextFile.WriteAllTextAsync(output.FullName, content);
     }
     
     private static string GenerateHtmlReport(TestReport report)

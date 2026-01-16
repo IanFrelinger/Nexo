@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Nexo.Infrastructure.IO;
 
 namespace Nexo.CLI.Demo.SelfExtend.Pipeline;
 
@@ -13,7 +14,7 @@ internal static class SelfExtendConfigLoader
 
         if (!string.IsNullOrWhiteSpace(filePath))
         {
-            var text = File.ReadAllText(filePath);
+            var text = TextFile.ReadAllText(filePath);
             return Deserialize(text);
         }
 

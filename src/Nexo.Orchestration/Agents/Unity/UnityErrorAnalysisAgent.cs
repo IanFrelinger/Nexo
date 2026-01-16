@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
+using Nexo.Infrastructure.IO;
 using Nexo.Orchestration.Architect.Models;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -102,7 +103,7 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
             SyntaxErrors = new List<SyntaxError>()
         };
 
-        if (string.IsNullOrEmpty(_unityLogPath) || !File.Exists(_unityLogPath))
+        if (string.IsNullOrEmpty(_unityLogPath) || !new FileInfo(_unityLogPath).Exists)
         {
             Logger.LogWarning("Unity log file not found: {LogPath}", _unityLogPath);
             analysisResult.HasErrors = false;
@@ -111,7 +112,7 @@ public class UnityErrorAnalysisAgent : BaseDomainAgent
 
         try
         {
-            var logContent = await File.ReadAllTextAsync(_unityLogPath, cancellationToken);
+            var logContent = await TextFile.ReadAllTextAsync(_unityLogPath, cancellationToken);
             analysisResult = AnalyzeUnityLog(logContent, analysisResult);
             
             // If we have a model, use it to provide more context

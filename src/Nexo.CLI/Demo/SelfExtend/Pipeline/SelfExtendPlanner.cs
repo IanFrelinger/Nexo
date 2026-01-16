@@ -29,7 +29,7 @@ public sealed class DeterministicSelfExtendPlanner : ISelfExtendPlanner
             {
                 new WriteGeneratedCommandCommand(_rt, messageOverride: "TODO: fix me"),
                 new DotnetBuildCommand(_rt),
-                new VerifyGeneratedCommandCommand()
+                new VerifyGeneratedCommandCommand(_rt)
             };
         }
 
@@ -45,7 +45,7 @@ public sealed class DeterministicSelfExtendPlanner : ISelfExtendPlanner
             return new ICommand<SelfExtendContext, SelfExtendContext>[]
             {
                 new WriteGeneratedCommandCommand(_rt, messageOverride: ctx.Spec.Message),
-                new VerifyGeneratedCommandCommand()
+                new VerifyGeneratedCommandCommand(_rt)
             };
         }
 

@@ -61,37 +61,6 @@ public sealed class OrchestrationRuntimeSpecAccessor : IOrchestrationRuntimeSpec
     }
 }
 
-public static class OrchestrationRuntimeSpecLoader
-{
-    public static OrchestrationRuntimeSpec Load(string? path, string? json)
-    {
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            return Deserialize(json);
-        }
-
-        if (!string.IsNullOrWhiteSpace(path))
-        {
-            return Deserialize(File.ReadAllText(path));
-        }
-
-        return OrchestrationRuntimeSpec.Default();
-    }
-
-    private static OrchestrationRuntimeSpec Deserialize(string json)
-    {
-        var cfg = JsonSerializer.Deserialize<OrchestrationRuntimeSpec>(
-            json,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-                AllowTrailingCommas = true
-            });
-        return cfg ?? throw new InvalidOperationException("Failed to parse orchestration runtime spec JSON");
-    }
-}
-
 /// <summary>
 /// Decorates an IModel so orchestration-wide runtime spec can be applied without touching every callsite.
 /// It injects nexo.model.prefer/provider directives based on the current runtime spec (default scope).

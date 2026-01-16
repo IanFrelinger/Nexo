@@ -11,7 +11,7 @@ public sealed class SelfExtendPreValidator : IPreValidator
             return ValueTask.FromResult((false, (string?)"input must be SelfExtendContext"));
         }
 
-        if (string.IsNullOrWhiteSpace(ctx.RepoRoot) || !Directory.Exists(ctx.RepoRoot))
+        if (string.IsNullOrWhiteSpace(ctx.RepoRoot) || !new DirectoryInfo(ctx.RepoRoot).Exists)
         {
             return ValueTask.FromResult((false, (string?)"RepoRoot missing or does not exist"));
         }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Nexo.Agents.AutonomousDev;
 using Nexo.Agents.AutonomousDev.Models;
+using Nexo.Infrastructure.IO;
 
 namespace Nexo.CLI.Commands;
 
@@ -26,7 +27,7 @@ public sealed class DevSessionFileStore : ISessionStore
         }
 
         var json = JsonSerializer.Serialize(session, Options);
-        await File.WriteAllTextAsync(_path.FullName, json, ct);
+        await TextFile.WriteAllTextAsync(_path.FullName, json, ct);
     }
 }
 
