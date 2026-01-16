@@ -159,6 +159,7 @@ public sealed class DemoSelfExtendCommand : Command
             Spec = spec
         };
 
+        var overallOk = true;
         for (var iteration = 0; iteration < maxIterations; iteration++)
         {
             ctxObj.Iteration = iteration;
@@ -180,6 +181,7 @@ public sealed class DemoSelfExtendCommand : Command
                 }
                 catch (Exception ex)
                 {
+                    overallOk = false;
                     ctxObj.History.Add(new { iteration, step = step.GetType().Name, ok = false, exception = ex.Message });
                     if (!json && console != null) console.WriteError($"{step.GetType().Name} threw: {ex.Message}");
                     break;
@@ -191,6 +193,7 @@ public sealed class DemoSelfExtendCommand : Command
 
                 if (!result.Success)
                 {
+                    overallOk = false;
                     ctxObj.History.Add(new { iteration, step = step.GetType().Name, ok = false, error = result.Message });
                     if (!json && console != null) console.WriteError($"{step.GetType().Name} failed: {result.Message}");
                     break;
@@ -203,20 +206,30 @@ public sealed class DemoSelfExtendCommand : Command
             }
         }
 
+        overallOk = overallOk && ctxObj.LastTestOk == true;
+
         if (json)
         {
             Console.WriteLine(JsonSerializer.Serialize(new
             {
-                ok = true,
+                ok = overallOk,
                 command = ctxObj.GeneratedCommandInvocation,
                 message = spec.Message,
+                lastTestOk = ctxObj.LastTestOk,
                 history = ctxObj.History
             }, new JsonSerializerOptions { WriteIndented = true }));
         }
         else if (console != null)
         {
             console.WriteLine();
-            console.WriteSuccess($"Demo complete. Try: `dotnet run --project src/Nexo.CLI -- {ctxObj.GeneratedCommandInvocation}`");
+            if (overallOk)
+            {
+                console.WriteSuccess($"Demo complete. Try: `dotnet run --project src/Nexo.CLI -- {ctxObj.GeneratedCommandInvocation}`");
+            }
+            else
+            {
+                console.WriteError("Demo failed to verify the generated command contract.");
+            }
             console.WriteWarning("Generated files are placed under `src/.../DemoGenerated/` and ignored by git (demo artifacts).");
         }
     }

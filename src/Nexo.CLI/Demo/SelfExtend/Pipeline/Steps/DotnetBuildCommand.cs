@@ -12,7 +12,18 @@ public sealed class DotnetBuildCommand : ICommand<SelfExtendContext, SelfExtendC
     public async ValueTask<SelfExtendContext> ExecuteAsync(SelfExtendContext input, CancellationToken ct)
     {
         var result = await _rt.InvokeAsync(input, "dotnet.build", new { root = input.RepoRoot }, ct);
-        input.History.Add(new { step = "dotnet_build", delta = result.Delta.Log });
+        var payloadJson = JsonSerializer.Serialize(result.Payload);
+        using var doc = JsonDocument.Parse(payloadJson);
+        var ok = doc.RootElement.TryGetProperty("ok", out var okProp) && okProp.GetBoolean();
+        var stdout = doc.RootElement.TryGetProperty("stdout", out var soProp) ? soProp.GetString() : null;
+        var stderr = doc.RootElement.TryGetProperty("stderr", out var seProp) ? seProp.GetString() : null;
+
+        input.History.Add(new { step = "dotnet_build", ok, delta = result.Delta.Log });
+
+        if (!ok)
+        {
+            throw new InvalidOperationException("dotnet build failed" + (string.IsNullOrWhiteSpace(stderr) ? "" : $": {stderr}"));
+        }
         return input;
     }
 }
