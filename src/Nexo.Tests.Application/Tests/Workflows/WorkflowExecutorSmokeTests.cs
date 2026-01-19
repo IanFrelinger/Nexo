@@ -8,6 +8,7 @@ using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;
 using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -66,6 +67,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
             mockFs.Object,
             mockLogger.Object);
 
@@ -139,6 +141,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
             mockFs.Object,
             mockLogger.Object);
 
@@ -241,6 +244,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
             mockFs.Object,
             mockLogger.Object);
 
@@ -304,6 +308,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
             mockFs.Object,
             mockLogger.Object);
 
@@ -359,6 +364,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
             mockFs.Object,
             mockLogger.Object);
 
@@ -433,6 +439,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
             mockFs.Object,
             mockLogger.Object);
 
@@ -503,6 +510,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             mockBricks.Object,
             mockBehaviors.Object,
             mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
             mockFs.Object,
             mockLogger.Object);
 

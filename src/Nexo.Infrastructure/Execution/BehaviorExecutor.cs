@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Behaviors;
@@ -18,17 +20,20 @@ public class BehaviorExecutor : IBehaviorExecutor
     private readonly IBrickRegistry _brickRegistry;
     private readonly IProviderFactory _providerFactory;
     private readonly ISemanticCache _semanticCache;
+    private readonly ILoopKernel _loops;
     private readonly ILogger<BehaviorExecutor> _logger;
     
     public BehaviorExecutor(
         IBrickRegistry brickRegistry,
         IProviderFactory providerFactory,
         ISemanticCache semanticCache,
+        ILoopKernel loops,
         ILogger<BehaviorExecutor> logger)
     {
         _brickRegistry = brickRegistry;
         _providerFactory = providerFactory;
         _semanticCache = semanticCache;
+        _loops = loops;
         _logger = logger;
     }
     
@@ -73,141 +78,151 @@ public class BehaviorExecutor : IBehaviorExecutor
         ExecutionOptions options,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var context = new ExecutionContext
+        var channel = Channel.CreateUnbounded<ExecutionEvent>();
+
+        _ = Task.Run(async () =>
         {
-            AgentId = agent.Id,
-            BehaviorId = behavior.Id,
-            IsAirGapped = options.IsAirGapped,
-            AuditMode = options.AuditMode,
-            Provider = options.Provider,
-            Variables = new Dictionary<string, object>(input.Parameters)
-        };
-        
-        yield return new BehaviorStartedEvent(behavior.Id, behavior.Name, DateTime.UtcNow);
-        
-        var stepIndex = 0;
-        foreach (var step in behavior.Steps)
+            var writer = channel.Writer;
+            try
+            {
+                var context = new ExecutionContext
+                {
+                    AgentId = agent.Id,
+                    BehaviorId = behavior.Id,
+                    IsAirGapped = options.IsAirGapped,
+                    AuditMode = options.AuditMode,
+                    Provider = options.Provider,
+                    Variables = new Dictionary<string, object>(input.Parameters)
+                };
+
+                await writer.WriteAsync(new BehaviorStartedEvent(behavior.Id, behavior.Name, DateTime.UtcNow), cancellationToken);
+
+                await _loops.ForEachAsync(behavior.Steps, async (step, stepIndex, ct) =>
+                {
+                    if (ct.IsCancellationRequested)
+                    {
+                        await writer.WriteAsync(new BehaviorCancelledEvent(behavior.Id), ct);
+                        return LoopAction.Break;
+                    }
+
+                    // Check step condition
+                    if (step.Condition != null && !EvaluateCondition(step.Condition, context))
+                    {
+                        await writer.WriteAsync(new StepSkippedEvent(step.Id, step.Condition), ct);
+                        return LoopAction.Continue;
+                    }
+
+                    var brick = _brickRegistry.GetBrick(step.BrickId);
+                    if (brick == null)
+                    {
+                        await writer.WriteAsync(new StepErrorEvent(step.Id, $"Brick not found: {step.BrickId}"), ct);
+                        return behavior.OnStepFailure == FailurePolicy.Abort ? LoopAction.Break : LoopAction.Continue;
+                    }
+
+                    // Map inputs once per step (implementation swapping should use same inputs).
+                    var brickInput = MapInputs(step.InputMapping, context);
+
+                    // Determine implementation chain (preference + fallback), filtering for availability.
+                    var chain = ResolveImplementationChain(step, brick, behavior, options, context);
+                    if (chain.Count == 0)
+                    {
+                        await writer.WriteAsync(new StepErrorEvent(step.Id, "No available implementation"), ct);
+                        return behavior.OnStepFailure == FailurePolicy.Abort ? LoopAction.Break : LoopAction.Continue;
+                    }
+
+                    BrickOutput? output = null;
+                    string? error = null;
+                    var usedFallback = false;
+
+                    await _loops.ForEachAsync(chain, async (implementation, _, ct2) =>
+                    {
+                        await writer.WriteAsync(new StepStartedEvent(
+                            step.Id,
+                            brick.Id,
+                            brick.Name,
+                            implementation,
+                            usedFallback,
+                            stepIndex,
+                            behavior.Steps.Count), ct2);
+
+                        var stopwatch = Stopwatch.StartNew();
+
+                        var cacheKey = ComputeCacheKey(brick.Id, brickInput, implementation);
+                        var cached = await _semanticCache.GetAsync(cacheKey, ct2);
+
+                        if (cached != null)
+                        {
+                            output = cached;
+                            await writer.WriteAsync(new CacheHitEvent(step.Id, cacheKey), ct2);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                output = await brick.ExecuteAsync(brickInput, implementation, context, ct2);
+                                await _semanticCache.SetAsync(cacheKey, output, ct2);
+                            }
+                            catch (Exception ex)
+                            {
+                                output = null;
+                                error = ex.Message;
+                                _logger.LogError(ex, "Error executing step {StepId} with {Implementation}", step.Id, implementation);
+                            }
+                        }
+
+                        stopwatch.Stop();
+
+                        if (output != null)
+                        {
+                            MapOutputs(step.OutputMapping, output, context);
+                            await writer.WriteAsync(new StepCompletedEvent(
+                                step.Id,
+                                brick.Id,
+                                implementation,
+                                stopwatch.ElapsedMilliseconds,
+                                output.Summary), ct2);
+
+                            error = null;
+                            return LoopAction.Break;
+                        }
+
+                        await writer.WriteAsync(new StepErrorEvent(step.Id, error ?? "Step failed", stopwatch.ElapsedMilliseconds), ct2);
+
+                        if (!options.SwapOnFailure)
+                        {
+                            return LoopAction.Break;
+                        }
+
+                        usedFallback = true;
+                        return LoopAction.Continue;
+                    }, new LoopOptions { Name = "behavior-step-impl-chain" }, ct);
+
+                    if (error != null && output == null && behavior.OnStepFailure == FailurePolicy.Abort)
+                    {
+                        return LoopAction.Break;
+                    }
+
+                    return LoopAction.Continue;
+                }, new LoopOptions { Name = "behavior-steps" }, cancellationToken);
+
+                var success = EvaluateSuccessCriteria(behavior.SuccessCriteria, context);
+                await writer.WriteAsync(new BehaviorCompletedEvent(behavior.Id, success, context.Variables), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // If something unexpected happens, emit a final failure event via StepError with synthetic step id.
+                await channel.Writer.WriteAsync(new StepErrorEvent("behavior", ex.Message), CancellationToken.None);
+            }
+            finally
+            {
+                writer.TryComplete();
+            }
+        }, cancellationToken);
+
+        await foreach (var evt in channel.Reader.ReadAllAsync(cancellationToken))
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                yield return new BehaviorCancelledEvent(behavior.Id);
-                yield break;
-            }
-            
-            // Check step condition
-            if (step.Condition != null && !EvaluateCondition(step.Condition, context))
-            {
-                yield return new StepSkippedEvent(step.Id, step.Condition);
-                continue;
-            }
-            
-            var brick = _brickRegistry.GetBrick(step.BrickId);
-            if (brick == null)
-            {
-                yield return new StepErrorEvent(step.Id, $"Brick not found: {step.BrickId}");
-                if (behavior.OnStepFailure == FailurePolicy.Abort)
-                    yield break;
-                continue;
-            }
-            
-            // Map inputs once per step (implementation swapping should use same inputs).
-            var brickInput = MapInputs(step.InputMapping, context);
-
-            // Determine implementation chain (preference + fallback), filtering for availability.
-            var chain = ResolveImplementationChain(step, brick, behavior, options, context);
-            if (chain.Count == 0)
-            {
-                yield return new StepErrorEvent(step.Id, "No available implementation");
-                if (behavior.OnStepFailure == FailurePolicy.Abort)
-                    yield break;
-                continue;
-            }
-
-            BrickOutput? output = null;
-            string? error = null;
-            var usedFallback = false;
-
-            foreach (var implementation in chain)
-            {
-                yield return new StepStartedEvent(
-                    step.Id,
-                    brick.Id,
-                    brick.Name,
-                    implementation,
-                    usedFallback,
-                    stepIndex,
-                    behavior.Steps.Count);
-
-                var stopwatch = Stopwatch.StartNew();
-
-                var cacheKey = ComputeCacheKey(brick.Id, brickInput, implementation);
-                var cached = await _semanticCache.GetAsync(cacheKey, cancellationToken);
-
-                if (cached != null)
-                {
-                    output = cached;
-                    yield return new CacheHitEvent(step.Id, cacheKey);
-                }
-                else
-                {
-                    try
-                    {
-                        output = await brick.ExecuteAsync(brickInput, implementation, context, cancellationToken);
-                        await _semanticCache.SetAsync(cacheKey, output, cancellationToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        output = null;
-                        error = ex.Message;
-                        _logger.LogError(ex, "Error executing step {StepId} with {Implementation}", step.Id, implementation);
-                    }
-                }
-
-                stopwatch.Stop();
-
-                if (output != null)
-                {
-                    // Map outputs to context
-                    MapOutputs(step.OutputMapping, output, context);
-
-                    yield return new StepCompletedEvent(
-                        step.Id,
-                        brick.Id,
-                        implementation,
-                        stopwatch.ElapsedMilliseconds,
-                        output.Summary);
-
-                    error = null;
-                    break;
-                }
-
-                // failed this implementation
-                yield return new StepErrorEvent(step.Id, error ?? "Step failed", stopwatch.ElapsedMilliseconds);
-
-                if (!options.SwapOnFailure)
-                {
-                    break;
-                }
-
-                usedFallback = true;
-            }
-
-            if (error != null && output == null)
-            {
-                if (behavior.OnStepFailure == FailurePolicy.Abort)
-                    yield break;
-            }
-            
-            stepIndex++;
+            yield return evt;
         }
-        
-        // Evaluate success criteria
-        var success = EvaluateSuccessCriteria(behavior.SuccessCriteria, context);
-        
-        yield return new BehaviorCompletedEvent(
-            behavior.Id,
-            success,
-            context.Variables);
     }
     
     private IReadOnlyList<ImplementationType> ResolveImplementationChain(

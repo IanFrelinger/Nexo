@@ -20,6 +20,7 @@ public class WorkflowExecutor
     private readonly IBrickRegistry _bricks;
     private readonly IBehaviorRegistry _behaviors;
     private readonly IBehaviorExecutor _behaviorExecutor;
+    private readonly ILoopKernel _loops;
     private readonly ITextFileSystem _fs;
     private readonly ILogger<WorkflowExecutor> _logger;
     private readonly Subject<WorkflowExecutionEvent> _events = new();
@@ -31,6 +32,7 @@ public class WorkflowExecutor
         IBrickRegistry bricks,
         IBehaviorRegistry behaviors,
         IBehaviorExecutor behaviorExecutor,
+        ILoopKernel loops,
         ITextFileSystem fs,
         ILogger<WorkflowExecutor> logger)
     {
@@ -38,6 +40,7 @@ public class WorkflowExecutor
         _bricks = bricks;
         _behaviors = behaviors;
         _behaviorExecutor = behaviorExecutor;
+        _loops = loops;
         _fs = fs;
         _logger = logger;
     }
@@ -67,23 +70,24 @@ public class WorkflowExecutor
             
             // Execute nodes in order
             var nodeResults = new Dictionary<string, NodeResult>();
-            
-            foreach (var nodeId in plan.ExecutionOrder)
+
+            await _loops.ForEachAsync(plan.ExecutionOrder, async (nodeId, _, token) =>
             {
                 var node = workflow.Nodes.First(n => n.Id == nodeId);
-                
+
                 _events.OnNext(new NodeStartedEvent(correlationId, node));
-                
+
                 // Gather inputs from connected nodes
                 var nodeInputs = GatherInputs(workflow, node, nodeResults);
-                
+
                 // Execute the node
-                var result = await ExecuteNodeAsync(node, nodeInputs, context, ct);
-                
+                var result = await ExecuteNodeAsync(node, nodeInputs, context, token);
+
                 nodeResults[nodeId] = result;
-                
+
                 _events.OnNext(new NodeCompletedEvent(correlationId, node, result));
-            }
+                return LoopAction.Continue;
+            }, new LoopOptions { Name = "workflow-execution-order" }, ct);
             
             // Gather final outputs
             var outputs = GatherOutputs(workflow, nodeResults);
@@ -241,21 +245,22 @@ public class WorkflowExecutor
         BrickOutput? result = null;
         Exception? last = null;
 
-        foreach (var impl in chain)
+        await _loops.ForEachAsync(chain, async (impl, _, token) =>
         {
             _events.OnNext(new BrickImplementationSelectedEvent(
                 context.CorrelationId, node.Id, brick.Name, impl));
 
             try
             {
-                result = await brick.ExecuteAsync(brickInput, impl, context.ExecutionContext, ct);
-                break;
+                result = await brick.ExecuteAsync(brickInput, impl, context.ExecutionContext, token);
+                return LoopAction.Break;
             }
             catch (Exception ex)
             {
                 last = ex;
+                return LoopAction.Continue;
             }
-        }
+        }, new LoopOptions { Name = "brick-fallback-chain" }, ct);
 
         if (result == null)
         {

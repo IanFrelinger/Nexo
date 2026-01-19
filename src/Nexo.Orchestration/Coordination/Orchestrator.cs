@@ -7,6 +7,7 @@ using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
 using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
+using Nexo.Core.Application.Common.Ports;
 using System.Text.Json;
 
 namespace Nexo.Orchestration.Coordination;
@@ -45,6 +46,7 @@ public sealed class Orchestrator
     private readonly IAgentBus _agentBus;
     private readonly NegotiationProtocol? _negotiationProtocol;
     private readonly OrchestrationMetrics? _metrics;
+    private readonly ILoopKernel _loops;
     private readonly ILogger<Orchestrator> _logger;
 
     /// <summary>
@@ -74,6 +76,7 @@ public sealed class Orchestrator
         EscalationManager escalationManager,
         OutputIntegrator outputIntegrator,
         IAgentBus agentBus,
+        ILoopKernel loops,
         ILogger<Orchestrator> logger,
         NegotiationProtocol? negotiationProtocol = null,
         OrchestrationMetrics? metrics = null)
@@ -88,6 +91,7 @@ public sealed class Orchestrator
         _escalationManager = escalationManager ?? throw new ArgumentNullException(nameof(escalationManager));
         _outputIntegrator = outputIntegrator ?? throw new ArgumentNullException(nameof(outputIntegrator));
         _agentBus = agentBus ?? throw new ArgumentNullException(nameof(agentBus));
+        _loops = loops ?? throw new ArgumentNullException(nameof(loops));
         _negotiationProtocol = negotiationProtocol;
         _metrics = metrics;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -141,9 +145,11 @@ public sealed class Orchestrator
             }
 
             // Step 2: Detect conflicts before spawning
-            var containers = decomposition.Agents
-                .Select(spec => _agentFactory.CreateContainer(spec))
-                .ToList();
+            var containers = _loops.SelectToList(
+                decomposition.Agents,
+                (spec, _, _) => _agentFactory.CreateContainer(spec),
+                new LoopOptions { Name = "spawn-containers" },
+                cancellationToken).ToList();
 
             var conflicts = _conflictDetector.DetectConflicts(containers);
             
@@ -153,14 +159,14 @@ public sealed class Orchestrator
 
             if (_negotiationProtocol != null)
             {
-                foreach (var conflict in conflicts)
+                await _loops.ForEachAsync(conflicts, async (conflict, _, token) =>
                 {
                     if (conflict.Severity == ConflictSeverity.Critical)
                     {
                         // Always escalate critical conflicts
                         _escalationManager.EscalateConflict(conflict, "Critical conflict - requires human decision");
                         unresolvedConflicts.Add(conflict);
-                        continue;
+                        return LoopAction.Continue;
                     }
 
                     var involvedAgents = containers
@@ -168,7 +174,7 @@ public sealed class Orchestrator
                         .ToList();
 
                     var result = await _negotiationProtocol.NegotiateAsync(
-                        conflict, involvedAgents, cancellationToken);
+                        conflict, involvedAgents, token);
 
                     if (result.Success)
                     {
@@ -177,7 +183,7 @@ public sealed class Orchestrator
                             conflict.ConflictType, result.ResolutionType, result.Reason);
 
                         // Apply resolution
-                        await ApplyResolutionAsync(conflict, result, involvedAgents, cancellationToken);
+                        await ApplyResolutionAsync(conflict, result, involvedAgents, token);
                         resolvedConflicts.Add(conflict);
                     }
                     else
@@ -189,7 +195,8 @@ public sealed class Orchestrator
                         _escalationManager.EscalateConflict(conflict, result.Reason ?? "Negotiation failed");
                         unresolvedConflicts.Add(conflict);
                     }
-                }
+                    return LoopAction.Continue;
+                }, new LoopOptions { Name = "negotiate-conflicts" }, cancellationToken);
             }
             else
             {
@@ -202,21 +209,21 @@ public sealed class Orchestrator
             }
 
             // Step 3: Register agents and allocate resources
-            foreach (var container in containers)
+            await _loops.ForEachAsync(containers, async (container, _, token) =>
             {
                 // Allocate resources
-                if (!_resourceAllocator.TryAllocate(container, out _))
+                if (!_resourceAllocator.TryAllocate(container, out var _allocation))
                 {
                     _logger.LogWarning("Failed to allocate resources for agent {AgentId}", container.AgentId);
                     var escalation = _escalationManager.EscalateIssue(
                         "ResourceAllocation",
                         $"Failed to allocate resources for agent {container.AgentId}",
                         EscalationSeverity.High);
-                    continue;
+                    return LoopAction.Continue;
                 }
 
                 // Register agent
-                await _lifecycleManager.RegisterAgentAsync(container, cancellationToken);
+                await _lifecycleManager.RegisterAgentAsync(container, token);
                 _dependencyResolver.RegisterAgent(container);
 
                 // Subscribe to agent messages
@@ -227,19 +234,20 @@ public sealed class Orchestrator
                         _dependencyResolver.RecordOutput(container.AgentId, outputMsg.Output);
                     }
                     await Task.CompletedTask;
-                }, container.AgentId, cancellationToken);
-            }
+                }, container.AgentId, token);
+                return LoopAction.Continue;
+            }, new LoopOptions { Name = "register-agents" }, cancellationToken);
 
             // Step 4: Execute agents in dependency order
             var executionOrder = _dependencyResolver.GetExecutionOrder();
             var outputs = new Dictionary<string, object>();
 
-            foreach (var agentId in executionOrder)
+            await _loops.ForEachAsync(executionOrder, async (agentId, _, token) =>
             {
                 var container = _lifecycleManager.GetAgent(agentId);
                 if (container == null)
                 {
-                    continue;
+                    return LoopAction.Continue;
                 }
 
                 // Wait for dependencies
@@ -247,7 +255,7 @@ public sealed class Orchestrator
                 {
                     var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
                         container.Agent.Spec.Dependencies);
-                    await container.Agent.WaitForDependenciesAsync(dependencyOutputs, cancellationToken);
+                    await container.Agent.WaitForDependenciesAsync(dependencyOutputs, token);
                 }
 
                 // Execute agent
@@ -256,7 +264,7 @@ public sealed class Orchestrator
                     var agentStartTime = DateTimeOffset.UtcNow;
                     var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
                         container.Agent.Spec.Dependencies);
-                    var output = await _lifecycleManager.ExecuteAgentAsync(agentId, dependencyOutputs, cancellationToken);
+                    var output = await _lifecycleManager.ExecuteAgentAsync(agentId, dependencyOutputs, token);
                     var agentDuration = DateTimeOffset.UtcNow - agentStartTime;
                     
                     outputs[agentId] = output;
@@ -283,7 +291,7 @@ public sealed class Orchestrator
                         MessageType = "OutputEmitted",
                         Output = output
                     };
-                    await _agentBus.PublishAsync(message, cancellationToken);
+                    await _agentBus.PublishAsync(message, token);
 
                     // Release resources
                     _resourceAllocator.ReleaseResources(agentId);
@@ -300,7 +308,8 @@ public sealed class Orchestrator
 
                 // Track progress
                 _progressTracker.RecordProgress(container);
-            }
+                return LoopAction.Continue;
+            }, new LoopOptions { Name = "execute-agents" }, cancellationToken);
 
             // Step 5: Integrate outputs
             using var integrateProfiler = _metrics != null

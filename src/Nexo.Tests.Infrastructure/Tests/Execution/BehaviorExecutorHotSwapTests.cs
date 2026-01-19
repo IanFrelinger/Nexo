@@ -11,6 +11,7 @@ using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Models;
+using Nexo.Core.Application.Common.Services;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
@@ -195,6 +196,7 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             registry,
             providerFactory,
             cache,
+            new SequentialLoopKernel(),
             loggerFactory.CreateLogger<BehaviorExecutor>());
     }
 

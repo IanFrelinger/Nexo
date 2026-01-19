@@ -1,4 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Interfaces;
 using Nexo.Core.Application.Orchestration;
 
@@ -12,6 +15,8 @@ public sealed class ServiceHost
     public static IServiceProvider BuildDefault(Action<IServiceCollection>? configure = null)
     {
         var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<ILoopKernel, SequentialLoopKernel>();
         services.AddSingleton<IOrchestrator, GenericCommandOrchestrator>();
         services.AddSingleton<GenericCommandOrchestrator>();
         services.AddSingleton<IPreValidator, NoopPreValidator>();

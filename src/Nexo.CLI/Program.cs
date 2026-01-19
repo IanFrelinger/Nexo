@@ -11,6 +11,8 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
+using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Common.Services;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
 
@@ -394,6 +396,26 @@ static class Program
 
         // Register configuration service
         services.AddSingleton<Nexo.Core.Application.Configuration.Ports.IConfigurationService, Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>();
+
+        // Register loop kernel for hot paths (toggleable via env vars).
+        services.AddSingleton<ILoopKernel>(sp =>
+        {
+            ILoopKernel k = new SequentialLoopKernel();
+
+            var enableParallel = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_PARALLEL"), "1", StringComparison.OrdinalIgnoreCase);
+            if (enableParallel)
+            {
+                k = new ParallelLoopKernel(k);
+            }
+
+            var instrument = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_INSTRUMENT"), "1", StringComparison.OrdinalIgnoreCase);
+            if (instrument)
+            {
+                k = new InstrumentedLoopKernel(k, sp.GetRequiredService<ILogger<InstrumentedLoopKernel>>());
+            }
+
+            return k;
+        });
 
         // Register orchestration layer
         services.AddNexoOrchestration();

@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Abstractions;
 using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Common.Services;
 using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Parsers;
@@ -37,6 +39,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddNexoOrchestration(this IServiceCollection services)
     {
         services.AddSingleton<IOrchestrationRuntimeSpecAccessor, OrchestrationRuntimeSpecAccessor>();
+
+        // Loop kernel (hot paths use this; default is sequential unless host decorates).
+        services.TryAddSingleton<ILoopKernel, SequentialLoopKernel>();
 
         // Architect
         services.AddSingleton<DomainRecognizer>();
