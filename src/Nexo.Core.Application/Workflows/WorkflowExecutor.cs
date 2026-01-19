@@ -209,7 +209,7 @@ public class WorkflowExecutor
             
             if (evt is BehaviorCompletedEvent completed)
             {
-                outputs = new Dictionary<string, object>(completed.Outputs);
+                outputs = ToMutableDictionary(completed.Outputs);
             }
         }
         
@@ -266,7 +266,7 @@ public class WorkflowExecutor
         {
             NodeId = node.Id,
             Success = true,
-            Outputs = new Dictionary<string, object>(result.ToDictionary())
+            Outputs = ToMutableDictionary(result.ToDictionary())
         };
     }
 
@@ -380,8 +380,10 @@ public class WorkflowExecutor
         }
         
         var queue = new Queue<string>();
-        foreach (var (nodeId, degree) in inDegree)
+        foreach (var kvp in inDegree)
         {
+            var nodeId = kvp.Key;
+            var degree = kvp.Value;
             if (degree == 0)
                 queue.Enqueue(nodeId);
         }
@@ -443,6 +445,16 @@ public class WorkflowExecutor
         }
         
         return inputs;
+    }
+
+    private static Dictionary<string, object> ToMutableDictionary(IReadOnlyDictionary<string, object> source)
+    {
+        var dict = new Dictionary<string, object>(source.Count);
+        foreach (var kvp in source)
+        {
+            dict[kvp.Key] = kvp.Value;
+        }
+        return dict;
     }
     
     private Dictionary<string, object> GatherOutputs(

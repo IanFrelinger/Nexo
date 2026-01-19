@@ -38,7 +38,7 @@ public sealed class PolicyEngine
     public IActionDelta Sign(IActionDelta delta)
     {
         using var sha = SHA256.Create();
-        var text = $"{delta.TickFrom}:{delta.TickTo}:{string.Join('|', delta.Log)}";
+        var text = $"{delta.TickFrom}:{delta.TickTo}:{string.Join("|", delta.Log)}";
         var sig = sha.ComputeHash(Encoding.UTF8.GetBytes(text));
         delta.Signature = sig;
         return delta;

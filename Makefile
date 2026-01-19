@@ -1,7 +1,10 @@
-.PHONY: build test demo-test demo-dev demo-fresh package-cli
+.PHONY: build build-portable test demo-test demo-dev demo-fresh package-cli
 
 build:
 	dotnet build
+
+build-portable:
+	bash scripts/build-portable.sh
 
 test:
 	dotnet test

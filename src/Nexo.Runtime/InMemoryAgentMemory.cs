@@ -22,7 +22,7 @@ public sealed class InMemoryAgentMemory : IAgentMemory
     public IReadOnlyList<EventRecord> Query(string filter, int k)
     {
         return _events
-            .Where(e => e.Message.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .Where(e => e.Message != null && e.Message.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
             .OrderByDescending(e => e.At)
             .Take(k)
             .ToList();

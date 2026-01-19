@@ -3,6 +3,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors></WarningsNotAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
+    <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
@@ -13,6 +14,11 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
+
+  <!-- NetStandard compatibility shims (Unity 2019+) -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
+    <Compile Include="$(MSBuildThisFileDirectory)src/Nexo.Compat/Polyfills/*.cs" />
+  </ItemGroup>
   
   <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
