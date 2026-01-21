@@ -73,6 +73,7 @@ static class Program
         var validateCommand = serviceProvider.GetRequiredService<ValidateCommand>();
         var agentCommand = serviceProvider.GetRequiredService<AgentCommand>();
         var geoTerrainCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
+        var geoVectorCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
 
         // nexo analyze
         var analyzeCmd = new Command("analyze", "Run code/assembly analyzers and policies")
@@ -414,6 +415,58 @@ static class Program
         geoCmd.AddCommand(tileToObjCmd);
         root.AddCommand(geoCmd);
 
+        // nexo geovector
+        var geoVectorCmd = new Command("geovector", "GeoVector overlays (buildings/roads/vegetation) → meshes");
+        var buildingsToObjCmd = new Command("buildings-to-obj", "Fetch building footprints and write an OBJ mesh");
+        var boundsOpt = new Option<string>("--bounds", "Bounds: minLat,minLon,maxLat,maxLon") { IsRequired = true };
+        var vecOutOpt = new Option<FileInfo>("--output", "Output OBJ file path") { IsRequired = true };
+        var vectorProviderOpt = new Option<string>("--vector-provider", () => "echo", "Provider: echo|mapbox");
+        var mapboxTokenOpt = new Option<string?>("--mapbox-token", () => null, "Mapbox access token (or set MAPBOX_ACCESS_TOKEN)");
+        var mapboxTilesetOpt = new Option<string?>("--mapbox-tileset", () => "mapbox.mapbox-streets-v8", "Mapbox tileset id (e.g. mapbox.mapbox-streets-v8)");
+        var mapboxZoomOpt = new Option<int?>("--mapbox-zoom", () => 15, "Zoom level for tile selection (0-22)");
+        var vecAirgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic only");
+        var vecForceFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (fallback demo)");
+
+        buildingsToObjCmd.AddOption(boundsOpt);
+        buildingsToObjCmd.AddOption(vecOutOpt);
+        buildingsToObjCmd.AddOption(vectorProviderOpt);
+        buildingsToObjCmd.AddOption(mapboxTokenOpt);
+        buildingsToObjCmd.AddOption(mapboxTilesetOpt);
+        buildingsToObjCmd.AddOption(mapboxZoomOpt);
+        buildingsToObjCmd.AddOption(vecAirgapOpt);
+        buildingsToObjCmd.AddOption(vecForceFailOpt);
+
+        buildingsToObjCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var bounds = ctx.ParseResult.GetValueForOption(boundsOpt) ?? throw new InvalidOperationException("--bounds is required");
+            var output = ctx.ParseResult.GetValueForOption(vecOutOpt) ?? throw new InvalidOperationException("--output is required");
+            var provider = ctx.ParseResult.GetValueForOption(vectorProviderOpt) ?? "echo";
+            var mapboxToken = ctx.ParseResult.GetValueForOption(mapboxTokenOpt);
+            var mapboxTileset = ctx.ParseResult.GetValueForOption(mapboxTilesetOpt);
+            var mapboxZoom = ctx.ParseResult.GetValueForOption(mapboxZoomOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
+            var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoVectorCommand.BuildingsToObjAsync(
+                bounds,
+                output,
+                provider,
+                mapboxToken,
+                mapboxTileset,
+                mapboxZoom,
+                airgap,
+                forceFail,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+
+        geoVectorCmd.AddCommand(buildingsToObjCmd);
+        root.AddCommand(geoVectorCmd);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
@@ -441,6 +494,7 @@ static class Program
     {
         services.AddHttpClient();
         services.AddHttpClient("geoterrain.srtm");
+        services.AddHttpClient("geovector.mapbox");
 
         // Register MediatR
         services.AddMediatR(cfg =>
@@ -522,6 +576,7 @@ static class Program
         services.AddScoped<UnityCommand>();
         services.AddScoped<DemoCommand>();
         services.AddScoped<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
+        services.AddScoped<Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

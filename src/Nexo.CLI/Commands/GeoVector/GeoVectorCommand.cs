@@ -1,0 +1,278 @@
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Nexo.Adapters.GeoVector.Providers;
+using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Domain.Agents;
+using Nexo.Core.Domain.Behaviors;
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
+using Nexo.Core.Domain.Execution.Events;
+using Nexo.Core.Domain.Workflows;
+using Nexo.GeoTerrain;
+using Nexo.GeoVector.Bricks;
+using Nexo.Infrastructure.Execution;
+using Nexo.Infrastructure.IO;
+using Nexo.Orchestration.GeoVector.Ports;
+
+namespace Nexo.CLI.Commands.GeoVector;
+
+public sealed class GeoVectorCommand
+{
+    private readonly Nexo.Infrastructure.Execution.IProviderFactory _providerFactory;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<GeoVectorCommand> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public GeoVectorCommand(
+        Nexo.Infrastructure.Execution.IProviderFactory providerFactory,
+        ILoggerFactory loggerFactory,
+        ILogger<GeoVectorCommand> logger,
+        IHttpClientFactory httpClientFactory)
+    {
+        _providerFactory = providerFactory ?? throw new ArgumentNullException(nameof(providerFactory));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    }
+
+    public async Task<int> BuildingsToObjAsync(
+        string bounds,
+        FileInfo output,
+        string provider,
+        string? mapboxAccessToken,
+        string? mapboxTileset,
+        int? mapboxZoom,
+        bool airGapped,
+        bool forceAgenticFail,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            var geoBounds = ParseBounds(bounds);
+            geoBounds.Validate();
+
+            if (airGapped && string.Equals(provider?.Trim(), "mapbox", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo or a local provider.");
+            }
+
+            var origin = new GeoPoint
+            {
+                Latitude = new Latitude((geoBounds.MinLatitude.Degrees + geoBounds.MaxLatitude.Degrees) * 0.5),
+                Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
+            };
+
+            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom);
+
+            var bricks = new Brick[]
+            {
+                new GeoVectorFetchFeaturesBrick(vectorProvider, _providerFactory, _loggerFactory.CreateLogger<GeoVectorFetchFeaturesBrick>()),
+                new GeoVectorBuildingsToMeshBrick(_providerFactory, _loggerFactory.CreateLogger<GeoVectorBuildingsToMeshBrick>()),
+                new GeoVectorObjFromMeshBrick(_loggerFactory.CreateLogger<GeoVectorObjFromMeshBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                new SequentialLoopKernel(),
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geovector.cli.buildings-to-obj",
+                Name = "GeoVector: buildings -> OBJ",
+                Steps =
+                [
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geovector.fetch.features",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["bounds"] = "bounds",
+                            ["kind"] = "kind",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["features"] = "features"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "mesh",
+                        BrickId = "geovector.buildings.to-mesh",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["features"] = "features",
+                            ["origin"] = "origin",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "obj",
+                        BrickId = "geovector.export.obj-text",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["objText"] = "objText"
+                        }
+                    }
+                ]
+            };
+
+            var agent = new AgentCard { Id = "geovector.cli", Name = "GeoVector CLI", Behaviors = [behavior.Id] };
+
+            var options = new ExecutionOptions
+            {
+                Provider = "offline",
+                IsAirGapped = airGapped,
+                ImplementationMode = airGapped ? ImplementationMode.DeterministicOnly : ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            var input = new BehaviorInput(new Dictionary<string, object>
+            {
+                ["bounds"] = geoBounds,
+                ["origin"] = origin,
+                ["kind"] = "building",
+                ["forceAgenticFail"] = forceAgenticFail
+            });
+
+            IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        if (verbose && !json) Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = b.Outputs;
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var objText = outputs.TryGetValue("objText", out var o) ? o as string : null;
+            if (string.IsNullOrWhiteSpace(objText))
+                throw new InvalidOperationException("OBJ output was not produced.");
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, objText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                bounds = geoBounds.ToString(),
+                output = output.FullName,
+                provider,
+                airGapped,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote OBJ: {output.FullName}");
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoVector buildings-to-obj failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
+    private static GeoBounds ParseBounds(string text)
+    {
+        // Format: "minLat,minLon,maxLat,maxLon"
+        if (string.IsNullOrWhiteSpace(text))
+            throw new ArgumentException("bounds is required (minLat,minLon,maxLat,maxLon).", nameof(text));
+
+        var parts = text.Split(',');
+        if (parts.Length != 4)
+            throw new ArgumentException("bounds must be 'minLat,minLon,maxLat,maxLon'.", nameof(text));
+
+        var minLat = double.Parse(parts[0].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+        var minLon = double.Parse(parts[1].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+        var maxLat = double.Parse(parts[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+        var maxLon = double.Parse(parts[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+
+        return new GeoBounds
+        {
+            MinLatitude = new Latitude(minLat),
+            MinLongitude = new Longitude(minLon),
+            MaxLatitude = new Latitude(maxLat),
+            MaxLongitude = new Longitude(maxLon)
+        };
+    }
+
+    private IVectorProvider BuildVectorProvider(string provider, GeoBounds bounds, string? mapboxAccessToken, string? mapboxTileset, int? mapboxZoom)
+    {
+        provider = (provider ?? "echo").Trim().ToLowerInvariant();
+        return provider switch
+        {
+            "echo" => new EchoVectorProvider(),
+            "mapbox" => new MapboxVectorTileProvider(
+                _httpClientFactory.CreateClient("geovector.mapbox"),
+                accessToken: ResolveMapboxToken(mapboxAccessToken),
+                tilesetId: string.IsNullOrWhiteSpace(mapboxTileset) ? "mapbox.mapbox-streets-v8" : mapboxTileset!,
+                zoom: mapboxZoom ?? 15,
+                formatExtension: "mvt",
+                logger: _loggerFactory.CreateLogger<MapboxVectorTileProvider>()),
+            _ => throw new InvalidOperationException($"Unknown vector provider '{provider}'. Use echo|mapbox.")
+        };
+    }
+
+    private static string ResolveMapboxToken(string? token)
+    {
+        token ??= Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("Mapbox access token is required. Pass --mapbox-token or set MAPBOX_ACCESS_TOKEN.");
+        return token;
+    }
+}
+

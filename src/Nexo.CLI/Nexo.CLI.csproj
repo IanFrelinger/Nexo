@@ -48,6 +48,8 @@
     <ProjectReference Include="../Nexo.Adapters.Models/Nexo.Adapters.Models.csproj" />
     <ProjectReference Include="../Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="../Nexo.Orchestration/Nexo.Orchestration.csproj" />
+    <ProjectReference Include="../Nexo.Adapters.GeoVector/Nexo.Adapters.GeoVector.csproj" />
+    <ProjectReference Include="../Nexo.GeoVector.Bricks/Nexo.GeoVector.Bricks.csproj" />
     <ProjectReference Include="../Nexo.Agents.Dev/Nexo.Agents.Dev.csproj" />
     <ProjectReference Include="../Nexo.Agents.UniversalTester/Nexo.Agents.UniversalTester.csproj" />
     <ProjectReference Include="../Nexo.Agents.AutonomousDev/Nexo.Agents.AutonomousDev.csproj" />
@@ -56,6 +58,7 @@
     <ProjectReference Include="../Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />
     <ProjectReference Include="../Nexo.Tests.Application/Nexo.Tests.Application.csproj" />
     <ProjectReference Include="../Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj" />
+    <ProjectReference Include="../Nexo.Tests.GeoVector/Nexo.Tests.GeoVector.csproj" />
   </ItemGroup>
   
 
