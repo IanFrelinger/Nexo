@@ -127,7 +127,8 @@ public class TestRunnerAdapter : ITestRunner
             "Nexo.Tests.Domain",
             "Nexo.Tests.Application",
             "Nexo.Tests.Infrastructure",
-            "Nexo.Tests.CLI"
+            "Nexo.Tests.CLI",
+            "Nexo.Tests.GeoTerrain"
         };
         
         var assemblies = new List<System.Reflection.Assembly>(loadedAssemblies);

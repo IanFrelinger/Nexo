@@ -15,10 +15,14 @@
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Application\Nexo.Tests.Application.csproj" />
     <ProjectReference Include="..\Nexo.Demo.Bricks\Nexo.Demo.Bricks.csproj" />
     <ProjectReference Include="..\Nexo.Agents.UniversalTester\Nexo.Agents.UniversalTester.csproj" />
     <ProjectReference Include="..\Nexo.Agents.AutonomousDev\Nexo.Agents.AutonomousDev.csproj" />
+    <ProjectReference Include="..\Nexo.Tools.GeoTerrain\Nexo.Tools.GeoTerrain.csproj" />
+    <ProjectReference Include="..\Nexo.Adapters.GeoTerrain\Nexo.Adapters.GeoTerrain.csproj" />
+    <ProjectReference Include="..\Nexo.GeoTerrain.Bricks\Nexo.GeoTerrain.Bricks.csproj" />
   </ItemGroup>
 
 </Project>

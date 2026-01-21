@@ -1,0 +1,302 @@
+using System.Text.Json;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
+using Nexo.Adapters.GeoTerrain.Providers;
+using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Domain.Agents;
+using Nexo.Core.Domain.Behaviors;
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
+using Nexo.Core.Domain.Execution.Events;
+using Nexo.GeoTerrain.Bricks;
+using Nexo.Infrastructure.Execution;
+using Nexo.Infrastructure.IO;
+using Nexo.Orchestration.GeoTerrain.Ports;
+
+namespace Nexo.CLI.Commands.GeoTerrain;
+
+public sealed class GeoTerrainCommand
+{
+    private readonly IProviderFactory _providerFactory;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<GeoTerrainCommand> _logger;
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    public GeoTerrainCommand(
+        IProviderFactory providerFactory,
+        ILoggerFactory loggerFactory,
+        ILogger<GeoTerrainCommand> logger,
+        IHttpClientFactory httpClientFactory)
+    {
+        _providerFactory = providerFactory ?? throw new ArgumentNullException(nameof(providerFactory));
+        _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    }
+
+    public async Task<int> TileToObjAsync(
+        string tile,
+        FileInfo output,
+        string provider,
+        string? localRoot,
+        string? srtmBaseUrl,
+        bool persistDownloads,
+        bool enableCache,
+        bool airGapped,
+        bool forceAgenticFail,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            if (string.IsNullOrWhiteSpace(tile)) throw new ArgumentException("tile is required", nameof(tile));
+
+            var elevationProvider = BuildElevationProvider(
+                provider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                enableCache,
+                airGapped);
+
+            // Build bricks + registries for behavior execution (evented, swap-on-failure aware).
+            var bricks = new Brick[]
+            {
+                new GeoTerrainFetchSrtmTileBrick(
+                    elevationProvider,
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainFetchSrtmTileBrick>()),
+                new GeoTerrainMeshFromHgtBrick(
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainMeshFromHgtBrick>()),
+                new GeoTerrainObjFromMeshBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainObjFromMeshBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                new SequentialLoopKernel(),
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geoterrain.cli.tile-to-obj",
+                Name = "GeoTerrain: tile -> OBJ",
+                Description = "Fetch a tile (local/http/hybrid), mesh it, and export OBJ text.",
+                Steps = new[]
+                {
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geoterrain.fetch.srtm-tile",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["tile"] = "tile",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["tileId"] = "tileId",
+                            ["hgtBytes"] = "hgtBytes"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "mesh",
+                        BrickId = "geoterrain.mesh.from-hgt",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["tileId"] = "tileId",
+                            ["hgtBytes"] = "hgtBytes",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh",
+                            ["quality"] = "quality"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "obj",
+                        BrickId = "geoterrain.export.obj-text",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["objText"] = "obj"
+                        }
+                    }
+                }
+            };
+
+            var agent = new AgentCard
+            {
+                Id = "geoterrain.cli",
+                Name = "GeoTerrain CLI",
+                Description = "CLI runner",
+                Behaviors = new[] { behavior.Id }
+            };
+
+            var options = new ExecutionOptions
+            {
+                IsAirGapped = airGapped,
+                Provider = airGapped ? "offline" : "offline", // safe default; can be made configurable later
+                ImplementationMode = airGapped ? Nexo.Core.Domain.Workflows.ImplementationMode.DeterministicOnly : Nexo.Core.Domain.Workflows.ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            var outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            var input = new BehaviorInput(new Dictionary<string, object>
+            {
+                ["tile"] = tile,
+                ["forceAgenticFail"] = forceAgenticFail
+            });
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        if (verbose && !json)
+                        {
+                            Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        }
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = new Dictionary<string, object>(b.Outputs);
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var objText = outputs.TryGetValue("objText", out var objObj) ? objObj as string : null;
+            if (string.IsNullOrWhiteSpace(objText))
+            {
+                throw new InvalidOperationException("OBJ output was not produced by the pipeline.");
+            }
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, objText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                tile,
+                output = output.FullName,
+                provider,
+                airGapped,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote OBJ: {output.FullName}");
+                if (errors.Count > 0)
+                {
+                    Console.Out.WriteLine("Errors:");
+                    foreach (var e in errors) Console.Out.WriteLine($"- {e}");
+                }
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoTerrain tile-to-obj failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
+    private IElevationProvider BuildElevationProvider(
+        string provider,
+        string? localRoot,
+        string? srtmBaseUrl,
+        bool persistDownloads,
+        bool enableCache,
+        bool airGapped)
+    {
+        provider = (provider ?? "echo").Trim().ToLowerInvariant();
+
+        if (airGapped && provider is "http" or "srtmhttp" or "hybrid")
+        {
+            // Air-gapped: do not attempt network. Force local.
+            provider = "local";
+        }
+
+        IElevationProvider inner = provider switch
+        {
+            "echo" => new EchoElevationProvider(),
+            "local" => new LocalFileElevationProvider(localRoot),
+            "http" or "srtmhttp" => new SrtmHttpElevationProvider(
+                _httpClientFactory.CreateClient("geoterrain.srtm"),
+                srtmBaseUrl,
+                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>()),
+            "hybrid" => BuildHybrid(localRoot, srtmBaseUrl, persistDownloads),
+            _ => throw new InvalidOperationException($"Unknown provider '{provider}'. Use echo|local|http|hybrid.")
+        };
+
+        return enableCache ? new CachedElevationProvider(inner) : inner;
+    }
+
+    private IElevationProvider BuildHybrid(string? localRoot, string? srtmBaseUrl, bool persistDownloads)
+    {
+        if (string.IsNullOrWhiteSpace(localRoot))
+        {
+            // If no local root was provided, fall back to pure HTTP mode.
+            return new SrtmHttpElevationProvider(
+                _httpClientFactory.CreateClient("geoterrain.srtm"),
+                srtmBaseUrl,
+                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
+        }
+
+        var local = new LocalFileElevationProvider(localRoot);
+        var http = new SrtmHttpElevationProvider(
+            _httpClientFactory.CreateClient("geoterrain.srtm"),
+            srtmBaseUrl,
+            _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
+
+        return new HybridLocalThenHttpElevationProvider(
+            local,
+            http,
+            persistDownloads,
+            _loggerFactory.CreateLogger<HybridLocalThenHttpElevationProvider>());
+    }
+}
+

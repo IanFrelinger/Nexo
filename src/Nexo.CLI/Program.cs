@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -71,6 +72,7 @@ static class Program
         var analyzeCommand = serviceProvider.GetRequiredService<AnalyzeCommand>();
         var validateCommand = serviceProvider.GetRequiredService<ValidateCommand>();
         var agentCommand = serviceProvider.GetRequiredService<AgentCommand>();
+        var geoTerrainCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
 
         // nexo analyze
         var analyzeCmd = new Command("analyze", "Run code/assembly analyzers and policies")
@@ -356,6 +358,62 @@ static class Program
         var demoCmd = DemoCommand.CreateCommand(host.Services, jsonOpt, verboseOpt);
         root.AddCommand(demoCmd);
 
+        // nexo geoterrain
+        var geoCmd = new Command("geoterrain", "GeoTerrain GIS elevation → mesh utilities");
+        var tileToObjCmd = new Command("tile-to-obj", "Fetch an SRTM tile and write an OBJ mesh");
+        var tileOpt = new Option<string>("--tile", "Tile id like N00E000 or N00E000.hgt") { IsRequired = true };
+        var outOpt = new Option<FileInfo>("--output", "Output OBJ file path") { IsRequired = true };
+        var elevationProviderOpt = new Option<string>("--elevation-provider", () => "echo", "Provider: echo|local|http|hybrid");
+        var localRootOpt = new Option<string?>("--local-root", () => null, "Local SRTM cache directory (for local/hybrid providers)");
+        var baseUrlOpt = new Option<string?>("--srtm-base-url", () => null, "Base URL for HTTP downloads (for http/hybrid providers)");
+        var persistOpt = new Option<bool>("--persist-downloads", () => true, "Persist downloaded tiles into --local-root (hybrid)");
+        var cacheOpt = new Option<bool>("--cache", () => true, "Enable in-memory provider cache");
+        var airgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic + disables network providers");
+        var forceAgenticFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (to demonstrate fallback)");
+
+        tileToObjCmd.AddOption(tileOpt);
+        tileToObjCmd.AddOption(outOpt);
+        tileToObjCmd.AddOption(elevationProviderOpt);
+        tileToObjCmd.AddOption(localRootOpt);
+        tileToObjCmd.AddOption(baseUrlOpt);
+        tileToObjCmd.AddOption(persistOpt);
+        tileToObjCmd.AddOption(cacheOpt);
+        tileToObjCmd.AddOption(airgapOpt);
+        tileToObjCmd.AddOption(forceAgenticFailOpt);
+
+        tileToObjCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var tile = ctx.ParseResult.GetValueForOption(tileOpt) ?? throw new InvalidOperationException("--tile is required");
+            var output = ctx.ParseResult.GetValueForOption(outOpt) ?? throw new InvalidOperationException("--output is required");
+            var elevationProvider = ctx.ParseResult.GetValueForOption(elevationProviderOpt) ?? "echo";
+            var localRoot = ctx.ParseResult.GetValueForOption(localRootOpt);
+            var srtmBaseUrl = ctx.ParseResult.GetValueForOption(baseUrlOpt);
+            var persistDownloads = ctx.ParseResult.GetValueForOption(persistOpt);
+            var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
+            var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoTerrainCommand.TileToObjAsync(
+                tile,
+                output,
+                elevationProvider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                cache,
+                airgap,
+                forceAgenticFail,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+
+        geoCmd.AddCommand(tileToObjCmd);
+        root.AddCommand(geoCmd);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
@@ -381,6 +439,9 @@ static class Program
     /// <param name="services">Service collection to configure</param>
     private static void ConfigureServices(IServiceCollection services)
     {
+        services.AddHttpClient();
+        services.AddHttpClient("geoterrain.srtm");
+
         // Register MediatR
         services.AddMediatR(cfg =>
         {
@@ -460,6 +521,7 @@ static class Program
         services.AddScoped<MetricsCommand>();
         services.AddScoped<UnityCommand>();
         services.AddScoped<DemoCommand>();
+        services.AddScoped<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
