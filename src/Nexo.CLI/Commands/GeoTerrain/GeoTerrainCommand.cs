@@ -244,6 +244,239 @@ public sealed class GeoTerrainCommand
         }
     }
 
+    public async Task<int> TileToContoursAsync(
+        string tile,
+        FileInfo output,
+        string provider,
+        string? localRoot,
+        string? srtmBaseUrl,
+        bool persistDownloads,
+        bool enableCache,
+        bool airGapped,
+        bool forceAgenticFail,
+        double intervalMeters,
+        double? minElevationMeters,
+        double? maxElevationMeters,
+        float verticalScale,
+        bool treatNoDataAsZero,
+        bool includeElevation,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            if (string.IsNullOrWhiteSpace(tile)) throw new ArgumentException("tile is required", nameof(tile));
+
+            var elevationProvider = BuildElevationProvider(
+                provider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                enableCache,
+                airGapped);
+
+            var bricks = new Brick[]
+            {
+                new GeoTerrainFetchSrtmTileBrick(
+                    elevationProvider,
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainFetchSrtmTileBrick>()),
+                new GeoTerrainContoursFromHgtBrick(
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainContoursFromHgtBrick>()),
+                new GeoTerrainGeoJsonFromContoursBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainGeoJsonFromContoursBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                new SequentialLoopKernel(),
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geoterrain.cli.tile-to-contours",
+                Name = "GeoTerrain: tile -> contours (GeoJSON)",
+                Description = "Fetch a tile (local/http/hybrid), extract contours, and export GeoJSON text.",
+                Steps = new[]
+                {
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geoterrain.fetch.srtm-tile",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["tile"] = "tile",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["tileId"] = "tileId",
+                            ["hgtBytes"] = "hgtBytes"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "contours",
+                        BrickId = "geoterrain.contours.from-hgt",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["tileId"] = "tileId",
+                            ["hgtBytes"] = "hgtBytes",
+                            ["intervalMeters"] = "intervalMeters",
+                            ["minElevationMeters"] = "minElevationMeters",
+                            ["maxElevationMeters"] = "maxElevationMeters",
+                            ["verticalScale"] = "verticalScale",
+                            ["treatNoDataAsZero"] = "treatNoDataAsZero",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid",
+                            ["contours"] = "contours"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "geojson",
+                        BrickId = "geoterrain.export.contours-geojson",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid",
+                            ["contours"] = "contours",
+                            ["includeElevation"] = "includeElevation"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["geojsonText"] = "geojson"
+                        }
+                    }
+                }
+            };
+
+            var agent = new AgentCard
+            {
+                Id = "geoterrain.cli",
+                Name = "GeoTerrain CLI",
+                Description = "CLI runner",
+                Behaviors = new[] { behavior.Id }
+            };
+
+            var options = new ExecutionOptions
+            {
+                IsAirGapped = airGapped,
+                Provider = airGapped ? "offline" : "offline",
+                ImplementationMode = airGapped ? Nexo.Core.Domain.Workflows.ImplementationMode.DeterministicOnly : Nexo.Core.Domain.Workflows.ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            var outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            var inputData = new Dictionary<string, object>
+            {
+                ["tile"] = tile,
+                ["forceAgenticFail"] = forceAgenticFail,
+                ["intervalMeters"] = intervalMeters,
+                ["verticalScale"] = verticalScale,
+                ["treatNoDataAsZero"] = treatNoDataAsZero,
+                ["includeElevation"] = includeElevation
+            };
+            if (minElevationMeters.HasValue) inputData["minElevationMeters"] = minElevationMeters.Value;
+            if (maxElevationMeters.HasValue) inputData["maxElevationMeters"] = maxElevationMeters.Value;
+
+            var input = new BehaviorInput(inputData);
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        if (verbose && !json)
+                        {
+                            Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        }
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = new Dictionary<string, object>(b.Outputs);
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var geojsonText = outputs.TryGetValue("geojsonText", out var gj) ? gj as string : null;
+            if (string.IsNullOrWhiteSpace(geojsonText))
+            {
+                throw new InvalidOperationException("GeoJSON output was not produced by the pipeline.");
+            }
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, geojsonText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                tile,
+                output = output.FullName,
+                provider,
+                airGapped,
+                intervalMeters,
+                minElevationMeters,
+                maxElevationMeters,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote GeoJSON: {output.FullName}");
+                if (errors.Count > 0)
+                {
+                    Console.Out.WriteLine("Errors:");
+                    foreach (var e in errors) Console.Out.WriteLine($"- {e}");
+                }
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoTerrain tile-to-contours failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
     private IElevationProvider BuildElevationProvider(
         string provider,
         string? localRoot,

@@ -362,6 +362,7 @@ static class Program
         // nexo geoterrain
         var geoCmd = new Command("geoterrain", "GeoTerrain GIS elevation → mesh utilities");
         var tileToObjCmd = new Command("tile-to-obj", "Fetch an SRTM tile and write an OBJ mesh");
+        var tileToContoursCmd = new Command("tile-to-contours", "Fetch an SRTM tile and write contour lines as GeoJSON");
         var tileOpt = new Option<string>("--tile", "Tile id like N00E000 or N00E000.hgt") { IsRequired = true };
         var outOpt = new Option<FileInfo>("--output", "Output OBJ file path") { IsRequired = true };
         var elevationProviderOpt = new Option<string>("--elevation-provider", () => "echo", "Provider: echo|local|http|hybrid");
@@ -371,6 +372,12 @@ static class Program
         var cacheOpt = new Option<bool>("--cache", () => true, "Enable in-memory provider cache");
         var airgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic + disables network providers");
         var forceAgenticFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (to demonstrate fallback)");
+        var intervalMetersOpt = new Option<double>("--interval-meters", () => 10.0, "Contour interval in meters");
+        var minElevOpt = new Option<double?>("--min-elevation-meters", () => null, "Optional min contour level (meters)");
+        var maxElevOpt = new Option<double?>("--max-elevation-meters", () => null, "Optional max contour level (meters)");
+        var verticalScaleOpt = new Option<float>("--vertical-scale", () => 1.0f, "Vertical scale multiplier");
+        var treatNoDataOpt = new Option<bool>("--treat-nodata-as-zero", () => false, "If true, NaN becomes 0m");
+        var includeElevationOpt = new Option<bool>("--include-elevation", () => true, "Include elevation as the 3rd coordinate in GeoJSON");
 
         tileToObjCmd.AddOption(tileOpt);
         tileToObjCmd.AddOption(outOpt);
@@ -413,6 +420,67 @@ static class Program
         });
 
         geoCmd.AddCommand(tileToObjCmd);
+
+        // geoterrain tile-to-contours
+        tileToContoursCmd.AddOption(tileOpt);
+        tileToContoursCmd.AddOption(outOpt);
+        tileToContoursCmd.AddOption(elevationProviderOpt);
+        tileToContoursCmd.AddOption(localRootOpt);
+        tileToContoursCmd.AddOption(baseUrlOpt);
+        tileToContoursCmd.AddOption(persistOpt);
+        tileToContoursCmd.AddOption(cacheOpt);
+        tileToContoursCmd.AddOption(airgapOpt);
+        tileToContoursCmd.AddOption(forceAgenticFailOpt);
+        tileToContoursCmd.AddOption(intervalMetersOpt);
+        tileToContoursCmd.AddOption(minElevOpt);
+        tileToContoursCmd.AddOption(maxElevOpt);
+        tileToContoursCmd.AddOption(verticalScaleOpt);
+        tileToContoursCmd.AddOption(treatNoDataOpt);
+        tileToContoursCmd.AddOption(includeElevationOpt);
+
+        tileToContoursCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var tile = ctx.ParseResult.GetValueForOption(tileOpt) ?? throw new InvalidOperationException("--tile is required");
+            var output = ctx.ParseResult.GetValueForOption(outOpt) ?? throw new InvalidOperationException("--output is required");
+            var elevationProvider = ctx.ParseResult.GetValueForOption(elevationProviderOpt) ?? "echo";
+            var localRoot = ctx.ParseResult.GetValueForOption(localRootOpt);
+            var srtmBaseUrl = ctx.ParseResult.GetValueForOption(baseUrlOpt);
+            var persistDownloads = ctx.ParseResult.GetValueForOption(persistOpt);
+            var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
+            var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
+            var intervalMeters = ctx.ParseResult.GetValueForOption(intervalMetersOpt);
+            var minElev = ctx.ParseResult.GetValueForOption(minElevOpt);
+            var maxElev = ctx.ParseResult.GetValueForOption(maxElevOpt);
+            var verticalScale = ctx.ParseResult.GetValueForOption(verticalScaleOpt);
+            var treatNoData = ctx.ParseResult.GetValueForOption(treatNoDataOpt);
+            var includeElevation = ctx.ParseResult.GetValueForOption(includeElevationOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoTerrainCommand.TileToContoursAsync(
+                tile,
+                output,
+                elevationProvider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                cache,
+                airgap,
+                forceAgenticFail,
+                intervalMeters,
+                minElev,
+                maxElev,
+                verticalScale,
+                treatNoData,
+                includeElevation,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+
+        geoCmd.AddCommand(tileToContoursCmd);
         root.AddCommand(geoCmd);
 
         // nexo geovector

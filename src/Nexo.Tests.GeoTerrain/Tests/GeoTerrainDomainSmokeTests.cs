@@ -12,6 +12,7 @@ public sealed class GeoTerrainDomainSmokeTests : UnitTestBase
         {
             TestValueObjects();
             TestGridMeshGeneration();
+            TestContours();
 
             return Task.FromResult(new TestResult
             {
@@ -84,6 +85,47 @@ public sealed class GeoTerrainDomainSmokeTests : UnitTestBase
         AssertEqual(2, report.TriangleCount);
         AssertEqual(0f, report.MinHeightMeters);
         AssertEqual(0f, report.MaxHeightMeters);
+    }
+
+    private void TestContours()
+    {
+        var bounds = new GeoBounds
+        {
+            MinLatitude = new Latitude(0),
+            MaxLatitude = new Latitude(1),
+            MinLongitude = new Longitude(0),
+            MaxLongitude = new Longitude(1)
+        };
+
+        // 2x2 grid (single cell). Bottom row 0m, top row 20m => a single contour at 10m across mid-row.
+        var heights = new float[]
+        {
+            0, 0,
+            20, 20
+        };
+
+        var grid = new ElevationGrid(2, 2, bounds, new GridSpacing(1, 1), heights);
+        var contours = ContourGenerator.Generate(grid, new ContourGenerationOptions
+        {
+            IntervalMeters = 10,
+            MinElevationMeters = 10,
+            MaxElevationMeters = 10,
+            VerticalScale = 1.0f
+        });
+
+        AssertEqual(1, contours.Count);
+        AssertEqual(10f, contours[0].ElevationMeters);
+        AssertEqual(2, contours[0].Points.Count);
+
+        var a = contours[0].Points[0];
+        var b = contours[0].Points[1];
+
+        // Expect a horizontal line at z=0.5 from x=0..1, with y=10.
+        AssertEqual(10f, a.Y);
+        AssertEqual(10f, b.Y);
+        AssertEqual(0.5f, a.Z);
+        AssertEqual(0.5f, b.Z);
+        AssertTrue((a.X == 0f && b.X == 1f) || (a.X == 1f && b.X == 0f), "Expected contour endpoints at x=0 and x=1");
     }
 }
 

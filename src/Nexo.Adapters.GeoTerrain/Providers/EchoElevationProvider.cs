@@ -4,7 +4,7 @@ using Nexo.Orchestration.GeoTerrain.Ports;
 namespace Nexo.Adapters.GeoTerrain.Providers;
 
 /// <summary>
-/// Offline placeholder provider. Returns a tiny, synthetic 2x2 tile (all zeros).
+/// Offline placeholder provider. Returns a tiny, synthetic 2x2 tile (a simple slope).
 /// </summary>
 public sealed class EchoElevationProvider : IElevationProvider
 {
@@ -15,8 +15,8 @@ public sealed class EchoElevationProvider : IElevationProvider
         {
             0x00, 0x00,
             0x00, 0x00,
-            0x00, 0x00,
-            0x00, 0x00
+            0x00, 0x14,
+            0x00, 0x14
         };
 
         var summary = SrtmHgtParser.Analyze(bytes);

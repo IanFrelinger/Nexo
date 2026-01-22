@@ -38,6 +38,7 @@ public sealed class GeoTerrainCliE2ETests : UnitTestBase
             AssertNotNull(_tempDir, "Temp dir should be created");
 
             await TestTileToObjEchoAsync(cancellationToken);
+            await TestTileToContoursEchoAsync(cancellationToken);
 
             return new TestResult
             {
@@ -74,6 +75,26 @@ public sealed class GeoTerrainCliE2ETests : UnitTestBase
         var obj = await File.ReadAllTextAsync(outPath, ct);
         AssertTrue(obj.Contains("v "), "OBJ should contain vertices");
         AssertTrue(obj.Contains("f "), "OBJ should contain faces");
+
+        var json = ExtractJsonObject(stdout);
+        using var doc = JsonDocument.Parse(json);
+        AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean(), "Expected ok=true in JSON output");
+    }
+
+    private async Task TestTileToContoursEchoAsync(CancellationToken ct)
+    {
+        var outPath = Path.Combine(_tempDir!, "contours.geojson");
+        var (code, stdout, stderr) = await RunDotnetAsync(
+            workingDir: _repoRoot!,
+            args: $"run --project src/Nexo.CLI -- geoterrain tile-to-contours --tile N00E000 --output \"{outPath}\" --elevation-provider echo --interval-meters 1 --format-json",
+            ct);
+
+        AssertEqual(0, code, $"geoterrain tile-to-contours should exit 0. stderr: {stderr}");
+        AssertTrue(File.Exists(outPath), "GeoJSON output file should exist");
+
+        var geojson = await File.ReadAllTextAsync(outPath, ct);
+        AssertTrue(geojson.Contains("\"FeatureCollection\""), "GeoJSON should be a FeatureCollection");
+        AssertTrue(geojson.Contains("\"LineString\""), "GeoJSON should contain LineString features");
 
         var json = ExtractJsonObject(stdout);
         using var doc = JsonDocument.Parse(json);
