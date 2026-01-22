@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Adapters.GeoVector.Providers;
 using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
@@ -22,17 +23,20 @@ public sealed class GeoVectorCommand
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<GeoVectorCommand> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILoopKernel _loopKernel;
 
     public GeoVectorCommand(
         Nexo.Infrastructure.Execution.IProviderFactory providerFactory,
         ILoggerFactory loggerFactory,
         ILogger<GeoVectorCommand> logger,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ILoopKernel loopKernel)
     {
         _providerFactory = providerFactory ?? throw new ArgumentNullException(nameof(providerFactory));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _loopKernel = loopKernel ?? throw new ArgumentNullException(nameof(loopKernel));
     }
 
     public async Task<int> BuildingsToObjAsync(
@@ -42,6 +46,8 @@ public sealed class GeoVectorCommand
         string? mapboxAccessToken,
         string? mapboxTileset,
         int? mapboxZoom,
+        bool generateTexCoords,
+        float uvMetersPerRepeat,
         bool airGapped,
         bool forceAgenticFail,
         bool json,
@@ -80,7 +86,7 @@ public sealed class GeoVectorCommand
                 brickRegistry,
                 _providerFactory,
                 semanticCache,
-                new SequentialLoopKernel(),
+                _loopKernel,
                 _loggerFactory.CreateLogger<BehaviorExecutor>());
 
             var behavior = new Behavior
@@ -114,6 +120,8 @@ public sealed class GeoVectorCommand
                         {
                             ["features"] = "features",
                             ["origin"] = "origin",
+                            ["generateTexCoords"] = "generateTexCoords",
+                            ["uvMetersPerRepeat"] = "uvMetersPerRepeat",
                             ["forceAgenticFail"] = "forceAgenticFail"
                         },
                         OutputMapping = new Dictionary<string, string>
@@ -153,6 +161,8 @@ public sealed class GeoVectorCommand
                 ["bounds"] = geoBounds,
                 ["origin"] = origin,
                 ["kind"] = "building",
+                ["generateTexCoords"] = generateTexCoords,
+                ["uvMetersPerRepeat"] = uvMetersPerRepeat,
                 ["forceAgenticFail"] = forceAgenticFail
             });
 

@@ -33,6 +33,19 @@ public static class ObjMeshWriter
               .AppendLine();
         }
 
+        var hasTexCoords = mesh.TexCoords != null && mesh.TexCoords.Count == mesh.Vertices.Count;
+        if (hasTexCoords)
+        {
+            for (var i = 0; i < mesh.TexCoords!.Count; i++)
+            {
+                var t = mesh.TexCoords[i];
+                sb.Append("vt ")
+                  .Append(t.X.ToString("G9", CultureInfo.InvariantCulture)).Append(' ')
+                  .Append(t.Y.ToString("G9", CultureInfo.InvariantCulture))
+                  .AppendLine();
+            }
+        }
+
         var hasNormals = mesh.Normals != null && mesh.Normals.Count == mesh.Vertices.Count;
         if (hasNormals)
         {
@@ -55,7 +68,21 @@ public static class ObjMeshWriter
             var c = mesh.Indices[i + 2] + 1;
 
             sb.Append("f ");
-            if (hasNormals)
+            if (hasTexCoords && hasNormals)
+            {
+                // v/vt/vn (use vertex index for vt + vn)
+                sb.Append(a).Append('/').Append(a).Append('/').Append(a).Append(' ')
+                  .Append(b).Append('/').Append(b).Append('/').Append(b).Append(' ')
+                  .Append(c).Append('/').Append(c).Append('/').Append(c).AppendLine();
+            }
+            else if (hasTexCoords && !hasNormals)
+            {
+                // v/vt (use vertex index for vt)
+                sb.Append(a).Append('/').Append(a).Append(' ')
+                  .Append(b).Append('/').Append(b).Append(' ')
+                  .Append(c).Append('/').Append(c).AppendLine();
+            }
+            else if (!hasTexCoords && hasNormals)
             {
                 // v//vn (use vertex index as normal index)
                 sb.Append(a).Append("//").Append(a).Append(' ')

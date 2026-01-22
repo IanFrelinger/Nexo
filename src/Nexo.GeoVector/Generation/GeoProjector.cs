@@ -1,5 +1,5 @@
 using Nexo.GeoTerrain;
-using Nexo.GeoVector.Geometry;
+using Local2 = Nexo.GeoVector.Geometry.Vector2;
 
 namespace Nexo.GeoVector.Generation;
 
@@ -9,7 +9,7 @@ namespace Nexo.GeoVector.Generation;
 /// </summary>
 public static class GeoProjector
 {
-    public static Vector2[] ProjectRingToLocalMeters(IReadOnlyList<GeoPoint> ring, GeoPoint origin)
+    public static Local2[] ProjectRingToLocalMeters(IReadOnlyList<GeoPoint> ring, GeoPoint origin)
     {
 #if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(ring);
@@ -18,7 +18,7 @@ public static class GeoProjector
         if (ring is null) throw new ArgumentNullException(nameof(ring));
         if (origin is null) throw new ArgumentNullException(nameof(origin));
 #endif
-        if (ring.Count == 0) return Array.Empty<Vector2>();
+        if (ring.Count == 0) return Array.Empty<Local2>();
 
         // Equirectangular approximation around origin latitude.
         // meters per degree latitude ~ 111,320
@@ -30,13 +30,13 @@ public static class GeoProjector
         var ox = origin.Longitude.Degrees;
         var oy = origin.Latitude.Degrees;
 
-        var result = new Vector2[ring.Count];
+        var result = new Local2[ring.Count];
         for (var i = 0; i < ring.Count; i++)
         {
             var p = ring[i];
             var dx = (p.Longitude.Degrees - ox) * mPerDegLon;
             var dy = (p.Latitude.Degrees - oy) * mPerDegLat;
-            result[i] = new Vector2((float)dx, (float)dy);
+            result[i] = new Local2((float)dx, (float)dy);
         }
         return result;
     }

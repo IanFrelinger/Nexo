@@ -365,6 +365,7 @@ static class Program
         var tileToContoursCmd = new Command("tile-to-contours", "Fetch an SRTM tile and write contour lines as GeoJSON");
         var boundsToObjCmd = new Command("bounds-to-obj", "Fetch all tiles covering bounds and write a stitched OBJ mesh");
         var boundsToContoursCmd = new Command("bounds-to-contours", "Fetch all tiles covering bounds and write stitched contours as GeoJSON");
+        var boundsToTreesCmd = new Command("bounds-to-tree-instances", "Fetch tiles covering bounds and write tree instance placements as JSON");
         var tileOpt = new Option<string>("--tile", "Tile id like N00E000 or N00E000.hgt") { IsRequired = true };
         var geoTerrainBoundsOpt = new Option<string>("--bounds", "Bounds: minLat,minLon,maxLat,maxLon") { IsRequired = true };
         var outOpt = new Option<FileInfo>("--output", "Output OBJ file path") { IsRequired = true };
@@ -381,6 +382,8 @@ static class Program
         var verticalScaleOpt = new Option<float>("--vertical-scale", () => 1.0f, "Vertical scale multiplier");
         var treatNoDataOpt = new Option<bool>("--treat-nodata-as-zero", () => false, "If true, NaN becomes 0m");
         var includeElevationOpt = new Option<bool>("--include-elevation", () => true, "Include elevation as the 3rd coordinate in GeoJSON");
+        var treesPerSqKmOpt = new Option<float>("--trees-per-sqkm", () => 200.0f, "Tree density (trees per square kilometer)");
+        var treeSeedOpt = new Option<int>("--seed", () => 1337, "Deterministic seed for placement");
 
         tileToObjCmd.AddOption(tileOpt);
         tileToObjCmd.AddOption(outOpt);
@@ -586,6 +589,54 @@ static class Program
             ctx.ExitCode = exitCode;
         });
         geoCmd.AddCommand(boundsToContoursCmd);
+
+        // geoterrain bounds-to-tree-instances
+        boundsToTreesCmd.AddOption(geoTerrainBoundsOpt);
+        boundsToTreesCmd.AddOption(outOpt);
+        boundsToTreesCmd.AddOption(elevationProviderOpt);
+        boundsToTreesCmd.AddOption(localRootOpt);
+        boundsToTreesCmd.AddOption(baseUrlOpt);
+        boundsToTreesCmd.AddOption(persistOpt);
+        boundsToTreesCmd.AddOption(cacheOpt);
+        boundsToTreesCmd.AddOption(airgapOpt);
+        boundsToTreesCmd.AddOption(treesPerSqKmOpt);
+        boundsToTreesCmd.AddOption(treeSeedOpt);
+        boundsToTreesCmd.AddOption(treatNoDataOpt);
+
+        boundsToTreesCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var bounds = ctx.ParseResult.GetValueForOption(geoTerrainBoundsOpt) ?? throw new InvalidOperationException("--bounds is required");
+            var output = ctx.ParseResult.GetValueForOption(outOpt) ?? throw new InvalidOperationException("--output is required");
+            var elevationProvider = ctx.ParseResult.GetValueForOption(elevationProviderOpt) ?? "echo";
+            var localRoot = ctx.ParseResult.GetValueForOption(localRootOpt);
+            var srtmBaseUrl = ctx.ParseResult.GetValueForOption(baseUrlOpt);
+            var persistDownloads = ctx.ParseResult.GetValueForOption(persistOpt);
+            var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
+            var treesPerSqKm = ctx.ParseResult.GetValueForOption(treesPerSqKmOpt);
+            var seed = ctx.ParseResult.GetValueForOption(treeSeedOpt);
+            var treatNoData = ctx.ParseResult.GetValueForOption(treatNoDataOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoTerrainCommand.BoundsToTreeInstancesAsync(
+                bounds,
+                output,
+                elevationProvider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                cache,
+                airgap,
+                treesPerSqKm,
+                seed,
+                treatNoData,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+        geoCmd.AddCommand(boundsToTreesCmd);
         root.AddCommand(geoCmd);
 
         // nexo geovector
@@ -597,6 +648,8 @@ static class Program
         var mapboxTokenOpt = new Option<string?>("--mapbox-token", () => null, "Mapbox access token (or set MAPBOX_ACCESS_TOKEN)");
         var mapboxTilesetOpt = new Option<string?>("--mapbox-tileset", () => "mapbox.mapbox-streets-v8", "Mapbox tileset id (e.g. mapbox.mapbox-streets-v8)");
         var mapboxZoomOpt = new Option<int?>("--mapbox-zoom", () => 15, "Zoom level for tile selection (0-22)");
+        var generateUvOpt = new Option<bool>("--uv", () => false, "Generate UVs for consistent, meter-scaled textures");
+        var uvMetersPerRepeatOpt = new Option<float>("--uv-meters-per-repeat", () => 1.0f, "Meters per texture repeat (UV scale)");
         var vecAirgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic only");
         var vecForceFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (fallback demo)");
 
@@ -606,6 +659,8 @@ static class Program
         buildingsToObjCmd.AddOption(mapboxTokenOpt);
         buildingsToObjCmd.AddOption(mapboxTilesetOpt);
         buildingsToObjCmd.AddOption(mapboxZoomOpt);
+        buildingsToObjCmd.AddOption(generateUvOpt);
+        buildingsToObjCmd.AddOption(uvMetersPerRepeatOpt);
         buildingsToObjCmd.AddOption(vecAirgapOpt);
         buildingsToObjCmd.AddOption(vecForceFailOpt);
 
@@ -617,6 +672,8 @@ static class Program
             var mapboxToken = ctx.ParseResult.GetValueForOption(mapboxTokenOpt);
             var mapboxTileset = ctx.ParseResult.GetValueForOption(mapboxTilesetOpt);
             var mapboxZoom = ctx.ParseResult.GetValueForOption(mapboxZoomOpt);
+            var generateUv = ctx.ParseResult.GetValueForOption(generateUvOpt);
+            var uvMetersPerRepeat = ctx.ParseResult.GetValueForOption(uvMetersPerRepeatOpt);
             var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
             var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -629,6 +686,8 @@ static class Program
                 mapboxToken,
                 mapboxTileset,
                 mapboxZoom,
+                generateUv,
+                uvMetersPerRepeat,
                 airgap,
                 forceFail,
                 json,

@@ -36,6 +36,8 @@ public sealed class GeoVectorBuildingsToMeshBrick : Brick
                 new BrickInputDefinition("origin", "GeoPoint", "Local projection origin point"),
                 new BrickInputDefinition("defaultHeightMeters", "float", "Default building height in meters", required: false, defaultValue: 10.0f),
                 new BrickInputDefinition("includeBottom", "bool", "Include bottom faces", required: false, defaultValue: false),
+                new BrickInputDefinition("generateTexCoords", "bool", "If true, generate UVs for texture mapping", required: false, defaultValue: false),
+                new BrickInputDefinition("uvMetersPerRepeat", "float", "Meters per texture repeat (UV scale)", required: false, defaultValue: 1.0f),
                 new BrickInputDefinition("forceAgenticFail", "bool", "If true, agentic path throws (for fallback demos)", required: false, defaultValue: false)
             ],
             Outputs =
@@ -106,6 +108,8 @@ public sealed class GeoVectorBuildingsToMeshBrick : Brick
         var origin = input.Get<GeoPoint>("origin");
         var defaultHeight = input.Get("defaultHeightMeters", 10.0f);
         var includeBottom = input.Get("includeBottom", false);
+        var generateTexCoords = input.Get("generateTexCoords", false);
+        var uvMetersPerRepeat = input.Get("uvMetersPerRepeat", 1.0f);
 
         var mesh = BuildingMeshGenerator.GenerateBuildings(
             features,
@@ -113,7 +117,9 @@ public sealed class GeoVectorBuildingsToMeshBrick : Brick
             new BuildingExtrusionOptions
             {
                 DefaultHeightMeters = defaultHeight,
-                IncludeBottom = includeBottom
+                IncludeBottom = includeBottom,
+                GenerateTexCoords = generateTexCoords,
+                UvMetersPerRepeat = uvMetersPerRepeat
             });
 
         return Task.FromResult(new BrickOutput

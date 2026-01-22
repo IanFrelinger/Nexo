@@ -933,6 +933,226 @@ public sealed class GeoTerrainCommand
         }
     }
 
+    public async Task<int> BoundsToTreeInstancesAsync(
+        string bounds,
+        FileInfo output,
+        string provider,
+        string? localRoot,
+        string? srtmBaseUrl,
+        bool persistDownloads,
+        bool enableCache,
+        bool airGapped,
+        float treesPerSqKm,
+        int seed,
+        bool treatNoDataAsZero,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            var geoBounds = ParseBounds(bounds);
+            geoBounds.Validate();
+
+            var elevationProvider = BuildElevationProvider(
+                provider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                enableCache,
+                airGapped);
+
+            var bricks = new Brick[]
+            {
+                new GeoTerrainFetchSrtmTilesBrick(
+                    elevationProvider,
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainFetchSrtmTilesBrick>()),
+                new GeoTerrainGridFromTilesBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainGridFromTilesBrick>()),
+                new GeoTerrainTreesFromGridBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainTreesFromGridBrick>()),
+                new GeoTerrainInstancesJsonBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainInstancesJsonBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                _loopKernel,
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geoterrain.cli.bounds-to-tree-instances",
+                Name = "GeoTerrain: bounds -> tree instances (JSON)",
+                Description = "Fetch tiles covering bounds, stitch, place tree instances, export JSON text.",
+                Steps =
+                [
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geoterrain.fetch.srtm-tiles",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["bounds"] = "bounds"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["tiles"] = "tiles"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "grid",
+                        BrickId = "geoterrain.grid.from-tiles",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["tiles"] = "tiles"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "trees",
+                        BrickId = "geoterrain.trees.from-grid",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid",
+                            ["bounds"] = "bounds",
+                            ["treesPerSqKm"] = "treesPerSqKm",
+                            ["seed"] = "seed",
+                            ["treatNoDataAsZero"] = "treatNoDataAsZero"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["instances"] = "instances"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "json",
+                        BrickId = "geoterrain.export.instances-json",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["instances"] = "instances"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["jsonText"] = "jsonText"
+                        }
+                    }
+                ]
+            };
+
+            var agent = new AgentCard
+            {
+                Id = "geoterrain.cli",
+                Name = "GeoTerrain CLI",
+                Description = "CLI runner",
+                Behaviors = [behavior.Id]
+            };
+
+            var options = new ExecutionOptions
+            {
+                IsAirGapped = airGapped,
+                Provider = airGapped ? "offline" : "offline",
+                ImplementationMode = airGapped ? Nexo.Core.Domain.Workflows.ImplementationMode.DeterministicOnly : Nexo.Core.Domain.Workflows.ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            var input = new BehaviorInput(new Dictionary<string, object>
+            {
+                ["bounds"] = geoBounds,
+                ["treesPerSqKm"] = treesPerSqKm,
+                ["seed"] = seed,
+                ["treatNoDataAsZero"] = treatNoDataAsZero
+            });
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        if (verbose && !json)
+                            Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = b.Outputs;
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var jsonText = outputs.TryGetValue("jsonText", out var t) ? t as string : null;
+            if (string.IsNullOrWhiteSpace(jsonText))
+                throw new InvalidOperationException("Instances JSON was not produced by the pipeline.");
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, jsonText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                bounds = geoBounds.ToString(),
+                output = output.FullName,
+                provider,
+                airGapped,
+                treesPerSqKm,
+                seed,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote instances JSON: {output.FullName}");
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoTerrain bounds-to-tree-instances failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
     private IElevationProvider BuildElevationProvider(
         string provider,
         string? localRoot,

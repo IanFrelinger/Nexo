@@ -1,5 +1,6 @@
 using Nexo.GeoTerrain;
-using Nexo.GeoVector.Geometry;
+using Local2 = Nexo.GeoVector.Geometry.Vector2;
+using Uv2 = Nexo.GeoTerrain.Vector2;
 using Nexo.GeoVector.Models;
 using Nexo.GeoVector.Values;
 
@@ -25,6 +26,13 @@ public static class BuildingMeshGenerator
 
         var vertices = new List<Vector3>(capacity: 4096);
         var indices = new List<int>(capacity: 8192);
+        List<Uv2>? texCoords = null;
+        if (options.GenerateTexCoords)
+        {
+            if (options.UvMetersPerRepeat <= 0)
+                throw new ArgumentOutOfRangeException(nameof(options), options.UvMetersPerRepeat, "UvMetersPerRepeat must be > 0.");
+            texCoords = new List<Uv2>(capacity: 4096);
+        }
 
         foreach (var f in features.Features)
         {
@@ -42,29 +50,48 @@ public static class BuildingMeshGenerator
             if (local2.Length < 3) continue;
 
             var height = ResolveHeightMeters(f, options);
-            var baseIndex = vertices.Count;
+            var n = local2.Length;
 
-            // base vertices (y=0), top vertices (y=height)
-            for (var i = 0; i < local2.Length; i++)
+            // Ensure CCW winding for consistent perimeter UVs + wall winding.
+            if (SignedArea(local2) < 0)
             {
-                var p = local2[i];
-                vertices.Add(new Vector3(p.X, 0, p.Y));
+                Array.Reverse(local2);
             }
-            for (var i = 0; i < local2.Length; i++)
+
+            // Perimeter cumulative distance (meters) for walls UVs.
+            var cum = new float[n + 1];
+            for (var i = 0; i < n; i++)
             {
-                var p = local2[i];
-                vertices.Add(new Vector3(p.X, height, p.Y));
+                var a = local2[i];
+                var b = local2[(i + 1) % n];
+                cum[i + 1] = cum[i] + Distance(a, b);
             }
+
+            var metersPerRepeat = options.UvMetersPerRepeat;
+            var invRepeat = metersPerRepeat > 0 ? (1.0f / metersPerRepeat) : 1.0f;
 
             var tri = EarClipTriangulator.Triangulate(local2);
             if (tri.Count == 0) continue;
 
-            // Top faces (ensure outward normals roughly +Y by using CCW in XZ)
+            // Roof vertices (duplicated to allow roof UVs independent of walls).
+            var roofBaseIndex = vertices.Count;
+            for (var i = 0; i < n; i++)
+            {
+                var p = local2[i];
+                vertices.Add(new Vector3(p.X, height, p.Y));
+                if (texCoords != null)
+                {
+                    // Planar mapping in meters: x/z
+                    texCoords.Add(new Uv2(p.X * invRepeat, p.Y * invRepeat));
+                }
+            }
+
+            // Top faces (roughly +Y)
             for (var i = 0; i < tri.Count; i += 3)
             {
-                var a = baseIndex + local2.Length + tri[i];
-                var b = baseIndex + local2.Length + tri[i + 1];
-                var c = baseIndex + local2.Length + tri[i + 2];
+                var a = roofBaseIndex + tri[i];
+                var b = roofBaseIndex + tri[i + 1];
+                var c = roofBaseIndex + tri[i + 2];
                 indices.Add(a);
                 indices.Add(b);
                 indices.Add(c);
@@ -73,34 +100,64 @@ public static class BuildingMeshGenerator
             // Optional bottom faces (reverse winding)
             if (options.IncludeBottom)
             {
+                var bottomBaseIndex = vertices.Count;
+                for (var i = 0; i < n; i++)
+                {
+                    var p = local2[i];
+                    vertices.Add(new Vector3(p.X, 0, p.Y));
+                    if (texCoords != null)
+                    {
+                        texCoords.Add(new Uv2(p.X * invRepeat, p.Y * invRepeat));
+                    }
+                }
+
                 for (var i = 0; i < tri.Count; i += 3)
                 {
-                    var a = baseIndex + tri[i];
-                    var b = baseIndex + tri[i + 1];
-                    var c = baseIndex + tri[i + 2];
+                    var a = bottomBaseIndex + tri[i];
+                    var b = bottomBaseIndex + tri[i + 1];
+                    var c = bottomBaseIndex + tri[i + 2];
                     indices.Add(c);
                     indices.Add(b);
                     indices.Add(a);
                 }
             }
 
-            // Walls
-            for (var i = 0; i < local2.Length; i++)
+            // Walls (duplicate vertices per edge so UVs can be correct per surface).
+            for (var i = 0; i < n; i++)
             {
-                var j = (i + 1) % local2.Length;
-                var b0 = baseIndex + i;
-                var b1 = baseIndex + j;
-                var t0 = baseIndex + local2.Length + i;
-                var t1 = baseIndex + local2.Length + j;
+                var j = (i + 1) % n;
+                var p0 = local2[i];
+                var p1 = local2[j];
+
+                var u0 = cum[i] * invRepeat;
+                var u1 = cum[i + 1] * invRepeat;
+                var v0 = 0f;
+                var v1 = height * invRepeat;
+
+                var wallBase = vertices.Count;
+
+                // Order: b0, b1, t1, t0
+                vertices.Add(new Vector3(p0.X, 0, p0.Y));
+                vertices.Add(new Vector3(p1.X, 0, p1.Y));
+                vertices.Add(new Vector3(p1.X, height, p1.Y));
+                vertices.Add(new Vector3(p0.X, height, p0.Y));
+
+                if (texCoords != null)
+                {
+                    texCoords.Add(new Uv2(u0, v0));
+                    texCoords.Add(new Uv2(u1, v0));
+                    texCoords.Add(new Uv2(u1, v1));
+                    texCoords.Add(new Uv2(u0, v1));
+                }
 
                 // Two triangles (b0, t0, t1) and (b0, t1, b1)
-                indices.Add(b0);
-                indices.Add(t0);
-                indices.Add(t1);
+                indices.Add(wallBase + 0);
+                indices.Add(wallBase + 3);
+                indices.Add(wallBase + 2);
 
-                indices.Add(b0);
-                indices.Add(t1);
-                indices.Add(b1);
+                indices.Add(wallBase + 0);
+                indices.Add(wallBase + 2);
+                indices.Add(wallBase + 1);
             }
         }
 
@@ -109,7 +166,8 @@ public static class BuildingMeshGenerator
         {
             Vertices = vertices,
             Indices = indices,
-            Normals = normals
+            Normals = normals,
+            TexCoords = texCoords
         };
     }
 
@@ -144,10 +202,29 @@ public static class BuildingMeshGenerator
         }
     }
 
-    private static bool NearlyEqual(Vector2 a, Vector2 b)
+    private static bool NearlyEqual(Local2 a, Local2 b)
     {
         const float eps = 1e-5f;
         return Math.Abs(a.X - b.X) < eps && Math.Abs(a.Y - b.Y) < eps;
+    }
+
+    private static float SignedArea(Local2[] p)
+    {
+        double area = 0;
+        for (var i = 0; i < p.Length; i++)
+        {
+            var a = p[i];
+            var b = p[(i + 1) % p.Length];
+            area += (double)a.X * b.Y - (double)b.X * a.Y;
+        }
+        return (float)(area * 0.5);
+    }
+
+    private static float Distance(Local2 a, Local2 b)
+    {
+        var dx = a.X - b.X;
+        var dy = a.Y - b.Y;
+        return (float)Math.Sqrt(dx * dx + dy * dy);
     }
 
     private static Vector3[] ComputeVertexNormals(IReadOnlyList<Vector3> vertices, IReadOnlyList<int> indices)
@@ -198,7 +275,7 @@ public static class BuildingMeshGenerator
 
 internal static class EarClipTriangulator
 {
-    public static List<int> Triangulate(IReadOnlyList<Vector2> poly)
+    public static List<int> Triangulate(IReadOnlyList<Local2> poly)
     {
         if (poly.Count < 3) return new List<int>();
 
@@ -252,7 +329,7 @@ internal static class EarClipTriangulator
         return result;
     }
 
-    private static float SignedArea(IReadOnlyList<Vector2> p)
+    private static float SignedArea(IReadOnlyList<Local2> p)
     {
         double area = 0;
         for (var i = 0; i < p.Count; i++)
@@ -264,7 +341,7 @@ internal static class EarClipTriangulator
         return (float)(area * 0.5);
     }
 
-    private static bool IsConvex(Vector2 a, Vector2 b, Vector2 c)
+    private static bool IsConvex(Local2 a, Local2 b, Local2 c)
     {
         // z-component of cross((b-a),(c-b)) in 2D
         var abx = b.X - a.X;
@@ -275,7 +352,7 @@ internal static class EarClipTriangulator
         return cross > 1e-6f;
     }
 
-    private static bool ContainsAnyPoint(IReadOnlyList<Vector2> poly, List<int> idx, int a, int b, int c)
+    private static bool ContainsAnyPoint(IReadOnlyList<Local2> poly, List<int> idx, int a, int b, int c)
     {
         var A = poly[a];
         var B = poly[b];
@@ -290,12 +367,12 @@ internal static class EarClipTriangulator
         return false;
     }
 
-    private static bool PointInTriangle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+    private static bool PointInTriangle(Local2 p, Local2 a, Local2 b, Local2 c)
     {
         // Barycentric technique, including edge as inside.
-        var v0 = new Vector2(c.X - a.X, c.Y - a.Y);
-        var v1 = new Vector2(b.X - a.X, b.Y - a.Y);
-        var v2 = new Vector2(p.X - a.X, p.Y - a.Y);
+        var v0 = new Local2(c.X - a.X, c.Y - a.Y);
+        var v1 = new Local2(b.X - a.X, b.Y - a.Y);
+        var v2 = new Local2(p.X - a.X, p.Y - a.Y);
 
         var dot00 = v0.X * v0.X + v0.Y * v0.Y;
         var dot01 = v0.X * v1.X + v0.Y * v1.Y;

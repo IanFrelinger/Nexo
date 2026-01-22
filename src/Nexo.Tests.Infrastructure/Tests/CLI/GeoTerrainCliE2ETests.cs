@@ -41,6 +41,7 @@ public sealed class GeoTerrainCliE2ETests : UnitTestBase
             await TestTileToContoursEchoAsync(cancellationToken);
             await TestBoundsToObjEchoAsync(cancellationToken);
             await TestBoundsToContoursEchoAsync(cancellationToken);
+            await TestBoundsToTreeInstancesEchoAsync(cancellationToken);
 
             return new TestResult
             {
@@ -136,6 +137,26 @@ public sealed class GeoTerrainCliE2ETests : UnitTestBase
 
         var geojson = await File.ReadAllTextAsync(outPath, ct);
         AssertTrue(geojson.Contains("\"FeatureCollection\""), "GeoJSON should be a FeatureCollection");
+
+        var json = ExtractJsonObject(stdout);
+        using var doc = JsonDocument.Parse(json);
+        AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean(), "Expected ok=true in JSON output");
+    }
+
+    private async Task TestBoundsToTreeInstancesEchoAsync(CancellationToken ct)
+    {
+        var outPath = Path.Combine(_tempDir!, "trees.json");
+        var (code, stdout, stderr) = await RunDotnetAsync(
+            workingDir: _repoRoot!,
+            args: $"run --project src/Nexo.CLI -- geoterrain bounds-to-tree-instances --bounds 0,0,2,2 --output \"{outPath}\" --elevation-provider echo --trees-per-sqkm 10 --format-json",
+            ct);
+
+        AssertEqual(0, code, $"geoterrain bounds-to-tree-instances should exit 0. stderr: {stderr}");
+        AssertTrue(File.Exists(outPath), "Instances JSON output file should exist");
+
+        var jsonText = await File.ReadAllTextAsync(outPath, ct);
+        AssertTrue(jsonText.Contains("\"sceneryInstances\""), "Expected sceneryInstances payload");
+        AssertTrue(jsonText.Contains("\"instances\""), "Expected instances array");
 
         var json = ExtractJsonObject(stdout);
         using var doc = JsonDocument.Parse(json);

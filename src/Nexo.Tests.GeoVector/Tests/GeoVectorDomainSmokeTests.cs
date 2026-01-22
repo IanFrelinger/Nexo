@@ -38,14 +38,17 @@ public sealed class GeoVectorDomainSmokeTests : UnitTestBase
                 new BuildingExtrusionOptions { IncludeBottom = false });
 
             // For a quad footprint:
-            // - 4 base + 4 top vertices = 8 vertices
+            // - Roof is duplicated (4 vertices)
+            // - Walls duplicate per edge (4 edges * 4 vertices = 16)
+            // Total vertices = 20
             // - Top triangulation => 2 triangles
             // - Walls => 4 edges * 2 triangles = 8 triangles
             // Total triangles = 10 => indices = 30
-            AssertEqual(8, mesh.Vertices.Count, "Expected 8 vertices for a single quad building");
+            AssertEqual(20, mesh.Vertices.Count, "Expected 20 vertices for a single quad building");
             AssertEqual(30, mesh.Indices.Count, "Expected 30 indices (10 triangles) for a single quad building");
             AssertNotNull(mesh.Normals, "Normals should be generated");
             AssertEqual(mesh.Vertices.Count, mesh.Normals!.Count, "Normals should match vertex count");
+            AssertTrue(mesh.TexCoords is null, "TexCoords should be null when GenerateTexCoords=false");
 
             return Task.FromResult(new TestResult
             {
