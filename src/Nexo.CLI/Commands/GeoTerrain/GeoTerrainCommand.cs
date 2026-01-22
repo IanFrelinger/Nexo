@@ -3,6 +3,7 @@ using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
@@ -22,17 +23,20 @@ public sealed class GeoTerrainCommand
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<GeoTerrainCommand> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILoopKernel _loopKernel;
 
     public GeoTerrainCommand(
         IProviderFactory providerFactory,
         ILoggerFactory loggerFactory,
         ILogger<GeoTerrainCommand> logger,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ILoopKernel loopKernel)
     {
         _providerFactory = providerFactory ?? throw new ArgumentNullException(nameof(providerFactory));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _loopKernel = loopKernel ?? throw new ArgumentNullException(nameof(loopKernel));
     }
 
     public async Task<int> TileToObjAsync(
@@ -83,7 +87,7 @@ public sealed class GeoTerrainCommand
                 brickRegistry,
                 _providerFactory,
                 semanticCache,
-                new SequentialLoopKernel(),
+                _loopKernel,
                 _loggerFactory.CreateLogger<BehaviorExecutor>());
 
             var behavior = new Behavior
@@ -294,7 +298,7 @@ public sealed class GeoTerrainCommand
                 brickRegistry,
                 _providerFactory,
                 semanticCache,
-                new SequentialLoopKernel(),
+                _loopKernel,
                 _loggerFactory.CreateLogger<BehaviorExecutor>());
 
             var behavior = new Behavior
@@ -512,7 +516,7 @@ public sealed class GeoTerrainCommand
                 brickRegistry,
                 _providerFactory,
                 semanticCache,
-                new SequentialLoopKernel(),
+                _loopKernel,
                 _loggerFactory.CreateLogger<BehaviorExecutor>());
 
             var behavior = new Behavior
@@ -747,7 +751,7 @@ public sealed class GeoTerrainCommand
                 brickRegistry,
                 _providerFactory,
                 semanticCache,
-                new SequentialLoopKernel(),
+                _loopKernel,
                 _loggerFactory.CreateLogger<BehaviorExecutor>());
 
             var behavior = new Behavior
