@@ -650,6 +650,13 @@ static class Program
         var mapboxZoomOpt = new Option<int?>("--mapbox-zoom", () => 15, "Zoom level for tile selection (0-22)");
         var generateUvOpt = new Option<bool>("--uv", () => false, "Generate UVs for consistent, meter-scaled textures");
         var uvMetersPerRepeatOpt = new Option<float>("--uv-meters-per-repeat", () => 1.0f, "Meters per texture repeat (UV scale)");
+        var alignToTerrainOpt = new Option<bool>("--align-to-terrain", () => false, "Offset building bases to match terrain elevation");
+        var terrainElevationProviderOpt = new Option<string>("--terrain-elevation-provider", () => "echo", "Terrain elevation provider: echo|local|http|hybrid");
+        var terrainLocalRootOpt = new Option<string?>("--terrain-local-root", () => null, "Local SRTM cache directory (for terrain local/hybrid)");
+        var terrainBaseUrlOpt = new Option<string?>("--terrain-srtm-base-url", () => null, "Base URL for terrain HTTP downloads (http/hybrid)");
+        var terrainPersistOpt = new Option<bool>("--terrain-persist-downloads", () => true, "Persist downloaded terrain tiles into --terrain-local-root (hybrid)");
+        var terrainCacheOpt = new Option<bool>("--terrain-cache", () => true, "Enable in-memory cache for terrain elevation provider");
+        var terrainTreatNoDataOpt = new Option<bool>("--terrain-treat-nodata-as-zero", () => false, "If true, terrain NaN becomes 0m when aligning buildings");
         var vecAirgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic only");
         var vecForceFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (fallback demo)");
 
@@ -661,6 +668,13 @@ static class Program
         buildingsToObjCmd.AddOption(mapboxZoomOpt);
         buildingsToObjCmd.AddOption(generateUvOpt);
         buildingsToObjCmd.AddOption(uvMetersPerRepeatOpt);
+        buildingsToObjCmd.AddOption(alignToTerrainOpt);
+        buildingsToObjCmd.AddOption(terrainElevationProviderOpt);
+        buildingsToObjCmd.AddOption(terrainLocalRootOpt);
+        buildingsToObjCmd.AddOption(terrainBaseUrlOpt);
+        buildingsToObjCmd.AddOption(terrainPersistOpt);
+        buildingsToObjCmd.AddOption(terrainCacheOpt);
+        buildingsToObjCmd.AddOption(terrainTreatNoDataOpt);
         buildingsToObjCmd.AddOption(vecAirgapOpt);
         buildingsToObjCmd.AddOption(vecForceFailOpt);
 
@@ -674,6 +688,13 @@ static class Program
             var mapboxZoom = ctx.ParseResult.GetValueForOption(mapboxZoomOpt);
             var generateUv = ctx.ParseResult.GetValueForOption(generateUvOpt);
             var uvMetersPerRepeat = ctx.ParseResult.GetValueForOption(uvMetersPerRepeatOpt);
+            var alignToTerrain = ctx.ParseResult.GetValueForOption(alignToTerrainOpt);
+            var terrainElevationProvider = ctx.ParseResult.GetValueForOption(terrainElevationProviderOpt) ?? "echo";
+            var terrainLocalRoot = ctx.ParseResult.GetValueForOption(terrainLocalRootOpt);
+            var terrainSrtmBaseUrl = ctx.ParseResult.GetValueForOption(terrainBaseUrlOpt);
+            var terrainPersist = ctx.ParseResult.GetValueForOption(terrainPersistOpt);
+            var terrainCache = ctx.ParseResult.GetValueForOption(terrainCacheOpt);
+            var terrainTreatNoData = ctx.ParseResult.GetValueForOption(terrainTreatNoDataOpt);
             var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
             var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -688,6 +709,13 @@ static class Program
                 mapboxZoom,
                 generateUv,
                 uvMetersPerRepeat,
+                alignToTerrain,
+                terrainElevationProvider,
+                terrainLocalRoot,
+                terrainSrtmBaseUrl,
+                terrainPersist,
+                terrainCache,
+                terrainTreatNoData,
                 airgap,
                 forceFail,
                 json,

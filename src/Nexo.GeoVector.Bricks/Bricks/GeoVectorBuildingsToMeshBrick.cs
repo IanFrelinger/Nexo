@@ -38,6 +38,9 @@ public sealed class GeoVectorBuildingsToMeshBrick : Brick
                 new BrickInputDefinition("includeBottom", "bool", "Include bottom faces", required: false, defaultValue: false),
                 new BrickInputDefinition("generateTexCoords", "bool", "If true, generate UVs for texture mapping", required: false, defaultValue: false),
                 new BrickInputDefinition("uvMetersPerRepeat", "float", "Meters per texture repeat (UV scale)", required: false, defaultValue: 1.0f),
+                new BrickInputDefinition("alignToTerrain", "bool", "If true, offset building base to terrain height", required: false, defaultValue: false),
+                new BrickInputDefinition("terrainGrid", "ElevationGrid", "Optional terrain grid for alignment", required: false),
+                new BrickInputDefinition("terrainTreatNoDataAsZero", "bool", "If true, NaN terrain samples become 0m", required: false, defaultValue: false),
                 new BrickInputDefinition("forceAgenticFail", "bool", "If true, agentic path throws (for fallback demos)", required: false, defaultValue: false)
             ],
             Outputs =
@@ -110,6 +113,9 @@ public sealed class GeoVectorBuildingsToMeshBrick : Brick
         var includeBottom = input.Get("includeBottom", false);
         var generateTexCoords = input.Get("generateTexCoords", false);
         var uvMetersPerRepeat = input.Get("uvMetersPerRepeat", 1.0f);
+        var alignToTerrain = input.Get("alignToTerrain", false);
+        var terrainGrid = input.Get<ElevationGrid?>("terrainGrid", null);
+        var terrainTreatNoDataAsZero = input.Get("terrainTreatNoDataAsZero", false);
 
         var mesh = BuildingMeshGenerator.GenerateBuildings(
             features,
@@ -119,7 +125,10 @@ public sealed class GeoVectorBuildingsToMeshBrick : Brick
                 DefaultHeightMeters = defaultHeight,
                 IncludeBottom = includeBottom,
                 GenerateTexCoords = generateTexCoords,
-                UvMetersPerRepeat = uvMetersPerRepeat
+                UvMetersPerRepeat = uvMetersPerRepeat,
+                AlignToTerrain = alignToTerrain,
+                TerrainGrid = terrainGrid,
+                TerrainTreatNoDataAsZero = terrainTreatNoDataAsZero
             });
 
         return Task.FromResult(new BrickOutput

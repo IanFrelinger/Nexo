@@ -65,7 +65,7 @@ public sealed class GeoVectorCliE2ETests : UnitTestBase
         var outPath = Path.Combine(_tempDir!, "buildings.obj");
         var (code, stdout, stderr) = await RunDotnetAsync(
             workingDir: _repoRoot!,
-            args: $"run --project src/Nexo.CLI -- geovector buildings-to-obj --bounds 0,0,0.001,0.001 --output \"{outPath}\" --vector-provider echo --format-json",
+            args: $"run --project src/Nexo.CLI -- geovector buildings-to-obj --bounds 0,0,0.001,0.001 --output \"{outPath}\" --vector-provider echo --align-to-terrain --terrain-elevation-provider echo --format-json",
             ct);
 
         AssertEqual(0, code, $"geovector buildings-to-obj should exit 0. stderr: {stderr}");

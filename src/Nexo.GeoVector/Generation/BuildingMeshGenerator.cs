@@ -40,11 +40,13 @@ public static class BuildingMeshGenerator
 
             var ring = f.Geometry.OuterRing;
             var local2 = GeoProjector.ProjectRingToLocalMeters(ring, localOrigin);
+            var ringGeo = ring.ToArray();
 
             // Normalize ring: drop duplicate closing point if provided.
             if (local2.Length >= 4 && NearlyEqual(local2[0], local2[local2.Length - 1]))
             {
                 Array.Resize(ref local2, local2.Length - 1);
+                if (ringGeo.Length > local2.Length) Array.Resize(ref ringGeo, local2.Length);
             }
 
             if (local2.Length < 3) continue;
@@ -56,6 +58,26 @@ public static class BuildingMeshGenerator
             if (SignedArea(local2) < 0)
             {
                 Array.Reverse(local2);
+                Array.Reverse(ringGeo);
+            }
+
+            // Optional: sample terrain base heights (meters) per footprint vertex.
+            float[]? baseY = null;
+            if (options.AlignToTerrain && options.TerrainGrid != null)
+            {
+                baseY = new float[n];
+                for (var i = 0; i < n; i++)
+                {
+                    if (!ElevationGridSampler.TrySampleHeightMetersAtGeoPoint(
+                            options.TerrainGrid,
+                            ringGeo[i],
+                            options.TerrainTreatNoDataAsZero,
+                            out var y))
+                    {
+                        y = 0f;
+                    }
+                    baseY[i] = y;
+                }
             }
 
             // Perimeter cumulative distance (meters) for walls UVs.
@@ -78,7 +100,8 @@ public static class BuildingMeshGenerator
             for (var i = 0; i < n; i++)
             {
                 var p = local2[i];
-                vertices.Add(new Vector3(p.X, height, p.Y));
+                var y0 = baseY != null ? baseY[i] : 0f;
+                vertices.Add(new Vector3(p.X, y0 + height, p.Y));
                 if (texCoords != null)
                 {
                     // Planar mapping in meters: x/z
@@ -104,7 +127,8 @@ public static class BuildingMeshGenerator
                 for (var i = 0; i < n; i++)
                 {
                     var p = local2[i];
-                    vertices.Add(new Vector3(p.X, 0, p.Y));
+                    var y0 = baseY != null ? baseY[i] : 0f;
+                    vertices.Add(new Vector3(p.X, y0, p.Y));
                     if (texCoords != null)
                     {
                         texCoords.Add(new Uv2(p.X * invRepeat, p.Y * invRepeat));
@@ -135,12 +159,14 @@ public static class BuildingMeshGenerator
                 var v1 = height * invRepeat;
 
                 var wallBase = vertices.Count;
+                var yb0 = baseY != null ? baseY[i] : 0f;
+                var yb1 = baseY != null ? baseY[j] : 0f;
 
                 // Order: b0, b1, t1, t0
-                vertices.Add(new Vector3(p0.X, 0, p0.Y));
-                vertices.Add(new Vector3(p1.X, 0, p1.Y));
-                vertices.Add(new Vector3(p1.X, height, p1.Y));
-                vertices.Add(new Vector3(p0.X, height, p0.Y));
+                vertices.Add(new Vector3(p0.X, yb0, p0.Y));
+                vertices.Add(new Vector3(p1.X, yb1, p1.Y));
+                vertices.Add(new Vector3(p1.X, yb1 + height, p1.Y));
+                vertices.Add(new Vector3(p0.X, yb0 + height, p0.Y));
 
                 if (texCoords != null)
                 {

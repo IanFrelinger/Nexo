@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.Adapters.GeoVector.Providers;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Common.Ports;
@@ -13,6 +14,7 @@ using Nexo.GeoTerrain;
 using Nexo.GeoVector.Bricks;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.IO;
+using Nexo.Orchestration.GeoTerrain.Ports;
 using Nexo.Orchestration.GeoVector.Ports;
 
 namespace Nexo.CLI.Commands.GeoVector;
@@ -48,6 +50,13 @@ public sealed class GeoVectorCommand
         int? mapboxZoom,
         bool generateTexCoords,
         float uvMetersPerRepeat,
+        bool alignToTerrain,
+        string terrainProvider,
+        string? terrainLocalRoot,
+        string? terrainSrtmBaseUrl,
+        bool terrainPersistDownloads,
+        bool terrainEnableCache,
+        bool terrainTreatNoDataAsZero,
         bool airGapped,
         bool forceAgenticFail,
         bool json,
@@ -72,6 +81,20 @@ public sealed class GeoVectorCommand
             };
 
             var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom);
+
+            ElevationGrid? terrainGrid = null;
+            if (alignToTerrain)
+            {
+                var elevationProvider = BuildElevationProvider(
+                    terrainProvider,
+                    terrainLocalRoot,
+                    terrainSrtmBaseUrl,
+                    terrainPersistDownloads,
+                    terrainEnableCache,
+                    airGapped);
+
+                terrainGrid = await BuildTerrainGridAsync(geoBounds, elevationProvider, ct);
+            }
 
             var bricks = new Brick[]
             {
@@ -122,6 +145,9 @@ public sealed class GeoVectorCommand
                             ["origin"] = "origin",
                             ["generateTexCoords"] = "generateTexCoords",
                             ["uvMetersPerRepeat"] = "uvMetersPerRepeat",
+                            ["alignToTerrain"] = "alignToTerrain",
+                            ["terrainGrid"] = "terrainGrid",
+                            ["terrainTreatNoDataAsZero"] = "terrainTreatNoDataAsZero",
                             ["forceAgenticFail"] = "forceAgenticFail"
                         },
                         OutputMapping = new Dictionary<string, string>
@@ -156,15 +182,23 @@ public sealed class GeoVectorCommand
                 SwapOnFailure = true
             };
 
-            var input = new BehaviorInput(new Dictionary<string, object>
+            var inputData = new Dictionary<string, object>
             {
                 ["bounds"] = geoBounds,
                 ["origin"] = origin,
                 ["kind"] = "building",
                 ["generateTexCoords"] = generateTexCoords,
                 ["uvMetersPerRepeat"] = uvMetersPerRepeat,
+                ["alignToTerrain"] = alignToTerrain,
+                ["terrainTreatNoDataAsZero"] = terrainTreatNoDataAsZero,
                 ["forceAgenticFail"] = forceAgenticFail
-            });
+            };
+            if (alignToTerrain)
+            {
+                inputData["terrainGrid"] = terrainGrid ?? throw new InvalidOperationException("Terrain grid was not built.");
+            }
+
+            var input = new BehaviorInput(inputData);
 
             IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
             var steps = new List<object>();
@@ -205,6 +239,7 @@ public sealed class GeoVectorCommand
                 bounds = geoBounds.ToString(),
                 output = output.FullName,
                 provider,
+                alignToTerrain,
                 airGapped,
                 errors,
                 steps
@@ -275,6 +310,86 @@ public sealed class GeoVectorCommand
                 logger: _loggerFactory.CreateLogger<MapboxVectorTileProvider>()),
             _ => throw new InvalidOperationException($"Unknown vector provider '{provider}'. Use echo|mapbox.")
         };
+    }
+
+    private IElevationProvider BuildElevationProvider(
+        string provider,
+        string? localRoot,
+        string? srtmBaseUrl,
+        bool persistDownloads,
+        bool enableCache,
+        bool airGapped)
+    {
+        provider = (provider ?? "echo").Trim().ToLowerInvariant();
+
+        if (airGapped && provider is "http" or "srtmhttp" or "hybrid")
+        {
+            provider = "local";
+        }
+
+        IElevationProvider inner = provider switch
+        {
+            "echo" => new EchoElevationProvider(),
+            "local" => new LocalFileElevationProvider(localRoot),
+            "http" or "srtmhttp" => new SrtmHttpElevationProvider(
+                _httpClientFactory.CreateClient("geoterrain.srtm"),
+                srtmBaseUrl,
+                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>()),
+            "hybrid" => BuildHybrid(localRoot, srtmBaseUrl, persistDownloads),
+            _ => throw new InvalidOperationException($"Unknown elevation provider '{provider}'. Use echo|local|http|hybrid.")
+        };
+
+        return enableCache ? new CachedElevationProvider(inner) : inner;
+    }
+
+    private IElevationProvider BuildHybrid(string? localRoot, string? srtmBaseUrl, bool persistDownloads)
+    {
+        if (string.IsNullOrWhiteSpace(localRoot))
+        {
+            return new SrtmHttpElevationProvider(
+                _httpClientFactory.CreateClient("geoterrain.srtm"),
+                srtmBaseUrl,
+                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
+        }
+
+        var local = new LocalFileElevationProvider(localRoot);
+        var http = new SrtmHttpElevationProvider(
+            _httpClientFactory.CreateClient("geoterrain.srtm"),
+            srtmBaseUrl,
+            _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
+
+        return new HybridLocalThenHttpElevationProvider(
+            local,
+            http,
+            persistDownloads,
+            _loggerFactory.CreateLogger<HybridLocalThenHttpElevationProvider>());
+    }
+
+    private async Task<ElevationGrid> BuildTerrainGridAsync(GeoBounds bounds, IElevationProvider elevationProvider, CancellationToken ct)
+    {
+        bounds.Validate();
+        var tileIds = SrtmTileCoverage.TilesCovering(bounds);
+        if (tileIds.Count == 0)
+            throw new InvalidOperationException("No SRTM tiles cover the requested bounds.");
+
+        var dict = new Dictionary<SrtmTileId, byte[]>(tileIds.Count);
+        var gate = new object();
+
+        await _loopKernel.ForEachAsync(
+            tileIds,
+            async (tileId, i, loopCt) =>
+            {
+                var tile = await elevationProvider.GetSrtmTileAsync(tileId, loopCt);
+                lock (gate)
+                {
+                    dict[tileId] = tile.HgtBytes;
+                }
+                return LoopAction.Continue;
+            },
+            new LoopOptions { Name = "geovector.terrain.fetch-tiles", EnableParallel = true },
+            ct);
+
+        return SrtmMosaicBuilder.Build(dict);
     }
 
     private static string ResolveMapboxToken(string? token)
