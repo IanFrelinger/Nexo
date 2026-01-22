@@ -13,6 +13,7 @@ public sealed class GeoTerrainDomainSmokeTests : UnitTestBase
             TestValueObjects();
             TestGridMeshGeneration();
             TestContours();
+            TestTileCoverage();
 
             return Task.FromResult(new TestResult
             {
@@ -126,6 +127,29 @@ public sealed class GeoTerrainDomainSmokeTests : UnitTestBase
         AssertEqual(0.5f, a.Z);
         AssertEqual(0.5f, b.Z);
         AssertTrue((a.X == 0f && b.X == 1f) || (a.X == 1f && b.X == 0f), "Expected contour endpoints at x=0 and x=1");
+    }
+
+    private void TestTileCoverage()
+    {
+        var bounds = new GeoBounds
+        {
+            MinLatitude = new Latitude(0),
+            MinLongitude = new Longitude(0),
+            MaxLatitude = new Latitude(2),
+            MaxLongitude = new Longitude(2)
+        };
+        bounds.Validate();
+
+        var tiles = SrtmTileCoverage.TilesCovering(bounds);
+        // 2x2 degrees => 4 tiles.
+        AssertEqual(4, tiles.Count);
+
+        // North-to-south, west-to-east order:
+        // north row has southLat=1, westLon=0..1
+        AssertEqual(new SrtmTileId(1, 0), tiles[0]);
+        AssertEqual(new SrtmTileId(1, 1), tiles[1]);
+        AssertEqual(new SrtmTileId(0, 0), tiles[2]);
+        AssertEqual(new SrtmTileId(0, 1), tiles[3]);
     }
 }
 

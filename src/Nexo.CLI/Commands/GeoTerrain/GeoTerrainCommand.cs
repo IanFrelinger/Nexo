@@ -8,6 +8,7 @@ using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
+using Nexo.GeoTerrain;
 using Nexo.GeoTerrain.Bricks;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.IO;
@@ -232,6 +233,220 @@ public sealed class GeoTerrainCommand
         catch (Exception ex)
         {
             _logger.LogError(ex, "GeoTerrain tile-to-obj failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
+    public async Task<int> BoundsToObjAsync(
+        string bounds,
+        FileInfo output,
+        string provider,
+        string? localRoot,
+        string? srtmBaseUrl,
+        bool persistDownloads,
+        bool enableCache,
+        bool airGapped,
+        bool forceAgenticFail,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            var geoBounds = ParseBounds(bounds);
+            geoBounds.Validate();
+
+            var elevationProvider = BuildElevationProvider(
+                provider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                enableCache,
+                airGapped);
+
+            var bricks = new Brick[]
+            {
+                new GeoTerrainFetchSrtmTilesBrick(
+                    elevationProvider,
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainFetchSrtmTilesBrick>()),
+                new GeoTerrainGridFromTilesBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainGridFromTilesBrick>()),
+                new GeoTerrainMeshFromGridBrick(
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainMeshFromGridBrick>()),
+                new GeoTerrainObjFromMeshBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainObjFromMeshBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                new SequentialLoopKernel(),
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geoterrain.cli.bounds-to-obj",
+                Name = "GeoTerrain: bounds -> OBJ",
+                Description = "Fetch all tiles covering bounds, stitch, mesh, export OBJ text.",
+                Steps =
+                [
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geoterrain.fetch.srtm-tiles",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["bounds"] = "bounds",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["tiles"] = "tiles"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "grid",
+                        BrickId = "geoterrain.grid.from-tiles",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["tiles"] = "tiles"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "mesh",
+                        BrickId = "geoterrain.mesh.from-grid",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh",
+                            ["quality"] = "quality"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "obj",
+                        BrickId = "geoterrain.export.obj-text",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["objText"] = "obj"
+                        }
+                    }
+                ]
+            };
+
+            var agent = new AgentCard
+            {
+                Id = "geoterrain.cli",
+                Name = "GeoTerrain CLI",
+                Description = "CLI runner",
+                Behaviors = [behavior.Id]
+            };
+
+            var options = new ExecutionOptions
+            {
+                IsAirGapped = airGapped,
+                Provider = airGapped ? "offline" : "offline",
+                ImplementationMode = airGapped ? Nexo.Core.Domain.Workflows.ImplementationMode.DeterministicOnly : Nexo.Core.Domain.Workflows.ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            var input = new BehaviorInput(new Dictionary<string, object>
+            {
+                ["bounds"] = geoBounds,
+                ["forceAgenticFail"] = forceAgenticFail
+            });
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        if (verbose && !json)
+                            Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = b.Outputs;
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var objText = outputs.TryGetValue("objText", out var o) ? o as string : null;
+            if (string.IsNullOrWhiteSpace(objText))
+                throw new InvalidOperationException("OBJ output was not produced by the pipeline.");
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, objText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                bounds = geoBounds.ToString(),
+                output = output.FullName,
+                provider,
+                airGapped,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote OBJ: {output.FullName}");
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoTerrain bounds-to-obj failed");
             if (json)
             {
                 Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
@@ -477,6 +692,243 @@ public sealed class GeoTerrainCommand
         }
     }
 
+    public async Task<int> BoundsToContoursAsync(
+        string bounds,
+        FileInfo output,
+        string provider,
+        string? localRoot,
+        string? srtmBaseUrl,
+        bool persistDownloads,
+        bool enableCache,
+        bool airGapped,
+        bool forceAgenticFail,
+        double intervalMeters,
+        double? minElevationMeters,
+        double? maxElevationMeters,
+        float verticalScale,
+        bool treatNoDataAsZero,
+        bool includeElevation,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            var geoBounds = ParseBounds(bounds);
+            geoBounds.Validate();
+
+            var elevationProvider = BuildElevationProvider(
+                provider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                enableCache,
+                airGapped);
+
+            var bricks = new Brick[]
+            {
+                new GeoTerrainFetchSrtmTilesBrick(
+                    elevationProvider,
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainFetchSrtmTilesBrick>()),
+                new GeoTerrainGridFromTilesBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainGridFromTilesBrick>()),
+                new GeoTerrainContoursFromGridBrick(
+                    _providerFactory,
+                    _loggerFactory.CreateLogger<GeoTerrainContoursFromGridBrick>()),
+                new GeoTerrainGeoJsonFromContoursBrick(
+                    _loggerFactory.CreateLogger<GeoTerrainGeoJsonFromContoursBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                new SequentialLoopKernel(),
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geoterrain.cli.bounds-to-contours",
+                Name = "GeoTerrain: bounds -> contours (GeoJSON)",
+                Description = "Fetch all tiles covering bounds, stitch, extract contours, export GeoJSON text.",
+                Steps =
+                [
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geoterrain.fetch.srtm-tiles",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["bounds"] = "bounds",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["tiles"] = "tiles"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "grid",
+                        BrickId = "geoterrain.grid.from-tiles",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["tiles"] = "tiles"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "contours",
+                        BrickId = "geoterrain.contours.from-grid",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid",
+                            ["intervalMeters"] = "intervalMeters",
+                            ["minElevationMeters"] = "minElevationMeters",
+                            ["maxElevationMeters"] = "maxElevationMeters",
+                            ["verticalScale"] = "verticalScale",
+                            ["treatNoDataAsZero"] = "treatNoDataAsZero",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["contours"] = "contours"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "geojson",
+                        BrickId = "geoterrain.export.contours-geojson",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["grid"] = "grid",
+                            ["contours"] = "contours",
+                            ["includeElevation"] = "includeElevation"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["geojsonText"] = "geojson"
+                        }
+                    }
+                ]
+            };
+
+            var agent = new AgentCard
+            {
+                Id = "geoterrain.cli",
+                Name = "GeoTerrain CLI",
+                Description = "CLI runner",
+                Behaviors = [behavior.Id]
+            };
+
+            var options = new ExecutionOptions
+            {
+                IsAirGapped = airGapped,
+                Provider = airGapped ? "offline" : "offline",
+                ImplementationMode = airGapped ? Nexo.Core.Domain.Workflows.ImplementationMode.DeterministicOnly : Nexo.Core.Domain.Workflows.ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            var inputData = new Dictionary<string, object>
+            {
+                ["bounds"] = geoBounds,
+                ["forceAgenticFail"] = forceAgenticFail,
+                ["intervalMeters"] = intervalMeters,
+                ["verticalScale"] = verticalScale,
+                ["treatNoDataAsZero"] = treatNoDataAsZero,
+                ["includeElevation"] = includeElevation
+            };
+            if (minElevationMeters.HasValue) inputData["minElevationMeters"] = minElevationMeters.Value;
+            if (maxElevationMeters.HasValue) inputData["maxElevationMeters"] = maxElevationMeters.Value;
+
+            var input = new BehaviorInput(inputData);
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        if (verbose && !json)
+                            Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = b.Outputs;
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var geojsonText = outputs.TryGetValue("geojsonText", out var gj) ? gj as string : null;
+            if (string.IsNullOrWhiteSpace(geojsonText))
+                throw new InvalidOperationException("GeoJSON output was not produced by the pipeline.");
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, geojsonText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                bounds = geoBounds.ToString(),
+                output = output.FullName,
+                provider,
+                airGapped,
+                intervalMeters,
+                minElevationMeters,
+                maxElevationMeters,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote GeoJSON: {output.FullName}");
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoTerrain bounds-to-contours failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
     private IElevationProvider BuildElevationProvider(
         string provider,
         string? localRoot,
@@ -530,6 +982,30 @@ public sealed class GeoTerrainCommand
             http,
             persistDownloads,
             _loggerFactory.CreateLogger<HybridLocalThenHttpElevationProvider>());
+    }
+
+    private static GeoBounds ParseBounds(string text)
+    {
+        // Format: "minLat,minLon,maxLat,maxLon"
+        if (string.IsNullOrWhiteSpace(text))
+            throw new ArgumentException("bounds is required (minLat,minLon,maxLat,maxLon).", nameof(text));
+
+        var parts = text.Split(',');
+        if (parts.Length != 4)
+            throw new ArgumentException("bounds must be 'minLat,minLon,maxLat,maxLon'.", nameof(text));
+
+        var minLat = double.Parse(parts[0].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+        var minLon = double.Parse(parts[1].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+        var maxLat = double.Parse(parts[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+        var maxLon = double.Parse(parts[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
+
+        return new GeoBounds
+        {
+            MinLatitude = new Latitude(minLat),
+            MinLongitude = new Longitude(minLon),
+            MaxLatitude = new Latitude(maxLat),
+            MaxLongitude = new Longitude(maxLon)
+        };
     }
 }
 

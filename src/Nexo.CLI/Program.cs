@@ -363,7 +363,10 @@ static class Program
         var geoCmd = new Command("geoterrain", "GeoTerrain GIS elevation → mesh utilities");
         var tileToObjCmd = new Command("tile-to-obj", "Fetch an SRTM tile and write an OBJ mesh");
         var tileToContoursCmd = new Command("tile-to-contours", "Fetch an SRTM tile and write contour lines as GeoJSON");
+        var boundsToObjCmd = new Command("bounds-to-obj", "Fetch all tiles covering bounds and write a stitched OBJ mesh");
+        var boundsToContoursCmd = new Command("bounds-to-contours", "Fetch all tiles covering bounds and write stitched contours as GeoJSON");
         var tileOpt = new Option<string>("--tile", "Tile id like N00E000 or N00E000.hgt") { IsRequired = true };
+        var geoTerrainBoundsOpt = new Option<string>("--bounds", "Bounds: minLat,minLon,maxLat,maxLon") { IsRequired = true };
         var outOpt = new Option<FileInfo>("--output", "Output OBJ file path") { IsRequired = true };
         var elevationProviderOpt = new Option<string>("--elevation-provider", () => "echo", "Provider: echo|local|http|hybrid");
         var localRootOpt = new Option<string?>("--local-root", () => null, "Local SRTM cache directory (for local/hybrid providers)");
@@ -481,6 +484,108 @@ static class Program
         });
 
         geoCmd.AddCommand(tileToContoursCmd);
+
+        // geoterrain bounds-to-obj
+        boundsToObjCmd.AddOption(geoTerrainBoundsOpt);
+        boundsToObjCmd.AddOption(outOpt);
+        boundsToObjCmd.AddOption(elevationProviderOpt);
+        boundsToObjCmd.AddOption(localRootOpt);
+        boundsToObjCmd.AddOption(baseUrlOpt);
+        boundsToObjCmd.AddOption(persistOpt);
+        boundsToObjCmd.AddOption(cacheOpt);
+        boundsToObjCmd.AddOption(airgapOpt);
+        boundsToObjCmd.AddOption(forceAgenticFailOpt);
+
+        boundsToObjCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var bounds = ctx.ParseResult.GetValueForOption(geoTerrainBoundsOpt) ?? throw new InvalidOperationException("--bounds is required");
+            var output = ctx.ParseResult.GetValueForOption(outOpt) ?? throw new InvalidOperationException("--output is required");
+            var elevationProvider = ctx.ParseResult.GetValueForOption(elevationProviderOpt) ?? "echo";
+            var localRoot = ctx.ParseResult.GetValueForOption(localRootOpt);
+            var srtmBaseUrl = ctx.ParseResult.GetValueForOption(baseUrlOpt);
+            var persistDownloads = ctx.ParseResult.GetValueForOption(persistOpt);
+            var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
+            var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoTerrainCommand.BoundsToObjAsync(
+                bounds,
+                output,
+                elevationProvider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                cache,
+                airgap,
+                forceAgenticFail,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+        geoCmd.AddCommand(boundsToObjCmd);
+
+        // geoterrain bounds-to-contours
+        boundsToContoursCmd.AddOption(geoTerrainBoundsOpt);
+        boundsToContoursCmd.AddOption(outOpt);
+        boundsToContoursCmd.AddOption(elevationProviderOpt);
+        boundsToContoursCmd.AddOption(localRootOpt);
+        boundsToContoursCmd.AddOption(baseUrlOpt);
+        boundsToContoursCmd.AddOption(persistOpt);
+        boundsToContoursCmd.AddOption(cacheOpt);
+        boundsToContoursCmd.AddOption(airgapOpt);
+        boundsToContoursCmd.AddOption(forceAgenticFailOpt);
+        boundsToContoursCmd.AddOption(intervalMetersOpt);
+        boundsToContoursCmd.AddOption(minElevOpt);
+        boundsToContoursCmd.AddOption(maxElevOpt);
+        boundsToContoursCmd.AddOption(verticalScaleOpt);
+        boundsToContoursCmd.AddOption(treatNoDataOpt);
+        boundsToContoursCmd.AddOption(includeElevationOpt);
+
+        boundsToContoursCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var bounds = ctx.ParseResult.GetValueForOption(geoTerrainBoundsOpt) ?? throw new InvalidOperationException("--bounds is required");
+            var output = ctx.ParseResult.GetValueForOption(outOpt) ?? throw new InvalidOperationException("--output is required");
+            var elevationProvider = ctx.ParseResult.GetValueForOption(elevationProviderOpt) ?? "echo";
+            var localRoot = ctx.ParseResult.GetValueForOption(localRootOpt);
+            var srtmBaseUrl = ctx.ParseResult.GetValueForOption(baseUrlOpt);
+            var persistDownloads = ctx.ParseResult.GetValueForOption(persistOpt);
+            var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
+            var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
+            var intervalMeters = ctx.ParseResult.GetValueForOption(intervalMetersOpt);
+            var minElev = ctx.ParseResult.GetValueForOption(minElevOpt);
+            var maxElev = ctx.ParseResult.GetValueForOption(maxElevOpt);
+            var verticalScale = ctx.ParseResult.GetValueForOption(verticalScaleOpt);
+            var treatNoData = ctx.ParseResult.GetValueForOption(treatNoDataOpt);
+            var includeElevation = ctx.ParseResult.GetValueForOption(includeElevationOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoTerrainCommand.BoundsToContoursAsync(
+                bounds,
+                output,
+                elevationProvider,
+                localRoot,
+                srtmBaseUrl,
+                persistDownloads,
+                cache,
+                airgap,
+                forceAgenticFail,
+                intervalMeters,
+                minElev,
+                maxElev,
+                verticalScale,
+                treatNoData,
+                includeElevation,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+        geoCmd.AddCommand(boundsToContoursCmd);
         root.AddCommand(geoCmd);
 
         // nexo geovector
