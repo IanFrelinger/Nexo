@@ -78,6 +78,7 @@
   </ItemGroup>
   <!-- Web/API Packages -->
   <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.4.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="7.4.0" />

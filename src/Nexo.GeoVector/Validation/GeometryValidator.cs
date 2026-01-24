@@ -1,3 +1,4 @@
+using Nexo.GeoTerrain;
 using Nexo.GeoVector.Geometry;
 
 namespace Nexo.GeoVector.Validation;
@@ -15,8 +16,12 @@ public static class GeometryValidator
     /// </summary>
     public static GeometryValidationResult ValidatePolygon(GeoPolygon polygon)
     {
+#if NET8_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(polygon);
+#else
         if (polygon == null)
             throw new ArgumentNullException(nameof(polygon));
+#endif
 
         var issues = new List<string>();
 

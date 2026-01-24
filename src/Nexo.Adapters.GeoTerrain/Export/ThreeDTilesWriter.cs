@@ -25,7 +25,6 @@ public static class ThreeDTilesWriter
 
         var centerLon = (bounds.MinLongitude.Degrees + bounds.MaxLongitude.Degrees) / 2.0;
         var centerLat = (bounds.MinLatitude.Degrees + bounds.MaxLatitude.Degrees) / 2.0;
-        var centerHeight = 0.0;
 
         var tileset = new
         {

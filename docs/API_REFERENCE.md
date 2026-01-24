@@ -1,63 +1,362 @@
-# Nexo API Reference
+# Nexo Geospatial API Reference
 
-This document summarizes the primary public APIs exposed by the Nexo Clean Architecture implementation. It focuses on the Application layer ports (interfaces) and the configuration services that external adapters are expected to implement.
+## Overview
 
-## Application Ports
+The Nexo Geospatial API provides RESTful endpoints for terrain generation, vector feature extraction, and world bundle creation. This document describes all available endpoints, request/response formats, and usage examples.
 
-### `Nexo.Core.Application.Analysis.Ports.IAnalysisService`
-- **Purpose:** Runs static analysis and policy validation against a given path.
-- **Method:** `Task<AnalysisResult> AnalyzeAsync(DirectoryInfo path, CancellationToken token = default)`
-- **Return:** `AnalysisResult` containing violations, totals, and severity metadata.
+**Base URL:** `https://api.nexo.example.com/api/v1`
 
-### `Nexo.Core.Application.Validation.Ports.IValidationService`
-- **Purpose:** Executes validation/test suites.
-- **Method:** `Task<ValidationResult> ValidateAsync(string? filter, CancellationToken token = default)`
-- **Return:** `ValidationResult` with counts, pass/fail flags, and per-test details.
+**API Version:** v1
 
-### `Nexo.Core.Application.Agent.Ports.IAgentExecutor`
-- **Purpose:** Runs registered agents with optional input files.
-- **Method:** `Task<AgentExecutionResult> ExecuteAsync(string agentName, FileInfo? inputFile, CancellationToken token = default)`
-- **Return:** `AgentExecutionResult` tracking success state, duration, and output payload.
+---
 
-### `Nexo.Core.Application.Agent.Ports.IAgentRegistry`
-- **Purpose:** Provides metadata about available agents.
-- **Methods:**
-  - `Task<IReadOnlyList<AgentMetadata>> GetAgentsAsync(...)`
-  - `Task<AgentMetadata?> GetAgentAsync(string agentName, ...)`
-  - `Task<IReadOnlyList<AgentMetadata>> DiscoverAgentsAsync(...)`
+## Authentication
 
-### `Nexo.Core.Application.Common.Ports.ICacheStrategy`
-- **Purpose:** Abstracts caching implementations (Decorator pattern).
-- **Methods:** `GetAsync`, `SetAsync`, `RemoveAsync`, `ClearAsync`.
+Currently, the API does not require authentication. Future versions will support API keys and OAuth2.
 
-### `Nexo.Core.Application.Common.Ports.IMetricsCollector`
-- **Purpose:** Collects execution metrics and counters.
-- **Methods:** `RecordExecutionTime`, `IncrementCounter`, `GetSnapshotAsync`.
+---
 
-### `Nexo.Core.Application.Configuration.Ports.IConfigurationService`
-- **Purpose:** Loads and saves CLI configuration (analysis, validation, logging).
-- **Methods:** `LoadAsync`, `SaveAsync`, `GetDefault`.
+## Endpoints
 
-## Domain Exceptions & Error Codes
+### Terrain Generation
 
-All domain-level failures use specialized exceptions with error codes and suggestions.
+#### POST `/api/v1/geoterrain/generate`
 
-| Exception | Typical Error Codes | Notes |
-|-----------|--------------------|-------|
-| `AnalysisException` | `ANALYSIS_100x` | Path issues, unauthorized access, rule failures. |
-| `ValidationException` | `VALIDATION_200x` | Missing tests, TRX parsing issues, timeouts. |
-| `AgentExecutionException` | `AGENT_300x` | Missing agents, timeouts, invalid inputs. |
-| `ConfigurationException` | `CONFIG_400x` | Config file not found, invalid format/values. |
+Generate a terrain mesh from elevation data.
 
-`docs/TROUBLESHOOTING_GUIDE.md` provides concrete suggestions per error code.
+**Request Body:**
+```json
+{
+  "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+  "elevationProvider": "mapbox-terrain-rgb",
+  "format": "obj",
+  "mapboxToken": "your_token_here",
+  "meshOptions": {
+    "treatNoDataAsZero": false,
+    "verticalScale": 1.0,
+    "generateNormals": true
+  }
+}
+```
 
-## Extension Points
+**Response:** `202 Accepted`
+```json
+{
+  "jobId": "abc123def456",
+  "status": "accepted"
+}
+```
 
-- **Analysis Rules:** Implement `Nexo.Infrastructure.Analysis.Rules.IAnalysisRule` and register via DI to extend rule coverage.
-- **Validation Parsers:** Implement `Nexo.Infrastructure.Validation.Parsers.ITestResultParser` to support additional test result formats.
-- **Agents:** Implement `Nexo.Abstractions.IAgent` and register in DI (or discovered via `IAgentRegistry`) to add new agents.
+**Parameters:**
+- `bounds` (required): Geographic bounds as "minLat,maxLat,minLon,maxLon"
+- `elevationProvider` (optional): Provider name (srtm, mapbox-terrain-rgb, local, geotiff, ascii-grid). Default: "srtm"
+- `format` (optional): Output format (obj, gltf, glb, fbx, usd). Default: "obj"
+- `mapboxToken` (optional): Mapbox access token (required for mapbox providers)
+- `localPath` (optional): Local file path (for local/geotiff/ascii-grid providers)
+- `meshOptions` (optional): Mesh generation options
 
-## ADRs
+**Example:**
+```bash
+curl -X POST https://api.nexo.example.com/api/v1/geoterrain/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+    "elevationProvider": "mapbox-terrain-rgb",
+    "format": "glb",
+    "mapboxToken": "pk.eyJ1..."
+  }'
+```
 
-Architecture decisions and rationale are documented in `docs/adr/`. See `ADR-001-clean-architecture.md` for the decision to adopt Clean Architecture + MediatR + FluentValidation.
+#### GET `/api/v1/geoterrain/jobs/{jobId}`
 
+Get terrain generation job status.
+
+**Response:** `200 OK`
+```json
+{
+  "jobId": "abc123def456",
+  "status": "completed",
+  "progress": 100,
+  "outputPath": "/tmp/nexo-api/geoterrain/abc123def456.glb",
+  "createdAt": "2024-01-23T10:00:00Z",
+  "completedAt": "2024-01-23T10:05:00Z"
+}
+```
+
+**Status Values:**
+- `pending`: Job is queued
+- `processing`: Job is being processed
+- `completed`: Job completed successfully
+- `failed`: Job failed with error
+
+#### GET `/api/v1/geoterrain/jobs/{jobId}/download`
+
+Download generated terrain mesh.
+
+**Query Parameters:**
+- `format` (optional): Output format. Default: "obj"
+
+**Response:** `200 OK` (file download)
+
+**Example:**
+```bash
+curl -O https://api.nexo.example.com/api/v1/geoterrain/jobs/abc123def456/download?format=glb
+```
+
+---
+
+### Vector Feature Extraction
+
+#### POST `/api/v1/geovector/extract`
+
+Extract vector features from geographic bounds.
+
+**Request Body:**
+```json
+{
+  "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+  "vectorProvider": "hybrid",
+  "featureKind": "building",
+  "format": "geojson",
+  "mapboxToken": "your_token_here",
+  "osmPbfPath": "/path/to/data.osm.pbf"
+}
+```
+
+**Response:** `202 Accepted`
+```json
+{
+  "jobId": "xyz789ghi012",
+  "status": "accepted"
+}
+```
+
+**Parameters:**
+- `bounds` (required): Geographic bounds as "minLat,maxLat,minLon,maxLon"
+- `vectorProvider` (optional): Provider name (osm, mapbox, geojson, shapefile, hybrid). Default: "osm"
+- `featureKind` (required): Feature type (building, road, water, vegetation, railway, power_line, administrative_boundary, land_use, point_of_interest, transportation_infrastructure)
+- `format` (optional): Output format (json, geojson). Default: "json"
+- `mapboxToken` (optional): Mapbox access token (required for mapbox provider)
+- `osmPbfPath` (optional): OSM PBF file path (for osm/hybrid providers)
+- `vectorFilePath` (optional): GeoJSON/Shapefile path (for geojson/shapefile providers)
+
+**Example:**
+```bash
+curl -X POST https://api.nexo.example.com/api/v1/geovector/extract \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+    "vectorProvider": "osm",
+    "featureKind": "building",
+    "format": "geojson",
+    "osmPbfPath": "/data/california-latest.osm.pbf"
+  }'
+```
+
+#### GET `/api/v1/geovector/jobs/{jobId}`
+
+Get vector extraction job status.
+
+**Response:** Same format as terrain job status.
+
+#### GET `/api/v1/geovector/jobs/{jobId}/download`
+
+Download extracted vector features.
+
+**Query Parameters:**
+- `format` (optional): Output format. Default: "json"
+
+---
+
+### World Bundle Generation
+
+#### POST `/api/v1/world/generate`
+
+Generate a complete world bundle with terrain, buildings, roads, water, and vegetation.
+
+**Request Body:**
+```json
+{
+  "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+  "elevationProvider": "mapbox-terrain-rgb",
+  "vectorProvider": "hybrid",
+  "format": "gltf",
+  "mapboxToken": "your_token_here",
+  "osmPbfPath": "/path/to/data.osm.pbf",
+  "worldOptions": {
+    "chunkTerrain": true,
+    "chunkSizeMeters": 1000.0,
+    "enableVegetation": true
+  }
+}
+```
+
+**Response:** `202 Accepted`
+```json
+{
+  "jobId": "world123abc456",
+  "status": "accepted"
+}
+```
+
+**Parameters:**
+- `bounds` (required): Geographic bounds
+- `elevationProvider` (optional): Elevation data provider
+- `vectorProvider` (optional): Vector data provider
+- `format` (optional): Output format (obj, gltf, glb). Default: "obj"
+- `mapboxToken` (optional): Mapbox access token
+- `osmPbfPath` (optional): OSM PBF file path
+- `worldOptions` (optional): World generation options
+
+**Example:**
+```bash
+curl -X POST https://api.nexo.example.com/api/v1/world/generate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+    "elevationProvider": "mapbox-terrain-rgb",
+    "vectorProvider": "hybrid",
+    "format": "gltf",
+    "mapboxToken": "pk.eyJ1...",
+    "osmPbfPath": "/data/california-latest.osm.pbf"
+  }'
+```
+
+#### GET `/api/v1/world/jobs/{jobId}`
+
+Get world generation job status.
+
+**Response:** Same format as terrain job status.
+
+#### GET `/api/v1/world/jobs/{jobId}/download`
+
+Download generated world bundle as ZIP archive.
+
+**Response:** `200 OK` (ZIP file download)
+
+#### POST `/api/v1/world/validate`
+
+Validate a world bundle manifest.
+
+**Request Body:**
+```json
+{
+  "bundlePath": "/path/to/world/bundle"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "isValid": true,
+  "issues": []
+}
+```
+
+---
+
+## Error Responses
+
+All endpoints may return error responses in the following format:
+
+**400 Bad Request:**
+```json
+{
+  "message": "Invalid bounds format. Expected: minLat,maxLat,minLon,maxLon"
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "message": "Job abc123def456 not found"
+}
+```
+
+**500 Internal Server Error:**
+```json
+{
+  "message": "An error occurred while processing your request"
+}
+```
+
+---
+
+## Rate Limiting
+
+Rate limits are not currently enforced but will be added in future versions:
+- **Free tier:** 100 requests/hour
+- **Pro tier:** 1000 requests/hour
+- **Enterprise:** Custom limits
+
+Rate limit headers will be included in responses:
+- `X-RateLimit-Limit`: Maximum requests per hour
+- `X-RateLimit-Remaining`: Remaining requests in current window
+- `X-RateLimit-Reset`: Unix timestamp when limit resets
+
+---
+
+## SDK Usage
+
+### C# SDK
+
+```csharp
+using Nexo.SDK;
+using Nexo.GeoTerrain;
+
+// Create terrain client
+var elevationProvider = new SrtmHttpElevationProvider(httpClient);
+var terrainClient = new GeoTerrainClient(elevationProvider, logger);
+
+// Generate mesh
+var bounds = new GeoBounds
+{
+    MinLatitude = new Latitude(37.7749),
+    MaxLatitude = new Latitude(37.8049),
+    MinLongitude = new Longitude(-122.4194),
+    MaxLongitude = new Longitude(-122.3894)
+};
+
+var mesh = await terrainClient.GenerateMeshAsync(bounds);
+
+// Export to file
+await terrainClient.ExportMeshAsync(mesh, "terrain.obj", "obj");
+```
+
+### Python SDK (Future)
+
+```python
+from nexo_sdk import GeoTerrainClient
+
+client = GeoTerrainClient()
+
+bounds = {
+    "minLat": 37.7749,
+    "maxLat": 37.8049,
+    "minLon": -122.4194,
+    "maxLon": -122.3894
+}
+
+mesh = client.generate_mesh(bounds)
+client.export_mesh(mesh, "terrain.obj", format="obj")
+```
+
+---
+
+## Best Practices
+
+1. **Use async/await** for all API calls
+2. **Poll job status** every 1-2 seconds for long-running operations
+3. **Handle errors gracefully** - check status codes and error messages
+4. **Cache results** when possible to reduce API calls
+5. **Use appropriate formats** - GLB for web, OBJ for offline, glTF for modern engines
+6. **Set timeouts** appropriately for large-area processing
+
+---
+
+## Support
+
+For API support, please visit:
+- Documentation: https://github.com/IanFrelinger/Nexo/docs
+- Issues: https://github.com/IanFrelinger/Nexo/issues
+- Discussions: https://github.com/IanFrelinger/Nexo/discussions

@@ -83,7 +83,16 @@ public sealed class MapboxRasterMosaicBuilder
                     // Fill with black/transparent for missing tile
                     var ox = (x - minX) * tileSize;
                     var oy = (y - minY) * tileSize;
-                    mosaic.Mutate(ctx => ctx.Fill(new Rgba32(0, 0, 0, 0), new Rectangle(ox, oy, tileSize, tileSize)));
+                    for (var ty = 0; ty < tileSize; ty++)
+                    {
+                        for (var tx = 0; tx < tileSize; tx++)
+                        {
+                            if (ox + tx < mosaic.Width && oy + ty < mosaic.Height)
+                            {
+                                mosaic[ox + tx, oy + ty] = new Rgba32(0, 0, 0, 0);
+                            }
+                        }
+                    }
                 }
             }
         }

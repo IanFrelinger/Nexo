@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -61,6 +61,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.GeoWorld", "src\Nexo.Tests.GeoWorld\Nexo.Tests.GeoWorld.csproj", "{F0B6D9E0-5F32-46A4-9A2D-2B5B4C5B56C1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.GeoWorld.Bricks", "src\Nexo.GeoWorld.Bricks\Nexo.GeoWorld.Bricks.csproj", "{8B403E8C-2D41-4F1E-95A6-1B1E969AB8B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.API", "src\Nexo.API\Nexo.API.csproj", "{FA8C1FDC-F653-47A3-817A-EB5D876B9203}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.SDK", "src\Nexo.SDK\Nexo.SDK.csproj", "{C09AF1A1-86F2-4F81-8A53-786606C33A16}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -204,6 +208,14 @@ Global
 		{8B403E8C-2D41-4F1E-95A6-1B1E969AB8B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8B403E8C-2D41-4F1E-95A6-1B1E969AB8B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8B403E8C-2D41-4F1E-95A6-1B1E969AB8B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA8C1FDC-F653-47A3-817A-EB5D876B9203}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA8C1FDC-F653-47A3-817A-EB5D876B9203}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA8C1FDC-F653-47A3-817A-EB5D876B9203}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA8C1FDC-F653-47A3-817A-EB5D876B9203}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C09AF1A1-86F2-4F81-8A53-786606C33A16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C09AF1A1-86F2-4F81-8A53-786606C33A16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C09AF1A1-86F2-4F81-8A53-786606C33A16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C09AF1A1-86F2-4F81-8A53-786606C33A16}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -240,5 +252,7 @@ Global
 		{2C68D4B0-4A9D-4A5B-9E9F-7B9D6F2E0A91} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{F0B6D9E0-5F32-46A4-9A2D-2B5B4C5B56C1} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{8B403E8C-2D41-4F1E-95A6-1B1E969AB8B7} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
+		{FA8C1FDC-F653-47A3-817A-EB5D876B9203} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
+		{C09AF1A1-86F2-4F81-8A53-786606C33A16} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 	EndGlobalSection
 EndGlobal

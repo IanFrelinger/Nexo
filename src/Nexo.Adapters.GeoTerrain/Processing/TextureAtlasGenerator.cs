@@ -33,7 +33,14 @@ public static class TextureAtlasGenerator
         using var atlas = new Image<Rgba32>(atlasSize, atlasSize);
         var mappings = new List<TextureAtlasMapping>();
 
-        atlas.Mutate(ctx => ctx.Fill(new Rgba32(0, 0, 0, 0)));
+        // Initialize with transparent background by setting all pixels
+        for (var y = 0; y < atlasSize; y++)
+        {
+            for (var x = 0; x < atlasSize; x++)
+            {
+                atlas[x, y] = new Rgba32(0, 0, 0, 0);
+            }
+        }
 
         for (var i = 0; i < textures.Count; i++)
         {
