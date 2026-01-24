@@ -169,6 +169,73 @@ public static class DataIntegrityValidator
 
         return true;
     }
+
+    /// <summary>
+    /// Validates projection parameters with detailed error reporting.
+    /// </summary>
+    public static bool ValidateProjectionParameters(
+        GeoBounds bounds,
+        GridSpacing spacing,
+        out string? error)
+    {
+        error = null;
+
+        if (bounds == null)
+        {
+            error = "Bounds cannot be null";
+            return false;
+        }
+
+        // Validate bounds
+        if (bounds.MinLatitude.Degrees < -90 || bounds.MaxLatitude.Degrees > 90)
+        {
+            error = "Latitude bounds must be between -90 and 90 degrees";
+            return false;
+        }
+
+        if (bounds.MinLongitude.Degrees < -180 || bounds.MaxLongitude.Degrees > 180)
+        {
+            error = "Longitude bounds must be between -180 and 180 degrees";
+            return false;
+        }
+
+        if (bounds.MinLatitude.Degrees >= bounds.MaxLatitude.Degrees)
+        {
+            error = "Min latitude must be less than max latitude";
+            return false;
+        }
+
+        if (bounds.MinLongitude.Degrees >= bounds.MaxLongitude.Degrees)
+        {
+            error = "Min longitude must be less than max longitude";
+            return false;
+        }
+
+        // Validate spacing
+        var latSpan = bounds.MaxLatitude.Degrees - bounds.MinLatitude.Degrees;
+        var lonSpan = bounds.MaxLongitude.Degrees - bounds.MinLongitude.Degrees;
+
+        // Convert spacing from meters to degrees (rough conversion)
+        var spacingDegreesX = spacing.MetersX / 111320.0;
+        var spacingDegreesY = spacing.MetersY / 111320.0;
+        var avgSpacingDegrees = (spacingDegreesX + spacingDegreesY) / 2.0;
+
+        // Spacing should be reasonable relative to bounds
+        if (avgSpacingDegrees > latSpan || avgSpacingDegrees > lonSpan)
+        {
+            error = $"Grid spacing ({avgSpacingDegrees:F6}°) is larger than bounds span (lat: {latSpan}°, lon: {lonSpan}°)";
+            return false;
+        }
+
+        // Spacing should not be too small (would create huge grids)
+        if (avgSpacingDegrees < 0.000001) // ~0.1 meters
+        {
+            error = $"Grid spacing ({avgSpacingDegrees:F6}°) is unreasonably small";
+            return false;
+        }
+
+        return true;
+    }
 }
 
 /// <summary>

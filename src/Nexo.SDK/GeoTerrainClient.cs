@@ -31,7 +31,7 @@ public class GeoTerrainClient
     /// <param name="options">Mesh generation options</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Generated mesh data</returns>
-    public Task<MeshData> GenerateMeshAsync(
+    public async Task<MeshData> GenerateMeshAsync(
         GeoBounds bounds,
         MeshGenerationOptions? options = null,
         CancellationToken cancellationToken = default)
@@ -42,12 +42,39 @@ public class GeoTerrainClient
         bounds.Validate();
         options ??= new MeshGenerationOptions();
 
-        // TODO: Implement full mesh generation pipeline
-        // For now, return a placeholder
         _logger?.LogInformation("Generating terrain mesh for bounds {Bounds}", bounds);
 
-        // This would integrate with the actual terrain generation logic
-        return Task.FromException<MeshData>(new NotImplementedException("Full mesh generation integration pending"));
+        // Get tiles covering the bounds
+        var tileIds = SrtmTileCoverage.TilesCovering(bounds);
+        if (tileIds.Count == 0)
+        {
+            throw new InvalidOperationException("No elevation tiles cover the requested bounds.");
+        }
+
+        _logger?.LogInformation("Fetching {Count} elevation tiles", tileIds.Count);
+
+        // Fetch all tiles
+        var hgtBytesByTile = new Dictionary<SrtmTileId, byte[]>(tileIds.Count);
+        foreach (var tileId in tileIds)
+        {
+            var tile = await _elevationProvider.GetSrtmTileAsync(tileId, cancellationToken);
+            hgtBytesByTile[tileId] = tile.HgtBytes;
+        }
+
+        _logger?.LogInformation("Building elevation grid from {Count} tiles", hgtBytesByTile.Count);
+
+        // Build elevation grid from tiles
+        var grid = SrtmMosaicBuilder.Build(hgtBytesByTile);
+
+        _logger?.LogInformation("Generating mesh from grid ({Width}x{Height})", grid.Width, grid.Height);
+
+        // Generate mesh from grid
+        var mesh = GridMeshGenerator.Generate(grid, options);
+
+        _logger?.LogInformation("Generated mesh with {VertexCount} vertices and {TriangleCount} triangles",
+            mesh.Vertices.Count, mesh.Indices.Count / 3);
+
+        return mesh;
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
+using NetTopologySuite.IO.ShapeFile;
 using Nexo.GeoTerrain;
 using Nexo.GeoVector.Geometry;
 using Nexo.GeoVector.Models;
@@ -12,7 +13,7 @@ namespace Nexo.Adapters.GeoVector.Providers;
 
 /// <summary>
 /// Loads vector features from Shapefile format (local disk, air-gapped friendly).
-/// Supports .shp files with associated .dbf and .shx files.
+/// Shapefiles consist of multiple files (.shp, .shx, .dbf, etc.) but only the .shp path is required.
 /// </summary>
 public sealed class ShapefileVectorProvider : IVectorProvider
 {
@@ -37,7 +38,7 @@ public sealed class ShapefileVectorProvider : IVectorProvider
 
         var features = ReadShapefile(_shapefilePath, bounds, kind, cancellationToken);
 
-        _logger?.LogInformation("Shapefile provider returned {Count} feature(s) for kind={Kind} from {Path}",
+        _logger?.LogInformation("Shapefile provider returned {Count} feature(s) for kind={Kind} from {Path}", 
             features.Count, kind.Value, _shapefilePath);
 
         return Task.FromResult(new GeoFeatureSet(features));
@@ -49,66 +50,81 @@ public sealed class ShapefileVectorProvider : IVectorProvider
 
         try
         {
-            using var shapefileReader = new ShapefileDataReader(path, new GeometryFactory());
-            var header = shapefileReader.DbaseHeader;
-            var fieldCount = header?.NumFields ?? 0;
+            var factory = new GeometryFactory();
+            using var reader = new ShapefileDataReader(path, factory);
+            
+            var dbaseHeader = reader.DbaseHeader;
+            var recordNumber = 0;
 
-            var fieldNames = new List<string>();
-            if (header != null)
+            while (reader.Read())
             {
-                for (var i = 0; i < fieldCount; i++)
-                {
-                    fieldNames.Add(header.Fields[i].Name);
-                }
-            }
+                ct.ThrowIfCancellationRequested();
+                recordNumber++;
 
-            while (shapefileReader.Read() && !ct.IsCancellationRequested)
-            {
-                var geometry = shapefileReader.Geometry;
+                var geometry = reader.Geometry;
                 if (geometry == null) continue;
 
-                // Convert NetTopologySuite geometry to our geometry types
+                // Check bounds intersection
+                var env = geometry.EnvelopeInternal;
+                if (env.MaxX < bounds.MinLongitude.Degrees ||
+                    env.MinX > bounds.MaxLongitude.Degrees ||
+                    env.MaxY < bounds.MinLatitude.Degrees ||
+                    env.MinY > bounds.MaxLatitude.Degrees)
+                {
+                    continue; // Feature outside query bounds
+                }
+
+                // Convert NTS geometry to GeoVector geometry
                 IGeoGeometry? geoGeom = null;
-                if (geometry is Polygon polygon)
+                if (geometry is Polygon poly)
                 {
-                    geoGeom = ConvertPolygon(polygon);
+                    geoGeom = ConvertPolygon(poly);
                 }
-                else if (geometry is LineString lineString)
+                else if (geometry is MultiPolygon mp)
                 {
-                    geoGeom = ConvertLineString(lineString);
+                    // Take first polygon for now
+                    if (mp.NumGeometries > 0 && mp.GetGeometryN(0) is Polygon firstPoly)
+                    {
+                        geoGeom = ConvertPolygon(firstPoly);
+                    }
                 }
-                else if (geometry is MultiPolygon multiPolygon && multiPolygon.NumGeometries > 0)
+                else if (geometry is LineString ls)
                 {
-                    // Take first polygon
-                    geoGeom = ConvertPolygon((Polygon)multiPolygon.GetGeometryN(0));
+                    geoGeom = ConvertLineString(ls);
                 }
-                else if (geometry is MultiLineString multiLineString && multiLineString.NumGeometries > 0)
+                else if (geometry is MultiLineString mls)
                 {
-                    // Take first line
-                    geoGeom = ConvertLineString((LineString)multiLineString.GetGeometryN(0));
+                    // Take first line for now
+                    if (mls.NumGeometries > 0 && mls.GetGeometryN(0) is LineString firstLine)
+                    {
+                        geoGeom = ConvertLineString(firstLine);
+                    }
                 }
 
                 if (geoGeom == null) continue;
 
-                // Check bounds intersection
-                if (!GeometryIntersectsBounds(geoGeom, bounds)) continue;
-
-                // Extract attributes
+                // Extract attributes from DBF
                 var props = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-                for (var i = 0; i < fieldCount; i++)
+                if (dbaseHeader != null)
                 {
-                    var fieldName = fieldNames[i];
-                    var value = shapefileReader.GetValue(i);
-                    props[fieldName] = value?.ToString() ?? "";
+                    for (var i = 0; i < dbaseHeader.NumFields; i++)
+                    {
+                        var field = dbaseHeader.Fields[i];
+                        var value = reader.GetValue(i);
+                        props[field.Name] = value?.ToString() ?? "";
+                    }
                 }
                 props["provider"] = "shapefile";
                 props["source"] = Path.GetFileName(path);
 
-                // Generate ID from FID or row number
-                var id = props.ContainsKey("FID") ? props["FID"]?.ToString() : null;
+                // Generate ID from record number or attributes
+                var id = props.TryGetValue("id", out var idObj) 
+                    ? Convert.ToString(idObj, System.Globalization.CultureInfo.InvariantCulture) ?? $"shapefile-{recordNumber}"
+                    : $"shapefile-{recordNumber}";
+
                 if (string.IsNullOrWhiteSpace(id))
                 {
-                    id = $"shapefile-{results.Count}";
+                    id = $"shapefile-{recordNumber}";
                 }
 
                 results.Add(new GeoFeature(id, kind, geoGeom, props));
@@ -123,25 +139,14 @@ public sealed class ShapefileVectorProvider : IVectorProvider
         return results;
     }
 
-    private static bool GeometryIntersectsBounds(IGeoGeometry geom, GeoBounds bounds)
+    private static GeoPolygon ConvertPolygon(Polygon poly)
     {
-        if (geom is GeoPolygon poly)
-        {
-            return poly.Points.Any(bounds.Contains);
-        }
-        if (geom is GeoPolyline line)
-        {
-            return line.Points.Any(bounds.Contains);
-        }
-        return true;
-    }
+        var exteriorRing = poly.ExteriorRing;
+        if (exteriorRing == null || exteriorRing.Coordinates.Length < 3)
+            throw new InvalidOperationException("Polygon must have at least 3 points in exterior ring");
 
-    private static GeoPolygon ConvertPolygon(Polygon polygon)
-    {
-        var exteriorRing = polygon.ExteriorRing;
         var points = new List<GeoPoint>();
-
-        foreach (Coordinate coord in exteriorRing.Coordinates)
+        foreach (var coord in exteriorRing.Coordinates)
         {
             points.Add(new GeoPoint
             {
@@ -150,17 +155,24 @@ public sealed class ShapefileVectorProvider : IVectorProvider
             });
         }
 
-        if (points.Count < 3)
-            throw new InvalidOperationException("Polygon must have at least 3 points.");
+        // Ensure closed
+        if (points.Count > 0 && 
+            (Math.Abs(points[0].Latitude.Degrees - points[^1].Latitude.Degrees) > 1e-9 ||
+             Math.Abs(points[0].Longitude.Degrees - points[^1].Longitude.Degrees) > 1e-9))
+        {
+            points.Add(points[0]);
+        }
 
         return new GeoPolygon(points);
     }
 
-    private static GeoPolyline ConvertLineString(LineString lineString)
+    private static GeoPolyline ConvertLineString(LineString line)
     {
-        var points = new List<GeoPoint>();
+        if (line.Coordinates == null || line.Coordinates.Length < 2)
+            throw new InvalidOperationException("LineString must have at least 2 points");
 
-        foreach (Coordinate coord in lineString.Coordinates)
+        var points = new List<GeoPoint>();
+        foreach (var coord in line.Coordinates)
         {
             points.Add(new GeoPoint
             {
@@ -168,9 +180,6 @@ public sealed class ShapefileVectorProvider : IVectorProvider
                 Latitude = new Latitude(coord.Y)
             });
         }
-
-        if (points.Count < 2)
-            throw new InvalidOperationException("LineString must have at least 2 points.");
 
         return new GeoPolyline(points);
     }

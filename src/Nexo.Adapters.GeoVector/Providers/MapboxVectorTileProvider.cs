@@ -61,6 +61,10 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
         var tiles = ComputeTiles(bounds, _zoom);
 
         var features = new List<GeoFeature>(capacity: 256);
+        var failures = new List<string>();
+        var successfulTiles = 0;
+        var failedTiles = 0;
+
         foreach (var t in tiles)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -70,17 +74,52 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
             try
             {
                 tileBytes = await GetTileBytesAsync(url, t.Z, t.X, t.Y, cancellationToken);
+                successfulTiles++;
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogWarning(ex, "Failed to download Mapbox tile {Z}/{X}/{Y}", t.Z, t.X, t.Y);
+                failedTiles++;
+                var failureMsg = $"Failed to download Mapbox tile {t.Z}/{t.X}/{t.Y}: {ex.Message}";
+                _logger.LogWarning(ex, failureMsg);
+                failures.Add(failureMsg);
+                continue;
+            }
+            catch (Exception ex)
+            {
+                failedTiles++;
+                var failureMsg = $"Unexpected error downloading Mapbox tile {t.Z}/{t.X}/{t.Y}: {ex.Message}";
+                _logger.LogError(ex, failureMsg);
+                failures.Add(failureMsg);
                 continue;
             }
 
-            foreach (var f in DecodeLayerFeatures(tileBytes, layerName, kind, t.Z, t.X, t.Y, cancellationToken))
+            try
             {
-                features.Add(f);
+                foreach (var f in DecodeLayerFeatures(tileBytes, layerName, kind, t.Z, t.X, t.Y, cancellationToken))
+                {
+                    features.Add(f);
+                }
             }
+            catch (Exception ex)
+            {
+                failedTiles++;
+                var failureMsg = $"Failed to decode Mapbox tile {t.Z}/{t.X}/{t.Y}: {ex.Message}";
+                _logger.LogWarning(ex, failureMsg);
+                failures.Add(failureMsg);
+                continue;
+            }
+        }
+
+        // Log partial success if applicable
+        if (failedTiles > 0 && successfulTiles > 0)
+        {
+            _logger.LogInformation(
+                "Partial success: {Successful}/{Total} tiles downloaded successfully, {Failed} failed. {Features} features extracted.",
+                successfulTiles, tiles.Count, failedTiles, features.Count);
+        }
+        else if (failedTiles > 0)
+        {
+            _logger.LogWarning("All {Total} tiles failed to download", tiles.Count);
         }
 
         // Filter by bounds (tiles can include geometry outside query bounds).

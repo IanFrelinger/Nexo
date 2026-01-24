@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.API.Models;
+using Nexo.CLI.Commands.GeoVector;
 using System.Collections.Concurrent;
 
 namespace Nexo.API.Services;
@@ -9,13 +10,20 @@ namespace Nexo.API.Services;
 /// </summary>
 public class GeoVectorService : IGeoVectorService
 {
+    private readonly GeoVectorCommand _command;
     private readonly ILogger<GeoVectorService> _logger;
+    private readonly WebhookService? _webhookService;
     private readonly ConcurrentDictionary<string, JobStatusResponse> _jobs = new();
     private readonly string _outputDirectory;
 
-    public GeoVectorService(ILogger<GeoVectorService> logger)
+    public GeoVectorService(
+        GeoVectorCommand command,
+        ILogger<GeoVectorService> logger,
+        WebhookService? webhookService = null)
     {
+        _command = command;
         _logger = logger;
+        _webhookService = webhookService;
         _outputDirectory = Path.Combine(Path.GetTempPath(), "nexo-api", "geovector");
         Directory.CreateDirectory(_outputDirectory);
     }
@@ -24,6 +32,8 @@ public class GeoVectorService : IGeoVectorService
     {
         var jobId = Guid.NewGuid().ToString("N");
         var outputPath = Path.Combine(_outputDirectory, $"{jobId}.{request.Format}");
+        var outputFile = new FileInfo(outputPath);
+        var webhookUrl = request.WebhookUrl;
 
         _jobs[jobId] = new JobStatusResponse
         {
@@ -40,8 +50,60 @@ public class GeoVectorService : IGeoVectorService
             {
                 _jobs[jobId] = _jobs[jobId] with { Status = "processing", Progress = 10 };
 
-                // TODO: Integrate with actual GeoVectorCommand execution
-                await Task.Delay(1000); // Simulate processing
+                // Parse bounds
+                var boundsParts = request.Bounds.Split(',');
+                if (boundsParts.Length != 4)
+                {
+                    throw new ArgumentException("Bounds must be in format: minLat,maxLat,minLon,maxLon");
+                }
+
+                var bounds = $"{boundsParts[0]},{boundsParts[1]},{boundsParts[2]},{boundsParts[3]}";
+
+                // Determine provider
+                var provider = request.VectorProvider ?? "hybrid";
+                var mapboxToken = request.MapboxToken ?? Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
+                var osmPbfPath = request.OsmPbfPath ?? request.VectorFilePath;
+
+                _jobs[jobId] = _jobs[jobId] with { Progress = 20 };
+
+                // Execute vector extraction based on feature kind
+                int exitCode;
+                if (string.Equals(request.FeatureKind, "building", StringComparison.OrdinalIgnoreCase))
+                {
+                    exitCode = await _command.BuildingsToObjAsync(
+                        bounds: bounds,
+                        output: outputFile,
+                        provider: provider,
+                        mapboxAccessToken: mapboxToken,
+                        mapboxTileset: null,
+                        mapboxZoom: null,
+                        osmPbfPath: osmPbfPath,
+                        generateTexCoords: false,
+                        uvMetersPerRepeat: 10.0f,
+                        alignToTerrain: false,
+                        terrainProvider: "srtm",
+                        terrainLocalRoot: null,
+                        terrainSrtmBaseUrl: null,
+                        terrainPersistDownloads: true,
+                        terrainEnableCache: true,
+                        terrainTreatNoDataAsZero: false,
+                        airGapped: false,
+                        forceAgenticFail: false,
+                        json: false,
+                        verbose: true,
+                        ct: CancellationToken.None);
+                }
+                else
+                {
+                    // For other feature kinds, use ExtractAsync if available
+                    // For now, throw not implemented
+                    throw new NotImplementedException($"Feature kind '{request.FeatureKind}' extraction not yet implemented in API service");
+                }
+
+                if (exitCode != 0)
+                {
+                    throw new InvalidOperationException($"Vector extraction failed with exit code {exitCode}");
+                }
 
                 _jobs[jobId] = _jobs[jobId] with
                 {
@@ -50,6 +112,14 @@ public class GeoVectorService : IGeoVectorService
                     OutputPath = outputPath,
                     CompletedAt = DateTime.UtcNow
                 };
+
+                _logger.LogInformation("Vector extraction job {JobId} completed successfully", jobId);
+
+                // Send webhook if configured
+                if (!string.IsNullOrEmpty(webhookUrl) && _webhookService != null)
+                {
+                    await _webhookService.SendWebhookAsync(webhookUrl, jobId, "completed");
+                }
             }
             catch (Exception ex)
             {
@@ -60,6 +130,12 @@ public class GeoVectorService : IGeoVectorService
                     ErrorMessage = ex.Message,
                     CompletedAt = DateTime.UtcNow
                 };
+
+                // Send webhook if configured
+                if (!string.IsNullOrEmpty(webhookUrl) && _webhookService != null)
+                {
+                    await _webhookService.SendWebhookAsync(webhookUrl, jobId, "failed", ex.Message);
+                }
             }
         });
 

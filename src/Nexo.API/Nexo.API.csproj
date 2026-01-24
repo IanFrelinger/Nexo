@@ -14,6 +14,7 @@
     <ProjectReference Include="..\Nexo.GeoTerrain\Nexo.GeoTerrain.csproj" />
     <ProjectReference Include="..\Nexo.GeoVector\Nexo.GeoVector.csproj" />
     <ProjectReference Include="..\Nexo.GeoWorld\Nexo.GeoWorld.csproj" />
+    <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

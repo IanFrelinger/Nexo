@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Nexo.API.Services;
 using Nexo.Adapters.GeoTerrain;
 using Nexo.Adapters.GeoVector;
 using Nexo.CLI;
+using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Common.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,10 +65,19 @@ builder.Services.AddScoped<Nexo.CLI.Commands.World.WorldCommand>();
 builder.Services.AddLogging();
 
 // Register API-specific services
+builder.Services.AddScoped<WebhookService>();
 builder.Services.AddScoped<IGeoTerrainService, GeoTerrainService>();
 builder.Services.AddScoped<IGeoVectorService, GeoVectorService>();
 builder.Services.AddScoped<IWorldService, WorldService>();
 builder.Services.AddScoped<IJobService, JobService>();
+
+// Register infrastructure needed by CLI commands
+builder.Services.AddScoped<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
+builder.Services.AddScoped<ILoopKernel, SequentialLoopKernel>();
+
+// Configure authentication
+builder.Services.AddAuthentication("ApiKey")
+    .AddScheme<AuthenticationSchemeOptions, Nexo.API.Middleware.ApiKeyAuthenticationHandler>("ApiKey", null);
 
 // Configure logging
 builder.Logging.AddConsole();
@@ -85,6 +97,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// Add rate limiting (60 requests per minute per client)
+app.UseMiddleware<Nexo.API.Middleware.RateLimitingMiddleware>(60);
+
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

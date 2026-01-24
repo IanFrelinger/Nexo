@@ -37,6 +37,10 @@ public sealed class SrtmHttpElevationProvider : IElevationProvider
         _logger.LogInformation("Downloading SRTM tile {Tile} from {Url}", tileId.ToString(), url);
         var payload = await _httpClient.GetByteArrayAsync(url, cancellationToken);
 
+        // Optional: Validate checksum if ETag or Content-MD5 header is available
+        // (This would require checking response headers, which GetByteArrayAsync doesn't expose)
+        // For now, we rely on the parser to detect corruption
+
         // Support common compressions: zip/gzip. If payload is already HGT, ExtractHgtBytes returns as-is.
         var bytes = ExtractHgtBytes(payload, fileName);
 

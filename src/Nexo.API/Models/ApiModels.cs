@@ -37,6 +37,11 @@ public class TerrainGenerationRequest
     /// Mesh generation options
     /// </summary>
     public MeshOptions? MeshOptions { get; set; }
+
+    /// <summary>
+    /// Optional webhook URL for job completion notifications
+    /// </summary>
+    public string? WebhookUrl { get; set; }
 }
 
 /// <summary>
@@ -80,6 +85,11 @@ public class VectorExtractionRequest
     /// GeoJSON/Shapefile path (for geojson/shapefile providers)
     /// </summary>
     public string? VectorFilePath { get; set; }
+
+    /// <summary>
+    /// Optional webhook URL for job completion notifications
+    /// </summary>
+    public string? WebhookUrl { get; set; }
 }
 
 /// <summary>
@@ -122,6 +132,11 @@ public class WorldGenerationRequest
     /// World generation options
     /// </summary>
     public WorldOptions? WorldOptions { get; set; }
+
+    /// <summary>
+    /// Optional webhook URL for job completion notifications
+    /// </summary>
+    public string? WebhookUrl { get; set; }
 }
 
 /// <summary>

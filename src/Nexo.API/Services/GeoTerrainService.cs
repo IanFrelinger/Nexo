@@ -12,15 +12,18 @@ public class GeoTerrainService : IGeoTerrainService
 {
     private readonly GeoTerrainCommand _command;
     private readonly ILogger<GeoTerrainService> _logger;
+    private readonly WebhookService? _webhookService;
     private readonly ConcurrentDictionary<string, JobStatusResponse> _jobs = new();
     private readonly string _outputDirectory;
 
     public GeoTerrainService(
         GeoTerrainCommand command,
-        ILogger<GeoTerrainService> logger)
+        ILogger<GeoTerrainService> logger,
+        WebhookService? webhookService = null)
     {
         _command = command;
         _logger = logger;
+        _webhookService = webhookService;
         _outputDirectory = Path.Combine(Path.GetTempPath(), "nexo-api", "geoterrain");
         Directory.CreateDirectory(_outputDirectory);
     }
@@ -29,6 +32,10 @@ public class GeoTerrainService : IGeoTerrainService
     {
         var jobId = Guid.NewGuid().ToString("N");
         var outputPath = Path.Combine(_outputDirectory, $"{jobId}.{request.Format}");
+        var outputFile = new FileInfo(outputPath);
+        
+        // Get webhook URL from request
+        var webhookUrl = request.WebhookUrl;
 
         _jobs[jobId] = new JobStatusResponse
         {
@@ -54,12 +61,32 @@ public class GeoTerrainService : IGeoTerrainService
 
                 var bounds = $"{boundsParts[0]},{boundsParts[1]},{boundsParts[2]},{boundsParts[3]}";
 
-                // Execute terrain generation (simplified - would need to adapt CLI command)
-                _jobs[jobId] = _jobs[jobId] with { Progress = 50 };
+                // Determine provider
+                var provider = request.ElevationProvider ?? "srtm";
+                var localRoot = request.LocalPath;
+                var mapboxToken = request.MapboxToken ?? Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
 
-                // TODO: Integrate with actual GeoTerrainCommand execution
-                // For now, mark as completed
-                await Task.Delay(1000); // Simulate processing
+                _jobs[jobId] = _jobs[jobId] with { Progress = 20 };
+
+                // Execute terrain generation using CLI command
+                var exitCode = await _command.BoundsToObjAsync(
+                    bounds: bounds,
+                    output: outputFile,
+                    provider: provider,
+                    localRoot: localRoot,
+                    srtmBaseUrl: null,
+                    persistDownloads: true,
+                    enableCache: true,
+                    airGapped: false,
+                    forceAgenticFail: false,
+                    json: false,
+                    verbose: true,
+                    ct: CancellationToken.None);
+
+                if (exitCode != 0)
+                {
+                    throw new InvalidOperationException($"Terrain generation failed with exit code {exitCode}");
+                }
 
                 _jobs[jobId] = _jobs[jobId] with
                 {
@@ -68,6 +95,14 @@ public class GeoTerrainService : IGeoTerrainService
                     OutputPath = outputPath,
                     CompletedAt = DateTime.UtcNow
                 };
+
+                _logger.LogInformation("Terrain generation job {JobId} completed successfully", jobId);
+
+                // Send webhook if configured
+                if (!string.IsNullOrEmpty(webhookUrl) && _webhookService != null)
+                {
+                    await _webhookService.SendWebhookAsync(webhookUrl, jobId, "completed");
+                }
             }
             catch (Exception ex)
             {
@@ -78,6 +113,12 @@ public class GeoTerrainService : IGeoTerrainService
                     ErrorMessage = ex.Message,
                     CompletedAt = DateTime.UtcNow
                 };
+
+                // Send webhook if configured
+                if (!string.IsNullOrEmpty(webhookUrl) && _webhookService != null)
+                {
+                    await _webhookService.SendWebhookAsync(webhookUrl, jobId, "failed", ex.Message);
+                }
             }
         });
 

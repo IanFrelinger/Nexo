@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
+using Nexo.Adapters.GeoTerrain.Validation;
 using Nexo.Orchestration.Resilience;
 
 namespace Nexo.Adapters.GeoTerrain.Providers;
@@ -39,21 +40,30 @@ public sealed class MapboxRasterTileDownloader
 
         var url = BuildUrl(tilesetId.Trim(), z, x, y, format.Trim(), _accessToken);
 
+        byte[] bytes;
         if (_retryPolicy != null)
         {
-            return await _retryPolicy.ExecuteAsync(
-                async () =>
-                {
-                    var bytes = await _http.GetByteArrayAsync(url, ct);
-                    _logger.LogInformation("Downloaded raster tile {Tileset} z={Z} x={X} y={Y} format={Format} bytes={Bytes}", tilesetId, z, x, y, format, bytes.Length);
-                    return bytes;
-                },
+            bytes = await _retryPolicy.ExecuteAsync(
+                async () => await _http.GetByteArrayAsync(url, ct),
                 shouldRetry: ex => ex is HttpRequestException || ex is TaskCanceledException || ex is TimeoutException,
                 ct);
         }
+        else
+        {
+            bytes = await _http.GetByteArrayAsync(url, ct);
+        }
 
-        var bytes = await _http.GetByteArrayAsync(url, ct);
-        _logger.LogInformation("Downloaded raster tile {Tileset} z={Z} x={X} y={Y} format={Format} bytes={Bytes}", tilesetId, z, x, y, format, bytes.Length);
+        // Validate data integrity
+        if (bytes.Length == 0)
+        {
+            throw new InvalidOperationException($"Downloaded tile {z}/{x}/{y} is empty");
+        }
+
+        // Compute checksum for logging/debugging
+        var checksum = DataIntegrityChecker.ComputeChecksum(bytes);
+        _logger.LogInformation("Downloaded raster tile {Tileset} z={Z} x={X} y={Y} format={Format} bytes={Bytes} checksum={Checksum}", 
+            tilesetId, z, x, y, format, bytes.Length, checksum);
+        
         return bytes;
     }
 

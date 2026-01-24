@@ -34,7 +34,11 @@ public static class GeometryValidator
 
         // Check if polygon is closed
         var first = points[0];
+#if NETSTANDARD2_0
+        var last = points[points.Count - 1];
+#else
         var last = points[^1];
+#endif
         if (Math.Abs(first.Latitude.Degrees - last.Latitude.Degrees) > 1e-9 ||
             Math.Abs(first.Longitude.Degrees - last.Longitude.Degrees) > 1e-9)
         {
