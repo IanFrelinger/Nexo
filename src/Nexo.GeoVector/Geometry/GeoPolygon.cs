@@ -7,8 +7,10 @@ namespace Nexo.GeoVector.Geometry;
 /// Ring is expected to be closed or will be treated as implicitly closed.
 /// </summary>
 public sealed class GeoPolygon
+    : IGeoGeometry
 {
     public IReadOnlyList<GeoPoint> OuterRing { get; }
+    public IReadOnlyList<GeoPoint> Points => OuterRing;
 
     public GeoPolygon(IReadOnlyList<GeoPoint> outerRing)
     {

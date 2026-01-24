@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.GeoTerrain;
+using Nexo.GeoTerrain.Projection;
 using Nexo.GeoVector.Generation;
 using Nexo.GeoVector.Models;
 using Nexo.Infrastructure.Execution;
@@ -14,11 +15,18 @@ namespace Nexo.GeoVector.Bricks;
 public sealed class GeoVectorBuildingsToMeshBrick : Brick
 {
     private readonly IProviderFactory _llm;
+    private readonly ICoordinateProjector _projector;
     private readonly ILogger<GeoVectorBuildingsToMeshBrick> _logger;
 
     public GeoVectorBuildingsToMeshBrick(IProviderFactory llm, ILogger<GeoVectorBuildingsToMeshBrick> logger)
+        : this(llm, EquirectangularProjector.Instance, logger)
+    {
+    }
+
+    public GeoVectorBuildingsToMeshBrick(IProviderFactory llm, ICoordinateProjector projector, ILogger<GeoVectorBuildingsToMeshBrick> logger)
     {
         _llm = llm ?? throw new ArgumentNullException(nameof(llm));
+        _projector = projector ?? throw new ArgumentNullException(nameof(projector));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         Id = "geovector.buildings.to-mesh";
@@ -129,7 +137,8 @@ public sealed class GeoVectorBuildingsToMeshBrick : Brick
                 AlignToTerrain = alignToTerrain,
                 TerrainGrid = terrainGrid,
                 TerrainTreatNoDataAsZero = terrainTreatNoDataAsZero
-            });
+            },
+            _projector);
 
         return Task.FromResult(new BrickOutput
         {

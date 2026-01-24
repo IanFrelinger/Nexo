@@ -69,8 +69,8 @@ public sealed class DependencyWrappingArchitectureTests : UnitTestBase
         // - Tools (process execution, compilation, decompilation, etc.)
         // - Infrastructure (IO/network/runtime integrations)
         // - Adapters (platform-specific integration points)
-        // - CLI (host/platform entrypoint)
-        // - Orchestration agents that are explicitly platform-facing
+        // NOTE: CLI is NOT included here by design. CLI must call through Infrastructure/Adapters/Tools
+        // wrappers rather than using raw platform APIs directly.
         // STRICT: raw platform APIs are only allowed in platform-specific top layers.
         // Everything else must go through ports/tools/adapters.
         var allowedNamespacePrefixes = new[]

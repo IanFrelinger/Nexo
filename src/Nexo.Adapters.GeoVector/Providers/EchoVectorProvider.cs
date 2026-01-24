@@ -17,7 +17,7 @@ public sealed class EchoVectorProvider : IVectorProvider
         bounds.Validate();
         kind ??= FeatureKind.Building;
 
-        // Emit a single square "building" near the bounds center.
+        // Emit deterministic toy features near the bounds center.
         var centerLat = (bounds.MinLatitude.Degrees + bounds.MaxLatitude.Degrees) * 0.5;
         var centerLon = (bounds.MinLongitude.Degrees + bounds.MaxLongitude.Degrees) * 0.5;
 
@@ -31,17 +31,69 @@ public sealed class EchoVectorProvider : IVectorProvider
             new GeoPoint { Latitude = new Latitude(centerLat - d), Longitude = new Longitude(centerLon - d) }
         };
 
-        var f = new GeoFeature(
-            id: "echo-building-1",
-            kind: FeatureKind.Building,
-            geometry: new GeoPolygon(ring),
-            properties: new Dictionary<string, object>
-            {
-                ["height_m"] = 12f,
-                ["provider"] = "echo"
-            });
+        if (kind.Equals(FeatureKind.Building))
+        {
+            var f = new GeoFeature(
+                id: "echo-building-1",
+                kind: FeatureKind.Building,
+                geometry: new GeoPolygon(ring),
+                properties: new Dictionary<string, object>
+                {
+                    ["height_m"] = 12f,
+                    ["provider"] = "echo"
+                });
+            return Task.FromResult(new GeoFeatureSet(new[] { f }));
+        }
 
-        return Task.FromResult(new GeoFeatureSet(new[] { f }));
+        if (kind.Equals(FeatureKind.Road))
+        {
+            var line = new[]
+            {
+                new GeoPoint { Latitude = new Latitude(centerLat - d), Longitude = new Longitude(centerLon - d) },
+                new GeoPoint { Latitude = new Latitude(centerLat + d), Longitude = new Longitude(centerLon + d) }
+            };
+            var f = new GeoFeature(
+                id: "echo-road-1",
+                kind: FeatureKind.Road,
+                geometry: new GeoPolyline(line),
+                properties: new Dictionary<string, object>
+                {
+                    ["class"] = "residential",
+                    ["provider"] = "echo"
+                });
+            return Task.FromResult(new GeoFeatureSet(new[] { f }));
+        }
+
+        if (kind.Equals(FeatureKind.Vegetation))
+        {
+            var f = new GeoFeature(
+                id: "echo-park-1",
+                kind: FeatureKind.Vegetation,
+                geometry: new GeoPolygon(ring),
+                properties: new Dictionary<string, object>
+                {
+                    ["landuse"] = "park",
+                    ["provider"] = "echo"
+                });
+            return Task.FromResult(new GeoFeatureSet(new[] { f }));
+        }
+
+        if (kind.Equals(FeatureKind.Water))
+        {
+            var f = new GeoFeature(
+                id: "echo-water-1",
+                kind: FeatureKind.Water,
+                geometry: new GeoPolygon(ring),
+                properties: new Dictionary<string, object>
+                {
+                    ["natural"] = "water",
+                    ["provider"] = "echo"
+                });
+            return Task.FromResult(new GeoFeatureSet(new[] { f }));
+        }
+
+        // Default: empty set for unsupported kinds.
+        return Task.FromResult(new GeoFeatureSet(Array.Empty<GeoFeature>()));
     }
 }
 

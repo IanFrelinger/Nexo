@@ -13,6 +13,25 @@ public sealed record GeoBounds
     public double HeightDegrees => MaxLatitude.Degrees - MinLatitude.Degrees;
     public double WidthDegrees => MaxLongitude.Degrees - MinLongitude.Degrees;
 
+    /// <summary>
+    /// Approximate width in meters using average latitude.
+    /// </summary>
+    public double WidthMeters()
+    {
+        var avgLat = (MinLatitude.Degrees + MaxLatitude.Degrees) / 2.0;
+        var latRad = avgLat * Math.PI / 180.0;
+        var metersPerDegreeLongitude = 111320.0 * Math.Cos(latRad);
+        return WidthDegrees * metersPerDegreeLongitude;
+    }
+
+    /// <summary>
+    /// Approximate height in meters.
+    /// </summary>
+    public double HeightMeters()
+    {
+        return HeightDegrees * 111320.0; // Approximately constant meters per degree latitude
+    }
+
     public void Validate()
     {
         if (MaxLatitude.Degrees < MinLatitude.Degrees)
@@ -35,6 +54,20 @@ public sealed record GeoBounds
                p.Latitude.Degrees <= MaxLatitude.Degrees &&
                p.Longitude.Degrees >= MinLongitude.Degrees &&
                p.Longitude.Degrees <= MaxLongitude.Degrees;
+    }
+
+    /// <summary>
+    /// Checks if two bounds intersect.
+    /// </summary>
+    public bool Intersects(GeoBounds other)
+    {
+        if (other == null) return false;
+        Validate();
+        other.Validate();
+        return MinLatitude.Degrees <= other.MaxLatitude.Degrees &&
+               MaxLatitude.Degrees >= other.MinLatitude.Degrees &&
+               MinLongitude.Degrees <= other.MaxLongitude.Degrees &&
+               MaxLongitude.Degrees >= other.MinLongitude.Degrees;
     }
 }
 

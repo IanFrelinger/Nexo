@@ -12,6 +12,7 @@ public sealed class GeoTerrainDomainSmokeTests : UnitTestBase
         {
             TestValueObjects();
             TestGridMeshGeneration();
+            TestGridLod();
             TestContours();
             TestTileCoverage();
 
@@ -86,6 +87,29 @@ public sealed class GeoTerrainDomainSmokeTests : UnitTestBase
         AssertEqual(2, report.TriangleCount);
         AssertEqual(0f, report.MinHeightMeters);
         AssertEqual(0f, report.MaxHeightMeters);
+    }
+
+    private void TestGridLod()
+    {
+        var bounds = new GeoBounds
+        {
+            MinLatitude = new Latitude(0),
+            MaxLatitude = new Latitude(1),
+            MinLongitude = new Longitude(0),
+            MaxLongitude = new Longitude(1)
+        };
+
+        // 4x4 grid with constant height.
+        var heights = new float[16];
+        for (var i = 0; i < heights.Length; i++) heights[i] = 10f;
+        var grid = new ElevationGrid(4, 4, bounds, new GridSpacing(2, 3), heights);
+
+        var lod2 = ElevationGridLodBuilder.BuildLod(grid, 2);
+        AssertEqual(2, lod2.Width);
+        AssertEqual(2, lod2.Height);
+        AssertEqual(4d, lod2.Spacing.MetersX);
+        AssertEqual(6d, lod2.Spacing.MetersY);
+        AssertEqual(10f, lod2.GetHeightMeters(0, 0));
     }
 
     private void TestContours()

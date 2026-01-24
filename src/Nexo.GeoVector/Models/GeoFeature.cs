@@ -10,10 +10,10 @@ public sealed class GeoFeature
 {
     public string Id { get; }
     public FeatureKind Kind { get; }
-    public GeoPolygon Geometry { get; }
+    public IGeoGeometry Geometry { get; }
     public IReadOnlyDictionary<string, object> Properties { get; }
 
-    public GeoFeature(string id, FeatureKind kind, GeoPolygon geometry, IReadOnlyDictionary<string, object>? properties = null)
+    public GeoFeature(string id, FeatureKind kind, IGeoGeometry geometry, IReadOnlyDictionary<string, object>? properties = null)
     {
         if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Feature id is required.", nameof(id));
         Id = id;

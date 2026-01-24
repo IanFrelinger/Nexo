@@ -1,4 +1,5 @@
 using Nexo.GeoTerrain;
+using Nexo.GeoTerrain.Projection;
 using Local2 = Nexo.GeoVector.Geometry.Vector2;
 using Uv2 = Nexo.GeoTerrain.Vector2;
 using Nexo.GeoVector.Models;
@@ -15,7 +16,8 @@ public static class BuildingMeshGenerator
     public static MeshData GenerateBuildings(
         GeoFeatureSet features,
         GeoPoint localOrigin,
-        BuildingExtrusionOptions? options = null)
+        BuildingExtrusionOptions? options = null,
+        ICoordinateProjector? projector = null)
     {
 #if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(features);
@@ -37,9 +39,10 @@ public static class BuildingMeshGenerator
         foreach (var f in features.Features)
         {
             if (!f.Kind.Equals(FeatureKind.Building)) continue;
+            if (f.Geometry is not Nexo.GeoVector.Geometry.GeoPolygon poly) continue;
 
-            var ring = f.Geometry.OuterRing;
-            var local2 = GeoProjector.ProjectRingToLocalMeters(ring, localOrigin);
+            var ring = poly.OuterRing;
+            var local2 = GeoProjector.ProjectRingToLocalMeters(ring, localOrigin, projector ?? EquirectangularProjector.Instance);
             var ringGeo = ring.ToArray();
 
             // Normalize ring: drop duplicate closing point if provided.

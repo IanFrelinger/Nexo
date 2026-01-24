@@ -8,6 +8,7 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddVectorProviders(this IServiceCollection services)
     {
+        // Default to echo for tests/demos; commands can manually select provider.
         services.AddSingleton<IVectorProvider, EchoVectorProvider>();
         return services;
     }

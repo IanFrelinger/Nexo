@@ -88,7 +88,9 @@ public sealed class MapboxVectorTileProviderTests : UnitTestBase
 
         var f = got.Features[0];
         AssertNotNull(f.Geometry, "Feature geometry should be present");
-        AssertTrue(f.Geometry.OuterRing.Count >= 4, "Polygon ring should have >= 4 points (closed)");
+        var poly = f.Geometry as Nexo.GeoVector.Geometry.GeoPolygon;
+        AssertTrue(poly != null, "Expected a polygon geometry for building features");
+        AssertTrue(poly!.OuterRing.Count >= 4, "Polygon ring should have >= 4 points (closed)");
     }
 
     private static byte[] BuildSyntheticBuildingTileBytes(int z, int x, int y, double lon0, double lat0)

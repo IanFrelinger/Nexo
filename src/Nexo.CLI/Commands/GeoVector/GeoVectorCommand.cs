@@ -48,6 +48,7 @@ public sealed class GeoVectorCommand
         string? mapboxAccessToken,
         string? mapboxTileset,
         int? mapboxZoom,
+        string? osmPbfPath,
         bool generateTexCoords,
         float uvMetersPerRepeat,
         bool alignToTerrain,
@@ -71,7 +72,7 @@ public sealed class GeoVectorCommand
 
             if (airGapped && string.Equals(provider?.Trim(), "mapbox", StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo or a local provider.");
+                throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo|osm|hybrid with an offline source.");
             }
 
             var origin = new GeoPoint
@@ -80,7 +81,7 @@ public sealed class GeoVectorCommand
                 Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
             };
 
-            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom);
+            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
 
             ElevationGrid? terrainGrid = null;
             if (alignToTerrain)
@@ -271,6 +272,474 @@ public sealed class GeoVectorCommand
         }
     }
 
+    public async Task<int> RoadsToObjAsync(
+        string bounds,
+        FileInfo output,
+        string provider,
+        string? mapboxAccessToken,
+        string? mapboxTileset,
+        int? mapboxZoom,
+        string? osmPbfPath,
+        float widthMeters,
+        bool generateTexCoords,
+        float uvMetersPerRepeat,
+        bool conformToTerrain,
+        string terrainProvider,
+        string? terrainLocalRoot,
+        string? terrainSrtmBaseUrl,
+        bool terrainPersistDownloads,
+        bool terrainEnableCache,
+        bool terrainTreatNoDataAsZero,
+        bool airGapped,
+        bool forceAgenticFail,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            var geoBounds = ParseBounds(bounds);
+            geoBounds.Validate();
+
+            if (airGapped && string.Equals(provider?.Trim(), "mapbox", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo|osm|hybrid with an offline source.");
+            }
+
+            var origin = new GeoPoint
+            {
+                Latitude = new Latitude((geoBounds.MinLatitude.Degrees + geoBounds.MaxLatitude.Degrees) * 0.5),
+                Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
+            };
+
+            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
+
+            ElevationGrid? terrainGrid = null;
+            if (conformToTerrain)
+            {
+                var elevationProvider = BuildElevationProvider(
+                    terrainProvider,
+                    terrainLocalRoot,
+                    terrainSrtmBaseUrl,
+                    terrainPersistDownloads,
+                    terrainEnableCache,
+                    airGapped);
+
+                terrainGrid = await BuildTerrainGridAsync(geoBounds, elevationProvider, ct);
+            }
+
+            var bricks = new Brick[]
+            {
+                new GeoVectorFetchFeaturesBrick(vectorProvider, _providerFactory, _loggerFactory.CreateLogger<GeoVectorFetchFeaturesBrick>()),
+                new GeoVectorRoadsToMeshBrick(_providerFactory, _loggerFactory.CreateLogger<GeoVectorRoadsToMeshBrick>()),
+                new GeoVectorObjFromMeshBrick(_loggerFactory.CreateLogger<GeoVectorObjFromMeshBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                _loopKernel,
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geovector.cli.roads-to-obj",
+                Name = "GeoVector: roads -> OBJ",
+                Steps =
+                [
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geovector.fetch.features",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["bounds"] = "bounds",
+                            ["kind"] = "kind",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["features"] = "features"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "mesh",
+                        BrickId = "geovector.roads.to-mesh",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["features"] = "features",
+                            ["origin"] = "origin",
+                            ["widthMeters"] = "widthMeters",
+                            ["generateTexCoords"] = "generateTexCoords",
+                            ["uvMetersPerRepeat"] = "uvMetersPerRepeat",
+                            ["conformToTerrain"] = "conformToTerrain",
+                            ["terrainGrid"] = "terrainGrid",
+                            ["terrainTreatNoDataAsZero"] = "terrainTreatNoDataAsZero",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "obj",
+                        BrickId = "geovector.export.obj-text",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["objText"] = "objText"
+                        }
+                    }
+                ]
+            };
+
+            var agent = new AgentCard { Id = "geovector.cli", Name = "GeoVector CLI", Behaviors = [behavior.Id] };
+
+            var options = new ExecutionOptions
+            {
+                Provider = "offline",
+                IsAirGapped = airGapped,
+                ImplementationMode = airGapped ? ImplementationMode.DeterministicOnly : ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            var inputData = new Dictionary<string, object>
+            {
+                ["bounds"] = geoBounds,
+                ["origin"] = origin,
+                ["kind"] = "road",
+                ["widthMeters"] = widthMeters,
+                ["generateTexCoords"] = generateTexCoords,
+                ["uvMetersPerRepeat"] = uvMetersPerRepeat,
+                ["conformToTerrain"] = conformToTerrain,
+                ["terrainTreatNoDataAsZero"] = terrainTreatNoDataAsZero,
+                ["forceAgenticFail"] = forceAgenticFail
+            };
+            if (conformToTerrain)
+            {
+                inputData["terrainGrid"] = terrainGrid ?? throw new InvalidOperationException("Terrain grid was not built.");
+            }
+
+            var input = new BehaviorInput(inputData);
+
+            IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        if (verbose && !json) Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = b.Outputs;
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var objText = outputs.TryGetValue("objText", out var o) ? o as string : null;
+            if (string.IsNullOrWhiteSpace(objText))
+                throw new InvalidOperationException("OBJ output was not produced.");
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, objText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                bounds = geoBounds.ToString(),
+                output = output.FullName,
+                provider,
+                conformToTerrain,
+                airGapped,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote OBJ: {output.FullName}");
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoVector roads-to-obj failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
+    public async Task<int> WaterToObjAsync(
+        string bounds,
+        FileInfo output,
+        string provider,
+        string? mapboxAccessToken,
+        string? mapboxTileset,
+        int? mapboxZoom,
+        string? osmPbfPath,
+        bool generateTexCoords,
+        float uvMetersPerRepeat,
+        bool conformToTerrain,
+        float surfaceOffsetMeters,
+        string terrainProvider,
+        string? terrainLocalRoot,
+        string? terrainSrtmBaseUrl,
+        bool terrainPersistDownloads,
+        bool terrainEnableCache,
+        bool terrainTreatNoDataAsZero,
+        bool airGapped,
+        bool forceAgenticFail,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            var geoBounds = ParseBounds(bounds);
+            geoBounds.Validate();
+
+            if (airGapped && string.Equals(provider?.Trim(), "mapbox", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo|osm|hybrid with an offline source.");
+            }
+
+            var origin = new GeoPoint
+            {
+                Latitude = new Latitude((geoBounds.MinLatitude.Degrees + geoBounds.MaxLatitude.Degrees) * 0.5),
+                Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
+            };
+
+            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
+
+            ElevationGrid? terrainGrid = null;
+            if (conformToTerrain)
+            {
+                var elevationProvider = BuildElevationProvider(
+                    terrainProvider,
+                    terrainLocalRoot,
+                    terrainSrtmBaseUrl,
+                    terrainPersistDownloads,
+                    terrainEnableCache,
+                    airGapped);
+
+                terrainGrid = await BuildTerrainGridAsync(geoBounds, elevationProvider, ct);
+            }
+
+            var bricks = new Brick[]
+            {
+                new GeoVectorFetchFeaturesBrick(vectorProvider, _providerFactory, _loggerFactory.CreateLogger<GeoVectorFetchFeaturesBrick>()),
+                new GeoVectorWaterToMeshBrick(_providerFactory, _loggerFactory.CreateLogger<GeoVectorWaterToMeshBrick>()),
+                new GeoVectorObjFromMeshBrick(_loggerFactory.CreateLogger<GeoVectorObjFromMeshBrick>())
+            };
+
+            var brickRegistry = new BrickRegistry(bricks);
+            var semanticCache = new SemanticCache(_loggerFactory.CreateLogger<SemanticCache>());
+            var exec = new BehaviorExecutor(
+                brickRegistry,
+                _providerFactory,
+                semanticCache,
+                _loopKernel,
+                _loggerFactory.CreateLogger<BehaviorExecutor>());
+
+            var behavior = new Behavior
+            {
+                Id = "geovector.cli.water-to-obj",
+                Name = "GeoVector: water -> OBJ",
+                Steps =
+                [
+                    new BehaviorStep
+                    {
+                        Id = "fetch",
+                        BrickId = "geovector.fetch.features",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["bounds"] = "bounds",
+                            ["kind"] = "kind",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["features"] = "features"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "mesh",
+                        BrickId = "geovector.water.to-mesh",
+                        Implementation = ImplementationType.Auto,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["features"] = "features",
+                            ["origin"] = "origin",
+                            ["generateTexCoords"] = "generateTexCoords",
+                            ["uvMetersPerRepeat"] = "uvMetersPerRepeat",
+                            ["conformToTerrain"] = "conformToTerrain",
+                            ["surfaceOffsetMeters"] = "surfaceOffsetMeters",
+                            ["terrainGrid"] = "terrainGrid",
+                            ["terrainTreatNoDataAsZero"] = "terrainTreatNoDataAsZero",
+                            ["forceAgenticFail"] = "forceAgenticFail"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        }
+                    },
+                    new BehaviorStep
+                    {
+                        Id = "obj",
+                        BrickId = "geovector.export.obj-text",
+                        Implementation = ImplementationType.Deterministic,
+                        InputMapping = new Dictionary<string, string>
+                        {
+                            ["mesh"] = "mesh"
+                        },
+                        OutputMapping = new Dictionary<string, string>
+                        {
+                            ["objText"] = "objText"
+                        }
+                    }
+                ]
+            };
+
+            var agent = new AgentCard { Id = "geovector.cli", Name = "GeoVector CLI", Behaviors = [behavior.Id] };
+
+            var options = new ExecutionOptions
+            {
+                Provider = "offline",
+                IsAirGapped = airGapped,
+                ImplementationMode = airGapped ? ImplementationMode.DeterministicOnly : ImplementationMode.Auto,
+                SwapOnFailure = true
+            };
+
+            var inputData = new Dictionary<string, object>
+            {
+                ["bounds"] = geoBounds,
+                ["origin"] = origin,
+                ["kind"] = "water",
+                ["generateTexCoords"] = generateTexCoords,
+                ["uvMetersPerRepeat"] = uvMetersPerRepeat,
+                ["conformToTerrain"] = conformToTerrain,
+                ["surfaceOffsetMeters"] = surfaceOffsetMeters,
+                ["terrainTreatNoDataAsZero"] = terrainTreatNoDataAsZero,
+                ["forceAgenticFail"] = forceAgenticFail
+            };
+            if (conformToTerrain)
+            {
+                inputData["terrainGrid"] = terrainGrid ?? throw new InvalidOperationException("Terrain grid was not built.");
+            }
+
+            var input = new BehaviorInput(inputData);
+
+            IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
+            var steps = new List<object>();
+            var errors = new List<string>();
+
+            await foreach (var evt in exec.ExecuteWithEventsAsync(agent, behavior, input, options, ct))
+            {
+                switch (evt)
+                {
+                    case StepStartedEvent s:
+                        steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
+                        if (verbose && !json) Console.Out.WriteLine($"step:start id={s.StepId} brick={s.BrickId} impl={s.Implementation} fallback={s.UsedFallback}");
+                        break;
+                    case StepCompletedEvent c:
+                        steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
+                        break;
+                    case StepErrorEvent e:
+                        errors.Add($"{e.StepId}: {e.Error}");
+                        steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
+                        break;
+                    case BehaviorCompletedEvent b:
+                        outputs = b.Outputs;
+                        steps.Add(new { type = "behavior_completed", b.Success });
+                        break;
+                }
+            }
+
+            var objText = outputs.TryGetValue("objText", out var o) ? o as string : null;
+            if (string.IsNullOrWhiteSpace(objText))
+                throw new InvalidOperationException("OBJ output was not produced.");
+
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await TextFile.WriteAllTextAsync(output.FullName, objText, ct);
+
+            var result = new
+            {
+                ok = errors.Count == 0,
+                bounds = geoBounds.ToString(),
+                output = output.FullName,
+                provider,
+                conformToTerrain,
+                airGapped,
+                errors,
+                steps
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote OBJ: {output.FullName}");
+            }
+
+            return errors.Count == 0 ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoVector water-to-obj failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
     private static GeoBounds ParseBounds(string text)
     {
         // Format: "minLat,minLon,maxLat,maxLon"
@@ -295,20 +764,53 @@ public sealed class GeoVectorCommand
         };
     }
 
-    private IVectorProvider BuildVectorProvider(string provider, GeoBounds bounds, string? mapboxAccessToken, string? mapboxTileset, int? mapboxZoom)
+    private IVectorProvider BuildVectorProvider(
+        string provider,
+        GeoBounds bounds,
+        string? mapboxAccessToken,
+        string? mapboxTileset,
+        int? mapboxZoom,
+        string? osmPbfPath,
+        bool airGapped)
     {
         provider = (provider ?? "echo").Trim().ToLowerInvariant();
-        return provider switch
+        IVectorProvider offline = provider switch
         {
-            "echo" => new EchoVectorProvider(),
-            "mapbox" => new MapboxVectorTileProvider(
+            "osm" or "hybrid" => string.IsNullOrWhiteSpace(osmPbfPath)
+                ? throw new InvalidOperationException("OSM PBF path is required for --vector-provider osm|hybrid. Use --osm-pbf <path>.")
+                : new OsmPbfVectorProvider(osmPbfPath, _loggerFactory.CreateLogger<OsmPbfVectorProvider>()),
+            _ => new EchoVectorProvider()
+        };
+
+        if (provider == "osm")
+        {
+            return new CachedVectorProvider(offline);
+        }
+
+        if (provider == "echo")
+        {
+            return new CachedVectorProvider(offline);
+        }
+
+        MapboxVectorTileProvider? online = null;
+        if (!airGapped)
+        {
+            online = new MapboxVectorTileProvider(
                 _httpClientFactory.CreateClient("geovector.mapbox"),
                 accessToken: ResolveMapboxToken(mapboxAccessToken),
                 tilesetId: string.IsNullOrWhiteSpace(mapboxTileset) ? "mapbox.mapbox-streets-v8" : mapboxTileset!,
                 zoom: mapboxZoom ?? 15,
                 formatExtension: "mvt",
-                logger: _loggerFactory.CreateLogger<MapboxVectorTileProvider>()),
-            _ => throw new InvalidOperationException($"Unknown vector provider '{provider}'. Use echo|mapbox.")
+                logger: _loggerFactory.CreateLogger<MapboxVectorTileProvider>());
+        }
+
+        return provider switch
+        {
+            "mapbox" => online is null
+                ? throw new InvalidOperationException("Mapbox provider is not available in air-gapped mode.")
+                : new CachedVectorProvider(online),
+            "hybrid" => new CachedVectorProvider(new HybridVectorProvider(offline, online, _loggerFactory.CreateLogger<HybridVectorProvider>())),
+            _ => throw new InvalidOperationException($"Unknown vector provider '{provider}'. Use echo|osm|mapbox|hybrid.")
         };
     }
 

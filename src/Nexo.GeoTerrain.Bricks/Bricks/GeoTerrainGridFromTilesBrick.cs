@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.GeoTerrain;
+using Nexo.GeoTerrain.Projection;
 using Nexo.Orchestration.GeoTerrain.Ports;
 
 namespace Nexo.GeoTerrain.Bricks;
@@ -12,9 +13,16 @@ namespace Nexo.GeoTerrain.Bricks;
 public sealed class GeoTerrainGridFromTilesBrick : Brick
 {
     private readonly ILogger<GeoTerrainGridFromTilesBrick> _logger;
+    private readonly ICoordinateProjector _projector;
 
     public GeoTerrainGridFromTilesBrick(ILogger<GeoTerrainGridFromTilesBrick> logger)
+        : this(EquirectangularProjector.Instance, logger)
     {
+    }
+
+    public GeoTerrainGridFromTilesBrick(ICoordinateProjector projector, ILogger<GeoTerrainGridFromTilesBrick> logger)
+    {
+        _projector = projector ?? throw new ArgumentNullException(nameof(projector));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         Id = "geoterrain.grid.from-tiles";
@@ -76,7 +84,7 @@ public sealed class GeoTerrainGridFromTilesBrick : Brick
             dict[tiles[i].TileId] = tiles[i].HgtBytes;
         }
 
-        var grid = SrtmMosaicBuilder.Build(dict);
+        var grid = SrtmMosaicBuilder.Build(dict, _projector);
         return Task.FromResult(new BrickOutput
         {
             ["grid"] = grid,

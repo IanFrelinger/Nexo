@@ -50,6 +50,45 @@ public sealed class GeoVectorDomainSmokeTests : UnitTestBase
             AssertEqual(mesh.Vertices.Count, mesh.Normals!.Count, "Normals should match vertex count");
             AssertTrue(mesh.TexCoords is null, "TexCoords should be null when GenerateTexCoords=false");
 
+            // Road ribbon (2-point polyline).
+            var roadLine = new[]
+            {
+                new GeoPoint { Latitude = new Latitude(0.0000), Longitude = new Longitude(0.0000) },
+                new GeoPoint { Latitude = new Latitude(0.0000), Longitude = new Longitude(0.0001) }
+            };
+            var road = new GeoFeature(
+                id: "r1",
+                kind: FeatureKind.Road,
+                geometry: new GeoPolyline(roadLine),
+                properties: new Dictionary<string, object> { ["class"] = "residential" });
+
+            var roadMesh = RoadMeshGenerator.GenerateRoads(
+                new GeoFeatureSet(new[] { road }),
+                origin,
+                terrainGrid: null,
+                new RoadMeshGenerationOptions { DefaultWidthMeters = 4, GenerateTexCoords = true, UvMetersPerRepeat = 1.0f });
+
+            AssertTrue(roadMesh.Vertices.Count >= 4, "Road mesh should have >= 4 vertices");
+            AssertTrue(roadMesh.Indices.Count >= 6, "Road mesh should have indices");
+            AssertNotNull(roadMesh.TexCoords, "Road mesh should generate texcoords");
+
+            // Water surface (simple square polygon).
+            var waterFeature = new GeoFeature(
+                id: "w1",
+                kind: FeatureKind.Water,
+                geometry: new GeoPolygon(ring),
+                properties: new Dictionary<string, object> { ["natural"] = "water" });
+
+            var waterMesh = WaterMeshGenerator.GenerateWater(
+                new GeoFeatureSet(new[] { waterFeature }),
+                origin,
+                terrainGrid: null,
+                new WaterMeshGenerationOptions { GenerateTexCoords = true, UvMetersPerRepeat = 5.0f });
+
+            AssertTrue(waterMesh.Vertices.Count >= 3, "Water mesh should have vertices");
+            AssertTrue(waterMesh.Indices.Count >= 3, "Water mesh should have indices");
+            AssertNotNull(waterMesh.TexCoords, "Water mesh should generate texcoords");
+
             return Task.FromResult(new TestResult
             {
                 TestName = nameof(GeoVectorDomainSmokeTests),

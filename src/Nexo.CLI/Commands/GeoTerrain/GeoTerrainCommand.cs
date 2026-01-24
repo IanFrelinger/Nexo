@@ -1153,6 +1153,152 @@ public sealed class GeoTerrainCommand
         }
     }
 
+    public async Task<int> TerrainRgbTileToObjAsync(
+        int z,
+        int x,
+        int y,
+        FileInfo outputObj,
+        FileInfo? outputTexturePng,
+        string? mapboxToken,
+        string? tilesetId,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (outputObj is null) throw new ArgumentNullException(nameof(outputObj));
+
+            var token = ResolveMapboxToken(mapboxToken);
+            var tileset = string.IsNullOrWhiteSpace(tilesetId) ? "mapbox.terrain-rgb" : tilesetId!.Trim();
+
+            var provider = new MapboxTerrainRgbGridProvider(
+                _httpClientFactory.CreateClient(),
+                token,
+                tileset,
+                _loggerFactory.CreateLogger<MapboxTerrainRgbGridProvider>());
+
+            var (grid, png) = await provider.GetTileGridAsync(z, x, y, ct);
+            var mesh = GridMeshGenerator.Generate(grid, new MeshGenerationOptions { GenerateNormals = true, TreatNoDataAsZero = true });
+
+            // Add simple UVs for the tile texture (0..1).
+            var tex = new Vector2[mesh.Vertices.Count];
+            var w = grid.Width;
+            var h = grid.Height;
+            for (var row = 0; row < h; row++)
+            {
+                for (var col = 0; col < w; col++)
+                {
+                    var u = w <= 1 ? 0f : (float)col / (float)(w - 1);
+                    var v = h <= 1 ? 0f : 1f - ((float)row / (float)(h - 1));
+                    tex[row * w + col] = new Vector2(u, v);
+                }
+            }
+            mesh = mesh with { TexCoords = tex };
+
+            var obj = ObjMeshWriter.Write(mesh);
+
+            DirectoryOps.EnsureParentDirectoryExists(outputObj.FullName);
+            await TextFile.WriteAllTextAsync(outputObj.FullName, obj, ct);
+
+            if (outputTexturePng != null)
+            {
+                DirectoryOps.EnsureParentDirectoryExists(outputTexturePng.FullName);
+                await BinaryFile.WriteAllBytesAsync(outputTexturePng.FullName, png, ct);
+            }
+
+            var result = new
+            {
+                ok = true,
+                z,
+                x,
+                y,
+                outputObj = outputObj.FullName,
+                outputTexturePng = outputTexturePng?.FullName,
+                tileset = tileset
+            };
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(result));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote OBJ: {outputObj.FullName}");
+                if (outputTexturePng != null) Console.Out.WriteLine($"Wrote texture: {outputTexturePng.FullName}");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoTerrain terrain-rgb-tile-to-obj failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
+    public async Task<int> MapboxRasterTileAsync(
+        int z,
+        int x,
+        int y,
+        FileInfo output,
+        string? mapboxToken,
+        string? tilesetId,
+        string? format,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        try
+        {
+            if (output is null) throw new ArgumentNullException(nameof(output));
+            var token = ResolveMapboxToken(mapboxToken);
+            var tileset = string.IsNullOrWhiteSpace(tilesetId) ? "mapbox.satellite" : tilesetId!.Trim();
+            var fmt = string.IsNullOrWhiteSpace(format) ? "jpg90" : format!.Trim();
+
+            var dl = new MapboxRasterTileDownloader(
+                _httpClientFactory.CreateClient(),
+                token,
+                _loggerFactory.CreateLogger<MapboxRasterTileDownloader>());
+
+            var bytes = await dl.DownloadAsync(tileset, z, x, y, fmt, ct);
+            DirectoryOps.EnsureParentDirectoryExists(output.FullName);
+            await BinaryFile.WriteAllBytesAsync(output.FullName, bytes, ct);
+
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = true, z, x, y, tileset, format = fmt, output = output.FullName, bytes = bytes.Length }));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Wrote raster tile: {output.FullName} ({bytes.Length} bytes)");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GeoTerrain mapbox-raster-tile failed");
+            if (json)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            }
+            else
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return 1;
+        }
+    }
+
     private IElevationProvider BuildElevationProvider(
         string provider,
         string? localRoot,
@@ -1230,6 +1376,14 @@ public sealed class GeoTerrainCommand
             MaxLatitude = new Latitude(maxLat),
             MaxLongitude = new Longitude(maxLon)
         };
+    }
+
+    private static string ResolveMapboxToken(string? token)
+    {
+        token = string.IsNullOrWhiteSpace(token) ? Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN") : token;
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("Mapbox token is required (set MAPBOX_ACCESS_TOKEN or pass --mapbox-token).");
+        return token.Trim();
     }
 }
 

@@ -38,6 +38,8 @@ public sealed class GeoVectorCliE2ETests : UnitTestBase
             AssertNotNull(_tempDir, "Temp dir should be created");
 
             await TestBuildingsToObjEchoAsync(cancellationToken);
+            await TestRoadsToObjEchoAsync(cancellationToken);
+            await TestWaterToObjEchoAsync(cancellationToken);
 
             return new TestResult
             {
@@ -69,6 +71,46 @@ public sealed class GeoVectorCliE2ETests : UnitTestBase
             ct);
 
         AssertEqual(0, code, $"geovector buildings-to-obj should exit 0. stderr: {stderr}");
+        AssertTrue(File.Exists(outPath), "OBJ output file should exist");
+
+        var obj = await File.ReadAllTextAsync(outPath, ct);
+        AssertTrue(obj.Contains("v "), "OBJ should contain vertices");
+        AssertTrue(obj.Contains("f "), "OBJ should contain faces");
+
+        var json = ExtractJsonObject(stdout);
+        using var doc = JsonDocument.Parse(json);
+        AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean(), "Expected ok=true in JSON output");
+    }
+
+    private async Task TestRoadsToObjEchoAsync(CancellationToken ct)
+    {
+        var outPath = Path.Combine(_tempDir!, "roads.obj");
+        var (code, stdout, stderr) = await RunDotnetAsync(
+            workingDir: _repoRoot!,
+            args: $"run --project src/Nexo.CLI -- geovector roads-to-obj --bounds 0,0,0.001,0.001 --output \"{outPath}\" --vector-provider echo --width-meters 4 --uv --uv-meters-per-repeat 1 --format-json",
+            ct);
+
+        AssertEqual(0, code, $"geovector roads-to-obj should exit 0. stderr: {stderr}");
+        AssertTrue(File.Exists(outPath), "OBJ output file should exist");
+
+        var obj = await File.ReadAllTextAsync(outPath, ct);
+        AssertTrue(obj.Contains("v "), "OBJ should contain vertices");
+        AssertTrue(obj.Contains("f "), "OBJ should contain faces");
+
+        var json = ExtractJsonObject(stdout);
+        using var doc = JsonDocument.Parse(json);
+        AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean(), "Expected ok=true in JSON output");
+    }
+
+    private async Task TestWaterToObjEchoAsync(CancellationToken ct)
+    {
+        var outPath = Path.Combine(_tempDir!, "water.obj");
+        var (code, stdout, stderr) = await RunDotnetAsync(
+            workingDir: _repoRoot!,
+            args: $"run --project src/Nexo.CLI -- geovector water-to-obj --bounds 0,0,0.001,0.001 --output \"{outPath}\" --vector-provider echo --uv --uv-meters-per-repeat 5 --format-json",
+            ct);
+
+        AssertEqual(0, code, $"geovector water-to-obj should exit 0. stderr: {stderr}");
         AssertTrue(File.Exists(outPath), "OBJ output file should exist");
 
         var obj = await File.ReadAllTextAsync(outPath, ct);

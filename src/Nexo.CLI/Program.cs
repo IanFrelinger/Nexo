@@ -74,6 +74,7 @@ static class Program
         var agentCommand = serviceProvider.GetRequiredService<AgentCommand>();
         var geoTerrainCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
         var geoVectorCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
+        var worldCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.World.WorldCommand>();
 
         // nexo analyze
         var analyzeCmd = new Command("analyze", "Run code/assembly analyzers and policies")
@@ -362,6 +363,8 @@ static class Program
         // nexo geoterrain
         var geoCmd = new Command("geoterrain", "GeoTerrain GIS elevation → mesh utilities");
         var tileToObjCmd = new Command("tile-to-obj", "Fetch an SRTM tile and write an OBJ mesh");
+        var terrainRgbTileToObjCmd = new Command("terrain-rgb-tile-to-obj", "Download a Mapbox Terrain-RGB tile and write an OBJ (optionally also the tile PNG)");
+        var mapboxRasterTileCmd = new Command("mapbox-raster-tile", "Download a Mapbox raster tile (e.g. satellite) to disk");
         var tileToContoursCmd = new Command("tile-to-contours", "Fetch an SRTM tile and write contour lines as GeoJSON");
         var boundsToObjCmd = new Command("bounds-to-obj", "Fetch all tiles covering bounds and write a stitched OBJ mesh");
         var boundsToContoursCmd = new Command("bounds-to-contours", "Fetch all tiles covering bounds and write stitched contours as GeoJSON");
@@ -384,6 +387,15 @@ static class Program
         var includeElevationOpt = new Option<bool>("--include-elevation", () => true, "Include elevation as the 3rd coordinate in GeoJSON");
         var treesPerSqKmOpt = new Option<float>("--trees-per-sqkm", () => 200.0f, "Tree density (trees per square kilometer)");
         var treeSeedOpt = new Option<int>("--seed", () => 1337, "Deterministic seed for placement");
+
+        var zOpt = new Option<int>("--z", "WebMercator tile zoom") { IsRequired = true };
+        var xOpt = new Option<int>("--x", "WebMercator tile x") { IsRequired = true };
+        var yOpt = new Option<int>("--y", "WebMercator tile y") { IsRequired = true };
+        var textureOutOpt = new Option<FileInfo?>("--texture-out", () => null, "Optional output PNG path for the downloaded tile");
+        var mapboxTokenOpt2 = new Option<string?>("--mapbox-token", () => null, "Mapbox access token (or set MAPBOX_ACCESS_TOKEN)");
+        var mapboxTilesetOpt2 = new Option<string?>("--mapbox-tileset", () => "mapbox.terrain-rgb", "Tileset id (default mapbox.terrain-rgb)");
+        var mapboxFormatOpt = new Option<string?>("--format", () => null, "Tile format/extension for v4 endpoint (e.g. png, jpg90)");
+        var mapboxRasterTilesetOpt = new Option<string?>("--mapbox-tileset", () => "mapbox.satellite", "Raster tileset id (default mapbox.satellite)");
 
         tileToObjCmd.AddOption(tileOpt);
         tileToObjCmd.AddOption(outOpt);
@@ -426,6 +438,66 @@ static class Program
         });
 
         geoCmd.AddCommand(tileToObjCmd);
+
+        // geoterrain terrain-rgb-tile-to-obj
+        terrainRgbTileToObjCmd.AddOption(zOpt);
+        terrainRgbTileToObjCmd.AddOption(xOpt);
+        terrainRgbTileToObjCmd.AddOption(yOpt);
+        terrainRgbTileToObjCmd.AddOption(outOpt);
+        terrainRgbTileToObjCmd.AddOption(textureOutOpt);
+        terrainRgbTileToObjCmd.AddOption(mapboxTokenOpt2);
+        terrainRgbTileToObjCmd.AddOption(mapboxTilesetOpt2);
+        terrainRgbTileToObjCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var z = ctx.ParseResult.GetValueForOption(zOpt);
+            var x = ctx.ParseResult.GetValueForOption(xOpt);
+            var y = ctx.ParseResult.GetValueForOption(yOpt);
+            var output = ctx.ParseResult.GetValueForOption(outOpt) ?? throw new InvalidOperationException("--output is required");
+            var textureOut = ctx.ParseResult.GetValueForOption(textureOutOpt);
+            var token = ctx.ParseResult.GetValueForOption(mapboxTokenOpt2);
+            var tileset = ctx.ParseResult.GetValueForOption(mapboxTilesetOpt2);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoTerrainCommand.TerrainRgbTileToObjAsync(
+                z,
+                x,
+                y,
+                output,
+                textureOut,
+                token,
+                tileset,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+        geoCmd.AddCommand(terrainRgbTileToObjCmd);
+
+        // geoterrain mapbox-raster-tile
+        mapboxRasterTileCmd.AddOption(zOpt);
+        mapboxRasterTileCmd.AddOption(xOpt);
+        mapboxRasterTileCmd.AddOption(yOpt);
+        mapboxRasterTileCmd.AddOption(outOpt);
+        mapboxRasterTileCmd.AddOption(mapboxTokenOpt2);
+        mapboxRasterTileCmd.AddOption(mapboxRasterTilesetOpt);
+        mapboxRasterTileCmd.AddOption(mapboxFormatOpt);
+        mapboxRasterTileCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var z = ctx.ParseResult.GetValueForOption(zOpt);
+            var x = ctx.ParseResult.GetValueForOption(xOpt);
+            var y = ctx.ParseResult.GetValueForOption(yOpt);
+            var output = ctx.ParseResult.GetValueForOption(outOpt) ?? throw new InvalidOperationException("--output is required");
+            var token = ctx.ParseResult.GetValueForOption(mapboxTokenOpt2);
+            var tileset = ctx.ParseResult.GetValueForOption(mapboxRasterTilesetOpt);
+            var format = ctx.ParseResult.GetValueForOption(mapboxFormatOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoTerrainCommand.MapboxRasterTileAsync(z, x, y, output, token, tileset, format, json, verbose, CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+        geoCmd.AddCommand(mapboxRasterTileCmd);
 
         // geoterrain tile-to-contours
         tileToContoursCmd.AddOption(tileOpt);
@@ -642,9 +714,12 @@ static class Program
         // nexo geovector
         var geoVectorCmd = new Command("geovector", "GeoVector overlays (buildings/roads/vegetation) → meshes");
         var buildingsToObjCmd = new Command("buildings-to-obj", "Fetch building footprints and write an OBJ mesh");
+        var roadsToObjCmd = new Command("roads-to-obj", "Fetch road centerlines and write an OBJ ribbon mesh");
+        var waterToObjCmd = new Command("water-to-obj", "Fetch water polygons and write an OBJ surface mesh");
         var boundsOpt = new Option<string>("--bounds", "Bounds: minLat,minLon,maxLat,maxLon") { IsRequired = true };
         var vecOutOpt = new Option<FileInfo>("--output", "Output OBJ file path") { IsRequired = true };
-        var vectorProviderOpt = new Option<string>("--vector-provider", () => "echo", "Provider: echo|mapbox");
+        var vectorProviderOpt = new Option<string>("--vector-provider", () => "echo", "Provider: echo|osm|mapbox|hybrid");
+        var osmPbfOpt = new Option<string?>("--osm-pbf", () => null, "Path to local OSM .pbf extract (required for osm/hybrid)");
         var mapboxTokenOpt = new Option<string?>("--mapbox-token", () => null, "Mapbox access token (or set MAPBOX_ACCESS_TOKEN)");
         var mapboxTilesetOpt = new Option<string?>("--mapbox-tileset", () => "mapbox.mapbox-streets-v8", "Mapbox tileset id (e.g. mapbox.mapbox-streets-v8)");
         var mapboxZoomOpt = new Option<int?>("--mapbox-zoom", () => 15, "Zoom level for tile selection (0-22)");
@@ -660,9 +735,15 @@ static class Program
         var vecAirgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic only");
         var vecForceFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (fallback demo)");
 
+        var roadWidthOpt = new Option<float>("--width-meters", () => 4.0f, "Road width in meters");
+        var conformToTerrainOpt = new Option<bool>("--conform-to-terrain", () => false, "Sample terrain height to conform mesh to terrain");
+
+        var waterSurfaceOffsetOpt = new Option<float>("--surface-offset-meters", () => 0.0f, "Offset water surface when conforming to terrain");
+
         buildingsToObjCmd.AddOption(boundsOpt);
         buildingsToObjCmd.AddOption(vecOutOpt);
         buildingsToObjCmd.AddOption(vectorProviderOpt);
+        buildingsToObjCmd.AddOption(osmPbfOpt);
         buildingsToObjCmd.AddOption(mapboxTokenOpt);
         buildingsToObjCmd.AddOption(mapboxTilesetOpt);
         buildingsToObjCmd.AddOption(mapboxZoomOpt);
@@ -683,6 +764,7 @@ static class Program
             var bounds = ctx.ParseResult.GetValueForOption(boundsOpt) ?? throw new InvalidOperationException("--bounds is required");
             var output = ctx.ParseResult.GetValueForOption(vecOutOpt) ?? throw new InvalidOperationException("--output is required");
             var provider = ctx.ParseResult.GetValueForOption(vectorProviderOpt) ?? "echo";
+            var osmPbf = ctx.ParseResult.GetValueForOption(osmPbfOpt);
             var mapboxToken = ctx.ParseResult.GetValueForOption(mapboxTokenOpt);
             var mapboxTileset = ctx.ParseResult.GetValueForOption(mapboxTilesetOpt);
             var mapboxZoom = ctx.ParseResult.GetValueForOption(mapboxZoomOpt);
@@ -707,6 +789,7 @@ static class Program
                 mapboxToken,
                 mapboxTileset,
                 mapboxZoom,
+                osmPbf,
                 generateUv,
                 uvMetersPerRepeat,
                 alignToTerrain,
@@ -724,8 +807,284 @@ static class Program
             ctx.ExitCode = exitCode;
         });
 
+        // roads-to-obj
+        roadsToObjCmd.AddOption(boundsOpt);
+        roadsToObjCmd.AddOption(vecOutOpt);
+        roadsToObjCmd.AddOption(vectorProviderOpt);
+        roadsToObjCmd.AddOption(osmPbfOpt);
+        roadsToObjCmd.AddOption(mapboxTokenOpt);
+        roadsToObjCmd.AddOption(mapboxTilesetOpt);
+        roadsToObjCmd.AddOption(mapboxZoomOpt);
+        roadsToObjCmd.AddOption(roadWidthOpt);
+        roadsToObjCmd.AddOption(conformToTerrainOpt);
+        roadsToObjCmd.AddOption(generateUvOpt);
+        roadsToObjCmd.AddOption(uvMetersPerRepeatOpt);
+        roadsToObjCmd.AddOption(terrainElevationProviderOpt);
+        roadsToObjCmd.AddOption(terrainLocalRootOpt);
+        roadsToObjCmd.AddOption(terrainBaseUrlOpt);
+        roadsToObjCmd.AddOption(terrainPersistOpt);
+        roadsToObjCmd.AddOption(terrainCacheOpt);
+        roadsToObjCmd.AddOption(terrainTreatNoDataOpt);
+        roadsToObjCmd.AddOption(vecAirgapOpt);
+        roadsToObjCmd.AddOption(vecForceFailOpt);
+
+        roadsToObjCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var bounds = ctx.ParseResult.GetValueForOption(boundsOpt) ?? throw new InvalidOperationException("--bounds is required");
+            var output = ctx.ParseResult.GetValueForOption(vecOutOpt) ?? throw new InvalidOperationException("--output is required");
+            var provider = ctx.ParseResult.GetValueForOption(vectorProviderOpt) ?? "echo";
+            var osmPbf = ctx.ParseResult.GetValueForOption(osmPbfOpt);
+            var mapboxToken = ctx.ParseResult.GetValueForOption(mapboxTokenOpt);
+            var mapboxTileset = ctx.ParseResult.GetValueForOption(mapboxTilesetOpt);
+            var mapboxZoom = ctx.ParseResult.GetValueForOption(mapboxZoomOpt);
+            var widthMeters = ctx.ParseResult.GetValueForOption(roadWidthOpt);
+            var conformToTerrain = ctx.ParseResult.GetValueForOption(conformToTerrainOpt);
+            var generateUv = ctx.ParseResult.GetValueForOption(generateUvOpt);
+            var uvMetersPerRepeat = ctx.ParseResult.GetValueForOption(uvMetersPerRepeatOpt);
+            var terrainElevationProvider = ctx.ParseResult.GetValueForOption(terrainElevationProviderOpt) ?? "echo";
+            var terrainLocalRoot = ctx.ParseResult.GetValueForOption(terrainLocalRootOpt);
+            var terrainSrtmBaseUrl = ctx.ParseResult.GetValueForOption(terrainBaseUrlOpt);
+            var terrainPersist = ctx.ParseResult.GetValueForOption(terrainPersistOpt);
+            var terrainCache = ctx.ParseResult.GetValueForOption(terrainCacheOpt);
+            var terrainTreatNoData = ctx.ParseResult.GetValueForOption(terrainTreatNoDataOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
+            var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoVectorCommand.RoadsToObjAsync(
+                bounds,
+                output,
+                provider,
+                mapboxToken,
+                mapboxTileset,
+                mapboxZoom,
+                osmPbf,
+                widthMeters,
+                generateUv,
+                uvMetersPerRepeat,
+                conformToTerrain,
+                terrainElevationProvider,
+                terrainLocalRoot,
+                terrainSrtmBaseUrl,
+                terrainPersist,
+                terrainCache,
+                terrainTreatNoData,
+                airgap,
+                forceFail,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+
+        // water-to-obj
+        waterToObjCmd.AddOption(boundsOpt);
+        waterToObjCmd.AddOption(vecOutOpt);
+        waterToObjCmd.AddOption(vectorProviderOpt);
+        waterToObjCmd.AddOption(osmPbfOpt);
+        waterToObjCmd.AddOption(mapboxTokenOpt);
+        waterToObjCmd.AddOption(mapboxTilesetOpt);
+        waterToObjCmd.AddOption(mapboxZoomOpt);
+        waterToObjCmd.AddOption(conformToTerrainOpt);
+        waterToObjCmd.AddOption(waterSurfaceOffsetOpt);
+        waterToObjCmd.AddOption(generateUvOpt);
+        waterToObjCmd.AddOption(uvMetersPerRepeatOpt);
+        waterToObjCmd.AddOption(terrainElevationProviderOpt);
+        waterToObjCmd.AddOption(terrainLocalRootOpt);
+        waterToObjCmd.AddOption(terrainBaseUrlOpt);
+        waterToObjCmd.AddOption(terrainPersistOpt);
+        waterToObjCmd.AddOption(terrainCacheOpt);
+        waterToObjCmd.AddOption(terrainTreatNoDataOpt);
+        waterToObjCmd.AddOption(vecAirgapOpt);
+        waterToObjCmd.AddOption(vecForceFailOpt);
+
+        waterToObjCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var bounds = ctx.ParseResult.GetValueForOption(boundsOpt) ?? throw new InvalidOperationException("--bounds is required");
+            var output = ctx.ParseResult.GetValueForOption(vecOutOpt) ?? throw new InvalidOperationException("--output is required");
+            var provider = ctx.ParseResult.GetValueForOption(vectorProviderOpt) ?? "echo";
+            var osmPbf = ctx.ParseResult.GetValueForOption(osmPbfOpt);
+            var mapboxToken = ctx.ParseResult.GetValueForOption(mapboxTokenOpt);
+            var mapboxTileset = ctx.ParseResult.GetValueForOption(mapboxTilesetOpt);
+            var mapboxZoom = ctx.ParseResult.GetValueForOption(mapboxZoomOpt);
+            var conformToTerrain = ctx.ParseResult.GetValueForOption(conformToTerrainOpt);
+            var surfaceOffset = ctx.ParseResult.GetValueForOption(waterSurfaceOffsetOpt);
+            var generateUv = ctx.ParseResult.GetValueForOption(generateUvOpt);
+            var uvMetersPerRepeat = ctx.ParseResult.GetValueForOption(uvMetersPerRepeatOpt);
+            var terrainElevationProvider = ctx.ParseResult.GetValueForOption(terrainElevationProviderOpt) ?? "echo";
+            var terrainLocalRoot = ctx.ParseResult.GetValueForOption(terrainLocalRootOpt);
+            var terrainSrtmBaseUrl = ctx.ParseResult.GetValueForOption(terrainBaseUrlOpt);
+            var terrainPersist = ctx.ParseResult.GetValueForOption(terrainPersistOpt);
+            var terrainCache = ctx.ParseResult.GetValueForOption(terrainCacheOpt);
+            var terrainTreatNoData = ctx.ParseResult.GetValueForOption(terrainTreatNoDataOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
+            var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await geoVectorCommand.WaterToObjAsync(
+                bounds,
+                output,
+                provider,
+                mapboxToken,
+                mapboxTileset,
+                mapboxZoom,
+                osmPbf,
+                generateUv,
+                uvMetersPerRepeat,
+                conformToTerrain,
+                surfaceOffset,
+                terrainElevationProvider,
+                terrainLocalRoot,
+                terrainSrtmBaseUrl,
+                terrainPersist,
+                terrainCache,
+                terrainTreatNoData,
+                airgap,
+                forceFail,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+
         geoVectorCmd.AddCommand(buildingsToObjCmd);
+        geoVectorCmd.AddCommand(roadsToObjCmd);
+        geoVectorCmd.AddCommand(waterToObjCmd);
         root.AddCommand(geoVectorCmd);
+
+        // nexo world
+        var worldCmd = new Command("world", "Unity-first world bundle builder (terrain + buildings + roads + water + vegetation)");
+        var worldBuildCmd = new Command("build", "Build a world/ bundle into an output directory");
+        var worldBoundsOpt = new Option<string>("--bounds", "Bounds: minLat,minLon,maxLat,maxLon") { IsRequired = true };
+        var worldOutDirOpt = new Option<DirectoryInfo>("--out-dir", "Output directory for bundle") { IsRequired = true };
+        var worldTerrainProviderOpt = new Option<string>("--terrain-elevation-provider", () => "echo", "Terrain elevation provider: echo|local|http|hybrid");
+        var worldTerrainLocalRootOpt = new Option<string?>("--terrain-local-root", () => null, "Local SRTM cache directory (for terrain local/hybrid)");
+        var worldTerrainBaseUrlOpt = new Option<string?>("--terrain-srtm-base-url", () => null, "Base URL for terrain HTTP downloads (http/hybrid)");
+        var worldTerrainPersistOpt = new Option<bool>("--terrain-persist-downloads", () => true, "Persist downloaded terrain tiles into --terrain-local-root (hybrid)");
+        var worldTerrainCacheOpt = new Option<bool>("--terrain-cache", () => true, "Enable in-memory cache for terrain elevation provider");
+        var worldVectorProviderOpt = new Option<string>("--vector-provider", () => "echo", "Vector provider: echo|osm|mapbox|hybrid");
+        var worldOsmPbfOpt = new Option<string?>("--osm-pbf", () => null, "Path to local OSM .pbf extract (required for osm/hybrid)");
+        var worldMapboxTokenOpt = new Option<string?>("--mapbox-token", () => null, "Mapbox access token (or set MAPBOX_ACCESS_TOKEN)");
+        var worldMapboxTilesetOpt = new Option<string?>("--mapbox-tileset", () => "mapbox.mapbox-streets-v8", "Mapbox tileset id");
+        var worldMapboxZoomOpt = new Option<int?>("--mapbox-zoom", () => 15, "Zoom level for tile selection (0-22)");
+        var worldTerrainChunkSamplesOpt = new Option<int>("--terrain-chunk-samples", () => 0, "If >0, export terrain as chunked OBJs (grid samples per chunk)");
+        var worldTerrainLodFactorsOpt = new Option<string?>("--terrain-lod-factors", () => null, "Optional CSV of LOD factors (e.g. 2,4). Generates additional terrain_lods/*.obj");
+        var worldLodTriBudgetsOpt = new Option<string?>("--lod-tri-budgets", () => null, "Optional CSV of triangle budgets per mesh (e.g. 200000,50000). Generates additional *_tri{N} meshes.");
+        var worldInstancesChunkSamplesOpt = new Option<int>("--instances-chunk-samples", () => 0, "If >0, export instances as chunked JSON files (grid samples per chunk)");
+        var worldTerrainImageryOpt = new Option<bool>("--terrain-imagery", () => false, "If set, download and stitch a Mapbox raster mosaic and export terrain_texture.png + terrain.mtl with UVs");
+        var worldTerrainImageryTilesetOpt = new Option<string?>("--terrain-imagery-tileset", () => "mapbox.satellite", "Mapbox raster tileset id for terrain imagery");
+        var worldTerrainImageryFormatOpt = new Option<string?>("--terrain-imagery-format", () => "jpg90", "Mapbox raster format (e.g. jpg90, png)");
+        var worldTerrainImageryZoomOpt = new Option<int?>("--terrain-imagery-zoom", () => null, "Optional zoom override for terrain imagery (defaults to --mapbox-zoom)");
+        var worldWaterFlattenOpt = new Option<bool>("--water-flatten-to-terrain", () => false, "If set, flatten each water polygon to a single sampled terrain height (instead of per-vertex)");
+        var worldMeshFormatOpt = new Option<string>("--mesh-format", () => "obj", "Mesh format for exported geometry: obj|gltf|gltf-scene|glb");
+        var worldProjectionOpt = new Option<string>("--projection", () => "auto", "Projection for mapping lat/lon to local meters: auto|local|utm|webmercator");
+        var worldVectorTexturesOpt = new Option<bool>("--vector-textures", () => false, "If set, generate simple procedural textures for buildings/roads/water and reference them in materials.json (and world.mtl for OBJ).");
+        var worldAirgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic only");
+
+        worldBuildCmd.AddOption(worldBoundsOpt);
+        worldBuildCmd.AddOption(worldOutDirOpt);
+        worldBuildCmd.AddOption(worldTerrainProviderOpt);
+        worldBuildCmd.AddOption(worldTerrainLocalRootOpt);
+        worldBuildCmd.AddOption(worldTerrainBaseUrlOpt);
+        worldBuildCmd.AddOption(worldTerrainPersistOpt);
+        worldBuildCmd.AddOption(worldTerrainCacheOpt);
+        worldBuildCmd.AddOption(worldVectorProviderOpt);
+        worldBuildCmd.AddOption(worldOsmPbfOpt);
+        worldBuildCmd.AddOption(worldMapboxTokenOpt);
+        worldBuildCmd.AddOption(worldMapboxTilesetOpt);
+        worldBuildCmd.AddOption(worldMapboxZoomOpt);
+        worldBuildCmd.AddOption(worldTerrainChunkSamplesOpt);
+        worldBuildCmd.AddOption(worldTerrainLodFactorsOpt);
+        worldBuildCmd.AddOption(worldLodTriBudgetsOpt);
+        worldBuildCmd.AddOption(worldInstancesChunkSamplesOpt);
+        worldBuildCmd.AddOption(worldTerrainImageryOpt);
+        worldBuildCmd.AddOption(worldTerrainImageryTilesetOpt);
+        worldBuildCmd.AddOption(worldTerrainImageryFormatOpt);
+        worldBuildCmd.AddOption(worldTerrainImageryZoomOpt);
+        worldBuildCmd.AddOption(worldWaterFlattenOpt);
+        worldBuildCmd.AddOption(worldMeshFormatOpt);
+        worldBuildCmd.AddOption(worldProjectionOpt);
+        worldBuildCmd.AddOption(worldVectorTexturesOpt);
+        worldBuildCmd.AddOption(worldAirgapOpt);
+
+        worldBuildCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var bounds = ctx.ParseResult.GetValueForOption(worldBoundsOpt) ?? throw new InvalidOperationException("--bounds is required");
+            var outDir = ctx.ParseResult.GetValueForOption(worldOutDirOpt) ?? throw new InvalidOperationException("--out-dir is required");
+            var terrainProvider = ctx.ParseResult.GetValueForOption(worldTerrainProviderOpt) ?? "echo";
+            var terrainLocalRoot = ctx.ParseResult.GetValueForOption(worldTerrainLocalRootOpt);
+            var terrainBaseUrl = ctx.ParseResult.GetValueForOption(worldTerrainBaseUrlOpt);
+            var terrainPersist = ctx.ParseResult.GetValueForOption(worldTerrainPersistOpt);
+            var terrainCache = ctx.ParseResult.GetValueForOption(worldTerrainCacheOpt);
+            var vectorProvider = ctx.ParseResult.GetValueForOption(worldVectorProviderOpt) ?? "echo";
+            var osmPbf = ctx.ParseResult.GetValueForOption(worldOsmPbfOpt);
+            var mapboxToken = ctx.ParseResult.GetValueForOption(worldMapboxTokenOpt);
+            var mapboxTileset = ctx.ParseResult.GetValueForOption(worldMapboxTilesetOpt);
+            var mapboxZoom = ctx.ParseResult.GetValueForOption(worldMapboxZoomOpt);
+            var terrainChunkSamples = ctx.ParseResult.GetValueForOption(worldTerrainChunkSamplesOpt);
+            var terrainLodFactors = ctx.ParseResult.GetValueForOption(worldTerrainLodFactorsOpt);
+            var lodTriBudgets = ctx.ParseResult.GetValueForOption(worldLodTriBudgetsOpt);
+            var instancesChunkSamples = ctx.ParseResult.GetValueForOption(worldInstancesChunkSamplesOpt);
+            var terrainImagery = ctx.ParseResult.GetValueForOption(worldTerrainImageryOpt);
+            var terrainImageryTileset = ctx.ParseResult.GetValueForOption(worldTerrainImageryTilesetOpt);
+            var terrainImageryFormat = ctx.ParseResult.GetValueForOption(worldTerrainImageryFormatOpt);
+            var terrainImageryZoom = ctx.ParseResult.GetValueForOption(worldTerrainImageryZoomOpt);
+            var waterFlatten = ctx.ParseResult.GetValueForOption(worldWaterFlattenOpt);
+            var meshFormat = ctx.ParseResult.GetValueForOption(worldMeshFormatOpt) ?? "obj";
+            var projection = ctx.ParseResult.GetValueForOption(worldProjectionOpt) ?? "auto";
+            var vectorTextures = ctx.ParseResult.GetValueForOption(worldVectorTexturesOpt);
+            var airgap = ctx.ParseResult.GetValueForOption(worldAirgapOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+
+            var exitCode = await worldCommand.BuildAsync(
+                bounds,
+                outDir,
+                terrainProvider,
+                terrainLocalRoot,
+                terrainBaseUrl,
+                terrainPersist,
+                terrainCache,
+                vectorProvider,
+                osmPbf,
+                mapboxToken,
+                mapboxTileset,
+                mapboxZoom,
+                terrainChunkSamples,
+                terrainLodFactors,
+                lodTriBudgets,
+                instancesChunkSamples,
+                terrainImagery,
+                terrainImageryTileset,
+                terrainImageryFormat,
+                terrainImageryZoom,
+                waterFlatten,
+                meshFormat,
+                projection,
+                vectorTextures,
+                airgap,
+                json,
+                verbose,
+                CancellationToken.None);
+            ctx.ExitCode = exitCode;
+        });
+
+        var worldValidateCmd = new Command("validate", "Validate a world bundle directory against its manifest");
+        var worldBundleDirOpt = new Option<DirectoryInfo>("--bundle-dir", "World bundle directory (contains manifest.json)") { IsRequired = true };
+        worldValidateCmd.AddOption(worldBundleDirOpt);
+        worldValidateCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var dir = ctx.ParseResult.GetValueForOption(worldBundleDirOpt) ?? throw new InvalidOperationException("--bundle-dir is required");
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+            ctx.ExitCode = await worldCommand.ValidateAsync(dir, json, verbose, CancellationToken.None);
+        });
+
+        worldCmd.AddCommand(worldBuildCmd);
+        worldCmd.AddCommand(worldValidateCmd);
+        root.AddCommand(worldCmd);
 
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
@@ -837,6 +1196,7 @@ static class Program
         services.AddScoped<DemoCommand>();
         services.AddScoped<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
         services.AddScoped<Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
+        services.AddScoped<Nexo.CLI.Commands.World.WorldCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();

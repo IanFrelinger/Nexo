@@ -18,6 +18,13 @@ public sealed class FeatureKind : IEquatable<FeatureKind>
     public static FeatureKind Building { get; } = new("building");
     public static FeatureKind Road { get; } = new("road");
     public static FeatureKind Vegetation { get; } = new("vegetation");
+    public static FeatureKind Water { get; } = new("water");
+    public static FeatureKind Railway { get; } = new("railway");
+    public static FeatureKind PowerLine { get; } = new("power_line");
+    public static FeatureKind AdministrativeBoundary { get; } = new("administrative_boundary");
+    public static FeatureKind LandUse { get; } = new("land_use");
+    public static FeatureKind PointOfInterest { get; } = new("point_of_interest");
+    public static FeatureKind TransportationInfrastructure { get; } = new("transportation_infrastructure");
 
     public bool Equals(FeatureKind? other) => other != null && string.Equals(Value, other.Value, StringComparison.OrdinalIgnoreCase);
     public override bool Equals(object? obj) => obj is FeatureKind k && Equals(k);

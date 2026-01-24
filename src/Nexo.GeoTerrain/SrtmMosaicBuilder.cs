@@ -1,11 +1,13 @@
 namespace Nexo.GeoTerrain;
 
+using Nexo.GeoTerrain.Projection;
+
 /// <summary>
 /// Deterministically stitches multiple adjacent SRTM tiles into a single <see cref="ElevationGrid"/>.
 /// </summary>
 public static class SrtmMosaicBuilder
 {
-    public static ElevationGrid Build(IReadOnlyDictionary<SrtmTileId, byte[]> hgtBytesByTile)
+    public static ElevationGrid Build(IReadOnlyDictionary<SrtmTileId, byte[]> hgtBytesByTile, ICoordinateProjector? projector = null)
     {
 #if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(hgtBytesByTile);
@@ -13,6 +15,8 @@ public static class SrtmMosaicBuilder
         if (hgtBytesByTile is null) throw new ArgumentNullException(nameof(hgtBytesByTile));
 #endif
         if (hgtBytesByTile.Count == 0) throw new ArgumentException("At least one tile is required.", nameof(hgtBytesByTile));
+
+        projector ??= EquirectangularProjector.Instance;
 
         // Parse sizes and determine grid layout bounds.
         int? size = null;
@@ -60,15 +64,23 @@ public static class SrtmMosaicBuilder
         };
         bounds.Validate();
 
-        // Use the same approximation as other GeoTerrain components.
-        var midLatRad = (bounds.MinLatitude.Degrees + bounds.MaxLatitude.Degrees) * 0.5 * (Math.PI / 180.0);
-        var metersPerDegLat = 111_320.0;
-        var metersPerDegLon = 111_320.0 * Math.Cos(midLatRad);
         var degPerSample = 1.0 / (tileSize - 1);
 
-        var spacing = new GridSpacing(
-            metersX: metersPerDegLon * degPerSample,
-            metersY: metersPerDegLat * degPerSample);
+        // Derive grid spacing from the selected projector near the grid center.
+        var origin = new GeoPoint
+        {
+            Latitude = new Latitude((bounds.MinLatitude.Degrees + bounds.MaxLatitude.Degrees) * 0.5),
+            Longitude = new Longitude((bounds.MinLongitude.Degrees + bounds.MaxLongitude.Degrees) * 0.5)
+        };
+        var east = new GeoPoint { Latitude = origin.Latitude, Longitude = new Longitude(origin.Longitude.Degrees + degPerSample) };
+        var north = new GeoPoint { Latitude = new Latitude(origin.Latitude.Degrees + degPerSample), Longitude = origin.Longitude };
+
+        var dx = Math.Abs(projector.ProjectMeters(east, origin).X);
+        var dy = Math.Abs(projector.ProjectMeters(north, origin).Y);
+        if (dx <= 0) dx = 1;
+        if (dy <= 0) dy = 1;
+
+        var spacing = new GridSpacing(metersX: dx, metersY: dy);
 
         // Place tiles. Global y=0 is north edge => use tile rows ordered north->south.
         // northmost tile has highest SouthLatitudeDegrees.

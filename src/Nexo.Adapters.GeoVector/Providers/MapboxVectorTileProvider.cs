@@ -24,6 +24,8 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
     private readonly string _tilesetId;
     private readonly int _zoom;
     private readonly string _formatExtension;
+    private readonly string? _tileCacheRoot;
+    private readonly bool _persistTileCache;
 
     public MapboxVectorTileProvider(
         HttpClient httpClient,
@@ -31,6 +33,8 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
         string tilesetId = "mapbox.mapbox-streets-v8",
         int zoom = 15,
         string formatExtension = "mvt",
+        string? tileCacheRoot = null,
+        bool persistTileCache = true,
         ILogger<MapboxVectorTileProvider>? logger = null)
     {
         _http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
@@ -43,6 +47,8 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
         _tilesetId = tilesetId.Trim();
         _zoom = zoom;
         _formatExtension = formatExtension.Trim().TrimStart('.');
+        _tileCacheRoot = string.IsNullOrWhiteSpace(tileCacheRoot) ? null : tileCacheRoot.Trim();
+        _persistTileCache = persistTileCache;
         _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<MapboxVectorTileProvider>.Instance;
     }
 
@@ -63,7 +69,7 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
             byte[] tileBytes;
             try
             {
-                tileBytes = await _http.GetByteArrayAsync(url, cancellationToken);
+                tileBytes = await GetTileBytesAsync(url, t.Z, t.X, t.Y, cancellationToken);
             }
             catch (HttpRequestException ex)
             {
@@ -71,18 +77,48 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
                 continue;
             }
 
-            foreach (var f in DecodeLayerFeatures(tileBytes, layerName, t.Z, t.X, t.Y, cancellationToken))
+            foreach (var f in DecodeLayerFeatures(tileBytes, layerName, kind, t.Z, t.X, t.Y, cancellationToken))
             {
                 features.Add(f);
             }
         }
 
         // Filter by bounds (tiles can include geometry outside query bounds).
-        var filtered = features.Where(f => f.Geometry.OuterRing.Any(bounds.Contains)).ToList();
+        var filtered = features.Where(f => f.Geometry.Points.Any(bounds.Contains)).ToList();
         return new GeoFeatureSet(filtered);
     }
 
-    private IEnumerable<GeoFeature> DecodeLayerFeatures(byte[] pbf, string layerName, int z, int x, int y, CancellationToken ct)
+    private async Task<byte[]> GetTileBytesAsync(string url, int z, int x, int y, CancellationToken ct)
+    {
+        var root = _tileCacheRoot;
+        if (root != null)
+        {
+            var path = Path.Combine(root, "mapbox", _tilesetId, z.ToString(), x.ToString(), $"{y}.{_formatExtension}");
+            if (File.Exists(path))
+            {
+                return await File.ReadAllBytesAsync(path, ct);
+            }
+
+            var bytes = await _http.GetByteArrayAsync(url, ct);
+            if (_persistTileCache)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                    await File.WriteAllBytesAsync(path, bytes, ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to persist tile cache at {Path}", path);
+                }
+            }
+            return bytes;
+        }
+
+        return await _http.GetByteArrayAsync(url, ct);
+    }
+
+    private IEnumerable<GeoFeature> DecodeLayerFeatures(byte[] pbf, string layerName, FeatureKind kind, int z, int x, int y, CancellationToken ct)
     {
         // NetTopologySuite vector tile reader returns tile-local coordinates (0..extent).
         using var ms = new MemoryStream(pbf, writable: false);
@@ -102,10 +138,9 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
             ct.ThrowIfCancellationRequested();
             if (feat?.Geometry is null) continue;
 
-            // Buildings should be polygons/multipolygons.
             if (feat.Geometry is Polygon p)
             {
-                foreach (var f in ConvertPolygonFeature(p, feat, extent, z, x, y))
+                foreach (var f in ConvertPolygonFeature(p, feat, kind, extent, z, x, y))
                     yield return f;
             }
             else if (feat.Geometry is MultiPolygon mp)
@@ -114,14 +149,29 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
                 {
                     var g = mp.GetGeometryN(i) as Polygon;
                     if (g == null) continue;
-                    foreach (var f in ConvertPolygonFeature(g, feat, extent, z, x, y))
+                    foreach (var f in ConvertPolygonFeature(g, feat, kind, extent, z, x, y))
+                        yield return f;
+                }
+            }
+            else if (feat.Geometry is LineString ls)
+            {
+                foreach (var f in ConvertLineStringFeature(ls, feat, kind, extent, z, x, y))
+                    yield return f;
+            }
+            else if (feat.Geometry is MultiLineString mls)
+            {
+                for (var i = 0; i < mls.NumGeometries; i++)
+                {
+                    var g = mls.GetGeometryN(i) as LineString;
+                    if (g == null) continue;
+                    foreach (var f in ConvertLineStringFeature(g, feat, kind, extent, z, x, y))
                         yield return f;
                 }
             }
         }
     }
 
-    private IEnumerable<GeoFeature> ConvertPolygonFeature(Polygon poly, IFeature feat, int extent, int z, int x, int y)
+    private IEnumerable<GeoFeature> ConvertPolygonFeature(Polygon poly, IFeature feat, FeatureKind kind, int extent, int z, int x, int y)
     {
         var coords = poly.ExteriorRing?.Coordinates;
         if (coords == null || coords.Length < 3) yield break;
@@ -152,8 +202,37 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
         var id = props.TryGetValue("id", out var idObj) ? Convert.ToString(idObj, CultureInfo.InvariantCulture) : Guid.NewGuid().ToString("N");
         yield return new GeoFeature(
             id: $"{z}/{x}/{y}:{id}",
-            kind: FeatureKind.Building,
+            kind: kind,
             geometry: new GeoPolygon(geoRing),
+            properties: props);
+    }
+
+    private IEnumerable<GeoFeature> ConvertLineStringFeature(LineString line, IFeature feat, FeatureKind kind, int extent, int z, int x, int y)
+    {
+        var coords = line.Coordinates;
+        if (coords == null || coords.Length < 2) yield break;
+
+        var geoPts = new List<GeoPoint>(coords.Length);
+        for (var i = 0; i < coords.Length; i++)
+        {
+            var c = coords[i];
+            geoPts.Add(TilePointToGeo(z, x, y, extent, (int)Math.Round(c.X), (int)Math.Round(c.Y)));
+        }
+
+        var props = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in feat.Attributes.GetNames())
+        {
+            props[name] = feat.Attributes[name] ?? "";
+        }
+        props["provider"] = "mapbox";
+        props["tileset"] = _tilesetId;
+        props["zxy"] = $"{z}/{x}/{y}";
+
+        var id = props.TryGetValue("id", out var idObj) ? Convert.ToString(idObj, CultureInfo.InvariantCulture) : Guid.NewGuid().ToString("N");
+        yield return new GeoFeature(
+            id: $"{z}/{x}/{y}:{id}",
+            kind: kind,
+            geometry: new GeoPolyline(geoPts),
             properties: props);
     }
 
@@ -162,6 +241,7 @@ public sealed class MapboxVectorTileProvider : IVectorProvider
         // Mapbox Streets v8 commonly uses these layer names.
         if (kind.Equals(FeatureKind.Building)) return "building";
         if (kind.Equals(FeatureKind.Road)) return "road";
+        if (kind.Equals(FeatureKind.Water)) return "water";
         if (kind.Equals(FeatureKind.Vegetation)) return "landuse"; // coarse fallback
         return kind.Value;
     }

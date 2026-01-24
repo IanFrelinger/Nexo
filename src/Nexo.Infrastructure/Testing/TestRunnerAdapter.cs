@@ -129,7 +129,8 @@ public class TestRunnerAdapter : ITestRunner
             "Nexo.Tests.Infrastructure",
             "Nexo.Tests.CLI",
             "Nexo.Tests.GeoTerrain",
-            "Nexo.Tests.GeoVector"
+            "Nexo.Tests.GeoVector",
+            "Nexo.Tests.GeoWorld"
         };
         
         var assemblies = new List<System.Reflection.Assembly>(loadedAssemblies);
@@ -153,7 +154,10 @@ public class TestRunnerAdapter : ITestRunner
                 {
                     Path.Combine(baseDir, $"{assemblyName}.dll"),
                     Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Debug", "net8.0", $"{assemblyName}.dll"),
+                    Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Release", "net8.0", $"{assemblyName}.dll"),
                     Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Debug", "net8.0", $"{assemblyName}.dll")
+                    ,
+                    Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Release", "net8.0", $"{assemblyName}.dll")
                 };
                 
                 foreach (var assemblyPath in possiblePaths)

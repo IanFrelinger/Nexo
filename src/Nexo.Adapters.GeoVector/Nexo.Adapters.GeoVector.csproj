@@ -18,6 +18,9 @@
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="NetTopologySuite.IO.VectorTiles" />
     <PackageReference Include="NetTopologySuite.IO.VectorTiles.Mapbox" />
+    <PackageReference Include="NetTopologySuite.IO.ShapeFile" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="OsmSharp" />
   </ItemGroup>
 </Project>
 
