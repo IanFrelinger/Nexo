@@ -86,7 +86,7 @@ public class WorldService : IWorldService
         return Task.FromResult<string?>(null);
     }
 
-    public async Task<ValidationResult> ValidateWorldAsync(string bundlePath)
+    public Task<ValidationResult> ValidateWorldAsync(string bundlePath)
     {
         try
         {
@@ -98,20 +98,20 @@ public class WorldService : IWorldService
                 issues.Add($"Bundle directory does not exist: {bundlePath}");
             }
 
-            return new ValidationResult
+            return Task.FromResult(new ValidationResult
             {
                 IsValid = issues.Count == 0,
                 Issues = issues
-            };
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating world bundle");
-            return new ValidationResult
+            return Task.FromResult(new ValidationResult
             {
                 IsValid = false,
                 Issues = new[] { ex.Message }
-            };
+            });
         }
     }
 }
