@@ -223,18 +223,30 @@ elif [ "${1:-}" == "--env" ] && [ -n "${2:-}" ]; then
     
     if [ $? -ne 0 ]; then
         echo -e "${RED}❌ Unknown environment: ${ENV_NAME}${NC}"
-        echo "Available: ubuntu-8.0 ubuntu-7.0 alpine-8.0 debian-8.0 android-8.0 windows-8.0"
+        echo "Available: ubuntu-8.0 ubuntu-7.0 alpine-8.0 debian-8.0 android-8.0 windows-8.0 unity-8.0"
         exit 1
     fi
     
-    IFS='|' read -r dockerfile dotnet_version description <<< "$config"
+    IFS='|' read -r dockerfile dotnet_version description env_type <<< "$config"
     
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${YELLOW}Testing ${ENV_NAME} (${description})${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
-    run_infrastructure_tests_docker "$ENV_NAME" "$dockerfile" "$dotnet_version" "$description"
+    if [ "$env_type" == "docker" ]; then
+        run_infrastructure_tests_docker "$ENV_NAME" "$dockerfile" "$dotnet_version" "$description"
+    else
+        # Native execution (Unity, iOS)
+        echo -e "${YELLOW}Running ${description} tests natively...${NC}"
+        if [ -f "$dockerfile" ]; then
+            chmod +x "$dockerfile"
+            "$dockerfile"
+        else
+            echo -e "${RED}❌ Script not found: ${dockerfile}${NC}"
+            exit 1
+        fi
+    fi
 else
     echo "Usage: $0 [--all|--env ENV_NAME]"
     echo ""
