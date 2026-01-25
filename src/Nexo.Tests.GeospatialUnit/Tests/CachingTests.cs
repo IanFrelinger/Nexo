@@ -46,7 +46,7 @@ public class CachingTests : IDisposable
         var provider = new SrtmHttpElevationProvider(
             _httpClient,
             "https://example.com/srtm/",
-            _mockLogger.Object,
+            _logger,
             cacheRoot: cacheRoot,
             persistCache: true);
 
@@ -116,7 +116,7 @@ public class CachingTests : IDisposable
         // Arrange
         var factory = new VectorProviderFactory(
             _mockHttpClientFactory.Object,
-            _mockLoggerFactory.Object);
+            _loggerFactory);
         var cacheRoot = Path.Combine(_testCacheDir, "vector-cache");
         var bounds = GeoBounds.Parse("37.0,-122.0,38.0,-121.0");
 
