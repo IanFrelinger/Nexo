@@ -27,23 +27,25 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<CompilationResult> CompileAsync(
+    public Task<CompilationResult> CompileAsync(
         string sourceCode,
         string assemblyName,
         string outputPath,
         IEnumerable<string>? references = null,
         CancellationToken cancellationToken = default)
     {
-        var startTime = DateTime.UtcNow;
-        var errors = new List<string>();
-        var warnings = new List<string>();
-
-        try
+        return Task.Run(() =>
         {
-            _logger.LogInformation("Compiling C# code to assembly: {AssemblyName}", assemblyName);
+            var startTime = DateTime.UtcNow;
+            var errors = new List<string>();
+            var warnings = new List<string>();
 
-            // Parse the source code
-            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, cancellationToken: cancellationToken);
+            try
+            {
+                _logger.LogInformation("Compiling C# code to assembly: {AssemblyName}", assemblyName);
+
+                // Parse the source code
+                var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, cancellationToken: cancellationToken);
 
             // Get default references (core .NET libraries)
             var defaultReferences = GetDefaultReferences();
@@ -90,26 +92,27 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                 }
             }
 
-            var duration = DateTime.UtcNow - startTime;
+                var duration = DateTime.UtcNow - startTime;
 
-            if (emitResult.Success)
-            {
-                _logger.LogInformation("Successfully compiled assembly: {OutputPath} in {Duration}ms", outputPath, duration.TotalMilliseconds);
-                return new CompilationResult(true, outputPath, errors, warnings, duration);
+                if (emitResult.Success)
+                {
+                    _logger.LogInformation("Successfully compiled assembly: {OutputPath} in {Duration}ms", outputPath, duration.TotalMilliseconds);
+                    return new CompilationResult(true, outputPath, errors, warnings, duration);
+                }
+                else
+                {
+                    _logger.LogWarning("Compilation failed with {ErrorCount} error(s)", errors.Count);
+                    return new CompilationResult(false, null, errors, warnings, duration);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                _logger.LogWarning("Compilation failed with {ErrorCount} error(s)", errors.Count);
+                var duration = DateTime.UtcNow - startTime;
+                _logger.LogError(ex, "Exception during compilation");
+                errors.Add($"Exception: {ex.Message}");
                 return new CompilationResult(false, null, errors, warnings, duration);
             }
-        }
-        catch (Exception ex)
-        {
-            var duration = DateTime.UtcNow - startTime;
-            _logger.LogError(ex, "Exception during compilation");
-            errors.Add($"Exception: {ex.Message}");
-            return new CompilationResult(false, null, errors, warnings, duration);
-        }
+        }, cancellationToken);
     }
 
     public async Task<DecompilationResult> DecompileAsync(
@@ -165,16 +168,63 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
         }
     }
 
-    public async Task<AssemblyAnalysisResult> AnalyzeAssemblyAsync(
+    public Task<AssemblyAnalysisResult> AnalyzeAssemblyAsync(
         string assemblyPath,
         CancellationToken cancellationToken = default)
     {
-        var startTime = DateTime.UtcNow;
-
-        try
+        return Task.Run(() =>
         {
-            if (!File.Exists(assemblyPath))
+            var startTime = DateTime.UtcNow;
+
+            try
             {
+                if (!File.Exists(assemblyPath))
+                {
+                    return new AssemblyAnalysisResult(
+                        false,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<string>(),
+                        Array.Empty<string>(),
+                        $"Assembly not found: {assemblyPath}",
+                        DateTime.UtcNow - startTime);
+                }
+
+                _logger.LogInformation("Analyzing assembly: {AssemblyPath}", assemblyPath);
+
+                // Load assembly using reflection
+                var assembly = Assembly.LoadFrom(assemblyPath);
+                var assemblyName = assembly.GetName();
+
+                // Extract types
+                var types = assembly.GetTypes()
+                    .Select(t => t.FullName ?? t.Name)
+                    .ToList();
+
+                // Extract methods
+                var methods = assembly.GetTypes()
+                    .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                    .Select(m => $"{m.DeclaringType?.FullName}.{m.Name}")
+                    .ToList();
+
+                var duration = DateTime.UtcNow - startTime;
+                _logger.LogInformation("Successfully analyzed assembly: {AssemblyName} in {Duration}ms", assemblyName.Name, duration.TotalMilliseconds);
+
+                return new AssemblyAnalysisResult(
+                    true,
+                    assemblyName.Name,
+                    assemblyName.Version?.ToString(),
+                    assemblyName.CultureName,
+                    types,
+                    methods,
+                    null,
+                    duration);
+            }
+            catch (Exception ex)
+            {
+                var duration = DateTime.UtcNow - startTime;
+                _logger.LogError(ex, "Exception during assembly analysis");
                 return new AssemblyAnalysisResult(
                     false,
                     null,
@@ -182,54 +232,10 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                     null,
                     Array.Empty<string>(),
                     Array.Empty<string>(),
-                    $"Assembly not found: {assemblyPath}",
-                    DateTime.UtcNow - startTime);
+                    ex.Message,
+                    duration);
             }
-
-            _logger.LogInformation("Analyzing assembly: {AssemblyPath}", assemblyPath);
-
-            // Load assembly using reflection
-            var assembly = Assembly.LoadFrom(assemblyPath);
-            var assemblyName = assembly.GetName();
-
-            // Extract types
-            var types = assembly.GetTypes()
-                .Select(t => t.FullName ?? t.Name)
-                .ToList();
-
-            // Extract methods
-            var methods = assembly.GetTypes()
-                .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                .Select(m => $"{m.DeclaringType?.FullName}.{m.Name}")
-                .ToList();
-
-            var duration = DateTime.UtcNow - startTime;
-            _logger.LogInformation("Successfully analyzed assembly: {AssemblyName} in {Duration}ms", assemblyName.Name, duration.TotalMilliseconds);
-
-            return new AssemblyAnalysisResult(
-                true,
-                assemblyName.Name,
-                assemblyName.Version?.ToString(),
-                assemblyName.CultureName,
-                types,
-                methods,
-                null,
-                duration);
-        }
-        catch (Exception ex)
-        {
-            var duration = DateTime.UtcNow - startTime;
-            _logger.LogError(ex, "Exception during assembly analysis");
-            return new AssemblyAnalysisResult(
-                false,
-                null,
-                null,
-                null,
-                Array.Empty<string>(),
-                Array.Empty<string>(),
-                ex.Message,
-                duration);
-        }
+        }, cancellationToken);
     }
 
     private static List<MetadataReference> GetDefaultReferences()
