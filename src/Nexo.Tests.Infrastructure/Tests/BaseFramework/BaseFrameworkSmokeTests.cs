@@ -179,6 +179,26 @@ public class BaseFrameworkSmokeTests : IDisposable
         task.Invoking(t => t.Wait()).Should().Throw<AggregateException>("Task should be cancelled");
     }
 
+    [Fact]
+    public void AutonomousDevAgent_ShouldBeAvailable()
+    {
+        // Arrange & Act
+        var agentType = Type.GetType("Nexo.Agents.AutonomousDev.AutonomousDevAgent, Nexo.Agents.AutonomousDev");
+
+        // Assert
+        agentType.Should().NotBeNull("AutonomousDevAgent should be available");
+    }
+
+    [Fact]
+    public void UniversalTesterAgent_ShouldBeAvailable()
+    {
+        // Arrange & Act
+        var agentType = Type.GetType("Nexo.Agents.UniversalTester.UniversalTesterAgent, Nexo.Agents.UniversalTester");
+
+        // Assert
+        agentType.Should().NotBeNull("UniversalTesterAgent should be available");
+    }
+
     public void Dispose()
     {
         try
