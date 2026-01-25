@@ -6,9 +6,18 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  
+  <!-- Workaround for Castle.Core net6.0 assembly loading issue on .NET 8.0 -->
+  <ItemGroup>
+    <Content Include="Nexo.Tests.Infrastructure.runtimeconfig.template.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Nexo.Tests.Infrastructure.runtimeconfig.json</TargetPath>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Moq" />
+    <PackageReference Include="Castle.Core" />
     <PackageReference Include="Mono.Cecil" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
