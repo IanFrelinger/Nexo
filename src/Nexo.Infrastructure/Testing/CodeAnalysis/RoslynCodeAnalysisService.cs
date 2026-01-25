@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Nexo.Infrastructure.Testing.CodeAnalysis;
 

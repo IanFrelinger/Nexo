@@ -15,12 +15,9 @@ public static class PlatformCompatibilityChecker
     /// </summary>
     public static CodeAnalysisCompatibilityResult CheckCompatibility()
     {
-        var result = new CodeAnalysisCompatibilityResult
-        {
-            Platform = GetPlatformName(),
-            IsCompatible = true,
-            Issues = new List<string>()
-        };
+        var platform = GetPlatformName();
+        var isCompatible = true;
+        var issues = new List<string>();
 
         // Check Roslyn availability
         try
@@ -28,14 +25,14 @@ public static class PlatformCompatibilityChecker
             var roslynAvailable = CheckRoslynAvailable();
             if (!roslynAvailable)
             {
-                result.IsCompatible = false;
-                result.Issues.Add("Microsoft.CodeAnalysis.CSharp (Roslyn) is not available");
+                isCompatible = false;
+                issues.Add("Microsoft.CodeAnalysis.CSharp (Roslyn) is not available");
             }
         }
         catch (Exception ex)
         {
-            result.IsCompatible = false;
-            result.Issues.Add($"Roslyn check failed: {ex.Message}");
+            isCompatible = false;
+            issues.Add($"Roslyn check failed: {ex.Message}");
         }
 
         // Check ICSharpCode.Decompiler availability
@@ -44,14 +41,14 @@ public static class PlatformCompatibilityChecker
             var decompilerAvailable = CheckDecompilerAvailable();
             if (!decompilerAvailable)
             {
-                result.IsCompatible = false;
-                result.Issues.Add("ICSharpCode.Decompiler is not available");
+                isCompatible = false;
+                issues.Add("ICSharpCode.Decompiler is not available");
             }
         }
         catch (Exception ex)
         {
-            result.IsCompatible = false;
-            result.Issues.Add($"Decompiler check failed: {ex.Message}");
+            isCompatible = false;
+            issues.Add($"Decompiler check failed: {ex.Message}");
         }
 
         // Check System.Reflection capabilities
@@ -60,17 +57,17 @@ public static class PlatformCompatibilityChecker
             var reflectionAvailable = CheckReflectionAvailable();
             if (!reflectionAvailable)
             {
-                result.IsCompatible = false;
-                result.Issues.Add("System.Reflection capabilities are limited");
+                isCompatible = false;
+                issues.Add("System.Reflection capabilities are limited");
             }
         }
         catch (Exception ex)
         {
-            result.IsCompatible = false;
-            result.Issues.Add($"Reflection check failed: {ex.Message}");
+            isCompatible = false;
+            issues.Add($"Reflection check failed: {ex.Message}");
         }
 
-        return result;
+        return new CodeAnalysisCompatibilityResult(platform, isCompatible, issues);
     }
 
     private static bool CheckRoslynAvailable()
@@ -134,9 +131,4 @@ public static class PlatformCompatibilityChecker
 public record CodeAnalysisCompatibilityResult(
     string Platform,
     bool IsCompatible,
-    List<string> Issues)
-{
-    public CodeAnalysisCompatibilityResult() : this("Unknown", true, new List<string>())
-    {
-    }
-}
+    List<string> Issues);
