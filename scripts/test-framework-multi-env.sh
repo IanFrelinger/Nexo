@@ -22,22 +22,25 @@ get_env_config() {
     local env_name=$1
     case "$env_name" in
         ubuntu-8.0)
-            echo ".docker/Dockerfile.test-framework|8.0|Ubuntu 22.04"
+            echo ".docker/Dockerfile.test-framework|8.0|Ubuntu 22.04|docker"
             ;;
         ubuntu-7.0)
-            echo ".docker/Dockerfile.test-framework|7.0|Ubuntu 22.04"
+            echo ".docker/Dockerfile.test-framework|7.0|Ubuntu 22.04|docker"
             ;;
         alpine-8.0)
-            echo ".docker/Dockerfile.test-framework-alpine|8.0|Alpine Linux"
+            echo ".docker/Dockerfile.test-framework-alpine|8.0|Alpine Linux|docker"
             ;;
         debian-8.0)
-            echo ".docker/Dockerfile.test-framework-debian|8.0|Debian 12"
+            echo ".docker/Dockerfile.test-framework-debian|8.0|Debian 12|docker"
             ;;
         android-8.0)
-            echo ".docker/Dockerfile.test-framework-android|8.0|Android"
+            echo ".docker/Dockerfile.test-framework-android|8.0|Android|docker"
             ;;
         windows-8.0)
-            echo ".docker/Dockerfile.test-framework-windows|8.0|Windows"
+            echo ".docker/Dockerfile.test-framework-windows|8.0|Windows|docker"
+            ;;
+        unity-8.0)
+            echo "scripts/test-framework-unity.sh|8.0|Unity|native"
             ;;
         *)
             return 1
@@ -169,7 +172,7 @@ if [ "${1:-}" == "--all" ]; then
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
-    ENVIRONMENTS="ubuntu-8.0 ubuntu-7.0 alpine-8.0 debian-8.0 android-8.0 windows-8.0"
+    ENVIRONMENTS="ubuntu-8.0 ubuntu-7.0 alpine-8.0 debian-8.0 android-8.0 windows-8.0 unity-8.0"
     FAILED=0
     
     for env_name in $ENVIRONMENTS; do
@@ -179,15 +182,28 @@ if [ "${1:-}" == "--all" ]; then
             continue
         fi
         
-        IFS='|' read -r dockerfile dotnet_version description <<< "$config"
+        IFS='|' read -r dockerfile dotnet_version description env_type <<< "$config"
         
         echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "${YELLOW}Testing ${env_name} (${description})${NC}"
         echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo ""
         
-        if ! run_infrastructure_tests_docker "$env_name" "$dockerfile" "$dotnet_version" "$description"; then
-            FAILED=1
+        if [ "$env_type" == "docker" ]; then
+            if ! run_infrastructure_tests_docker "$env_name" "$dockerfile" "$dotnet_version" "$description"; then
+                FAILED=1
+            fi
+        else
+            # Native execution (Unity)
+            if [ -f "$dockerfile" ]; then
+                chmod +x "$dockerfile"
+                if ! "$dockerfile"; then
+                    FAILED=1
+                fi
+            else
+                echo -e "${RED}❌ Script not found: ${dockerfile}${NC}"
+                FAILED=1
+            fi
         fi
         
         echo ""
@@ -228,5 +244,6 @@ else
     echo "  - debian-8.0: Debian 12 (.NET 8.0)"
     echo "  - android-8.0: Android (.NET 8.0)"
     echo "  - windows-8.0: Windows (.NET 8.0)"
+    echo "  - unity-8.0: Unity (.NET Standard 2.0 compatible)"
     exit 1
 fi
