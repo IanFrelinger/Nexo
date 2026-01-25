@@ -142,11 +142,18 @@ public class GeoTerrainClient
         // Fetch all tiles and track actual download sizes
         var hgtBytesByTile = new Dictionary<SrtmTileId, byte[]>(tileIds.Count);
         long actualDownloadBytes = 0;
+        int cachedCount = 0;
         foreach (var tileId in tileIds)
         {
             var tile = await _elevationProvider.GetSrtmTileAsync(tileId, cancellationToken);
             hgtBytesByTile[tileId] = tile.HgtBytes;
             actualDownloadBytes += tile.HgtBytes.Length;
+            
+            // Check if tile was cached
+            if (tile.Metadata != null && tile.Metadata.TryGetValue("cached", out var cached) && cached is bool isCached && isCached)
+            {
+                cachedCount++;
+            }
         }
 
         _logger?.LogInformation("Building elevation grid from {Count} tiles", hgtBytesByTile.Count);
