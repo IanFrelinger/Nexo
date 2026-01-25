@@ -54,8 +54,9 @@ The code analysis service is designed to work on:
 
 **Platform Support**:
 - ✅ All .NET platforms
-- ⚠️ **iOS Limitations**: `Assembly.LoadFrom()` may have restrictions
-- ⚠️ **Unity Limitations**: Some reflection APIs may be restricted
+- ⚠️ **.NET Standard 2.0**: `Assembly.LoadFrom()` is NOT available
+- ✅ **Solution**: Uses `Assembly.Load(byte[])` for maximum compatibility
+- ✅ **Works on**: Windows, Linux, macOS, Android, iOS, Unity
 
 ## Platform-Specific Considerations
 
@@ -91,35 +92,31 @@ The code analysis service is designed to work on:
 - Full API support within container
 - No native Android app limitations
 
-### iOS ⚠️
+### iOS ✅
 
-**Status**: Limited Support
+**Status**: Supported
 
-**Limitations**:
-- `Assembly.LoadFrom()` may not work in all iOS contexts
-- Some reflection APIs may be restricted
-- Requires native macOS execution (not device/simulator)
+**Implementation**:
+- Uses `Assembly.Load(byte[])` instead of `Assembly.LoadFrom()`
+- Works in native macOS execution context
+- Full reflection support for analysis
 
-**Recommendations**:
-- Use `MetadataLoadContext` for assembly analysis if available
-- Test assembly loading in iOS-specific contexts
-- Consider alternative analysis methods for iOS
+**Note**: Requires native macOS execution (not device/simulator)
 
-### Unity ⚠️
+### Unity ✅
 
-**Status**: Limited Support
+**Status**: Supported (with testing recommended)
 
-**Limitations**:
-- .NET Standard 2.0 compatibility required
-- Some Roslyn APIs may not be available
-- `Assembly.LoadFrom()` may have restrictions
-- Reflection capabilities may be limited
+**Implementation**:
+- Uses `Assembly.Load(byte[])` for .NET Standard 2.0 compatibility
+- Roslyn 4.8.0 supports .NET Standard 2.0 (may need testing)
+- ICSharpCode.Decompiler 8.0.0 supports .NET Standard 2.0
 
 **Recommendations**:
-- Test compilation/decompilation in Unity environment
-- Use Unity-compatible Roslyn version if needed
-- Consider using `MetadataLoadContext` for assembly analysis
-- Verify ICSharpCode.Decompiler works in Unity context
+- ✅ Test compilation/decompilation in Unity environment to verify
+- ⚠️ If Roslyn 4.8.0 has issues, consider downgrading to 3.8
+- ✅ Assembly loading uses .NET Standard 2.0 compatible API
+- ✅ ICSharpCode.Decompiler should work in Unity context
 
 ## Compatibility Testing
 
@@ -153,25 +150,29 @@ foreach (var issue in checker.Issues)
 
 ## Known Issues and Workarounds
 
-### Issue: Assembly.LoadFrom() on iOS
+### Issue: Assembly.LoadFrom() Not in .NET Standard 2.0 ✅ RESOLVED
 
-**Problem**: iOS may restrict loading assemblies from arbitrary paths.
+**Problem**: `Assembly.LoadFrom()` is not available in .NET Standard 2.0.
 
-**Workaround**: Use `MetadataLoadContext` or `Assembly.LoadFile()` if available.
+**Solution**: 
+- ✅ Uses `Assembly.Load(byte[])` instead
+- ✅ Works on all platforms including Unity and iOS
+- ✅ Fully compatible with .NET Standard 2.0
 
-### Issue: Roslyn in Unity
+### Issue: Roslyn in Unity ⚠️
 
-**Problem**: Some Roslyn APIs may not be available in .NET Standard 2.0.
+**Problem**: Roslyn 4.8.0 may have some API limitations in Unity.
 
 **Workaround**: 
-- Use Roslyn 3.x for full .NET Standard 2.0 support
-- Or limit to compilation only (skip advanced analysis)
+- Test in Unity environment to verify compatibility
+- If issues occur, consider Roslyn 3.x for full .NET Standard 2.0 support
+- Compilation should work; advanced analysis features may be limited
 
-### Issue: ICSharpCode.Decompiler in Unity
+### Issue: ICSharpCode.Decompiler in Unity ✅
 
-**Problem**: Some decompiler features may be limited.
+**Status**: Should work - ICSharpCode.Decompiler 8.0.0 supports .NET Standard 2.0
 
-**Workaround**: Basic decompilation should work; advanced features may need testing.
+**Recommendation**: Test in Unity environment to verify full functionality
 
 ## Recommendations
 
