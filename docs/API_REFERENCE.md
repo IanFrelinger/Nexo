@@ -300,6 +300,8 @@ Rate limit headers will be included in responses:
 
 ### C# SDK
 
+#### Basic Usage
+
 ```csharp
 using Nexo.SDK;
 using Nexo.GeoTerrain;
@@ -309,19 +311,71 @@ var elevationProvider = new SrtmHttpElevationProvider(httpClient);
 var terrainClient = new GeoTerrainClient(elevationProvider, logger);
 
 // Generate mesh
-var bounds = new GeoBounds
-{
-    MinLatitude = new Latitude(37.7749),
-    MaxLatitude = new Latitude(37.8049),
-    MinLongitude = new Longitude(-122.4194),
-    MaxLongitude = new Longitude(-122.3894)
-};
-
+var bounds = GeoBounds.Parse("37.7749,37.8049,-122.4194,-122.3894");
 var mesh = await terrainClient.GenerateMeshAsync(bounds);
 
 // Export to file
 await terrainClient.ExportMeshAsync(mesh, "terrain.obj", "obj");
 ```
+
+#### Resource Estimation
+
+```csharp
+using Nexo.SDK;
+using Nexo.SDK.Estimation;
+
+// Create estimator with custom cost model
+var costModel = new CostModelConfiguration
+{
+    MapboxVectorTileCostPerRequest = 0.0005m,
+    SrtmBandwidthCostPerGb = 0.01m
+};
+var estimator = new ResourceEstimationService(costModel);
+
+// Create client with estimator
+var terrainClient = new GeoTerrainClient(
+    elevationProvider, 
+    logger, 
+    estimator);
+
+// Generate mesh with estimation
+var bounds = GeoBounds.Parse("37.7749,37.8049,-122.4194,-122.3894");
+var result = await terrainClient.GenerateMeshWithEstimationAsync(bounds);
+
+// Access results
+var mesh = result.Result;
+Console.WriteLine($"Estimated: ${result.Estimate?.CostUsd:F4}, {result.Estimate?.MemoryMegabytes:F2} MB");
+Console.WriteLine($"Actual: ${result.Actual?.CostUsd:F4}, {result.Actual?.MemoryMegabytes:F2} MB");
+
+// Cost breakdown
+if (result.Actual?.CostBreakdown != null)
+{
+    foreach (var component in result.Actual.CostBreakdown)
+    {
+        Console.WriteLine($"  {component.Key}: ${component.Value:F4}");
+    }
+}
+```
+
+#### Vector Feature Extraction
+
+```csharp
+using Nexo.SDK;
+using Nexo.GeoVector.Values;
+
+var vectorProvider = /* your provider */;
+var vectorClient = new GeoVectorClient(vectorProvider, logger, estimator);
+
+var bounds = GeoBounds.Parse("37.7749,37.8049,-122.4194,-122.3894");
+var result = await vectorClient.ExtractFeaturesWithEstimationAsync(
+    bounds, 
+    FeatureKind.Building);
+
+Console.WriteLine($"Extracted {result.Result.Features.Count} features");
+Console.WriteLine($"Memory: {result.Actual?.MemoryMegabytes:F2} MB");
+```
+
+See [SDK Resource Estimation Guide](SDK_RESOURCE_ESTIMATION.md) for complete documentation.
 
 ### Python SDK (Future)
 

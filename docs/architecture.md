@@ -128,11 +128,20 @@ Nexo/
 │   │   ├── Resilience/              # Circuit breakers, retry policies
 │   │   └── Metrics/                 # Performance monitoring
 │   │
+│   ├── Nexo.GeoTerrain/             # Terrain generation domain
+│   ├── Nexo.GeoVector/              # Vector feature processing domain
+│   ├── Nexo.GeoWorld/               # World bundle generation domain
+│   │
 │   ├── Nexo.Adapters.*/             # Infrastructure adapters
 │   │   ├── Nexo.Adapters.OpenAI/
 │   │   ├── Nexo.Adapters.Azure/
 │   │   ├── Nexo.Adapters.Ollama/
-│   │   └── Nexo.Adapters.Assets/
+│   │   ├── Nexo.Adapters.Assets/
+│   │   ├── Nexo.Adapters.GeoTerrain/  # Elevation data providers
+│   │   └── Nexo.Adapters.GeoVector/   # Vector data providers
+│   │
+│   ├── Nexo.API/                    # REST API for geospatial operations
+│   ├── Nexo.SDK/                    # Programmatic SDK with resource estimation
 │   │
 │   ├── Nexo.Tools.*/                # Development tools
 │   ├── Nexo.Policies.*/             # Policy enforcement
@@ -318,8 +327,36 @@ public void Domain_Should_Not_Depend_On_Infrastructure()
 
 ---
 
+## Geospatial Architecture
+
+Nexo includes a comprehensive geospatial processing system with:
+
+### Domain Layer
+- **Nexo.GeoTerrain**: Elevation grid processing and terrain mesh generation
+- **Nexo.GeoVector**: Vector feature extraction and processing
+- **Nexo.GeoWorld**: World bundle composition and validation
+
+### Adapter Layer
+- **Nexo.Adapters.GeoTerrain**: SRTM, GeoTIFF, Mapbox, and local elevation providers
+- **Nexo.Adapters.GeoVector**: OSM, Mapbox, GeoJSON, and Shapefile vector providers
+
+### Application Layer
+- **Nexo.API**: REST API with async job processing, webhooks, and SSE progress streaming
+- **Nexo.SDK**: Programmatic SDK with resource estimation (cost and memory tracking)
+- **Nexo.CLI**: Command-line interface for all geospatial operations
+
+### Key Features
+- **Resource Estimation**: Built-in cost and memory footprint estimation
+- **Base Classes**: `BaseGeospatialService<TCommand>` and `BaseGeospatialController<TService>` for code reuse
+- **Factory Pattern**: `ElevationProviderFactory` and `VectorProviderFactory` for provider creation
+- **Validation**: Data integrity checks and mesh quality metrics
+
+See [Geospatial User Guide](GEOSPATIAL_USER_GUIDE.md) and [SDK Resource Estimation](SDK_RESOURCE_ESTIMATION.md) for details.
+
 ## Next Steps
 
 - [Quick Start Guide](QUICK_START.md) - Get running in 5 minutes
+- [Geospatial User Guide](GEOSPATIAL_USER_GUIDE.md) - Geospatial features
+- [SDK Resource Estimation](SDK_RESOURCE_ESTIMATION.md) - Cost and memory estimation
 - [Defense Deployment](DEFENSE_DEPLOYMENT.md) - Air-gap and compliance
 - [API Reference](API_REFERENCE.md) - Complete API documentation

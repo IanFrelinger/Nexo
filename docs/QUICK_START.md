@@ -212,14 +212,54 @@ public class MyAnalyzerBrick : Brick
 
 ---
 
+## Geospatial Quick Start
+
+Nexo includes comprehensive geospatial capabilities:
+
+```bash
+# Generate terrain mesh from SRTM data
+nexo geoterrain bounds-to-mesh \
+  --bounds "37.0,-122.0,38.0,-121.0" \
+  --output terrain.obj
+
+# Extract buildings from OSM
+nexo geovector extract \
+  --provider osm \
+  --input data.osm.pbf \
+  --bounds "37.0,-122.0,38.0,-121.0" \
+  --kind building \
+  --output buildings.json
+
+# Generate complete world bundle
+nexo world generate \
+  --bounds "37.0,-122.0,38.0,-121.0" \
+  --output ./world_bundle
+```
+
+**SDK with Resource Estimation:**
+```csharp
+using Nexo.SDK;
+using Nexo.SDK.Estimation;
+
+var estimator = new ResourceEstimationService();
+var client = new GeoTerrainClient(provider, logger, estimator);
+
+var result = await client.GenerateMeshWithEstimationAsync(bounds);
+Console.WriteLine($"Cost: ${result.Actual?.CostUsd:F4}");
+Console.WriteLine($"Memory: {result.Actual?.MemoryMegabytes:F2} MB");
+```
+
+See [Geospatial User Guide](GEOSPATIAL_USER_GUIDE.md) and [SDK Resource Estimation](SDK_RESOURCE_ESTIMATION.md) for details.
+
 ## Next Steps
 
 | Goal | Guide |
 |------|-------|
 | Understand the architecture | [Architecture Overview](ARCHITECTURE.md) |
+| Use geospatial features | [Geospatial User Guide](GEOSPATIAL_USER_GUIDE.md) |
+| Estimate costs and memory | [SDK Resource Estimation](SDK_RESOURCE_ESTIMATION.md) |
 | Deploy to air-gapped environment | [Defense Deployment](DEFENSE_DEPLOYMENT.md) |
-| Integrate with Unity | [Unity Integration](UNITY_INTEGRATION.md) |
-| Set up CI/CD | [CI/CD Guide](CI_CD_GUIDE.md) |
+| API documentation | [API Reference](API_REFERENCE.md) |
 
 ---
 

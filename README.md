@@ -125,12 +125,38 @@ See [Architecture Guide](docs/ARCHITECTURE.md) for details.
 
 ---
 
+## Geospatial Capabilities
+
+Nexo includes comprehensive geospatial processing capabilities:
+
+- **Terrain Generation**: Generate 3D terrain meshes from SRTM, GeoTIFF, Mapbox, and other elevation sources
+- **Vector Feature Extraction**: Extract buildings, roads, water, and other features from OSM, Mapbox, GeoJSON, and Shapefiles
+- **World Bundle Generation**: Create complete world bundles with terrain, features, and metadata
+- **Resource Estimation**: Built-in cost and memory footprint estimation for all operations
+- **Multiple Formats**: Support for OBJ, glTF, GLB, FBX, USD, GeoJSON, and more
+
+**SDK Example:**
+```csharp
+using Nexo.SDK;
+using Nexo.SDK.Estimation;
+
+var estimator = new ResourceEstimationService();
+var client = new GeoTerrainClient(elevationProvider, logger, estimator);
+
+var result = await client.GenerateMeshWithEstimationAsync(bounds);
+Console.WriteLine($"Cost: ${result.Actual?.CostUsd:F4}, Memory: {result.Actual?.MemoryMegabytes:F2} MB");
+```
+
+See [Geospatial User Guide](docs/GEOSPATIAL_USER_GUIDE.md) and [SDK Resource Estimation](docs/SDK_RESOURCE_ESTIMATION.md) for details.
+
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
 | [Quick Start Guide](docs/QUICK_START.md) | Get running in 5 minutes |
 | [Architecture Overview](docs/ARCHITECTURE.md) | System design and patterns |
+| [Geospatial User Guide](docs/GEOSPATIAL_USER_GUIDE.md) | Geospatial features and usage |
+| [SDK Resource Estimation](docs/SDK_RESOURCE_ESTIMATION.md) | Cost and memory estimation |
 | [Defense Deployment](docs/DEFENSE_DEPLOYMENT.md) | Air-gap and compliance guide |
 | [API Reference](docs/API_REFERENCE.md) | Complete API documentation |
 
