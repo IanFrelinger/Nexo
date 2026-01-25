@@ -47,7 +47,7 @@ public class ResourceLimitStressTests
     }
 
     [Fact]
-    public async Task ServiceProvider_ShouldHandleManyScopedServices()
+    public void ServiceProvider_ShouldHandleManyScopedServices()
     {
         // Arrange
         var services = new ServiceCollection();
