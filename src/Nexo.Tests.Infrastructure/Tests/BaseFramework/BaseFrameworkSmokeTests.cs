@@ -149,19 +149,14 @@ public class BaseFrameworkSmokeTests : IDisposable
     }
 
     [Fact]
-    public void AsyncOperations_ShouldComplete()
+    public async Task AsyncOperations_ShouldComplete()
     {
-        // Arrange
-        var repository = _serviceProvider.GetRequiredService<IJobRepository>();
-
-        // Act
-        var task = Task.Run(async () =>
+        // Arrange & Act
+        var result = await Task.Run(async () =>
         {
             await Task.Delay(10);
             return "completed";
         });
-
-        var result = task.Result;
 
         // Assert
         result.Should().Be("completed", "Async operations should complete");
