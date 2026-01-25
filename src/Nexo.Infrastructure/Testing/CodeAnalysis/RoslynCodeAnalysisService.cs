@@ -195,18 +195,33 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                 _logger.LogInformation("Analyzing assembly: {AssemblyPath}", assemblyPath);
 
                 // Load assembly using reflection
-                // Note: Assembly.LoadFrom works on most platforms but may have limitations in:
-                // - Some mobile contexts (iOS restrictions)
-                // - Some Unity contexts (depends on .NET Standard version)
-                // We handle failures gracefully and provide clear error messages
+                // Note: Assembly.LoadFrom is NOT available in .NET Standard 2.0
+                // We use Assembly.Load(byte[]) for maximum compatibility across all platforms
+                // This works on Windows, Linux, macOS, Android, iOS, and Unity
                 Assembly assembly;
+                AssemblyName assemblyName;
+                
                 try
                 {
-                    assembly = Assembly.LoadFrom(assemblyPath);
+                    // Get assembly name first (works on all platforms)
+                    assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
+                    
+                    // Load assembly - use Load(byte[]) for .NET Standard 2.0 compatibility
+                    // This is the recommended approach for .NET Standard 2.0 and works everywhere
+                    var assemblyBytes = File.ReadAllBytes(assemblyPath);
+                    assembly = Assembly.Load(assemblyBytes);
                 }
                 catch (FileNotFoundException)
                 {
                     throw; // Re-throw file not found as-is
+                }
+                catch (BadImageFormatException ex)
+                {
+                    // Invalid assembly format
+                    throw new InvalidOperationException(
+                        $"Invalid assembly format: {assemblyPath}. " +
+                        $"This may not be a valid .NET assembly. " +
+                        $"Original error: {ex.Message}", ex);
                 }
                 catch (Exception ex)
                 {
@@ -218,8 +233,6 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                         $"Framework: {RuntimeInformation.FrameworkDescription}. " +
                         $"Original error: {ex.Message}", ex);
                 }
-                
-                var assemblyName = assembly.GetName();
 
                 // Extract types
                 var types = assembly.GetTypes()
