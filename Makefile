@@ -16,6 +16,19 @@ test-geospatial-smoke:
 test-geospatial-smoke-all:
 	bash scripts/test-caching-multi-env.sh --all
 
+# Framework test coverage and stress testing
+test-framework-coverage:
+	bash scripts/test-framework-coverage.sh
+
+test-framework-stress:
+	bash scripts/test-framework-stress.sh
+
+test-framework-all:
+	bash scripts/test-framework-multi-env.sh --all
+
+test-framework-env:
+	bash scripts/test-framework-multi-env.sh --env $(ENV)
+
 # CLI demos
 demo-test:
 	dotnet run --project src/Nexo.CLI -- demo test \
