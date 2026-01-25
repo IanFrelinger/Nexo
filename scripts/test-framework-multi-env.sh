@@ -40,7 +40,7 @@ get_env_config() {
             echo ".docker/Dockerfile.test-framework-windows|8.0|Windows|docker"
             ;;
         unity-8.0)
-            echo "scripts/test-framework-unity.sh|8.0|Unity|native"
+            echo "scripts/test-framework-unity.sh|8.0|Unity (.NET Standard 2.0)|native"
             ;;
         *)
             return 1
@@ -194,7 +194,8 @@ if [ "${1:-}" == "--all" ]; then
                 FAILED=1
             fi
         else
-            # Native execution (Unity)
+            # Native execution (Unity, iOS)
+            echo -e "${YELLOW}Running ${description} tests natively...${NC}"
             if [ -f "$dockerfile" ]; then
                 chmod +x "$dockerfile"
                 if ! "$dockerfile"; then
