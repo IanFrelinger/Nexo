@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using Nexo.API.Models;
 using Nexo.API.Services;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
