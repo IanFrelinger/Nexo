@@ -1283,6 +1283,13 @@ static class Program
             return new Nexo.Infrastructure.Testing.Docker.DockerService(logger);
         });
 
+        // Register code analysis service for portable compilation/decompilation
+        services.AddSingleton<Nexo.Infrastructure.Testing.CodeAnalysis.ICodeAnalysisService>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService>>();
+            return new Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService(logger);
+        });
+
         // Register renderer
         services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();
 

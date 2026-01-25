@@ -1,0 +1,262 @@
+using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.CSharp;
+using ICSharpCode.Decompiler.Metadata;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.Extensions.Logging;
+using System.Reflection;
+
+namespace Nexo.Infrastructure.Testing.CodeAnalysis;
+
+/// <summary>
+/// Portable implementation of ICodeAnalysisService using Roslyn and ICSharpCode.Decompiler.
+/// 
+/// Provides:
+/// - Code compilation using Microsoft.CodeAnalysis (Roslyn)
+/// - Assembly decompilation using ICSharpCode.Decompiler
+/// - Assembly analysis using System.Reflection
+/// 
+/// Fully portable - no command-line dependencies, works on all .NET platforms.
+/// </summary>
+public class RoslynCodeAnalysisService : ICodeAnalysisService
+{
+    private readonly ILogger<RoslynCodeAnalysisService> _logger;
+
+    public RoslynCodeAnalysisService(ILogger<RoslynCodeAnalysisService> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<CompilationResult> CompileAsync(
+        string sourceCode,
+        string assemblyName,
+        string outputPath,
+        IEnumerable<string>? references = null,
+        CancellationToken cancellationToken = default)
+    {
+        var startTime = DateTime.UtcNow;
+        var errors = new List<string>();
+        var warnings = new List<string>();
+
+        try
+        {
+            _logger.LogInformation("Compiling C# code to assembly: {AssemblyName}", assemblyName);
+
+            // Parse the source code
+            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, cancellationToken: cancellationToken);
+
+            // Get default references (core .NET libraries)
+            var defaultReferences = GetDefaultReferences();
+            var allReferences = defaultReferences;
+
+            // Add custom references if provided
+            if (references != null)
+            {
+                var customReferences = references
+                    .Where(r => File.Exists(r))
+                    .Select(r => MetadataReference.CreateFromFile(r))
+                    .ToList();
+                allReferences = defaultReferences.Concat(customReferences).ToList();
+            }
+
+            // Create compilation
+            var compilation = CSharpCompilation.Create(
+                assemblyName,
+                new[] { syntaxTree },
+                allReferences,
+                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            // Ensure output directory exists
+            var outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Emit the assembly
+            var emitResult = compilation.Emit(outputPath, cancellationToken: cancellationToken);
+
+            // Collect diagnostics
+            foreach (var diagnostic in emitResult.Diagnostics)
+            {
+                var message = diagnostic.GetMessage();
+                if (diagnostic.Severity == DiagnosticSeverity.Error)
+                {
+                    errors.Add($"{diagnostic.Id}: {message}");
+                }
+                else if (diagnostic.Severity == DiagnosticSeverity.Warning)
+                {
+                    warnings.Add($"{diagnostic.Id}: {message}");
+                }
+            }
+
+            var duration = DateTime.UtcNow - startTime;
+
+            if (emitResult.Success)
+            {
+                _logger.LogInformation("Successfully compiled assembly: {OutputPath} in {Duration}ms", outputPath, duration.TotalMilliseconds);
+                return new CompilationResult(true, outputPath, errors, warnings, duration);
+            }
+            else
+            {
+                _logger.LogWarning("Compilation failed with {ErrorCount} error(s)", errors.Count);
+                return new CompilationResult(false, null, errors, warnings, duration);
+            }
+        }
+        catch (Exception ex)
+        {
+            var duration = DateTime.UtcNow - startTime;
+            _logger.LogError(ex, "Exception during compilation");
+            errors.Add($"Exception: {ex.Message}");
+            return new CompilationResult(false, null, errors, warnings, duration);
+        }
+    }
+
+    public async Task<DecompilationResult> DecompileAsync(
+        string assemblyPath,
+        string outputPath,
+        CancellationToken cancellationToken = default)
+    {
+        var startTime = DateTime.UtcNow;
+
+        try
+        {
+            if (!File.Exists(assemblyPath))
+            {
+                return new DecompilationResult(
+                    false,
+                    null,
+                    null,
+                    $"Assembly not found: {assemblyPath}",
+                    DateTime.UtcNow - startTime);
+            }
+
+            _logger.LogInformation("Decompiling assembly: {AssemblyPath}", assemblyPath);
+
+            // Ensure output directory exists
+            var outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Load assembly using ICSharpCode.Decompiler
+            var decompiler = new CSharpDecompiler(assemblyPath, new DecompilerSettings
+            {
+                ThrowOnAssemblyResolveErrors = false
+            });
+
+            // Decompile to C# source
+            var sourceCode = decompiler.DecompileWholeModuleAsString();
+
+            // Write to output file
+            await File.WriteAllTextAsync(outputPath, sourceCode, cancellationToken);
+
+            var duration = DateTime.UtcNow - startTime;
+            _logger.LogInformation("Successfully decompiled assembly to: {OutputPath} in {Duration}ms", outputPath, duration.TotalMilliseconds);
+
+            return new DecompilationResult(true, sourceCode, outputPath, null, duration);
+        }
+        catch (Exception ex)
+        {
+            var duration = DateTime.UtcNow - startTime;
+            _logger.LogError(ex, "Exception during decompilation");
+            return new DecompilationResult(false, null, null, ex.Message, duration);
+        }
+    }
+
+    public async Task<AssemblyAnalysisResult> AnalyzeAssemblyAsync(
+        string assemblyPath,
+        CancellationToken cancellationToken = default)
+    {
+        var startTime = DateTime.UtcNow;
+
+        try
+        {
+            if (!File.Exists(assemblyPath))
+            {
+                return new AssemblyAnalysisResult(
+                    false,
+                    null,
+                    null,
+                    null,
+                    Array.Empty<string>(),
+                    Array.Empty<string>(),
+                    $"Assembly not found: {assemblyPath}",
+                    DateTime.UtcNow - startTime);
+            }
+
+            _logger.LogInformation("Analyzing assembly: {AssemblyPath}", assemblyPath);
+
+            // Load assembly using reflection
+            var assembly = Assembly.LoadFrom(assemblyPath);
+            var assemblyName = assembly.GetName();
+
+            // Extract types
+            var types = assembly.GetTypes()
+                .Select(t => t.FullName ?? t.Name)
+                .ToList();
+
+            // Extract methods
+            var methods = assembly.GetTypes()
+                .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                .Select(m => $"{m.DeclaringType?.FullName}.{m.Name}")
+                .ToList();
+
+            var duration = DateTime.UtcNow - startTime;
+            _logger.LogInformation("Successfully analyzed assembly: {AssemblyName} in {Duration}ms", assemblyName.Name, duration.TotalMilliseconds);
+
+            return new AssemblyAnalysisResult(
+                true,
+                assemblyName.Name,
+                assemblyName.Version?.ToString(),
+                assemblyName.CultureName,
+                types,
+                methods,
+                null,
+                duration);
+        }
+        catch (Exception ex)
+        {
+            var duration = DateTime.UtcNow - startTime;
+            _logger.LogError(ex, "Exception during assembly analysis");
+            return new AssemblyAnalysisResult(
+                false,
+                null,
+                null,
+                null,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                ex.Message,
+                duration);
+        }
+    }
+
+    private static List<MetadataReference> GetDefaultReferences()
+    {
+        // Get core .NET references
+        var references = new List<MetadataReference>();
+
+        // Add common system assemblies
+        var systemAssemblies = new[]
+        {
+            typeof(object).Assembly,           // System.Runtime
+            typeof(Console).Assembly,          // System.Console
+            typeof(System.Linq.Enumerable).Assembly, // System.Linq
+        };
+
+        foreach (var assembly in systemAssemblies)
+        {
+            try
+            {
+                references.Add(MetadataReference.CreateFromFile(assembly.Location));
+            }
+            catch
+            {
+                // Skip if location is not available (e.g., in some runtime contexts)
+            }
+        }
+
+        return references;
+    }
+}

@@ -23,6 +23,8 @@
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
         <PackageReference Include="Docker.DotNet" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+        <PackageReference Include="ICSharpCode.Decompiler" />
     </ItemGroup>
 
 </Project>
