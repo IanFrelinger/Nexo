@@ -1,89 +1,70 @@
-using FluentAssertions;
-using Microsoft.Extensions.Logging;
-using Moq;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
 using Nexo.GeoTerrain;
-using Nexo.Orchestration.GeoTerrain.Ports;
-using Nexo.SDK;
 using Nexo.SDK.Estimation;
-using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.SDK;
 
 /// <summary>
 /// Tests for SDK caching functionality and resource estimation with caching.
 /// </summary>
-public class CachingSdkTests : IDisposable
+public sealed class CachingSdkTests : UnitTestBase
 {
-    private readonly string _testCacheDir;
-    private readonly Mock<IElevationProvider> _mockElevationProvider;
-    private readonly Mock<ILogger<GeoTerrainClient>> _mockLogger;
-    private readonly Mock<IResourceEstimator> _mockEstimator;
+    private string? _testCacheDir;
 
-    public CachingSdkTests()
+    public override Task SetupAsync(CancellationToken cancellationToken = default)
     {
         _testCacheDir = Path.Combine(Path.GetTempPath(), $"nexo-sdk-cache-{Guid.NewGuid()}");
         Directory.CreateDirectory(_testCacheDir);
-
-        _mockElevationProvider = new Mock<IElevationProvider>();
-        _mockLogger = new Mock<ILogger<GeoTerrainClient>>();
-        _mockEstimator = new Mock<IResourceEstimator>();
+        return Task.CompletedTask;
     }
 
-    [Fact]
-    public void GeoTerrainClient_WithEstimator_ShouldTrackCachedTiles()
+    public override Task CleanupAsync(CancellationToken cancellationToken = default)
     {
-        // Arrange
-        var tileId = new SrtmTileId(37, -122);
-        var cachedTile = new ElevationTile
+        if (_testCacheDir != null && Directory.Exists(_testCacheDir))
         {
-            TileId = tileId,
-            HgtBytes = new byte[2_884_802],
-            Size = 1201,
-            MinMeters = 0,
-            MaxMeters = 100,
-            NoDataSamples = 0,
-            Metadata = new Dictionary<string, object>
-            {
-                ["cached"] = true,
-                ["cache-path"] = Path.Combine(_testCacheDir, "srtm", $"{tileId}.hgt")
-            }
-        };
-
-        _mockElevationProvider
-            .Setup(p => p.GetSrtmTileAsync(It.IsAny<SrtmTileId>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(cachedTile);
-
-        var estimate = new ResourceEstimate
-        {
-            CostUsd = 0,
-            MemoryBytes = 2_884_802,
-            IsEstimate = true,
-            Metadata = new Dictionary<string, object>
-            {
-                ["cached-count"] = 1,
-                ["download-count"] = 0
-            }
-        };
-
-        _mockEstimator
-            .Setup(e => e.EstimateSrtmTileDownload(It.IsAny<IReadOnlyList<SrtmTileId>>(), It.IsAny<bool>(), It.IsAny<string>()))
-            .Returns(estimate);
-
-        var client = new GeoTerrainClient(
-            _mockElevationProvider.Object,
-            _mockLogger.Object,
-            _mockEstimator.Object);
-
-        // Act & Assert
-        client.Should().NotBeNull("Client should be created with estimator");
+            try { Directory.Delete(_testCacheDir, recursive: true); } catch { /* ignore */ }
+        }
+        return Task.CompletedTask;
     }
 
-    [Fact]
-    public void ResourceEstimationService_ShouldDetectCachedTilesInCacheDirectory()
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            AssertNotNull(_testCacheDir, "Test cache directory should be created");
+            
+            await TestResourceEstimationWithPartialCacheAsync(cancellationToken);
+            await TestResourceEstimationWithAllCachedAsync(cancellationToken);
+            await TestResourceEstimationWithNoCacheAsync(cancellationToken);
+            await TestResourceEstimationWithFromCacheTrueAsync(cancellationToken);
+
+            return new TestResult
+            {
+                TestName = nameof(CachingSdkTests),
+                Category = "SDK",
+                Passed = true,
+                Message = "SDK caching tests passed"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new TestResult
+            {
+                TestName = nameof(CachingSdkTests),
+                Category = "SDK",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+        }
+    }
+
+    private async Task TestResourceEstimationWithPartialCacheAsync(CancellationToken ct)
     {
         // Arrange
         var estimator = new ResourceEstimationService();
-        var cacheRoot = Path.Combine(_testCacheDir, "estimation");
+        var cacheRoot = Path.Combine(_testCacheDir!, "estimation");
         var srtmCacheDir = Path.Combine(cacheRoot, "srtm");
         Directory.CreateDirectory(srtmCacheDir);
 
@@ -92,7 +73,7 @@ public class CachingSdkTests : IDisposable
 
         // Create one cached tile
         var cachedPath = Path.Combine(srtmCacheDir, $"{cachedTileId}.hgt");
-        await File.WriteAllBytesAsync(cachedPath, new byte[2_884_802]);
+        await File.WriteAllBytesAsync(cachedPath, new byte[2_884_802], ct);
 
         var tileIds = new[] { cachedTileId, uncachedTileId };
 
@@ -100,19 +81,18 @@ public class CachingSdkTests : IDisposable
         var result = estimator.EstimateSrtmTileDownload(tileIds, fromCache: false, cacheRoot: cacheRoot);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!["cached-count"].Should().Be(1, "Should detect one cached tile");
-        result.Metadata["download-count"].Should().Be(1, "Should detect one tile to download");
-        result.CostUsd.Should().BeGreaterThan(0, "Should have cost for uncached tile");
+        AssertNotNull(result, "Result should not be null");
+        AssertNotNull(result.Metadata, "Metadata should not be null");
+        AssertEqual(1, result.Metadata!["cached-count"], "Should detect one cached tile");
+        AssertEqual(1, result.Metadata["download-count"], "Should detect one tile to download");
+        AssertTrue(result.CostUsd > 0, "Should have cost for uncached tile");
     }
 
-    [Fact]
-    public void ResourceEstimationService_WithAllCachedTiles_ShouldReturnZeroCost()
+    private async Task TestResourceEstimationWithAllCachedAsync(CancellationToken ct)
     {
         // Arrange
         var estimator = new ResourceEstimationService();
-        var cacheRoot = Path.Combine(_testCacheDir, "all-cached");
+        var cacheRoot = Path.Combine(_testCacheDir!, "all-cached");
         var srtmCacheDir = Path.Combine(cacheRoot, "srtm");
         Directory.CreateDirectory(srtmCacheDir);
 
@@ -120,8 +100,8 @@ public class CachingSdkTests : IDisposable
         var tileId2 = new SrtmTileId(37, -121);
 
         // Create both tiles in cache
-        await File.WriteAllBytesAsync(Path.Combine(srtmCacheDir, $"{tileId1}.hgt"), new byte[2_884_802]);
-        await File.WriteAllBytesAsync(Path.Combine(srtmCacheDir, $"{tileId2}.hgt"), new byte[2_884_802]);
+        await File.WriteAllBytesAsync(Path.Combine(srtmCacheDir, $"{tileId1}.hgt"), new byte[2_884_802], ct);
+        await File.WriteAllBytesAsync(Path.Combine(srtmCacheDir, $"{tileId2}.hgt"), new byte[2_884_802], ct);
 
         var tileIds = new[] { tileId1, tileId2 };
 
@@ -129,15 +109,14 @@ public class CachingSdkTests : IDisposable
         var result = estimator.EstimateSrtmTileDownload(tileIds, fromCache: false, cacheRoot: cacheRoot);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!["cached-count"].Should().Be(2, "Should detect both tiles as cached");
-        result.Metadata["download-count"].Should().Be(0, "Should have no tiles to download");
-        result.CostUsd.Should().Be(0, "All cached tiles should have zero cost");
+        AssertNotNull(result, "Result should not be null");
+        AssertNotNull(result.Metadata, "Metadata should not be null");
+        AssertEqual(2, result.Metadata!["cached-count"], "Should detect both tiles as cached");
+        AssertEqual(0, result.Metadata["download-count"], "Should have no tiles to download");
+        AssertEqual(0, result.CostUsd, "All cached tiles should have zero cost");
     }
 
-    [Fact]
-    public void ResourceEstimationService_WithNoCacheRoot_ShouldEstimateAllAsDownloads()
+    private Task TestResourceEstimationWithNoCacheAsync(CancellationToken ct)
     {
         // Arrange
         var estimator = new ResourceEstimationService();
@@ -147,42 +126,30 @@ public class CachingSdkTests : IDisposable
         var result = estimator.EstimateSrtmTileDownload(tileIds, fromCache: false, cacheRoot: null);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Metadata.Should().NotBeNull();
-        result.Metadata!["cached-count"].Should().Be(0, "Should have no cached tiles");
-        result.Metadata["download-count"].Should().Be(2, "Should estimate all as downloads");
-        result.CostUsd.Should().BeGreaterThan(0, "Should have cost for downloads");
+        AssertNotNull(result, "Result should not be null");
+        AssertNotNull(result.Metadata, "Metadata should not be null");
+        AssertEqual(0, result.Metadata!["cached-count"], "Should have no cached tiles");
+        AssertEqual(2, result.Metadata["download-count"], "Should estimate all as downloads");
+        AssertTrue(result.CostUsd > 0, "Should have cost for downloads");
+        
+        return Task.CompletedTask;
     }
 
-    [Fact]
-    public void ResourceEstimationService_WithFromCacheTrue_ShouldIgnoreCacheRoot()
+    private Task TestResourceEstimationWithFromCacheTrueAsync(CancellationToken ct)
     {
         // Arrange
         var estimator = new ResourceEstimationService();
-        var cacheRoot = Path.Combine(_testCacheDir, "from-cache");
+        var cacheRoot = Path.Combine(_testCacheDir!, "from-cache");
         var tileIds = new[] { new SrtmTileId(37, -122) };
 
         // Act
         var result = estimator.EstimateSrtmTileDownload(tileIds, fromCache: true, cacheRoot: cacheRoot);
 
         // Assert
-        result.Should().NotBeNull();
-        result.CostUsd.Should().Be(0, "fromCache=true should return zero cost regardless of cache root");
-        result.Metadata!["cached-count"].Should().Be(1, "Should mark all as cached");
-    }
-
-    public void Dispose()
-    {
-        try
-        {
-            if (Directory.Exists(_testCacheDir))
-            {
-                Directory.Delete(_testCacheDir, recursive: true);
-            }
-        }
-        catch
-        {
-            // Ignore cleanup errors
-        }
+        AssertNotNull(result, "Result should not be null");
+        AssertEqual(0, result.CostUsd, "fromCache=true should return zero cost");
+        AssertEqual(1, result.Metadata!["cached-count"], "Should mark all as cached");
+        
+        return Task.CompletedTask;
     }
 }

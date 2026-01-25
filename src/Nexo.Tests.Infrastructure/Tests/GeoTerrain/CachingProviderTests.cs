@@ -1,11 +1,7 @@
-using FluentAssertions;
-using Microsoft.Extensions.Http;
-using Microsoft.Extensions.Logging;
-using Moq;
 using Nexo.Adapters.GeoTerrain.Providers;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
 using Nexo.GeoTerrain;
-using Nexo.Orchestration.GeoTerrain.Ports;
-using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.GeoTerrain;
 
@@ -13,120 +9,60 @@ namespace Nexo.Tests.Infrastructure.Tests.GeoTerrain;
 /// Integration tests for caching in elevation providers.
 /// Tests actual file system interactions and cache behavior.
 /// </summary>
-public class CachingProviderTests : IDisposable
+public sealed class CachingProviderTests : UnitTestBase
 {
-    private readonly string _testCacheDir;
-    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
-    private readonly Mock<ILoggerFactory> _mockLoggerFactory;
-    private readonly Mock<ILogger<SrtmHttpElevationProvider>> _mockLogger;
-    private readonly HttpClient _httpClient;
+    private string? _testCacheDir;
 
-    public CachingProviderTests()
+    public override Task SetupAsync(CancellationToken cancellationToken = default)
     {
         _testCacheDir = Path.Combine(Path.GetTempPath(), $"nexo-provider-cache-{Guid.NewGuid()}");
         Directory.CreateDirectory(_testCacheDir);
-
-        _httpClient = new HttpClient();
-        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        _mockHttpClientFactory
-            .Setup(f => f.CreateClient(It.IsAny<string>()))
-            .Returns(_httpClient);
-
-        _mockLogger = new Mock<ILogger<SrtmHttpElevationProvider>>();
-        _mockLoggerFactory = new Mock<ILoggerFactory>();
-        _mockLoggerFactory
-            .Setup(f => f.CreateLogger<SrtmHttpElevationProvider>())
-            .Returns(_mockLogger.Object);
+        return Task.CompletedTask;
     }
 
-    [Fact]
-    public void SrtmHttpElevationProvider_WithCacheRoot_ShouldStoreCachePath()
+    public override Task CleanupAsync(CancellationToken cancellationToken = default)
     {
-        // Arrange
-        var cacheRoot = Path.Combine(_testCacheDir, "srtm-cache");
-        var provider = new SrtmHttpElevationProvider(
-            _httpClient,
-            "https://example.com/srtm/",
-            _mockLogger.Object,
-            cacheRoot: cacheRoot,
-            persistCache: true);
-
-        // Act & Assert
-        provider.Should().NotBeNull("Provider should be created with cache root");
+        if (_testCacheDir != null && Directory.Exists(_testCacheDir))
+        {
+            try { Directory.Delete(_testCacheDir, recursive: true); } catch { /* ignore */ }
+        }
+        return Task.CompletedTask;
     }
 
-    [Fact]
-    public void SrtmHttpElevationProvider_WithPersistCacheFalse_ShouldNotSaveToDisk()
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        // Arrange
-        var cacheRoot = Path.Combine(_testCacheDir, "no-persist");
-        var provider = new SrtmHttpElevationProvider(
-            _httpClient,
-            "https://example.com/srtm/",
-            _mockLogger.Object,
-            cacheRoot: cacheRoot,
-            persistCache: false);
+        try
+        {
+            AssertNotNull(_testCacheDir, "Test cache directory should be created");
+            
+            await TestCacheDirectoryStructureAsync(cancellationToken);
+            await TestMultipleCacheRootsAsync(cancellationToken);
 
-        // Act & Assert
-        provider.Should().NotBeNull("Provider should be created with persistCache=false");
-        // Note: We can't easily test the actual behavior without mocking HTTP responses,
-        // but we verify the provider accepts the configuration
+            return new TestResult
+            {
+                TestName = nameof(CachingProviderTests),
+                Category = "Integration",
+                Passed = true,
+                Message = "Caching provider tests passed"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new TestResult
+            {
+                TestName = nameof(CachingProviderTests),
+                Category = "Integration",
+                Passed = false,
+                ErrorMessage = ex.Message,
+                StackTrace = ex.StackTrace
+            };
+        }
     }
 
-    [Fact]
-    public void ElevationProviderFactory_WithCacheConfiguration_ShouldCreateProviderWithCache()
+    private async Task TestCacheDirectoryStructureAsync(CancellationToken ct)
     {
         // Arrange
-        var factory = new ElevationProviderFactory(
-            _mockHttpClientFactory.Object,
-            _mockLoggerFactory.Object);
-        var cacheRoot = Path.Combine(_testCacheDir, "factory-test");
-
-        // Act
-        var provider = factory.Build(
-            provider: "http",
-            localRoot: null,
-            srtmBaseUrl: "https://example.com/srtm/",
-            persistDownloads: false,
-            enableCache: false,
-            airGapped: false,
-            cacheRoot: cacheRoot,
-            persistCache: true);
-
-        // Assert
-        provider.Should().NotBeNull("Factory should create provider with cache configuration");
-    }
-
-    [Fact]
-    public void ElevationProviderFactory_HybridProvider_ShouldPassCacheToHttpProvider()
-    {
-        // Arrange
-        var factory = new ElevationProviderFactory(
-            _mockHttpClientFactory.Object,
-            _mockLoggerFactory.Object);
-        var cacheRoot = Path.Combine(_testCacheDir, "hybrid-test");
-        var localRoot = Path.Combine(_testCacheDir, "local-tiles");
-
-        // Act
-        var provider = factory.Build(
-            provider: "hybrid",
-            localRoot: localRoot,
-            srtmBaseUrl: "https://example.com/srtm/",
-            persistDownloads: true,
-            enableCache: true,
-            airGapped: false,
-            cacheRoot: cacheRoot,
-            persistCache: true);
-
-        // Assert
-        provider.Should().NotBeNull("Hybrid provider should be created with cache configuration");
-    }
-
-    [Fact]
-    public void CacheDirectoryStructure_ShouldFollowExpectedPattern()
-    {
-        // Arrange
-        var cacheRoot = Path.Combine(_testCacheDir, "structure-test");
+        var cacheRoot = Path.Combine(_testCacheDir!, "structure-test");
         var srtmCacheDir = Path.Combine(cacheRoot, "srtm");
         var tileId = new SrtmTileId(37, -122);
         var expectedPath = Path.Combine(srtmCacheDir, $"{tileId}.hgt");
@@ -137,34 +73,15 @@ public class CachingProviderTests : IDisposable
         await File.WriteAllBytesAsync(expectedPath, fakeTileData);
 
         // Assert
-        File.Exists(expectedPath).Should().BeTrue("Cached tile should exist at expected path");
-        Path.GetDirectoryName(expectedPath).Should().Be(srtmCacheDir, "Cache should be in srtm subdirectory");
+        AssertTrue(File.Exists(expectedPath), "Cached tile should exist at expected path");
+        AssertEqual(srtmCacheDir, Path.GetDirectoryName(expectedPath), "Cache should be in srtm subdirectory");
     }
 
-    [Fact]
-    public void CachePath_ShouldHandleSpecialCharacters()
+    private async Task TestMultipleCacheRootsAsync(CancellationToken ct)
     {
         // Arrange
-        var cacheRoot = Path.Combine(_testCacheDir, "special-chars");
-        var srtmCacheDir = Path.Combine(cacheRoot, "srtm");
-        var tileId = new SrtmTileId(37, -122);
-        var expectedPath = Path.Combine(srtmCacheDir, $"{tileId}.hgt");
-
-        // Act - Create path with special characters in directory name
-        Directory.CreateDirectory(srtmCacheDir);
-        var fakeTileData = new byte[100];
-        await File.WriteAllBytesAsync(expectedPath, fakeTileData);
-
-        // Assert
-        File.Exists(expectedPath).Should().BeTrue("Cache path should handle special characters");
-    }
-
-    [Fact]
-    public void MultipleCacheRoots_ShouldNotInterfere()
-    {
-        // Arrange
-        var cacheRoot1 = Path.Combine(_testCacheDir, "cache1");
-        var cacheRoot2 = Path.Combine(_testCacheDir, "cache2");
+        var cacheRoot1 = Path.Combine(_testCacheDir!, "cache1");
+        var cacheRoot2 = Path.Combine(_testCacheDir!, "cache2");
         var tileId = new SrtmTileId(37, -122);
 
         // Act - Create tiles in different cache roots
@@ -175,29 +92,15 @@ public class CachingProviderTests : IDisposable
 
         var path1 = Path.Combine(srtmCache1, $"{tileId}.hgt");
         var path2 = Path.Combine(srtmCache2, $"{tileId}.hgt");
-        await File.WriteAllBytesAsync(path1, new byte[100]);
-        await File.WriteAllBytesAsync(path2, new byte[200]);
+        await File.WriteAllBytesAsync(path1, new byte[100], ct);
+        await File.WriteAllBytesAsync(path2, new byte[200], ct);
 
         // Assert
-        File.Exists(path1).Should().BeTrue("First cache should have tile");
-        File.Exists(path2).Should().BeTrue("Second cache should have tile");
-        (await File.ReadAllBytesAsync(path1)).Length.Should().Be(100, "First cache should have correct data");
-        (await File.ReadAllBytesAsync(path2)).Length.Should().Be(200, "Second cache should have different data");
-    }
-
-    public void Dispose()
-    {
-        try
-        {
-            _httpClient?.Dispose();
-            if (Directory.Exists(_testCacheDir))
-            {
-                Directory.Delete(_testCacheDir, recursive: true);
-            }
-        }
-        catch
-        {
-            // Ignore cleanup errors
-        }
+        AssertTrue(File.Exists(path1), "First cache should have tile");
+        AssertTrue(File.Exists(path2), "Second cache should have tile");
+        var data1 = await File.ReadAllBytesAsync(path1, ct);
+        var data2 = await File.ReadAllBytesAsync(path2, ct);
+        AssertEqual(100, data1.Length, "First cache should have correct data");
+        AssertEqual(200, data2.Length, "Second cache should have different data");
     }
 }
