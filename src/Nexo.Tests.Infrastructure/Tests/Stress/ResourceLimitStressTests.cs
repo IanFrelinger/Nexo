@@ -25,7 +25,7 @@ public class ResourceLimitStressTests
 
         // Act
         var tasks = Enumerable.Range(0, concurrentRequests)
-            .Select(async i =>
+            .Select(i => Task.Run(async () =>
             {
                 try
                 {
@@ -37,7 +37,7 @@ public class ResourceLimitStressTests
                 {
                     return false;
                 }
-            })
+            }))
             .ToArray();
 
         var results = await Task.WhenAll(tasks);
@@ -133,7 +133,8 @@ public class ResourceLimitStressTests
 
         // Assert
         var successCount = results.Count(r => r);
-        successCount.Should().BeGreaterThan(operationCount * 0.95, 
+        var minSuccess = (int)(operationCount * 0.95);
+        successCount.Should().BeGreaterThan(minSuccess, 
             "At least 95% of operations should succeed under load");
     }
 }
