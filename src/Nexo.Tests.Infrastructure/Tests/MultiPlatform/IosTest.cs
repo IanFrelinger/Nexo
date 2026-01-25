@@ -21,7 +21,7 @@ namespace Nexo.Tests.Infrastructure.Tests.MultiPlatform;
 public class Ios80Test : MultiPlatformTestBase
 {
     public Ios80Test(ILogger<Ios80Test>? logger = null)
-        : base("ios-8.0", "8.0", "iOS (.NET 8.0)", dockerService: null, logger)
+        : base("ios-8.0", "8.0", "iOS (.NET 8.0)", executionPlatform: null, logger)
     {
     }
 
