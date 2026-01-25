@@ -114,7 +114,7 @@ public class CommandExecutionStressTests
     }
 
     [Fact]
-    public void CommandExecution_ShouldNotLeakResources()
+    public async Task CommandExecution_ShouldNotLeakResources()
     {
         // Arrange
         var kernel = new SequentialLoopKernel();
@@ -122,7 +122,7 @@ public class CommandExecutionStressTests
         // Act - Execute many commands
         for (int i = 0; i < 1000; i++)
         {
-            _ = kernel.ForEachAsync(
+            await kernel.ForEachAsync(
                 new[] { i },
                 async (item, index, ct) =>
                 {
@@ -131,7 +131,7 @@ public class CommandExecutionStressTests
                 },
                 null,
                 CancellationToken.None
-            ).Result;
+            );
         }
 
         // Assert - Force GC and verify no leaks
