@@ -131,9 +131,9 @@ echo -e "${YELLOW}Unity Test Results Summary${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 if [ -f "test-results/framework/unity/unity-domain.log" ]; then
-    local passed=$(grep -oE '[0-9]+(?=\s+Passed!)' "test-results/framework/unity/unity-domain.log" | head -1 || echo "0")
-    local failed=$(grep -oE '[0-9]+(?=\s+Failed!)' "test-results/framework/unity/unity-domain.log" | head -1 || echo "0")
-    local total=$(grep -oE '[0-9]+(?=\s+Total)' "test-results/framework/unity/unity-domain.log" | head -1 || echo "0")
+    passed=$(grep -oE '[0-9]+(?=\s+Passed!)' "test-results/framework/unity/unity-domain.log" 2>/dev/null | head -1 || echo "0")
+    failed=$(grep -oE '[0-9]+(?=\s+Failed!)' "test-results/framework/unity/unity-domain.log" 2>/dev/null | head -1 || echo "0")
+    total=$(grep -oE '[0-9]+(?=\s+Total)' "test-results/framework/unity/unity-domain.log" 2>/dev/null | head -1 || echo "0")
     
     if [ -n "$passed" ] && [ "$passed" != "0" ]; then
         echo -e "${GREEN}✅ Domain Tests: ${total} total, ${passed} passed, ${failed} failed${NC}"
