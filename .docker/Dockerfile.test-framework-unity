@@ -47,6 +47,7 @@ RUN dotnet build src/Nexo.Core.Domain/Nexo.Core.Domain.csproj \
         --no-restore
 
 # Run framework tests that are Unity-compatible
-# Phase 1: Base Framework Smoke Tests
-# Phase 2: Domain tests (Unity-compatible)
-CMD ["bash", "-c", "echo '✅ Core.Domain is Unity-compatible (.NET Standard 2.0)' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' && dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj --framework netstandard2.0 --logger 'console;verbosity=minimal' && echo '✅ Unity compatibility tests completed'"]
+# Phase 1: Base Framework Smoke Tests (includes code analysis tests)
+# Phase 2: Code Analysis Platform Compatibility Tests
+# Phase 3: Domain tests (Unity-compatible)
+CMD ["bash", "-c", "echo '✅ Core.Domain is Unity-compatible (.NET Standard 2.0)' && echo '🧪 Running Base Framework Smoke Tests (includes code analysis)...' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' && echo '🧪 Running Code Analysis Platform Compatibility Tests...' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~CodeAnalysisPlatformCompatibilityTests' --logger 'console;verbosity=minimal' && echo '🧪 Running Code Analysis Portability Tests...' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~CodeAnalysisPortabilityTests' --logger 'console;verbosity=minimal' && dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj --framework netstandard2.0 --logger 'console;verbosity=minimal' && echo '✅ Unity compatibility tests completed (including code analysis)'"]
