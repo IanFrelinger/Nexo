@@ -35,15 +35,23 @@ COPY scripts/ ./scripts/
 COPY coverage.runsettings ./
 
 # Restore and build for .NET Standard 2.0 (Unity compatible)
+# Also restore Infrastructure for code analysis tests
 RUN dotnet restore src/Nexo.Core.Domain/Nexo.Core.Domain.csproj && \
     dotnet restore src/Nexo.Core.UI.Unity/Nexo.Core.UI.Unity.csproj && \
-    dotnet restore src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
+    dotnet restore src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj && \
+    dotnet restore src/Nexo.Infrastructure/Nexo.Infrastructure.csproj && \
+    dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
 
 # Build for .NET Standard 2.0 to verify Unity compatibility
+# Build Infrastructure for code analysis (targets net8.0 but uses .NET Standard 2.0 compatible APIs)
 RUN dotnet build src/Nexo.Core.Domain/Nexo.Core.Domain.csproj \
         --framework netstandard2.0 \
         --no-restore && \
     dotnet build src/Nexo.Core.UI.Unity/Nexo.Core.UI.Unity.csproj \
+        --no-restore && \
+    dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj \
+        --no-restore && \
+    dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
         --no-restore
 
 # Run framework tests that are Unity-compatible
