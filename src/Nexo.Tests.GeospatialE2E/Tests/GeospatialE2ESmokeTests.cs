@@ -482,7 +482,7 @@ public class GeospatialE2ESmokeTests : IDisposable
     }
 
     [Fact]
-    public async Task CacheDirectory_ShouldBeCreated_WhenCacheRootIsSet()
+    public void CacheDirectory_ShouldBeCreated_WhenCacheRootIsSet()
     {
         // Arrange
         var cacheRoot = Path.Combine(_testOutputDir, "new-cache");
