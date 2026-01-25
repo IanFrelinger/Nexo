@@ -4,18 +4,18 @@ This guide explains how to test the geospatial caching functionality across diff
 
 ## Overview
 
-The caching tests are designed to run across multiple environments to ensure compatibility:
-- **Operating Systems**: Ubuntu, Alpine Linux, Debian
+The geospatial smoke tests (including caching functionality) are designed to run across multiple environments to ensure compatibility:
+- **Operating Systems**: Ubuntu, Alpine Linux, Debian, Windows, Android, iOS, Unity
 - **.NET Versions**: 7.0, 8.0
-- **Test Types**: Unit tests, E2E smoke tests, Infrastructure tests
+- **Test Types**: E2E smoke tests (includes caching validation)
 
 ## Quick Start
 
 ### Run All Tests Locally
 
 ```bash
-# Run caching tests on all configured environments
-make test-caching-all
+# Run geospatial smoke tests on all configured environments
+make test-geospatial-smoke-all
 
 # Or use the script directly
 ./scripts/test-caching-multi-env.sh --all
@@ -100,28 +100,12 @@ docker build -f .docker/Dockerfile.test-caching-windows \
 ### Run Tests Manually
 
 ```bash
-# Run unit tests
-docker run --rm \
-  -v "$(pwd)/test-results:/workspace/test-results" \
-  nexo-caching-test:ubuntu-8.0 \
-  dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj \
-    --filter 'FullyQualifiedName~CachingTests' \
-    --logger 'console;verbosity=normal'
-
-# Run E2E tests
+# Run smoke tests (includes caching validation)
 docker run --rm \
   -v "$(pwd)/test-results:/workspace/test-results" \
   nexo-caching-test:ubuntu-8.0 \
   dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj \
-    --filter 'FullyQualifiedName~CachingSmokeTests' \
-    --logger 'console;verbosity=normal'
-
-# Run infrastructure tests
-docker run --rm \
-  -v "$(pwd)/test-results:/workspace/test-results" \
-  nexo-caching-test:ubuntu-8.0 \
-  dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-    --filter 'FullyQualifiedName~Caching' \
+    --filter 'FullyQualifiedName~GeospatialE2ESmokeTests' \
     --logger 'console;verbosity=normal'
 ```
 
