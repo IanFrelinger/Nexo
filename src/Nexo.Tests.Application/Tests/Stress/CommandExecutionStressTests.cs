@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Xunit;
 
@@ -24,13 +25,14 @@ public class CommandExecutionStressTests
             {
                 try
                 {
-                    await kernel.ExecuteAsync(
+                    await kernel.ForEachAsync(
                         Enumerable.Range(0, 10),
-                        async (item, ct) =>
+                        async (item, index, ct) =>
                         {
                             await Task.Delay(1, ct);
-                            return item;
+                            return LoopAction.Continue;
                         },
+                        null,
                         CancellationToken.None
                     );
                     return true;
@@ -54,17 +56,19 @@ public class CommandExecutionStressTests
     {
         // Arrange
         const int workloadSize = 1000;
-        var kernel = new ParallelLoopKernel(Mock.Of<ILogger<ParallelLoopKernel>>());
+        var sequentialKernel = new SequentialLoopKernel();
+        var kernel = new ParallelLoopKernel(sequentialKernel);
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        await kernel.ExecuteAsync(
+        await kernel.ForEachAsync(
             Enumerable.Range(0, workloadSize),
-            async (item, ct) =>
+            async (item, index, ct) =>
             {
                 await Task.Delay(10, ct);
-                return item * 2;
+                return LoopAction.Continue;
             },
+            new LoopOptions { EnableParallel = true },
             CancellationToken.None
         );
         stopwatch.Stop();
@@ -87,13 +91,14 @@ public class CommandExecutionStressTests
         {
             try
             {
-                await kernel.ExecuteAsync(
+                await kernel.ForEachAsync(
                     new[] { i },
-                    async (item, ct) =>
+                    async (item, index, ct) =>
                     {
                         await Task.Delay(1, ct);
-                        return item;
+                        return LoopAction.Continue;
                     },
+                    null,
                     CancellationToken.None
                 );
                 successCount++;
@@ -117,13 +122,14 @@ public class CommandExecutionStressTests
         // Act - Execute many commands
         for (int i = 0; i < 1000; i++)
         {
-            _ = kernel.ExecuteAsync(
+            _ = kernel.ForEachAsync(
                 new[] { i },
-                async (item, ct) =>
+                async (item, index, ct) =>
                 {
                     await Task.Delay(1, ct);
-                    return item;
+                    return LoopAction.Continue;
                 },
+                null,
                 CancellationToken.None
             ).Result;
         }
