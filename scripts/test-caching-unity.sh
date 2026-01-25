@@ -68,23 +68,41 @@ NC='\033[0m' # No Color
 
 FAILED=0
 
-# Always run .NET smoke tests
+# Phase 1: Test base framework dependencies
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${YELLOW}Running Geospatial Smoke Tests (Unity-compatible)...${NC}"
+echo -e "${YELLOW}Phase 1: Testing Base Framework Dependencies...${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Run smoke tests
-echo -e "${YELLOW}Running Smoke Tests...${NC}"
+if dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+    --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
+    --logger "console;verbosity=minimal" \
+    --logger "trx;LogFileName=unity-base.trx" \
+    --results-directory test-results/caching \
+    > test-results/caching/unity-base.log 2>&1; then
+    echo -e "${GREEN}✅ Base framework tests passed${NC}"
+else
+    echo -e "${RED}❌ Base framework tests failed - skipping geo app tests${NC}"
+    FAILED=1
+    exit $FAILED
+fi
+
+# Phase 2: Test geospatial application
+echo ""
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}Phase 2: Testing Geospatial Application...${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
 if dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj \
     --filter "FullyQualifiedName~GeospatialE2ESmokeTests" \
     --logger "console;verbosity=minimal" \
-    --logger "trx;LogFileName=unity-smoke.trx" \
+    --logger "trx;LogFileName=unity-geo.trx" \
     --results-directory test-results/caching \
-    > test-results/caching/unity-smoke.log 2>&1; then
-    echo -e "${GREEN}✅ Smoke tests passed${NC}"
+    > test-results/caching/unity-geo.log 2>&1; then
+    echo -e "${GREEN}✅ Geospatial application tests passed${NC}"
 else
-    echo -e "${RED}❌ Smoke tests failed${NC}"
+    echo -e "${RED}❌ Geospatial application tests failed${NC}"
     FAILED=1
 fi
 

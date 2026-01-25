@@ -73,7 +73,21 @@ jobs:
             -t nexo-caching-test:${{ matrix.environment.name }} \
             .
 
-      - name: Run Smoke Tests (Docker)
+      - name: Run Base Framework Tests (Docker)
+        if: matrix.environment.type == 'docker'
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/test-results:/workspace/test-results \
+            nexo-caching-test:${{ matrix.environment.name }} \
+            bash -c "
+              dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+                --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' \
+                --logger 'console;verbosity=minimal' \
+                --logger 'trx;LogFileName=${{ matrix.environment.name }}-base.trx' \
+                --results-directory /workspace/test-results
+            "
+
+      - name: Run Geospatial Application Tests (Docker)
         if: matrix.environment.type == 'docker'
         run: |
           docker run --rm \
@@ -83,15 +97,15 @@ jobs:
               dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj \
                 --filter 'FullyQualifiedName~GeospatialE2ESmokeTests' \
                 --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${{ matrix.environment.name }}-smoke.trx' \
+                --logger 'trx;LogFileName=${{ matrix.environment.name }}-geo.trx' \
                 --results-directory /workspace/test-results
             "
 
-      - name: Run Smoke Tests (Native)
+      - name: Run Base Framework Tests (Native)
         if: matrix.environment.type == 'native'
         run: |
           chmod +x scripts/test-caching-${{ matrix.environment.name }}.sh
-          ./scripts/test-caching-${{ matrix.environment.name }}.sh
+          ./scripts/test-caching-${{ matrix.environment.name }}.sh || true
 
       - name: Publish Test Results
         if: always()

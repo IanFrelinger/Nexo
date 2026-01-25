@@ -10,10 +10,12 @@ WORKDIR C:\workspace
 COPY . .
 
 # Restore dependencies for test projects
-RUN dotnet restore src\Nexo.Tests.GeospatialE2E\Nexo.Tests.GeospatialE2E.csproj
+RUN dotnet restore src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj && \
+    dotnet restore src\Nexo.Tests.GeospatialE2E\Nexo.Tests.GeospatialE2E.csproj
 
 # Build test projects
-RUN dotnet build src\Nexo.Tests.GeospatialE2E\Nexo.Tests.GeospatialE2E.csproj --no-restore
+RUN dotnet build src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj --no-restore && \
+    dotnet build src\Nexo.Tests.GeospatialE2E\Nexo.Tests.GeospatialE2E.csproj --no-restore
 
-# Default command: run smoke tests
-CMD ["cmd", "/c", "dotnet test src\\Nexo.Tests.GeospatialE2E\\Nexo.Tests.GeospatialE2E.csproj --filter \"FullyQualifiedName~GeospatialE2ESmokeTests\" --logger \"console;verbosity=normal\""]
+# Default command: run tests in phases (base framework first, then geo app)
+CMD ["cmd", "/c", "dotnet test src\\Nexo.Tests.Infrastructure\\Nexo.Tests.Infrastructure.csproj --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --logger \"console;verbosity=normal\" && dotnet test src\\Nexo.Tests.GeospatialE2E\\Nexo.Tests.GeospatialE2E.csproj --filter \"FullyQualifiedName~GeospatialE2ESmokeTests\" --logger \"console;verbosity=normal\""]
