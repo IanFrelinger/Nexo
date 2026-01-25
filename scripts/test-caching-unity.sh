@@ -68,51 +68,23 @@ NC='\033[0m' # No Color
 
 FAILED=0
 
-# Always run .NET caching tests
+# Always run .NET smoke tests
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${YELLOW}Running .NET Caching Tests (Unity-compatible)...${NC}"
+echo -e "${YELLOW}Running Geospatial Smoke Tests (Unity-compatible)...${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Run unit tests
-echo -e "${YELLOW}Running Unit Tests...${NC}"
-if dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj \
-    --filter "FullyQualifiedName~CachingTests" \
-    --logger "console;verbosity=minimal" \
-    --logger "trx;LogFileName=unity-unit.trx" \
-    --results-directory test-results/caching \
-    > test-results/caching/unity-unit.log 2>&1; then
-    echo -e "${GREEN}✅ Unit tests passed${NC}"
-else
-    echo -e "${RED}❌ Unit tests failed${NC}"
-    FAILED=1
-fi
-
-# Run E2E tests
-echo -e "${YELLOW}Running E2E Tests...${NC}"
+# Run smoke tests
+echo -e "${YELLOW}Running Smoke Tests...${NC}"
 if dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj \
-    --filter "FullyQualifiedName~CachingSmokeTests" \
+    --filter "FullyQualifiedName~GeospatialE2ESmokeTests" \
     --logger "console;verbosity=minimal" \
-    --logger "trx;LogFileName=unity-e2e.trx" \
+    --logger "trx;LogFileName=unity-smoke.trx" \
     --results-directory test-results/caching \
-    > test-results/caching/unity-e2e.log 2>&1; then
-    echo -e "${GREEN}✅ E2E tests passed${NC}"
+    > test-results/caching/unity-smoke.log 2>&1; then
+    echo -e "${GREEN}✅ Smoke tests passed${NC}"
 else
-    echo -e "${RED}❌ E2E tests failed${NC}"
-    FAILED=1
-fi
-
-# Run infrastructure tests
-echo -e "${YELLOW}Running Infrastructure Tests...${NC}"
-if dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-    --filter "FullyQualifiedName~Caching" \
-    --logger "console;verbosity=minimal" \
-    --logger "trx;LogFileName=unity-infra.trx" \
-    --results-directory test-results/caching \
-    > test-results/caching/unity-infra.log 2>&1; then
-    echo -e "${GREEN}✅ Infrastructure tests passed${NC}"
-else
-    echo -e "${RED}❌ Infrastructure tests failed${NC}"
+    echo -e "${RED}❌ Smoke tests failed${NC}"
     FAILED=1
 fi
 

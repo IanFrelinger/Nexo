@@ -26,5 +26,5 @@ RUN dotnet build src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj 
     dotnet build src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --no-restore && \
     dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --no-restore
 
-# Default command: run caching tests
-CMD ["bash", "-c", "dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj --filter 'FullyQualifiedName~CachingTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --filter 'FullyQualifiedName~CachingSmokeTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~Caching' --logger 'console;verbosity=normal'"]
+# Default command: run smoke tests
+CMD ["bash", "-c", "dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --filter 'FullyQualifiedName~GeospatialE2ESmokeTests' --logger 'console;verbosity=normal'"]

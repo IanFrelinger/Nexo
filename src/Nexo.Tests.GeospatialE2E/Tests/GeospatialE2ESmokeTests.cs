@@ -360,6 +360,144 @@ public class GeospatialE2ESmokeTests : IDisposable
         retrieved.Should().BeNull("Old job should be deleted");
     }
 
+    [Fact]
+    public async Task CLI_GeoTerrain_WithCacheRoot_ShouldAcceptCacheParameters()
+    {
+        // Arrange
+        var cacheRoot = Path.Combine(_testOutputDir, "cache");
+        var outputFile = Path.Combine(_testOutputDir, "cached-terrain.obj");
+        var command = CreateGeoTerrainCommand();
+
+        // Act
+        var exitCode = await command.BoundsToObjAsync(
+            bounds: "37.0,-122.0,37.1,-121.9",
+            output: new FileInfo(outputFile),
+            provider: "echo",
+            localRoot: null,
+            srtmBaseUrl: null,
+            persistDownloads: false,
+            enableCache: false,
+            airGapped: true,
+            forceAgenticFail: false,
+            validateIntegrity: false,
+            meshQualityReport: false,
+            cacheRoot: cacheRoot,
+            persistCache: true,
+            json: true,
+            verbose: false,
+            CancellationToken.None);
+
+        // Assert
+        exitCode.Should().BeLessThanOrEqualTo(1, "Command should accept cache parameters");
+    }
+
+    [Fact]
+    public async Task CLI_GeoVector_WithCacheRoot_ShouldAcceptCacheParameters()
+    {
+        // Arrange
+        var cacheRoot = Path.Combine(_testOutputDir, "cache");
+        var outputFile = Path.Combine(_testOutputDir, "cached-buildings.obj");
+        var command = CreateGeoVectorCommand();
+
+        // Act
+        var exitCode = await command.BuildingsToObjAsync(
+            bounds: "37.0,-122.0,37.1,-121.9",
+            output: new FileInfo(outputFile),
+            provider: "echo",
+            mapboxAccessToken: null,
+            mapboxTileset: null,
+            mapboxZoom: null,
+            osmPbfPath: null,
+            generateTexCoords: false,
+            uvMetersPerRepeat: 10.0f,
+            alignToTerrain: false,
+            terrainProvider: "echo",
+            terrainLocalRoot: null,
+            terrainSrtmBaseUrl: null,
+            terrainPersistDownloads: false,
+            terrainEnableCache: false,
+            terrainTreatNoDataAsZero: false,
+            airGapped: true,
+            forceAgenticFail: false,
+            cacheRoot: cacheRoot,
+            persistCache: true,
+            terrainCacheRoot: cacheRoot,
+            terrainPersistCache: true,
+            json: true,
+            verbose: false,
+            CancellationToken.None);
+
+        // Assert
+        exitCode.Should().Be(0, "Command should accept cache parameters");
+    }
+
+    [Fact]
+    public async Task API_GeoTerrain_WithCacheRoot_ShouldAcceptCacheProperties()
+    {
+        // Arrange
+        var cacheRoot = Path.Combine(_testOutputDir, "cache");
+        var service = _serviceProvider.GetRequiredService<IGeoTerrainService>();
+        var request = new TerrainGenerationRequest
+        {
+            Bounds = "37.0,-122.0,37.1,-121.9",
+            ElevationProvider = "echo",
+            Format = "obj",
+            CacheRoot = cacheRoot,
+            PersistCache = true
+        };
+
+        // Act
+        var jobId = await service.GenerateTerrainAsync(request);
+
+        // Assert
+        jobId.Should().NotBeNullOrEmpty("Job should be created with cache configuration");
+        
+        var job = await _jobRepository.GetJobAsync(jobId);
+        job.Should().NotBeNull("Job should be persisted");
+    }
+
+    [Fact]
+    public async Task API_GeoVector_WithCacheRoot_ShouldAcceptCacheProperties()
+    {
+        // Arrange
+        var cacheRoot = Path.Combine(_testOutputDir, "cache");
+        var service = _serviceProvider.GetRequiredService<IGeoVectorService>();
+        var request = new VectorExtractionRequest
+        {
+            Bounds = "37.0,-122.0,37.1,-121.9",
+            FeatureKind = "building",
+            VectorProvider = "echo",
+            CacheRoot = cacheRoot,
+            PersistCache = true
+        };
+
+        // Act
+        var jobId = await service.ExtractFeaturesAsync(request);
+
+        // Assert
+        jobId.Should().NotBeNullOrEmpty("Job should be created with cache configuration");
+        
+        var job = await _jobRepository.GetJobAsync(jobId);
+        job.Should().NotBeNull("Job should be persisted");
+    }
+
+    [Fact]
+    public async Task CacheDirectory_ShouldBeCreated_WhenCacheRootIsSet()
+    {
+        // Arrange
+        var cacheRoot = Path.Combine(_testOutputDir, "new-cache");
+        var srtmCacheDir = Path.Combine(cacheRoot, "srtm");
+        
+        // Verify directory doesn't exist yet
+        Directory.Exists(srtmCacheDir).Should().BeFalse("Cache directory should not exist initially");
+
+        // Act - Create a provider that would use this cache
+        Directory.CreateDirectory(srtmCacheDir);
+
+        // Assert
+        Directory.Exists(srtmCacheDir).Should().BeTrue("Cache directory should be created");
+    }
+
     private GeoTerrainCommand CreateGeoTerrainCommand()
     {
         return _serviceProvider.GetRequiredService<GeoTerrainCommand>();

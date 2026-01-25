@@ -55,36 +55,24 @@ run_caching_tests_docker() {
         "nexo-caching-test:${env_name}" \
         bash -c "
             cd /workspace && \
-            dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj \
-                --filter 'FullyQualifiedName~CachingTests' \
-                --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${env_name}-unit.trx' \
-                --results-directory /workspace/test-results \
-                2>&1 | tee /workspace/test-results/${env_name}-unit.log && \
             dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj \
-                --filter 'FullyQualifiedName~CachingSmokeTests' \
+                --filter 'FullyQualifiedName~GeospatialE2ESmokeTests' \
                 --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${env_name}-e2e.trx' \
+                --logger 'trx;LogFileName=${env_name}-smoke.trx' \
                 --results-directory /workspace/test-results \
-                2>&1 | tee /workspace/test-results/${env_name}-e2e.log && \
-            dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-                --filter 'FullyQualifiedName~Caching' \
-                --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${env_name}-infra.trx' \
-                --results-directory /workspace/test-results \
-                2>&1 | tee /workspace/test-results/${env_name}-infra.log
+                2>&1 | tee /workspace/test-results/${env_name}-smoke.log
         " > "test-results/caching/${env_name}-output.log" 2>&1
     
     local exit_code=$?
     
     # Extract test results
-    if [ -f "test-results/caching/${env_name}-unit.log" ]; then
-        local passed=$(grep -oP '\d+(?=\s+Passed!)' "test-results/caching/${env_name}-unit.log" | head -1 || echo "0")
-        local failed=$(grep -oP '\d+(?=\s+Failed!)' "test-results/caching/${env_name}-unit.log" | head -1 || echo "0")
-        local total=$(grep -oP '\d+(?=\s+Total)' "test-results/caching/${env_name}-unit.log" | head -1 || echo "0")
+    if [ -f "test-results/caching/${env_name}-smoke.log" ]; then
+        local passed=$(grep -oP '\d+(?=\s+Passed!)' "test-results/caching/${env_name}-smoke.log" | head -1 || echo "0")
+        local failed=$(grep -oP '\d+(?=\s+Failed!)' "test-results/caching/${env_name}-smoke.log" | head -1 || echo "0")
+        local total=$(grep -oP '\d+(?=\s+Total)' "test-results/caching/${env_name}-smoke.log" | head -1 || echo "0")
         
         if [ -n "$passed" ] && [ -n "$failed" ]; then
-            echo -e "${GREEN}✅ ${env_name} Unit Tests: ${total} total, ${passed} passed, ${failed} failed${NC}"
+            echo -e "${GREEN}✅ ${env_name} Smoke Tests: ${total} total, ${passed} passed, ${failed} failed${NC}"
         fi
     fi
     

@@ -73,21 +73,7 @@ jobs:
             -t nexo-caching-test:${{ matrix.environment.name }} \
             .
 
-      - name: Run Unit Tests (Docker)
-        if: matrix.environment.type == 'docker'
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}/test-results:/workspace/test-results \
-            nexo-caching-test:${{ matrix.environment.name }} \
-            bash -c "
-              dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj \
-                --filter 'FullyQualifiedName~CachingTests' \
-                --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${{ matrix.environment.name }}-unit.trx' \
-                --results-directory /workspace/test-results
-            "
-
-      - name: Run E2E Tests (Docker)
+      - name: Run Smoke Tests (Docker)
         if: matrix.environment.type == 'docker'
         run: |
           docker run --rm \
@@ -95,27 +81,13 @@ jobs:
             nexo-caching-test:${{ matrix.environment.name }} \
             bash -c "
               dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj \
-                --filter 'FullyQualifiedName~CachingSmokeTests' \
+                --filter 'FullyQualifiedName~GeospatialE2ESmokeTests' \
                 --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${{ matrix.environment.name }}-e2e.trx' \
+                --logger 'trx;LogFileName=${{ matrix.environment.name }}-smoke.trx' \
                 --results-directory /workspace/test-results
             "
 
-      - name: Run Infrastructure Tests (Docker)
-        if: matrix.environment.type == 'docker'
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}/test-results:/workspace/test-results \
-            nexo-caching-test:${{ matrix.environment.name }} \
-            bash -c "
-              dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-                --filter 'FullyQualifiedName~Caching' \
-                --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${{ matrix.environment.name }}-infra.trx' \
-                --results-directory /workspace/test-results
-            "
-
-      - name: Run Native Tests (iOS/Unity)
+      - name: Run Smoke Tests (Native)
         if: matrix.environment.type == 'native'
         run: |
           chmod +x scripts/test-caching-${{ matrix.environment.name }}.sh

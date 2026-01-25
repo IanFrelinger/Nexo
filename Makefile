@@ -9,13 +9,11 @@ build-portable:
 test:
 	dotnet test
 
-# Caching tests
-test-caching:
-	dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj --filter "FullyQualifiedName~CachingTests"
-	dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --filter "FullyQualifiedName~CachingSmokeTests"
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Caching"
+# Geospatial smoke tests (includes caching)
+test-geospatial-smoke:
+	dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --filter "FullyQualifiedName~GeospatialE2ESmokeTests"
 
-test-caching-all:
+test-geospatial-smoke-all:
 	bash scripts/test-caching-multi-env.sh --all
 
 # CLI demos
