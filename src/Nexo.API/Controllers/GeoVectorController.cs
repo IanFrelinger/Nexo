@@ -10,15 +10,11 @@ namespace Nexo.API.Controllers;
 [ApiController]
 [Route("api/v1/geovector")]
 [Produces("application/json")]
-public class GeoVectorController : ControllerBase
+public class GeoVectorController : BaseGeospatialController<IGeoVectorService>
 {
-    private readonly IGeoVectorService _service;
-    private readonly ILogger<GeoVectorController> _logger;
-
     public GeoVectorController(IGeoVectorService service, ILogger<GeoVectorController> logger)
+        : base(service, logger)
     {
-        _service = service;
-        _logger = logger;
     }
 
     /// <summary>
@@ -48,24 +44,6 @@ public class GeoVectorController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Get vector extraction job status.
-    /// </summary>
-    /// <param name="jobId">Job identifier</param>
-    /// <returns>Job status and result if complete</returns>
-    [HttpGet("jobs/{jobId}")]
-    [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<JobStatusResponse>> GetJobStatus(string jobId)
-    {
-        var status = await _service.GetJobStatusAsync(jobId);
-        if (status == null)
-        {
-            return NotFound(new ErrorResponse { Message = $"Job {jobId} not found" });
-        }
-
-        return Ok(status);
-    }
 
     /// <summary>
     /// Download extracted vector features.
@@ -73,19 +51,18 @@ public class GeoVectorController : ControllerBase
     /// <param name="jobId">Job identifier</param>
     /// <param name="format">Output format (json, geojson)</param>
     /// <returns>Feature file</returns>
+    /// <summary>
+    /// Download extracted vector features.
+    /// </summary>
     [HttpGet("jobs/{jobId}/download")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DownloadFeatures(string jobId, [FromQuery] string format = "json")
     {
-        var filePath = await _service.GetJobOutputPathAsync(jobId, format);
-        if (filePath == null || !System.IO.File.Exists(filePath))
-        {
-            return NotFound(new ErrorResponse { Message = $"Output file not found for job {jobId}" });
-        }
-
-        var contentType = format.ToLowerInvariant() == "geojson" ? "application/geo+json" : "application/json";
-        var fileName = Path.GetFileName(filePath);
-        return PhysicalFile(filePath, contentType, fileName);
+        return await DownloadFile(
+            jobId, 
+            format, 
+            "application/json", 
+            f => f.ToLowerInvariant() == "geojson" ? "application/geo+json" : "application/json");
     }
 }

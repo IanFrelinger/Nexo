@@ -10,15 +10,11 @@ namespace Nexo.API.Controllers;
 [ApiController]
 [Route("api/v1/world")]
 [Produces("application/json")]
-public class WorldController : ControllerBase
+public class WorldController : BaseGeospatialController<IWorldService>
 {
-    private readonly IWorldService _service;
-    private readonly ILogger<WorldController> _logger;
-
     public WorldController(IWorldService service, ILogger<WorldController> logger)
+        : base(service, logger)
     {
-        _service = service;
-        _logger = logger;
     }
 
     /// <summary>
@@ -48,43 +44,21 @@ public class WorldController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Get world generation job status.
-    /// </summary>
-    /// <param name="jobId">Job identifier</param>
-    /// <returns>Job status and result if complete</returns>
-    [HttpGet("jobs/{jobId}")]
-    [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<JobStatusResponse>> GetJobStatus(string jobId)
-    {
-        var status = await _service.GetJobStatusAsync(jobId);
-        if (status == null)
-        {
-            return NotFound(new ErrorResponse { Message = $"Job {jobId} not found" });
-        }
-
-        return Ok(status);
-    }
 
     /// <summary>
     /// Download generated world bundle as ZIP archive.
     /// </summary>
     /// <param name="jobId">Job identifier</param>
     /// <returns>World bundle ZIP file</returns>
+    /// <summary>
+    /// Download generated world bundle as ZIP archive.
+    /// </summary>
     [HttpGet("jobs/{jobId}/download")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DownloadWorld(string jobId)
     {
-        var filePath = await _service.GetJobOutputPathAsync(jobId, "zip");
-        if (filePath == null || !System.IO.File.Exists(filePath))
-        {
-            return NotFound(new ErrorResponse { Message = $"Output file not found for job {jobId}" });
-        }
-
-        var fileName = Path.GetFileName(filePath);
-        return PhysicalFile(filePath, "application/zip", fileName);
+        return await DownloadFile(jobId, "zip", "application/zip");
     }
 
     /// <summary>

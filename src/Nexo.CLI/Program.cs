@@ -387,6 +387,8 @@ static class Program
         var includeElevationOpt = new Option<bool>("--include-elevation", () => true, "Include elevation as the 3rd coordinate in GeoJSON");
         var treesPerSqKmOpt = new Option<float>("--trees-per-sqkm", () => 200.0f, "Tree density (trees per square kilometer)");
         var treeSeedOpt = new Option<int>("--seed", () => 1337, "Deterministic seed for placement");
+        var validateIntegrityOpt = new Option<bool>("--validate-integrity", () => false, "Validate data integrity (checksum, corruption detection)");
+        var meshQualityReportOpt = new Option<bool>("--mesh-quality-report", () => false, "Generate mesh quality metrics report");
 
         var zOpt = new Option<int>("--z", "WebMercator tile zoom") { IsRequired = true };
         var xOpt = new Option<int>("--x", "WebMercator tile x") { IsRequired = true };
@@ -570,6 +572,8 @@ static class Program
         boundsToObjCmd.AddOption(cacheOpt);
         boundsToObjCmd.AddOption(airgapOpt);
         boundsToObjCmd.AddOption(forceAgenticFailOpt);
+        boundsToObjCmd.AddOption(validateIntegrityOpt);
+        boundsToObjCmd.AddOption(meshQualityReportOpt);
 
         boundsToObjCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -582,6 +586,8 @@ static class Program
             var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
             var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
             var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
+            var validateIntegrity = ctx.ParseResult.GetValueForOption(validateIntegrityOpt);
+            var meshQualityReport = ctx.ParseResult.GetValueForOption(meshQualityReportOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
 
@@ -595,6 +601,8 @@ static class Program
                 cache,
                 airgap,
                 forceAgenticFail,
+                validateIntegrity,
+                meshQualityReport,
                 json,
                 verbose,
                 CancellationToken.None);
@@ -1194,6 +1202,11 @@ static class Program
         services.AddScoped<MetricsCommand>();
         services.AddScoped<UnityCommand>();
         services.AddScoped<DemoCommand>();
+        // Register geospatial commands with interfaces for testability
+        services.AddScoped<Nexo.CLI.Commands.GeoTerrain.IGeoTerrainCommand, Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
+        services.AddScoped<Nexo.CLI.Commands.GeoVector.IGeoVectorCommand, Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
+        services.AddScoped<Nexo.CLI.Commands.World.IWorldCommand, Nexo.CLI.Commands.World.WorldCommand>();
+        // Also register concrete types for CLI command handlers
         services.AddScoped<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
         services.AddScoped<Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
         services.AddScoped<Nexo.CLI.Commands.World.WorldCommand>();

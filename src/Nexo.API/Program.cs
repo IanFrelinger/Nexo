@@ -51,18 +51,22 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("geoterrain.srtm");
 builder.Services.AddHttpClient("geovector.mapbox");
 
-// Register geospatial services (reuse CLI configuration pattern)
-builder.Services.AddHttpClient();
-builder.Services.AddHttpClient("geoterrain.srtm");
-builder.Services.AddHttpClient("geovector.mapbox");
-
 // Register CLI commands (needed for service execution)
-builder.Services.AddScoped<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
-builder.Services.AddScoped<Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
-builder.Services.AddScoped<Nexo.CLI.Commands.World.WorldCommand>();
+builder.Services.AddScoped<Nexo.CLI.Commands.GeoTerrain.IGeoTerrainCommand, Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
+builder.Services.AddScoped<Nexo.CLI.Commands.GeoVector.IGeoVectorCommand, Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
+builder.Services.AddScoped<Nexo.CLI.Commands.World.IWorldCommand, Nexo.CLI.Commands.World.WorldCommand>();
 
 // Register logging
 builder.Services.AddLogging();
+
+// Register job repository (SQLite)
+var dbPath = Path.Combine(Path.GetTempPath(), "nexo-api", "jobs.db");
+Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+builder.Services.AddSingleton<IJobRepository>(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<SqliteJobRepository>>();
+    return new SqliteJobRepository(dbPath, logger);
+});
 
 // Register API-specific services
 builder.Services.AddScoped<WebhookService>();
@@ -70,6 +74,9 @@ builder.Services.AddScoped<IGeoTerrainService, GeoTerrainService>();
 builder.Services.AddScoped<IGeoVectorService, GeoVectorService>();
 builder.Services.AddScoped<IWorldService, WorldService>();
 builder.Services.AddScoped<IJobService, JobService>();
+
+// Register background job cleanup service
+builder.Services.AddHostedService<JobCleanupService>();
 
 // Register infrastructure needed by CLI commands
 builder.Services.AddScoped<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();

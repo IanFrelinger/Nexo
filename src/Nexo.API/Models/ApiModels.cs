@@ -276,3 +276,32 @@ public class ErrorResponse
     /// </summary>
     public required string Message { get; init; }
 }
+
+/// <summary>
+/// Request to validate mesh quality.
+/// </summary>
+public class MeshValidationRequest
+{
+    /// <summary>
+    /// Path to mesh file
+    /// </summary>
+    [Required]
+    public string MeshPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional path to source elevation grid for accuracy validation
+    /// </summary>
+    public string? SourceGridPath { get; set; }
+}
+
+/// <summary>
+/// Request to validate data integrity.
+/// </summary>
+public class IntegrityValidationRequest
+{
+    /// <summary>
+    /// Geographic bounds as "minLat,minLon,maxLat,maxLon"
+    /// </summary>
+    [Required]
+    public string Bounds { get; set; } = string.Empty;
+}

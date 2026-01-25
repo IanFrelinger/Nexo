@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Nexo.Adapters.GeoTerrain.Providers;
+using Nexo.Adapters.GeoTerrain.Validation;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
@@ -11,13 +12,15 @@ using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
 using Nexo.GeoTerrain;
 using Nexo.GeoTerrain.Bricks;
+using Nexo.GeoTerrain.Validation;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.IO;
 using Nexo.Orchestration.GeoTerrain.Ports;
+using Nexo.Adapters.GeoVector.Utilities;
 
 namespace Nexo.CLI.Commands.GeoTerrain;
 
-public sealed class GeoTerrainCommand
+public class GeoTerrainCommand : IGeoTerrainCommand
 {
     private readonly IProviderFactory _providerFactory;
     private readonly ILoggerFactory _loggerFactory;
@@ -259,6 +262,8 @@ public sealed class GeoTerrainCommand
         bool enableCache,
         bool airGapped,
         bool forceAgenticFail,
+        bool validateIntegrity,
+        bool meshQualityReport,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -266,7 +271,7 @@ public sealed class GeoTerrainCommand
         try
         {
             if (output is null) throw new ArgumentNullException(nameof(output));
-            var geoBounds = ParseBounds(bounds);
+            var geoBounds = GeoBounds.Parse(bounds);
             geoBounds.Validate();
 
             var elevationProvider = BuildElevationProvider(
@@ -389,6 +394,8 @@ public sealed class GeoTerrainCommand
             IReadOnlyDictionary<string, object> outputs = new Dictionary<string, object>();
             var steps = new List<object>();
             var errors = new List<string>();
+            var partialFailures = new List<string>();
+            var warnings = new List<string>();
 
             var input = new BehaviorInput(new Dictionary<string, object>
             {
@@ -406,14 +413,29 @@ public sealed class GeoTerrainCommand
                         steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
                         break;
                     case StepCompletedEvent c:
+                        // Check summary for partial failure indicators
+                        if (!string.IsNullOrEmpty(c.Summary))
+                        {
+                            var summary = c.Summary.ToLowerInvariant();
+                            if (summary.Contains("partial") || summary.Contains("failed") || summary.Contains("warning"))
+                            {
+                                warnings.Add($"{c.StepId}: {c.Summary}");
+                            }
+                        }
                         steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
                         break;
                     case StepErrorEvent e:
                         errors.Add($"{e.StepId}: {e.Error}");
+                        partialFailures.Add($"{e.StepId}: {e.Error}");
                         steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
                         break;
                     case BehaviorCompletedEvent b:
                         outputs = b.Outputs;
+                        // Check if behavior completed with partial success
+                        if (!b.Success && errors.Count > 0 && outputs.Count > 0)
+                        {
+                            partialFailures.Add($"Behavior completed with partial success: {outputs.Count} outputs, {errors.Count} errors");
+                        }
                         steps.Add(new { type = "behavior_completed", b.Success });
                         break;
                 }
@@ -423,18 +445,106 @@ public sealed class GeoTerrainCommand
             if (string.IsNullOrWhiteSpace(objText))
                 throw new InvalidOperationException("OBJ output was not produced by the pipeline.");
 
+            // Run validation if requested
+            object? integrityReport = null;
+            object? qualityReport = null;
+
+            if (validateIntegrity || meshQualityReport)
+            {
+                var grid = outputs.TryGetValue("grid", out var g) ? g as ElevationGrid : null;
+                var mesh = outputs.TryGetValue("mesh", out var m) ? m as MeshData : null;
+
+                if (validateIntegrity && grid != null)
+                {
+                    var corruptionReport = DataIntegrityChecker.DetectCorruption(grid, _logger);
+                    integrityReport = new
+                    {
+                        isCorrupted = corruptionReport.IsCorrupted,
+                        issues = corruptionReport.Issues,
+                        noDataCount = corruptionReport.NoDataCount,
+                        suspiciousValueCount = corruptionReport.SuspiciousValueCount,
+                        minElevation = corruptionReport.MinElevation,
+                        maxElevation = corruptionReport.MaxElevation
+                    };
+
+                    if (corruptionReport.IsCorrupted && !json)
+                    {
+                        Console.Error.WriteLine($"WARNING: Data integrity issues detected:");
+                        foreach (var issue in corruptionReport.Issues)
+                        {
+                            Console.Error.WriteLine($"  - {issue}");
+                        }
+                    }
+                }
+
+                if (meshQualityReport && mesh != null && grid != null)
+                {
+                    var triangleQuality = MeshQualityMetrics.ComputeTriangleQuality(mesh);
+                    var meshAccuracy = MeshQualityMetrics.ValidateMeshAccuracy(mesh, grid);
+                    var maxSlope = MeshQualityMetrics.ValidateMaxSlope(mesh);
+                    var normalConsistency = MeshQualityMetrics.ComputeNormalConsistency(mesh);
+
+                    qualityReport = new
+                    {
+                        triangleQuality = new
+                        {
+                            triangleQuality.MinAspectRatio,
+                            triangleQuality.MaxAspectRatio,
+                            triangleQuality.AverageAspectRatio,
+                            triangleQuality.SliverTriangleCount,
+                            triangleQuality.SliverTriangleRatio
+                        },
+                        accuracy = new
+                        {
+                            meshAccuracy.AverageDeviation,
+                            meshAccuracy.MaxDeviation,
+                            meshAccuracy.RmsError,
+                            meshAccuracy.IsAcceptable
+                        },
+                        slope = new
+                        {
+                            maxSlope.MaxSlopeDegrees,
+                            maxSlope.SteepTriangleCount,
+                            maxSlope.IsValid
+                        },
+                        normalConsistency = new
+                        {
+                            normalConsistency.ConsistencyRatio
+                        }
+                    };
+
+                    if (!json)
+                    {
+                        Console.Out.WriteLine($"Mesh Quality Report:");
+                        Console.Out.WriteLine($"  Triangles: {mesh.Indices?.Count / 3 ?? 0}");
+                        Console.Out.WriteLine($"  Aspect Ratio: {triangleQuality.AverageAspectRatio:F2} (min: {triangleQuality.MinAspectRatio:F2}, max: {triangleQuality.MaxAspectRatio:F2})");
+                        Console.Out.WriteLine($"  Sliver Triangles: {triangleQuality.SliverTriangleCount} ({triangleQuality.SliverTriangleRatio:P1})");
+                        Console.Out.WriteLine($"  Max Deviation: {meshAccuracy.MaxDeviation:F2}m (RMS: {meshAccuracy.RmsError:F2}m)");
+                        Console.Out.WriteLine($"  Max Slope: {maxSlope.MaxSlopeDegrees:F1}°");
+                    }
+                }
+            }
+
             DirectoryOps.EnsureParentDirectoryExists(output.FullName);
             await TextFile.WriteAllTextAsync(output.FullName, objText, ct);
 
+            var hasPartialFailures = partialFailures.Count > 0 || warnings.Count > 0;
             var result = new
             {
-                ok = errors.Count == 0,
+                ok = errors.Count == 0 && !hasPartialFailures,
                 bounds = geoBounds.ToString(),
                 output = output.FullName,
                 provider,
                 airGapped,
                 errors,
-                steps
+                partialFailures = hasPartialFailures ? partialFailures : null,
+                warnings = warnings.Count > 0 ? warnings : null,
+                steps,
+                validation = integrityReport != null || qualityReport != null ? new
+                {
+                    integrity = integrityReport,
+                    quality = qualityReport
+                } : null
             };
 
             if (json)
@@ -444,6 +554,22 @@ public sealed class GeoTerrainCommand
             else
             {
                 Console.Out.WriteLine($"Wrote OBJ: {output.FullName}");
+                if (hasPartialFailures)
+                {
+                    Console.Out.WriteLine($"⚠️  Partial failures detected:");
+                    foreach (var pf in partialFailures)
+                    {
+                        Console.Out.WriteLine($"  - {pf}");
+                    }
+                }
+                if (warnings.Count > 0)
+                {
+                    Console.Out.WriteLine($"⚠️  Warnings:");
+                    foreach (var w in warnings)
+                    {
+                        Console.Out.WriteLine($"  - {w}");
+                    }
+                }
             }
 
             return errors.Count == 0 ? 0 : 1;
@@ -719,7 +845,7 @@ public sealed class GeoTerrainCommand
         try
         {
             if (output is null) throw new ArgumentNullException(nameof(output));
-            var geoBounds = ParseBounds(bounds);
+            var geoBounds = GeoBounds.Parse(bounds);
             geoBounds.Validate();
 
             var elevationProvider = BuildElevationProvider(
@@ -952,7 +1078,7 @@ public sealed class GeoTerrainCommand
         try
         {
             if (output is null) throw new ArgumentNullException(nameof(output));
-            var geoBounds = ParseBounds(bounds);
+            var geoBounds = GeoBounds.Parse(bounds);
             geoBounds.Validate();
 
             var elevationProvider = BuildElevationProvider(
@@ -1169,7 +1295,7 @@ public sealed class GeoTerrainCommand
         {
             if (outputObj is null) throw new ArgumentNullException(nameof(outputObj));
 
-            var token = ResolveMapboxToken(mapboxToken);
+            var token = MapboxTokenResolver.Resolve(mapboxToken);
             var tileset = string.IsNullOrWhiteSpace(tilesetId) ? "mapbox.terrain-rgb" : tilesetId!.Trim();
 
             var provider = new MapboxTerrainRgbGridProvider(
@@ -1260,7 +1386,7 @@ public sealed class GeoTerrainCommand
         try
         {
             if (output is null) throw new ArgumentNullException(nameof(output));
-            var token = ResolveMapboxToken(mapboxToken);
+            var token = MapboxTokenResolver.Resolve(mapboxToken);
             var tileset = string.IsNullOrWhiteSpace(tilesetId) ? "mapbox.satellite" : tilesetId!.Trim();
             var fmt = string.IsNullOrWhiteSpace(format) ? "jpg90" : format!.Trim();
 
@@ -1307,83 +1433,8 @@ public sealed class GeoTerrainCommand
         bool enableCache,
         bool airGapped)
     {
-        provider = (provider ?? "echo").Trim().ToLowerInvariant();
-
-        if (airGapped && provider is "http" or "srtmhttp" or "hybrid")
-        {
-            // Air-gapped: do not attempt network. Force local.
-            provider = "local";
-        }
-
-        IElevationProvider inner = provider switch
-        {
-            "echo" => new EchoElevationProvider(),
-            "local" => new LocalFileElevationProvider(localRoot),
-            "http" or "srtmhttp" => new SrtmHttpElevationProvider(
-                _httpClientFactory.CreateClient("geoterrain.srtm"),
-                srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>()),
-            "hybrid" => BuildHybrid(localRoot, srtmBaseUrl, persistDownloads),
-            _ => throw new InvalidOperationException($"Unknown provider '{provider}'. Use echo|local|http|hybrid.")
-        };
-
-        return enableCache ? new CachedElevationProvider(inner) : inner;
-    }
-
-    private IElevationProvider BuildHybrid(string? localRoot, string? srtmBaseUrl, bool persistDownloads)
-    {
-        if (string.IsNullOrWhiteSpace(localRoot))
-        {
-            // If no local root was provided, fall back to pure HTTP mode.
-            return new SrtmHttpElevationProvider(
-                _httpClientFactory.CreateClient("geoterrain.srtm"),
-                srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
-        }
-
-        var local = new LocalFileElevationProvider(localRoot);
-        var http = new SrtmHttpElevationProvider(
-            _httpClientFactory.CreateClient("geoterrain.srtm"),
-            srtmBaseUrl,
-            _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
-
-        return new HybridLocalThenHttpElevationProvider(
-            local,
-            http,
-            persistDownloads,
-            _loggerFactory.CreateLogger<HybridLocalThenHttpElevationProvider>());
-    }
-
-    private static GeoBounds ParseBounds(string text)
-    {
-        // Format: "minLat,minLon,maxLat,maxLon"
-        if (string.IsNullOrWhiteSpace(text))
-            throw new ArgumentException("bounds is required (minLat,minLon,maxLat,maxLon).", nameof(text));
-
-        var parts = text.Split(',');
-        if (parts.Length != 4)
-            throw new ArgumentException("bounds must be 'minLat,minLon,maxLat,maxLon'.", nameof(text));
-
-        var minLat = double.Parse(parts[0].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var minLon = double.Parse(parts[1].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var maxLat = double.Parse(parts[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var maxLon = double.Parse(parts[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-
-        return new GeoBounds
-        {
-            MinLatitude = new Latitude(minLat),
-            MinLongitude = new Longitude(minLon),
-            MaxLatitude = new Latitude(maxLat),
-            MaxLongitude = new Longitude(maxLon)
-        };
-    }
-
-    private static string ResolveMapboxToken(string? token)
-    {
-        token = string.IsNullOrWhiteSpace(token) ? Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN") : token;
-        if (string.IsNullOrWhiteSpace(token))
-            throw new InvalidOperationException("Mapbox token is required (set MAPBOX_ACCESS_TOKEN or pass --mapbox-token).");
-        return token.Trim();
+        var factory = new ElevationProviderFactory(_httpClientFactory, _loggerFactory);
+        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped);
     }
 }
 

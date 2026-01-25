@@ -16,10 +16,11 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.IO;
 using Nexo.Orchestration.GeoTerrain.Ports;
 using Nexo.Orchestration.GeoVector.Ports;
+using Nexo.Adapters.GeoVector.Utilities;
 
 namespace Nexo.CLI.Commands.GeoVector;
 
-public sealed class GeoVectorCommand
+public class GeoVectorCommand : IGeoVectorCommand
 {
     private readonly Nexo.Infrastructure.Execution.IProviderFactory _providerFactory;
     private readonly ILoggerFactory _loggerFactory;
@@ -67,7 +68,7 @@ public sealed class GeoVectorCommand
         try
         {
             if (output is null) throw new ArgumentNullException(nameof(output));
-            var geoBounds = ParseBounds(bounds);
+            var geoBounds = GeoBounds.Parse(bounds);
             geoBounds.Validate();
 
             if (airGapped && string.Equals(provider?.Trim(), "mapbox", StringComparison.OrdinalIgnoreCase))
@@ -75,11 +76,7 @@ public sealed class GeoVectorCommand
                 throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo|osm|hybrid with an offline source.");
             }
 
-            var origin = new GeoPoint
-            {
-                Latitude = new Latitude((geoBounds.MinLatitude.Degrees + geoBounds.MaxLatitude.Degrees) * 0.5),
-                Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
-            };
+            var origin = geoBounds.Center;
 
             var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
 
@@ -299,7 +296,7 @@ public sealed class GeoVectorCommand
         try
         {
             if (output is null) throw new ArgumentNullException(nameof(output));
-            var geoBounds = ParseBounds(bounds);
+            var geoBounds = GeoBounds.Parse(bounds);
             geoBounds.Validate();
 
             if (airGapped && string.Equals(provider?.Trim(), "mapbox", StringComparison.OrdinalIgnoreCase))
@@ -307,11 +304,7 @@ public sealed class GeoVectorCommand
                 throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo|osm|hybrid with an offline source.");
             }
 
-            var origin = new GeoPoint
-            {
-                Latitude = new Latitude((geoBounds.MinLatitude.Degrees + geoBounds.MaxLatitude.Degrees) * 0.5),
-                Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
-            };
+            var origin = geoBounds.Center;
 
             var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
 
@@ -533,7 +526,7 @@ public sealed class GeoVectorCommand
         try
         {
             if (output is null) throw new ArgumentNullException(nameof(output));
-            var geoBounds = ParseBounds(bounds);
+            var geoBounds = GeoBounds.Parse(bounds);
             geoBounds.Validate();
 
             if (airGapped && string.Equals(provider?.Trim(), "mapbox", StringComparison.OrdinalIgnoreCase))
@@ -541,11 +534,7 @@ public sealed class GeoVectorCommand
                 throw new InvalidOperationException("Air-gapped mode cannot use the Mapbox provider. Use --vector-provider echo|osm|hybrid with an offline source.");
             }
 
-            var origin = new GeoPoint
-            {
-                Latitude = new Latitude((geoBounds.MinLatitude.Degrees + geoBounds.MaxLatitude.Degrees) * 0.5),
-                Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
-            };
+            var origin = geoBounds.Center;
 
             var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
 
@@ -740,29 +729,6 @@ public sealed class GeoVectorCommand
         }
     }
 
-    private static GeoBounds ParseBounds(string text)
-    {
-        // Format: "minLat,minLon,maxLat,maxLon"
-        if (string.IsNullOrWhiteSpace(text))
-            throw new ArgumentException("bounds is required (minLat,minLon,maxLat,maxLon).", nameof(text));
-
-        var parts = text.Split(',');
-        if (parts.Length != 4)
-            throw new ArgumentException("bounds must be 'minLat,minLon,maxLat,maxLon'.", nameof(text));
-
-        var minLat = double.Parse(parts[0].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var minLon = double.Parse(parts[1].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var maxLat = double.Parse(parts[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var maxLon = double.Parse(parts[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-
-        return new GeoBounds
-        {
-            MinLatitude = new Latitude(minLat),
-            MinLongitude = new Longitude(minLon),
-            MaxLatitude = new Latitude(maxLat),
-            MaxLongitude = new Longitude(maxLon)
-        };
-    }
 
     private IVectorProvider BuildVectorProvider(
         string provider,
@@ -773,45 +739,8 @@ public sealed class GeoVectorCommand
         string? osmPbfPath,
         bool airGapped)
     {
-        provider = (provider ?? "echo").Trim().ToLowerInvariant();
-        IVectorProvider offline = provider switch
-        {
-            "osm" or "hybrid" => string.IsNullOrWhiteSpace(osmPbfPath)
-                ? throw new InvalidOperationException("OSM PBF path is required for --vector-provider osm|hybrid. Use --osm-pbf <path>.")
-                : new OsmPbfVectorProvider(osmPbfPath, _loggerFactory.CreateLogger<OsmPbfVectorProvider>()),
-            _ => new EchoVectorProvider()
-        };
-
-        if (provider == "osm")
-        {
-            return new CachedVectorProvider(offline);
-        }
-
-        if (provider == "echo")
-        {
-            return new CachedVectorProvider(offline);
-        }
-
-        MapboxVectorTileProvider? online = null;
-        if (!airGapped)
-        {
-            online = new MapboxVectorTileProvider(
-                _httpClientFactory.CreateClient("geovector.mapbox"),
-                accessToken: ResolveMapboxToken(mapboxAccessToken),
-                tilesetId: string.IsNullOrWhiteSpace(mapboxTileset) ? "mapbox.mapbox-streets-v8" : mapboxTileset!,
-                zoom: mapboxZoom ?? 15,
-                formatExtension: "mvt",
-                logger: _loggerFactory.CreateLogger<MapboxVectorTileProvider>());
-        }
-
-        return provider switch
-        {
-            "mapbox" => online is null
-                ? throw new InvalidOperationException("Mapbox provider is not available in air-gapped mode.")
-                : new CachedVectorProvider(online),
-            "hybrid" => new CachedVectorProvider(new HybridVectorProvider(offline, online, _loggerFactory.CreateLogger<HybridVectorProvider>())),
-            _ => throw new InvalidOperationException($"Unknown vector provider '{provider}'. Use echo|osm|mapbox|hybrid.")
-        };
+        var factory = new VectorProviderFactory(_httpClientFactory, _loggerFactory);
+        return factory.Build(provider, bounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
     }
 
     private IElevationProvider BuildElevationProvider(
@@ -822,49 +751,8 @@ public sealed class GeoVectorCommand
         bool enableCache,
         bool airGapped)
     {
-        provider = (provider ?? "echo").Trim().ToLowerInvariant();
-
-        if (airGapped && provider is "http" or "srtmhttp" or "hybrid")
-        {
-            provider = "local";
-        }
-
-        IElevationProvider inner = provider switch
-        {
-            "echo" => new EchoElevationProvider(),
-            "local" => new LocalFileElevationProvider(localRoot),
-            "http" or "srtmhttp" => new SrtmHttpElevationProvider(
-                _httpClientFactory.CreateClient("geoterrain.srtm"),
-                srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>()),
-            "hybrid" => BuildHybrid(localRoot, srtmBaseUrl, persistDownloads),
-            _ => throw new InvalidOperationException($"Unknown elevation provider '{provider}'. Use echo|local|http|hybrid.")
-        };
-
-        return enableCache ? new CachedElevationProvider(inner) : inner;
-    }
-
-    private IElevationProvider BuildHybrid(string? localRoot, string? srtmBaseUrl, bool persistDownloads)
-    {
-        if (string.IsNullOrWhiteSpace(localRoot))
-        {
-            return new SrtmHttpElevationProvider(
-                _httpClientFactory.CreateClient("geoterrain.srtm"),
-                srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
-        }
-
-        var local = new LocalFileElevationProvider(localRoot);
-        var http = new SrtmHttpElevationProvider(
-            _httpClientFactory.CreateClient("geoterrain.srtm"),
-            srtmBaseUrl,
-            _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
-
-        return new HybridLocalThenHttpElevationProvider(
-            local,
-            http,
-            persistDownloads,
-            _loggerFactory.CreateLogger<HybridLocalThenHttpElevationProvider>());
+        var factory = new ElevationProviderFactory(_httpClientFactory, _loggerFactory);
+        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped);
     }
 
     private async Task<ElevationGrid> BuildTerrainGridAsync(GeoBounds bounds, IElevationProvider elevationProvider, CancellationToken ct)
@@ -894,12 +782,5 @@ public sealed class GeoVectorCommand
         return SrtmMosaicBuilder.Build(dict);
     }
 
-    private static string ResolveMapboxToken(string? token)
-    {
-        token ??= Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
-        if (string.IsNullOrWhiteSpace(token))
-            throw new InvalidOperationException("Mapbox access token is required. Pass --mapbox-token or set MAPBOX_ACCESS_TOKEN.");
-        return token;
-    }
 }
 

@@ -23,10 +23,11 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.IO;
 using Nexo.Orchestration.GeoTerrain.Ports;
 using Nexo.Orchestration.GeoVector.Ports;
+using Nexo.Adapters.GeoVector.Utilities;
 
 namespace Nexo.CLI.Commands.World;
 
-public sealed class WorldCommand
+public class WorldCommand : IWorldCommand
 {
     private readonly Nexo.Infrastructure.Execution.IProviderFactory _providerFactory;
     private readonly ILoggerFactory _loggerFactory;
@@ -81,14 +82,10 @@ public sealed class WorldCommand
         try
         {
             if (outDir is null) throw new ArgumentNullException(nameof(outDir));
-            var geoBounds = ParseBounds(bounds);
+            var geoBounds = GeoBounds.Parse(bounds);
             geoBounds.Validate();
 
-            var origin = new GeoPoint
-            {
-                Latitude = new Latitude((geoBounds.MinLatitude.Degrees + geoBounds.MaxLatitude.Degrees) * 0.5),
-                Longitude = new Longitude((geoBounds.MinLongitude.Degrees + geoBounds.MaxLongitude.Degrees) * 0.5)
-            };
+            var origin = geoBounds.Center;
 
             var projector = Nexo.GeoTerrain.Projection.CoordinateProjectorFactory.Create(projection, geoBounds);
 
@@ -595,7 +592,7 @@ public sealed class WorldCommand
 
                 if (enableTerrainImagery && !airGapped)
                 {
-                    var token = ResolveMapboxToken(mapboxAccessToken);
+                    var token = MapboxTokenResolver.Resolve(mapboxAccessToken);
                     var z = terrainImageryZoom ?? mapboxZoom ?? 15;
                     var tileset = string.IsNullOrWhiteSpace(terrainImageryTileset) ? "mapbox.satellite" : terrainImageryTileset!.Trim();
                     var fmt = string.IsNullOrWhiteSpace(terrainImageryFormat) ? "jpg90" : terrainImageryFormat!.Trim();
@@ -753,7 +750,7 @@ public sealed class WorldCommand
                 RasterMosaic? mosaic = null;
                 if (enableTerrainImagery && !airGapped)
                 {
-                    var token = ResolveMapboxToken(mapboxAccessToken);
+                    var token = MapboxTokenResolver.Resolve(mapboxAccessToken);
                     var z = terrainImageryZoom ?? mapboxZoom ?? 15;
                     var tileset = string.IsNullOrWhiteSpace(terrainImageryTileset) ? "mapbox.satellite" : terrainImageryTileset!.Trim();
                     var fmt = string.IsNullOrWhiteSpace(terrainImageryFormat) ? "jpg90" : terrainImageryFormat!.Trim();
@@ -1421,29 +1418,6 @@ public sealed class WorldCommand
         }
     }
 
-    private static GeoBounds ParseBounds(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            throw new ArgumentException("bounds is required (minLat,minLon,maxLat,maxLon).", nameof(text));
-
-        var parts = text.Split(',');
-        if (parts.Length != 4)
-            throw new ArgumentException("bounds must be 'minLat,minLon,maxLat,maxLon'.", nameof(text));
-
-        var minLat = double.Parse(parts[0].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var minLon = double.Parse(parts[1].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var maxLat = double.Parse(parts[2].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-        var maxLon = double.Parse(parts[3].Trim(), System.Globalization.CultureInfo.InvariantCulture);
-
-        return new GeoBounds
-        {
-            MinLatitude = new Latitude(minLat),
-            MinLongitude = new Longitude(minLon),
-            MaxLatitude = new Latitude(maxLat),
-            MaxLongitude = new Longitude(maxLon)
-        };
-    }
-
     private IElevationProvider BuildElevationProvider(
         string provider,
         string? localRoot,
@@ -1452,49 +1426,8 @@ public sealed class WorldCommand
         bool enableCache,
         bool airGapped)
     {
-        provider = (provider ?? "echo").Trim().ToLowerInvariant();
-
-        if (airGapped && provider is "http" or "srtmhttp" or "hybrid")
-        {
-            provider = "local";
-        }
-
-        IElevationProvider inner = provider switch
-        {
-            "echo" => new EchoElevationProvider(),
-            "local" => new LocalFileElevationProvider(localRoot),
-            "http" or "srtmhttp" => new SrtmHttpElevationProvider(
-                _httpClientFactory.CreateClient("geoterrain.srtm"),
-                srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>()),
-            "hybrid" => BuildHybridElevation(localRoot, srtmBaseUrl, persistDownloads),
-            _ => throw new InvalidOperationException($"Unknown elevation provider '{provider}'. Use echo|local|http|hybrid.")
-        };
-
-        return enableCache ? new CachedElevationProvider(inner) : inner;
-    }
-
-    private IElevationProvider BuildHybridElevation(string? localRoot, string? srtmBaseUrl, bool persistDownloads)
-    {
-        if (string.IsNullOrWhiteSpace(localRoot))
-        {
-            return new SrtmHttpElevationProvider(
-                _httpClientFactory.CreateClient("geoterrain.srtm"),
-                srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
-        }
-
-        var local = new LocalFileElevationProvider(localRoot);
-        var http = new SrtmHttpElevationProvider(
-            _httpClientFactory.CreateClient("geoterrain.srtm"),
-            srtmBaseUrl,
-            _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
-
-        return new HybridLocalThenHttpElevationProvider(
-            local,
-            http,
-            persistDownloads,
-            _loggerFactory.CreateLogger<HybridLocalThenHttpElevationProvider>());
+        var factory = new ElevationProviderFactory(_httpClientFactory, _loggerFactory);
+        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped);
     }
 
     private IVectorProvider BuildVectorProvider(
@@ -1506,48 +1439,8 @@ public sealed class WorldCommand
         string? osmPbfPath,
         bool airGapped)
     {
-        provider = (provider ?? "echo").Trim().ToLowerInvariant();
-        IVectorProvider offline = provider switch
-        {
-            "osm" or "hybrid" => string.IsNullOrWhiteSpace(osmPbfPath)
-                ? throw new InvalidOperationException("OSM PBF path is required for --vector-provider osm|hybrid. Use --osm-pbf <path>.")
-                : new OsmPbfVectorProvider(osmPbfPath, _loggerFactory.CreateLogger<OsmPbfVectorProvider>()),
-            _ => new EchoVectorProvider()
-        };
-
-        if (provider == "osm" || provider == "echo")
-        {
-            return new CachedVectorProvider(offline);
-        }
-
-        MapboxVectorTileProvider? online = null;
-        if (!airGapped)
-        {
-            online = new MapboxVectorTileProvider(
-                _httpClientFactory.CreateClient("geovector.mapbox"),
-                accessToken: ResolveMapboxToken(mapboxAccessToken),
-                tilesetId: string.IsNullOrWhiteSpace(mapboxTileset) ? "mapbox.mapbox-streets-v8" : mapboxTileset!,
-                zoom: mapboxZoom ?? 15,
-                formatExtension: "mvt",
-                logger: _loggerFactory.CreateLogger<MapboxVectorTileProvider>());
-        }
-
-        return provider switch
-        {
-            "mapbox" => online is null
-                ? throw new InvalidOperationException("Mapbox provider is not available in air-gapped mode.")
-                : new CachedVectorProvider(online),
-            "hybrid" => new CachedVectorProvider(new HybridVectorProvider(offline, online, _loggerFactory.CreateLogger<HybridVectorProvider>())),
-            _ => throw new InvalidOperationException($"Unknown vector provider '{provider}'. Use echo|osm|mapbox|hybrid.")
-        };
-    }
-
-    private static string ResolveMapboxToken(string? token)
-    {
-        token = string.IsNullOrWhiteSpace(token) ? Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN") : token;
-        if (string.IsNullOrWhiteSpace(token))
-            throw new InvalidOperationException("Mapbox token is required (set MAPBOX_ACCESS_TOKEN or pass --mapbox-token).");
-        return token.Trim();
+        var factory = new VectorProviderFactory(_httpClientFactory, _loggerFactory);
+        return factory.Build(provider, bounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
     }
 
     private static List<(int x0, int y0, int w, int h)> BuildGridChunks(int width, int height, int chunkSamples)

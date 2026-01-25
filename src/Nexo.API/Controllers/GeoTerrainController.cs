@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Nexo.API.Models;
 using Nexo.API.Services;
+using Nexo.Adapters.GeoTerrain.Validation;
 using Nexo.GeoTerrain;
+using Nexo.GeoTerrain.Validation;
 
 namespace Nexo.API.Controllers;
 
@@ -11,15 +13,11 @@ namespace Nexo.API.Controllers;
 [ApiController]
 [Route("api/v1/geoterrain")]
 [Produces("application/json")]
-public class GeoTerrainController : ControllerBase
+public class GeoTerrainController : BaseGeospatialController<IGeoTerrainService>
 {
-    private readonly IGeoTerrainService _service;
-    private readonly ILogger<GeoTerrainController> _logger;
-
     public GeoTerrainController(IGeoTerrainService service, ILogger<GeoTerrainController> logger)
+        : base(service, logger)
     {
-        _service = service;
-        _logger = logger;
     }
 
     /// <summary>
@@ -49,24 +47,6 @@ public class GeoTerrainController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Get terrain generation job status.
-    /// </summary>
-    /// <param name="jobId">Job identifier</param>
-    /// <returns>Job status and result if complete</returns>
-    [HttpGet("jobs/{jobId}")]
-    [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<JobStatusResponse>> GetJobStatus(string jobId)
-    {
-        var status = await _service.GetJobStatusAsync(jobId);
-        if (status == null)
-        {
-            return NotFound(new ErrorResponse { Message = $"Job {jobId} not found" });
-        }
-
-        return Ok(status);
-    }
 
     /// <summary>
     /// Download generated terrain mesh.
@@ -74,20 +54,84 @@ public class GeoTerrainController : ControllerBase
     /// <param name="jobId">Job identifier</param>
     /// <param name="format">Output format (obj, gltf, glb, fbx, usd)</param>
     /// <returns>Mesh file</returns>
+    /// <summary>
+    /// Download generated terrain mesh.
+    /// </summary>
     [HttpGet("jobs/{jobId}/download")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> DownloadTerrain(string jobId, [FromQuery] string format = "obj")
     {
-        var filePath = await _service.GetJobOutputPathAsync(jobId, format);
-        if (filePath == null || !System.IO.File.Exists(filePath))
+        return await DownloadFile(jobId, format, "application/octet-stream", GetContentType);
+    }
+
+    /// <summary>
+    /// Validate mesh quality and integrity.
+    /// </summary>
+    /// <param name="request">Validation request with mesh file path</param>
+    /// <returns>Validation report</returns>
+    [HttpPost("validate-mesh")]
+    [ProducesResponseType(typeof(ValidationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public Task<ActionResult<ValidationResponse>> ValidateMesh([FromBody] MeshValidationRequest request)
+    {
+        if (!ModelState.IsValid)
         {
-            return NotFound(new ErrorResponse { Message = $"Output file not found for job {jobId}" });
+            return Task.FromResult<ActionResult<ValidationResponse>>(BadRequest(ModelState));
         }
 
-        var contentType = GetContentType(format);
-        var fileName = Path.GetFileName(filePath);
-        return PhysicalFile(filePath, contentType, fileName);
+        // Load mesh from file (simplified - would need actual mesh loading)
+        // For now, return not implemented
+        return Task.FromResult<ActionResult<ValidationResponse>>(
+            StatusCode(501, new ErrorResponse { Message = "Mesh validation from file not yet implemented. Use CLI with --mesh-quality-report flag." }));
+    }
+
+    /// <summary>
+    /// Validate data integrity of elevation grid.
+    /// </summary>
+    /// <param name="request">Validation request with grid bounds</param>
+    /// <returns>Integrity validation report</returns>
+    [HttpPost("validate-integrity")]
+    [ProducesResponseType(typeof(ValidationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public Task<ActionResult<ValidationResponse>> ValidateIntegrity([FromBody] IntegrityValidationRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return Task.FromResult<ActionResult<ValidationResponse>>(BadRequest(ModelState));
+        }
+
+        // Parse bounds
+        var boundsParts = request.Bounds.Split(',');
+        if (boundsParts.Length != 4)
+        {
+            return Task.FromResult<ActionResult<ValidationResponse>>(
+                BadRequest(new ErrorResponse { Message = "Bounds must be in format: minLat,minLon,maxLat,maxLon" }));
+        }
+
+        var bounds = new GeoBounds
+        {
+            MinLatitude = new Latitude(double.Parse(boundsParts[0])),
+            MinLongitude = new Longitude(double.Parse(boundsParts[1])),
+            MaxLatitude = new Latitude(double.Parse(boundsParts[2])),
+            MaxLongitude = new Longitude(double.Parse(boundsParts[3]))
+        };
+
+        // Validate projection parameters
+        var isValid = DataIntegrityChecker.ValidateProjectionParameters(bounds, _logger);
+        var issues = new List<string>();
+
+        if (!isValid)
+        {
+            issues.Add("Projection parameters validation failed");
+        }
+
+        return Task.FromResult<ActionResult<ValidationResponse>>(
+            Ok(new ValidationResponse
+            {
+                IsValid = isValid,
+                Issues = issues
+            }));
     }
 
     private static string GetContentType(string format)

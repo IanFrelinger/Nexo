@@ -1,74 +1,43 @@
 using Microsoft.Extensions.Logging;
 using Nexo.API.Models;
 using Nexo.CLI.Commands.World;
-using System.Collections.Concurrent;
 
 namespace Nexo.API.Services;
 
 /// <summary>
 /// Implementation of world bundle generation service.
 /// </summary>
-public class WorldService : IWorldService
+public class WorldService : BaseGeospatialService<IWorldCommand>, IWorldService
 {
-    private readonly WorldCommand _command;
-    private readonly ILogger<WorldService> _logger;
-    private readonly WebhookService? _webhookService;
-    private readonly ConcurrentDictionary<string, JobStatusResponse> _jobs = new();
-    private readonly string _outputDirectory;
-
     public WorldService(
-        WorldCommand command,
+        IWorldCommand command,
         ILogger<WorldService> logger,
+        IJobRepository jobRepository,
         WebhookService? webhookService = null)
+        : base(command, logger, jobRepository, webhookService, "world")
     {
-        _command = command;
-        _logger = logger;
-        _webhookService = webhookService;
-        _outputDirectory = Path.Combine(Path.GetTempPath(), "nexo-api", "world");
-        Directory.CreateDirectory(_outputDirectory);
     }
 
-    public Task<string> GenerateWorldAsync(WorldGenerationRequest request)
+    public async Task<string> GenerateWorldAsync(WorldGenerationRequest request)
     {
-        var jobId = Guid.NewGuid().ToString("N");
-        var outputPath = Path.Combine(_outputDirectory, jobId);
+        var (jobId, outputPath) = await CreateJobAsync("zip", request.WebhookUrl, isDirectory: true);
         var outputDir = new DirectoryInfo(outputPath);
-        var webhookUrl = request.WebhookUrl;
 
-        _jobs[jobId] = new JobStatusResponse
-        {
-            JobId = jobId,
-            Status = "pending",
-            Progress = 0,
-            CreatedAt = DateTime.UtcNow
-        };
+        var bounds = ParseBounds(request.Bounds);
+        var elevationProvider = request.ElevationProvider ?? "srtm";
+        var vectorProvider = request.VectorProvider ?? "hybrid";
+        var mapboxToken = request.MapboxToken ?? Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
+        var osmPbfPath = request.OsmPbfPath;
 
-        // Start async processing
-        _ = Task.Run(async () =>
-        {
-            try
+        StartJobProcessing(
+            jobId,
+            request.WebhookUrl,
+            async (job) =>
             {
-                _jobs[jobId] = _jobs[jobId] with { Status = "processing", Progress = 10 };
+                job = job with { Progress = 20 };
+                await _jobRepository.UpdateJobAsync(job);
 
-                // Parse bounds
-                var boundsParts = request.Bounds.Split(',');
-                if (boundsParts.Length != 4)
-                {
-                    throw new ArgumentException("Bounds must be in format: minLat,maxLat,minLon,maxLon");
-                }
-
-                var bounds = $"{boundsParts[0]},{boundsParts[1]},{boundsParts[2]},{boundsParts[3]}";
-
-                // Determine providers
-                var elevationProvider = request.ElevationProvider ?? "srtm";
-                var vectorProvider = request.VectorProvider ?? "hybrid";
-                var mapboxToken = request.MapboxToken ?? Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
-                var osmPbfPath = request.OsmPbfPath;
-
-                _jobs[jobId] = _jobs[jobId] with { Progress = 20 };
-
-                // Execute world generation using CLI command
-                var exitCode = await _command.BuildAsync(
+                return await _command.BuildAsync(
                     bounds: bounds,
                     outDir: outputDir,
                     terrainElevationProvider: elevationProvider,
@@ -97,62 +66,10 @@ public class WorldService : IWorldService
                     json: false,
                     verbose: true,
                     ct: CancellationToken.None);
+            },
+            outputPath);
 
-                if (exitCode != 0)
-                {
-                    throw new InvalidOperationException($"World generation failed with exit code {exitCode}");
-                }
-
-                _jobs[jobId] = _jobs[jobId] with
-                {
-                    Status = "completed",
-                    Progress = 100,
-                    OutputPath = outputPath,
-                    CompletedAt = DateTime.UtcNow
-                };
-
-                _logger.LogInformation("World generation job {JobId} completed successfully", jobId);
-
-                // Send webhook if configured
-                if (!string.IsNullOrEmpty(webhookUrl) && _webhookService != null)
-                {
-                    await _webhookService.SendWebhookAsync(webhookUrl, jobId, "completed");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing world generation job {JobId}", jobId);
-                _jobs[jobId] = _jobs[jobId] with
-                {
-                    Status = "failed",
-                    ErrorMessage = ex.Message,
-                    CompletedAt = DateTime.UtcNow
-                };
-
-                // Send webhook if configured
-                if (!string.IsNullOrEmpty(webhookUrl) && _webhookService != null)
-                {
-                    await _webhookService.SendWebhookAsync(webhookUrl, jobId, "failed", ex.Message);
-                }
-            }
-        });
-
-        return Task.FromResult(jobId);
-    }
-
-    public Task<JobStatusResponse?> GetJobStatusAsync(string jobId)
-    {
-        _jobs.TryGetValue(jobId, out var status);
-        return Task.FromResult(status);
-    }
-
-    public Task<string?> GetJobOutputPathAsync(string jobId, string format)
-    {
-        if (_jobs.TryGetValue(jobId, out var status) && status.Status == "completed")
-        {
-            return Task.FromResult<string?>(status.OutputPath);
-        }
-        return Task.FromResult<string?>(null);
+        return jobId;
     }
 
     public async Task<ValidationResult> ValidateWorldAsync(string bundlePath)
