@@ -6,12 +6,28 @@
       <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(UserProfile)\.nuget\packages</NuGetPackageRoot>
       <NuGetPackageRoot Condition="'$(OS)' != 'Windows_NT' AND '$(NuGetPackageRoot)' == ''">$(HOME)/.nuget/packages</NuGetPackageRoot>
       <DepsJsonPath>$(OutputPath)$(AssemblyName).deps.json</DepsJsonPath>
-      <CopyScriptPath>$(MSBuildThisFileDirectory)scripts/copy-assemblies.py</CopyScriptPath>
+      <CopyScriptDir>$(MSBuildThisFileDirectory)scripts</CopyScriptDir>
+      <CopyScriptProj>$(CopyScriptDir)\copy-assemblies.csproj</CopyScriptProj>
+      <CopyScriptProj Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/copy-assemblies.csproj</CopyScriptProj>
+      <CopyScriptExe>$(CopyScriptDir)\bin\Debug\net8.0\copy-assemblies.dll</CopyScriptExe>
+      <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/net8.0/copy-assemblies.dll</CopyScriptExe>
     </PropertyGroup>
     
-    <!-- Use Python script to automatically copy all assemblies from deps.json -->
-    <Exec Command="python3 &quot;$(CopyScriptPath)&quot; &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
-          Condition="Exists('$(CopyScriptPath)') AND Exists('$(DepsJsonPath)')"
+    <!-- Build the C# assembly copying tool if needed -->
+    <MSBuild Projects="$(CopyScriptProj)" 
+             Targets="Build" 
+             Properties="Configuration=Debug"
+             Condition="Exists('$(CopyScriptProj)')"
+             ContinueOnError="false" />
+    
+    <!-- Use C# program to automatically copy all assemblies from deps.json -->
+    <Exec Command="dotnet &quot;$(CopyScriptExe)&quot; &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
+          Condition="Exists('$(CopyScriptExe)') AND Exists('$(DepsJsonPath)')"
+          ContinueOnError="true" />
+    
+    <!-- Alternative: Use dotnet run if the DLL doesn't exist yet (builds on first run) -->
+    <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -- &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
+          Condition="!Exists('$(CopyScriptExe)') AND Exists('$(CopyScriptProj)') AND Exists('$(DepsJsonPath)')"
           ContinueOnError="true" />
     
     <!-- Fallback: Known problematic assemblies that need to be copied -->

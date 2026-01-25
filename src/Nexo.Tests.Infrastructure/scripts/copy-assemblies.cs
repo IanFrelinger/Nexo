@@ -1,0 +1,112 @@
+// Parse deps.json and copy all required assemblies to output directory.
+// This is a C# program that can be compiled and run with: dotnet run --project <path> -- <args>
+// Or compiled to a single file and executed.
+
+using System;
+using System.IO;
+using System.Text.Json;
+using System.Linq;
+
+if (args.Length < 2)
+{
+    Console.Error.WriteLine("Usage: copy-assemblies <deps.json> <output-dir> [nuget-packages-root]");
+    Environment.Exit(1);
+}
+
+var depsJsonPath = args[0];
+var outputDir = args[1];
+var nugetRoot = args.Length > 2 ? args[2] : Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+    ".nuget", "packages");
+
+if (!File.Exists(depsJsonPath))
+{
+    Console.Error.WriteLine($"deps.json not found: {depsJsonPath}");
+    Environment.Exit(1);
+}
+
+// Ensure output directory exists
+Directory.CreateDirectory(outputDir);
+
+// Parse deps.json
+string jsonContent = File.ReadAllText(depsJsonPath);
+using JsonDocument doc = JsonDocument.Parse(jsonContent);
+var root = doc.RootElement;
+
+if (!root.TryGetProperty("targets", out var targetsElement))
+{
+    Console.Error.WriteLine("deps.json does not contain 'targets' property");
+    Environment.Exit(1);
+}
+
+// Find the .NET 8.0 runtime target
+var runtimeTarget = targetsElement.EnumerateObject()
+    .FirstOrDefault(p => p.Name.Contains("NETCoreApp") && p.Name.Contains("8.0"));
+
+if (runtimeTarget.Value.ValueKind == JsonValueKind.Undefined)
+{
+    Console.Error.WriteLine("Could not find .NET 8.0 runtime target in deps.json");
+    Environment.Exit(1);
+}
+
+var runtime = runtimeTarget.Value;
+int copied = 0;
+int failed = 0;
+
+foreach (var libProperty in runtime.EnumerateObject())
+{
+    var libName = libProperty.Name;
+    
+    // Skip if not a package reference (package references have '/' separator)
+    if (!libName.Contains('/'))
+        continue;
+    
+    if (!libProperty.Value.TryGetProperty("runtime", out var runtimePaths))
+        continue;
+    
+    // Extract package name and version
+    var parts = libName.Split('/', 2);
+    if (parts.Length != 2)
+        continue;
+    
+    var pkgName = parts[0];
+    var pkgVersion = parts[1];
+    var pkgNameLower = pkgName.ToLowerInvariant(); // NuGet package folders are lowercase
+    
+    // Process each runtime path
+    foreach (var runtimePathProperty in runtimePaths.EnumerateObject())
+    {
+        var path = runtimePathProperty.Name;
+        
+        // Only process .dll files
+        if (!path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            continue;
+        
+        // Build source path - normalize path separators
+        var libPath = path.Replace('/', Path.DirectorySeparatorChar);
+        var sourcePath = Path.Combine(nugetRoot, pkgNameLower, pkgVersion, libPath);
+        
+        // Build destination path
+        var dllName = Path.GetFileName(path);
+        var destPath = Path.Combine(outputDir, dllName);
+        
+        // Copy if source exists
+        if (File.Exists(sourcePath))
+        {
+            try
+            {
+                File.Copy(sourcePath, destPath, overwrite: true);
+                copied++;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to copy {sourcePath}: {ex.Message}");
+                failed++;
+            }
+        }
+        // Don't fail on missing assemblies - some might be in different locations
+    }
+}
+
+Console.WriteLine($"Copied {copied} assemblies, {failed} failures");
+Environment.Exit(failed == 0 ? 0 : 1);
