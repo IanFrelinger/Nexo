@@ -1,13 +1,32 @@
 # Multi-Environment Testing Guide
 
-This guide explains how to test the geospatial caching functionality across different virtual environments.
+This guide explains how to test the geospatial application across different virtual environments using a layered testing approach.
 
 ## Overview
 
-The geospatial smoke tests (including caching functionality) are designed to run across multiple environments to ensure compatibility:
+Tests run in two phases to ensure dependencies are validated before the application:
+1. **Phase 1: Base Framework Tests** - Validates infrastructure dependencies
+2. **Phase 2: Geospatial Application Tests** - Tests the geo app (only if base passes)
+
+### Base Framework Tests
+Validates core infrastructure that geo app depends on:
+- **Logging**: ILoggerFactory, ILogger
+- **HTTP**: IHttpClientFactory, named clients
+- **Dependency Injection**: ServiceCollection, scoped services
+- **File System**: File and directory operations
+- **Async Operations**: Task, async/await, CancellationToken
+- **Core Services**: IProviderFactory, ILoopKernel
+
+### Geospatial Application Tests
+Tests the actual geo application:
+- CLI commands (GeoTerrainCommand, GeoVectorCommand)
+- API services (GeoTerrainService, GeoVectorService, WorldService)
+- Caching functionality (cache parameters, directory creation)
+- Job persistence and status tracking
+
+### Supported Environments
 - **Operating Systems**: Ubuntu, Alpine Linux, Debian, Windows, Android, iOS, Unity
 - **.NET Versions**: 7.0, 8.0
-- **Test Types**: E2E smoke tests (includes caching validation)
 
 ## Quick Start
 
@@ -100,7 +119,15 @@ docker build -f .docker/Dockerfile.test-caching-windows \
 ### Run Tests Manually
 
 ```bash
-# Run smoke tests (includes caching validation)
+# Phase 1: Run base framework tests
+docker run --rm \
+  -v "$(pwd)/test-results:/workspace/test-results" \
+  nexo-caching-test:ubuntu-8.0 \
+  dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+    --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' \
+    --logger 'console;verbosity=normal'
+
+# Phase 2: Run geospatial application tests (only if base passes)
 docker run --rm \
   -v "$(pwd)/test-results:/workspace/test-results" \
   nexo-caching-test:ubuntu-8.0 \
