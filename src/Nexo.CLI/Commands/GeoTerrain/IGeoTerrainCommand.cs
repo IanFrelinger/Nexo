@@ -17,6 +17,8 @@ public interface IGeoTerrainCommand
         bool forceAgenticFail,
         bool validateIntegrity,
         bool meshQualityReport,
+        string? cacheRoot,
+        bool persistCache,
         bool json,
         bool verbose,
         CancellationToken ct);
@@ -31,6 +33,8 @@ public interface IGeoTerrainCommand
         bool enableCache,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
         bool json,
         bool verbose,
         CancellationToken ct);

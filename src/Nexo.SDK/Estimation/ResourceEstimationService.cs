@@ -65,18 +65,36 @@ public class ResourceEstimationService : IResourceEstimator
     /// <param name="tileIds">List of SRTM tile IDs to download</param>
     /// <param name="fromCache">Whether tiles are from cache (no cost if true)</param>
     /// <returns>Resource estimate for tile downloads</returns>
-    public ResourceEstimate EstimateSrtmTileDownload(IReadOnlyList<SrtmTileId> tileIds, bool fromCache = false)
+    public ResourceEstimate EstimateSrtmTileDownload(IReadOnlyList<SrtmTileId> tileIds, bool fromCache = false, string? cacheRoot = null)
     {
         if (tileIds == null || tileIds.Count == 0)
             return new ResourceEstimate { CostUsd = 0, MemoryBytes = 0 };
 
-        // Assume standard SRTM-3 tiles (1201x1201) unless we can detect SRTM-1
-        // For estimation purposes, we'll use the standard size
+        // Check cache if cache root is provided
+        int cachedCount = 0;
+        if (cacheRoot != null && !fromCache)
+        {
+            foreach (var tileId in tileIds)
+            {
+                var cachePath = Path.Combine(cacheRoot, "srtm", $"{tileId}.hgt");
+                if (File.Exists(cachePath))
+                {
+                    cachedCount++;
+                }
+            }
+        }
+        else if (fromCache)
+        {
+            cachedCount = tileIds.Count;
+        }
+
+        var downloadCount = tileIds.Count - cachedCount;
         var totalBytesPerTile = SrtmTileSizeBytes;
         var totalBytes = (long)tileIds.Count * totalBytesPerTile;
         var totalGb = totalBytes / (1024.0 * 1024.0 * 1024.0);
+        var downloadGb = (long)downloadCount * totalBytesPerTile / (1024.0 * 1024.0 * 1024.0);
 
-        var cost = fromCache ? 0 : (decimal)totalGb * _costModel.SrtmBandwidthCostPerGb;
+        var cost = (decimal)downloadGb * _costModel.SrtmBandwidthCostPerGb;
 
         return new ResourceEstimate
         {
@@ -94,6 +112,8 @@ public class ResourceEstimationService : IResourceEstimator
             Metadata = new Dictionary<string, object>
             {
                 ["tile-count"] = tileIds.Count,
+                ["cached-count"] = cachedCount,
+                ["download-count"] = downloadCount,
                 ["from-cache"] = fromCache,
                 ["bytes-per-tile"] = totalBytesPerTile
             }

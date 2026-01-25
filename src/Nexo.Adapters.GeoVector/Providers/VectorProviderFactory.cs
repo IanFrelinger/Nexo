@@ -30,7 +30,9 @@ public class VectorProviderFactory
         string? mapboxTileset,
         int? mapboxZoom,
         string? osmPbfPath,
-        bool airGapped)
+        bool airGapped,
+        string? cacheRoot = null,
+        bool persistCache = true)
     {
         provider = (provider ?? "echo").Trim().ToLowerInvariant();
         
@@ -56,6 +58,8 @@ public class VectorProviderFactory
                 tilesetId: string.IsNullOrWhiteSpace(mapboxTileset) ? "mapbox.mapbox-streets-v8" : mapboxTileset!,
                 zoom: mapboxZoom ?? 15,
                 formatExtension: "mvt",
+                tileCacheRoot: cacheRoot,
+                persistTileCache: persistCache,
                 logger: _loggerFactory.CreateLogger<MapboxVectorTileProvider>());
         }
 

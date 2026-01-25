@@ -42,6 +42,16 @@ public class TerrainGenerationRequest
     /// Optional webhook URL for job completion notifications
     /// </summary>
     public string? WebhookUrl { get; set; }
+
+    /// <summary>
+    /// Directory root for tile cache (saves downloaded tiles to disk to avoid re-downloading)
+    /// </summary>
+    public string? CacheRoot { get; set; }
+
+    /// <summary>
+    /// Enable disk caching (default: true)
+    /// </summary>
+    public bool? PersistCache { get; set; }
 }
 
 /// <summary>
@@ -90,6 +100,16 @@ public class VectorExtractionRequest
     /// Optional webhook URL for job completion notifications
     /// </summary>
     public string? WebhookUrl { get; set; }
+
+    /// <summary>
+    /// Directory root for tile cache (saves downloaded tiles to disk to avoid re-downloading)
+    /// </summary>
+    public string? CacheRoot { get; set; }
+
+    /// <summary>
+    /// Enable disk caching (default: true)
+    /// </summary>
+    public bool? PersistCache { get; set; }
 }
 
 /// <summary>
@@ -137,6 +157,16 @@ public class WorldGenerationRequest
     /// Optional webhook URL for job completion notifications
     /// </summary>
     public string? WebhookUrl { get; set; }
+
+    /// <summary>
+    /// Directory root for tile cache (saves downloaded tiles to disk to avoid re-downloading)
+    /// </summary>
+    public string? CacheRoot { get; set; }
+
+    /// <summary>
+    /// Enable disk caching (default: true)
+    /// </summary>
+    public bool? PersistCache { get; set; }
 }
 
 /// <summary>

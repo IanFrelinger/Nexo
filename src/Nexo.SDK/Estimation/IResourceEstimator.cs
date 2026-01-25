@@ -11,7 +11,10 @@ public interface IResourceEstimator
     /// <summary>
     /// Estimates cost and memory for downloading SRTM elevation tiles.
     /// </summary>
-    ResourceEstimate EstimateSrtmTileDownload(IReadOnlyList<SrtmTileId> tileIds, bool fromCache = false);
+    /// <param name="tileIds">List of SRTM tile IDs</param>
+    /// <param name="fromCache">Whether all tiles are from cache (no cost)</param>
+    /// <param name="cacheRoot">Optional cache directory root to check for cached tiles</param>
+    ResourceEstimate EstimateSrtmTileDownload(IReadOnlyList<SrtmTileId> tileIds, bool fromCache = false, string? cacheRoot = null);
 
     /// <summary>
     /// Estimates cost and memory for downloading Mapbox vector tiles.

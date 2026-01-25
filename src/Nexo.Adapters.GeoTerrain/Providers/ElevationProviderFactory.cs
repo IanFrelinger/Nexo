@@ -27,7 +27,9 @@ public class ElevationProviderFactory
         string? srtmBaseUrl,
         bool persistDownloads,
         bool enableCache,
-        bool airGapped)
+        bool airGapped,
+        string? cacheRoot = null,
+        bool persistCache = true)
     {
         provider = (provider ?? "echo").Trim().ToLowerInvariant();
 
@@ -43,30 +45,36 @@ public class ElevationProviderFactory
             "http" or "srtmhttp" => new SrtmHttpElevationProvider(
                 _httpClientFactory.CreateClient("geoterrain.srtm"),
                 srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>()),
-            "hybrid" => BuildHybrid(localRoot, srtmBaseUrl, persistDownloads),
+                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>(),
+                cacheRoot: cacheRoot,
+                persistCache: persistCache),
+            "hybrid" => BuildHybrid(localRoot, srtmBaseUrl, persistDownloads, cacheRoot, persistCache),
             _ => throw new InvalidOperationException($"Unknown elevation provider '{provider}'. Use echo|local|http|hybrid.")
         };
 
         return enableCache ? new CachedElevationProvider(inner) : inner;
     }
 
-    private IElevationProvider BuildHybrid(string? localRoot, string? srtmBaseUrl, bool persistDownloads)
+    private IElevationProvider BuildHybrid(string? localRoot, string? srtmBaseUrl, bool persistDownloads, string? cacheRoot = null, bool persistCache = true)
     {
         if (string.IsNullOrWhiteSpace(localRoot))
         {
-            // If no local root was provided, fall back to pure HTTP mode.
+            // If no local root was provided, fall back to pure HTTP mode with caching.
             return new SrtmHttpElevationProvider(
                 _httpClientFactory.CreateClient("geoterrain.srtm"),
                 srtmBaseUrl,
-                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
+                _loggerFactory.CreateLogger<SrtmHttpElevationProvider>(),
+                cacheRoot: cacheRoot,
+                persistCache: persistCache);
         }
 
         var local = new LocalFileElevationProvider(localRoot);
         var http = new SrtmHttpElevationProvider(
             _httpClientFactory.CreateClient("geoterrain.srtm"),
             srtmBaseUrl,
-            _loggerFactory.CreateLogger<SrtmHttpElevationProvider>());
+            _loggerFactory.CreateLogger<SrtmHttpElevationProvider>(),
+            cacheRoot: cacheRoot,
+            persistCache: persistCache);
 
         return new HybridLocalThenHttpElevationProvider(
             local,

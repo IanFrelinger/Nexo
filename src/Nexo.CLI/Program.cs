@@ -376,6 +376,8 @@ static class Program
         var localRootOpt = new Option<string?>("--local-root", () => null, "Local SRTM cache directory (for local/hybrid providers)");
         var baseUrlOpt = new Option<string?>("--srtm-base-url", () => null, "Base URL for HTTP downloads (for http/hybrid providers)");
         var persistOpt = new Option<bool>("--persist-downloads", () => true, "Persist downloaded tiles into --local-root (hybrid)");
+        var cacheRootOpt = new Option<string?>("--cache-root", "Directory root for tile cache (saves downloaded tiles to disk)");
+        var persistCacheOpt = new Option<bool>("--persist-cache", () => true, "Enable disk caching (default: true)");
         var cacheOpt = new Option<bool>("--cache", () => true, "Enable in-memory provider cache");
         var airgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic + disables network providers");
         var forceAgenticFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (to demonstrate fallback)");
@@ -406,6 +408,8 @@ static class Program
         tileToObjCmd.AddOption(baseUrlOpt);
         tileToObjCmd.AddOption(persistOpt);
         tileToObjCmd.AddOption(cacheOpt);
+        tileToObjCmd.AddOption(cacheRootOpt);
+        tileToObjCmd.AddOption(persistCacheOpt);
         tileToObjCmd.AddOption(airgapOpt);
         tileToObjCmd.AddOption(forceAgenticFailOpt);
 
@@ -418,6 +422,8 @@ static class Program
             var srtmBaseUrl = ctx.ParseResult.GetValueForOption(baseUrlOpt);
             var persistDownloads = ctx.ParseResult.GetValueForOption(persistOpt);
             var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
+            var cacheRoot = ctx.ParseResult.GetValueForOption(cacheRootOpt);
+            var persistCache = ctx.ParseResult.GetValueForOption(persistCacheOpt);
             var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
             var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -433,6 +439,8 @@ static class Program
                 cache,
                 airgap,
                 forceAgenticFail,
+                cacheRoot,
+                persistCache,
                 json,
                 verbose,
                 CancellationToken.None);
@@ -570,6 +578,8 @@ static class Program
         boundsToObjCmd.AddOption(baseUrlOpt);
         boundsToObjCmd.AddOption(persistOpt);
         boundsToObjCmd.AddOption(cacheOpt);
+        boundsToObjCmd.AddOption(cacheRootOpt);
+        boundsToObjCmd.AddOption(persistCacheOpt);
         boundsToObjCmd.AddOption(airgapOpt);
         boundsToObjCmd.AddOption(forceAgenticFailOpt);
         boundsToObjCmd.AddOption(validateIntegrityOpt);
@@ -584,6 +594,8 @@ static class Program
             var srtmBaseUrl = ctx.ParseResult.GetValueForOption(baseUrlOpt);
             var persistDownloads = ctx.ParseResult.GetValueForOption(persistOpt);
             var cache = ctx.ParseResult.GetValueForOption(cacheOpt);
+            var cacheRoot = ctx.ParseResult.GetValueForOption(cacheRootOpt);
+            var persistCache = ctx.ParseResult.GetValueForOption(persistCacheOpt);
             var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
             var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
             var validateIntegrity = ctx.ParseResult.GetValueForOption(validateIntegrityOpt);
@@ -603,6 +615,8 @@ static class Program
                 forceAgenticFail,
                 validateIntegrity,
                 meshQualityReport,
+                cacheRoot,
+                persistCache,
                 json,
                 verbose,
                 CancellationToken.None);
@@ -740,6 +754,10 @@ static class Program
         var terrainPersistOpt = new Option<bool>("--terrain-persist-downloads", () => true, "Persist downloaded terrain tiles into --terrain-local-root (hybrid)");
         var terrainCacheOpt = new Option<bool>("--terrain-cache", () => true, "Enable in-memory cache for terrain elevation provider");
         var terrainTreatNoDataOpt = new Option<bool>("--terrain-treat-nodata-as-zero", () => false, "If true, terrain NaN becomes 0m when aligning buildings");
+        var vecCacheRootOpt = new Option<string?>("--cache-root", "Directory root for tile cache (saves downloaded tiles to disk)");
+        var vecPersistCacheOpt = new Option<bool>("--persist-cache", () => true, "Enable disk caching (default: true)");
+        var terrainCacheRootOpt = new Option<string?>("--terrain-cache-root", "Directory root for terrain tile cache");
+        var terrainPersistCacheOpt = new Option<bool>("--terrain-persist-cache", () => true, "Enable terrain disk caching (default: true)");
         var vecAirgapOpt = new Option<bool>("--airgap", () => false, "Air-gapped mode: forces deterministic only");
         var vecForceFailOpt = new Option<bool>("--force-agentic-fail", () => false, "Force agentic implementation to fail (fallback demo)");
 
@@ -764,6 +782,10 @@ static class Program
         buildingsToObjCmd.AddOption(terrainPersistOpt);
         buildingsToObjCmd.AddOption(terrainCacheOpt);
         buildingsToObjCmd.AddOption(terrainTreatNoDataOpt);
+        buildingsToObjCmd.AddOption(vecCacheRootOpt);
+        buildingsToObjCmd.AddOption(vecPersistCacheOpt);
+        buildingsToObjCmd.AddOption(terrainCacheRootOpt);
+        buildingsToObjCmd.AddOption(terrainPersistCacheOpt);
         buildingsToObjCmd.AddOption(vecAirgapOpt);
         buildingsToObjCmd.AddOption(vecForceFailOpt);
 
@@ -785,6 +807,10 @@ static class Program
             var terrainPersist = ctx.ParseResult.GetValueForOption(terrainPersistOpt);
             var terrainCache = ctx.ParseResult.GetValueForOption(terrainCacheOpt);
             var terrainTreatNoData = ctx.ParseResult.GetValueForOption(terrainTreatNoDataOpt);
+            var cacheRoot = ctx.ParseResult.GetValueForOption(vecCacheRootOpt);
+            var persistCache = ctx.ParseResult.GetValueForOption(vecPersistCacheOpt);
+            var terrainCacheRoot = ctx.ParseResult.GetValueForOption(terrainCacheRootOpt);
+            var terrainPersistCache = ctx.ParseResult.GetValueForOption(terrainPersistCacheOpt);
             var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
             var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -809,6 +835,10 @@ static class Program
                 terrainTreatNoData,
                 airgap,
                 forceFail,
+                cacheRoot,
+                persistCache,
+                terrainCacheRoot,
+                terrainPersistCache,
                 json,
                 verbose,
                 CancellationToken.None);
@@ -833,6 +863,10 @@ static class Program
         roadsToObjCmd.AddOption(terrainPersistOpt);
         roadsToObjCmd.AddOption(terrainCacheOpt);
         roadsToObjCmd.AddOption(terrainTreatNoDataOpt);
+        roadsToObjCmd.AddOption(vecCacheRootOpt);
+        roadsToObjCmd.AddOption(vecPersistCacheOpt);
+        roadsToObjCmd.AddOption(terrainCacheRootOpt);
+        roadsToObjCmd.AddOption(terrainPersistCacheOpt);
         roadsToObjCmd.AddOption(vecAirgapOpt);
         roadsToObjCmd.AddOption(vecForceFailOpt);
 
@@ -855,6 +889,10 @@ static class Program
             var terrainPersist = ctx.ParseResult.GetValueForOption(terrainPersistOpt);
             var terrainCache = ctx.ParseResult.GetValueForOption(terrainCacheOpt);
             var terrainTreatNoData = ctx.ParseResult.GetValueForOption(terrainTreatNoDataOpt);
+            var cacheRoot = ctx.ParseResult.GetValueForOption(vecCacheRootOpt);
+            var persistCache = ctx.ParseResult.GetValueForOption(vecPersistCacheOpt);
+            var terrainCacheRoot = ctx.ParseResult.GetValueForOption(terrainCacheRootOpt);
+            var terrainPersistCache = ctx.ParseResult.GetValueForOption(terrainPersistCacheOpt);
             var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
             var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -880,6 +918,10 @@ static class Program
                 terrainTreatNoData,
                 airgap,
                 forceFail,
+                cacheRoot,
+                persistCache,
+                terrainCacheRoot,
+                terrainPersistCache,
                 json,
                 verbose,
                 CancellationToken.None);
@@ -904,6 +946,10 @@ static class Program
         waterToObjCmd.AddOption(terrainPersistOpt);
         waterToObjCmd.AddOption(terrainCacheOpt);
         waterToObjCmd.AddOption(terrainTreatNoDataOpt);
+        waterToObjCmd.AddOption(vecCacheRootOpt);
+        waterToObjCmd.AddOption(vecPersistCacheOpt);
+        waterToObjCmd.AddOption(terrainCacheRootOpt);
+        waterToObjCmd.AddOption(terrainPersistCacheOpt);
         waterToObjCmd.AddOption(vecAirgapOpt);
         waterToObjCmd.AddOption(vecForceFailOpt);
 
@@ -926,6 +972,10 @@ static class Program
             var terrainPersist = ctx.ParseResult.GetValueForOption(terrainPersistOpt);
             var terrainCache = ctx.ParseResult.GetValueForOption(terrainCacheOpt);
             var terrainTreatNoData = ctx.ParseResult.GetValueForOption(terrainTreatNoDataOpt);
+            var cacheRoot = ctx.ParseResult.GetValueForOption(vecCacheRootOpt);
+            var persistCache = ctx.ParseResult.GetValueForOption(vecPersistCacheOpt);
+            var terrainCacheRoot = ctx.ParseResult.GetValueForOption(terrainCacheRootOpt);
+            var terrainPersistCache = ctx.ParseResult.GetValueForOption(terrainPersistCacheOpt);
             var airgap = ctx.ParseResult.GetValueForOption(vecAirgapOpt);
             var forceFail = ctx.ParseResult.GetValueForOption(vecForceFailOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -951,6 +1001,10 @@ static class Program
                 terrainTreatNoData,
                 airgap,
                 forceFail,
+                cacheRoot,
+                persistCache,
+                terrainCacheRoot,
+                terrainPersistCache,
                 json,
                 verbose,
                 CancellationToken.None);

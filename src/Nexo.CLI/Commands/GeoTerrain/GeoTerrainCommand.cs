@@ -52,6 +52,8 @@ public class GeoTerrainCommand : IGeoTerrainCommand
         bool enableCache,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -67,7 +69,9 @@ public class GeoTerrainCommand : IGeoTerrainCommand
                 srtmBaseUrl,
                 persistDownloads,
                 enableCache,
-                airGapped);
+                airGapped,
+                cacheRoot,
+                persistCache);
 
             // Build bricks + registries for behavior execution (evented, swap-on-failure aware).
             var bricks = new Brick[]
@@ -264,6 +268,8 @@ public class GeoTerrainCommand : IGeoTerrainCommand
         bool forceAgenticFail,
         bool validateIntegrity,
         bool meshQualityReport,
+        string? cacheRoot,
+        bool persistCache,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -280,7 +286,9 @@ public class GeoTerrainCommand : IGeoTerrainCommand
                 srtmBaseUrl,
                 persistDownloads,
                 enableCache,
-                airGapped);
+                airGapped,
+                cacheRoot,
+                persistCache);
 
             var bricks = new Brick[]
             {
@@ -1431,10 +1439,12 @@ public class GeoTerrainCommand : IGeoTerrainCommand
         string? srtmBaseUrl,
         bool persistDownloads,
         bool enableCache,
-        bool airGapped)
+        bool airGapped,
+        string? cacheRoot = null,
+        bool persistCache = true)
     {
         var factory = new ElevationProviderFactory(_httpClientFactory, _loggerFactory);
-        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped);
+        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped, cacheRoot, persistCache);
     }
 }
 

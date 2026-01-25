@@ -47,6 +47,8 @@ public class GeoTerrainService : BaseGeospatialService<IGeoTerrainCommand>, IGeo
                     forceAgenticFail: false,
                     validateIntegrity: false,
                     meshQualityReport: false,
+                    cacheRoot: request.CacheRoot,
+                    persistCache: request.PersistCache ?? true,
                     json: false,
                     verbose: true,
                     ct: CancellationToken.None);

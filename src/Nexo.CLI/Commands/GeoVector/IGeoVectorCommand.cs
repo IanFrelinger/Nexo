@@ -24,6 +24,10 @@ public interface IGeoVectorCommand
         bool terrainTreatNoDataAsZero,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
+        string? terrainCacheRoot,
+        bool terrainPersistCache,
         bool json,
         bool verbose,
         CancellationToken ct);
@@ -48,6 +52,10 @@ public interface IGeoVectorCommand
         bool terrainTreatNoDataAsZero,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
+        string? terrainCacheRoot,
+        bool terrainPersistCache,
         bool json,
         bool verbose,
         CancellationToken ct);
@@ -72,6 +80,10 @@ public interface IGeoVectorCommand
         bool terrainTreatNoDataAsZero,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
+        string? terrainCacheRoot,
+        bool terrainPersistCache,
         bool json,
         bool verbose,
         CancellationToken ct);

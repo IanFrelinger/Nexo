@@ -61,6 +61,10 @@ public class GeoVectorCommand : IGeoVectorCommand
         bool terrainTreatNoDataAsZero,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
+        string? terrainCacheRoot,
+        bool terrainPersistCache,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -78,7 +82,7 @@ public class GeoVectorCommand : IGeoVectorCommand
 
             var origin = geoBounds.Center;
 
-            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
+            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped, cacheRoot, persistCache);
 
             ElevationGrid? terrainGrid = null;
             if (alignToTerrain)
@@ -89,7 +93,9 @@ public class GeoVectorCommand : IGeoVectorCommand
                     terrainSrtmBaseUrl,
                     terrainPersistDownloads,
                     terrainEnableCache,
-                    airGapped);
+                    airGapped,
+                    terrainCacheRoot,
+                    terrainPersistCache);
 
                 terrainGrid = await BuildTerrainGridAsync(geoBounds, elevationProvider, ct);
             }
@@ -289,6 +295,10 @@ public class GeoVectorCommand : IGeoVectorCommand
         bool terrainTreatNoDataAsZero,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
+        string? terrainCacheRoot,
+        bool terrainPersistCache,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -306,7 +316,7 @@ public class GeoVectorCommand : IGeoVectorCommand
 
             var origin = geoBounds.Center;
 
-            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
+            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped, cacheRoot, persistCache);
 
             ElevationGrid? terrainGrid = null;
             if (conformToTerrain)
@@ -317,7 +327,9 @@ public class GeoVectorCommand : IGeoVectorCommand
                     terrainSrtmBaseUrl,
                     terrainPersistDownloads,
                     terrainEnableCache,
-                    airGapped);
+                    airGapped,
+                    terrainCacheRoot,
+                    terrainPersistCache);
 
                 terrainGrid = await BuildTerrainGridAsync(geoBounds, elevationProvider, ct);
             }
@@ -519,6 +531,10 @@ public class GeoVectorCommand : IGeoVectorCommand
         bool terrainTreatNoDataAsZero,
         bool airGapped,
         bool forceAgenticFail,
+        string? cacheRoot,
+        bool persistCache,
+        string? terrainCacheRoot,
+        bool terrainPersistCache,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -536,7 +552,7 @@ public class GeoVectorCommand : IGeoVectorCommand
 
             var origin = geoBounds.Center;
 
-            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
+            var vectorProvider = BuildVectorProvider(provider ?? "echo", geoBounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped, cacheRoot, persistCache);
 
             ElevationGrid? terrainGrid = null;
             if (conformToTerrain)
@@ -547,7 +563,9 @@ public class GeoVectorCommand : IGeoVectorCommand
                     terrainSrtmBaseUrl,
                     terrainPersistDownloads,
                     terrainEnableCache,
-                    airGapped);
+                    airGapped,
+                    terrainCacheRoot,
+                    terrainPersistCache);
 
                 terrainGrid = await BuildTerrainGridAsync(geoBounds, elevationProvider, ct);
             }
@@ -737,10 +755,12 @@ public class GeoVectorCommand : IGeoVectorCommand
         string? mapboxTileset,
         int? mapboxZoom,
         string? osmPbfPath,
-        bool airGapped)
+        bool airGapped,
+        string? cacheRoot = null,
+        bool persistCache = true)
     {
         var factory = new VectorProviderFactory(_httpClientFactory, _loggerFactory);
-        return factory.Build(provider, bounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped);
+        return factory.Build(provider, bounds, mapboxAccessToken, mapboxTileset, mapboxZoom, osmPbfPath, airGapped, cacheRoot, persistCache);
     }
 
     private IElevationProvider BuildElevationProvider(
@@ -749,10 +769,12 @@ public class GeoVectorCommand : IGeoVectorCommand
         string? srtmBaseUrl,
         bool persistDownloads,
         bool enableCache,
-        bool airGapped)
+        bool airGapped,
+        string? cacheRoot = null,
+        bool persistCache = true)
     {
         var factory = new ElevationProviderFactory(_httpClientFactory, _loggerFactory);
-        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped);
+        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped, cacheRoot, persistCache);
     }
 
     private async Task<ElevationGrid> BuildTerrainGridAsync(GeoBounds bounds, IElevationProvider elevationProvider, CancellationToken ct)

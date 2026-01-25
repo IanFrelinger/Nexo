@@ -7,24 +7,61 @@ namespace Nexo.Adapters.GeoTerrain.Providers;
 
 /// <summary>
 /// Downloads SRTM tiles over HTTP. Intended for non-air-gapped environments.
+/// Supports optional disk caching to avoid re-downloading tiles.
 /// </summary>
 public sealed class SrtmHttpElevationProvider : IElevationProvider
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<SrtmHttpElevationProvider> _logger;
     private readonly string _baseUrl;
+    private readonly string? _cacheRoot;
+    private readonly bool _persistCache;
 
-    public SrtmHttpElevationProvider(HttpClient httpClient, string? baseUrl, ILogger<SrtmHttpElevationProvider> logger)
+    public SrtmHttpElevationProvider(
+        HttpClient httpClient, 
+        string? baseUrl, 
+        ILogger<SrtmHttpElevationProvider> logger,
+        string? cacheRoot = null,
+        bool persistCache = true)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         if (string.IsNullOrWhiteSpace(baseUrl))
             throw new ArgumentException("SRTM base URL must be configured for HTTP provider.", nameof(baseUrl));
         _baseUrl = baseUrl!;
+        _cacheRoot = string.IsNullOrWhiteSpace(cacheRoot) ? null : cacheRoot.Trim();
+        _persistCache = persistCache;
     }
 
     public async Task<ElevationTile> GetSrtmTileAsync(SrtmTileId tileId, CancellationToken cancellationToken = default)
     {
+        // Check cache first if enabled
+        if (_cacheRoot != null)
+        {
+            var cachePath = Path.Combine(_cacheRoot, "srtm", $"{tileId}.hgt");
+            if (File.Exists(cachePath))
+            {
+                _logger.LogInformation("Loading SRTM tile {Tile} from cache: {Path}", tileId.ToString(), cachePath);
+                var cachedBytes = await File.ReadAllBytesAsync(cachePath, cancellationToken);
+                var cachedSummary = SrtmHgtParser.Analyze(cachedBytes);
+                return new ElevationTile
+                {
+                    TileId = tileId,
+                    HgtBytes = cachedBytes,
+                    Size = cachedSummary.Size,
+                    MinMeters = cachedSummary.MinMeters,
+                    MaxMeters = cachedSummary.MaxMeters,
+                    NoDataSamples = cachedSummary.NoDataSamples,
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["provider"] = "srtm-http",
+                        ["cached"] = true,
+                        ["cache-path"] = cachePath
+                    }
+                };
+            }
+        }
+
         // Expect a direct .hgt (or compressed) endpoint. Example:
         // baseUrl = https://example.com/srtm/
         // -> https://example.com/srtm/N37W122.hgt (or .hgt.zip / .hgt.gz)
@@ -44,6 +81,22 @@ public sealed class SrtmHttpElevationProvider : IElevationProvider
         // Support common compressions: zip/gzip. If payload is already HGT, ExtractHgtBytes returns as-is.
         var bytes = ExtractHgtBytes(payload, fileName);
 
+        // Save to cache if enabled
+        if (_cacheRoot != null && _persistCache)
+        {
+            try
+            {
+                var cachePath = Path.Combine(_cacheRoot, "srtm", $"{tileId}.hgt");
+                Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                await File.WriteAllBytesAsync(cachePath, bytes, cancellationToken);
+                _logger.LogInformation("Cached SRTM tile {Tile} to {Path}", tileId.ToString(), cachePath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to cache tile {Tile} (continuing)", tileId.ToString());
+            }
+        }
+
         var summary = SrtmHgtParser.Analyze(bytes);
         return new ElevationTile
         {
@@ -56,7 +109,8 @@ public sealed class SrtmHttpElevationProvider : IElevationProvider
             Metadata = new Dictionary<string, object>
             {
                 ["provider"] = "srtm-http",
-                ["url"] = url
+                ["url"] = url,
+                ["cached"] = false
             }
         };
     }

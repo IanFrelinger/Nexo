@@ -115,7 +115,9 @@ public class GeoTerrainClient
         // Generate estimate before operation
         if (_estimator != null)
         {
-            var downloadEstimate = _estimator.EstimateSrtmTileDownload(tileIds);
+            // Check if we have a cache root from elevation provider metadata
+            string? cacheRoot = null;
+            var downloadEstimate = _estimator.EstimateSrtmTileDownload(tileIds, fromCache: false, cacheRoot: cacheRoot);
             
             // Estimate grid size (approximate based on bounds)
             var estimatedWidth = 1000; // Conservative estimate
@@ -165,7 +167,7 @@ public class GeoTerrainClient
         {
             var actualDownload = new ResourceEstimate
             {
-                CostUsd = _estimator.EstimateSrtmTileDownload(tileIds).CostUsd, // Cost doesn't change
+                CostUsd = _estimator.EstimateSrtmTileDownload(tileIds, fromCache: cachedCount == tileIds.Count, cacheRoot: null).CostUsd,
                 MemoryBytes = actualDownloadBytes,
                 IsEstimate = false,
                 MemoryBreakdown = new Dictionary<string, long>
