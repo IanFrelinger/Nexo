@@ -159,19 +159,21 @@ public class GeoTerrainServiceTests : IDisposable
 
         _mockCommand
             .Setup(c => c.BoundsToObjAsync(
-                It.IsAny<string>(),
-                It.IsAny<FileInfo>(),
-                It.IsAny<string>(),
-                It.IsAny<string?>(),
-                It.IsAny<string?>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
-                It.IsAny<bool>(),
+                It.IsAny<string>(),      // bounds
+                It.IsAny<FileInfo>(),    // output
+                It.IsAny<string>(),      // provider
+                It.IsAny<string?>(),     // localRoot
+                It.IsAny<string?>(),     // srtmBaseUrl
+                It.IsAny<bool>(),        // persistDownloads
+                It.IsAny<bool>(),        // enableCache
+                It.IsAny<bool>(),        // airGapped
+                It.IsAny<bool>(),        // forceAgenticFail
+                It.IsAny<bool>(),        // validateIntegrity
+                It.IsAny<bool>(),        // meshQualityReport
+                It.IsAny<string?>(),     // cacheRoot
+                It.IsAny<bool>(),        // persistCache
+                It.IsAny<bool>(),        // json
+                It.IsAny<bool>(),        // verbose
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(1); // Failure exit code
 
