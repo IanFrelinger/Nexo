@@ -77,6 +77,8 @@ public class GeospatialE2ESmokeTests : IDisposable
             forceAgenticFail: false,
             validateIntegrity: true,
             meshQualityReport: true,
+            cacheRoot: null,
+            persistCache: true,
             json: true,
             verbose: false,
             CancellationToken.None);
@@ -123,6 +125,10 @@ public class GeospatialE2ESmokeTests : IDisposable
             terrainTreatNoDataAsZero: false,
             airGapped: true,
             forceAgenticFail: false,
+            cacheRoot: null,
+            persistCache: true,
+            terrainCacheRoot: null,
+            terrainPersistCache: true,
             json: true,
             verbose: false,
             CancellationToken.None);
@@ -277,6 +283,8 @@ public class GeospatialE2ESmokeTests : IDisposable
                 forceAgenticFail: false,
                 validateIntegrity: true,
                 meshQualityReport: true,
+                cacheRoot: null,
+                persistCache: true,
                 json: true,
                 verbose: false,
                 CancellationToken.None);

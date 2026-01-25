@@ -163,7 +163,7 @@ public class CachingTests : IDisposable
     }
 
     [Fact]
-    public void ResourceEstimationService_WithCacheRoot_ShouldDetectCachedTiles()
+    public async Task ResourceEstimationService_WithCacheRoot_ShouldDetectCachedTiles()
     {
         // Arrange
         var estimator = new ResourceEstimationService();
@@ -191,7 +191,7 @@ public class CachingTests : IDisposable
     }
 
     [Fact]
-    public void ResourceEstimationService_WithPartialCache_ShouldCalculateCorrectCost()
+    public async Task ResourceEstimationService_WithPartialCache_ShouldCalculateCorrectCost()
     {
         // Arrange
         var estimator = new ResourceEstimationService();

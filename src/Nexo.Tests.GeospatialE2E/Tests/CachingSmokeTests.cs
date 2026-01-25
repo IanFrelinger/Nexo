@@ -38,7 +38,9 @@ public class CachingSmokeTests : IDisposable
         services.AddScoped<IProviderFactory, ProviderFactory>();
         services.AddScoped<ILoopKernel, Nexo.Core.Application.Common.Services.SequentialLoopKernel>();
         services.AddScoped<GeoTerrainCommand>();
+        services.AddScoped<IGeoTerrainCommand>(sp => sp.GetRequiredService<GeoTerrainCommand>());
         services.AddScoped<GeoVectorCommand>();
+        services.AddScoped<IGeoVectorCommand>(sp => sp.GetRequiredService<GeoVectorCommand>());
         
         // Use test database
         var dbPath = Path.Combine(_testOutputDir, "test-jobs.db");
@@ -203,7 +205,7 @@ public class CachingSmokeTests : IDisposable
     }
 
     [Fact]
-    public async Task CacheDirectory_ShouldBeCreated_WhenCacheRootIsSet()
+    public void CacheDirectory_ShouldBeCreated_WhenCacheRootIsSet()
     {
         // Arrange
         var cacheRoot = Path.Combine(_testCacheDir, "new-cache");

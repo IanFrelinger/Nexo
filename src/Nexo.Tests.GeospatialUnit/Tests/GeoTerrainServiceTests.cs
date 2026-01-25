@@ -60,6 +60,7 @@ public class GeoTerrainServiceTests : IDisposable
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
+                It.IsAny<bool>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
@@ -111,6 +112,7 @@ public class GeoTerrainServiceTests : IDisposable
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<string?>(),
+                It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
@@ -300,6 +302,7 @@ public class GeoTerrainServiceTests : IDisposable
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<string?>(),
+                It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
                 It.IsAny<bool>(),
