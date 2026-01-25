@@ -194,7 +194,30 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                 _logger.LogInformation("Analyzing assembly: {AssemblyPath}", assemblyPath);
 
                 // Load assembly using reflection
-                var assembly = Assembly.LoadFrom(assemblyPath);
+                // Note: Assembly.LoadFrom works on most platforms but may have limitations in:
+                // - Some mobile contexts (iOS restrictions)
+                // - Some Unity contexts (depends on .NET Standard version)
+                // We handle failures gracefully and provide clear error messages
+                Assembly assembly;
+                try
+                {
+                    assembly = Assembly.LoadFrom(assemblyPath);
+                }
+                catch (FileNotFoundException)
+                {
+                    throw; // Re-throw file not found as-is
+                }
+                catch (Exception ex)
+                {
+                    // Platform-specific loading issues
+                    throw new InvalidOperationException(
+                        $"Failed to load assembly from {assemblyPath}. " +
+                        $"This may indicate platform compatibility issues. " +
+                        $"Platform: {RuntimeInformation.OSDescription}, " +
+                        $"Framework: {RuntimeInformation.FrameworkDescription}. " +
+                        $"Original error: {ex.Message}", ex);
+                }
+                
                 var assemblyName = assembly.GetName();
 
                 // Extract types
