@@ -64,6 +64,7 @@ public class ResourceEstimationService : IResourceEstimator
     /// </summary>
     /// <param name="tileIds">List of SRTM tile IDs to download</param>
     /// <param name="fromCache">Whether tiles are from cache (no cost if true)</param>
+    /// <param name="cacheRoot">Optional cache directory root to check for cached tiles</param>
     /// <returns>Resource estimate for tile downloads</returns>
     public ResourceEstimate EstimateSrtmTileDownload(IReadOnlyList<SrtmTileId> tileIds, bool fromCache = false, string? cacheRoot = null)
     {
