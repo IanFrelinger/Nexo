@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Nexo.GeoTerrain.Bricks\Nexo.GeoTerrain.Bricks.csproj" />
     <ProjectReference Include="..\Nexo.Adapters.GeoVector\Nexo.Adapters.GeoVector.csproj" />
     <ProjectReference Include="..\Nexo.GeoVector.Bricks\Nexo.GeoVector.Bricks.csproj" />
+    <ProjectReference Include="..\Nexo.SDK\Nexo.SDK.csproj" />
   </ItemGroup>
 
 </Project>
