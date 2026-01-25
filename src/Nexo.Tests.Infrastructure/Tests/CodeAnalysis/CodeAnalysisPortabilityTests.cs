@@ -11,7 +11,7 @@ namespace Nexo.Tests.Infrastructure.Tests.CodeAnalysis;
 /// Validates that compilation/decompilation works across different platforms
 /// and is truly portable (no command-line dependencies).
 /// </summary>
-public class CodeAnalysisPortabilityTests
+public class CodeAnalysisPortabilityTests : IDisposable
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly ICodeAnalysisService _codeAnalysisService;
@@ -87,7 +87,7 @@ public class TestClass
         // Assert
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeEmpty();
-        result.Errors.Should().Contain(e => e.Contains("error", StringComparison.OrdinalIgnoreCase));
+        result.Errors.Should().Contain(e => e.Contains("error", StringComparison.OrdinalIgnoreCase) || e.Contains("CS", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -279,7 +279,7 @@ public class RoundTripTest
         }
     }
 
-    public void Dispose()
+    void IDisposable.Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);

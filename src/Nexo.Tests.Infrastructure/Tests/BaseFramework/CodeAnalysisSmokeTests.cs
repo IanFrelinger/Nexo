@@ -11,7 +11,7 @@ namespace Nexo.Tests.Infrastructure.Tests.BaseFramework;
 /// Validates that the code analysis infrastructure is available and functional
 /// as part of the base framework tests that run across all platforms.
 /// </summary>
-public class CodeAnalysisSmokeTests
+public class CodeAnalysisSmokeTests : IDisposable
 {
     private readonly ILoggerFactory _loggerFactory;
     private readonly ICodeAnalysisService _codeAnalysisService;
@@ -142,7 +142,7 @@ public class DecompileTest
         }
     }
 
-    public void Dispose()
+    void IDisposable.Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
