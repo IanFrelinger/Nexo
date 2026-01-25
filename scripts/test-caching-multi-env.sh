@@ -24,7 +24,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Function to run caching tests in Docker
-run_caching_tests() {
+run_caching_tests_docker() {
     local env_name=$1
     local dockerfile=$2
     local dotnet_version=${3:-8.0}
@@ -98,6 +98,38 @@ run_caching_tests() {
     fi
 }
 
+# Function to run caching tests natively (iOS, Unity)
+run_caching_tests_native() {
+    local env_name=$1
+    local script_path=$2
+    local dotnet_version=${3:-8.0}
+    local os_name=$4
+    
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}Testing on ${env_name} (${os_name}) with .NET ${dotnet_version}...${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    
+    if [ ! -f "$script_path" ]; then
+        echo -e "${RED}❌ Test script not found: $script_path${NC}"
+        return 1
+    fi
+    
+    # Run the native test script
+    echo -e "${YELLOW}Running native test script...${NC}"
+    bash "$script_path" > "test-results/caching/${env_name}-output.log" 2>&1
+    
+    local exit_code=$?
+    
+    if [ $exit_code -eq 0 ]; then
+        echo -e "${GREEN}✅ ${env_name} tests completed successfully${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ ${env_name} tests failed (exit code: $exit_code)${NC}"
+        echo -e "${YELLOW}   Check test-results/caching/${env_name}-output.log for details${NC}"
+        return 1
+    fi
+}
+
 # Parse arguments
 ENVIRONMENTS=()
 ALL_ENVS=false
@@ -127,14 +159,20 @@ done
 
 # Define test environments
 declare -A ENV_CONFIGS
-ENV_CONFIGS["ubuntu-8.0"]=".docker/Dockerfile.test-caching|8.0|Ubuntu 22.04"
-ENV_CONFIGS["ubuntu-7.0"]=".docker/Dockerfile.test-caching|7.0|Ubuntu 22.04"
-ENV_CONFIGS["alpine-8.0"]=".docker/Dockerfile.test-caching-alpine|8.0|Alpine Linux"
-ENV_CONFIGS["debian-8.0"]=".docker/Dockerfile.test-caching-debian|8.0|Debian 12"
+ENV_CONFIGS["ubuntu-8.0"]=".docker/Dockerfile.test-caching|8.0|Ubuntu 22.04|docker"
+ENV_CONFIGS["ubuntu-7.0"]=".docker/Dockerfile.test-caching|7.0|Ubuntu 22.04|docker"
+ENV_CONFIGS["alpine-8.0"]=".docker/Dockerfile.test-caching-alpine|8.0|Alpine Linux|docker"
+ENV_CONFIGS["debian-8.0"]=".docker/Dockerfile.test-caching-debian|8.0|Debian 12|docker"
+ENV_CONFIGS["android-8.0"]=".docker/Dockerfile.test-caching-android|8.0|Android|docker"
+ENV_CONFIGS["windows-8.0"]=".docker/Dockerfile.test-caching-windows|8.0|Windows|docker"
+ENV_CONFIGS["ios-8.0"]="scripts/test-caching-ios.sh|8.0|iOS|native"
+ENV_CONFIGS["unity-8.0"]="scripts/test-caching-unity.sh|8.0|Unity|native"
 
 # Default to all environments if none specified
 if [ ${#ENVIRONMENTS[@]} -eq 0 ] || [ "$ALL_ENVS" = true ]; then
-    ENVIRONMENTS=("ubuntu-8.0" "ubuntu-7.0" "alpine-8.0" "debian-8.0")
+    ENVIRONMENTS=("ubuntu-8.0" "ubuntu-7.0" "alpine-8.0" "debian-8.0" "android-8.0")
+    # Note: windows-8.0 requires Windows containers (not available on Linux/macOS)
+    # Note: ios-8.0 and unity-8.0 require native execution (macOS for iOS, Unity installation for Unity)
 fi
 
 # Run tests
@@ -149,11 +187,34 @@ for env in "${ENVIRONMENTS[@]}"; do
         continue
     fi
     
-    IFS='|' read -r dockerfile dotnet_version os_name <<< "${ENV_CONFIGS[$env]}"
+    IFS='|' read -r config_path dotnet_version os_name env_type <<< "${ENV_CONFIGS[$env]}"
     
-    if run_caching_tests "$env" "$dockerfile" "$dotnet_version" "$os_name"; then
-        PASSED_ENVS+=("$env")
+    # Skip Windows on non-Windows hosts (requires Windows containers)
+    if [[ "$env" == "windows-8.0" ]] && [[ "$OSTYPE" != "msys" ]] && [[ "$OSTYPE" != "win32" ]] && [[ "$OSTYPE" != "cygwin" ]]; then
+        echo -e "${YELLOW}⚠️  Skipping $env (requires Windows containers)${NC}"
+        continue
+    fi
+    
+    # Skip iOS on non-macOS hosts
+    if [[ "$env" == "ios-8.0" ]] && [[ "$OSTYPE" != "darwin"* ]]; then
+        echo -e "${YELLOW}⚠️  Skipping $env (requires macOS)${NC}"
+        continue
+    fi
+    
+    if [ "$env_type" = "docker" ]; then
+        if run_caching_tests_docker "$env" "$config_path" "$dotnet_version" "$os_name"; then
+            PASSED_ENVS+=("$env")
+        else
+            FAILED_ENVS+=("$env")
+        fi
+    elif [ "$env_type" = "native" ]; then
+        if run_caching_tests_native "$env" "$config_path" "$dotnet_version" "$os_name"; then
+            PASSED_ENVS+=("$env")
+        else
+            FAILED_ENVS+=("$env")
+        fi
     else
+        echo -e "${RED}❌ Unknown environment type: $env_type${NC}"
         FAILED_ENVS+=("$env")
     fi
     

@@ -1,0 +1,23 @@
+# Dockerfile for running geospatial caching tests on Windows
+# Note: Requires Windows containers (not Linux containers)
+ARG DOTNET_VERSION=8.0
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-nanoserver-ltsc2022
+
+# Set working directory
+WORKDIR C:\workspace
+
+# Copy project files
+COPY . .
+
+# Restore dependencies for test projects
+RUN dotnet restore src\Nexo.Tests.GeospatialUnit\Nexo.Tests.GeospatialUnit.csproj && \
+    dotnet restore src\Nexo.Tests.GeospatialE2E\Nexo.Tests.GeospatialE2E.csproj && \
+    dotnet restore src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj
+
+# Build test projects
+RUN dotnet build src\Nexo.Tests.GeospatialUnit\Nexo.Tests.GeospatialUnit.csproj --no-restore && \
+    dotnet build src\Nexo.Tests.GeospatialE2E\Nexo.Tests.GeospatialE2E.csproj --no-restore && \
+    dotnet build src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj --no-restore
+
+# Default command: run caching tests
+CMD ["cmd", "/c", "dotnet test src\\Nexo.Tests.GeospatialUnit\\Nexo.Tests.GeospatialUnit.csproj --filter \"FullyQualifiedName~CachingTests\" --logger \"console;verbosity=normal\" && dotnet test src\\Nexo.Tests.GeospatialE2E\\Nexo.Tests.GeospatialE2E.csproj --filter \"FullyQualifiedName~CachingSmokeTests\" --logger \"console;verbosity=normal\" && dotnet test src\\Nexo.Tests.Infrastructure\\Nexo.Tests.Infrastructure.csproj --filter \"FullyQualifiedName~Caching\" --logger \"console;verbosity=normal\""]

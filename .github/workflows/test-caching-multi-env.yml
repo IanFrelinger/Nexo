@@ -25,8 +25,8 @@ on:
 
 jobs:
   test-caching:
-    name: Caching Tests - ${{ matrix.environment }}
-    runs-on: ubuntu-latest
+    name: Caching Tests - ${{ matrix.environment.name }}
+    runs-on: ${{ matrix.environment.os || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -34,15 +34,28 @@ jobs:
           - name: ubuntu-8.0
             dockerfile: .docker/Dockerfile.test-caching
             dotnet: 8.0
+            type: docker
           - name: ubuntu-7.0
             dockerfile: .docker/Dockerfile.test-caching
             dotnet: 7.0
+            type: docker
           - name: alpine-8.0
             dockerfile: .docker/Dockerfile.test-caching-alpine
             dotnet: 8.0
+            type: docker
           - name: debian-8.0
             dockerfile: .docker/Dockerfile.test-caching-debian
             dotnet: 8.0
+            type: docker
+          - name: android-8.0
+            dockerfile: .docker/Dockerfile.test-caching-android
+            dotnet: 8.0
+            type: docker
+          - name: windows-8.0
+            dockerfile: .docker/Dockerfile.test-caching-windows
+            dotnet: 8.0
+            type: docker
+            os: windows-latest
 
     steps:
       - name: Checkout code
@@ -52,6 +65,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
+        if: matrix.environment.type == 'docker'
         run: |
           docker build \
             -f ${{ matrix.environment.dockerfile }} \
@@ -59,7 +73,8 @@ jobs:
             -t nexo-caching-test:${{ matrix.environment.name }} \
             .
 
-      - name: Run Unit Tests
+      - name: Run Unit Tests (Docker)
+        if: matrix.environment.type == 'docker'
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/test-results:/workspace/test-results \
@@ -72,7 +87,8 @@ jobs:
                 --results-directory /workspace/test-results
             "
 
-      - name: Run E2E Tests
+      - name: Run E2E Tests (Docker)
+        if: matrix.environment.type == 'docker'
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/test-results:/workspace/test-results \
@@ -85,7 +101,8 @@ jobs:
                 --results-directory /workspace/test-results
             "
 
-      - name: Run Infrastructure Tests
+      - name: Run Infrastructure Tests (Docker)
+        if: matrix.environment.type == 'docker'
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/test-results:/workspace/test-results \
@@ -98,12 +115,19 @@ jobs:
                 --results-directory /workspace/test-results
             "
 
+      - name: Run Native Tests (iOS/Unity)
+        if: matrix.environment.type == 'native'
+        run: |
+          chmod +x scripts/test-caching-${{ matrix.environment.name }}.sh
+          ./scripts/test-caching-${{ matrix.environment.name }}.sh
+
       - name: Publish Test Results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: |
             test-results/**/*.trx
+            test-results/caching/**/*.trx
           check_name: Caching Tests - ${{ matrix.environment.name }}
           comment_mode: create new
           report_individual_runs: true

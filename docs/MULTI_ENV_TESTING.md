@@ -32,16 +32,39 @@ make test-caching-all
 
 # Run on Debian
 ./scripts/test-caching-multi-env.sh --env debian-8.0
+
+# Run on Android
+./scripts/test-caching-multi-env.sh --env android-8.0
+
+# Run on Windows (requires Windows containers)
+./scripts/test-caching-multi-env.sh --env windows-8.0
+
+# Run on iOS (macOS only)
+./scripts/test-caching-ios.sh
+
+# Run on Unity
+./scripts/test-caching-unity.sh
 ```
 
 ## Available Environments
 
-| Environment | OS | .NET Version | Dockerfile |
-|------------|----|--------------|------------|
-| `ubuntu-8.0` | Ubuntu 22.04 | 8.0 | `.docker/Dockerfile.test-caching` |
-| `ubuntu-7.0` | Ubuntu 22.04 | 7.0 | `.docker/Dockerfile.test-caching` |
-| `alpine-8.0` | Alpine Linux | 8.0 | `.docker/Dockerfile.test-caching-alpine` |
-| `debian-8.0` | Debian 12 | 8.0 | `.docker/Dockerfile.test-caching-debian` |
+| Environment | OS | .NET Version | Type | Configuration |
+|------------|----|--------------|------|---------------|
+| `ubuntu-8.0` | Ubuntu 22.04 | 8.0 | Docker | `.docker/Dockerfile.test-caching` |
+| `ubuntu-7.0` | Ubuntu 22.04 | 7.0 | Docker | `.docker/Dockerfile.test-caching` |
+| `alpine-8.0` | Alpine Linux | 8.0 | Docker | `.docker/Dockerfile.test-caching-alpine` |
+| `debian-8.0` | Debian 12 | 8.0 | Docker | `.docker/Dockerfile.test-caching-debian` |
+| `android-8.0` | Android (Linux) | 8.0 | Docker | `.docker/Dockerfile.test-caching-android` |
+| `windows-8.0` | Windows Server | 8.0 | Docker | `.docker/Dockerfile.test-caching-windows` |
+| `ios-8.0` | iOS (macOS) | 8.0 | Native | `scripts/test-caching-ios.sh` |
+| `unity-8.0` | Unity Engine | 8.0 | Native | `scripts/test-caching-unity.sh` |
+
+### Environment Types
+
+- **Docker**: Runs in Docker containers (cross-platform)
+- **Native**: Requires native environment setup
+  - iOS: Requires macOS with Xcode
+  - Unity: Requires Unity installation
 
 ## Manual Docker Usage
 
@@ -62,6 +85,16 @@ docker build -f .docker/Dockerfile.test-caching-alpine \
 docker build -f .docker/Dockerfile.test-caching-debian \
   --build-arg DOTNET_VERSION=8.0 \
   -t nexo-caching-test:debian-8.0 .
+
+# Android
+docker build -f .docker/Dockerfile.test-caching-android \
+  --build-arg DOTNET_VERSION=8.0 \
+  -t nexo-caching-test:android-8.0 .
+
+# Windows (requires Windows containers)
+docker build -f .docker/Dockerfile.test-caching-windows \
+  --build-arg DOTNET_VERSION=8.0 \
+  -t nexo-caching-test:windows-8.0 .
 ```
 
 ### Run Tests Manually
@@ -166,23 +199,57 @@ chmod +x scripts/test-caching-multi-env.sh
 docker ps
 ```
 
+## Platform-Specific Notes
+
+### iOS Testing
+- **Requires**: macOS with Xcode
+- **Script**: `scripts/test-caching-ios.sh`
+- **Note**: Cannot run in Docker; requires native macOS execution
+
+### Unity Testing
+- **Requires**: Unity installation (any platform)
+- **Script**: `scripts/test-caching-unity.sh`
+- **Environment Variables**:
+  - `UNITY_BIN`: Path to Unity executable (auto-detected if not set)
+  - `UNITY_PROJECT`: Path to Unity project (optional, auto-detected)
+- **Note**: Falls back to .NET-only tests if Unity is not available
+
+### Windows Testing
+- **Requires**: Windows containers (not available on Linux/macOS Docker)
+- **Dockerfile**: `.docker/Dockerfile.test-caching-windows`
+- **Note**: Requires Docker Desktop with Windows containers enabled
+
+### Android Testing
+- **Requires**: Docker (includes Android SDK)
+- **Dockerfile**: `.docker/Dockerfile.test-caching-android`
+- **Note**: Includes Android SDK and build tools
+
 ## Adding New Environments
 
 To add a new test environment:
 
-1. Create a new Dockerfile in `.docker/`:
+1. **For Docker environments**: Create a new Dockerfile in `.docker/`:
    ```dockerfile
    ARG DOTNET_VERSION=8.0
    FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-{os-variant}
    # ... rest of Dockerfile
    ```
 
-2. Add environment to `scripts/test-caching-multi-env.sh`:
+2. **For native environments**: Create a test script in `scripts/`:
    ```bash
-   ENV_CONFIGS["new-env"]=".docker/Dockerfile.test-caching-new|8.0|OS Name"
+   #!/bin/bash
+   # Script to run caching tests on {platform}
+   # ... test execution logic
    ```
 
-3. Add to GitHub Actions matrix in `.github/workflows/test-caching-multi-env.yml`
+3. Add environment to `scripts/test-caching-multi-env.sh`:
+   ```bash
+   ENV_CONFIGS["new-env"]=".docker/Dockerfile.test-caching-new|8.0|OS Name|docker"
+   # or for native:
+   ENV_CONFIGS["new-env"]="scripts/test-caching-new.sh|8.0|OS Name|native"
+   ```
+
+4. Add to GitHub Actions matrix in `.github/workflows/test-caching-multi-env.yml`
 
 ## Best Practices
 

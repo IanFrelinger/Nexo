@@ -1,0 +1,49 @@
+# Dockerfile for running geospatial caching tests on Android
+ARG DOTNET_VERSION=8.0
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
+
+# Install Android SDK and dependencies
+RUN apt-get update && \
+    apt-get install -y \
+        curl \
+        git \
+        python3 \
+        python3-pip \
+        wget \
+        unzip \
+        openjdk-17-jdk \
+        && rm -rf /var/lib/apt/lists/*
+
+# Set up Android environment variables
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/cmdline-tools/latest/bin
+
+# Install Android SDK command line tools
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools && \
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
+    unzip -q commandlinetools-linux-9477386_latest.zip -d ${ANDROID_HOME}/cmdline-tools && \
+    mv ${ANDROID_HOME}/cmdline-tools/cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest && \
+    rm commandlinetools-linux-9477386_latest.zip
+
+# Accept Android licenses and install platform tools
+RUN yes | sdkmanager --licenses || true && \
+    sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0" || true
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy project files
+COPY . .
+
+# Restore dependencies for test projects
+RUN dotnet restore src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj && \
+    dotnet restore src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj && \
+    dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+
+# Build test projects
+RUN dotnet build src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj --no-restore && \
+    dotnet build src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --no-restore && \
+    dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --no-restore
+
+# Default command: run caching tests
+CMD ["bash", "-c", "dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj --filter 'FullyQualifiedName~CachingTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --filter 'FullyQualifiedName~CachingSmokeTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~Caching' --logger 'console;verbosity=normal'"]
