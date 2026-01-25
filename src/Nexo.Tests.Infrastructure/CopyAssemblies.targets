@@ -1,0 +1,59 @@
+<Project>
+  <!-- Automatically copy all assemblies from deps.json that the test host can't find -->
+  <!-- This is a workaround for .NET 8.0 test host issue with finding assemblies from NuGet cache -->
+  <Target Name="CopyAllRequiredAssemblies" AfterTargets="Build">
+    <PropertyGroup>
+      <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(UserProfile)\.nuget\packages</NuGetPackageRoot>
+      <NuGetPackageRoot Condition="'$(OS)' != 'Windows_NT' AND '$(NuGetPackageRoot)' == ''">$(HOME)/.nuget/packages</NuGetPackageRoot>
+      <DepsJsonPath>$(OutputPath)$(AssemblyName).deps.json</DepsJsonPath>
+      <CopyScriptPath>$(MSBuildThisFileDirectory)scripts/copy-assemblies.py</CopyScriptPath>
+    </PropertyGroup>
+    
+    <!-- Use Python script to automatically copy all assemblies from deps.json -->
+    <Exec Command="python3 &quot;$(CopyScriptPath)&quot; &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
+          Condition="Exists('$(CopyScriptPath)') AND Exists('$(DepsJsonPath)')"
+          ContinueOnError="true" />
+    
+    <!-- Fallback: Known problematic assemblies that need to be copied -->
+    <!-- These are assemblies that target net6.0, netstandard2.x, net7.0, or netcoreapp3.1 -->
+    <ItemGroup>
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/castle.core/5.2.1/lib/net6.0/Castle.Core.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\castle.core\5.2.1\lib\net6.0\Castle.Core.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/docker.dotnet/3.125.15/lib/netstandard2.1/Docker.DotNet.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\docker.dotnet\3.125.15\lib\netstandard2.1\Docker.DotNet.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/fluentassertions/6.12.0/lib/net6.0/FluentAssertions.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\fluentassertions\6.12.0\lib\net6.0\FluentAssertions.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/fluentvalidation/11.9.2/lib/net8.0/FluentValidation.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\fluentvalidation\11.9.2\lib\net8.0\FluentValidation.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/fluentvalidation.dependencyinjectionextensions/11.9.2/lib/netstandard2.1/FluentValidation.DependencyInjectionExtensions.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\fluentvalidation.dependencyinjectionextensions\11.9.2\lib\netstandard2.1\FluentValidation.DependencyInjectionExtensions.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/icsharpcode.decompiler/8.0.0.7345/lib/netstandard2.0/ICSharpCode.Decompiler.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\icsharpcode.decompiler\8.0.0.7345\lib\netstandard2.0\ICSharpCode.Decompiler.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/jetbrains.annotations/2025.2.0/lib/netstandard2.0/JetBrains.Annotations.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\jetbrains.annotations\2025.2.0\lib\netstandard2.0\JetBrains.Annotations.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/json.more.net/1.7.0/lib/netstandard2.0/Json.More.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\json.more.net\1.7.0\lib\netstandard2.0\Json.More.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/jsonpointer.net/3.0.0/lib/netstandard2.0/JsonPointer.Net.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\jsonpointer.net\3.0.0\lib\netstandard2.0\JsonPointer.Net.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/jsonschema.net/4.0.0/lib/netstandard2.0/JsonSchema.Net.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\jsonschema.net\4.0.0\lib\netstandard2.0\JsonSchema.Net.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/mediatr/12.4.1/lib/net6.0/MediatR.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\mediatr\12.4.1\lib\net6.0\MediatR.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/mediatr.contracts/2.0.1/lib/netstandard2.0/MediatR.Contracts.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\mediatr.contracts\2.0.1\lib\netstandard2.0\MediatR.Contracts.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/microsoft.bcl.asyncinterfaces/6.0.0/lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\microsoft.bcl.asyncinterfaces\6.0.0\lib\netstandard2.1\Microsoft.Bcl.AsyncInterfaces.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/microsoft.codeanalysis.common/4.8.0/lib/net7.0/Microsoft.CodeAnalysis.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\microsoft.codeanalysis.common\4.8.0\lib\net7.0\Microsoft.CodeAnalysis.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/microsoft.codeanalysis.csharp/4.8.0/lib/net7.0/Microsoft.CodeAnalysis.CSharp.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\microsoft.codeanalysis.csharp\4.8.0\lib\net7.0\Microsoft.CodeAnalysis.CSharp.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/microsoft.codecoverage/17.8.0/lib/netcoreapp3.1/Microsoft.VisualStudio.CodeCoverage.Shim.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\microsoft.codecoverage\17.8.0\lib\netcoreapp3.1\Microsoft.VisualStudio.CodeCoverage.Shim.dll" Condition="'$(OS)' == 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)/microsoft.playwright/1.48.0/lib/netstandard2.0/Microsoft.Playwright.dll" Condition="'$(OS)' != 'Windows_NT'" />
+      <AssembliesToCopy Include="$(NuGetPackageRoot)\microsoft.playwright\1.48.0\lib\netstandard2.0\Microsoft.Playwright.dll" Condition="'$(OS)' == 'Windows_NT'" />
+    </ItemGroup>
+    
+    <Message Text="Copying assemblies to $(OutputPath)" Importance="high" />
+    <Copy SourceFiles="@(AssembliesToCopy)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('%(Identity)')" />
+  </Target>
+</Project>

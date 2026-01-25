@@ -5,6 +5,9 @@
 ARG DOTNET_VERSION=8.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
 
+# Install Python3 for assembly copying script
+RUN apt-get update && apt-get install -y python3 && rm -rf /var/lib/apt/lists/*
+
 # Verify .NET installation
 RUN dotnet --version
 
