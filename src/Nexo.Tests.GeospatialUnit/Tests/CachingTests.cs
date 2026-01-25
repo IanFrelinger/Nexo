@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.Adapters.GeoVector.Providers;
@@ -17,8 +18,8 @@ public class CachingTests : IDisposable
 {
     private readonly string _testCacheDir;
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
-    private readonly Mock<ILoggerFactory> _mockLoggerFactory;
-    private readonly Mock<ILogger<SrtmHttpElevationProvider>> _mockLogger;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<SrtmHttpElevationProvider> _logger;
     private readonly HttpClient _httpClient;
 
     public CachingTests()
@@ -32,14 +33,9 @@ public class CachingTests : IDisposable
             .Setup(f => f.CreateClient(It.IsAny<string>()))
             .Returns(_httpClient);
 
-        _mockLogger = new Mock<ILogger<SrtmHttpElevationProvider>>();
-        _mockLoggerFactory = new Mock<ILoggerFactory>();
-        _mockLoggerFactory
-            .Setup(f => f.CreateLogger<SrtmHttpElevationProvider>())
-            .Returns(_mockLogger.Object);
-        _mockLoggerFactory
-            .Setup(f => f.CreateLogger<MapboxVectorTileProvider>())
-            .Returns(new Mock<ILogger<MapboxVectorTileProvider>>().Object);
+        // Use NullLoggerFactory instead of mocking (can't mock extension methods)
+        _loggerFactory = NullLoggerFactory.Instance;
+        _logger = NullLogger<SrtmHttpElevationProvider>.Instance;
     }
 
     [Fact]
@@ -68,7 +64,7 @@ public class CachingTests : IDisposable
         // Arrange
         var factory = new ElevationProviderFactory(
             _mockHttpClientFactory.Object,
-            _mockLoggerFactory.Object);
+            _loggerFactory);
         var cacheRoot = Path.Combine(_testCacheDir, "factory-cache");
 
         // Act & Assert - Verify factory accepts cache parameters without throwing
@@ -95,7 +91,7 @@ public class CachingTests : IDisposable
         // Arrange
         var factory = new ElevationProviderFactory(
             _mockHttpClientFactory.Object,
-            _mockLoggerFactory.Object);
+            _loggerFactory);
 
         // Act & Assert - Verify factory works without cache
         var exception = Record.Exception(() =>
@@ -146,7 +142,7 @@ public class CachingTests : IDisposable
         // Arrange
         var factory = new VectorProviderFactory(
             _mockHttpClientFactory.Object,
-            _mockLoggerFactory.Object);
+            _loggerFactory);
         var bounds = GeoBounds.Parse("37.0,-122.0,38.0,-121.0");
 
         // Act & Assert - Verify factory works without cache
