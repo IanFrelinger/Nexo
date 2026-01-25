@@ -87,7 +87,9 @@ public class TestClass
         // Assert
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeEmpty();
-        result.Errors.Should().Contain(e => e.Contains("error", StringComparison.OrdinalIgnoreCase) || e.Contains("CS", StringComparison.OrdinalIgnoreCase));
+        result.Errors.Should().Contain(e => 
+            e.Contains("error", StringComparison.OrdinalIgnoreCase) || 
+            e.Contains("CS", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -147,7 +149,7 @@ public class TestClass
         // Assert
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().NotBeNullOrEmpty();
-        result.ErrorMessage.Should().Contain("not found", StringComparison.OrdinalIgnoreCase);
+        result.ErrorMessage.Should().Contain("not found");
     }
 
     [Fact]
@@ -208,7 +210,7 @@ public class AnotherClass
         // Assert
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().NotBeNullOrEmpty();
-        result.ErrorMessage.Should().Contain("not found", StringComparison.OrdinalIgnoreCase);
+        result.ErrorMessage.Should().Contain("not found");
     }
 
     [Fact]
