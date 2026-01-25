@@ -130,7 +130,8 @@ public class TestRunnerAdapter : ITestRunner
             "Nexo.Tests.CLI",
             "Nexo.Tests.GeoTerrain",
             "Nexo.Tests.GeoVector",
-            "Nexo.Tests.GeoWorld"
+            "Nexo.Tests.GeoWorld",
+            "Nexo.Tests.Orchestration"
         };
         
         var assemblies = new List<System.Reflection.Assembly>(loadedAssemblies);

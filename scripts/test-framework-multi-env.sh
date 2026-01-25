@@ -40,7 +40,7 @@ get_env_config() {
             echo ".docker/Dockerfile.test-framework-windows|8.0|Windows|docker"
             ;;
         unity-8.0)
-            echo "scripts/test-framework-unity.sh|8.0|Unity (.NET Standard 2.0)|native"
+            echo ".docker/Dockerfile.test-framework-unity|8.0|Unity (.NET Standard 2.0)|docker"
             ;;
         *)
             return 1

@@ -1267,6 +1267,21 @@ static class Program
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
+        
+        // Register execution platform for portable multi-platform testing
+        // Default to Docker, but users can override with Rancher, Kubernetes, etc.
+        services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform>>();
+            return new Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform(logger);
+        });
+        
+        // Also register Docker service for backward compatibility (if needed)
+        services.AddSingleton<Nexo.Infrastructure.Testing.Docker.IDockerService>(sp =>
+        {
+            var logger = sp.GetRequiredService<ILogger<Nexo.Infrastructure.Testing.Docker.DockerService>>();
+            return new Nexo.Infrastructure.Testing.Docker.DockerService(logger);
+        });
 
         // Register renderer
         services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();

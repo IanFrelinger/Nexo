@@ -168,4 +168,8 @@
     <PackageVersion Include="Microsoft.Playwright" Version="1.48.0" />
     <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
   </ItemGroup>
+  <!-- Docker Packages -->
+  <ItemGroup>
+    <PackageVersion Include="Docker.DotNet" Version="3.125.15" />
+  </ItemGroup>
 </Project>
