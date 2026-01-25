@@ -1,4 +1,4 @@
-.PHONY: build build-portable test demo-test demo-dev demo-fresh package-cli
+.PHONY: build build-portable test test-caching test-caching-all demo-test demo-dev demo-fresh package-cli
 
 build:
 	dotnet build
@@ -8,6 +8,15 @@ build-portable:
 
 test:
 	dotnet test
+
+# Caching tests
+test-caching:
+	dotnet test src/Nexo.Tests.GeospatialUnit/Nexo.Tests.GeospatialUnit.csproj --filter "FullyQualifiedName~CachingTests"
+	dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj --filter "FullyQualifiedName~CachingSmokeTests"
+	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Caching"
+
+test-caching-all:
+	bash scripts/test-caching-multi-env.sh --all
 
 # CLI demos
 demo-test:
