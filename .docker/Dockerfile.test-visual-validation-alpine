@@ -2,21 +2,10 @@
 ARG DOTNET_VERSION=8.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-alpine
 
-# Install Playwright dependencies for Alpine
-# Note: Playwright requires node.js for its transport layer, even when using system chromium
+# Pure .NET rendering - no browser dependencies needed
+# Only install basic dependencies for .NET SDK
 RUN apk add --no-cache \
-    chromium \
-    nodejs \
-    npm \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
     ca-certificates \
-    ttf-freefont \
-    cups-libs \
-    pango \
-    cairo \
     && rm -rf /var/cache/apk/*
 
 # Set working directory
