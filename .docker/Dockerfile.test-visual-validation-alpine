@@ -11,8 +11,8 @@ RUN apk add --no-cache \
     harfbuzz \
     ca-certificates \
     ttf-freefont \
-    libcups \
-    libpango \
+    cups-libs \
+    pango \
     cairo \
     && rm -rf /var/cache/apk/*
 
