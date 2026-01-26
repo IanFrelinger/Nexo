@@ -168,6 +168,7 @@
   <ItemGroup>
     <PackageVersion Include="Microsoft.Playwright" Version="1.48.0" />
     <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageVersion Include="JeremyAnsel.Media.WavefrontObj" Version="2.0.6" />
   </ItemGroup>
   <!-- Docker Packages -->
   <ItemGroup>
