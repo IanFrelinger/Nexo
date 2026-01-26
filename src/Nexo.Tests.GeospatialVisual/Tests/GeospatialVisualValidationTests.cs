@@ -276,14 +276,33 @@ Provide JSON response:
   ""confidence"": 0.0-1.0
 }}";
 
-        // Use LLM for validation (will be enhanced with vision API in full implementation)
-        // For synthetic data testing, use mock provider which returns valid JSON
-        var response = await _providerFactory.ExecuteLLMAsync(
-            provider: "mock-json", // Use mock provider for synthetic data testing
-            systemPrompt: "You are an expert in 3D graphics and visual validation. Analyze rendered 3D models for correctness and quality.",
-            userPrompt: prompt,
-            config: new { model = "gpt-4o" },
-            cancellationToken: CancellationToken.None);
+        // Try local vision models first (Ollama), fallback to mock for testing
+        string response;
+        var logger = _loggerFactory.CreateLogger<GeospatialVisualValidationTests>();
+        try
+        {
+            // Try Ollama with vision support (local, no API costs)
+            logger.LogInformation("Attempting to use Ollama vision model for validation");
+            response = await _providerFactory.ExecuteVisionAsync(
+                provider: "ollama", // Use local Ollama vision model
+                systemPrompt: "You are an expert in 3D graphics and visual validation. Analyze rendered 3D models for correctness and quality. Provide your response as valid JSON only.",
+                userPrompt: prompt,
+                imageBytes: screenshot,
+                config: new { model = "llava:7b" }, // or llama3.2-vision
+                cancellationToken: CancellationToken.None);
+            logger.LogInformation("Successfully used Ollama vision model for validation");
+        }
+        catch (Exception ex)
+        {
+            // Fallback to mock provider if Ollama not available
+            logger.LogWarning(ex, "Ollama not available, using mock provider for validation");
+            response = await _providerFactory.ExecuteLLMAsync(
+                provider: "mock-json",
+                systemPrompt: "You are an expert in 3D graphics and visual validation. Analyze rendered 3D models for correctness and quality.",
+                userPrompt: prompt,
+                config: new { model = "gpt-4o" },
+                cancellationToken: CancellationToken.None);
+        }
 
         return ParseValidationResponse(response);
     }

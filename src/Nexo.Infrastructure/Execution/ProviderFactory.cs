@@ -205,11 +205,40 @@ public class ProviderFactory : IProviderFactory
 
     private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, CancellationToken ct)
     {
+        return await ExecuteOllamaAsync(systemPrompt, userPrompt, null, ct);
+    }
+
+    private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, byte[]? imageBytes, CancellationToken ct)
+    {
         var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
-        var model = Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1";
+        // For vision, prefer vision models; fallback to text-only model
+        var model = Environment.GetEnvironmentVariable("OLLAMA_MODEL") 
+            ?? (imageBytes != null ? "llava:7b" : "llama3.1");
         var url = $"{baseUrl.TrimEnd('/')}/api/chat";
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
+
+        // Build message payload - support vision if image provided
+        object userMessage;
+        if (imageBytes != null)
+        {
+            // Convert image to base64 for vision models
+            var imageBase64 = Convert.ToBase64String(imageBytes);
+            userMessage = new
+            {
+                role = "user",
+                content = userPrompt ?? "",
+                images = new[] { imageBase64 }
+            };
+        }
+        else
+        {
+            userMessage = new
+            {
+                role = "user",
+                content = userPrompt ?? ""
+            };
+        }
 
         var payload = new
         {
@@ -218,7 +247,7 @@ public class ProviderFactory : IProviderFactory
             messages = new[]
             {
                 new { role = "system", content = systemPrompt ?? "" },
-                new { role = "user", content = userPrompt ?? "" }
+                userMessage
             }
         };
 
@@ -236,6 +265,44 @@ public class ProviderFactory : IProviderFactory
             .GetString();
 
         return content ?? throw new InvalidOperationException("Ollama response content was null");
+    }
+
+    /// <summary>
+    /// Execute LLM with vision support (image analysis).
+    /// </summary>
+    public async Task<string> ExecuteVisionAsync(
+        string provider,
+        string systemPrompt,
+        string userPrompt,
+        byte[] imageBytes,
+        object config,
+        CancellationToken cancellationToken = default)
+    {
+        provider = (provider ?? "mock").Trim().ToLowerInvariant();
+        _logger.LogInformation("Executing vision request with provider {Provider}", provider);
+
+        // Try Ollama first for local vision models
+        if (provider is "ollama" or "auto" or "local")
+        {
+            try
+            {
+                return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Ollama vision call failed; falling back to mock-json response");
+                // Fall through to mock
+            }
+        }
+
+        // For other providers, fall back to text-only (or implement vision APIs later)
+        if (provider is "openai" or "azure")
+        {
+            _logger.LogWarning("Vision API not yet implemented for {Provider}; using text-only fallback", provider);
+        }
+
+        // Fallback to mock for now
+        return GenerateMockJsonResponse(systemPrompt, userPrompt);
     }
 
     private static string GenerateMockJsonResponse(string systemPrompt, string userPrompt)

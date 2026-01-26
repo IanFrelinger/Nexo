@@ -12,5 +12,16 @@ public interface IProviderFactory
         string userPrompt,
         object config,
         CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Execute LLM with vision support (image analysis).
+    /// </summary>
+    Task<string> ExecuteVisionAsync(
+        string provider,
+        string systemPrompt,
+        string userPrompt,
+        byte[] imageBytes,
+        object config,
+        CancellationToken cancellationToken = default);
 }
 
