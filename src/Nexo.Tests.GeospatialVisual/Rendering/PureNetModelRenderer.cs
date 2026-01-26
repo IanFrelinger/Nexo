@@ -102,7 +102,7 @@ public static class PureNetModelRenderer
         float scale,
         Vector2 offset)
     {
-        var color = ImageSharpColor.FromRgb(136, 136, 136); // Gray wireframe
+        var color = new Rgba32(136, 136, 136); // Gray wireframe
 
         if (objFile.Faces == null) return;
 
@@ -194,7 +194,7 @@ public static class PureNetModelRenderer
                 var r = (byte)(baseR * intensity);
                 var g = (byte)(baseG * intensity);
                 var b = (byte)(baseB * intensity);
-                var shadedColor = ImageSharpColor.FromRgb(r, g, b);
+                var shadedColor = new Rgba32(r, g, b);
 
                 // Draw filled polygon
                 DrawFilledPolygon(image, vertices, shadedColor);
@@ -237,7 +237,7 @@ public static class PureNetModelRenderer
         return Vector3.UnitY;
     }
 
-    private static void DrawLine(Image<Rgba32> image, Vector2 p1, Vector2 p2, ImageSharpColor color)
+    private static void DrawLine(Image<Rgba32> image, Vector2 p1, Vector2 p2, Rgba32 color)
     {
         var x0 = (int)Math.Round(p1.X);
         var y0 = (int)Math.Round(p1.Y);
@@ -249,14 +249,12 @@ public static class PureNetModelRenderer
         var sx = x0 < x1 ? 1 : -1;
         var sy = y0 < y1 ? 1 : -1;
         var err = dx - dy;
-        
-        var pixelColor = new Rgba32(color.R, color.G, color.B, color.A);
 
         while (true)
         {
             if (x0 >= 0 && x0 < image.Width && y0 >= 0 && y0 < image.Height)
             {
-                image[x0, y0] = pixelColor;
+                image[x0, y0] = color;
             }
 
             if (x0 == x1 && y0 == y1) break;
@@ -275,7 +273,7 @@ public static class PureNetModelRenderer
         }
     }
 
-    private static void DrawFilledPolygon(Image<Rgba32> image, List<Vector2> vertices, ImageSharpColor color)
+    private static void DrawFilledPolygon(Image<Rgba32> image, List<Vector2> vertices, Rgba32 color)
     {
         if (vertices.Count < 3) return;
 
@@ -309,12 +307,11 @@ public static class PureNetModelRenderer
                 xStart = Math.Max(0, xStart);
                 xEnd = Math.Min(image.Width - 1, xEnd);
 
-                var pixelColor = new Rgba32(color.R, color.G, color.B, color.A);
                 for (int x = xStart; x <= xEnd; x++)
                 {
                     if (x >= 0 && x < image.Width && y >= 0 && y < image.Height)
                     {
-                        image[x, y] = pixelColor;
+                        image[x, y] = color;
                     }
                 }
             }
