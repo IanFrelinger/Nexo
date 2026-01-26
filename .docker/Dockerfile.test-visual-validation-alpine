@@ -23,7 +23,6 @@ WORKDIR /workspace
 COPY *.sln *.props *.json ./
 COPY src/ ./src/
 COPY scripts/ ./scripts/
-COPY .docker/ ./docker/
 
 # Restore dependencies
 RUN dotnet restore src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj
