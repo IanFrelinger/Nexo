@@ -215,6 +215,8 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         public bool IsProviderAvailable(string provider) => _available;
         public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default)
             => Task.FromResult("{}");
+        public Task<string> ExecuteVisionAsync(string provider, string systemPrompt, string userPrompt, byte[] imageBytes, object config, CancellationToken cancellationToken = default)
+            => Task.FromResult("{}");
     }
 
     private sealed class FlakyAgenticBrick : Brick
