@@ -23,6 +23,7 @@ mkdir -p "$RESULTS_DIR"
 PLATFORMS=(
     "ubuntu-8.0:.docker/Dockerfile.test-visual-validation"
     "alpine-8.0:.docker/Dockerfile.test-visual-validation-alpine"
+    "debian-8.0:.docker/Dockerfile.test-visual-validation-debian"
 )
 
 # Function to run tests on a platform

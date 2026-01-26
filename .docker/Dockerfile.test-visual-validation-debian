@@ -1,0 +1,43 @@
+# Dockerfile for running visual validation tests on Debian
+ARG DOTNET_VERSION=8.0
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
+
+# Install system dependencies for Playwright
+RUN apt-get update && \
+    apt-get install -y \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libcups2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy solution and project files
+COPY *.sln *.props *.json ./
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+
+# Restore dependencies
+RUN dotnet restore src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj
+
+# Build the test project
+RUN dotnet build src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --no-restore
+
+# Install Playwright browsers using dotnet tool
+RUN dotnet tool install --global Microsoft.Playwright.CLI || true
+ENV PATH="/root/.dotnet/tools:${PATH}"
+
+# Run visual validation tests with synthetic data (echo provider)
+# Install Playwright browsers first, then run tests
+CMD ["bash", "-c", "echo '🎨 Installing Playwright browsers...' && playwright install chromium || (cd src/Nexo.Tests.GeospatialVisual && dotnet build --no-restore && dotnet exec bin/Debug/net8.0/playwright.ps1 install chromium || echo 'Playwright install will happen at runtime') && echo '🎨 Running Visual Validation Tests with Synthetic Data (Debian)...' && dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter 'FullyQualifiedName~GeospatialVisualValidationTests' --logger 'console;verbosity=detailed' && echo '✅ Visual validation tests completed'"]

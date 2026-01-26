@@ -11,6 +11,9 @@ RUN apk add --no-cache \
     harfbuzz \
     ca-certificates \
     ttf-freefont \
+    libcups \
+    libpango \
+    cairo \
     && rm -rf /var/cache/apk/*
 
 # Set working directory
@@ -28,5 +31,10 @@ RUN dotnet restore src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.c
 # Build the test project
 RUN dotnet build src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --no-restore
 
+# Install Playwright browsers using dotnet tool
+RUN dotnet tool install --global Microsoft.Playwright.CLI || true
+ENV PATH="/root/.dotnet/tools:${PATH}"
+
 # Run visual validation tests with synthetic data (echo provider)
-CMD ["sh", "-c", "echo '🎨 Running Visual Validation Tests with Synthetic Data (Alpine)...' && dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter 'FullyQualifiedName~GeospatialVisualValidationTests' --logger 'console;verbosity=detailed' && echo '✅ Visual validation tests completed'"]
+# Install Playwright browsers first, then run tests
+CMD ["sh", "-c", "echo '🎨 Installing Playwright browsers...' && playwright install chromium || (cd src/Nexo.Tests.GeospatialVisual && dotnet build --no-restore && dotnet exec bin/Debug/net8.0/playwright.ps1 install chromium || echo 'Playwright install will happen at runtime') && echo '🎨 Running Visual Validation Tests with Synthetic Data (Alpine)...' && dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter 'FullyQualifiedName~GeospatialVisualValidationTests' --logger 'console;verbosity=detailed' && echo '✅ Visual validation tests completed'"]
