@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   
   <!-- Workaround for Castle.Core net6.0 assembly loading issue on .NET 8.0 -->
@@ -17,6 +19,11 @@
   
   <!-- Import the targets file that handles copying assemblies -->
   <Import Project="$(MSBuildThisFileDirectory)CopyAssemblies.targets" />
+
+  <!-- Exclude scripts directory from compilation -->
+  <ItemGroup>
+    <Compile Remove="scripts/**/*.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Moq" />
