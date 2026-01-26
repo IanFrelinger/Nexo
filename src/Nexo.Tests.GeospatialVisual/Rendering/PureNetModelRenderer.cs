@@ -188,10 +188,12 @@ public static class PureNetModelRenderer
                 var normal = CalculateFaceNormal(face, objFile, center);
                 var lightDir = Vector3.Normalize(new Vector3(0.5f, 1f, 0.5f));
                 var intensity = Math.Max(0.3f, Vector3.Dot(normal, lightDir));
-                var baseColor = ImageSharpColor.FromRgb(136, 136, 136);
-                var r = (byte)(baseColor.R * intensity);
-                var g = (byte)(baseColor.G * intensity);
-                var b = (byte)(baseColor.B * intensity);
+                var baseR = 136;
+                var baseG = 136;
+                var baseB = 136;
+                var r = (byte)(baseR * intensity);
+                var g = (byte)(baseG * intensity);
+                var b = (byte)(baseB * intensity);
                 var shadedColor = ImageSharpColor.FromRgb(r, g, b);
 
                 // Draw filled polygon
