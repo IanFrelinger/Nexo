@@ -44,8 +44,8 @@ services:
           echo \"   Waiting for Ollama... (attempt \$i/30)\" &&
           sleep 2
         done &&
-        echo '🎨 Installing Playwright browsers...' &&
-        playwright install chromium &&
+        echo '🎨 Playwright browsers will install automatically on first use' &&
+        cd /workspace &&
         echo '🎨 Running Visual Validation Tests with Ollama (Alpine)...' &&
         dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj \
           --filter 'FullyQualifiedName~GeospatialVisualValidationTests' \

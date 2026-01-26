@@ -30,10 +30,14 @@ RUN dotnet restore src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.c
 # Build the test project
 RUN dotnet build src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --no-restore
 
-# Install Playwright browsers using dotnet tool
-RUN dotnet tool install --global Microsoft.Playwright.CLI || true
-ENV PATH="/root/.dotnet/tools:${PATH}"
+# Install wget for health checks (Alpine uses wget instead of curl)
+RUN apk add --no-cache wget
 
-# Run visual validation tests with synthetic data (echo provider)
-# Install Playwright browsers first, then run tests
-CMD ["sh", "-c", "echo '🎨 Installing Playwright browsers...' && playwright install chromium || (cd src/Nexo.Tests.GeospatialVisual && dotnet build --no-restore && dotnet exec bin/Debug/net8.0/playwright.ps1 install chromium || echo 'Playwright install will happen at runtime') && echo '🎨 Running Visual Validation Tests with Synthetic Data (Alpine)...' && dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter 'FullyQualifiedName~GeospatialVisualValidationTests' --logger 'console;verbosity=detailed' && echo '✅ Visual validation tests completed'"]
+# Set environment variables for Playwright browser installation
+ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+
+# Run visual validation tests
+# Playwright will automatically install browsers on first use via the NuGet package
+# Note: When using docker-compose, Ollama will be available at http://ollama:11434
+CMD ["sh", "-c", "echo '🎨 Running Visual Validation Tests with Ollama (Alpine)...' && cd /workspace && dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter 'FullyQualifiedName~GeospatialVisualValidationTests' --logger 'console;verbosity=detailed' && echo '✅ Visual validation tests completed'"]
