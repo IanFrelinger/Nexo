@@ -11,10 +11,11 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
-      interval: 5s
-      timeout: 3s
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 30s
     # Start Ollama server (model will be pulled on first use or via init script)
 
   visual-test-ubuntu:
