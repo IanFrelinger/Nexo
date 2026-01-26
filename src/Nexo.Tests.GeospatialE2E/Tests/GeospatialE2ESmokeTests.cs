@@ -36,9 +36,14 @@ public class GeospatialE2ESmokeTests : IDisposable
         services.AddHttpClient("geovector.mapbox");
         services.AddScoped<IProviderFactory, ProviderFactory>();
         services.AddScoped<ILoopKernel, Nexo.Core.Application.Common.Services.SequentialLoopKernel>();
+        
+        // Register command implementations and their interfaces
         services.AddScoped<GeoTerrainCommand>();
+        services.AddScoped<IGeoTerrainCommand>(sp => sp.GetRequiredService<GeoTerrainCommand>());
         services.AddScoped<GeoVectorCommand>();
+        services.AddScoped<IGeoVectorCommand>(sp => sp.GetRequiredService<GeoVectorCommand>());
         services.AddScoped<WorldCommand>();
+        services.AddScoped<IWorldCommand>(sp => sp.GetRequiredService<WorldCommand>());
         
         // Use test database
         var dbPath = Path.Combine(_testOutputDir, "test-jobs.db");
