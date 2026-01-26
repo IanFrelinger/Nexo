@@ -20,10 +20,12 @@ RESULTS_DIR="$PROJECT_ROOT/test-results/visual-validation"
 mkdir -p "$RESULTS_DIR"
 
 # Platforms to test with their docker-compose files
+# Note: Alpine has known Playwright compatibility issues on arm64 (node binary path)
+# Ubuntu and Debian work correctly with Playwright
 PLATFORMS=(
     "ubuntu-8.0:docker-compose.visual-validation.yml:visual-test-ubuntu"
-    "alpine-8.0:docker-compose.visual-validation-alpine.yml:visual-test-alpine"
     "debian-8.0:docker-compose.visual-validation-debian.yml:visual-test-debian"
+    # "alpine-8.0:docker-compose.visual-validation-alpine.yml:visual-test-alpine"  # Disabled: Playwright arm64 compatibility issue
 )
 
 # Function to run tests on a platform

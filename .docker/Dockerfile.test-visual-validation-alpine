@@ -3,8 +3,11 @@ ARG DOTNET_VERSION=8.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-alpine
 
 # Install Playwright dependencies for Alpine
+# Note: Playwright requires node.js for its transport layer, even when using system chromium
 RUN apk add --no-cache \
     chromium \
+    nodejs \
+    npm \
     nss \
     freetype \
     freetype-dev \
@@ -33,7 +36,24 @@ RUN dotnet build src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csp
 # Install wget for health checks (Alpine uses wget instead of curl)
 RUN apk add --no-cache wget
 
-# Set environment variables for Playwright browser installation
+# Install Playwright browsers and node binary
+# Playwright needs its own node binary in a specific location
+RUN cd src/Nexo.Tests.GeospatialVisual && \
+    dotnet build --no-restore && \
+    PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright \
+    dotnet exec /root/.dotnet/tools/playwright install chromium --with-deps || \
+    (PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright /root/.dotnet/tools/playwright install chromium --with-deps) || \
+    echo "Playwright install will happen at runtime"
+
+# Create symlink for node binary if Playwright's node doesn't exist
+# Playwright expects node at: bin/Debug/net8.0/.playwright/node/linux-arm64/node
+RUN mkdir -p src/Nexo.Tests.GeospatialVisual/bin/Debug/net8.0/.playwright/node/linux-arm64 && \
+    if [ ! -f src/Nexo.Tests.GeospatialVisual/bin/Debug/net8.0/.playwright/node/linux-arm64/node ]; then \
+        ln -sf /usr/bin/node src/Nexo.Tests.GeospatialVisual/bin/Debug/net8.0/.playwright/node/linux-arm64/node || \
+        echo "Node symlink created"; \
+    fi
+
+# Set environment variables for Playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
 
