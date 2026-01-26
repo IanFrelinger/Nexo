@@ -12,7 +12,7 @@ namespace Nexo.Tests.GeospatialVisual.Adapters;
 /// Adapter for rendering 3D models (OBJ, glTF, GLB) to images for visual validation.
 /// Uses a web-based viewer (Three.js) to render models and capture screenshots.
 /// </summary>
-public class Model3DRendererAdapter : ITargetAdapter, IDisposable
+public class Model3DRendererAdapter : ITargetAdapter
 {
     private readonly ILogger<Model3DRendererAdapter>? _logger;
     private Process? _webServer;
@@ -61,7 +61,7 @@ public class Model3DRendererAdapter : ITargetAdapter, IDisposable
         await StartWebServerAsync(_tempWebDir, ct);
 
         // Initialize Playwright for screenshot capture
-        _playwright = await Playwright.Playwright.CreateAsync();
+        _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = true
@@ -78,12 +78,12 @@ public class Model3DRendererAdapter : ITargetAdapter, IDisposable
         });
 
         // Wait for model to load and render
-        await _page.WaitForTimeoutAsync(3000, ct);
+        await Task.Delay(3000, ct);
         
         // Wait for Three.js scene to be ready
         try
         {
-            await _page.WaitForFunctionAsync("window.scene !== undefined", new PageWaitForFunctionOptions { Timeout = 10000 }, ct);
+            await _page.WaitForFunctionAsync("window.scene !== undefined", new PageWaitForFunctionOptions { Timeout = 10000 });
         }
         catch
         {
@@ -156,14 +156,14 @@ public class Model3DRendererAdapter : ITargetAdapter, IDisposable
         });
     }
 
-    public Task<string?> GetStructureAsync(CancellationToken ct = default)
+    public async Task<string?> GetStructureAsync(CancellationToken ct = default)
     {
         // Return HTML content if available
         if (_page != null)
         {
-            return _page.ContentAsync();
+            return await _page.ContentAsync();
         }
-        return Task.FromResult<string?>(null);
+        return null;
     }
 
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default)

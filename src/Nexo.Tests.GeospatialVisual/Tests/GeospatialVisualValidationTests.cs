@@ -1,10 +1,13 @@
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Agents.UniversalTester;
 using Nexo.Agents.UniversalTester.Configuration;
 using Nexo.Agents.UniversalTester.Models;
 using Nexo.CLI.Commands.GeoTerrain;
 using Nexo.CLI.Commands.GeoVector;
+using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Common.Services;
 using Nexo.Infrastructure.Execution;
 using Nexo.Tests.GeospatialVisual.Adapters;
 using Xunit;
@@ -330,12 +333,12 @@ Provide JSON response:
 
     private GeoTerrainCommand CreateGeoTerrainCommand()
     {
-        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole());
         services.AddHttpClient();
         services.AddHttpClient("geoterrain.srtm");
-        services.AddScoped<Nexo.Core.Application.Common.Ports.IProviderFactory, Nexo.Core.Application.Common.Services.ProviderFactory>();
-        services.AddScoped<Nexo.Core.Application.Common.Ports.ILoopKernel, Nexo.Core.Application.Common.Services.SequentialLoopKernel>();
+        services.AddScoped<IProviderFactory, ProviderFactory>();
+        services.AddScoped<ILoopKernel, SequentialLoopKernel>();
         services.AddScoped<GeoTerrainCommand>();
 
         var provider = services.BuildServiceProvider();
@@ -344,12 +347,12 @@ Provide JSON response:
 
     private GeoVectorCommand CreateGeoVectorCommand()
     {
-        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole());
         services.AddHttpClient();
         services.AddHttpClient("geovector.mapbox");
-        services.AddScoped<Nexo.Core.Application.Common.Ports.IProviderFactory, Nexo.Core.Application.Common.Services.ProviderFactory>();
-        services.AddScoped<Nexo.Core.Application.Common.Ports.ILoopKernel, Nexo.Core.Application.Common.Services.SequentialLoopKernel>();
+        services.AddScoped<IProviderFactory, ProviderFactory>();
+        services.AddScoped<ILoopKernel, SequentialLoopKernel>();
         services.AddScoped<GeoVectorCommand>();
 
         var provider = services.BuildServiceProvider();
