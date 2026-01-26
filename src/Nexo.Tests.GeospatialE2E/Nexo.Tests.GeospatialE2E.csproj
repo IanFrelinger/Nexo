@@ -7,6 +7,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- Import the assembly copying infrastructure to handle .NET 8.0 test host issues -->
+  <Import Project="$(MSBuildThisFileDirectory)../Nexo.Tests.Infrastructure/CopyAssemblies.targets" />
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />

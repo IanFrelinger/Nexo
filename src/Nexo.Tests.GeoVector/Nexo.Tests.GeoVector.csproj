@@ -6,6 +6,9 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- Import the assembly copying infrastructure to handle .NET 8.0 test host issues -->
+  <Import Project="$(MSBuildThisFileDirectory)../Nexo.Tests.Infrastructure/CopyAssemblies.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.GeoVector\Nexo.GeoVector.csproj" />
