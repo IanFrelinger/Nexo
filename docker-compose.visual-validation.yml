@@ -15,23 +15,14 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    # Pull vision model after container starts
-    command: >
-      sh -c "
-        ollama serve &
-        sleep 5 &&
-        echo '📥 Pulling llava:7b vision model...' &&
-        ollama pull llava:7b &&
-        echo '✅ Ollama ready with llava:7b' &&
-        wait
-      "
+    # Start Ollama server (model will be pulled on first use or via init script)
 
   visual-test-ubuntu:
     build:
       context: .
       dockerfile: .docker/Dockerfile.test-visual-validation
       args:
-        DOTNET_VERSION: 8.0
+        DOTNET_VERSION: "8.0"
     image: nexo-visual-test:ubuntu-8.0
     depends_on:
       ollama:
