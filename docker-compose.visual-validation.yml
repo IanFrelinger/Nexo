@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nexo-ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Pull vision model after container starts
+    command: >
+      sh -c "
+        ollama serve &
+        sleep 5 &&
+        echo '📥 Pulling llava:7b vision model...' &&
+        ollama pull llava:7b &&
+        echo '✅ Ollama ready with llava:7b' &&
+        wait
+      "
+
+  visual-test-ubuntu:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.test-visual-validation
+      args:
+        DOTNET_VERSION: 8.0
+    image: nexo-visual-test:ubuntu-8.0
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=llava:7b
+    volumes:
+      - ./test-results:/workspace/test-results
+    shm_size: 2gb
+    command: >
+      bash -c "
+        echo '🎨 Waiting for Ollama to be ready...' &&
+        timeout 60 bash -c 'until curl -f http://ollama:11434/api/tags; do sleep 2; done' &&
+        echo '✅ Ollama is ready' &&
+        echo '🎨 Installing Playwright browsers...' &&
+        playwright install chromium &&
+        echo '🎨 Running Visual Validation Tests with Ollama...' &&
+        dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj \
+          --filter 'FullyQualifiedName~GeospatialVisualValidationTests' \
+          --logger 'console;verbosity=detailed' \
+          --logger 'trx;LogFileName=visual-validation-ubuntu.trx' \
+          --results-directory /workspace/test-results &&
+        echo '✅ Visual validation tests completed'
+      "
+
+volumes:
+  ollama-data:

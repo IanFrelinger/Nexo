@@ -39,6 +39,10 @@ RUN dotnet build src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csp
 RUN dotnet tool install --global Microsoft.Playwright.CLI || true
 ENV PATH="/root/.dotnet/tools:${PATH}"
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Run visual validation tests with synthetic data (echo provider)
 # Install Playwright browsers first, then run tests
+# Note: When using docker-compose, Ollama will be available at http://ollama:11434
 CMD ["bash", "-c", "echo '🎨 Installing Playwright browsers...' && playwright install chromium || (cd src/Nexo.Tests.GeospatialVisual && dotnet build --no-restore && dotnet exec bin/Debug/net8.0/playwright.ps1 install chromium || echo 'Playwright install will happen at runtime') && echo '🎨 Running Visual Validation Tests with Synthetic Data...' && dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter 'FullyQualifiedName~GeospatialVisualValidationTests' --logger 'console;verbosity=detailed' && echo '✅ Visual validation tests completed'"]
