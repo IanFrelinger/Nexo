@@ -16,6 +16,13 @@ test-geospatial-smoke:
 test-geospatial-smoke-all:
 	bash scripts/test-caching-multi-env.sh --all
 
+# Visual validation tests
+test-visual-validation:
+	dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter "FullyQualifiedName~GeospatialVisualValidationTests"
+
+test-visual-validation-all:
+	bash scripts/test-visual-validation-multi-env.sh --all
+
 # Framework test coverage and stress testing
 test-framework-coverage:
 	bash scripts/test-framework-coverage.sh

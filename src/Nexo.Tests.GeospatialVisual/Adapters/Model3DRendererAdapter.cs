@@ -18,7 +18,8 @@ public class Model3DRendererAdapter : ITargetAdapter
     private Process? _webServer;
     private System.Net.HttpListener? _httpListener;
     private string? _tempWebDir;
-    private int _webServerPort = 8080;
+    private int _webServerPort;
+    private Random? _portRandom;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private IPage? _page;
@@ -38,6 +39,11 @@ public class Model3DRendererAdapter : ITargetAdapter
         {
             throw new ArgumentException($"Model path does not exist: {target}", nameof(target));
         }
+
+        // Use a random port to avoid conflicts when running multiple tests in parallel
+        // Store random instance for retry logic
+        _portRandom = new Random();
+        _webServerPort = _portRandom.Next(8000, 9000);
 
         // Create temporary web directory for serving the viewer
         _tempWebDir = Path.Combine(Path.GetTempPath(), $"nexo-viewer-{Guid.NewGuid():N}");
@@ -381,9 +387,29 @@ public class Model3DRendererAdapter : ITargetAdapter
         }
 
         // Fallback: Use HttpListener (built into .NET)
-        _httpListener = new System.Net.HttpListener();
-        _httpListener.Prefixes.Add($"http://localhost:{_webServerPort}/");
-        _httpListener.Start();
+        // Try multiple ports in case of conflicts
+        for (int attempt = 0; attempt < 10; attempt++)
+        {
+            try
+            {
+                _httpListener = new System.Net.HttpListener();
+                _httpListener.Prefixes.Add($"http://localhost:{_webServerPort}/");
+                _httpListener.Start();
+                break; // Success
+            }
+            catch (System.Net.HttpListenerException) when (attempt < 9)
+            {
+                // Port conflict, try next port
+                _httpListener?.Close();
+                _httpListener = null;
+                _webServerPort = _portRandom?.Next(8000, 9000) ?? 8080 + attempt;
+            }
+        }
+        
+        if (_httpListener == null || !_httpListener.IsListening)
+        {
+            throw new InvalidOperationException($"Failed to start HTTP server on any port after 10 attempts");
+        }
 
         _ = Task.Run(async () =>
         {

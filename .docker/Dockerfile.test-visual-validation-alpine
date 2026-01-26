@@ -1,0 +1,32 @@
+# Dockerfile for running visual validation tests on Alpine Linux
+ARG DOTNET_VERSION=8.0
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-alpine
+
+# Install Playwright dependencies for Alpine
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
+
+# Set working directory
+WORKDIR /workspace
+
+# Copy solution and project files
+COPY *.sln *.props *.json ./
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+COPY .docker/ ./docker/
+
+# Restore dependencies
+RUN dotnet restore src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj
+
+# Build the test project
+RUN dotnet build src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --no-restore
+
+# Run visual validation tests with synthetic data (echo provider)
+CMD ["sh", "-c", "echo '🎨 Running Visual Validation Tests with Synthetic Data (Alpine)...' && dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter 'FullyQualifiedName~GeospatialVisualValidationTests' --logger 'console;verbosity=detailed' && echo '✅ Visual validation tests completed'"]

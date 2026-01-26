@@ -277,8 +277,9 @@ Provide JSON response:
 }}";
 
         // Use LLM for validation (will be enhanced with vision API in full implementation)
+        // For synthetic data testing, use mock provider which returns valid JSON
         var response = await _providerFactory.ExecuteLLMAsync(
-            provider: "openai",
+            provider: "mock-json", // Use mock provider for synthetic data testing
             systemPrompt: "You are an expert in 3D graphics and visual validation. Analyze rendered 3D models for correctness and quality.",
             userPrompt: prompt,
             config: new { model = "gpt-4o" },
