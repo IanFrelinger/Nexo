@@ -3,6 +3,9 @@ using Nexo.Agents.UniversalTester.Adapters;
 using Nexo.Agents.UniversalTester.Configuration;
 using Nexo.Agents.UniversalTester.Models;
 using Nexo.Tests.GeospatialVisual.Rendering;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Formats.Png;
 
 namespace Nexo.Tests.GeospatialVisual.Adapters;
 
@@ -71,7 +74,7 @@ public class Model3DRendererAdapter : ITargetAdapter
         {
             try
             {
-                if (Path.GetExtension(_modelPath).ToLowerInvariant() == ".obj")
+                if (_modelPath != null && Path.GetExtension(_modelPath).ToLowerInvariant() == ".obj")
                 {
                     _cachedScreenshot = PureNetModelRenderer.RenderObjToImage(
                         _modelPath,
@@ -138,8 +141,15 @@ public class Model3DRendererAdapter : ITargetAdapter
 
     private byte[] CreatePlaceholderImage()
     {
-        using var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(1920, 1080);
-        img.Mutate(ctx => ctx.Fill(SixLabors.ImageSharp.Color.FromRgb(26, 26, 26)));
+        using var img = new Image<Rgba32>(1920, 1080);
+        var bgColor = new Rgba32(26, 26, 26);
+        for (int y = 0; y < 1080; y++)
+        {
+            for (int x = 0; x < 1920; x++)
+            {
+                img[x, y] = bgColor;
+            }
+        }
         using var ms = new MemoryStream();
         img.SaveAsPng(ms);
         return ms.ToArray();

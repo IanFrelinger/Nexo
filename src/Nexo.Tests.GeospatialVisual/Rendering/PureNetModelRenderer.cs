@@ -2,6 +2,7 @@ using System.Numerics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Png;
 using JeremyAnsel.Media.WavefrontObj;
 using ImageSharpColor = SixLabors.ImageSharp.Color;
 
@@ -35,8 +36,15 @@ public static class PureNetModelRenderer
         // Create image
         using var image = new Image<Rgba32>(width, height);
         
-        // Fill background
-        image.Mutate(ctx => ctx.Fill(Color.FromRgb(26, 26, 26))); // Dark gray background
+        // Fill background - set all pixels directly
+        var bgColor = new Rgba32(26, 26, 26);
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                image[x, y] = bgColor;
+            }
+        }
 
         // Project and render
         var scale = CalculateScale(bounds, width, height);
@@ -105,9 +113,10 @@ public static class PureNetModelRenderer
             var vertices = new List<Vector2>();
             foreach (var fv in face.Vertices)
             {
-                if (fv.VertexIndex < 0 || fv.VertexIndex >= objFile.Vertices.Count) continue;
-                var v = objFile.Vertices[fv.VertexIndex];
-                var worldPos = new Vector3(v.X, v.Y, v.Z) - center;
+                var vertexIndex = fv.Vertex - 1; // OBJ uses 1-based indexing
+                if (vertexIndex < 0 || vertexIndex >= objFile.Vertices.Count) continue;
+                var v = objFile.Vertices[vertexIndex];
+                var worldPos = new Vector3((float)v.Position.X, (float)v.Position.Y, (float)v.Position.Z) - center;
                 var screenPos = ProjectToScreen(worldPos, scale, offset);
                 vertices.Add(screenPos);
             }
@@ -238,12 +247,14 @@ public static class PureNetModelRenderer
         var sx = x0 < x1 ? 1 : -1;
         var sy = y0 < y1 ? 1 : -1;
         var err = dx - dy;
+        
+        var pixelColor = new Rgba32(color.R, color.G, color.B, color.A);
 
         while (true)
         {
             if (x0 >= 0 && x0 < image.Width && y0 >= 0 && y0 < image.Height)
             {
-                image[x0, y0] = color;
+                image[x0, y0] = pixelColor;
             }
 
             if (x0 == x1 && y0 == y1) break;
@@ -296,11 +307,12 @@ public static class PureNetModelRenderer
                 xStart = Math.Max(0, xStart);
                 xEnd = Math.Min(image.Width - 1, xEnd);
 
+                var pixelColor = new Rgba32(color.R, color.G, color.B, color.A);
                 for (int x = xStart; x <= xEnd; x++)
                 {
                     if (x >= 0 && x < image.Width && y >= 0 && y < image.Height)
                     {
-                        image[x, y] = color;
+                        image[x, y] = pixelColor;
                     }
                 }
             }
