@@ -21,7 +21,7 @@ test-visual-validation:
 	dotnet test src/Nexo.Tests.GeospatialVisual/Nexo.Tests.GeospatialVisual.csproj --filter "FullyQualifiedName~GeospatialVisualValidationTests"
 
 test-visual-validation-all:
-	bash scripts/test-visual-validation-multi-env.sh --all
+	bash scripts/test-visual-validation-all-platforms.sh --all
 
 # Framework test coverage and stress testing
 test-framework-coverage:
