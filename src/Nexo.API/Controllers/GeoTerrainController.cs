@@ -88,7 +88,7 @@ public class GeoTerrainController : BaseGeospatialController<IGeoTerrainService>
                     BadRequest(new ErrorResponse { Message = "MeshPath is required" }));
             }
 
-            if (!File.Exists(request.MeshPath))
+            if (!System.IO.File.Exists(request.MeshPath))
             {
                 return Task.FromResult<ActionResult<ValidationResponse>>(
                     NotFound(new ErrorResponse { Message = $"Mesh file not found: {request.MeshPath}" }));
