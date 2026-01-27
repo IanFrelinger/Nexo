@@ -311,6 +311,7 @@ public class GeoTerrainCommand : IGeoTerrainCommand
                         var normalConsistency = MeshQualityMetrics.ComputeNormalConsistency(mesh);
                         var maxSlope = MeshQualityMetrics.ValidateMaxSlope(mesh);
 
+                        var totalTriangles = mesh.Indices?.Count / 3 ?? 0;
                         qualityReport = new
                         {
                             triangleQuality = new
@@ -319,27 +320,31 @@ public class GeoTerrainCommand : IGeoTerrainCommand
                                 triangleQuality.MaxAspectRatio,
                                 triangleQuality.AverageAspectRatio,
                                 triangleQuality.SliverTriangleCount,
-                                triangleQuality.TotalTriangles
+                                triangleQuality.SliverTriangleRatio,
+                                totalTriangles
                             },
                             normalConsistency = new
                             {
-                                normalConsistency.AverageDotProduct,
-                                normalConsistency.InconsistentNormalCount
+                                normalConsistency.ConsistencyRatio,
+                                normalConsistency.InconsistencyCount,
+                                normalConsistency.TotalComparisons
                             },
                             maxSlope = new
                             {
                                 maxSlope.MaxSlopeDegrees,
-                                maxSlope.SteepSlopeCount
+                                maxSlope.SteepTriangleCount,
+                                maxSlope.SteepTriangleRatio
                             }
                         };
 
                         if (!json)
                         {
                             Console.Out.WriteLine($"Mesh Quality Report:");
-                            Console.Out.WriteLine($"  Triangles: {triangleQuality.TotalTriangles}");
-                            Console.Out.WriteLine($"  Sliver triangles: {triangleQuality.SliverTriangleCount}");
+                            Console.Out.WriteLine($"  Triangles: {totalTriangles}");
+                            Console.Out.WriteLine($"  Sliver triangles: {triangleQuality.SliverTriangleCount} ({triangleQuality.SliverTriangleRatio:P1})");
                             Console.Out.WriteLine($"  Aspect ratio: {triangleQuality.MinAspectRatio:F3} - {triangleQuality.MaxAspectRatio:F3} (avg: {triangleQuality.AverageAspectRatio:F3})");
                             Console.Out.WriteLine($"  Max slope: {maxSlope.MaxSlopeDegrees:F1}°");
+                            Console.Out.WriteLine($"  Normal consistency: {normalConsistency.ConsistencyRatio:P1}");
                         }
                     }
                     catch (Exception ex)
