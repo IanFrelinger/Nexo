@@ -46,14 +46,53 @@ public class GeoVectorController : BaseGeospatialController<IGeoVectorService>
 
 
     /// <summary>
+    /// Extract roads from geographic bounds.
+    /// </summary>
+    /// <param name="request">Vector extraction request</param>
+    /// <returns>Job ID for async processing</returns>
+    [HttpPost("extract/roads")]
+    [ProducesResponseType(typeof(JobResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<JobResponse>> ExtractRoads([FromBody] VectorExtractionRequest request)
+    {
+        request.FeatureKind = "road";
+        return await ExtractFeatures(request);
+    }
+
+    /// <summary>
+    /// Extract water features from geographic bounds.
+    /// </summary>
+    /// <param name="request">Vector extraction request</param>
+    /// <returns>Job ID for async processing</returns>
+    [HttpPost("extract/water")]
+    [ProducesResponseType(typeof(JobResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<JobResponse>> ExtractWater([FromBody] VectorExtractionRequest request)
+    {
+        request.FeatureKind = "water";
+        return await ExtractFeatures(request);
+    }
+
+    /// <summary>
+    /// Extract vegetation from geographic bounds.
+    /// </summary>
+    /// <param name="request">Vector extraction request</param>
+    /// <returns>Job ID for async processing</returns>
+    [HttpPost("extract/vegetation")]
+    [ProducesResponseType(typeof(JobResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<JobResponse>> ExtractVegetation([FromBody] VectorExtractionRequest request)
+    {
+        request.FeatureKind = "vegetation";
+        return await ExtractFeatures(request);
+    }
+
+    /// <summary>
     /// Download extracted vector features.
     /// </summary>
     /// <param name="jobId">Job identifier</param>
     /// <param name="format">Output format (json, geojson)</param>
     /// <returns>Feature file</returns>
-    /// <summary>
-    /// Download extracted vector features.
-    /// </summary>
     [HttpGet("jobs/{jobId}/download")]
     [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

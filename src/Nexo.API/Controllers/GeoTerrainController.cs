@@ -80,10 +80,44 @@ public class GeoTerrainController : BaseGeospatialController<IGeoTerrainService>
             return Task.FromResult<ActionResult<ValidationResponse>>(BadRequest(ModelState));
         }
 
-        // Load mesh from file (simplified - would need actual mesh loading)
-        // For now, return not implemented
-        return Task.FromResult<ActionResult<ValidationResponse>>(
-            StatusCode(501, new ErrorResponse { Message = "Mesh validation from file not yet implemented. Use CLI with --mesh-quality-report flag." }));
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.MeshPath))
+            {
+                return Task.FromResult<ActionResult<ValidationResponse>>(
+                    BadRequest(new ErrorResponse { Message = "MeshPath is required" }));
+            }
+
+            if (!File.Exists(request.MeshPath))
+            {
+                return Task.FromResult<ActionResult<ValidationResponse>>(
+                    NotFound(new ErrorResponse { Message = $"Mesh file not found: {request.MeshPath}" }));
+            }
+
+            // Mesh file validation is complex and requires format-specific parsers (OBJ, glTF, etc.)
+            // For now, provide a helpful error message with alternatives
+            var issues = new List<string>
+            {
+                "Mesh validation from file path is not yet fully implemented in the API.",
+                "To validate mesh quality, use one of these options:",
+                "1. Use the CLI: nexo geoterrain bounds-to-obj --bounds ... --mesh-quality-report --output mesh.obj",
+                "2. Generate terrain via API with validation flags (coming soon)",
+                "3. Use the programmatic SDK: MeshQualityMetrics.ComputeTriangleQuality(mesh)"
+            };
+
+            return Task.FromResult<ActionResult<ValidationResponse>>(
+                StatusCode(501, new ValidationResponse
+                {
+                    IsValid = false,
+                    Issues = issues
+                }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating mesh");
+            return Task.FromResult<ActionResult<ValidationResponse>>(
+                StatusCode(500, new ErrorResponse { Message = $"Validation error: {ex.Message}" }));
+        }
     }
 
     /// <summary>
@@ -101,37 +135,46 @@ public class GeoTerrainController : BaseGeospatialController<IGeoTerrainService>
             return Task.FromResult<ActionResult<ValidationResponse>>(BadRequest(ModelState));
         }
 
-        // Parse bounds
-        var boundsParts = request.Bounds.Split(',');
-        if (boundsParts.Length != 4)
+        try
         {
-            return Task.FromResult<ActionResult<ValidationResponse>>(
-                BadRequest(new ErrorResponse { Message = "Bounds must be in format: minLat,minLon,maxLat,maxLon" }));
-        }
-
-        var bounds = new GeoBounds
-        {
-            MinLatitude = new Latitude(double.Parse(boundsParts[0])),
-            MinLongitude = new Longitude(double.Parse(boundsParts[1])),
-            MaxLatitude = new Latitude(double.Parse(boundsParts[2])),
-            MaxLongitude = new Longitude(double.Parse(boundsParts[3]))
-        };
-
-        // Validate projection parameters
-        var isValid = DataIntegrityChecker.ValidateProjectionParameters(bounds, _logger);
-        var issues = new List<string>();
-
-        if (!isValid)
-        {
-            issues.Add("Projection parameters validation failed");
-        }
-
-        return Task.FromResult<ActionResult<ValidationResponse>>(
-            Ok(new ValidationResponse
+            // Parse bounds using GeoBounds.Parse for proper validation
+            GeoBounds bounds;
+            try
             {
-                IsValid = isValid,
-                Issues = issues
-            }));
+                bounds = GeoBounds.Parse(request.Bounds);
+            }
+            catch (ArgumentException ex)
+            {
+                return Task.FromResult<ActionResult<ValidationResponse>>(
+                    BadRequest(new ErrorResponse { Message = $"Invalid bounds format: {ex.Message}. Expected format: minLat,minLon,maxLat,maxLon" }));
+            }
+
+            // Validate projection parameters
+            var isValid = DataIntegrityChecker.ValidateProjectionParameters(bounds, _logger);
+            var issues = new List<string>();
+
+            if (!isValid)
+            {
+                issues.Add("Projection parameters validation failed - bounds may be invalid or out of range");
+            }
+
+            // Note: Full corruption detection requires loading elevation grid data.
+            // For bounds-only validation, we only check projection parameters.
+            // To perform full corruption detection, use the terrain generation endpoint with --validate-integrity flag.
+
+            return Task.FromResult<ActionResult<ValidationResponse>>(
+                Ok(new ValidationResponse
+                {
+                    IsValid = isValid,
+                    Issues = issues
+                }));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating integrity");
+            return Task.FromResult<ActionResult<ValidationResponse>>(
+                StatusCode(500, new ErrorResponse { Message = $"Validation error: {ex.Message}" }));
+        }
     }
 
     private static string GetContentType(string format)

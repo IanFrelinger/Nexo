@@ -75,6 +75,9 @@ builder.Services.AddScoped<IGeoVectorService, GeoVectorService>();
 builder.Services.AddScoped<IWorldService, WorldService>();
 builder.Services.AddScoped<IJobService, JobService>();
 
+// Configure job cleanup options
+builder.Services.Configure<JobCleanupOptions>(builder.Configuration.GetSection("JobRetention"));
+
 // Register background job cleanup service
 builder.Services.AddHostedService<JobCleanupService>();
 

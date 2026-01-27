@@ -17,6 +17,7 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.IO;
 using Nexo.Orchestration.GeoTerrain.Ports;
 using Nexo.Adapters.GeoVector.Utilities;
+using Nexo.Adapters.GeoTerrain.Parsing;
 
 namespace Nexo.CLI.Commands.GeoTerrain;
 
@@ -52,6 +53,8 @@ public class GeoTerrainCommand : IGeoTerrainCommand
         bool enableCache,
         bool airGapped,
         bool forceAgenticFail,
+        bool validateIntegrity,
+        bool meshQualityReport,
         string? cacheRoot,
         bool persistCache,
         bool json,
@@ -173,6 +176,8 @@ public class GeoTerrainCommand : IGeoTerrainCommand
             var outputs = new Dictionary<string, object>();
             var steps = new List<object>();
             var errors = new List<string>();
+            var partialFailures = new List<string>();
+            var warnings = new List<string>();
 
             var input = new BehaviorInput(new Dictionary<string, object>
             {
@@ -192,14 +197,29 @@ public class GeoTerrainCommand : IGeoTerrainCommand
                         steps.Add(new { type = "step_started", s.StepId, s.BrickId, s.Implementation, s.UsedFallback });
                         break;
                     case StepCompletedEvent c:
+                        // Check summary for partial failure indicators
+                        if (!string.IsNullOrEmpty(c.Summary))
+                        {
+                            var summary = c.Summary.ToLowerInvariant();
+                            if (summary.Contains("partial") || summary.Contains("failed") || summary.Contains("warning"))
+                            {
+                                warnings.Add($"{c.StepId}: {c.Summary}");
+                            }
+                        }
                         steps.Add(new { type = "step_completed", c.StepId, c.BrickId, c.Implementation, latencyMs = c.LatencyMs, c.Summary });
                         break;
                     case StepErrorEvent e:
                         errors.Add($"{e.StepId}: {e.Error}");
+                        partialFailures.Add($"{e.StepId}: {e.Error}");
                         steps.Add(new { type = "step_error", e.StepId, e.Error, latencyMs = e.LatencyMs });
                         break;
                     case BehaviorCompletedEvent b:
                         outputs = new Dictionary<string, object>(b.Outputs);
+                        // Check if behavior completed with partial success
+                        if (!b.Success && errors.Count > 0 && outputs.Count > 0)
+                        {
+                            partialFailures.Add($"Behavior completed with partial success: {outputs.Count} outputs, {errors.Count} errors");
+                        }
                         steps.Add(new { type = "behavior_completed", b.Success });
                         break;
                 }
@@ -209,6 +229,128 @@ public class GeoTerrainCommand : IGeoTerrainCommand
             if (string.IsNullOrWhiteSpace(objText))
             {
                 throw new InvalidOperationException("OBJ output was not produced by the pipeline.");
+            }
+
+            // Run validation if requested
+            object? integrityReport = null;
+            object? qualityReport = null;
+
+            if (validateIntegrity || meshQualityReport)
+            {
+                var mesh = outputs.TryGetValue("mesh", out var m) ? m as MeshData : null;
+                var hgtBytes = outputs.TryGetValue("hgtBytes", out var h) ? h as byte[] : null;
+
+                // For integrity: validate tile data if available
+                if (validateIntegrity && hgtBytes != null)
+                {
+                    try
+                    {
+                        // Parse tile to create grid for validation
+                        var heights = SrtmHgtParser.ParseHeightsMeters(hgtBytes, out var size);
+                        GeoBounds bounds;
+                        
+                        if (SrtmTileId.TryParse(tile, out var parsedTile))
+                        {
+                            bounds = parsedTile.ToBounds();
+                        }
+                        else
+                        {
+                            // Fallback bounds if tile ID parsing fails
+                            bounds = new GeoBounds
+                            {
+                                MinLatitude = new Latitude(0),
+                                MaxLatitude = new Latitude(1),
+                                MinLongitude = new Longitude(0),
+                                MaxLongitude = new Longitude(1)
+                            };
+                        }
+
+                        var midLatRad = (bounds.MinLatitude.Degrees + bounds.MaxLatitude.Degrees) * 0.5 * (Math.PI / 180.0);
+                        var metersPerDegLat = 111_320.0;
+                        var metersPerDegLon = 111_320.0 * Math.Cos(midLatRad);
+                        var degPerSample = 1.0 / (size - 1);
+                        var spacing = new GridSpacing(
+                            metersX: metersPerDegLon * degPerSample,
+                            metersY: metersPerDegLat * degPerSample);
+                        var grid = new ElevationGrid(size, size, bounds, spacing, heights);
+                        var corruptionReport = DataIntegrityChecker.DetectCorruption(grid, _logger);
+                        integrityReport = new
+                        {
+                            isCorrupted = corruptionReport.IsCorrupted,
+                            issues = corruptionReport.Issues,
+                            noDataCount = corruptionReport.NoDataCount,
+                            suspiciousValueCount = corruptionReport.SuspiciousValueCount,
+                            minElevation = corruptionReport.MinElevation,
+                            maxElevation = corruptionReport.MaxElevation
+                        };
+                        if (corruptionReport.IsCorrupted && !json)
+                        {
+                            Console.Error.WriteLine($"WARNING: Data integrity issues detected:");
+                            foreach (var issue in corruptionReport.Issues)
+                            {
+                                Console.Error.WriteLine($"  - {issue}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to validate tile integrity");
+                        if (!json)
+                        {
+                            Console.Error.WriteLine($"WARNING: Could not validate integrity: {ex.Message}");
+                        }
+                    }
+                }
+
+                // For mesh quality: validate mesh if available
+                if (meshQualityReport && mesh != null)
+                {
+                    try
+                    {
+                        var triangleQuality = MeshQualityMetrics.ComputeTriangleQuality(mesh);
+                        var normalConsistency = MeshQualityMetrics.ComputeNormalConsistency(mesh);
+                        var maxSlope = MeshQualityMetrics.ValidateMaxSlope(mesh);
+
+                        qualityReport = new
+                        {
+                            triangleQuality = new
+                            {
+                                triangleQuality.MinAspectRatio,
+                                triangleQuality.MaxAspectRatio,
+                                triangleQuality.AverageAspectRatio,
+                                triangleQuality.SliverTriangleCount,
+                                triangleQuality.TotalTriangles
+                            },
+                            normalConsistency = new
+                            {
+                                normalConsistency.AverageDotProduct,
+                                normalConsistency.InconsistentNormalCount
+                            },
+                            maxSlope = new
+                            {
+                                maxSlope.MaxSlopeDegrees,
+                                maxSlope.SteepSlopeCount
+                            }
+                        };
+
+                        if (!json)
+                        {
+                            Console.Out.WriteLine($"Mesh Quality Report:");
+                            Console.Out.WriteLine($"  Triangles: {triangleQuality.TotalTriangles}");
+                            Console.Out.WriteLine($"  Sliver triangles: {triangleQuality.SliverTriangleCount}");
+                            Console.Out.WriteLine($"  Aspect ratio: {triangleQuality.MinAspectRatio:F3} - {triangleQuality.MaxAspectRatio:F3} (avg: {triangleQuality.AverageAspectRatio:F3})");
+                            Console.Out.WriteLine($"  Max slope: {maxSlope.MaxSlopeDegrees:F1}°");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to generate mesh quality report");
+                        if (!json)
+                        {
+                            Console.Error.WriteLine($"WARNING: Could not generate quality report: {ex.Message}");
+                        }
+                    }
+                }
             }
 
             DirectoryOps.EnsureParentDirectoryExists(output.FullName);
@@ -222,7 +364,11 @@ public class GeoTerrainCommand : IGeoTerrainCommand
                 provider,
                 airGapped,
                 errors,
-                steps
+                warnings = warnings.Count > 0 ? warnings : null,
+                partialFailures = partialFailures.Count > 0 ? partialFailures : null,
+                steps,
+                integrityReport,
+                qualityReport
             };
 
             if (json)

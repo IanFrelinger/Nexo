@@ -103,11 +103,117 @@ Download generated terrain mesh.
 curl -O https://api.nexo.example.com/api/v1/geoterrain/jobs/abc123def456/download?format=glb
 ```
 
+#### POST `/api/v1/geoterrain/validate-integrity`
+
+Validate data integrity of elevation grid for given bounds.
+
+**Request Body:**
+```json
+{
+  "bounds": "37.7749,-122.4194,37.8049,-122.3894"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "isValid": true,
+  "issues": []
+}
+```
+
+**Parameters:**
+- `bounds` (required): Geographic bounds as "minLat,minLon,maxLat,maxLon"
+
+**Note:** This endpoint validates projection parameters. For full corruption detection including elevation grid analysis, use the terrain generation endpoint with validation flags.
+
+**Example:**
+```bash
+curl -X POST https://api.nexo.example.com/api/v1/geoterrain/validate-integrity \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bounds": "37.7749,-122.4194,37.8049,-122.3894"
+  }'
+```
+
+#### POST `/api/v1/geoterrain/validate-mesh`
+
+Validate mesh quality and integrity.
+
+**Request Body:**
+```json
+{
+  "meshPath": "/path/to/mesh.obj",
+  "sourceGridPath": "/path/to/source.grid"
+}
+```
+
+**Response:** `501 Not Implemented` (currently returns helpful error message with alternatives)
+
+**Note:** Mesh validation from file path is not yet fully implemented. To validate mesh quality:
+1. Use the CLI: `nexo geoterrain bounds-to-obj --bounds ... --mesh-quality-report --output mesh.obj`
+2. Use the programmatic SDK: `MeshQualityMetrics.ComputeTriangleQuality(mesh)`
+
 ---
 
 ### Vector Feature Extraction
 
 #### POST `/api/v1/geovector/extract`
+
+Extract vector features from geographic bounds (generic endpoint).
+
+#### POST `/api/v1/geovector/extract/roads`
+
+Extract roads from geographic bounds (dedicated endpoint).
+
+**Request Body:** Same as `/extract` but `featureKind` is automatically set to "road"
+
+**Example:**
+```bash
+curl -X POST https://api.nexo.example.com/api/v1/geovector/extract/roads \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+    "vectorProvider": "osm",
+    "format": "geojson"
+  }'
+```
+
+#### POST `/api/v1/geovector/extract/water`
+
+Extract water features from geographic bounds (dedicated endpoint).
+
+**Request Body:** Same as `/extract` but `featureKind` is automatically set to "water"
+
+**Example:**
+```bash
+curl -X POST https://api.nexo.example.com/api/v1/geovector/extract/water \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+    "vectorProvider": "osm",
+    "format": "geojson"
+  }'
+```
+
+#### POST `/api/v1/geovector/extract/vegetation`
+
+Extract vegetation from geographic bounds (dedicated endpoint).
+
+**Request Body:** Same as `/extract` but `featureKind` is automatically set to "vegetation"
+
+**Example:**
+```bash
+curl -X POST https://api.nexo.example.com/api/v1/geovector/extract/vegetation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bounds": "37.7749,37.8049,-122.4194,-122.3894",
+    "vectorProvider": "osm",
+    "format": "geojson"
+  }'
+```
+
+#### POST `/api/v1/geovector/extract` (Generic)
 
 Extract vector features from geographic bounds.
 

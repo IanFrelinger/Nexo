@@ -33,6 +33,8 @@ public interface IGeoTerrainCommand
         bool enableCache,
         bool airGapped,
         bool forceAgenticFail,
+        bool validateIntegrity,
+        bool meshQualityReport,
         string? cacheRoot,
         bool persistCache,
         bool json,

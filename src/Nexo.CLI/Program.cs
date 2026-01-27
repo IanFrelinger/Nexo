@@ -412,6 +412,8 @@ static class Program
         tileToObjCmd.AddOption(persistCacheOpt);
         tileToObjCmd.AddOption(airgapOpt);
         tileToObjCmd.AddOption(forceAgenticFailOpt);
+        tileToObjCmd.AddOption(validateIntegrityOpt);
+        tileToObjCmd.AddOption(meshQualityReportOpt);
 
         tileToObjCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -426,6 +428,8 @@ static class Program
             var persistCache = ctx.ParseResult.GetValueForOption(persistCacheOpt);
             var airgap = ctx.ParseResult.GetValueForOption(airgapOpt);
             var forceAgenticFail = ctx.ParseResult.GetValueForOption(forceAgenticFailOpt);
+            var validateIntegrity = ctx.ParseResult.GetValueForOption(validateIntegrityOpt);
+            var meshQualityReport = ctx.ParseResult.GetValueForOption(meshQualityReportOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
 
@@ -439,6 +443,8 @@ static class Program
                 cache,
                 airgap,
                 forceAgenticFail,
+                validateIntegrity,
+                meshQualityReport,
                 cacheRoot,
                 persistCache,
                 json,

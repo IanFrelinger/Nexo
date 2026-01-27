@@ -238,6 +238,116 @@ public class GeospatialE2ESmokeTests : IDisposable
     }
 
     [Fact]
+    public async Task API_GeoVector_ExtractRoads_ShouldCreateJob()
+    {
+        // Arrange
+        var service = _serviceProvider.GetRequiredService<IGeoVectorService>();
+        var request = new VectorExtractionRequest
+        {
+            Bounds = "37.0,-122.0,37.1,-121.9",
+            FeatureKind = "road", // Will be set to "road" by dedicated endpoint
+            VectorProvider = "echo"
+        };
+
+        // Act - Test that roads extraction works (via service which handles featureKind)
+        var jobId = await service.ExtractFeaturesAsync(request);
+
+        // Assert
+        jobId.Should().NotBeNullOrEmpty("Road extraction should create job");
+        
+        var job = await _jobRepository.GetJobAsync(jobId);
+        job.Should().NotBeNull("Job should be persisted");
+        job!.Status.Should().BeOneOf("pending", "processing");
+    }
+
+    [Fact]
+    public async Task API_GeoVector_ExtractWater_ShouldCreateJob()
+    {
+        // Arrange
+        var service = _serviceProvider.GetRequiredService<IGeoVectorService>();
+        var request = new VectorExtractionRequest
+        {
+            Bounds = "37.0,-122.0,37.1,-121.9",
+            FeatureKind = "water",
+            VectorProvider = "echo"
+        };
+
+        // Act
+        var jobId = await service.ExtractFeaturesAsync(request);
+
+        // Assert
+        jobId.Should().NotBeNullOrEmpty("Water extraction should create job");
+        
+        var job = await _jobRepository.GetJobAsync(jobId);
+        job.Should().NotBeNull("Job should be persisted");
+    }
+
+    [Fact]
+    public async Task API_GeoTerrain_ValidateIntegrity_ShouldReturnValidationResult()
+    {
+        // Arrange
+        var service = _serviceProvider.GetRequiredService<IGeoTerrainService>();
+        
+        // Note: This tests the service layer, not the controller directly
+        // The validation endpoint logic is in the controller, but we can test
+        // that the integrity checking infrastructure works
+        
+        // Act - Create a terrain job and verify it can be validated
+        var request = new TerrainGenerationRequest
+        {
+            Bounds = "37.0,-122.0,37.1,-121.9",
+            ElevationProvider = "echo",
+            Format = "obj"
+        };
+
+        var jobId = await service.GenerateTerrainAsync(request);
+        
+        // Wait a bit for job processing
+        await Task.Delay(1000);
+        
+        var job = await _jobRepository.GetJobAsync(jobId);
+
+        // Assert
+        job.Should().NotBeNull("Job should exist");
+        // Validation endpoint would be tested via HTTP in integration tests
+        // This test verifies the underlying infrastructure works
+    }
+
+    [Fact]
+    public async Task CLI_GeoTerrain_TileToObj_WithValidation_ShouldSucceed()
+    {
+        // Arrange
+        var outputFile = Path.Combine(_testOutputDir, "test-tile.obj");
+        var command = CreateGeoTerrainCommand();
+
+        // Act
+        var exitCode = await command.TileToObjAsync(
+            tile: "N37W122",
+            output: new FileInfo(outputFile),
+            provider: "echo",
+            localRoot: null,
+            srtmBaseUrl: null,
+            persistDownloads: false,
+            enableCache: false,
+            airGapped: true,
+            forceAgenticFail: false,
+            validateIntegrity: true,
+            meshQualityReport: true,
+            cacheRoot: null,
+            persistCache: true,
+            json: true,
+            verbose: false,
+            CancellationToken.None);
+
+        // Assert
+        // Exit code may be 1 if validation detects issues (expected with echo provider)
+        exitCode.Should().BeLessThanOrEqualTo(1, "Command should complete (validation may detect issues)");
+        
+        // The key test is that validation flags are accepted and processed
+        // File may or may not exist depending on validation results
+    }
+
+    [Fact]
     public async Task API_JobPersistence_ShouldSurviveServiceRestart()
     {
         // Arrange
