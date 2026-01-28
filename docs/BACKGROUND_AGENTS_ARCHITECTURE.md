@@ -70,14 +70,101 @@ public class BackgroundAgentConfig
     public ExfiltrationPolicy ExfiltrationPolicy { get; set; }  // Policy for preventing data exfiltration
 }
 
-public enum DataSensitivityLevel
+/// <summary>
+/// Interface for data sensitivity levels - allows extensible, configurable sensitivity classification.
+/// 
+/// Framework provides primitive levels (Public, Internal, Confidential, Secret, TopSecret),
+/// but users can define custom sensitivity levels with their own ordering and restrictions.
+/// </summary>
+public interface IDataSensitivityLevel : ITypeValue
 {
-    Public,           // Public data, no restrictions
-    Internal,         // Internal use only
-    Confidential,     // Confidential, restricted access
-    Secret,          // Secret, highly restricted
-    TopSecret        // Top secret, maximum restrictions
+    /// <summary>
+    /// Numeric value for ordering (lower = less sensitive, higher = more sensitive).
+    /// </summary>
+    int SensitivityValue { get; }
+    
+    /// <summary>
+    /// Whether this level allows external LLM calls.
+    /// </summary>
+    bool AllowsExternalLLM { get; }
+    
+    /// <summary>
+    /// Whether this level allows web search.
+    /// </summary>
+    bool AllowsWebSearch { get; }
+    
+    /// <summary>
+    /// Whether this level requires local-only processing.
+    /// </summary>
+    bool RequiresLocalOnly { get; }
+    
+    /// <summary>
+    /// Whether this level allows network exports.
+    /// </summary>
+    bool AllowsNetworkExports { get; }
+    
+    /// <summary>
+    /// Description of this sensitivity level.
+    /// </summary>
+    string Description { get; }
 }
+
+/// <summary>
+/// Primitive sensitivity levels provided by the framework.
+/// </summary>
+public static class DataSensitivityLevels
+{
+    public static IDataSensitivityLevel Public { get; } = new PrimitiveSensitivityLevel(
+        "Public", 0, true, true, false, true, "Public data, no restrictions");
+    
+    public static IDataSensitivityLevel Internal { get; } = new PrimitiveSensitivityLevel(
+        "Internal", 1, true, true, false, true, "Internal use only");
+    
+    public static IDataSensitivityLevel Confidential { get; } = new PrimitiveSensitivityLevel(
+        "Confidential", 2, false, true, false, false, "Confidential, restricted access");
+    
+    public static IDataSensitivityLevel Secret { get; } = new PrimitiveSensitivityLevel(
+        "Secret", 3, false, false, false, false, "Secret, highly restricted");
+    
+    public static IDataSensitivityLevel TopSecret { get; } = new PrimitiveSensitivityLevel(
+        "TopSecret", 4, false, false, true, false, "Top secret, maximum restrictions");
+    
+    /// <summary>
+    /// Get sensitivity level by name (case-insensitive).
+    /// </summary>
+    public static IDataSensitivityLevel? FromName(string name)
+    {
+        return name?.ToLowerInvariant() switch
+        {
+            "public" => Public,
+            "internal" => Internal,
+            "confidential" => Confidential,
+            "secret" => Secret,
+            "topsecret" or "top-secret" => TopSecret,
+            _ => null
+        };
+    }
+    
+    /// <summary>
+    /// All primitive sensitivity levels in order.
+    /// </summary>
+    public static IReadOnlyList<IDataSensitivityLevel> All => new[]
+    {
+        Public, Internal, Confidential, Secret, TopSecret
+    };
+}
+
+/// <summary>
+/// Primitive sensitivity level implementation.
+/// </summary>
+private sealed record PrimitiveSensitivityLevel(
+    string Value,
+    int SensitivityValue,
+    bool AllowsExternalLLM,
+    bool AllowsWebSearch,
+    bool RequiresLocalOnly,
+    bool AllowsNetworkExports,
+    string Description) : IDataSensitivityLevel;
 
 public class RAGConfig
 {
@@ -87,7 +174,7 @@ public class RAGConfig
     public int MaxRetrievalResults { get; set; }      // Maximum number of results to retrieve
     public double SimilarityThreshold { get; set; }   // Minimum similarity score (0.0-1.0)
     public List<string>? KnowledgeSources { get; set; }  // Paths to knowledge sources (docs, code, etc.)
-    public DataSensitivityLevel MaxSourceSensitivity { get; set; }  // Max sensitivity of sources to index
+    public string MaxSourceSensitivity { get; set; }  // Max sensitivity level name of sources to index
 }
 
 public class WebSearchConfig
@@ -108,7 +195,7 @@ public class ExfiltrationPolicy
     public bool BlockNetworkExports { get; set; }     // Block network-based exports
     public bool RequireLocalOnly { get; set; }        // Require all processing to be local-only
     public List<string>? AllowedDestinations { get; set; }  // Whitelist of allowed destinations
-    public DataSensitivityLevel MaxAllowedLevel { get; set; }  // Maximum sensitivity level that can be processed
+    public string MaxAllowedLevel { get; set; }  // Maximum sensitivity level name that can be processed
 }
 
 public class BackgroundAgentSchedule
@@ -151,6 +238,16 @@ public enum ScheduleType
           "blockWebSearch": true,
           "blockNetworkExports": false,
           "maxAllowedLevel": "Internal"
+        },
+        "customSensitivityLevels": {
+          "CustomerData": {
+            "sensitivityValue": 2,
+            "allowsExternalLLM": false,
+            "allowsWebSearch": false,
+            "requiresLocalOnly": false,
+            "allowsNetworkExports": false,
+            "description": "Customer-specific data, GDPR protected"
+          }
         }
       },
       {
@@ -228,38 +325,162 @@ public enum ScheduleType
 
 ### Data Sensitivity Classification
 
-All data processed by background agents is classified with sensitivity levels:
+All data processed by background agents is classified with sensitivity levels. The framework provides primitive levels but allows custom sensitivity levels to be defined.
+
+#### Sensitivity Level Registry
+
+```csharp
+public interface IDataSensitivityRegistry
+{
+    /// <summary>
+    /// Register a custom sensitivity level.
+    /// </summary>
+    void Register(IDataSensitivityLevel level);
+    
+    /// <summary>
+    /// Get sensitivity level by name (checks both primitives and custom levels).
+    /// </summary>
+    IDataSensitivityLevel? GetByName(string name);
+    
+    /// <summary>
+    /// Get all registered sensitivity levels (primitives + custom).
+    /// </summary>
+    IReadOnlyList<IDataSensitivityLevel> GetAll();
+    
+    /// <summary>
+    /// Check if one level can access another (based on SensitivityValue).
+    /// </summary>
+    bool CanAccess(IDataSensitivityLevel agentLevel, IDataSensitivityLevel dataLevel);
+}
+
+public class DataSensitivityRegistry : IDataSensitivityRegistry
+{
+    private readonly ConcurrentDictionary<string, IDataSensitivityLevel> _customLevels = new();
+    
+    public void Register(IDataSensitivityLevel level)
+    {
+        _customLevels[level.Value] = level;
+    }
+    
+    public IDataSensitivityLevel? GetByName(string name)
+    {
+        // Check primitives first
+        var primitive = DataSensitivityLevels.FromName(name);
+        if (primitive != null)
+            return primitive;
+        
+        // Check custom levels
+        return _customLevels.TryGetValue(name, out var custom) ? custom : null;
+    }
+    
+    public IReadOnlyList<IDataSensitivityLevel> GetAll()
+    {
+        return DataSensitivityLevels.All
+            .Concat(_customLevels.Values)
+            .OrderBy(l => l.SensitivityValue)
+            .ToList();
+    }
+    
+    public bool CanAccess(IDataSensitivityLevel agentLevel, IDataSensitivityLevel dataLevel)
+    {
+        // Agent can only access data at or below its maximum sensitivity level
+        return dataLevel.SensitivityValue <= agentLevel.SensitivityValue;
+    }
+}
+```
+
+#### Data Sensitivity Marker
 
 ```csharp
 public interface IDataSensitivityMarker
 {
-    DataSensitivityLevel GetSensitivityLevel(object data);
-    void MarkSensitivity(object data, DataSensitivityLevel level);
-    bool CanAccess(DataSensitivityLevel agentLevel, DataSensitivityLevel dataLevel);
+    IDataSensitivityLevel GetSensitivityLevel(object data);
+    void MarkSensitivity(object data, IDataSensitivityLevel level);
+    void MarkSensitivity(object data, string levelName);
+    bool CanAccess(IDataSensitivityLevel agentLevel, object data);
 }
 
 public class DataSensitivityMarker : IDataSensitivityMarker
 {
-    private readonly ConcurrentDictionary<object, DataSensitivityLevel> _markings = new();
+    private readonly IDataSensitivityRegistry _registry;
+    private readonly ConcurrentDictionary<object, IDataSensitivityLevel> _markings = new();
     
-    public DataSensitivityLevel GetSensitivityLevel(object data)
+    public DataSensitivityMarker(IDataSensitivityRegistry registry)
+    {
+        _registry = registry;
+    }
+    
+    public IDataSensitivityLevel GetSensitivityLevel(object data)
     {
         return _markings.TryGetValue(data, out var level) 
             ? level 
-            : DataSensitivityLevel.Public;
+            : DataSensitivityLevels.Public;
     }
     
-    public void MarkSensitivity(object data, DataSensitivityLevel level)
+    public void MarkSensitivity(object data, IDataSensitivityLevel level)
     {
         _markings[data] = level;
     }
     
-    public bool CanAccess(DataSensitivityLevel agentLevel, DataSensitivityLevel dataLevel)
+    public void MarkSensitivity(object data, string levelName)
     {
-        // Agent can only access data at or below its maximum sensitivity level
-        return dataLevel <= agentLevel;
+        var level = _registry.GetByName(levelName) 
+            ?? throw new ArgumentException($"Unknown sensitivity level: {levelName}", nameof(levelName));
+        MarkSensitivity(data, level);
+    }
+    
+    public bool CanAccess(IDataSensitivityLevel agentLevel, object data)
+    {
+        var dataLevel = GetSensitivityLevel(data);
+        return _registry.CanAccess(agentLevel, dataLevel);
     }
 }
+```
+
+#### Custom Sensitivity Level Configuration
+
+```csharp
+public class CustomSensitivityLevel
+{
+    public string Name { get; set; } = string.Empty;
+    public int SensitivityValue { get; set; }
+    public bool AllowsExternalLLM { get; set; }
+    public bool AllowsWebSearch { get; set; }
+    public bool RequiresLocalOnly { get; set; }
+    public bool AllowsNetworkExports { get; set; }
+    public string Description { get; set; } = string.Empty;
+}
+
+public class CustomSensitivityLevelFactory
+{
+    private readonly IDataSensitivityRegistry _registry;
+    
+    public void RegisterFromConfig(Dictionary<string, CustomSensitivityLevel> config)
+    {
+        foreach (var (name, configLevel) in config)
+        {
+            var level = new ConfigurableSensitivityLevel(
+                name,
+                configLevel.SensitivityValue,
+                configLevel.AllowsExternalLLM,
+                configLevel.AllowsWebSearch,
+                configLevel.RequiresLocalOnly,
+                configLevel.AllowsNetworkExports,
+                configLevel.Description);
+            
+            _registry.Register(level);
+        }
+    }
+}
+
+private sealed record ConfigurableSensitivityLevel(
+    string Value,
+    int SensitivityValue,
+    bool AllowsExternalLLM,
+    bool AllowsWebSearch,
+    bool RequiresLocalOnly,
+    bool AllowsNetworkExports,
+    string Description) : IDataSensitivityLevel;
 ```
 
 ### Exfiltration Prevention Policy
@@ -287,8 +508,16 @@ public class DataExfiltrationPolicy : IPolicy
             var data = ExtractDataFromToolCall(call);
             var sensitivity = _sensitivityMarker.GetSensitivityLevel(data);
             
+            // Get max allowed level from registry
+            var maxAllowed = _sensitivityRegistry.GetByName(_config.MaxAllowedLevel);
+            if (maxAllowed == null)
+            {
+                reason = $"Unknown sensitivity level: {_config.MaxAllowedLevel}";
+                return false;
+            }
+            
             // Check policy restrictions
-            if (sensitivity > _config.MaxAllowedLevel)
+            if (!_sensitivityRegistry.CanAccess(maxAllowed, sensitivity))
             {
                 reason = $"Data sensitivity {sensitivity} exceeds allowed level {_config.MaxAllowedLevel}";
                 return false;
@@ -777,14 +1006,29 @@ public class BackgroundAgentConfigLoader
         // Validate exfiltration policy
         if (config.ExfiltrationPolicy == null)
         {
-            // Set defaults based on data sensitivity
+            // Get sensitivity level to determine defaults
+            var sensitivityLevel = _sensitivityRegistry.GetByName(config.MaxDataSensitivity);
+            if (sensitivityLevel == null)
+            {
+                throw new InvalidOperationException($"Unknown sensitivity level: {config.MaxDataSensitivity}");
+            }
+            
+            // Set defaults based on sensitivity level properties
             config.ExfiltrationPolicy = new ExfiltrationPolicy
             {
                 MaxAllowedLevel = config.MaxDataSensitivity,
-                BlockExternalLLMs = config.MaxDataSensitivity >= DataSensitivityLevel.Confidential,
-                BlockWebSearch = config.MaxDataSensitivity >= DataSensitivityLevel.Secret,
-                RequireLocalOnly = config.MaxDataSensitivity >= DataSensitivityLevel.TopSecret
+                BlockExternalLLMs = !sensitivityLevel.AllowsExternalLLM,
+                BlockWebSearch = !sensitivityLevel.AllowsWebSearch,
+                RequireLocalOnly = sensitivityLevel.RequiresLocalOnly,
+                BlockNetworkExports = !sensitivityLevel.AllowsNetworkExports
             };
+        }
+        
+        // Register custom sensitivity levels if provided
+        if (config.CustomSensitivityLevels != null && config.CustomSensitivityLevels.Any())
+        {
+            var factory = new CustomSensitivityLevelFactory(_sensitivityRegistry);
+            factory.RegisterFromConfig(config.CustomSensitivityLevels);
         }
     }
 }
@@ -813,10 +1057,18 @@ public class BackgroundAgentSpecBuilder
             dependencies.Add(config.ParentId);
         }
         
+        // Get sensitivity level to include in parameters
+        var sensitivityLevel = _sensitivityRegistry.GetByName(config.MaxDataSensitivity);
+        if (sensitivityLevel == null)
+        {
+            throw new InvalidOperationException($"Unknown sensitivity level: {config.MaxDataSensitivity}");
+        }
+        
         // Add RAG and web search capabilities to parameters
         var parameters = new Dictionary<string, object>(config.Parameters ?? new Dictionary<string, object>())
         {
-            ["maxDataSensitivity"] = config.MaxDataSensitivity.ToString(),
+            ["maxDataSensitivity"] = config.MaxDataSensitivity,
+            ["maxDataSensitivityValue"] = sensitivityLevel.SensitivityValue,
             ["hasRAG"] = config.RAG?.Enabled == true,
             ["hasWebSearch"] = config.WebSearch?.Enabled == true
         };
@@ -838,8 +1090,9 @@ public class BackgroundAgentSpecBuilder
 Your available commands are:
 {string.Join("\n", config.Commands.Select(c => $"- {c}"))}
 
-IMPORTANT: You can only access data with sensitivity level {config.MaxDataSensitivity} or lower.
-Any data marked as more sensitive will be automatically blocked.";
+IMPORTANT: You can only access data with sensitivity level {config.MaxDataSensitivity} (value: {sensitivityLevel.SensitivityValue}) or lower.
+Any data marked as more sensitive will be automatically blocked.
+Restrictions: External LLM={sensitivityLevel.AllowsExternalLLM}, Web Search={sensitivityLevel.AllowsWebSearch}, Local Only={sensitivityLevel.RequiresLocalOnly}.";
         
         if (config.RAG?.Enabled == true)
         {
@@ -1111,7 +1364,10 @@ services.AddBackgroundAgents(options =>
 - BackgroundAgentRegistry
 - BackgroundAgentConfigLoader
 - Basic configuration file support
+- IDataSensitivityLevel interface and primitive levels
+- DataSensitivityRegistry for extensible sensitivity levels
 - DataSensitivityMarker and classification system
+- CustomSensitivityLevelFactory for config-based levels
 - ExfiltrationPolicy implementation
 
 ### Phase 2: Agent Creation & Security (Week 3)
