@@ -140,14 +140,52 @@ nexo aggregate junit --pattern "*.junit.xml"
 - Configurable output file and search pattern
 - Aggregates test counts, failures, and execution time
 
+### 6. Docker Command (`nexo docker`)
+
+**Location:** `src/Nexo.CLI/Commands/DockerCommand.cs`
+
+**Replaces:**
+- Direct Docker CLI calls in test scripts
+- Docker operations embedded in bash scripts
+
+**Usage:**
+```bash
+# Build a Docker image
+nexo docker build --dockerfile .docker/Dockerfile.test --tag nexo-test:latest
+
+# Run a container
+nexo docker run --image nexo-test:latest --command "dotnet test"
+
+# List containers
+nexo docker ps
+nexo docker ps --all
+
+# List images
+nexo docker images
+
+# Clean up resources
+nexo docker clean --image nexo-test:latest
+nexo docker clean --container <container-id>
+nexo docker clean --all
+```
+
+**Subcommands:**
+- `nexo docker build` - Build Docker images from Dockerfiles
+- `nexo docker run` - Run containers with commands
+- `nexo docker ps` - List containers
+- `nexo docker images` - List images
+- `nexo docker clean` - Clean up images and containers
+
+**Features:**
+- Uses `DockerService` for portable Docker operations
+- Cross-platform support (Windows, Linux, macOS)
+- JSON output for CI/CD
+- Progress reporting for builds
+- Automatic container cleanup
+
 ## 🚧 Remaining Work
 
-### High Priority
-
-1. **Docker Command** (`nexo docker`)
-   - Replace: Direct docker CLI calls
-   - Use: `IExecutionPlatform` for all Docker operations
-   - Commands: `build`, `run`, `clean`
+### Medium Priority
 
 ### Medium Priority
 
@@ -208,14 +246,14 @@ nexo aggregate junit --pattern "*.junit.xml"
 ## Progress Summary
 
 - **Total Scripts:** 32
-- **Replaced:** 13 (41%)
-- **High Priority Remaining:** 1 (`nexo docker`)
+- **Replaced:** 14 (44%)
+- **High Priority Remaining:** 0 ✅ (All high-priority items completed!)
 - **Medium Priority Remaining:** 2 (Unity enhancements, test enhancements)
 - **Low Priority Remaining:** 2 (utility scripts)
 
 ## Next Steps
 
-1. Implement `nexo docker` command (High Priority)
+1. ✅ **DONE:** Implement `nexo docker` command (High Priority)
 2. Enhance `nexo test` with coverage/stress/visual validation flags (Medium Priority)
 3. Enhance `nexo unity` with missing subcommands (Medium Priority)
 4. Test all commands on all platforms

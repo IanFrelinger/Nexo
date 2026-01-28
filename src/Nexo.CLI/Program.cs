@@ -1202,6 +1202,10 @@ static class Program
         var aggregateCmd = new AggregateCommand();
         root.AddCommand(aggregateCmd);
 
+        // nexo docker
+        var dockerCmd = new DockerCommand();
+        root.AddCommand(dockerCmd);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
