@@ -1190,6 +1190,18 @@ static class Program
         worldCmd.AddCommand(worldValidateCmd);
         root.AddCommand(worldCmd);
 
+        // nexo build
+        var buildCmd = new BuildCommand();
+        root.AddCommand(buildCmd);
+
+        // nexo ci
+        var ciCmd = new CiCommand();
+        root.AddCommand(ciCmd);
+
+        // nexo aggregate
+        var aggregateCmd = new AggregateCommand();
+        root.AddCommand(aggregateCmd);
+
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
