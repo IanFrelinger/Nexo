@@ -172,22 +172,28 @@ static class Program
         var executionPlatformOpt = testCmd.Options[4] as Option<string> ?? throw new InvalidOperationException();
         var outputDirOpt = testCmd.Options[5] as Option<DirectoryInfo> ?? throw new InvalidOperationException();
         
-        testCmd.SetHandler(
-            async (string[] platforms, string? project, string? filter, string dotnetVersion, 
-                   string executionPlatform, DirectoryInfo outputDir, bool json, bool verbose) =>
-            {
-                var exitCode = await MultiPlatformTestCommand.ExecuteAsync(
-                    platforms, project, filter, dotnetVersion, executionPlatform, outputDir, json, verbose, serviceProvider);
-                Environment.Exit(exitCode);
-            },
-            platformsOpt,
-            projectOpt,
-            filterOpt,
-            dotnetVersionOpt,
-            executionPlatformOpt,
-            outputDirOpt,
-            jsonOpt,
-            verboseOpt);
+        var coverageOpt = new Option<bool>("--coverage", () => false, "Enable code coverage collection");
+        var stressOpt = new Option<bool>("--stress", () => false, "Run stress tests (multiple iterations)");
+        testCmd.AddOption(coverageOpt);
+        testCmd.AddOption(stressOpt);
+
+        testCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var platforms = ctx.ParseResult.GetValueForOption(platformsOpt) ?? Array.Empty<string>();
+            var project = ctx.ParseResult.GetValueForOption(projectOpt);
+            var filter = ctx.ParseResult.GetValueForOption(filterOpt);
+            var dotnetVersion = ctx.ParseResult.GetValueForOption(dotnetVersionOpt) ?? "8.0";
+            var executionPlatform = ctx.ParseResult.GetValueForOption(executionPlatformOpt) ?? "docker";
+            var outputDir = ctx.ParseResult.GetValueForOption(outputDirOpt) ?? new DirectoryInfo("test-results");
+            var coverage = ctx.ParseResult.GetValueForOption(coverageOpt);
+            var stress = ctx.ParseResult.GetValueForOption(stressOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
+            
+            var exitCode = await MultiPlatformTestCommand.ExecuteAsync(
+                platforms, project, filter, dotnetVersion, executionPlatform, outputDir, coverage, stress, json, verbose, serviceProvider);
+            Environment.Exit(exitCode);
+        });
         // nexo test local - Run tests locally (replaces test-local.sh)
         var testLocalCmd = new Command("local", "Run tests locally using framework test runner")
         {
@@ -1205,6 +1211,14 @@ static class Program
         // nexo docker
         var dockerCmd = new DockerCommand();
         root.AddCommand(dockerCmd);
+
+        // nexo diff
+        var diffCmd = new DiffCommand();
+        root.AddCommand(diffCmd);
+
+        // nexo report
+        var reportCmd = new ReportCommand();
+        root.AddCommand(reportCmd);
 
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);

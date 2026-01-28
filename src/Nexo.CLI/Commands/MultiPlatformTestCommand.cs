@@ -55,12 +55,26 @@ public class MultiPlatformTestCommand : Command
             "Directory for test results"
         );
 
+        var coverageOption = new Option<bool>(
+            "--coverage",
+            () => false,
+            "Enable code coverage collection"
+        );
+
+        var stressOption = new Option<bool>(
+            "--stress",
+            () => false,
+            "Run stress tests (multiple iterations)"
+        );
+
         AddOption(platformsOption);
         AddOption(testProjectOption);
         AddOption(filterOption);
         AddOption(dotnetVersionOption);
         AddOption(executionPlatformOption);
         AddOption(outputDirOption);
+        AddOption(coverageOption);
+        AddOption(stressOption);
     }
 
     public static async Task<int> ExecuteAsync(
@@ -70,6 +84,8 @@ public class MultiPlatformTestCommand : Command
         string dotnetVersion,
         string executionPlatform,
         DirectoryInfo outputDir,
+        bool coverage,
+        bool stress,
         bool json,
         bool verbose,
         IServiceProvider? serviceProvider = null)

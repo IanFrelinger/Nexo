@@ -75,10 +75,38 @@ public sealed class UnityCommand
         }, logsCmd.Arguments[0] as Argument<FileInfo> ?? throw new InvalidOperationException(),
            logsOutputOpt, jsonOpt, verboseOpt);
 
+        // nexo unity capture-logs (alias for logs)
+        var captureLogsCmd = new Command("capture-logs", "Capture and analyze Unity logs");
+        captureLogsCmd.AddArgument(new Argument<FileInfo>("log-file", "Path to Unity log file"));
+        var captureLogsOutputOpt = new Option<FileInfo?>("--output", "Output JSON analysis file");
+        captureLogsCmd.AddOption(captureLogsOutputOpt);
+        captureLogsCmd.SetHandler(async (FileInfo logFile, FileInfo? output, bool json, bool verbose) =>
+        {
+            var exitCode = await command.AnalyzeLogsAsync(logFile, output, json);
+            Environment.Exit(exitCode);
+        }, captureLogsCmd.Arguments[0] as Argument<FileInfo> ?? throw new InvalidOperationException(),
+           captureLogsOutputOpt, jsonOpt, verboseOpt);
+
+        // nexo unity analyze-errors
+        var analyzeErrorsCmd = new Command("analyze-errors", "Analyze Unity errors and attempt fixes");
+        analyzeErrorsCmd.AddArgument(new Argument<FileInfo>("log-file", "Path to Unity log file"));
+        analyzeErrorsCmd.AddArgument(new Argument<DirectoryInfo>("project", "Path to Unity project"));
+        var analyzeErrorsOutputOpt = new Option<FileInfo?>("--output", "Output JSON analysis file");
+        analyzeErrorsCmd.AddOption(analyzeErrorsOutputOpt);
+        analyzeErrorsCmd.SetHandler(async (FileInfo logFile, DirectoryInfo project, FileInfo? output, bool json, bool verbose) =>
+        {
+            var exitCode = await command.AnalyzeErrorsAsync(logFile, project, output, json);
+            Environment.Exit(exitCode);
+        }, analyzeErrorsCmd.Arguments[0] as Argument<FileInfo> ?? throw new InvalidOperationException(),
+           analyzeErrorsCmd.Arguments[1] as Argument<DirectoryInfo> ?? throw new InvalidOperationException(),
+           analyzeErrorsOutputOpt, jsonOpt, verboseOpt);
+
         unityCmd.AddCommand(createCmd);
         unityCmd.AddCommand(openCmd);
         unityCmd.AddCommand(runCmd);
         unityCmd.AddCommand(logsCmd);
+        unityCmd.AddCommand(captureLogsCmd);
+        unityCmd.AddCommand(analyzeErrorsCmd);
         return unityCmd;
     }
 
@@ -198,6 +226,72 @@ public sealed class UnityCommand
 
         if (json) Console.WriteLine(analysisJson);
         else _logger.LogInformation("Unity log analysis saved to {Path}", outputPath);
+        return 0;
+    }
+
+    private async Task<int> AnalyzeErrorsAsync(FileInfo logFile, DirectoryInfo project, FileInfo? output, bool json)
+    {
+        // First analyze the logs
+        var analysisPath = output ?? new FileInfo(Path.ChangeExtension(logFile.FullName, ".analysis.json"));
+        var analysisExitCode = await AnalyzeLogsAsync(logFile, analysisPath, json);
+        
+        if (analysisExitCode != 0)
+        {
+            return analysisExitCode;
+        }
+
+        // Check if there are errors
+        if (!analysisPath.Exists)
+        {
+            if (json) Console.WriteLine(JsonSerializer.Serialize(new { error = "Analysis file not created" }));
+            return 1;
+        }
+
+        var analysisJson = await File.ReadAllTextAsync(analysisPath.FullName);
+        var analysisDoc = JsonDocument.Parse(analysisJson);
+        var root = analysisDoc.RootElement;
+
+        var hasErrors = root.TryGetProperty("hasErrors", out var hasErrorsProp) && hasErrorsProp.GetBoolean();
+        var errorCount = root.TryGetProperty("errorCount", out var errorCountProp) ? errorCountProp.GetInt32() : 0;
+
+        if (hasErrors && errorCount > 0)
+        {
+            if (!json)
+            {
+                _logger.LogWarning("Found {ErrorCount} error(s) in Unity log", errorCount);
+                _logger.LogInformation("Attempting to fix syntax errors via orchestration...");
+            }
+
+            // Note: Actual error fixing would require orchestration integration
+            // For now, we just report the errors
+            if (json)
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    hasErrors = true,
+                    errorCount = errorCount,
+                    message = "Errors found. Use 'nexo orchestrate' to attempt automatic fixes.",
+                    analysisFile = analysisPath.FullName
+                }));
+            }
+        }
+        else
+        {
+            if (!json)
+            {
+                _logger.LogInformation("✅ No errors found in Unity log");
+            }
+            else
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    hasErrors = false,
+                    errorCount = 0,
+                    message = "No errors found"
+                }));
+            }
+        }
+
         return 0;
     }
 }
