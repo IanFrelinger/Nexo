@@ -38,16 +38,19 @@ git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
 dotnet build
 
-# Run CLI demo commands
-dotnet run --project src/Nexo.CLI -- demo test "https://example.com" "Test the application"
+# Run CLI commands
+dotnet run --project src/Nexo.CLI -- analyze --path .
+dotnet run --project src/Nexo.CLI -- agent --name SecurityScan
+dotnet run --project src/Nexo.CLI -- orchestrate "build authentication system"
 
 # Or install as global tool
 dotnet tool install --global Nexo.CLI
-nexo demo test "https://example.com" "Test the application"
-nexo demo dev "Add a feature" "./MyProject"
+nexo analyze --path .
+nexo agent --name SecurityScan
+nexo orchestrate "build authentication system"
 ```
 
-**See it in action:** [Quick Start Guide](docs/QUICK_START.md) | [Architecture Overview](docs/ARCHITECTURE.md)
+**See it in action:** [Architecture Overview](docs/ARCHITECTURE.md) | [CLI Reference](docs/CLI_REFERENCE.md)
 
 ---
 
@@ -85,6 +88,40 @@ nexo demo dev "Add a feature" "./MyProject"
 
 ---
 
+## Framework Architecture
+
+### Three-Layer Composition Model
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         COMPOSITION HIERARCHY               │
+│                                                             │
+│   AGENT          →  Persona with memory, constraints,       │
+│   (uses behaviors)   platform bindings                      │
+│                                                             │
+│   BEHAVIOR       →  Composed workflow solving a use case    │
+│   (uses bricks)     Steps with input/output mapping,        │
+│                     failure policies                        │
+│                                                             │
+│   BRICK          →  Atomic unit with dual implementation    │
+│                     ⚙️ Deterministic | 🤖 Agentic            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Core Abstractions
+
+- **`IAgent`**: Agents that observe the world and make decisions
+- **`ITool`**: Tools that agents can invoke to perform actions
+- **`IPolicy`**: Policies that approve/reject tool calls
+- **`IModel`**: LLM models for AI operations
+- **`IToolbox`**: Tool registry and memory provider
+- **`IAgentMemory`**: Agent event storage and retrieval
+
+See [Architecture Guide](docs/ARCHITECTURE.md) for details.
+
+---
+
 ## Built for Regulated Industries
 
 | Capability | Status |
@@ -99,16 +136,99 @@ nexo demo dev "Add a feature" "./MyProject"
 
 ---
 
-## Architecture
+## Framework Capabilities
 
-```
-BRICK      → Atomic unit with dual ⚙️/🤖 implementation
-BEHAVIOR   → Composed workflow of bricks  
-AGENT      → Persona that executes behaviors
-CLUSTER    → Reusable group of bricks (combos)
+### Agent Orchestration
+
+- **Multi-agent coordination**: Coordinate multiple agents working on complex tasks
+- **Conflict resolution**: Automatic detection and resolution of agent conflicts
+- **Negotiation protocol**: Agents negotiate to resolve constraints and dependencies
+- **Progress tracking**: Real-time progress monitoring across agent workflows
+- **Error recovery**: Automatic error recovery and retry mechanisms
+
+### Execution Platform Abstraction
+
+- **Multi-platform testing**: Test on Windows, macOS, Linux, Android, iOS, Unity
+- **Execution platforms**: Docker, Rancher, Kubernetes support
+- **Portable testing**: Write once, run anywhere
+- **Platform-specific adapters**: Native execution for iOS/macOS, containerized for others
+
+### Resilience & Reliability
+
+- **Circuit breakers**: Prevent cascading failures
+- **Retry policies**: Exponential backoff and configurable retry strategies
+- **Rate limiting**: Protect downstream services from overload
+- **Health monitoring**: Agent and system health checks
+
+### CLI & Tooling
+
+- **Comprehensive CLI**: Self-contained command system replacing external scripts
+- **Multi-platform testing**: `nexo test` with platform selection
+- **Build & CI**: `nexo build`, `nexo ci` for continuous integration
+- **Docker integration**: `nexo docker` for container management
+- **Unity integration**: `nexo unity` for Unity Editor operations
+- **Analysis & validation**: Code analysis, architecture validation, agent execution
+
+### SDK & Programmatic API
+
+- **NuGet packages**: Install as library dependencies
+- **Fluent APIs**: Type-safe, async/await patterns
+- **Resource estimation**: Built-in cost and memory estimation
+- **Event-driven**: Subscribe to agent events and workflow progress
+
+---
+
+## CLI Commands
+
+### Core Commands
+
+```bash
+# Code analysis and validation
+nexo analyze --path .                    # Run code analyzers
+nexo validate                            # Run architecture tests
+
+# Agent execution
+nexo agent --name SecurityScan           # Execute specific agent
+nexo orchestrate "build auth system"     # Multi-agent orchestration
+
+# Testing
+nexo test                                # Run tests on all platforms
+nexo test --platforms ubuntu android    # Test specific platforms
+nexo test local                          # Run tests locally
+
+# Build and CI
+nexo build --portable                    # Build portable projects
+nexo ci verify                           # Verify CI setup
+nexo ci check-promotion                  # Check promotion criteria
+
+# Docker operations
+nexo docker build --image myapp          # Build Docker image
+nexo docker run --image myapp            # Run container
+nexo docker clean                        # Clean up resources
+
+# Unity integration
+nexo unity create-project ./MyProject    # Create Unity project
+nexo unity analyze-errors                # Analyze Unity errors
+
+# Demo commands
+nexo demo test "https://example.com" "Test checkout flow"
+nexo demo dev "Add save system" "./MyGame"
 ```
 
-See [Architecture Guide](docs/ARCHITECTURE.md) for details.
+See [CLI Reference](docs/CLI_REFERENCE.md) for complete command documentation.
+
+---
+
+## Example Applications
+
+Nexo is a framework that can be used to build various applications. Example applications include:
+
+- **Geospatial Processing**: Terrain generation, vector feature extraction, world bundle creation
+- **Security Analysis**: Vulnerability scanning, compliance checking, security audits
+- **Code Generation**: Autonomous code generation with testing and validation
+- **Game Development**: Unity integration, asset generation, playtesting automation
+
+These applications demonstrate the framework's capabilities but are not the focus of the framework itself.
 
 ---
 
@@ -122,57 +242,20 @@ See [Architecture Guide](docs/ARCHITECTURE.md) for details.
 | Architecture Tests | 18 |
 | Code Reuse (cross-framework) | ~80% |
 | Cloud Dependencies Required | 0 |
+| Supported Platforms | 7+ (Windows, macOS, Linux, Android, iOS, Unity, Web) |
 
 ---
-
-## Geospatial Capabilities
-
-Nexo includes comprehensive geospatial processing capabilities:
-
-- **Terrain Generation**: Generate 3D terrain meshes from SRTM, GeoTIFF, Mapbox, and other elevation sources
-- **Vector Feature Extraction**: Extract buildings, roads, water, and other features from OSM, Mapbox, GeoJSON, and Shapefiles
-- **World Bundle Generation**: Create complete world bundles with terrain, features, and metadata
-- **Resource Estimation**: Built-in cost and memory footprint estimation for all operations
-- **Multiple Formats**: Support for OBJ, glTF, GLB, FBX, USD, GeoJSON, and more
-
-**SDK Example:**
-```csharp
-using Nexo.SDK;
-using Nexo.SDK.Estimation;
-
-var estimator = new ResourceEstimationService();
-var client = new GeoTerrainClient(elevationProvider, logger, estimator);
-
-var result = await client.GenerateMeshWithEstimationAsync(bounds);
-Console.WriteLine($"Cost: ${result.Actual?.CostUsd:F4}, Memory: {result.Actual?.MemoryMegabytes:F2} MB");
-```
-
-See [Geospatial User Guide](docs/GEOSPATIAL_USER_GUIDE.md) and [SDK Resource Estimation](docs/SDK_RESOURCE_ESTIMATION.md) for details.
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [Quick Start Guide](docs/QUICK_START.md) | Get running in 5 minutes |
 | [Architecture Overview](docs/ARCHITECTURE.md) | System design and patterns |
-| [Geospatial User Guide](docs/GEOSPATIAL_USER_GUIDE.md) | Geospatial features and usage |
-| [SDK Resource Estimation](docs/SDK_RESOURCE_ESTIMATION.md) | Cost and memory estimation |
+| [CLI Reference](docs/CLI_REFERENCE.md) | Complete CLI command documentation |
+| [Agent Development Guide](docs/AGENT_DEVELOPMENT_GUIDE.md) | How to build agents |
+| [Execution Platform Guide](docs/EXECUTION_PLATFORM_ABSTRACTION.md) | Multi-platform testing |
 | [Defense Deployment](docs/DEFENSE_DEPLOYMENT.md) | Air-gap and compliance guide |
 | [API Reference](docs/API_REFERENCE.md) | Complete API documentation |
-
----
-
-## CLI
-
-```bash
-nexo demo --interactive          # Launch visual demo
-nexo analyze --path .            # Analyze codebase
-nexo validate                    # Run architecture tests
-nexo agent --name SecurityScan   # Execute specific agent
-nexo orchestrate "build auth"    # Multi-agent orchestration
-```
-
-See [CLI Reference](docs/CLI_REFERENCE.md) for all commands.
 
 ---
 
@@ -190,7 +273,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 <p align="center">
   <b>Nexo: Where AI meets auditability.</b><br>
-  <a href="docs/QUICK_START.md">Get Started</a> •
   <a href="docs/ARCHITECTURE.md">Architecture</a> •
+  <a href="docs/CLI_REFERENCE.md">CLI Reference</a> •
   <a href="https://github.com/IanFrelinger/Nexo/issues">Issues</a>
 </p>
