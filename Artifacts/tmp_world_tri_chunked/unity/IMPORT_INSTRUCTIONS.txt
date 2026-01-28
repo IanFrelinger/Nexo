@@ -1,1 +1,0 @@
-Copy the Unity importer scripts from this repo under `src/Nexo.Core.UI.Unity/Frameworks/Unity/GeoWorld/` into your Unity project, then run the importer.
