@@ -67,6 +67,12 @@ public class MultiPlatformTestCommand : Command
             "Run stress tests (multiple iterations)"
         );
 
+        var visualOption = new Option<bool>(
+            "--visual",
+            () => false,
+            "Run visual validation tests (requires Ollama for vision models)"
+        );
+
         AddOption(platformsOption);
         AddOption(testProjectOption);
         AddOption(filterOption);
@@ -75,6 +81,7 @@ public class MultiPlatformTestCommand : Command
         AddOption(outputDirOption);
         AddOption(coverageOption);
         AddOption(stressOption);
+        AddOption(visualOption);
     }
 
     public static async Task<int> ExecuteAsync(
@@ -86,6 +93,7 @@ public class MultiPlatformTestCommand : Command
         DirectoryInfo outputDir,
         bool coverage,
         bool stress,
+        bool visual,
         bool json,
         bool verbose,
         IServiceProvider? serviceProvider = null)
@@ -105,7 +113,20 @@ public class MultiPlatformTestCommand : Command
                 console.WritePair("Test Project", testProject ?? "all");
                 console.WritePair(".NET Version", dotnetVersion);
                 console.WritePair("Execution Platform", executionPlatform);
+                if (coverage) console.WritePair("Coverage", "enabled");
+                if (stress) console.WritePair("Stress", "enabled");
+                if (visual) console.WritePair("Visual Validation", "enabled");
                 console.WriteLine();
+            }
+
+            // Handle visual validation tests
+            if (visual)
+            {
+                testProject = testProject ?? "Nexo.Tests.GeospatialVisual";
+                if (platforms.Length == 0)
+                {
+                    platforms = new[] { "ubuntu", "alpine", "debian", "android", "ios", "unity" };
+                }
             }
 
             // Create execution platform

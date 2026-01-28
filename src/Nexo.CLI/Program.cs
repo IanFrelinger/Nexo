@@ -174,8 +174,10 @@ static class Program
         
         var coverageOpt = new Option<bool>("--coverage", () => false, "Enable code coverage collection");
         var stressOpt = new Option<bool>("--stress", () => false, "Run stress tests (multiple iterations)");
+        var visualOpt = new Option<bool>("--visual", () => false, "Run visual validation tests (requires Ollama)");
         testCmd.AddOption(coverageOpt);
         testCmd.AddOption(stressOpt);
+        testCmd.AddOption(visualOpt);
 
         testCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -187,11 +189,12 @@ static class Program
             var outputDir = ctx.ParseResult.GetValueForOption(outputDirOpt) ?? new DirectoryInfo("test-results");
             var coverage = ctx.ParseResult.GetValueForOption(coverageOpt);
             var stress = ctx.ParseResult.GetValueForOption(stressOpt);
+            var visual = ctx.ParseResult.GetValueForOption(visualOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
             
             var exitCode = await MultiPlatformTestCommand.ExecuteAsync(
-                platforms, project, filter, dotnetVersion, executionPlatform, outputDir, coverage, stress, json, verbose, serviceProvider);
+                platforms, project, filter, dotnetVersion, executionPlatform, outputDir, coverage, stress, visual, json, verbose, serviceProvider);
             Environment.Exit(exitCode);
         });
         // nexo test local - Run tests locally (replaces test-local.sh)
