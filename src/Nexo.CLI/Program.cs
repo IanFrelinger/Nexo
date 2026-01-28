@@ -152,23 +152,59 @@ static class Program
             jsonOpt,
             verboseOpt);
 
-        // nexo test - TODO: Re-implement test runner command
-        // This was removed when we renamed TestCommand to UniversalTestCommand
-        // The old test command was for running unit tests, not the Universal Testing Agent
-        // For now, use "nexo demo test" for Universal Testing Agent
-        var testCommand = serviceProvider.GetRequiredService<TestCommand>();
-        var testCmd = new Command("test", "Run internal unit/integration tests (framework test runner)");
-        var filterOpt = new Option<string?>("--filter", "Filter tests by name or category");
-        testCmd.AddOption(filterOpt);
+        // nexo test - Multi-platform test execution
+        var testCmd = new Command("test", "Run tests across multiple platforms")
+        {
+            new Option<string[]>("--platforms", "Platforms to test (ubuntu, alpine, debian, android, ios, unity, windows, macos)")
+            {
+                AllowMultipleArgumentsPerToken = true
+            },
+            new Option<string?>("--project", "Test project to run"),
+            new Option<string?>("--filter", "Test filter (xUnit filter syntax)"),
+            new Option<string>("--dotnet-version", () => "8.0", ".NET version to use"),
+            new Option<string>("--execution-platform", () => "docker", "Execution platform (docker, rancher, kubernetes)"),
+            new Option<DirectoryInfo>("--output-dir", () => new DirectoryInfo("test-results"), "Directory for test results")
+        };
+        var platformsOpt = testCmd.Options[0] as Option<string[]> ?? throw new InvalidOperationException();
+        var projectOpt = testCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException();
+        var filterOpt = testCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException();
+        var dotnetVersionOpt = testCmd.Options[3] as Option<string> ?? throw new InvalidOperationException();
+        var executionPlatformOpt = testCmd.Options[4] as Option<string> ?? throw new InvalidOperationException();
+        var outputDirOpt = testCmd.Options[5] as Option<DirectoryInfo> ?? throw new InvalidOperationException();
+        
         testCmd.SetHandler(
+            async (string[] platforms, string? project, string? filter, string dotnetVersion, 
+                   string executionPlatform, DirectoryInfo outputDir, bool json, bool verbose) =>
+            {
+                var exitCode = await MultiPlatformTestCommand.ExecuteAsync(
+                    platforms, project, filter, dotnetVersion, executionPlatform, outputDir, json, verbose, serviceProvider);
+                Environment.Exit(exitCode);
+            },
+            platformsOpt,
+            projectOpt,
+            filterOpt,
+            dotnetVersionOpt,
+            executionPlatformOpt,
+            outputDirOpt,
+            jsonOpt,
+            verboseOpt);
+        // nexo test local - Run tests locally (replaces test-local.sh)
+        var testLocalCmd = new Command("local", "Run tests locally using framework test runner")
+        {
+            new Option<string?>("--filter", "Filter tests by name or category")
+        };
+        testLocalCmd.SetHandler(
             async (string? filter, bool json, bool verbose) =>
             {
+                var testCommand = serviceProvider.GetRequiredService<TestCommand>();
                 var exitCode = await testCommand.ExecuteAsync(filter, json, verbose);
                 Environment.Exit(exitCode);
             },
-            filterOpt,
+            testLocalCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
             jsonOpt,
             verboseOpt);
+        testCmd.AddCommand(testLocalCmd);
+        root.AddCommand(testCmd);
 
         // nexo orchestrate
         var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
