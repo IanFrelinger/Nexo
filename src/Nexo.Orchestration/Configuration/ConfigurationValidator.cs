@@ -155,20 +155,22 @@ public sealed class ConfigurationValidator
     private void ValidateFeatureFlags(List<ConfigurationWarning> warnings)
     {
         // Check for deprecated feature flags
+        // Deprecation timeline: Flags will be removed in v3.0.0 (target: Q2 2026)
         var deprecatedFlags = new[]
         {
-            "Nexo:Orchestration:LegacyMode"
+            new { Flag = "Nexo:Orchestration:LegacyMode", RemovalVersion = "3.0.0", RemovalDate = "Q2 2026" }
         };
 
-        foreach (var flag in deprecatedFlags)
+        foreach (var deprecation in deprecatedFlags)
         {
-            var value = _configuration.GetValue<bool?>(flag);
+            var value = _configuration.GetValue<bool?>(deprecation.Flag);
             if (value == true)
             {
                 warnings.Add(new ConfigurationWarning
                 {
-                    Setting = flag,
-                    Message = $"Feature flag '{flag}' is deprecated and will be removed in a future version"
+                    Setting = deprecation.Flag,
+                    Message = $"Feature flag '{deprecation.Flag}' is deprecated and will be removed in version {deprecation.RemovalVersion} ({deprecation.RemovalDate}). " +
+                              "Please migrate to the new orchestration system."
                 });
             }
         }

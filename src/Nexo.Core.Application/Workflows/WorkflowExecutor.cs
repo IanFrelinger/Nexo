@@ -304,30 +304,81 @@ public class WorkflowExecutor
         return chain.Where(Available).ToList();
     }
     
+    /// <summary>
+    /// Executes a cluster node (pre-built combination of agents/bricks).
+    /// 
+    /// **STATUS: FUTURE FEATURE**
+    /// 
+    /// Cluster nodes allow grouping multiple agents/bricks into reusable components.
+    /// This feature is planned for future implementation.
+    /// 
+    /// When implemented, this will:
+    /// 1. Load the cluster definition by ClusterId
+    /// 2. Execute the cluster's internal workflow
+    /// 3. Return aggregated results
+    /// 
+    /// See: `Nexo.Core.Domain.Clusters.Cluster` for cluster definition structure.
+    /// </summary>
     private Task<NodeResult> ExecuteClusterNodeAsync(
         ClusterNode node,
         Dictionary<string, object> inputs,
         WorkflowExecutionContext context,
         CancellationToken ct)
     {
-        // TODO: Implement cluster execution
-        throw new NotImplementedException("Cluster execution not yet implemented");
+        throw new NotImplementedException(
+            "Cluster execution is a planned future feature. " +
+            "Cluster nodes allow grouping agents/bricks into reusable components. " +
+            "See WorkflowExecutor documentation for implementation roadmap.");
     }
     
+    /// <summary>
+    /// Executes a transform node for data manipulation.
+    /// 
+    /// **STATUS: FUTURE FEATURE**
+    /// 
+    /// Transform nodes allow data transformation operations (map, filter, reduce, etc.)
+    /// between workflow nodes. This feature is planned for future implementation.
+    /// 
+    /// When implemented, this will:
+    /// 1. Parse the transform expression
+    /// 2. Apply the operation to input data
+    /// 3. Return transformed output
+    /// 
+    /// Supported operations will include: Map, Filter, Reduce, Sort, Group, etc.
+    /// </summary>
     private NodeResult ExecuteTransformNode(
         TransformNode node,
         Dictionary<string, object> inputs)
     {
-        // TODO: Implement transform operations
-        throw new NotImplementedException("Transform operations not yet implemented");
+        throw new NotImplementedException(
+            "Transform operations are a planned future feature. " +
+            "Transform nodes allow data manipulation (map, filter, reduce) between workflow nodes. " +
+            "See WorkflowExecutor documentation for implementation roadmap.");
     }
     
+    /// <summary>
+    /// Executes a conditional node for branching logic.
+    /// 
+    /// **STATUS: FUTURE FEATURE**
+    /// 
+    /// Conditional nodes allow workflow branching based on conditions.
+    /// This feature is planned for future implementation.
+    /// 
+    /// When implemented, this will:
+    /// 1. Evaluate the condition expression
+    /// 2. Route execution to the appropriate output port (true/false)
+    /// 3. Return the selected branch result
+    /// 
+    /// Conditions will support: comparisons, boolean logic, data type checks, etc.
+    /// </summary>
     private NodeResult ExecuteConditionalNode(
         ConditionalNode node,
         Dictionary<string, object> inputs)
     {
-        // TODO: Implement conditional branching
-        throw new NotImplementedException("Conditional branching not yet implemented");
+        throw new NotImplementedException(
+            "Conditional branching is a planned future feature. " +
+            "Conditional nodes allow workflow branching based on evaluated conditions. " +
+            "See WorkflowExecutor documentation for implementation roadmap.");
     }
     
     private async Task<NodeResult> ExecuteOutputNodeAsync(
