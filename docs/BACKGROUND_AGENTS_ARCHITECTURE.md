@@ -12,6 +12,9 @@ Optional embedded background agents that run continuously in the framework, with
 4. **Dog Fooded**: Use framework's own `IAgent`, `Orchestrator`, `AgentFactory` infrastructure
 5. **Background**: Run asynchronously without blocking main operations
 6. **Hierarchical**: Support agent hierarchies (parent-child relationships)
+7. **Data Sensitivity**: Mark and protect sensitive data from exfiltration
+8. **RAG Integration**: Support Retrieval Augmented Generation for knowledge access
+9. **Web Search**: Optional web search capabilities for agents
 
 ## Architecture
 
@@ -60,6 +63,52 @@ public class BackgroundAgentConfig
     public Dictionary<string, object> Parameters { get; set; }  // Agent-specific parameters
     public BackgroundAgentSchedule Schedule { get; set; }       // When to run
     public bool Enabled { get; set; }                // Enable/disable this agent
+    public DataSensitivityLevel MaxDataSensitivity { get; set; }  // Maximum sensitivity level agent can access
+    public List<string> AllowedDataSensitivityLevels { get; set; }  // Specific sensitivity levels allowed
+    public RAGConfig? RAG { get; set; }              // RAG configuration (optional)
+    public WebSearchConfig? WebSearch { get; set; }  // Web search configuration (optional)
+    public ExfiltrationPolicy ExfiltrationPolicy { get; set; }  // Policy for preventing data exfiltration
+}
+
+public enum DataSensitivityLevel
+{
+    Public,           // Public data, no restrictions
+    Internal,         // Internal use only
+    Confidential,     // Confidential, restricted access
+    Secret,          // Secret, highly restricted
+    TopSecret        // Top secret, maximum restrictions
+}
+
+public class RAGConfig
+{
+    public bool Enabled { get; set; }                // Enable RAG for this agent
+    public string? VectorStoreProvider { get; set; }  // "in-memory", "sqlite", "postgres", "qdrant"
+    public string? VectorStorePath { get; set; }      // Path/connection string for vector store
+    public int MaxRetrievalResults { get; set; }      // Maximum number of results to retrieve
+    public double SimilarityThreshold { get; set; }   // Minimum similarity score (0.0-1.0)
+    public List<string>? KnowledgeSources { get; set; }  // Paths to knowledge sources (docs, code, etc.)
+    public DataSensitivityLevel MaxSourceSensitivity { get; set; }  // Max sensitivity of sources to index
+}
+
+public class WebSearchConfig
+{
+    public bool Enabled { get; set; }                // Enable web search for this agent
+    public string? SearchProvider { get; set; }       // "bing", "google", "duckduckgo", "serpapi"
+    public string? ApiKey { get; set; }               // API key for search provider
+    public int MaxResults { get; set; }               // Maximum search results to return
+    public bool FilterSensitiveContent { get; set; }  // Filter out potentially sensitive content
+    public List<string>? AllowedDomains { get; set; } // Whitelist of allowed domains (optional)
+    public List<string>? BlockedDomains { get; set; } // Blacklist of blocked domains (optional)
+}
+
+public class ExfiltrationPolicy
+{
+    public bool BlockExternalLLMs { get; set; }      // Block sending data to external LLM providers
+    public bool BlockWebSearch { get; set; }          // Block web search for sensitive data
+    public bool BlockNetworkExports { get; set; }     // Block network-based exports
+    public bool RequireLocalOnly { get; set; }        // Require all processing to be local-only
+    public List<string>? AllowedDestinations { get; set; }  // Whitelist of allowed destinations
+    public DataSensitivityLevel MaxAllowedLevel { get; set; }  // Maximum sensitivity level that can be processed
 }
 
 public class BackgroundAgentSchedule
@@ -95,7 +144,14 @@ public enum ScheduleType
           "type": "interval",
           "interval": "00:05:00"
         },
-        "enabled": true
+        "enabled": true,
+        "maxDataSensitivity": "Internal",
+        "exfiltrationPolicy": {
+          "blockExternalLLMs": false,
+          "blockWebSearch": true,
+          "blockNetworkExports": false,
+          "maxAllowedLevel": "Internal"
+        }
       },
       {
         "id": "code-analyzer",
@@ -110,26 +166,459 @@ public enum ScheduleType
           "cronExpression": "0 */6 * * *"
         },
         "enabled": true,
+        "maxDataSensitivity": "Confidential",
         "parameters": {
           "analysisDepth": "thorough",
           "reportFormat": "json"
+        },
+        "rag": {
+          "enabled": true,
+          "vectorStoreProvider": "sqlite",
+          "vectorStorePath": "./data/rag-store.db",
+          "maxRetrievalResults": 5,
+          "similarityThreshold": 0.7,
+          "knowledgeSources": [
+            "./docs",
+            "./src"
+          ],
+          "maxSourceSensitivity": "Internal"
+        },
+        "webSearch": {
+          "enabled": true,
+          "searchProvider": "bing",
+          "apiKey": "${BING_API_KEY}",
+          "maxResults": 10,
+          "filterSensitiveContent": true,
+          "allowedDomains": ["github.com", "stackoverflow.com"]
+        },
+        "exfiltrationPolicy": {
+          "blockExternalLLMs": false,
+          "blockWebSearch": false,
+          "blockNetworkExports": true,
+          "maxAllowedLevel": "Confidential"
         }
       },
       {
-        "id": "performance-optimizer",
-        "name": "Performance Optimizer",
-        "role": "optimizer",
+        "id": "security-auditor",
+        "name": "Security Auditor Agent",
+        "role": "auditor",
         "modelProvider": "ollama",
         "modelName": "llama2",
-        "commands": ["optimize-performance", "suggest-improvements"],
+        "commands": ["audit-security", "scan-vulnerabilities"],
         "schedule": {
-          "type": "continuous",
-          "initialDelay": "00:01:00"
+          "type": "interval",
+          "interval": "01:00:00"
         },
-        "enabled": false
+        "enabled": true,
+        "maxDataSensitivity": "Secret",
+        "exfiltrationPolicy": {
+          "blockExternalLLMs": true,
+          "blockWebSearch": true,
+          "blockNetworkExports": true,
+          "requireLocalOnly": true,
+          "maxAllowedLevel": "Secret"
+        }
       }
     ]
   }
+}
+```
+
+## Data Sensitivity & Exfiltration Prevention
+
+### Data Sensitivity Classification
+
+All data processed by background agents is classified with sensitivity levels:
+
+```csharp
+public interface IDataSensitivityMarker
+{
+    DataSensitivityLevel GetSensitivityLevel(object data);
+    void MarkSensitivity(object data, DataSensitivityLevel level);
+    bool CanAccess(DataSensitivityLevel agentLevel, DataSensitivityLevel dataLevel);
+}
+
+public class DataSensitivityMarker : IDataSensitivityMarker
+{
+    private readonly ConcurrentDictionary<object, DataSensitivityLevel> _markings = new();
+    
+    public DataSensitivityLevel GetSensitivityLevel(object data)
+    {
+        return _markings.TryGetValue(data, out var level) 
+            ? level 
+            : DataSensitivityLevel.Public;
+    }
+    
+    public void MarkSensitivity(object data, DataSensitivityLevel level)
+    {
+        _markings[data] = level;
+    }
+    
+    public bool CanAccess(DataSensitivityLevel agentLevel, DataSensitivityLevel dataLevel)
+    {
+        // Agent can only access data at or below its maximum sensitivity level
+        return dataLevel <= agentLevel;
+    }
+}
+```
+
+### Exfiltration Prevention Policy
+
+```csharp
+public class DataExfiltrationPolicy : IPolicy
+{
+    private readonly IDataSensitivityMarker _sensitivityMarker;
+    private readonly ExfiltrationPolicy _config;
+    
+    public DataExfiltrationPolicy(
+        IDataSensitivityMarker sensitivityMarker,
+        ExfiltrationPolicy config)
+    {
+        _sensitivityMarker = sensitivityMarker;
+        _config = config;
+    }
+    
+    public bool Approve(ToolCall call, WorldSnapshot s, out string reason)
+    {
+        // Check if tool call involves external communication
+        if (IsExternalTool(call))
+        {
+            // Extract data from tool call
+            var data = ExtractDataFromToolCall(call);
+            var sensitivity = _sensitivityMarker.GetSensitivityLevel(data);
+            
+            // Check policy restrictions
+            if (sensitivity > _config.MaxAllowedLevel)
+            {
+                reason = $"Data sensitivity {sensitivity} exceeds allowed level {_config.MaxAllowedLevel}";
+                return false;
+            }
+            
+            if (_config.BlockExternalLLMs && IsLLMTool(call))
+            {
+                reason = "External LLM calls blocked by exfiltration policy";
+                return false;
+            }
+            
+            if (_config.BlockWebSearch && IsWebSearchTool(call))
+            {
+                reason = "Web search blocked by exfiltration policy";
+                return false;
+            }
+            
+            if (_config.RequireLocalOnly && IsNetworkTool(call))
+            {
+                reason = "Network tools blocked - local-only processing required";
+                return false;
+            }
+        }
+        
+        reason = "OK";
+        return true;
+    }
+    
+    private bool IsExternalTool(ToolCall call)
+    {
+        return call.Id.StartsWith("web.") || 
+               call.Id.StartsWith("llm.") || 
+               call.Id.StartsWith("api.");
+    }
+}
+```
+
+### Integration with Policy Engine
+
+```csharp
+// In BackgroundAgentService
+private PolicyEngine CreatePolicyEngine(BackgroundAgentConfig config)
+{
+    var policies = new List<IPolicy>();
+    
+    // Add data exfiltration policy
+    policies.Add(new DataExfiltrationPolicy(
+        _sensitivityMarker,
+        config.ExfiltrationPolicy));
+    
+    // Add other policies (path restrictions, etc.)
+    policies.Add(new OutputPathSandboxed());
+    
+    return new PolicyEngine(policies);
+}
+```
+
+## RAG (Retrieval Augmented Generation) Integration
+
+### RAG Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Background Agent                         │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │     RAG Tool (ITool)                                  │  │
+│  │  - search-knowledge-base                              │  │
+│  │  - retrieve-context                                   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                        │                                    │
+│                        ▼                                    │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │     RAG Service                                       │  │
+│  │  - Vector store interface                             │  │
+│  │  - Embedding generation                               │  │
+│  │  - Similarity search                                  │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                        │                                    │
+│                        ▼                                    │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │     Vector Store (IVectorStore)                      │  │
+│  │  - In-memory, SQLite, PostgreSQL, Qdrant             │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### RAG Implementation
+
+```csharp
+public interface IVectorStore
+{
+    Task<bool> InitializeAsync(CancellationToken ct);
+    Task IndexAsync(string id, string text, Dictionary<string, object>? metadata, CancellationToken ct);
+    Task<List<VectorSearchResult>> SearchAsync(string query, int maxResults, double minScore, CancellationToken ct);
+    Task<List<VectorSearchResult>> SearchBySensitivityAsync(
+        string query, 
+        DataSensitivityLevel maxSensitivity,
+        int maxResults, 
+        double minScore, 
+        CancellationToken ct);
+}
+
+public class RAGService
+{
+    private readonly IVectorStore _vectorStore;
+    private readonly IEmbeddingGenerator _embeddingGenerator;
+    private readonly IDataSensitivityMarker _sensitivityMarker;
+    
+    public async Task<List<VectorSearchResult>> RetrieveAsync(
+        string query,
+        RAGConfig config,
+        CancellationToken ct)
+    {
+        // Generate query embedding
+        var queryEmbedding = await _embeddingGenerator.GenerateAsync(query, ct);
+        
+        // Search with sensitivity filtering
+        var results = await _vectorStore.SearchBySensitivityAsync(
+            query,
+            config.MaxSourceSensitivity,
+            config.MaxRetrievalResults,
+            config.SimilarityThreshold,
+            ct);
+        
+        return results;
+    }
+}
+
+public class RAGTool : ITool
+{
+    private readonly RAGService _ragService;
+    private readonly RAGConfig _config;
+    
+    public string Id => "rag.search-knowledge-base";
+    
+    public ToolSchema Schema => new ToolSchema(
+        Id,
+        "Search the knowledge base using RAG",
+        @"{
+          ""type"": ""object"",
+          ""properties"": {
+            ""query"": { ""type"": ""string"", ""description"": ""Search query"" },
+            ""maxResults"": { ""type"": ""integer"", ""description"": ""Maximum results"" }
+          },
+          ""required"": [""query""]
+        }");
+    
+    public async Task<ToolResult> InvokeAsync(ToolCall toolCall, WorldSnapshot s, CancellationToken ct)
+    {
+        var args = toolCall.ParseArgs<RAGSearchArgs>();
+        var results = await _ragService.RetrieveAsync(args.Query, _config, ct);
+        
+        return new ToolResult(
+            new ActionDelta(s.Tick, s.Tick + 1, new[] { $"Retrieved {results.Count} results from knowledge base" }),
+            results);
+    }
+}
+```
+
+### Knowledge Base Indexing
+
+```csharp
+public class KnowledgeBaseIndexer
+{
+    private readonly IVectorStore _vectorStore;
+    private readonly IEmbeddingGenerator _embeddingGenerator;
+    private readonly IDataSensitivityMarker _sensitivityMarker;
+    
+    public async Task IndexDirectoryAsync(
+        string directory,
+        DataSensitivityLevel sensitivityLevel,
+        CancellationToken ct)
+    {
+        var files = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
+        
+        foreach (var file in files)
+        {
+            var content = await File.ReadAllTextAsync(file, ct);
+            
+            // Mark content with sensitivity level
+            _sensitivityMarker.MarkSensitivity(content, sensitivityLevel);
+            
+            // Chunk content for better retrieval
+            var chunks = ChunkText(content, maxChunkSize: 1000);
+            
+            foreach (var (chunk, index) in chunks.Select((c, i) => (c, i)))
+            {
+                await _vectorStore.IndexAsync(
+                    $"{file}:{index}",
+                    chunk,
+                    new Dictionary<string, object>
+                    {
+                        ["file"] = file,
+                        ["sensitivity"] = sensitivityLevel.ToString(),
+                        ["chunkIndex"] = index
+                    },
+                    ct);
+            }
+        }
+    }
+}
+```
+
+## Web Search Integration
+
+### Web Search Architecture
+
+```csharp
+public interface IWebSearchProvider
+{
+    Task<List<WebSearchResult>> SearchAsync(
+        string query,
+        int maxResults,
+        CancellationToken ct);
+    
+    Task<List<WebSearchResult>> SearchAsync(
+        string query,
+        WebSearchConfig config,
+        CancellationToken ct);
+}
+
+public class WebSearchTool : ITool
+{
+    private readonly IWebSearchProvider _searchProvider;
+    private readonly WebSearchConfig _config;
+    private readonly IDataSensitivityMarker _sensitivityMarker;
+    
+    public string Id => "web.search";
+    
+    public ToolSchema Schema => new ToolSchema(
+        Id,
+        "Search the web for information",
+        @"{
+          ""type"": ""object"",
+          ""properties"": {
+            ""query"": { ""type"": ""string"", ""description"": ""Search query"" },
+            ""maxResults"": { ""type"": ""integer"", ""description"": ""Maximum results"" }
+          },
+          ""required"": [""query""]
+        }");
+    
+    public async Task<ToolResult> InvokeAsync(ToolCall toolCall, WorldSnapshot s, CancellationToken ct)
+    {
+        // Check if web search is allowed for this agent
+        if (!_config.Enabled)
+        {
+            throw new InvalidOperationException("Web search is not enabled for this agent");
+        }
+        
+        var args = toolCall.ParseArgs<WebSearchArgs>();
+        
+        // Filter query for sensitive content
+        if (_config.FilterSensitiveContent)
+        {
+            args.Query = FilterSensitiveTerms(args.Query);
+        }
+        
+        var results = await _searchProvider.SearchAsync(
+            args.Query,
+            _config,
+            ct);
+        
+        // Filter results by domain allowlist/blocklist
+        if (_config.AllowedDomains?.Any() == true)
+        {
+            results = results.Where(r => 
+                _config.AllowedDomains.Any(domain => r.Url.Contains(domain))).ToList();
+        }
+        
+        if (_config.BlockedDomains?.Any() == true)
+        {
+            results = results.Where(r => 
+                !_config.BlockedDomains.Any(domain => r.Url.Contains(domain))).ToList();
+        }
+        
+        return new ToolResult(
+            new ActionDelta(s.Tick, s.Tick + 1, new[] { $"Found {results.Count} web search results" }),
+            results);
+    }
+    
+    private string FilterSensitiveTerms(string query)
+    {
+        // Remove or redact potentially sensitive terms
+        // This is a simplified example - real implementation would be more sophisticated
+        var sensitivePatterns = new[] { "password", "secret", "key", "token" };
+        foreach (var pattern in sensitivePatterns)
+        {
+            query = System.Text.RegularExpressions.Regex.Replace(
+                query, 
+                pattern, 
+                "[REDACTED]", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+        return query;
+    }
+}
+```
+
+### Web Search Provider Implementations
+
+```csharp
+public class BingWebSearchProvider : IWebSearchProvider
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _apiKey;
+    
+    public async Task<List<WebSearchResult>> SearchAsync(
+        string query,
+        WebSearchConfig config,
+        CancellationToken ct)
+    {
+        var url = $"https://api.bing.microsoft.com/v7.0/search?q={Uri.EscapeDataString(query)}&count={config.MaxResults}";
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Ocp-Apim-Subscription-Key", _apiKey);
+        
+        var response = await _httpClient.SendAsync(request, ct);
+        response.EnsureSuccessStatusCode();
+        
+        var json = await response.Content.ReadAsStringAsync(ct);
+        var results = JsonSerializer.Deserialize<BingSearchResponse>(json);
+        
+        return results?.WebPages?.Value?.Select(r => new WebSearchResult
+        {
+            Title = r.Name,
+            Url = r.Url,
+            Snippet = r.Snippet
+        }).ToList() ?? new List<WebSearchResult>();
+    }
 }
 ```
 
@@ -270,6 +759,33 @@ public class BackgroundAgentConfigLoader
         
         // Validate schedule
         ValidateSchedule(config.Schedule);
+        
+        // Validate RAG config if present
+        if (config.RAG?.Enabled == true)
+        {
+            if (string.IsNullOrEmpty(config.RAG.VectorStoreProvider))
+                throw new InvalidOperationException($"Agent {config.Id} RAG enabled but no provider specified");
+        }
+        
+        // Validate web search config if present
+        if (config.WebSearch?.Enabled == true)
+        {
+            if (string.IsNullOrEmpty(config.WebSearch.SearchProvider))
+                throw new InvalidOperationException($"Agent {config.Id} web search enabled but no provider specified");
+        }
+        
+        // Validate exfiltration policy
+        if (config.ExfiltrationPolicy == null)
+        {
+            // Set defaults based on data sensitivity
+            config.ExfiltrationPolicy = new ExfiltrationPolicy
+            {
+                MaxAllowedLevel = config.MaxDataSensitivity,
+                BlockExternalLLMs = config.MaxDataSensitivity >= DataSensitivityLevel.Confidential,
+                BlockWebSearch = config.MaxDataSensitivity >= DataSensitivityLevel.Secret,
+                RequireLocalOnly = config.MaxDataSensitivity >= DataSensitivityLevel.TopSecret
+            };
+        }
     }
 }
 ```
@@ -281,6 +797,10 @@ public class BackgroundAgentConfigLoader
 ```csharp
 public class BackgroundAgentSpecBuilder
 {
+    private readonly IDataSensitivityMarker _sensitivityMarker;
+    private readonly RAGService? _ragService;
+    private readonly IWebSearchProvider? _webSearchProvider;
+    
     public AgentSpawnSpec BuildSpec(BackgroundAgentConfig config)
     {
         // Build system prompt based on role and commands
@@ -293,13 +813,21 @@ public class BackgroundAgentSpecBuilder
             dependencies.Add(config.ParentId);
         }
         
+        // Add RAG and web search capabilities to parameters
+        var parameters = new Dictionary<string, object>(config.Parameters ?? new Dictionary<string, object>())
+        {
+            ["maxDataSensitivity"] = config.MaxDataSensitivity.ToString(),
+            ["hasRAG"] = config.RAG?.Enabled == true,
+            ["hasWebSearch"] = config.WebSearch?.Enabled == true
+        };
+        
         return new AgentSpawnSpec
         {
             AgentId = config.Id,
             AgentType = DetermineAgentType(config.Role),
             SystemPrompt = systemPrompt,
             Dependencies = dependencies,
-            Parameters = config.Parameters ?? new Dictionary<string, object>()
+            Parameters = parameters
         };
     }
     
@@ -309,6 +837,28 @@ public class BackgroundAgentSpecBuilder
 
 Your available commands are:
 {string.Join("\n", config.Commands.Select(c => $"- {c}"))}
+
+IMPORTANT: You can only access data with sensitivity level {config.MaxDataSensitivity} or lower.
+Any data marked as more sensitive will be automatically blocked.";
+        
+        if (config.RAG?.Enabled == true)
+        {
+            prompt += $@"
+
+You have access to a knowledge base via RAG (Retrieval Augmented Generation).
+Use the 'rag.search-knowledge-base' tool to search for relevant information before making decisions.";
+        }
+        
+        if (config.WebSearch?.Enabled == true)
+        {
+            prompt += $@"
+
+You have access to web search capabilities.
+Use the 'web.search' tool to find current information from the internet.
+Note: Sensitive content will be automatically filtered from search queries.";
+        }
+        
+        prompt += @"
 
 Execute your commands based on your role and the current system state.
 Report your findings and take actions as appropriate for your role.";
@@ -325,6 +875,27 @@ Report your findings and take actions as appropriate for your role.";
             "optimizer" => "GenericAgent",
             _ => "GenericAgent"
         };
+    }
+    
+    public IToolbox BuildToolbox(BackgroundAgentConfig config)
+    {
+        var tools = new List<ITool>();
+        
+        // Add RAG tool if enabled
+        if (config.RAG?.Enabled == true && _ragService != null)
+        {
+            tools.Add(new RAGTool(_ragService, config.RAG));
+        }
+        
+        // Add web search tool if enabled
+        if (config.WebSearch?.Enabled == true && _webSearchProvider != null)
+        {
+            tools.Add(new WebSearchTool(_webSearchProvider, config.WebSearch, _sensitivityMarker));
+        }
+        
+        // Add other standard tools...
+        
+        return new BackgroundAgentToolbox(tools);
     }
 }
 ```
@@ -535,24 +1106,42 @@ services.AddBackgroundAgents(options =>
 
 ## Implementation Phases
 
-### Phase 1: Core Infrastructure (Week 1)
+### Phase 1: Core Infrastructure (Week 1-2)
 - BackgroundAgentService
 - BackgroundAgentRegistry
 - BackgroundAgentConfigLoader
 - Basic configuration file support
+- DataSensitivityMarker and classification system
+- ExfiltrationPolicy implementation
 
-### Phase 2: Agent Creation (Week 2)
+### Phase 2: Agent Creation & Security (Week 3)
 - BackgroundAgentSpecBuilder
 - Integration with AgentFactory
 - Schedule execution (interval, cron, continuous)
+- Data exfiltration prevention policies
+- Sensitivity-based access control
 
-### Phase 3: CLI Integration (Week 3)
+### Phase 3: RAG Integration (Week 4)
+- IVectorStore interface and implementations
+- RAGService with embedding generation
+- RAGTool for agent access
+- Knowledge base indexing
+- Sensitivity-aware vector search
+
+### Phase 4: Web Search Integration (Week 5)
+- IWebSearchProvider interface
+- Bing/Google/DuckDuckGo implementations
+- WebSearchTool for agent access
+- Domain filtering and sensitive content filtering
+
+### Phase 5: CLI Integration (Week 6)
 - `nexo background-agent list`
 - `nexo background-agent add`
 - `nexo background-agent configure`
 - `nexo background-agent enable/disable`
+- `nexo background-agent index-knowledge` (for RAG)
 
-### Phase 4: Self-Management (Week 4)
+### Phase 6: Self-Management (Week 7)
 - Meta-agent for agent management
 - Agent management tools
 - Self-configuration capabilities
