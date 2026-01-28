@@ -6,7 +6,19 @@ namespace Nexo.Infrastructure.Testing.ExecutionPlatform;
 /// Kubernetes implementation of IExecutionPlatform.
 /// 
 /// Provides execution via Kubernetes Job/Pod resources.
-/// This is a placeholder implementation that users can extend.
+/// 
+/// **STATUS: PLACEHOLDER IMPLEMENTATION**
+/// 
+/// This is an extensibility point for Kubernetes-based test execution.
+/// All methods currently return "not yet implemented" responses.
+/// 
+/// To implement:
+/// 1. Use Kubernetes client library (e.g., KubernetesClient.NET)
+/// 2. Implement BuildImageAsync using Kaniko, BuildKit, or external registry
+/// 3. Implement RunContainerAsync using Kubernetes Jobs or Pods
+/// 4. Implement cleanup methods for Jobs/Pods and images
+/// 
+/// This class is used in tests to verify platform compatibility and extensibility.
 /// </summary>
 public class KubernetesExecutionPlatform : IExecutionPlatform
 {

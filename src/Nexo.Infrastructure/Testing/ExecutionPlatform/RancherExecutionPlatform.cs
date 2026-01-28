@@ -6,7 +6,19 @@ namespace Nexo.Infrastructure.Testing.ExecutionPlatform;
 /// Rancher implementation of IExecutionPlatform.
 /// 
 /// Provides execution via Rancher container orchestration platform.
-/// This is a placeholder implementation that users can extend.
+/// 
+/// **STATUS: PLACEHOLDER IMPLEMENTATION**
+/// 
+/// This is an extensibility point for Rancher-based test execution.
+/// All methods currently return "not yet implemented" responses.
+/// 
+/// To implement:
+/// 1. Use Rancher API client library
+/// 2. Implement BuildImageAsync via Docker-in-Docker or external registries
+/// 3. Implement RunContainerAsync via Kubernetes workloads or Docker containers
+/// 4. Implement cleanup methods for containers and images
+/// 
+/// This class is used in tests to verify platform compatibility and extensibility.
 /// </summary>
 public class RancherExecutionPlatform : IExecutionPlatform
 {

@@ -53,7 +53,6 @@
     <ProjectReference Include="../Nexo.GeoTerrain.Bricks/Nexo.GeoTerrain.Bricks.csproj" />
     <ProjectReference Include="../Nexo.GeoWorld/Nexo.GeoWorld.csproj" />
     <ProjectReference Include="../Nexo.GeoWorld.Bricks/Nexo.GeoWorld.Bricks.csproj" />
-    <ProjectReference Include="../Nexo.Agents.Dev/Nexo.Agents.Dev.csproj" />
     <ProjectReference Include="../Nexo.Agents.UniversalTester/Nexo.Agents.UniversalTester.csproj" />
     <ProjectReference Include="../Nexo.Agents.AutonomousDev/Nexo.Agents.AutonomousDev.csproj" />
     <ProjectReference Include="../Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
