@@ -40,9 +40,6 @@ public class BackgroundAgentsE2ETests
         var services = new ServiceCollection();
         services.AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning));
         services.AddSingleton<IConfiguration>(config);
-        services.AddSingleton<HealthMonitor>();
-        services.AddSingleton<LifecycleManager>();
-        services.AddSingleton<AgentFactory>();
         var sp = services.BuildServiceProvider();
 
         var sensitivityRegistry = new DataSensitivityRegistry();
@@ -51,14 +48,7 @@ public class BackgroundAgentsE2ETests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var agentFactory = sp.GetRequiredService<AgentFactory>();
-        var lifecycleManager = sp.GetRequiredService<LifecycleManager>();
-        var registry = new BackgroundAgentRegistry(
-            agentFactory,
-            lifecycleManager,
-            scheduler,
-            null,
-            logStore);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore);
 
         var configs = await configLoader.LoadAsync(default);
         configs.Should().HaveCount(1);

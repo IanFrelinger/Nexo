@@ -4,7 +4,6 @@ using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Scheduling;
-using Nexo.Orchestration.Agents;
 
 namespace Nexo.BackgroundAgents.Registry;
 
@@ -82,29 +81,22 @@ public interface IBackgroundAgentRegistry
 public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
 {
     private readonly ConcurrentDictionary<string, BackgroundAgentInstance> _agents = new();
-    private readonly AgentFactory _agentFactory;
-    private readonly LifecycleManager _lifecycleManager;
     private readonly IAgentScheduler _scheduler;
     private readonly ILogger<BackgroundAgentRegistry>? _logger;
     private readonly IBackgroundAgentLogStore? _logStore;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BackgroundAgentRegistry"/> class.
+    /// Agent creation is done by the host (e.g. BackgroundAgentService) before RegisterAsync.
     /// </summary>
-    /// <param name="agentFactory">The agent factory for creating agent containers.</param>
-    /// <param name="lifecycleManager">The lifecycle manager for agent registration.</param>
     /// <param name="scheduler">Scheduler for agent execution loops.</param>
     /// <param name="logger">Optional logger.</param>
     /// <param name="logStore">Optional log store for agent execution logs.</param>
     public BackgroundAgentRegistry(
-        AgentFactory agentFactory,
-        LifecycleManager lifecycleManager,
         IAgentScheduler scheduler,
         ILogger<BackgroundAgentRegistry>? logger = null,
         IBackgroundAgentLogStore? logStore = null)
     {
-        _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
-        _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _logger = logger;
         _logStore = logStore;
@@ -229,6 +221,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
 
     private Task ExecuteAgentAsync(BackgroundAgentInstance instance, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var agentId = instance.Config.Id;
         try
         {
@@ -253,6 +246,10 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
             _logStore?.Append(agentId, "Info", "Execution completed successfully.");
             _logger?.LogDebug("Background agent {AgentId} executed successfully", agentId);
             return Task.CompletedTask;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

@@ -19,7 +19,7 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Adds background agent services including scheduler, registry, and policy integration.
-    /// Requires orchestration (AgentFactory, LifecycleManager) and configuration to be registered.
+    /// Requires orchestration (AgentFactory, LifecycleManager for BackgroundAgentService) and configuration to be registered.
     /// </summary>
     /// <param name="registerHostedService">If true, registers BackgroundAgentService as a hosted service (default true). Set false for CLI-only usage.</param>
     public static IServiceCollection AddBackgroundAgents(this IServiceCollection services, bool registerHostedService = true)
@@ -30,12 +30,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAgentScheduler, AgentScheduler>();
         services.AddSingleton<IBackgroundAgentRegistry>(sp =>
         {
-            var agentFactory = sp.GetRequiredService<AgentFactory>();
-            var lifecycleManager = sp.GetRequiredService<LifecycleManager>();
             var scheduler = sp.GetRequiredService<IAgentScheduler>();
             var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<BackgroundAgentRegistry>>();
             var logStore = sp.GetService<IBackgroundAgentLogStore>();
-            return new BackgroundAgentRegistry(agentFactory, lifecycleManager, scheduler, logger, logStore);
+            return new BackgroundAgentRegistry(scheduler, logger, logStore);
         });
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();

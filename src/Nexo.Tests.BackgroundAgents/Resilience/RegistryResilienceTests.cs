@@ -58,7 +58,7 @@ public class RegistryResilienceTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
         var act = () => registry.ExecuteOnceAsync(agentId, cts.Token);
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -66,9 +66,6 @@ public class RegistryResilienceTests
     {
         var services = new ServiceCollection();
         services.AddLogging(b => b.SetMinimumLevel(LogLevel.Warning));
-        services.AddSingleton<HealthMonitor>();
-        services.AddSingleton<LifecycleManager>();
-        services.AddSingleton<AgentFactory>();
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>())
             .Build();
@@ -80,12 +77,7 @@ public class RegistryResilienceTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(
-            sp.GetRequiredService<AgentFactory>(),
-            sp.GetRequiredService<LifecycleManager>(),
-            scheduler,
-            null,
-            logStore);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore);
 
         registry.GetAll().Should().BeEmpty();
         var act = () => registry.ExecuteOnceAsync("any-id", default);
@@ -143,9 +135,6 @@ public class RegistryResilienceTests
         var services = new ServiceCollection();
         services.AddLogging(b => b.SetMinimumLevel(LogLevel.Warning));
         services.AddSingleton<IConfiguration>(config);
-        services.AddSingleton<HealthMonitor>();
-        services.AddSingleton<LifecycleManager>();
-        services.AddSingleton<AgentFactory>();
         var sp = services.BuildServiceProvider();
 
         var sensitivityRegistry = new DataSensitivityRegistry();
@@ -154,12 +143,7 @@ public class RegistryResilienceTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(
-            sp.GetRequiredService<AgentFactory>(),
-            sp.GetRequiredService<LifecycleManager>(),
-            scheduler,
-            null,
-            logStore);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore);
 
         var configs = await configLoader.LoadAsync(default);
         var agentIds = new List<string>();
