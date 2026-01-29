@@ -1,0 +1,49 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "code-analyzer",
+        "Name": "Code Analyzer",
+        "Role": "analyzer",
+        "ParentId": null,
+        "ModelProvider": "openai",
+        "ModelName": "gpt-4",
+        "Commands": ["analyze", "suggest", "rag_search", "web_search"],
+        "Parameters": {
+          "maxSuggestions": 5
+        },
+        "Schedule": {
+          "Type": "Cron",
+          "CronExpression": "0 */6 * * *",
+          "InitialDelay": "00:01:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": ["Public", "Internal"],
+        "RAG": {
+          "Enabled": true,
+          "VectorStoreProvider": "sqlite",
+          "VectorStorePath": "./data/kb.db",
+          "MaxRetrievalResults": 5,
+          "SimilarityThreshold": 0.7,
+          "KnowledgeSources": ["./docs", "./specs"],
+          "MaxSourceSensitivity": "Internal"
+        },
+        "WebSearch": {
+          "Enabled": true,
+          "SearchProvider": "bing",
+          "ApiKey": "${BING_SEARCH_KEY}",
+          "MaxResults": 10,
+          "FilterSensitiveContent": true
+        },
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": false,
+          "BlockWebSearch": false,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": false,
+          "MaxAllowedLevel": "Internal"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "audit-runner",
+        "Name": "Audit Runner",
+        "Role": "auditor",
+        "ModelProvider": "deterministic",
+        "Commands": ["audit", "report"],
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "01:00:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Confidential",
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Confidential"
+        }
+      }
+    ]
+  }
+}

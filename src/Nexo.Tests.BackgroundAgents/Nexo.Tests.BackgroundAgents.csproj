@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
+    <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
   </ItemGroup>
 
   <ItemGroup>

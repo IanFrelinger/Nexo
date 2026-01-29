@@ -350,6 +350,49 @@ This document outlines the development plan for implementing optional embedded b
 
 ---
 
+### Phase 10: Hardening (Week 11)
+
+**Goal:** Harden the background agents system with performance benchmarks, load testing, security validation, and resilience improvements.
+
+#### Week 11: Performance, Load & Security
+
+**Tasks:**
+1. **Performance benchmarks**
+   - Benchmark single-agent execution (ExecuteOnceAsync) latency and throughput
+   - Benchmark RAG search (InMemory vs SQLite) with varying corpus sizes and concurrency
+   - Benchmark embedding generation and vector store indexing
+   - Document baseline metrics and add optional benchmark project or test category
+2. **Load testing**
+   - Run multiple agents (e.g. 5–20) concurrently with interval/cron schedules
+   - Stress registry (register/start/stop/execute) under concurrent access
+   - Verify log store (InMemoryAgentLogStore) under high volume and bounded buffer behavior
+   - Measure memory usage and scheduler behavior with many agents
+3. **Security & regression**
+   - Validate DataExfiltrationPolicy under concurrent tool calls and multiple sensitivity levels
+   - Regression tests for config loading (malformed JSON, missing required fields, invalid schedule)
+   - Verify sensitivity enforcement across RAG search and web search tool usage
+4. **Resilience**
+   - Test cancellation (ExecuteOnceAsync, Start/Stop) and graceful shutdown
+   - Verify failure isolation (one agent failing does not stop others; error logging and metrics)
+   - Optional: add circuit breaker or retry policy for agent execution failures
+
+**Deliverables:**
+- `src/Nexo.Tests.BackgroundAgents/Performance/` (or equivalent) benchmark/integration tests
+- Documented performance baselines (e.g. in `docs/BACKGROUND_AGENTS_ARCHITECTURE.md` or `docs/METRICS.md`)
+- Load and security test scenarios; any resilience fixes or configuration knobs
+
+**Dependencies:** Phase 9 complete
+
+**Estimated Effort:** 3–5 days
+
+**Testing:**
+- Automated performance benchmarks (repeatable)
+- Load tests with configurable agent count and schedule mix
+- Security tests for exfiltration policy and sensitivity boundaries
+- Resilience tests for cancellation and failure isolation
+
+---
+
 ## Project Structure
 
 ```
@@ -476,6 +519,7 @@ src/Nexo.BackgroundAgents/
 8. ✅ Meta-agent can manage other agents
 9. ✅ All tests pass
 10. ✅ Documentation is complete
+11. (Phase 10) Performance baselines documented; load and security tests pass; resilience validated
 
 ## Timeline Summary
 
@@ -490,7 +534,8 @@ src/Nexo.BackgroundAgents/
 | Phase 7: Monitoring CLI | 1 week | 8 |
 | Phase 8: Meta-Agent | 1 week | 9 |
 | Phase 9: Integration & Docs | 1 week | 10 |
-| **Total** | **10 weeks** | **1-10** |
+| Phase 10: Hardening | 1 week | 11 |
+| **Total** | **11 weeks** | **1-11** |
 
 ## Next Steps
 
@@ -498,3 +543,4 @@ src/Nexo.BackgroundAgents/
 2. Create `Nexo.BackgroundAgents` project
 3. Set up project structure
 4. Begin Phase 1 implementation
+5. (After Phase 9) Execute Phase 10 hardening: benchmarks, load tests, security and resilience validation

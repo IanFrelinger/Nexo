@@ -22,6 +22,13 @@ public interface IDataSensitivityRegistry
     void Register(IDataSensitivityLevel level);
 
     /// <summary>
+    /// Unregister a custom sensitivity level by name. Primitive levels cannot be unregistered.
+    /// </summary>
+    /// <param name="name">The sensitivity level name to remove.</param>
+    /// <returns>True if a custom level was removed, false if not found or primitive.</returns>
+    bool Unregister(string name);
+
+    /// <summary>
     /// Get sensitivity level by name (checks both primitives and custom levels).
     /// </summary>
     /// <param name="name">The sensitivity level name.</param>
@@ -73,6 +80,16 @@ public sealed class DataSensitivityRegistry : IDataSensitivityRegistry
         }
 
         _customLevels[level.Value] = level;
+    }
+
+    /// <inheritdoc />
+    public bool Unregister(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+        if (DataSensitivityLevels.FromName(name) != null)
+            return false; // primitives cannot be unregistered
+        return _customLevels.TryRemove(name, out _);
     }
 
     /// <summary>

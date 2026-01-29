@@ -1,0 +1,19 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "health-monitor",
+        "Name": "Health Monitor",
+        "Role": "monitor",
+        "ModelProvider": "deterministic",
+        "Commands": ["ping", "health_check"],
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:05:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Public"
+      }
+    ]
+  }
+}

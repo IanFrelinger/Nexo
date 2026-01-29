@@ -1,11 +1,14 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MediatR;
 using FluentValidation;
 using Nexo.CLI.Commands;
+using Nexo.CLI.Commands.BackgroundAgent;
+using Nexo.BackgroundAgents;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
@@ -143,6 +146,50 @@ static class Program
         // nexo config
         var configCommand = serviceProvider.GetRequiredService<ConfigCommand>();
         var configCmd = new Command("config", "View or manage configuration");
+        var configShowCmd = new Command("show", "Show current configuration");
+        configShowCmd.SetHandler(
+            async (bool json, bool verbose) =>
+            {
+                var exitCode = await configCommand.ExecuteAsync(json, verbose);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt,
+            verboseOpt);
+        configCmd.AddCommand(configShowCmd);
+        var configValidateCmd = new Command("validate", "Validate configuration");
+        configValidateCmd.SetHandler(
+            async (bool json, bool verbose) =>
+            {
+                var exitCode = await configCommand.ValidateAsync(json, verbose);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt,
+            verboseOpt);
+        configCmd.AddCommand(configValidateCmd);
+        var configExportPathOpt = new Option<FileInfo>("--path", "Output file path") { IsRequired = true };
+        var configExportCmd = new Command("export", "Export configuration to file") { configExportPathOpt };
+        configExportCmd.SetHandler(
+            async (FileInfo path, bool json, bool verbose) =>
+            {
+                var exitCode = await configCommand.ExportAsync(path.FullName, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            configExportPathOpt,
+            jsonOpt,
+            verboseOpt);
+        configCmd.AddCommand(configExportCmd);
+        var configImportPathOpt = new Option<FileInfo>("--path", "Input file path") { IsRequired = true };
+        var configImportCmd = new Command("import", "Import and validate configuration from file") { configImportPathOpt };
+        configImportCmd.SetHandler(
+            async (FileInfo path, bool json, bool verbose) =>
+            {
+                var exitCode = await configCommand.ImportAsync(path.FullName, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            configImportPathOpt,
+            jsonOpt,
+            verboseOpt);
+        configCmd.AddCommand(configImportCmd);
         configCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
@@ -151,6 +198,234 @@ static class Program
             },
             jsonOpt,
             verboseOpt);
+
+        // nexo background-agent
+        var backgroundAgentCommand = serviceProvider.GetRequiredService<BackgroundAgentCommand>();
+        var backgroundAgentCmd = new Command("background-agent", "Configure and manage background agents");
+        var listBgCmd = new Command("list", "List configured background agents")
+        {
+            new Option<string?>("--status", "Filter by status (Running, Stopped, Error, NotRegistered)"),
+            new Option<string?>("--role", "Filter by role"),
+            new Option<string?>("--sensitivity", "Filter by max sensitivity level")
+        };
+        listBgCmd.SetHandler(
+            async (bool formatJson, string? status, string? role, string? sensitivity) =>
+            {
+                var exitCode = await backgroundAgentCommand.ListAsync(formatJson, status, role, sensitivity);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt,
+            listBgCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            listBgCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
+            listBgCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException());
+        backgroundAgentCmd.AddCommand(listBgCmd);
+
+        var showBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var showBgCmd = new Command("show", "Show details for a background agent") { showBgIdOpt };
+        showBgCmd.SetHandler(
+            async (string id, bool formatJson) =>
+            {
+                var exitCode = await backgroundAgentCommand.ShowAsync(id, formatJson);
+                Environment.Exit(exitCode);
+            },
+            showBgIdOpt,
+            jsonOpt);
+        backgroundAgentCmd.AddCommand(showBgCmd);
+
+        var startBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var startBgCmd = new Command("start", "Start a background agent") { startBgIdOpt };
+        startBgCmd.SetHandler(
+            async (string id, bool formatJson) =>
+            {
+                var exitCode = await backgroundAgentCommand.StartAsync(id, formatJson);
+                Environment.Exit(exitCode);
+            },
+            startBgIdOpt,
+            jsonOpt);
+        backgroundAgentCmd.AddCommand(startBgCmd);
+
+        var stopBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var stopBgCmd = new Command("stop", "Stop a background agent") { stopBgIdOpt };
+        stopBgCmd.SetHandler(
+            async (string id, bool formatJson) =>
+            {
+                var exitCode = await backgroundAgentCommand.StopAsync(id, formatJson);
+                Environment.Exit(exitCode);
+            },
+            stopBgIdOpt,
+            jsonOpt);
+        backgroundAgentCmd.AddCommand(stopBgCmd);
+
+        var restartBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var restartBgCmd = new Command("restart", "Restart a background agent") { restartBgIdOpt };
+        restartBgCmd.SetHandler(
+            async (string id, bool formatJson) =>
+            {
+                var exitCode = await backgroundAgentCommand.RestartAsync(id, formatJson);
+                Environment.Exit(exitCode);
+            },
+            restartBgIdOpt,
+            jsonOpt);
+        backgroundAgentCmd.AddCommand(restartBgCmd);
+
+        // nexo background-agent execute
+        var executeBgCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
+        var executeBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var executeBgAsyncOpt = new Option<bool>("--async", "Run execution asynchronously (don't wait)");
+        var executeBgCmd = new Command("execute", "Manually run one execution of a background agent") { executeBgIdOpt, executeBgAsyncOpt };
+        executeBgCmd.SetHandler(
+            async (string id, bool runAsync, bool formatJson) =>
+                Environment.Exit(await executeBgCommand.ExecuteAsync(id, runAsync, formatJson)),
+            executeBgIdOpt, executeBgAsyncOpt, jsonOpt);
+        backgroundAgentCmd.AddCommand(executeBgCmd);
+
+        // nexo background-agent logs
+        var logsBgCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
+        var logsBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var logsBgCmd = new Command("logs", "Show agent execution logs")
+        {
+            logsBgIdOpt,
+            new Option<int>("--tail", () => 100, "Show last N lines"),
+            new Option<string?>("--level", "Filter by level (Debug, Info, Warning, Error)"),
+            new Option<string?>("--since", "Show logs since duration (e.g. 1h, 30m)")
+        };
+        logsBgCmd.SetHandler(
+            async (string id, int tail, string? level, string? since, bool formatJson) =>
+            {
+                TimeSpan? sinceTs = ParseSince(since);
+                Environment.Exit(await logsBgCommand.ExecuteAsync(id, tail, level, sinceTs, formatJson));
+            },
+            logsBgIdOpt,
+            logsBgCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
+            logsBgCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
+            logsBgCmd.Options[3] as Option<string?> ?? throw new InvalidOperationException(),
+            jsonOpt);
+        backgroundAgentCmd.AddCommand(logsBgCmd);
+
+        // nexo background-agent metrics
+        var metricsBgCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
+        var metricsBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
+        var metricsBgCmd = new Command("metrics", "Show agent performance metrics") { metricsBgIdOpt };
+        metricsBgCmd.SetHandler(
+            async (string id, bool formatJson) =>
+                Environment.Exit(await metricsBgCommand.ExecuteAsync(id, formatJson)),
+            metricsBgIdOpt, jsonOpt);
+        backgroundAgentCmd.AddCommand(metricsBgCmd);
+
+        // nexo background-agent sensitivity
+        var sensitivityCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+        var sensitivityCmd = new Command("sensitivity", "Manage data sensitivity levels");
+        var sensListCmd = new Command("list", "List sensitivity levels");
+        sensListCmd.SetHandler(async (bool formatJson) => Environment.Exit(await sensitivityCommand.ListAsync(formatJson)), jsonOpt);
+        sensitivityCmd.AddCommand(sensListCmd);
+        var sensShowNameOpt = new Option<string>("--name", "Sensitivity level name") { IsRequired = true };
+        var sensShowCmd = new Command("show", "Show a sensitivity level") { sensShowNameOpt };
+        sensShowCmd.SetHandler(async (string name, bool formatJson) => Environment.Exit(await sensitivityCommand.ShowAsync(name, formatJson)), sensShowNameOpt, jsonOpt);
+        sensitivityCmd.AddCommand(sensShowCmd);
+        var sensAddNameOpt = new Option<string>("--name", "Level name") { IsRequired = true };
+        var sensAddValueOpt = new Option<int>("--value", () => 0, "Sensitivity value (ordering)");
+        var sensAddDescOpt = new Option<string>("--description", "Description");
+        var sensAddCmd = new Command("add", "Add a custom sensitivity level")
+        {
+            sensAddNameOpt, sensAddValueOpt,
+            new Option<bool>("--allows-external-llm", () => false),
+            new Option<bool>("--allows-web-search", () => false),
+            new Option<bool>("--requires-local-only", () => false),
+            new Option<bool>("--allows-network-exports", () => false),
+            sensAddDescOpt
+        };
+        sensAddCmd.SetHandler(
+            async (string name, int value, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string? description, bool formatJson) =>
+                Environment.Exit(await sensitivityCommand.AddAsync(name, value, allowsExternalLLM, allowsWebSearch, requiresLocalOnly, allowsNetworkExports, description ?? "", formatJson)),
+            sensAddNameOpt, sensAddValueOpt,
+            sensAddCmd.Options[2] as Option<bool> ?? throw new InvalidOperationException(),
+            sensAddCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException(),
+            sensAddCmd.Options[4] as Option<bool> ?? throw new InvalidOperationException(),
+            sensAddCmd.Options[5] as Option<bool> ?? throw new InvalidOperationException(),
+            sensAddDescOpt, jsonOpt);
+        sensitivityCmd.AddCommand(sensAddCmd);
+        var sensUpdateNameOpt = new Option<string>("--name", "Level name") { IsRequired = true };
+        var sensUpdateCmd = new Command("update", "Update a custom sensitivity level")
+        {
+            sensUpdateNameOpt, new Option<int>("--value", () => 0, "Sensitivity value"),
+            new Option<bool>("--allows-external-llm", () => false),
+            new Option<bool>("--allows-web-search", () => false),
+            new Option<bool>("--requires-local-only", () => false),
+            new Option<bool>("--allows-network-exports", () => false),
+            new Option<string>("--description", "Description")
+        };
+        sensUpdateCmd.SetHandler(
+            async (string name, int value, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string? description, bool formatJson) =>
+                Environment.Exit(await sensitivityCommand.UpdateAsync(name, value, allowsExternalLLM, allowsWebSearch, requiresLocalOnly, allowsNetworkExports, description ?? "", formatJson)),
+            sensUpdateNameOpt, sensUpdateCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
+            sensUpdateCmd.Options[2] as Option<bool> ?? throw new InvalidOperationException(),
+            sensUpdateCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException(),
+            sensUpdateCmd.Options[4] as Option<bool> ?? throw new InvalidOperationException(),
+            sensUpdateCmd.Options[5] as Option<bool> ?? throw new InvalidOperationException(),
+            sensUpdateCmd.Options[6] as Option<string> ?? throw new InvalidOperationException(),
+            jsonOpt);
+        sensitivityCmd.AddCommand(sensUpdateCmd);
+        var sensRemoveNameOpt = new Option<string>("--name", "Level name") { IsRequired = true };
+        var sensRemoveCmd = new Command("remove", "Remove a custom sensitivity level") { sensRemoveNameOpt };
+        sensRemoveCmd.SetHandler(async (string name, bool formatJson) => Environment.Exit(await sensitivityCommand.RemoveAsync(name, formatJson)), sensRemoveNameOpt, jsonOpt);
+        sensitivityCmd.AddCommand(sensRemoveCmd);
+        backgroundAgentCmd.AddCommand(sensitivityCmd);
+
+        // nexo background-agent rag
+        var ragCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
+        var ragCmd = new Command("rag", "RAG (Retrieval Augmented Generation) operations");
+        var ragIndexPathsOpt = new Option<string[]>("--paths", "Paths to index (files or directories)") { IsRequired = true, AllowMultipleArgumentsPerToken = true };
+        var ragIndexSensOpt = new Option<string?>("--sensitivity", "Default sensitivity level for indexed documents");
+        var ragIndexCmd = new Command("index", "Index paths into RAG store") { ragIndexPathsOpt, ragIndexSensOpt };
+        ragIndexCmd.SetHandler(
+            async (string[] paths, string? sensitivity, bool formatJson) =>
+                Environment.Exit(await ragCommand.IndexAsync(paths ?? Array.Empty<string>(), sensitivity, formatJson)),
+            ragIndexPathsOpt, ragIndexSensOpt, jsonOpt);
+        ragCmd.AddCommand(ragIndexCmd);
+        var ragSearchQueryOpt = new Option<string>("--query", "Search query") { IsRequired = true };
+        var ragSearchCmd = new Command("search", "Search RAG store")
+        {
+            ragSearchQueryOpt,
+            new Option<int>("--max-results", () => 5, "Max results"),
+            new Option<double>("--min-score", () => 0.0, "Min similarity score"),
+            new Option<string?>("--max-sensitivity", "Max sensitivity level for results")
+        };
+        ragSearchCmd.SetHandler(
+            async (string query, int maxResults, double minScore, string? maxSensitivity, bool formatJson) =>
+                Environment.Exit(await ragCommand.SearchAsync(query, maxResults, minScore, maxSensitivity, formatJson)),
+            ragSearchQueryOpt,
+            ragSearchCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
+            ragSearchCmd.Options[2] as Option<double> ?? throw new InvalidOperationException(),
+            ragSearchCmd.Options[3] as Option<string?> ?? throw new InvalidOperationException(),
+            jsonOpt);
+        ragCmd.AddCommand(ragSearchCmd);
+        var ragStatsCmd = new Command("stats", "Show RAG store statistics");
+        ragStatsCmd.SetHandler(async (bool formatJson) => Environment.Exit(await ragCommand.StatsAsync(formatJson)), jsonOpt);
+        ragCmd.AddCommand(ragStatsCmd);
+        var ragClearCmd = new Command("clear", "Clear RAG store");
+        ragClearCmd.SetHandler(async (bool formatJson) => Environment.Exit(await ragCommand.ClearAsync(formatJson)), jsonOpt);
+        ragCmd.AddCommand(ragClearCmd);
+        backgroundAgentCmd.AddCommand(ragCmd);
+
+        // nexo background-agent websearch
+        var webSearchCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
+        var webSearchCmd = new Command("websearch", "Web search configuration and test");
+        var webSearchConfigureCmd = new Command("configure", "Show web search configuration");
+        webSearchConfigureCmd.SetHandler(async (bool formatJson) => Environment.Exit(await webSearchCommand.ConfigureAsync(formatJson)), jsonOpt);
+        webSearchCmd.AddCommand(webSearchConfigureCmd);
+        var webSearchTestCmd = new Command("test", "Run a test search")
+        {
+            new Option<string>("--query", () => "Nexo framework", "Search query"),
+            new Option<int>("--max-results", () => 5, "Max results")
+        };
+        webSearchTestCmd.SetHandler(
+            async (string query, int maxResults, bool formatJson) =>
+                Environment.Exit(await webSearchCommand.TestAsync(query, maxResults, formatJson)),
+            webSearchTestCmd.Options[0] as Option<string> ?? throw new InvalidOperationException(),
+            webSearchTestCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
+            jsonOpt);
+        webSearchCmd.AddCommand(webSearchTestCmd);
+        backgroundAgentCmd.AddCommand(webSearchCmd);
 
         // nexo test - Multi-platform test execution
         var testCmd = new Command("test", "Run tests across multiple platforms")
@@ -213,7 +488,6 @@ static class Program
             jsonOpt,
             verboseOpt);
         testCmd.AddCommand(testLocalCmd);
-        root.AddCommand(testCmd);
 
         // nexo orchestrate
         var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
@@ -1227,6 +1501,7 @@ static class Program
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
         root.AddCommand(configCmd);
+        root.AddCommand(backgroundAgentCmd);
         root.AddCommand(testCmd);
         root.AddCommand(escalateCmd);
         root.AddCommand(metricsCmd);
@@ -1291,6 +1566,11 @@ static class Program
         // Register orchestration layer
         services.AddNexoOrchestration();
 
+        // Background agents (CLI-only: no hosted service)
+        services.AddBackgroundAgents(registerHostedService: false);
+        services.AddBackgroundAgentsRAG();
+        services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
+
         // Register base IModel as hot-swappable (provider-backed with deterministic fallback),
         // then wrap it with OrchestrationRuntimeModelDecorator so `nexo orchestrate --runtime-spec`
         // can affect Architect/Negotiation without changing callsites.
@@ -1339,6 +1619,13 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
         services.AddScoped<Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
         services.AddScoped<Nexo.CLI.Commands.World.WorldCommand>();
+        services.AddScoped<BackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
 
         // Register test runner
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
@@ -1419,5 +1706,25 @@ static class Program
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentExecutor, Nexo.Infrastructure.Agent.Adapters.AgentExecutorAdapter>();
 
         // Register available agents
+    }
+
+    private static TimeSpan? ParseSince(string? since)
+    {
+        if (string.IsNullOrWhiteSpace(since))
+            return null;
+        since = since.Trim();
+        if (since.Length < 2)
+            return null;
+        var unit = since[^1];
+        if (!int.TryParse(since[..^1], out var value) || value <= 0)
+            return null;
+        return unit switch
+        {
+            'h' or 'H' => TimeSpan.FromHours(value),
+            'm' or 'M' => TimeSpan.FromMinutes(value),
+            's' or 'S' => TimeSpan.FromSeconds(value),
+            'd' or 'D' => TimeSpan.FromDays(value),
+            _ => null
+        };
     }
 }

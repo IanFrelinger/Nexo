@@ -145,6 +145,7 @@ See [Architecture Guide](docs/ARCHITECTURE.md) for details.
 - **Negotiation protocol**: Agents negotiate to resolve constraints and dependencies
 - **Progress tracking**: Real-time progress monitoring across agent workflows
 - **Error recovery**: Automatic error recovery and retry mechanisms
+- **Background agents**: Optional embedded agents with configurable commands, roles, schedules, data sensitivity, RAG, and web search; managed via CLI or host registration
 
 ### Execution Platform Abstraction
 
@@ -213,9 +214,14 @@ nexo unity analyze-errors                # Analyze Unity errors
 # Demo commands
 nexo demo test "https://example.com" "Test checkout flow"
 nexo demo dev "Add save system" "./MyGame"
+
+# Background agents (optional)
+nexo background-agent list
+nexo background-agent start <id>
+nexo background-agent execute --id <id>
 ```
 
-See [CLI Reference](docs/CLI_REFERENCE.md) for complete command documentation.
+See [CLI Reference](docs/CLI_REFERENCE.md) and [Background Agents CLI Spec](docs/BACKGROUND_AGENTS_CLI_SPEC.md) for complete command documentation.
 
 ---
 
@@ -253,6 +259,8 @@ These applications demonstrate the framework's capabilities but are not the focu
 | [Architecture Overview](docs/ARCHITECTURE.md) | System design and patterns |
 | [CLI Reference](docs/CLI_REFERENCE.md) | Complete CLI command documentation |
 | [Agent Development Guide](docs/AGENT_DEVELOPMENT_GUIDE.md) | How to build agents |
+| [Background Agents](docs/BACKGROUND_AGENTS_ARCHITECTURE.md) | Background agents design and configuration |
+| [Background Agents Migration](docs/BACKGROUND_AGENTS_MIGRATION.md) | Integrating background agents into your host |
 | [Execution Platform Guide](docs/EXECUTION_PLATFORM_ABSTRACTION.md) | Multi-platform testing |
 | [Defense Deployment](docs/DEFENSE_DEPLOYMENT.md) | Air-gap and compliance guide |
 | [API Reference](docs/API_REFERENCE.md) | Complete API documentation |
