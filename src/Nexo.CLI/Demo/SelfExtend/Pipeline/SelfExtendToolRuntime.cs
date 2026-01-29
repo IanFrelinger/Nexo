@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Nexo.Abstractions;
+using Nexo.CLI.Commands.BackgroundAgent;
 using Nexo.Policies;
 using Nexo.Policies.Dev;
 using Nexo.Runtime;
@@ -10,6 +11,7 @@ namespace Nexo.CLI.Demo.SelfExtend.Pipeline;
 /// <summary>
 /// Runtime wrapper around the toolbox + policy engine (framework primitives).
 /// Pipeline commands use this to invoke tools in a consistent, policy-guarded way.
+/// Uses RepoFsToolboxFactory for minimal repo-fs tools, then adds build/test/run/analyze tools and extra policies.
 /// </summary>
 public sealed class SelfExtendToolRuntime
 {
@@ -18,13 +20,12 @@ public sealed class SelfExtendToolRuntime
 
     public SelfExtendToolRuntime()
     {
-        _tools = new CapabilityRegistry();
-        _tools.Register(new RepoFsWriteTool());
-        _tools.Register(new RepoFsSearchReplaceTool());
-        _tools.Register(new DotnetBuildTool());
-        _tools.Register(new DotnetTestTool());
-        _tools.Register(new DotnetRunTool());
-        _tools.Register(new RoslynAnalyzeTool());
+        var (tools, _) = RepoFsToolboxFactory.CreateMinimal();
+        tools.Register(new DotnetBuildTool());
+        tools.Register(new DotnetTestTool());
+        tools.Register(new DotnetRunTool());
+        tools.Register(new RoslynAnalyzeTool());
+        _tools = tools;
 
         _policies = new PolicyEngine(new IPolicy[]
         {
@@ -37,11 +38,7 @@ public sealed class SelfExtendToolRuntime
 
     public async Task<ToolResult> InvokeAsync(SelfExtendContext ctx, string toolId, object args, CancellationToken ct)
     {
-        var snapshot = new WorldSnapshot(ctx.Iteration, new Dictionary<string, object?>
-        {
-            ["RepoRoot"] = ctx.RepoRoot,
-            ["OutputRoot"] = ctx.OutputRoot
-        });
+        var snapshot = WorldSnapshot.ForRepo(ctx.RepoRoot, ctx.OutputRoot, ctx.Iteration);
 
         var call = new ToolCall(toolId, JsonSerializer.SerializeToElement(args));
         if (!_policies.Approve(call, snapshot, out var reason))

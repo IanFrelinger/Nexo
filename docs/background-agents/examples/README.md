@@ -9,6 +9,9 @@ These JSON examples can be merged into your `appsettings.json` or loaded via a d
 | **minimal-agent.json** | Single agent with interval schedule; no RAG or web search. |
 | **full-agent-with-rag-and-websearch.json** | Agent with RAG (SQLite vector store), web search (Bing), and exfiltration policy. |
 | **air-gapped-deterministic.json** | Strict local-only agent for air-gapped or high-sensitivity environments. |
+| **dogfood-optimizer.json** | **Dog-fooded** optimizer agent: runs the app's own code analysis on a path (e.g. `.`) on a schedule. See [DOGFOOD_OPTIMIZER.md](../DOGFOOD_OPTIMIZER.md). |
+| **dogfood-tester.json** | **Dog-fooded** tester agent: runs the app's own test pipeline on a schedule. Optional `Parameters.Filter` for test filter. See [DOGFOOD_TESTER.md](../DOGFOOD_TESTER.md). |
+| **dogfood-extender.json** | **Dog-fooded** extender agent: runs one self-extend cycle (LLM + repo.fs.write / search_replace) with path and size policy. See [DOGFOOD_EXTENDER.md](../DOGFOOD_EXTENDER.md). |
 
 ## Usage
 

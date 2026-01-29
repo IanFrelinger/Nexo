@@ -1,0 +1,20 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "self-tester",
+        "Name": "Self Tester",
+        "Role": "tester",
+        "ModelProvider": "deterministic",
+        "Commands": ["test"],
+        "Parameters": {},
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:30:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Public"
+      }
+    ]
+  }
+}

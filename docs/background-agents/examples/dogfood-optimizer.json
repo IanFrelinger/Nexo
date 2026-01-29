@@ -1,0 +1,22 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "codebase-optimizer",
+        "Name": "Codebase Optimizer",
+        "Role": "optimizer",
+        "ModelProvider": "deterministic",
+        "Commands": ["analyze"],
+        "Parameters": {
+          "Path": "."
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "01:00:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Public"
+      }
+    ]
+  }
+}

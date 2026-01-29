@@ -15,7 +15,7 @@ public sealed class GeoVectorCliE2ETests : UnitTestBase
 
     public override Task SetupAsync(CancellationToken cancellationToken = default)
     {
-        _repoRoot = FindRepoRoot();
+        _repoRoot = TestPaths.FindRepoRoot();
         _tempDir = Path.Combine(Path.GetTempPath(), "nexo-geovector-e2e", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
         return Task.CompletedTask;
@@ -120,18 +120,6 @@ public sealed class GeoVectorCliE2ETests : UnitTestBase
         var json = ExtractJsonObject(stdout);
         using var doc = JsonDocument.Parse(json);
         AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean(), "Expected ok=true in JSON output");
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null)
-        {
-            var sln = Path.Combine(dir.FullName, "Nexo.sln");
-            if (File.Exists(sln)) return dir.FullName;
-            dir = dir.Parent;
-        }
-        throw new InvalidOperationException("Could not locate Nexo.sln from test base directory");
     }
 
     private static async Task<(int ExitCode, string StdOut, string StdErr)> RunDotnetAsync(string workingDir, string args, CancellationToken ct)

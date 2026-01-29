@@ -225,7 +225,24 @@ public sealed record AgentActions(IReadOnlyList<ToolCall> ToolCalls)
 /// </summary>
 /// <param name="Tick">The current tick number.</param>
 /// <param name="Data">Dictionary containing world state data as key-value pairs.</param>
-public sealed record WorldSnapshot(int Tick, IReadOnlyDictionary<string, object?> Data);
+public sealed record WorldSnapshot(int Tick, IReadOnlyDictionary<string, object?> Data)
+{
+    /// <summary>
+    /// Creates a world snapshot for repo-based tool execution (RepoRoot and OutputRoot).
+    /// </summary>
+    /// <param name="repoRoot">Repository root path.</param>
+    /// <param name="outputRoot">Output root path; if null, uses Path.Combine(repoRoot, "out").</param>
+    /// <param name="tick">Tick number (default 0).</param>
+    public static WorldSnapshot ForRepo(string repoRoot, string? outputRoot = null, int tick = 0)
+    {
+        var output = outputRoot ?? Path.Combine(repoRoot, "out");
+        return new WorldSnapshot(tick, new Dictionary<string, object?>
+        {
+            ["RepoRoot"] = repoRoot,
+            ["OutputRoot"] = output
+        });
+    }
+}
 
 /// <summary>
 /// Represents an agent's observation of the world.

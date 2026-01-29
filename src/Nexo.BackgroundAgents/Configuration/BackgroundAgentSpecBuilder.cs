@@ -119,6 +119,7 @@ Report your findings and take actions as appropriate for your role.";
             "analyzer" => "CodeGeneration",
             "optimizer" => "Infrastructure",
             "auditor" => "Security",
+            "extender" => "CodeGeneration",
             _ => "Generic"
         };
     }

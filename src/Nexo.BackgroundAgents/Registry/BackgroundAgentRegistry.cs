@@ -2,8 +2,11 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Logging;
+using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Scheduling;
+using Nexo.BackgroundAgents.Testing;
 
 namespace Nexo.BackgroundAgents.Registry;
 
@@ -84,6 +87,9 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly IAgentScheduler _scheduler;
     private readonly ILogger<BackgroundAgentRegistry>? _logger;
     private readonly IBackgroundAgentLogStore? _logStore;
+    private readonly ICodeAnalysisRunner? _codeAnalysisRunner;
+    private readonly ITestRunRunner? _testRunRunner;
+    private readonly ISelfExtendRunner? _selfExtendRunner;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BackgroundAgentRegistry"/> class.
@@ -92,14 +98,23 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     /// <param name="scheduler">Scheduler for agent execution loops.</param>
     /// <param name="logger">Optional logger.</param>
     /// <param name="logStore">Optional log store for agent execution logs.</param>
+    /// <param name="codeAnalysisRunner">Optional runner for optimizer agents (dog-food: run analysis on codebase).</param>
+    /// <param name="testRunRunner">Optional runner for tester agents (dog-food: run framework tests).</param>
+    /// <param name="selfExtendRunner">Optional runner for extender agents (dog-food: LLM-driven code/doc changes within policy).</param>
     public BackgroundAgentRegistry(
         IAgentScheduler scheduler,
         ILogger<BackgroundAgentRegistry>? logger = null,
-        IBackgroundAgentLogStore? logStore = null)
+        IBackgroundAgentLogStore? logStore = null,
+        ICodeAnalysisRunner? codeAnalysisRunner = null,
+        ITestRunRunner? testRunRunner = null,
+        ISelfExtendRunner? selfExtendRunner = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _logger = logger;
         _logStore = logStore;
+        _codeAnalysisRunner = codeAnalysisRunner;
+        _testRunRunner = testRunRunner;
+        _selfExtendRunner = selfExtendRunner;
     }
 
     /// <summary>
@@ -219,7 +234,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         await ExecuteAgentAsync(instance, cancellationToken).ConfigureAwait(false);
     }
 
-    private Task ExecuteAgentAsync(BackgroundAgentInstance instance, CancellationToken cancellationToken)
+    private async Task ExecuteAgentAsync(BackgroundAgentInstance instance, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var agentId = instance.Config.Id;
@@ -229,7 +244,52 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
             _logStore?.Append(agentId, "Info", "Executing background agent.");
             _logger?.LogDebug("Executing background agent: {AgentId}", agentId);
 
-            // Create a simple observation for the agent
+            // Dog-food: optimizer agents run code analysis when Path/AnalysisPath is set and runner is registered
+            if (string.Equals(instance.Config.Role, "optimizer", StringComparison.OrdinalIgnoreCase) &&
+                _codeAnalysisRunner != null &&
+                TryGetParameter(instance.Config, new[] { "Path", "AnalysisPath" }, out var analysisPath))
+            {
+                var result = await _codeAnalysisRunner.RunAsync(analysisPath, cancellationToken).ConfigureAwait(false);
+                _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
+                    $"Code analysis: {result.Summary} (violations: {result.ViolationCount})");
+                _logger?.LogDebug("Background agent {AgentId} code analysis: {Summary}", agentId, result.Summary);
+                instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                instance.SuccessCount++;
+                _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                return;
+            }
+
+            // Dog-food: tester agents run tests when test runner is registered (optional Filter from Parameters)
+            if (string.Equals(instance.Config.Role, "tester", StringComparison.OrdinalIgnoreCase) &&
+                _testRunRunner != null)
+            {
+                var filter = TryGetParameter(instance.Config, new[] { "Filter" }, out var f) ? f : null;
+                var result = await _testRunRunner.RunAsync(filter, cancellationToken).ConfigureAwait(false);
+                _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
+                    $"Tests: {result.Summary} (total: {result.TotalTests}, failed: {result.FailedTests})");
+                _logger?.LogDebug("Background agent {AgentId} test run: {Summary}", agentId, result.Summary);
+                instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                instance.SuccessCount++;
+                _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                return;
+            }
+
+            // Dog-food: extender agents run self-extend cycle (LLM + tools) when runner is registered
+            if (string.Equals(instance.Config.Role, "extender", StringComparison.OrdinalIgnoreCase) &&
+                _selfExtendRunner != null &&
+                TryGetParameter(instance.Config, new[] { "RepoRoot", "Path" }, out var repoRoot))
+            {
+                var result = await _selfExtendRunner.RunAsync(repoRoot, cancellationToken).ConfigureAwait(false);
+                _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
+                    $"Self-extend: {result.Summary} (executed: {result.ToolCallsExecuted}, denied: {result.ToolCallsDenied})");
+                _logger?.LogDebug("Background agent {AgentId} self-extend: {Summary}", agentId, result.Summary);
+                instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                instance.SuccessCount++;
+                _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                return;
+            }
+
+            // Default: simple success (full agent ThinkAsync + toolbox can be wired later)
             var observation = new AgentObservation(new WorldSnapshot(0, new Dictionary<string, object?>
             {
                 ["agentId"] = agentId,
@@ -245,7 +305,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
             instance.SuccessCount++;
             _logStore?.Append(agentId, "Info", "Execution completed successfully.");
             _logger?.LogDebug("Background agent {AgentId} executed successfully", agentId);
-            return Task.CompletedTask;
+            return;
         }
         catch (OperationCanceledException)
         {
@@ -257,7 +317,23 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
             instance.LastError = ex.Message;
             _logStore?.Append(agentId, "Error", $"Execution failed: {ex.Message}");
             _logger?.LogError(ex, "Background agent {AgentId} execution failed", agentId);
-            return Task.CompletedTask;
+            return;
         }
+    }
+
+    private static bool TryGetParameter(BackgroundAgentConfig config, string[] keys, out string value)
+    {
+        value = null!;
+        if (config.Parameters == null || config.Parameters.Count == 0)
+            return false;
+        foreach (var key in keys)
+        {
+            if (config.Parameters.TryGetValue(key, out var obj) && obj is string s && !string.IsNullOrWhiteSpace(s))
+            {
+                value = s;
+                return true;
+            }
+        }
+        return false;
     }
 }

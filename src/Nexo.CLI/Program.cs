@@ -1570,6 +1570,12 @@ static class Program
         services.AddBackgroundAgents(registerHostedService: false);
         services.AddBackgroundAgentsRAG();
         services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
+        // Dog-food: optimizer agents run the app's own analysis pipeline
+        services.TryAddSingleton<Nexo.BackgroundAgents.Optimization.ICodeAnalysisRunner, Nexo.CLI.Commands.BackgroundAgent.CodeAnalysisRunnerAdapter>();
+        // Dog-food: tester agents run the app's own test pipeline
+        services.TryAddSingleton<Nexo.BackgroundAgents.Testing.ITestRunRunner, Nexo.CLI.Commands.BackgroundAgent.TestRunRunnerAdapter>();
+        // Dog-food: extender agents run self-extend cycle (LLM + tools with path policy)
+        services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner, Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>();
 
         // Register base IModel as hot-swappable (provider-backed with deterministic fallback),
         // then wrap it with OrchestrationRuntimeModelDecorator so `nexo orchestrate --runtime-spec`

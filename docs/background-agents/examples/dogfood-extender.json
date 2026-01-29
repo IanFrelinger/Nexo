@@ -1,0 +1,22 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "self-extender",
+        "Name": "Self Extender",
+        "Role": "extender",
+        "ModelProvider": "deterministic",
+        "Commands": ["extend", "write"],
+        "Parameters": {
+          "RepoRoot": "."
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "02:00:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Public"
+      }
+    ]
+  }
+}
