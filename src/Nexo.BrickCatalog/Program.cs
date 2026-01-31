@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<CentralCatalogOptions>(
     builder.Configuration.GetSection(CentralCatalogOptions.SectionName));
+builder.Services.AddSingleton<UsageReportStore>();
 builder.Services.AddSingleton<CatalogAggregator>();
 builder.Services.AddHttpClient("CentralCatalog.Instance");
 
@@ -63,5 +64,16 @@ app.MapGet("/api/bricks/{id}", async (string id, CatalogAggregator aggregator, C
 .WithOpenApi()
 .Produces<BrickCatalogEntryDto>(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status404NotFound);
+
+app.MapPost("/api/bricks/usage", (BrickUsageReportDto report, UsageReportStore store) =>
+{
+    if (report?.NodeId == null) return Results.BadRequest();
+    store.Store(report);
+    return Results.Accepted();
+})
+.WithName("PostBricksUsage")
+.WithOpenApi()
+.Produces(StatusCodes.Status202Accepted)
+.Produces(StatusCodes.Status400BadRequest);
 
 app.Run();

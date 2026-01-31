@@ -9,6 +9,8 @@ using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.GeoTerrain.Bricks;
 using Nexo.Infrastructure.Execution;
+using Nexo.Infrastructure.Networking;
+using Nexo.Orchestration;
 using Nexo.Orchestration.GeoTerrain.Ports;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,6 +56,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient("geoterrain.srtm");
 builder.Services.AddHttpClient("geovector.mapbox");
+builder.Services.AddHttpClient("Nexo.Networking");
 
 // Register CLI commands (needed for service execution)
 builder.Services.AddScoped<Nexo.CLI.Commands.GeoTerrain.IGeoTerrainCommand, Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
@@ -88,6 +91,32 @@ builder.Services.AddHostedService<JobCleanupService>();
 // Register infrastructure needed by CLI commands
 builder.Services.AddScoped<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
 builder.Services.AddScoped<ILoopKernel, SequentialLoopKernel>();
+
+// Network bus (opt-in: empty PeerUrls = no-op)
+builder.Services.Configure<NetworkBusOptions>(builder.Configuration.GetSection(NetworkBusOptions.SectionName));
+builder.Services.AddSingleton<Nexo.Core.Application.Networking.Ports.INetworkBus, HttpNetworkBus>();
+
+// Knowledge sync (opt-in: empty PeerUrls = no-op)
+builder.Services.Configure<Nexo.Infrastructure.Networking.KnowledgeSyncServiceOptions>(builder.Configuration.GetSection(Nexo.Infrastructure.Networking.KnowledgeSyncServiceOptions.SectionName));
+builder.Services.AddSingleton<Nexo.Core.Application.Networking.Ports.IKnowledgeChunkStore>(sp =>
+{
+    var logger = sp.GetService<ILogger<Nexo.Infrastructure.Networking.InMemoryKnowledgeChunkStore>>();
+    return new Nexo.Infrastructure.Networking.InMemoryKnowledgeChunkStore(logger);
+});
+builder.Services.AddSingleton<Nexo.Core.Application.Networking.Ports.IKnowledgeSyncService, Nexo.Infrastructure.Networking.HttpKnowledgeSyncService>();
+
+// Network agent directory and negotiation (opt-in: empty PeerUrls = no-op)
+builder.Services.Configure<Nexo.Infrastructure.Networking.NetworkAgentDirectoryOptions>(builder.Configuration.GetSection(Nexo.Infrastructure.Networking.NetworkAgentDirectoryOptions.SectionName));
+builder.Services.AddSingleton<Nexo.Core.Application.Networking.Ports.INetworkAgentDirectory, Nexo.Infrastructure.Networking.HttpNetworkAgentDirectory>();
+builder.Services.AddSingleton<Nexo.Core.Application.Networking.Ports.INetworkNegotiationService, Nexo.Infrastructure.Networking.NetworkNegotiationService>();
+
+// Plasticity (metrics aggregation)
+builder.Services.Configure<Nexo.Infrastructure.Networking.PlasticityOptions>(builder.Configuration.GetSection(Nexo.Infrastructure.Networking.PlasticityOptions.SectionName));
+builder.Services.AddSingleton<Nexo.Core.Application.Networking.Ports.IPlasticityService, Nexo.Infrastructure.Networking.PlasticityService>();
+
+// Orchestration (agent bus) and bridge to network bus
+builder.Services.AddNexoOrchestration();
+builder.Services.AddAgentBusNetworkBridge(builder.Configuration);
 
 // Brick host: elevation provider and brick registry (catalog + execute)
 builder.Services.AddSingleton<IElevationProvider, EchoElevationProvider>();

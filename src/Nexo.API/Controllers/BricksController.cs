@@ -46,6 +46,17 @@ public class BricksController : ControllerBase
         return Ok(MapToCatalogEntry(brick));
     }
 
+    /// <summary>Accept a batch of usage records (e.g. from local tracker or forward to central catalog).</summary>
+    [HttpPost("usage")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult PostUsage([FromBody] BrickUsageReportDto? report)
+    {
+        if (report?.NodeId == null)
+            return BadRequest();
+        return Accepted();
+    }
+
     /// <summary>Execute a brick by id with the given input and context.</summary>
     [HttpPost("{id}/execute")]
     [ProducesResponseType(typeof(BrickExecuteResponseDto), StatusCodes.Status200OK)]

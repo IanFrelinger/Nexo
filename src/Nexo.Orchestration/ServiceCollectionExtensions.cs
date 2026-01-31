@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Abstractions;
@@ -65,6 +66,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAgentBus, AgentBus>();
         services.AddSingleton<ChannelManager>();
         services.AddSingleton<MessageSchemaValidator>();
+        // AgentBusNetworkBridge is registered by AddAgentBusNetworkBridge when INetworkBus is also registered (e.g. in API).
 
         // Coordination
         services.AddSingleton<DependencyResolver>();
@@ -101,6 +103,19 @@ public static class ServiceCollectionExtensions
         // Note: ITelemetryStore and IGameRunner should be registered by consuming application
         // services.AddSingleton<ITelemetryStore, InMemoryTelemetryStore>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the bridge between IAgentBus and INetworkBus. Call after both AddNexoOrchestration and INetworkBus registration.
+    /// </summary>
+    public static IServiceCollection AddAgentBusNetworkBridge(this IServiceCollection services, IConfiguration? configuration = null)
+    {
+        if (configuration != null)
+            services.Configure<AgentBusNetworkBridgeOptions>(configuration.GetSection(AgentBusNetworkBridgeOptions.SectionName));
+        else
+            services.Configure<AgentBusNetworkBridgeOptions>(_ => { });
+        services.AddHostedService<AgentBusNetworkBridge>();
         return services;
     }
 

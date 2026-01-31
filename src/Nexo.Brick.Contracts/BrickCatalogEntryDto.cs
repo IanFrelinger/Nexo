@@ -19,4 +19,7 @@ public class BrickCatalogEntryDto
     public bool HasDeterministic { get; set; }
     public bool HasAgentic { get; set; }
     public BrickMetadataDto Metadata { get; set; } = new();
+
+    /// <summary>Network-wide usage statistics (populated by central catalog when available).</summary>
+    public BrickUsageStatsDto? UsageStats { get; set; }
 }

@@ -1,12 +1,33 @@
-.PHONY: build test test-local test-cross-platform test-portable test-multi-env ci-verify review-summary demo-test demo-dev package-cli
+.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms ci-verify review-summary demo-test demo-dev package-cli
 
 # Build the solution
 build:
 	dotnet build
 
-# Run tests locally
+# Run tests locally (solution test projects: GeoTerrain, Orchestration, GeoVector, GeoWorld, BackgroundAgents)
 test:
 	dotnet test
+
+# Run tests on all target platforms: local + Docker (ubuntu, alpine, debian).
+# For native macOS/Windows/Linux use: make test-cross-platform (triggers CI).
+test-all-platforms:
+	@echo "=== Local (current OS) ==="
+	dotnet build -v minimal
+	dotnet test --no-build --verbosity minimal
+	@echo "=== Docker: Ubuntu 8.0 ==="
+	docker build -f .docker/Dockerfile.test-caching --build-arg DOTNET_VERSION=8.0 -t nexo-test-ubuntu:8.0 .
+	mkdir -p test-results
+	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" nexo-test-ubuntu:8.0 \
+		bash -c "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=ubuntu-8.0-base.trx' --results-directory /workspace/test-results"
+	@echo "=== Docker: Alpine 8.0 ==="
+	docker build -f .docker/Dockerfile.test-caching-alpine --build-arg DOTNET_VERSION=8.0 -t nexo-test-alpine:8.0 .
+	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" nexo-test-alpine:8.0 \
+		bash -c "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=alpine-8.0-base.trx' --results-directory /workspace/test-results"
+	@echo "=== Docker: Debian 8.0 ==="
+	docker build -f .docker/Dockerfile.test-caching-debian --build-arg DOTNET_VERSION=8.0 -t nexo-test-debian:8.0 .
+	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" nexo-test-debian:8.0 \
+		bash -c "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=debian-8.0-base.trx' --results-directory /workspace/test-results"
+	@echo "=== All target platforms (local + ubuntu + alpine + debian) completed ==="
 
 # Run tests on all platforms (C#-driven; works on Windows, macOS, Linux, mobile)
 test-all:

@@ -12,6 +12,7 @@ public sealed class CatalogAggregator
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly CentralCatalogOptions _options;
     private readonly ILogger<CatalogAggregator> _logger;
+    private readonly UsageReportStore? _usageStore;
     private List<BrickCatalogEntryDto>? _cached;
     private DateTime _cacheExpiry = DateTime.MinValue;
     private readonly object _cacheLock = new();
@@ -19,11 +20,13 @@ public sealed class CatalogAggregator
     public CatalogAggregator(
         IHttpClientFactory httpClientFactory,
         IOptions<CentralCatalogOptions> options,
-        ILogger<CatalogAggregator> logger)
+        ILogger<CatalogAggregator> logger,
+        UsageReportStore? usageStore = null)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _usageStore = usageStore;
     }
 
     /// <summary>Returns merged catalog from all instances; each entry has HostBaseUrl set to the instance that provided it.</summary>
@@ -67,6 +70,17 @@ public sealed class CatalogAggregator
         }
 
         var list = merged.Values.ToList();
+
+        if (_usageStore != null)
+        {
+            foreach (var entry in list)
+            {
+                if (string.IsNullOrEmpty(entry.Id)) continue;
+                var stats = _usageStore.GetAggregatedStats(entry.Id);
+                if (stats != null)
+                    entry.UsageStats = stats;
+            }
+        }
         if (_options.CacheTtlSeconds > 0)
         {
             lock (_cacheLock)
