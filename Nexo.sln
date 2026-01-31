@@ -68,6 +68,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.BackgroundAgents", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.BackgroundAgents", "src\Nexo.Tests.BackgroundAgents\Nexo.Tests.BackgroundAgents.csproj", "{4E64A5A5-C6F6-4E04-839B-570503542327}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Brick.Contracts", "src\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj", "{075C8F77-AF69-42FC-8098-BC01F0920FD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.BrickCatalog", "src\Nexo.BrickCatalog\Nexo.BrickCatalog.csproj", "{1B0E74AB-A86D-476B-8E9A-EE33CB469D37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -222,6 +226,14 @@ Global
 		{4E64A5A5-C6F6-4E04-839B-570503542327}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E64A5A5-C6F6-4E04-839B-570503542327}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E64A5A5-C6F6-4E04-839B-570503542327}.Release|Any CPU.Build.0 = Release|Any CPU
+		{075C8F77-AF69-42FC-8098-BC01F0920FD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{075C8F77-AF69-42FC-8098-BC01F0920FD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{075C8F77-AF69-42FC-8098-BC01F0920FD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{075C8F77-AF69-42FC-8098-BC01F0920FD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B0E74AB-A86D-476B-8E9A-EE33CB469D37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B0E74AB-A86D-476B-8E9A-EE33CB469D37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B0E74AB-A86D-476B-8E9A-EE33CB469D37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B0E74AB-A86D-476B-8E9A-EE33CB469D37}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -261,5 +273,7 @@ Global
 		{C09AF1A1-86F2-4F81-8A53-786606C33A16} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{79F47F1D-EC2D-4398-96CA-B08D3A9724DB} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{4E64A5A5-C6F6-4E04-839B-570503542327} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
+		{075C8F77-AF69-42FC-8098-BC01F0920FD5} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
+		{1B0E74AB-A86D-476B-8E9A-EE33CB469D37} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 	EndGlobalSection
 EndGlobal

@@ -8,7 +8,7 @@ The Dockerfiles in this directory are used by the `nexo test` command to run tes
 
 ## Usage
 
-Dockerfiles are automatically used when running:
+Dockerfiles are automatically used when running `nexo test --platforms ...`. The framework **removes each test image after use** so images do not accumulate.
 
 ```bash
 # Test on all platforms
@@ -26,7 +26,7 @@ nexo test --filter "FullyQualifiedName~GeospatialE2ESmokeTests"
 - **`Dockerfile.test`**: Base test image for Ubuntu
 - **`Dockerfile.test-framework*`**: Framework tests for various platforms (alpine, debian, android, windows, unity)
 - **`Dockerfile.test-caching*`**: Caching tests for various platforms
-- **`Dockerfile.test-visual-validation*`**: Visual validation tests
+- **`Dockerfile.test-visual-validation*`**: Visual validation tests (used with docker-compose + Ollama). The script `scripts/test-visual-validation-all-platforms.sh` removes the built **nexo-visual-test:*** images after each run; the Ollama image is kept for reuse.
 
 ## Manual Usage
 

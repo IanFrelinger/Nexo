@@ -91,12 +91,18 @@ public class DockerCommand : Command
             "--workdir",
             "Working directory in container"
         );
+        var rmImageOpt = new Option<bool>(
+            "--rm-image",
+            () => false,
+            "Remove the image after the container exits"
+        );
 
         runCmd.AddOption(imageOpt);
         runCmd.AddOption(commandOpt);
         runCmd.AddOption(envOpt);
         runCmd.AddOption(volumeOpt);
         runCmd.AddOption(workdirOpt);
+        runCmd.AddOption(rmImageOpt);
 
         runCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -105,12 +111,13 @@ public class DockerCommand : Command
             var env = ctx.ParseResult.GetValueForOption(envOpt) ?? Array.Empty<string>();
             var volume = ctx.ParseResult.GetValueForOption(volumeOpt) ?? Array.Empty<string>();
             var workdir = ctx.ParseResult.GetValueForOption(workdirOpt);
+            var rmImage = ctx.ParseResult.GetValueForOption(rmImageOpt);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
             var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
             var json = jsonOpt != null ? ctx.ParseResult.GetValueForOption(jsonOpt) : false;
             var verbose = verboseOpt != null ? ctx.ParseResult.GetValueForOption(verboseOpt) : false;
-            await RunAsync(image, command, env, volume, workdir, json, verbose);
+            await RunAsync(image, command, env, volume, workdir, rmImage, json, verbose);
         });
 
         // nexo docker clean
@@ -316,6 +323,7 @@ public class DockerCommand : Command
         string[] env,
         string[] volume,
         string? workdir,
+        bool rmImage,
         bool json,
         bool verbose)
     {
@@ -388,6 +396,25 @@ public class DockerCommand : Command
                 command.Length > 0 ? command : Array.Empty<string>(),
                 envDict.Count > 0 ? envDict : null,
                 volumeDict.Count > 0 ? volumeDict : null);
+
+            if (rmImage)
+            {
+                try
+                {
+                    await dockerService.RemoveImageAsync(image);
+                    if (!json && console != null)
+                    {
+                        console.WriteSuccess($"Removed image: {image}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (!json && console != null)
+                    {
+                        console.WriteError($"Failed to remove image: {ex.Message}");
+                    }
+                }
+            }
 
             if (result.Success)
             {

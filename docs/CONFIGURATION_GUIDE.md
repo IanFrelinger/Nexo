@@ -69,6 +69,34 @@ nexo config --json   # raw JSON
 
 Inside your rule implementation, read from the configuration service to apply custom behavior.
 
+## Brick Host (Networked Bricks)
+
+When using **networked brick discovery** (see [NETWORKED_BRICKS.md](NETWORKED_BRICKS.md)), configure remote catalog URLs and optional auth via `BrickHostOptions` (section `BrickHost`). Typically bound from appsettings or environment in the host that uses `CompositeBrickRegistry`.
+
+| Setting | Description |
+|---------|-------------|
+| `BrickHost:RemoteCatalogBaseUrls` | List of base URLs for brick catalogs (e.g. `["https://nexo-a.example.com", "https://nexo-b.example.com"]`). Each host must expose `GET /api/bricks` and `GET /api/bricks/{id}`. |
+| `BrickHost:CatalogCacheTtlSeconds` | Cache TTL for catalog responses (default 60). Use 0 for no cache. |
+| `BrickHost:UseAuth` | If true, add API key header to catalog and execute requests. |
+| `BrickHost:ApiKeyHeader` | Header name for API key (default `X-Api-Key`). |
+| `BrickHost:ApiKeyValue` | API key value (prefer environment or secrets over appsettings). |
+
+Example (appsettings):
+
+```json
+{
+  "BrickHost": {
+    "RemoteCatalogBaseUrls": ["https://nexo-api.example.com"],
+    "CatalogCacheTtlSeconds": 60,
+    "UseAuth": false
+  }
+}
+```
+
+Register `CompositeBrickRegistry` with your local `IBrickRegistry`, a list of `IRemoteBrickCatalog` (e.g. `HttpRemoteBrickCatalog` per URL), and an `HttpClient` for execute calls. Use `AddNexoBrickHostOptions(services, configure)` to bind options.
+
+**Central catalog:** Run **Nexo.BrickCatalog** and set `CentralCatalog:InstanceBaseUrls` to your brick host instance URLs. Then point callers’ `BrickHost:RemoteCatalogBaseUrls` at the central catalog URL only (e.g. `["https://catalog.example.com"]`). The central catalog aggregates all instance catalogs and returns entries with `HostBaseUrl` set so execute goes to the correct instance. See `src/Nexo.BrickCatalog/README.md`.
+
 ## Advanced Scenarios
 
 - **Environment Overrides:** You can symlink or copy different `config.json` files per environment (dev/staging/prod).

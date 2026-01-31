@@ -41,7 +41,7 @@ public class CiCommand : Command
         AddCommand(checkPromotionCmd);
     }
 
-    private static Task VerifyAsync(bool json, bool verbose)
+    private static async Task VerifyAsync(bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);
 
@@ -53,70 +53,81 @@ public class CiCommand : Command
 
         try
         {
-            // For now, verify just checks that the project builds
-            // This can be extended with more checks
             var rootDir = DiscoverProjectRoot();
             if (rootDir == null)
             {
                 if (json)
-                {
                     Console.WriteLine(JsonSerializer.Serialize(new { error = "Could not find project root directory" }));
-                }
-                else if (console != null)
-                {
-                    console.WriteError("Could not find project root directory");
-                }
+                else
+                    console?.WriteError("Could not find project root directory");
                 Environment.ExitCode = 1;
-                return Task.CompletedTask;
+                return;
             }
 
-            if (!json && console != null)
-            {
-                console.WriteLine("Running basic verification checks...");
-            }
-
-            // Check that solution file exists
             var solutionFile = Path.Combine(rootDir, "Nexo.sln");
             if (!File.Exists(solutionFile))
             {
                 if (json)
-                {
                     Console.WriteLine(JsonSerializer.Serialize(new { error = "Solution file not found" }));
-                }
-                else if (console != null)
+                else
+                    console?.WriteError("Solution file not found");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            if (!json && console != null)
+                console.WriteLine("Running dotnet build...");
+
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
                 {
-                    console.WriteError("Solution file not found");
+                    FileName = "dotnet",
+                    Arguments = $"build \"{solutionFile}\" --verbosity minimal",
+                    WorkingDirectory = rootDir,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            process.Start();
+            var stdout = await process.StandardOutput.ReadToEndAsync();
+            var stderr = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode != 0)
+            {
+                if (json)
+                    Console.WriteLine(JsonSerializer.Serialize(new { success = false, error = "Build failed", stderr }));
+                else
+                {
+                    console?.WriteError("Build failed");
+                    if (!string.IsNullOrEmpty(stderr)) console?.WriteError(stderr);
                 }
                 Environment.ExitCode = 1;
-                return Task.CompletedTask;
+                return;
             }
 
             if (!json && console != null)
             {
                 console.WriteSuccess("✅ Solution file found");
+                console.WriteSuccess("✅ Build succeeded");
                 console.WriteSuccess("✅ CI verification complete");
             }
             else if (json)
-            {
                 Console.WriteLine(JsonSerializer.Serialize(new { success = true }));
-            }
 
             Environment.ExitCode = 0;
         }
         catch (Exception ex)
         {
             if (json)
-            {
                 Console.WriteLine(JsonSerializer.Serialize(new { error = ex.Message }));
-            }
-            else if (console != null)
-            {
-                console.WriteError($"Error: {ex.Message}");
-            }
+            else
+                console?.WriteError($"Error: {ex.Message}");
             Environment.ExitCode = 1;
         }
-        
-        return Task.CompletedTask;
     }
 
     private static Task CheckPromotionAsync(bool json, bool verbose)

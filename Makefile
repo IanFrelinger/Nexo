@@ -1,4 +1,4 @@
-.PHONY: build test test-local demo-test demo-dev package-cli
+.PHONY: build test test-local test-cross-platform test-portable test-multi-env ci-verify review-summary demo-test demo-dev package-cli
 
 # Build the solution
 build:
@@ -8,13 +8,35 @@ build:
 test:
 	dotnet test
 
-# Run tests on all platforms
+# Run tests on all platforms (C#-driven; works on Windows, macOS, Linux, mobile)
 test-all:
-	nexo test --platforms ubuntu alpine debian android ios unity windows
+	dotnet run --project src/Nexo.CLI -- test --platforms ubuntu alpine debian android ios unity windows
 
 # Run tests on specific platform
 test-platform:
-	nexo test --platforms $(PLATFORM)
+	dotnet run --project src/Nexo.CLI -- test --platforms $(PLATFORM)
+
+# Trigger cross-platform tests in CI (Mac, Windows, Linux from one place)
+# Requires: gh auth login. Usage: make test-cross-platform [SCOPE=smoke|persistence|full]
+test-cross-platform:
+	gh workflow run "Cross-Platform Tests" --ref main -f scope=$${SCOPE:-smoke}
+
+# Portable tests: C#-driven (replaces scripts/portable-test.sh). Works on Windows, macOS, Linux, mobile.
+# Usage: make test-portable [SCOPE=persistence|smoke|all]. Use --list to see targets: dotnet run --project src/Nexo.CLI -- test portable --list
+test-portable:
+	dotnet run --project src/Nexo.CLI -- test portable --scope $${SCOPE:-persistence}
+
+# Multi-env framework/caching/persistence tests (C#-driven; replaces test-framework-multi-env.sh etc.)
+test-multi-env:
+	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --all
+
+# CI verification: build + checks (C#-driven; replaces scripts/ci-verify.sh)
+ci-verify:
+	dotnet run --project src/Nexo.CLI -- ci verify
+
+# Review summary Markdown from JSON (C#-driven; replaces scripts/review-summary-md.sh)
+review-summary:
+	dotnet run --project src/Nexo.CLI -- review summary
 
 # CLI demos
 demo-test:

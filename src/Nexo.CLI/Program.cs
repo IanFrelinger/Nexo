@@ -19,6 +19,7 @@ using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
+using Nexo.Infrastructure.Persistence;
 
 namespace Nexo.CLI;
 
@@ -488,6 +489,8 @@ static class Program
             jsonOpt,
             verboseOpt);
         testCmd.AddCommand(testLocalCmd);
+        testCmd.AddCommand(TestPortableCommand.CreateCommand());
+        testCmd.AddCommand(TestMultiEnvCommand.CreateCommand());
 
         // nexo orchestrate
         var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
@@ -1493,6 +1496,9 @@ static class Program
         var diffCmd = new DiffCommand();
         root.AddCommand(diffCmd);
 
+        // nexo review (replaces review-summary-md.sh)
+        root.AddCommand(new ReviewCommand());
+
         // nexo report
         var reportCmd = new ReportCommand();
         root.AddCommand(reportCmd);
@@ -1565,6 +1571,9 @@ static class Program
 
         // Register orchestration layer
         services.AddNexoOrchestration();
+
+        // Persistence (in-memory by default; replace with adapter for SQLite/Postgres/etc. to avoid DB lock-in)
+        services.AddNexoPersistence();
 
         // Background agents (CLI-only: no hosted service)
         services.AddBackgroundAgents(registerHostedService: false);

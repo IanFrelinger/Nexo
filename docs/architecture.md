@@ -138,7 +138,8 @@ Nexo/
 │   │   ├── Nexo.Adapters.Ollama/
 │   │   ├── Nexo.Adapters.Assets/
 │   │   ├── Nexo.Adapters.GeoTerrain/  # Elevation data providers
-│   │   └── Nexo.Adapters.GeoVector/   # Vector data providers
+│   │   ├── Nexo.Adapters.GeoVector/   # Vector data providers
+│   │   └── Nexo.Adapters.Persistence.*/  # Optional: SQLite, Postgres, etc. (see docs/PERSISTENCE.md)
 │   │
 │   ├── Nexo.API/                    # REST API for geospatial operations
 │   ├── Nexo.SDK/                    # Programmatic SDK with resource estimation
@@ -188,6 +189,10 @@ Infrastructure (Adapters, Tools, Policies)
 2. **Adapters implement abstractions only**
 3. **Application orchestrates domain and adapters**
 4. **Presentation consumes application services**
+
+### Persistence (Database Abstraction)
+
+Storage is abstracted via **IUnitOfWork** and **IRepository&lt;TEntity, TKey&gt;** (Nexo.Core.Application.Persistence.Ports). Applications depend only on these interfaces; the host registers an implementation (in-memory by default, or a database adapter). This avoids database lock-in: swap SQLite, PostgreSQL, or another adapter by changing registration only. See [PERSISTENCE.md](PERSISTENCE.md).
 
 ---
 
@@ -293,6 +298,12 @@ public record ProviderSwitchedEvent(
     string Reason
 ) : ExecutionEvent;
 ```
+
+---
+
+## Networked Bricks
+
+Nexo supports **networked brick discovery and execution**: one instance can expose a brick catalog (`GET /api/bricks`, `GET /api/bricks/{id}`) and execute API (`POST /api/bricks/{id}/execute`); other instances can discover and run those bricks via `CompositeBrickRegistry` and `RemoteBrick`. Wire format and DTOs live in **Nexo.Brick.Contracts** (namespace `Nexo.BrickContracts`); serialization for BrickInput/BrickOutput (including binary as base64) and the remote brick proxy live in **Nexo.Infrastructure**. See [NETWORKED_BRICKS.md](NETWORKED_BRICKS.md) and [NETWORKED_BRICKS_IMPLEMENTATION_PLAN.md](NETWORKED_BRICKS_IMPLEMENTATION_PLAN.md).
 
 ---
 

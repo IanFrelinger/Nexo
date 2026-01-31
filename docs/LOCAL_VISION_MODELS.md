@@ -165,6 +165,10 @@ LocalAI is another option for running local models with OpenAI-compatible APIs:
 # See: https://localai.io/
 ```
 
+## Image Cleanup (Docker)
+
+When you run visual validation via `scripts/test-visual-validation-all-platforms.sh`, the script removes the **built test images** (`nexo-visual-test:ubuntu-8.0`, `nexo-visual-test:alpine-8.0`, `nexo-visual-test:debian-8.0`) after each platform run so they do not accumulate. The **Ollama image** (`ollama/ollama:latest`) is kept so the next run can reuse it without re-pulling.
+
 ## Best Practices
 
 1. **Use Appropriate Model Size**: Start with `llava:7b` for most use cases

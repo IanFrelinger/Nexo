@@ -7,13 +7,13 @@ namespace Nexo.Infrastructure.Execution;
 /// </summary>
 public class ExecutionContext : IExecutionContext
 {
-    public string AgentId { get; init; } = default!;
-    public string BehaviorId { get; init; } = default!;
+    public string AgentId { get; init; } = string.Empty;
+    public string BehaviorId { get; init; } = string.Empty;
     public bool IsAirGapped { get; init; }
     public bool AuditMode { get; init; }
     public string Provider { get; init; } = "openai";
     public Dictionary<string, object> Variables { get; init; } = new();
-    
+
     IReadOnlyDictionary<string, object> IExecutionContext.Variables => Variables;
 }
 

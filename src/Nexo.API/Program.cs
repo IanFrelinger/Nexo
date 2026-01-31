@@ -2,10 +2,14 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Nexo.API.Services;
 using Nexo.Adapters.GeoTerrain;
+using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.Adapters.GeoVector;
 using Nexo.CLI;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
+using Nexo.GeoTerrain.Bricks;
+using Nexo.Infrastructure.Execution;
+using Nexo.Orchestration.GeoTerrain.Ports;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,6 +88,23 @@ builder.Services.AddHostedService<JobCleanupService>();
 // Register infrastructure needed by CLI commands
 builder.Services.AddScoped<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
 builder.Services.AddScoped<ILoopKernel, SequentialLoopKernel>();
+
+// Brick host: elevation provider and brick registry (catalog + execute)
+builder.Services.AddSingleton<IElevationProvider, EchoElevationProvider>();
+builder.Services.AddSingleton<IBrickRegistry>(sp =>
+{
+    var elevationProvider = sp.GetRequiredService<IElevationProvider>();
+    var providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var bricks = new Nexo.Core.Domain.Bricks.Brick[]
+    {
+        new GeoTerrainFetchSrtmTileBrick(
+            elevationProvider,
+            providerFactory,
+            loggerFactory.CreateLogger<GeoTerrainFetchSrtmTileBrick>())
+    };
+    return new BrickRegistry(bricks);
+});
 
 // Configure authentication
 builder.Services.AddAuthentication("ApiKey")

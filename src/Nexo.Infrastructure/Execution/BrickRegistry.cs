@@ -3,7 +3,7 @@ using Nexo.Core.Domain.Bricks;
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
-/// In-memory registry for bricks.
+/// In-memory registry for bricks. Implements IBrickRegistry (Domain.Execution.IBrickRegistry has same shape).
 /// </summary>
 public class BrickRegistry : IBrickRegistry
 {

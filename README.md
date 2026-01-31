@@ -204,8 +204,9 @@ nexo ci check-promotion                  # Check promotion criteria
 
 # Docker operations
 nexo docker build --image myapp          # Build Docker image
-nexo docker run --image myapp            # Run container
-nexo docker clean                        # Clean up resources
+nexo docker run --image myapp             # Run container
+nexo docker run --image myapp --rm-image  # Run container and remove image when done
+nexo docker clean                         # Clean up resources
 
 # Unity integration
 nexo unity create-project ./MyProject    # Create Unity project

@@ -287,6 +287,7 @@ public class MultiPlatformTestCommand : Command
     {
         var startTime = DateTime.UtcNow;
         var projectRoot = DiscoverProjectRoot();
+        string? imageTagToRemove = null;
 
         try
         {
@@ -310,6 +311,7 @@ public class MultiPlatformTestCommand : Command
 
             // Build image
             var imageTag = $"nexo-test:{platformName}-{dotnetVersion}";
+            imageTagToRemove = imageTag;
             var buildResult = await executionPlatform.BuildImageAsync(
                 dockerfile,
                 imageTag,
@@ -320,6 +322,7 @@ public class MultiPlatformTestCommand : Command
 
             if (!buildResult.Success)
             {
+                imageTagToRemove = null;
                 return new PlatformTestResult
                 {
                     PlatformName = platformName,
@@ -345,6 +348,21 @@ public class MultiPlatformTestCommand : Command
 
             var duration = DateTime.UtcNow - startTime;
 
+            // Remove image after use so it does not accumulate
+            if (imageTagToRemove != null)
+            {
+                try
+                {
+                    await executionPlatform.RemoveImageAsync(imageTagToRemove, CancellationToken.None);
+                    logger.LogDebug("Removed image after use: {ImageTag}", imageTagToRemove);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to remove image after use: {ImageTag}", imageTagToRemove);
+                }
+                imageTagToRemove = null;
+            }
+
             // Parse test results
             var (passed, failed, total) = ParseTestResults(runResult.StandardOutput);
 
@@ -361,6 +379,18 @@ public class MultiPlatformTestCommand : Command
         }
         catch (Exception ex)
         {
+            if (imageTagToRemove != null)
+            {
+                try
+                {
+                    await executionPlatform.RemoveImageAsync(imageTagToRemove, CancellationToken.None);
+                    logger.LogDebug("Removed image after failure: {ImageTag}", imageTagToRemove);
+                }
+                catch (Exception removeEx)
+                {
+                    logger.LogWarning(removeEx, "Failed to remove image after failure: {ImageTag}", imageTagToRemove);
+                }
+            }
             logger.LogError(ex, "Failed to run tests on {Platform}", platformName);
             return new PlatformTestResult
             {

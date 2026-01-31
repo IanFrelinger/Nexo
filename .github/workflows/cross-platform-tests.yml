@@ -1,0 +1,96 @@
+# Cross-platform test server: one trigger runs build + test on Mac, Windows, and Linux.
+# Use this when you want to run tests on all platforms without changing hosts.
+# Trigger: Actions → Cross-Platform Tests → Run workflow, or: gh workflow run "Cross-Platform Tests"
+name: Cross-Platform Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Test scope'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - persistence
+          - full
+  push:
+    branches: [ master, main ]
+    paths:
+      - '.github/workflows/cross-platform-tests.yml'
+      - 'src/Nexo.Tests.Infrastructure/**'
+      - 'src/Nexo.Core.Application/**'
+      - 'src/Nexo.Infrastructure/**'
+
+jobs:
+  cross-platform:
+    name: Build & Test - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -v minimal
+
+      - name: Run tests (smoke)
+        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'full'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=smoke-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (persistence)
+        if: github.event.inputs.scope == 'persistence' || github.event.inputs.scope == 'full'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --filter "FullyQualifiedName~InMemoryPersistenceTests" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=persistence-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (full Infrastructure)
+        if: github.event.inputs.scope == 'full'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=full-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-results/**/*.trx
+          check_name: Cross-Platform - ${{ matrix.os }}
+          report_individual_runs: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test-results/
+          retention-days: 14
