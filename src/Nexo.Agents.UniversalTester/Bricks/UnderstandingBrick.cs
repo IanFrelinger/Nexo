@@ -105,21 +105,75 @@ public class UnderstandingBrick : Brick
         }
 
         var prompt = BuildUnderstandingPrompt(perception, goal, constraints, actionHistory);
+        var useVision = perception.Screenshot != null && perception.Screenshot.Length > 0
+            && perception.InteractiveElements.Count == 0;
+        string response;
 
-        var response = await _providerFactory.ExecuteLLMAsync(
-            context.Provider,
-            "You are a universal testing agent analyzing an application.",
-            prompt,
-            new { },
-            cancellationToken);
+        if (useVision && perception.Screenshot != null)
+        {
+            var visionPrompt = BuildVisionUnderstandingPrompt(perception, goal, constraints);
+            response = await _providerFactory.ExecuteVisionAsync(
+                context.Provider,
+                "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.",
+                visionPrompt,
+                perception.Screenshot,
+                new { },
+                cancellationToken);
+        }
+        else
+        {
+            response = await _providerFactory.ExecuteLLMAsync(
+                context.Provider,
+                "You are a universal testing agent analyzing an application.",
+                prompt,
+                new { },
+                cancellationToken);
+        }
 
-        var understandingAgentic = ParseUnderstanding(response, perception);
-        
+        var parsed = ParseUnderstanding(response, perception);
+
         return new BrickOutput
         {
-            ["understanding"] = understandingAgentic,
-            Summary = $"Understood: {understandingAgentic.ScreenType}, {understandingAgentic.AvailableActions.Count} actions available"
+            ["understanding"] = parsed,
+            Summary = $"Understood: {parsed.ScreenType}, {parsed.AvailableActions.Count} actions available"
         };
+    }
+
+    private static string BuildVisionUnderstandingPrompt(
+        PerceptionState perception,
+        string goal,
+        string[] constraints)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine($"## Testing Goal: {goal}");
+        if (constraints.Length > 0)
+        {
+            sb.AppendLine("## Constraints:");
+            foreach (var c in constraints) sb.AppendLine($"- {c}");
+        }
+        sb.AppendLine();
+        var isFirstTimeUserGoal = goal.Contains("first time", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("new user", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("come up with your own", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("your own questions", StringComparison.OrdinalIgnoreCase);
+        if (isFirstTimeUserGoal)
+            sb.AppendLine("The tester is simulating a new user. For type actions, suggest varied natural questions or messages a real first-time user might ask (e.g. 'What is this app?', 'How do I get started?', 'What can you help with?'), not generic placeholders like 'hello'.");
+        sb.AppendLine("Look at the screenshot as a human would. Identify: buttons (e.g. Send, Chat, Architecture), text input areas, labels. For each action a user could take, give the approximate pixel coordinates of where to click (target \"x,y\", origin top-left of screen). For typing, give the coordinates of the input field and \"value\": \"text to type\".");
+        sb.AppendLine("Return JSON only (no markdown):");
+        sb.AppendLine(@"{
+  ""screenType"": ""e.g. Chat app with sidebar"",
+  ""currentContext"": ""What is visible and what a user would see"",
+  ""availableActions"": [
+    { ""id"": ""click_send"", ""description"": ""Click the Send button"", ""type"": ""click"", ""target"": ""x,y"", ""relevanceToGoal"": 0.9, ""explorationValue"": 0.5, ""riskLevel"": 0.1 },
+    { ""id"": ""type_chat"", ""description"": ""Type in the chat input"", ""type"": ""type"", ""target"": ""x,y"", ""value"": ""hello"", ""relevanceToGoal"": 0.8, ""explorationValue"": 0.6, ""riskLevel"": 0.1 }
+  ],
+  ""currentObjective"": ""..."",
+  ""progressPercent"": 0,
+  ""issues"": [],
+  ""unexploredAreas"": [],
+  ""confidence"": 0.8
+}");
+        return sb.ToString();
     }
 
     private static Understanding BuildDeterministicUnderstanding(PerceptionState perception, string goal)
@@ -206,6 +260,11 @@ public class UnderstandingBrick : Brick
         }
         
         sb.AppendLine();
+        var isFirstTimeUser = goal.Contains("first time", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("new user", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("your own questions", StringComparison.OrdinalIgnoreCase);
+        if (isFirstTimeUser)
+            sb.AppendLine("The tester is simulating a new user. Suggest varied natural questions or messages for type actions (e.g. 'What is this?', 'How do I start?'), not only generic text.");
         sb.AppendLine(@"## Your Task
 
 Analyze and provide JSON:
@@ -253,27 +312,9 @@ Analyze and provide JSON:
                     : Array.Empty<string>()
             };
         }
-        catch
+        catch (Exception ex)
         {
-            // Fallback understanding
-            return new Understanding
-            {
-                ScreenType = "Unknown",
-                CurrentContext = "Unable to parse AI response",
-                CurrentObjective = "Continue exploration",
-                ProgressPercent = 0,
-                Confidence = 0.1,
-                AvailableActions = perception.InteractiveElements.Select((el, i) => new AvailableAction
-                {
-                    Id = el.Id,
-                    Description = el.Label ?? el.Type,
-                    Type = "click",
-                    Target = el.Id,
-                    RelevanceToGoal = 0.5,
-                    ExplorationValue = 0.5,
-                    RiskLevel = 0.1
-                }).ToList()
-            };
+            throw new InvalidOperationException("Understanding brick could not parse vision/LLM response as JSON. Ensure the model returns valid JSON.", ex);
         }
     }
     

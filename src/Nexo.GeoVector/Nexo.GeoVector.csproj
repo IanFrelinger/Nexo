@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Reuse shared geo primitives + MeshData/Vector3 from GeoTerrain domain -->
+    <ProjectReference Include="..\Nexo.GeoPrimitives\Nexo.GeoPrimitives.csproj" />
     <ProjectReference Include="..\Nexo.GeoTerrain\Nexo.GeoTerrain.csproj" />
   </ItemGroup>
 </Project>

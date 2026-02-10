@@ -3,9 +3,9 @@ using Nexo.Core.Domain.Behaviors;
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
-/// In-memory registry for behaviors.
+/// In-memory registry for behaviors. Implements Core.Domain.Execution.IBehaviorRegistry.
 /// </summary>
-public class BehaviorRegistry : IBehaviorRegistry
+public class BehaviorRegistry : Nexo.Core.Domain.Execution.IBehaviorRegistry
 {
     private readonly Dictionary<string, Behavior> _behaviors = new();
     

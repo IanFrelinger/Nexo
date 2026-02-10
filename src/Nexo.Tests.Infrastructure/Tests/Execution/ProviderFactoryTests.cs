@@ -4,6 +4,7 @@ using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 using Nexo.Infrastructure.Execution;
 using System.Text.Json;
+using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
@@ -12,12 +13,20 @@ namespace Nexo.Tests.Infrastructure.Tests.Execution;
 /// </summary>
 public class ProviderFactoryTests : UnitTestBase
 {
+    [Fact]
+    public async Task ProviderFactory_AllTests_Pass()
+    {
+        var result = await ExecuteAsync(CancellationToken.None);
+        Assert.True(result.Passed, result.ErrorMessage ?? result.Message);
+    }
+
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             await TestIsProviderAvailable();
             await TestExecuteLLMAsync();
+            await TestExecuteVisionAsync();
             
             return new TestResult
             {
@@ -98,20 +107,57 @@ public class ProviderFactoryTests : UnitTestBase
         AssertNotNull(result);
         AssertTrue(IsJsonObject(result), "mock provider should return JSON");
         
-        // openai should never throw just because it's not configured; it should fall back to mock-json.
+        // openai when not configured should throw (fail fast, no mock fallback).
         WithEnv("OPENAI_API_KEY", null, async () =>
         {
-            var openAiResult = await factory.ExecuteLLMAsync(
-                "openai",
-                "Test",
-                "Test",
-                new { },
-                CancellationToken.None);
-            AssertNotNull(openAiResult);
-            AssertTrue(IsJsonObject(openAiResult), "openai should fall back to JSON when not configured");
+            await AssertThrowsAsync<InvalidOperationException>(async () =>
+                await factory.ExecuteLLMAsync("openai", "Test", "Test", new { }, CancellationToken.None));
         }).GetAwaiter().GetResult();
-        
+
+        // unknown provider should throw.
+        await AssertThrowsAsync<InvalidOperationException>(async () =>
+            await factory.ExecuteLLMAsync("unknown_provider", "Test", "Test", new { }, CancellationToken.None));
+
         await Task.CompletedTask;
+    }
+
+    private async Task TestExecuteVisionAsync()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        // Unknown vision provider should throw (fail fast).
+        await AssertThrowsAsync<InvalidOperationException>(async () =>
+            await factory.ExecuteVisionAsync(
+                "unknown_vision",
+                "System",
+                "Describe the image",
+                new byte[] { 0x89, 0x50, 0x4E },
+                new { },
+                CancellationToken.None));
+
+        // openai/azure vision not implemented — throws NotSupportedException.
+        await AssertThrowsAsync<NotSupportedException>(async () =>
+            await factory.ExecuteVisionAsync(
+                "openai",
+                "System",
+                "Describe",
+                Array.Empty<byte>(),
+                new { },
+                CancellationToken.None));
+    }
+
+    private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception
+    {
+        try
+        {
+            await action();
+        }
+        catch (T)
+        {
+            return;
+        }
+        throw new AssertionException($"Expected {typeof(T).Name} to be thrown");
     }
 
     private static bool IsJsonObject(string text)

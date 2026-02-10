@@ -1,0 +1,1 @@
+Audience: Non-technical. Use simple analogies. Avoid jargon: brick, runtime, CQRS, DI, deterministic, agentic. Focus on what Nexo enables in plain language.

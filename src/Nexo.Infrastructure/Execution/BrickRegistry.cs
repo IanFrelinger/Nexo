@@ -3,9 +3,9 @@ using Nexo.Core.Domain.Bricks;
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
-/// In-memory registry for bricks. Implements IBrickRegistry (Domain.Execution.IBrickRegistry has same shape).
+/// In-memory registry for bricks. Implements Core.Domain.Execution.IBrickRegistry.
 /// </summary>
-public class BrickRegistry : IBrickRegistry
+public class BrickRegistry : Nexo.Core.Domain.Execution.IBrickRegistry
 {
     private readonly Dictionary<string, Brick> _bricks = new();
     

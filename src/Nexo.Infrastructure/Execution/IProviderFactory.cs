@@ -23,5 +23,11 @@ public interface IProviderFactory
         byte[] imageBytes,
         object config,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Ensures Ollama is reachable and, if required, that a vision-capable model is available.
+    /// Throws if unreachable or if requireVisionModel and no llava model is present.
+    /// </summary>
+    Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default);
 }
 

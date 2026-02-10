@@ -1,17 +1,14 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Nexo.API.Services;
-using Nexo.Adapters.GeoTerrain;
-using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.Adapters.GeoVector;
 using Nexo.CLI;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
-using Nexo.GeoTerrain.Bricks;
+using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Networking;
 using Nexo.Orchestration;
-using Nexo.Orchestration.GeoTerrain.Ports;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,12 +51,10 @@ builder.Services.AddCors(options =>
 
 // Register HTTP clients
 builder.Services.AddHttpClient();
-builder.Services.AddHttpClient("geoterrain.srtm");
 builder.Services.AddHttpClient("geovector.mapbox");
 builder.Services.AddHttpClient("Nexo.Networking");
 
 // Register CLI commands (needed for service execution)
-builder.Services.AddScoped<Nexo.CLI.Commands.GeoTerrain.IGeoTerrainCommand, Nexo.CLI.Commands.GeoTerrain.GeoTerrainCommand>();
 builder.Services.AddScoped<Nexo.CLI.Commands.GeoVector.IGeoVectorCommand, Nexo.CLI.Commands.GeoVector.GeoVectorCommand>();
 builder.Services.AddScoped<Nexo.CLI.Commands.World.IWorldCommand, Nexo.CLI.Commands.World.WorldCommand>();
 
@@ -77,7 +72,6 @@ builder.Services.AddSingleton<IJobRepository>(sp =>
 
 // Register API-specific services
 builder.Services.AddScoped<WebhookService>();
-builder.Services.AddScoped<IGeoTerrainService, GeoTerrainService>();
 builder.Services.AddScoped<IGeoVectorService, GeoVectorService>();
 builder.Services.AddScoped<IWorldService, WorldService>();
 builder.Services.AddScoped<IJobService, JobService>();
@@ -118,20 +112,10 @@ builder.Services.AddSingleton<Nexo.Core.Application.Networking.Ports.IPlasticity
 builder.Services.AddNexoOrchestration();
 builder.Services.AddAgentBusNetworkBridge(builder.Configuration);
 
-// Brick host: elevation provider and brick registry (catalog + execute)
-builder.Services.AddSingleton<IElevationProvider, EchoElevationProvider>();
-builder.Services.AddSingleton<IBrickRegistry>(sp =>
+// Brick host: brick registry (catalog + execute)
+builder.Services.AddSingleton<Nexo.Core.Domain.Execution.IBrickRegistry>(sp =>
 {
-    var elevationProvider = sp.GetRequiredService<IElevationProvider>();
-    var providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
-    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var bricks = new Nexo.Core.Domain.Bricks.Brick[]
-    {
-        new GeoTerrainFetchSrtmTileBrick(
-            elevationProvider,
-            providerFactory,
-            loggerFactory.CreateLogger<GeoTerrainFetchSrtmTileBrick>())
-    };
+    var bricks = Array.Empty<Nexo.Core.Domain.Bricks.Brick>();
     return new BrickRegistry(bricks);
 });
 

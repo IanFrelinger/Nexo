@@ -14,17 +14,18 @@ namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
 /// Executes behaviors by running their brick steps in sequence.
+/// Implements Core.Domain.Execution.IBehaviorExecutor (used by Guide and other consumers).
 /// </summary>
-public class BehaviorExecutor : IBehaviorExecutor
+public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
 {
-    private readonly IBrickRegistry _brickRegistry;
+    private readonly Nexo.Core.Domain.Execution.IBrickRegistry _brickRegistry;
     private readonly IProviderFactory _providerFactory;
     private readonly ISemanticCache _semanticCache;
     private readonly ILoopKernel _loops;
     private readonly ILogger<BehaviorExecutor> _logger;
     
     public BehaviorExecutor(
-        IBrickRegistry brickRegistry,
+        Nexo.Core.Domain.Execution.IBrickRegistry brickRegistry,
         IProviderFactory providerFactory,
         ISemanticCache semanticCache,
         ILoopKernel loops,
@@ -37,7 +38,7 @@ public class BehaviorExecutor : IBehaviorExecutor
         _logger = logger;
     }
     
-    public async Task<BehaviorResult> ExecuteAsync(
+    public async Task<Nexo.Core.Domain.Execution.BehaviorResult> ExecuteAsync(
         AgentCard agent,
         Behavior behavior,
         BehaviorInput input,
@@ -62,7 +63,7 @@ public class BehaviorExecutor : IBehaviorExecutor
         
         stopwatch.Stop();
         
-        return new BehaviorResult
+        return new Nexo.Core.Domain.Execution.BehaviorResult
         {
             Success = errors.Count == 0,
             Outputs = outputs,

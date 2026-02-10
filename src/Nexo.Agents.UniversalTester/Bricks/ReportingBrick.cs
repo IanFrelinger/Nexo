@@ -137,7 +137,8 @@ public class ReportingBrick : Brick
         {
             Summary = summary,
             HtmlReport = htmlReport,
-            JsonReport = jsonReport
+            JsonReport = jsonReport,
+            Session = session
         };
         
         return new BrickOutput

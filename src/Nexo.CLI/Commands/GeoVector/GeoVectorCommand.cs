@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.Adapters.GeoVector.Providers;
+using Nexo.CLI.Commands;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
@@ -773,8 +773,7 @@ public class GeoVectorCommand : IGeoVectorCommand
         string? cacheRoot = null,
         bool persistCache = true)
     {
-        var factory = new ElevationProviderFactory(_httpClientFactory, _loggerFactory);
-        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped, cacheRoot, persistCache);
+        return new EchoElevationProvider();
     }
 
     private async Task<ElevationGrid> BuildTerrainGridAsync(GeoBounds bounds, IElevationProvider elevationProvider, CancellationToken ct)

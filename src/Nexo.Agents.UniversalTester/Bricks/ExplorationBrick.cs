@@ -193,6 +193,11 @@ public class ExplorationBrick : Brick
         }
         
         sb.AppendLine();
+        var isFirstTimeUserGoal = goal.Contains("first time", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("new user", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("come up with your own", StringComparison.OrdinalIgnoreCase);
+        if (isFirstTimeUserGoal)
+            sb.AppendLine("You are simulating a curious first-time user. Choose actions they would naturally try; prefer exploration and varied interactions over repeating the same action.");
         sb.AppendLine(@"## Decision
 
 Provide JSON:
@@ -227,17 +232,9 @@ Provide JSON:
                 Duration = TimeSpan.FromSeconds(1)
             }, reasoning, shouldStop);
         }
-        catch
+        catch (Exception ex)
         {
-            // Fallback
-            var action = understanding.AvailableActions.FirstOrDefault();
-            return (action != null ? ConvertToTestAction(action) : new TestAction
-            {
-                Id = "wait",
-                Type = ActionType.Wait,
-                Description = "Waiting",
-                Duration = TimeSpan.FromSeconds(1)
-            }, "Failed to parse AI response", false);
+            throw new InvalidOperationException("Exploration brick could not parse LLM response as JSON. Ensure the model returns valid JSON.", ex);
         }
     }
     
@@ -259,14 +256,31 @@ Provide JSON:
             "command" => ActionType.ExecuteCommand,
             _ => ActionType.Click
         };
-        
+
+        var coordinates = TryParseTargetAsCoordinates(action.Target);
+        var inputValue = actionType == ActionType.KeyPress ? null : action.Value;
+        var key = actionType == ActionType.KeyPress ? action.Value : null;
+
         return new TestAction
         {
             Id = action.Id,
             Type = actionType,
             Description = action.Description,
             Selector = action.Target,
-            InputValue = action.Value
+            ElementId = action.Target,
+            Coordinates = coordinates,
+            InputValue = inputValue,
+            Key = key
         };
+    }
+
+    private static Vector2? TryParseTargetAsCoordinates(string? target)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return null;
+        var parts = target.Trim().Split(',');
+        if (parts.Length != 2) return null;
+        if (double.TryParse(parts[0].Trim(), out var x) && double.TryParse(parts[1].Trim(), out var y))
+            return new Vector2 { X = x, Y = y };
+        return null;
     }
 }

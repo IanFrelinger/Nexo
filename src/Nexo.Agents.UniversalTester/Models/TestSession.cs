@@ -36,6 +36,8 @@ public record TestReport
     public required TestSummary Summary { get; init; }
     public string? HtmlReport { get; init; }
     public string? JsonReport { get; init; }
+    /// <summary>Full session (steps, actions) for test assertions.</summary>
+    public TestSession? Session { get; init; }
 }
 
 /// <summary>

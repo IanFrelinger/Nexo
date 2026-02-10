@@ -12,6 +12,23 @@ public class ProviderFactory : IProviderFactory
 {
     private readonly ILogger<ProviderFactory> _logger;
     private static readonly HttpClient Http = new();
+    private static HttpClient? _ollamaHttp;
+    private static readonly object OllamaHttpLock = new();
+
+    private static HttpClient OllamaHttp
+    {
+        get
+        {
+            if (_ollamaHttp != null) return _ollamaHttp;
+            lock (OllamaHttpLock)
+            {
+                if (_ollamaHttp != null) return _ollamaHttp;
+                var seconds = int.TryParse(Environment.GetEnvironmentVariable("OLLAMA_TIMEOUT_SECONDS"), out var s) && s > 0 ? s : 300;
+                _ollamaHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(seconds) };
+                return _ollamaHttp;
+            }
+        }
+    }
     private readonly HashSet<string> _availableProviders = new()
     {
         // Real providers (may be wired later)
@@ -71,25 +88,13 @@ public class ProviderFactory : IProviderFactory
             return GenerateMockJsonResponse(systemPrompt, userPrompt);
         }
         
-        // Real providers (best-effort). If not configured or call fails, fall back to mock-json.
+        // Real providers: fail fast on misconfiguration or request failure (no mock fallback).
         if (provider is "openai")
         {
             var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                _logger.LogWarning("OPENAI_API_KEY not set; falling back to mock-json response");
-                return GenerateMockJsonResponse(systemPrompt, userPrompt);
-            }
-
-            try
-            {
-                return await ExecuteOpenAiAsync(apiKey, systemPrompt, userPrompt, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "OpenAI call failed; falling back to mock-json response");
-                return GenerateMockJsonResponse(systemPrompt, userPrompt);
-            }
+                throw new InvalidOperationException("OPENAI_API_KEY is not set. Set it or use provider mock/offline.");
+            return await ExecuteOpenAiAsync(apiKey, systemPrompt, userPrompt, cancellationToken);
         }
 
         if (provider is "azure")
@@ -98,37 +103,14 @@ public class ProviderFactory : IProviderFactory
             var apiKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
             var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT");
             if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(deployment))
-            {
-                _logger.LogWarning("Azure OpenAI env vars not set (AZURE_OPENAI_ENDPOINT/AZURE_OPENAI_API_KEY/AZURE_OPENAI_DEPLOYMENT); falling back to mock-json response");
-                return GenerateMockJsonResponse(systemPrompt, userPrompt);
-            }
-
-            try
-            {
-                return await ExecuteAzureOpenAiAsync(endpoint, apiKey, deployment, systemPrompt, userPrompt, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Azure OpenAI call failed; falling back to mock-json response");
-                return GenerateMockJsonResponse(systemPrompt, userPrompt);
-            }
+                throw new InvalidOperationException("Azure OpenAI env vars not set (AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT). Set them or use provider mock/offline.");
+            return await ExecuteAzureOpenAiAsync(endpoint, apiKey, deployment, systemPrompt, userPrompt, cancellationToken);
         }
 
         if (provider is "ollama")
-        {
-            try
-            {
-                return await ExecuteOllamaAsync(systemPrompt, userPrompt, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Ollama call failed; falling back to mock-json response");
-                return GenerateMockJsonResponse(systemPrompt, userPrompt);
-            }
-        }
+            return await ExecuteOllamaAsync(systemPrompt, userPrompt, cancellationToken);
 
-        _logger.LogWarning("Unknown provider {Provider}; falling back to mock-json response", provider);
-        return GenerateMockJsonResponse(systemPrompt, userPrompt);
+        throw new InvalidOperationException($"Unknown or unsupported provider: {provider}. Use mock, offline, openai, azure, or ollama.");
     }
 
     private async Task<string> ExecuteOpenAiAsync(string apiKey, string systemPrompt, string userPrompt, CancellationToken ct)
@@ -211,10 +193,13 @@ public class ProviderFactory : IProviderFactory
     private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, byte[]? imageBytes, CancellationToken ct)
     {
         var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
-        // For vision, prefer vision models; fallback to text-only model
-        var model = Environment.GetEnvironmentVariable("OLLAMA_MODEL") 
-            ?? (imageBytes != null ? "llava:7b" : "llama3.1");
-        var url = $"{baseUrl.TrimEnd('/')}/api/chat";
+        baseUrl = baseUrl.TrimEnd('/');
+        // Vision calls require a vision-capable model (e.g. llava). Use OLLAMA_VISION_MODEL when passing an image.
+        var requestedModel = imageBytes != null
+            ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llava:7b")
+            : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1");
+        var model = await ResolveOllamaModelAsync(baseUrl, requestedModel, imageBytes != null, ct);
+        var url = $"{baseUrl}/api/chat";
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
 
@@ -222,7 +207,6 @@ public class ProviderFactory : IProviderFactory
         object userMessage;
         if (imageBytes != null)
         {
-            // Convert image to base64 for vision models
             var imageBase64 = Convert.ToBase64String(imageBytes);
             userMessage = new
             {
@@ -254,8 +238,17 @@ public class ProviderFactory : IProviderFactory
         req.Content = new StringContent(JsonSerializer.Serialize(payload));
         req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
-        using var resp = await Http.SendAsync(req, ct);
+        using var resp = await OllamaHttp.SendAsync(req, ct);
         var body = await resp.Content.ReadAsStringAsync(ct);
+
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            var available = await GetOllamaModelNamesAsync(baseUrl, ct);
+            throw new InvalidOperationException(
+                $"Ollama model '{model}' not found (404). Available: {string.Join(", ", available)}. " +
+                "Pull a model with: ollama pull " + (imageBytes != null ? "llava:7b" : "llama3.2:3b"));
+        }
+
         resp.EnsureSuccessStatusCode();
 
         using var doc = JsonDocument.Parse(body);
@@ -265,6 +258,73 @@ public class ProviderFactory : IProviderFactory
             .GetString();
 
         return content ?? throw new InvalidOperationException("Ollama response content was null");
+    }
+
+    /// <summary>
+    /// Resolve the requested model name to an available Ollama model. If the requested model
+    /// is not found, pick the first available vision or text model so the agent can run without manual config.
+    /// </summary>
+    private async Task<string> ResolveOllamaModelAsync(string baseUrl, string requestedModel, bool forVision, CancellationToken ct)
+    {
+        var available = await GetOllamaModelNamesAsync(baseUrl, ct);
+        if (available.Count == 0)
+            return requestedModel;
+
+        var exact = available.FirstOrDefault(m => string.Equals(m, requestedModel, StringComparison.OrdinalIgnoreCase));
+        if (exact != null)
+            return exact;
+
+        if (forVision)
+        {
+            var vision = available.FirstOrDefault(m => m.Contains("llava", StringComparison.OrdinalIgnoreCase));
+            if (vision != null)
+            {
+                _logger.LogInformation("Ollama model '{Requested}' not found; using vision model '{Resolved}'", requestedModel, vision);
+                return vision;
+            }
+        }
+        else
+        {
+            var text = available.FirstOrDefault(m => m.Contains("llama", StringComparison.OrdinalIgnoreCase))
+                ?? available.FirstOrDefault();
+            if (text != null)
+            {
+                _logger.LogInformation("Ollama model '{Requested}' not found; using '{Resolved}'", requestedModel, text);
+                return text;
+            }
+        }
+
+        var fallback = available[0];
+        _logger.LogInformation("Ollama model '{Requested}' not found; using '{Resolved}'", requestedModel, fallback);
+        return fallback;
+    }
+
+    private async Task<List<string>> GetOllamaModelNamesAsync(string baseUrl, CancellationToken ct)
+    {
+        try
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/tags");
+            using var resp = await OllamaHttp.SendAsync(req, ct);
+            resp.EnsureSuccessStatusCode();
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(body);
+            var list = new List<string>();
+            if (doc.RootElement.TryGetProperty("models", out var models))
+            {
+                foreach (var m in models.EnumerateArray())
+                {
+                    var name = m.TryGetProperty("name", out var n) ? n.GetString() : null;
+                    if (!string.IsNullOrEmpty(name))
+                        list.Add(name);
+                }
+            }
+            return list;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not list Ollama models at {BaseUrl}/api/tags", baseUrl);
+            return new List<string>();
+        }
     }
 
     /// <summary>
@@ -281,28 +341,55 @@ public class ProviderFactory : IProviderFactory
         provider = (provider ?? "mock").Trim().ToLowerInvariant();
         _logger.LogInformation("Executing vision request with provider {Provider}", provider);
 
-        // Try Ollama first for local vision models
         if (provider is "ollama" or "auto" or "local")
-        {
-            try
-            {
-                return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Ollama vision call failed; falling back to mock-json response");
-                // Fall through to mock
-            }
-        }
+            return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes, cancellationToken);
 
-        // For other providers, fall back to text-only (or implement vision APIs later)
         if (provider is "openai" or "azure")
+            throw new NotSupportedException($"Vision API not yet implemented for provider: {provider}. Use ollama with a vision model (e.g. llava:7b).");
+
+        throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}. Use ollama, auto, or local.");
+    }
+
+    /// <inheritdoc />
+    public async Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
+    {
+        var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
+        baseUrl = baseUrl.TrimEnd('/');
+        List<string> models;
+        try
         {
-            _logger.LogWarning("Vision API not yet implemented for {Provider}; using text-only fallback", provider);
+            using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/tags");
+            using var resp = await OllamaHttp.SendAsync(req, cancellationToken);
+            resp.EnsureSuccessStatusCode();
+            var body = await resp.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(body);
+            models = new List<string>();
+            if (doc.RootElement.TryGetProperty("models", out var arr))
+            {
+                foreach (var m in arr.EnumerateArray())
+                {
+                    var name = m.TryGetProperty("name", out var n) ? n.GetString() : null;
+                    if (!string.IsNullOrEmpty(name)) models.Add(name);
+                }
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new InvalidOperationException(
+                $"Ollama is not reachable at {baseUrl}. Start Ollama (e.g. ollama serve or: docker run -d -p 11434:11434 ollama/ollama). {ex.Message}", ex);
         }
 
-        // Fallback to mock for now
-        return GenerateMockJsonResponse(systemPrompt, userPrompt);
+        if (models.Count == 0)
+            throw new InvalidOperationException(
+                $"Ollama at {baseUrl} returned no models. Pull a model: ollama pull llama3.2:3b (and for vision: ollama pull llava:7b).");
+
+        if (requireVisionModel)
+        {
+            var hasVision = models.Any(m => m.Contains("llava", StringComparison.OrdinalIgnoreCase));
+            if (!hasVision)
+                throw new InvalidOperationException(
+                    $"No vision model found at {baseUrl}. Available: {string.Join(", ", models)}. Pull one: ollama pull llava:7b");
+        }
     }
 
     private static string GenerateMockJsonResponse(string systemPrompt, string userPrompt)

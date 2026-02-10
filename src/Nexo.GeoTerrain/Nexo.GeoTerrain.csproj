@@ -6,5 +6,20 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisMode>All</AnalysisMode>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.GeoPrimitives\Nexo.GeoPrimitives.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Vector2.cs" />
+    <Compile Remove="Vector3.cs" />
+    <Compile Remove="MeshData.cs" />
+    <Compile Remove="GeoPoint.cs" />
+    <Compile Remove="GeoBounds.cs" />
+    <Compile Remove="Latitude.cs" />
+    <Compile Remove="Longitude.cs" />
+    <Compile Remove="SrtmTileId.cs" />
+    <Compile Remove="Projection\ICoordinateProjector.cs" />
+    <Compile Remove="Projection\EquirectangularProjector.cs" />
+  </ItemGroup>
 </Project>
 

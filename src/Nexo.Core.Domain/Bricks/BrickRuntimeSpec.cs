@@ -22,5 +22,9 @@ public sealed record BrickRuntimeSpec
 
     public static BrickRuntimeSpec AgenticWithDeterministicFallback()
         => new() { Prefer = "agentic", Fallback = new[] { ImplementationType.Agentic, ImplementationType.Deterministic } };
+
+    /// <summary>Agentic only; no deterministic fallback.</summary>
+    public static BrickRuntimeSpec AgenticOnly()
+        => new() { Prefer = "agentic", Fallback = new[] { ImplementationType.Agentic } };
 }
 

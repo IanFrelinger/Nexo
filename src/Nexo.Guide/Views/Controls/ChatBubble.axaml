@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Nexo.Guide.ViewModels"
+             x:Class="Nexo.Guide.Views.Controls.ChatBubble"
+             x:DataType="vm:ChatMessage">
+	<Grid>
+		<Border Background="#FF232326" Padding="16,12" CornerRadius="18,18,6,18" HorizontalAlignment="Right" MaxWidth="600" IsVisible="{Binding IsUser}">
+			<TextBlock Text="{Binding Text}" FontSize="14" Foreground="#FFF5F5F7" TextWrapping="Wrap" />
+		</Border>
+		<StackPanel HorizontalAlignment="Left" MaxWidth="600" Margin="0,4,0,0" IsVisible="{Binding IsAssistant}">
+			<TextBlock x:Name="AssistantText" FontSize="14" Foreground="#FFF5F5F7" TextWrapping="Wrap" />
+			<TextBlock x:Name="MetricsText" FontSize="10" Foreground="#4DFFFFFF" Margin="0,8,0,0" IsVisible="{Binding HasMetrics}" />
+		</StackPanel>
+	</Grid>
+</UserControl>

@@ -10,10 +10,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.CLI\Nexo.CLI.csproj" />
-    <ProjectReference Include="..\Nexo.Adapters.GeoTerrain\Nexo.Adapters.GeoTerrain.csproj" />
     <ProjectReference Include="..\Nexo.Adapters.GeoVector\Nexo.Adapters.GeoVector.csproj" />
-    <ProjectReference Include="..\Nexo.GeoTerrain\Nexo.GeoTerrain.csproj" />
-    <ProjectReference Include="..\Nexo.GeoTerrain.Bricks\Nexo.GeoTerrain.Bricks.csproj" />
+    <ProjectReference Include="..\Nexo.GeoPrimitives\Nexo.GeoPrimitives.csproj" />
     <ProjectReference Include="..\Nexo.GeoVector\Nexo.GeoVector.csproj" />
     <ProjectReference Include="..\Nexo.GeoWorld\Nexo.GeoWorld.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />

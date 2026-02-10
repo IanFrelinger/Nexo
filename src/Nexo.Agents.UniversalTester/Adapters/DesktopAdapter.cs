@@ -18,6 +18,7 @@ namespace Nexo.Agents.UniversalTester.Adapters;
 public class DesktopAdapter : ITargetAdapter
 {
     private Process? _process;
+    private string? _processName; // For macOS/Linux: target app name for focus/automation
     private readonly ILogger<DesktopAdapter>? _logger;
     private readonly List<string> _errors = new();
     private ITargetAdapter? _platformAdapter;
@@ -52,6 +53,7 @@ public class DesktopAdapter : ITargetAdapter
                 if (processes.Length > 0)
                 {
                     _process = processes[0];
+                    _processName = _process.ProcessName;
                     _logger?.LogInformation("Connected to existing process: {Process}", processName);
                 }
                 else
@@ -73,6 +75,9 @@ public class DesktopAdapter : ITargetAdapter
                 
                 // Wait a bit for process to initialize
                 await Task.Delay(1000, ct);
+                _processName = Path.GetFileNameWithoutExtension(target); // e.g. "Nexo.Guide"
+                if (_process != null && !_process.HasExited)
+                    _processName = _process.ProcessName; // Prefer actual process name
                 _logger?.LogInformation("Launched desktop app: {Target}", target);
             }
             else
@@ -106,19 +111,83 @@ public class DesktopAdapter : ITargetAdapter
         // Don't kill the process - it might be user's application
         // Just mark as disconnected
         _process = null;
+        _processName = null;
         return Task.CompletedTask;
     }
-    
+
     public Task<byte[]?> CaptureScreenshotAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.CaptureScreenshotAsync(ct);
 
-        // TODO: Implement screenshot capture using platform-specific APIs
-        // Windows: BitBlt or GDI+
-        // macOS: CGWindowListCreateImage
-        // Linux: X11 screenshot APIs
-        _logger?.LogWarning("Screenshot capture not implemented for desktop apps");
+        if (OperatingSystem.IsMacOS())
+            return CaptureScreenshotMacOsAsync(ct);
+        if (OperatingSystem.IsLinux())
+            return CaptureScreenshotLinuxAsync(ct);
+
+        _logger?.LogWarning("Screenshot capture not implemented for this platform");
         return Task.FromResult<byte[]?>(null);
+    }
+
+    private Task<byte[]?> CaptureScreenshotMacOsAsync(CancellationToken ct)
+    {
+        try
+        {
+            var path = Path.Combine(Path.GetTempPath(), "nexo-ut-cap-" + Guid.NewGuid().ToString("N") + ".png");
+            var psi = new ProcessStartInfo
+            {
+                FileName = "screencapture",
+                ArgumentList = { "-x", "-t", "png", path },
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var p = Process.Start(psi);
+            if (p == null) return Task.FromResult<byte[]?>(null);
+            p.WaitForExit(5000);
+            if (p.ExitCode != 0 || !File.Exists(path))
+            {
+                try { File.Delete(path); } catch { }
+                return Task.FromResult<byte[]?>(null);
+            }
+            var bytes = File.ReadAllBytes(path);
+            try { File.Delete(path); } catch { }
+            return Task.FromResult<byte[]?>(bytes);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "macOS screencapture failed");
+            return Task.FromResult<byte[]?>(null);
+        }
+    }
+
+    private Task<byte[]?> CaptureScreenshotLinuxAsync(CancellationToken ct)
+    {
+        try
+        {
+            var path = Path.Combine(Path.GetTempPath(), "nexo-ut-cap-" + Guid.NewGuid().ToString("N") + ".png");
+            var psi = new ProcessStartInfo
+            {
+                FileName = "scrot",
+                ArgumentList = { "-o", path },
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var p = Process.Start(psi);
+            if (p == null) return Task.FromResult<byte[]?>(null);
+            p.WaitForExit(5000);
+            if (p.ExitCode != 0 || !File.Exists(path))
+            {
+                try { File.Delete(path); } catch { }
+                return Task.FromResult<byte[]?>(null);
+            }
+            var bytes = File.ReadAllBytes(path);
+            try { File.Delete(path); } catch { }
+            return Task.FromResult<byte[]?>(bytes);
+        }
+        catch
+        {
+            _logger?.LogWarning("Linux scrot screenshot not available");
+            return Task.FromResult<byte[]?>(null);
+        }
     }
     
     public Task<string?> GetStructureAsync(CancellationToken ct = default)
@@ -150,13 +219,144 @@ public class DesktopAdapter : ITargetAdapter
     {
         if (_platformAdapter != null) return _platformAdapter.ExecuteActionAsync(action, ct);
 
-        // TODO: Implement action execution using UI Automation
-        // This requires:
-        // - Finding elements by automation ID, name, or coordinates
-        // - Sending input events (clicks, keyboard, etc.)
-        // - Waiting for UI updates
-        _logger?.LogWarning("Action execution not implemented for desktop apps. Action: {ActionType}", action.Type);
-        return Task.FromResult<string?>("Desktop automation requires UI Automation implementation");
+        if (OperatingSystem.IsMacOS())
+            return ExecuteActionMacOsAsync(action, ct);
+        if (OperatingSystem.IsLinux())
+            return ExecuteActionLinuxAsync(action, ct);
+
+        _logger?.LogWarning("Action execution not implemented for this platform. Action: {ActionType}", action.Type);
+        return Task.FromResult<string?>("Desktop automation not implemented for this platform");
+    }
+
+    private async Task<string?> ExecuteActionMacOsAsync(TestAction action, CancellationToken ct)
+    {
+        var processName = _processName ?? _process?.ProcessName ?? "Nexo.Guide";
+        switch (action.Type)
+        {
+            case ActionType.Wait:
+                await Task.Delay(action.Duration ?? TimeSpan.FromMilliseconds(500), ct);
+                return "Waited";
+            case ActionType.Click:
+            case ActionType.DoubleClick:
+            case ActionType.RightClick:
+                return ExecuteClickMacOs(processName, action);
+            case ActionType.Type:
+            case ActionType.Fill:
+                return ExecuteTypeMacOs(processName, action);
+            case ActionType.KeyPress:
+                return ExecuteKeyPressMacOs(processName, action);
+            case ActionType.SwitchWindow:
+                return RunOsascript($"tell application \"System Events\" to set frontmost of first process whose name is \"{processName}\" to true");
+            default:
+                return $"Unsupported action: {action.Type}";
+        }
+    }
+
+    private string? ExecuteClickMacOs(string processName, TestAction action)
+    {
+        int x, y;
+        if (action.Coordinates != null)
+        {
+            x = (int)action.Coordinates.X;
+            y = (int)action.Coordinates.Y;
+        }
+        else if (TryParseCoordinates(action.Selector ?? action.ElementId, out x, out y))
+        {
+            // Target was "x,y" from vision
+        }
+        else
+            return "No coordinates or selector for click";
+
+        var script = $@"
+tell application ""System Events"" to set frontmost of first process whose name is ""{processName}"" to true
+delay 0.2
+tell application ""System Events"" to click at {{{x}, {y}}}
+";
+        return RunOsascript(script);
+    }
+
+    private string? ExecuteTypeMacOs(string processName, TestAction action)
+    {
+        var value = action.InputValue ?? "";
+        value = value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        var script = $@"
+tell application ""System Events"" to set frontmost of first process whose name is ""{processName}"" to true
+delay 0.2
+tell application ""System Events"" to keystroke ""{value}""
+";
+        return RunOsascript(script);
+    }
+
+    private string? ExecuteKeyPressMacOs(string processName, TestAction action)
+    {
+        var key = action.Key?.Trim() ?? "";
+        var code = KeyCodeToMacCode(key.ToLowerInvariant());
+        var script = $@"
+tell application ""System Events"" to set frontmost of first process whose name is ""{processName}"" to true
+delay 0.1
+tell application ""System Events"" to key code {code}
+";
+        return RunOsascript(script);
+    }
+
+    private static int KeyCodeToMacCode(string key)
+    {
+        return key switch
+        {
+            "enter" or "return" => 36,
+            "tab" => 48,
+            "escape" or "esc" => 53,
+            "backspace" or "delete" => 51,
+            _ => 0
+        };
+    }
+
+    private static bool TryParseCoordinates(string? target, out int x, out int y)
+    {
+        x = y = 0;
+        if (string.IsNullOrWhiteSpace(target)) return false;
+        var parts = target.Trim().Split(',');
+        if (parts.Length != 2) return false;
+        if (!int.TryParse(parts[0].Trim(), out x) || !int.TryParse(parts[1].Trim(), out y)) return false;
+        return true;
+    }
+
+    private string? RunOsascript(string script)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "osascript",
+                ArgumentList = { "-e", script },
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true
+            };
+            using var p = Process.Start(psi);
+            if (p == null) return "Failed to start osascript";
+            var err = p.StandardError.ReadToEnd();
+            p.WaitForExit(5000);
+            return p.ExitCode == 0 ? "OK" : (string.IsNullOrWhiteSpace(err) ? "osascript failed" : err);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "osascript failed");
+            return ex.Message;
+        }
+    }
+
+    private async Task<string?> ExecuteActionLinuxAsync(TestAction action, CancellationToken ct)
+    {
+        switch (action.Type)
+        {
+            case ActionType.Wait:
+                await Task.Delay(action.Duration ?? TimeSpan.FromMilliseconds(500), ct);
+                return "Waited";
+            default:
+                _logger?.LogWarning("Linux desktop automation only supports Wait (install xdotool for click/type)");
+                return "Linux action not implemented";
+        }
     }
     
     public Task<GameState?> GetGameStateAsync(CancellationToken ct = default) =>

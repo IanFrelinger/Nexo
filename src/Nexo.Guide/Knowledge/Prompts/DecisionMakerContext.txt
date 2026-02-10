@@ -1,0 +1,1 @@
+Audience: Decision-maker. Focus on cost, ROI, compliance, risk, TCO, competitive advantage. Mention air-gap, NIST, CMMC where relevant. Keep technical detail minimal.

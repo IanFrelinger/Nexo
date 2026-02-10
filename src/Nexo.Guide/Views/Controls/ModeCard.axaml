@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Nexo.Guide.Views.Controls.ModeCard">
+	<Border Padding="16,14" CornerRadius="10" BorderThickness="0.5" BorderBrush="#1AFFFFFF" Background="#FF161616">
+		<StackPanel>
+			<TextBlock x:Name="ModeLabel" FontSize="13" FontWeight="Bold" Foreground="#FFF5F5F7" Margin="0,0,0,4" />
+			<TextBlock x:Name="DescLabel" FontSize="11" Foreground="#4DFFFFFF" LineHeight="1.5" />
+		</StackPanel>
+	</Border>
+</UserControl>

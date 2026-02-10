@@ -200,7 +200,7 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             loggerFactory.CreateLogger<BehaviorExecutor>());
     }
 
-    private sealed class SingleBrickRegistry : Nexo.Infrastructure.Execution.IBrickRegistry
+    private sealed class SingleBrickRegistry : Nexo.Core.Domain.Execution.IBrickRegistry
     {
         private readonly Brick _brick;
         public SingleBrickRegistry(Brick brick) => _brick = brick;
@@ -217,6 +217,8 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             => Task.FromResult("{}");
         public Task<string> ExecuteVisionAsync(string provider, string systemPrompt, string userPrompt, byte[] imageBytes, object config, CancellationToken cancellationToken = default)
             => Task.FromResult("{}");
+        public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 
     private sealed class FlakyAgenticBrick : Brick

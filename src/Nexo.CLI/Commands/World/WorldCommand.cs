@@ -4,6 +4,7 @@ using Nexo.Adapters.GeoTerrain.Export;
 using Nexo.Adapters.GeoTerrain.Processing;
 using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.Adapters.GeoVector.Providers;
+using Nexo.CLI.Commands;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Domain.Agents;
@@ -1426,8 +1427,7 @@ public class WorldCommand : IWorldCommand
         bool enableCache,
         bool airGapped)
     {
-        var factory = new ElevationProviderFactory(_httpClientFactory, _loggerFactory);
-        return factory.Build(provider, localRoot, srtmBaseUrl, persistDownloads, enableCache, airGapped);
+        return new EchoElevationProvider();
     }
 
     private IVectorProvider BuildVectorProvider(

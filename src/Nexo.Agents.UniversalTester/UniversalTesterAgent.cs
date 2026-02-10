@@ -51,7 +51,14 @@ public class UniversalTesterAgent
         
         // Determine target type
         var targetType = config.TargetType ?? InferTargetType(config.Target);
-        
+
+        var provider = (context.Provider ?? "").Trim().ToLowerInvariant();
+        if (provider is "ollama" or "auto" or "local")
+        {
+            var requireVision = targetType == TargetType.DesktopApp;
+            await _providerFactory.EnsureOllamaReachableAsync(requireVision, ct);
+        }
+
         // Create appropriate adapter
         await using var adapter = CreateAdapter(targetType);
         await adapter.ConnectAsync(config.Target, ct);

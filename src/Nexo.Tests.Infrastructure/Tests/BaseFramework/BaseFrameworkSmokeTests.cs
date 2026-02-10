@@ -199,6 +199,16 @@ public class BaseFrameworkSmokeTests : IDisposable
         agentType.Should().NotBeNull("UniversalTesterAgent should be available");
     }
 
+    [Fact]
+    public void NexoGuide_ShouldBeAvailable()
+    {
+        // Arrange & Act - Guide (nexo-guide agent, GuideChatBrick, IUnitySceneSink) is used by the Guide MAUI app
+        var setupType = Type.GetType("Nexo.Guide.GuideNexoSetup, Nexo.Guide");
+
+        // Assert
+        setupType.Should().NotBeNull("Nexo Guide setup and agent types should be available");
+    }
+
     public void Dispose()
     {
         try

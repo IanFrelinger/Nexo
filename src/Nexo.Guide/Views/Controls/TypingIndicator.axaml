@@ -1,0 +1,9 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Nexo.Guide.Views.Controls.TypingIndicator">
+	<StackPanel Orientation="Horizontal" Spacing="4" Margin="4,12,0,0">
+		<Ellipse x:Name="Dot1" Width="5" Height="5" Fill="#4DFFFFFF" Opacity="0.25" />
+		<Ellipse x:Name="Dot2" Width="5" Height="5" Fill="#4DFFFFFF" Opacity="0.25" />
+		<Ellipse x:Name="Dot3" Width="5" Height="5" Fill="#4DFFFFFF" Opacity="0.25" />
+	</StackPanel>
+</UserControl>

@@ -20,9 +20,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Nexo.API\Nexo.API.csproj" />
     <ProjectReference Include="..\Nexo.CLI\Nexo.CLI.csproj" />
-    <ProjectReference Include="..\Nexo.GeoTerrain\Nexo.GeoTerrain.csproj" />
+    <ProjectReference Include="..\Nexo.GeoPrimitives\Nexo.GeoPrimitives.csproj" />
     <ProjectReference Include="..\Nexo.GeoVector\Nexo.GeoVector.csproj" />
-    <ProjectReference Include="..\Nexo.Adapters.GeoTerrain\Nexo.Adapters.GeoTerrain.csproj" />
     <ProjectReference Include="..\Nexo.Adapters.GeoVector\Nexo.Adapters.GeoVector.csproj" />
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />

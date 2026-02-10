@@ -29,9 +29,9 @@ public sealed record UniversalTesterRuntimeConfig
                 ["perception"] = BrickRuntimeSpec.DeterministicOnly(),
                 ["action"] = BrickRuntimeSpec.DeterministicOnly(),
 
-                // Prefer agentic, but always allow deterministic fallback.
-                ["understanding"] = BrickRuntimeSpec.AgenticWithDeterministicFallback(),
-                ["exploration"] = BrickRuntimeSpec.AgenticWithDeterministicFallback(),
+                // Agentic only; no fallback. Vision/LLM must be reachable.
+                ["understanding"] = BrickRuntimeSpec.AgenticOnly(),
+                ["exploration"] = BrickRuntimeSpec.AgenticOnly(),
                 ["validation"] = BrickRuntimeSpec.AgenticWithDeterministicFallback(),
                 ["reporting"] = BrickRuntimeSpec.AgenticWithDeterministicFallback()
             }

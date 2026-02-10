@@ -54,7 +54,7 @@ The agent follows a **Perception → Understanding → Action → Validation** l
 - **GameAdapter** - Unity/game engine integration (via TCP/WebSocket)
 - **ApiAdapter** - HTTP client for REST APIs
 - **CliAdapter** - Process + stdin/stdout for CLI applications
-- **DesktopAdapter** - Windows UI Automation (placeholder)
+- **DesktopAdapter** - Desktop apps: Windows (FlaUI/UIA when available), macOS (screenshot via `screencapture`, actions via AppleScript), Linux (screenshot via `scrot`, Wait only)
 
 ## Usage
 
@@ -128,9 +128,28 @@ Bricks can switch between implementations based on context (air-gapped environme
 - Nexo.Core.Domain - Brick system
 - Nexo.Infrastructure - LLM provider factory
 
+## Desktop UI interaction
+
+When testing a desktop app (e.g. the Nexo Guide), the agent:
+
+- **Windows**: Uses FlaUI (Nexo.Agents.UniversalTester.Windows) when the assembly is present for full UI Automation (screenshot, element discovery, click/type by selector).
+- **macOS**: Captures the screen with `screencapture`, sends the screenshot to a vision-capable LLM (Understanding brick), and executes click/type via AppleScript using pixel coordinates returned by the model.
+- **Linux**: Captures the screen with `scrot` if available; action execution is limited to Wait (optional: add `xdotool` for click/type).
+
+Run the agentic Guide test with a display and Ollama (e.g. via Docker) so the agent can see the app and interact with it: `./scripts/run-guide-agentic-test-docker.sh`.
+
+### Vision model for human-like UI testing
+
+To have the agent **see the screen** (screenshot), identify buttons and inputs, and simulate a human user:
+
+- Use a **vision-capable model** for the Understanding brick. With Ollama, set **OLLAMA_VISION_MODEL** to a vision model; the script uses **llava:7b** by default.
+- The Docker script pulls both a text model (e.g. `llama3.2:3b`) and a vision model (`llava:7b`). Vision is used only when analyzing the screenshot; text model is used for exploration/reporting.
+- Alternatives: `llava:13b`, `llava-llama3`, `llama3.2-vision` (see [Ollama vision models](https://ollama.com/blog/vision-models)).
+- Without a vision model, the agent falls back to fixed coordinate-based actions (less accurate).
+
 ## Future Enhancements
 
-- [ ] Full desktop automation support (Windows UI Automation)
+- [x] Desktop screenshot + coordinate-based actions (macOS AppleScript, Windows FlaUI)
 - [ ] Mobile app testing (via emulators)
 - [ ] Enhanced game integration (Unity plugin)
 - [ ] Visual regression testing
