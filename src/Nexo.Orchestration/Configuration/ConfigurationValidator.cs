@@ -12,7 +12,6 @@ namespace Nexo.Orchestration.Configuration;
 /// - Validates required settings are present
 /// - Validates numeric ranges (retries, timeouts)
 /// - Validates connection strings and API keys
-/// - Checks for deprecated feature flags
 /// - Returns validation results with errors and warnings
 /// 
 /// Used at startup to ensure configuration is valid before orchestration begins.
@@ -46,9 +45,6 @@ public sealed class ConfigurationValidator
 
         // Validate connection strings
         ValidateConnectionStrings(errors, warnings);
-
-        // Validate feature flags
-        ValidateFeatureFlags(warnings);
 
         var isValid = errors.Count == 0;
 
@@ -152,29 +148,6 @@ public sealed class ConfigurationValidator
         }
     }
 
-    private void ValidateFeatureFlags(List<ConfigurationWarning> warnings)
-    {
-        // Check for deprecated feature flags
-        // Deprecation timeline: Flags will be removed in v3.0.0 (target: Q2 2026)
-        var deprecatedFlags = new[]
-        {
-            new { Flag = "Nexo:Orchestration:LegacyMode", RemovalVersion = "3.0.0", RemovalDate = "Q2 2026" }
-        };
-
-        foreach (var deprecation in deprecatedFlags)
-        {
-            var value = _configuration.GetValue<bool?>(deprecation.Flag);
-            if (value == true)
-            {
-                warnings.Add(new ConfigurationWarning
-                {
-                    Setting = deprecation.Flag,
-                    Message = $"Feature flag '{deprecation.Flag}' is deprecated and will be removed in version {deprecation.RemovalVersion} ({deprecation.RemovalDate}). " +
-                              "Please migrate to the new orchestration system."
-                });
-            }
-        }
-    }
 }
 
 /// <summary>

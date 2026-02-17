@@ -24,14 +24,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-# Copy solution and projects
-COPY *.sln global.json Directory.*.props ./
+# Copy solution and projects (override global.json to match SDK 8.0 runtime)
+COPY *.sln Directory.*.props ./
 COPY src/ ./src/
 COPY scripts/ ./scripts/
+RUN echo '{"sdk":{"version":"8.0.0","rollForward":"latestMinor","allowPrerelease":false}}' > global.json
 
-# Restore and build Nexo CLI
-RUN dotnet restore Nexo.sln \
-    && dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release --no-restore \
+# Restore and build Nexo CLI (skip CopyAssemblies in Docker to avoid targeting pack issues)
+RUN dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework=net8.0 \
+    && dotnet build src/Nexo.CLI/Nexo.CLI.csproj --configuration Release --no-restore -f net8.0 -p:TreatWarningsAsErrors=false -p:SkipCopyAssemblies=true -p:TargetFrameworks=net8.0 \
     && dotnet publish src/Nexo.CLI/Nexo.CLI.csproj --configuration Release --no-build -o /app/nexo
 
 ENV DISPLAY=:99

@@ -13,21 +13,21 @@
       <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/net8.0/copy-assemblies.dll</CopyScriptExe>
     </PropertyGroup>
     
-    <!-- Build the C# assembly copying tool if needed -->
+    <!-- Build the C# assembly copying tool if needed (skip in Docker/CI to avoid targeting pack issues) -->
     <MSBuild Projects="$(CopyScriptProj)" 
              Targets="Build" 
              Properties="Configuration=Debug"
-             Condition="Exists('$(CopyScriptProj)')"
+             Condition="Exists('$(CopyScriptProj)') AND '$(SkipCopyAssemblies)' != 'true'"
              ContinueOnError="false" />
     
     <!-- Use C# program to automatically copy all assemblies from deps.json -->
     <Exec Command="dotnet &quot;$(CopyScriptExe)&quot; &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
-          Condition="Exists('$(CopyScriptExe)') AND Exists('$(DepsJsonPath)')"
+          Condition="Exists('$(CopyScriptExe)') AND Exists('$(DepsJsonPath)') AND '$(SkipCopyAssemblies)' != 'true'"
           ContinueOnError="true" />
     
     <!-- Alternative: Use dotnet run if the DLL doesn't exist yet (builds on first run) -->
     <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -- &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
-          Condition="!Exists('$(CopyScriptExe)') AND Exists('$(CopyScriptProj)') AND Exists('$(DepsJsonPath)')"
+          Condition="!Exists('$(CopyScriptExe)') AND Exists('$(CopyScriptProj)') AND Exists('$(DepsJsonPath)') AND '$(SkipCopyAssemblies)' != 'true'"
           ContinueOnError="true" />
     
     <!-- Fallback: Known problematic assemblies that need to be copied -->
@@ -69,7 +69,7 @@
       <AssembliesToCopy Include="$(NuGetPackageRoot)\microsoft.playwright\1.48.0\lib\netstandard2.0\Microsoft.Playwright.dll" Condition="'$(OS)' == 'Windows_NT'" />
     </ItemGroup>
     
-    <Message Text="Copying assemblies to $(OutputPath)" Importance="high" />
-    <Copy SourceFiles="@(AssembliesToCopy)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('%(Identity)')" />
+    <Message Text="Copying assemblies to $(OutputPath)" Importance="high" Condition="'$(SkipCopyAssemblies)' != 'true'" />
+    <Copy SourceFiles="@(AssembliesToCopy)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('%(Identity)') AND '$(SkipCopyAssemblies)' != 'true'" />
   </Target>
 </Project>

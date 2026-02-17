@@ -137,6 +137,8 @@ public class UniversalTesterAgent
                 understandingInput.Set("previousUnderstanding", previousUnderstanding);
             if (frameBuffer.Count > 0)
                 understandingInput.Set("recentScreenshots", frameBuffer.ToList());
+            if (!string.IsNullOrWhiteSpace(config.AudioTranscript))
+                understandingInput.Set("audioTranscript", config.AudioTranscript);
 
             var understandingOutput = await ExecuteBrickWithRuntimeFallbackAsync(
                 brickKey: "understanding",

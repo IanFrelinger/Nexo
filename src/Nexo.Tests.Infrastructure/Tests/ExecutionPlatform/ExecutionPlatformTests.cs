@@ -40,34 +40,6 @@ public class ExecutionPlatformTests
     }
 
     [Fact]
-    public void RancherExecutionPlatform_ShouldHaveCorrectPlatformName()
-    {
-        // Arrange
-        var logger = _loggerFactory.CreateLogger<RancherExecutionPlatform>();
-        var platform = new RancherExecutionPlatform(logger, "https://rancher.example.com");
-
-        // Act
-        var platformName = platform.PlatformName;
-
-        // Assert
-        platformName.Should().Be("Rancher");
-    }
-
-    [Fact]
-    public void KubernetesExecutionPlatform_ShouldHaveCorrectPlatformName()
-    {
-        // Arrange
-        var logger = _loggerFactory.CreateLogger<KubernetesExecutionPlatform>();
-        var platform = new KubernetesExecutionPlatform(logger, "~/.kube/config");
-
-        // Act
-        var platformName = platform.PlatformName;
-
-        // Assert
-        platformName.Should().Be("Kubernetes");
-    }
-
-    [Fact]
     public async Task DockerExecutionPlatform_IsAvailableAsync_ShouldReturnFalse_WhenDockerNotAvailable()
     {
         // Arrange
@@ -81,30 +53,6 @@ public class ExecutionPlatformTests
         // Assert
         // We can't assert true/false definitively without Docker, but we can verify it doesn't throw
         isAvailable.Should().BeFalse(); // Most test environments won't have Docker
-    }
-
-    [Fact]
-    public async Task RancherExecutionPlatform_IsAvailableAsync_ShouldNotThrow()
-    {
-        // Arrange
-        var logger = _loggerFactory.CreateLogger<RancherExecutionPlatform>();
-        var platform = new RancherExecutionPlatform(logger, "https://rancher.example.com");
-
-        // Act & Assert
-        var act = async () => await platform.IsAvailableAsync();
-        await act.Should().NotThrowAsync();
-    }
-
-    [Fact]
-    public async Task KubernetesExecutionPlatform_IsAvailableAsync_ShouldNotThrow()
-    {
-        // Arrange
-        var logger = _loggerFactory.CreateLogger<KubernetesExecutionPlatform>();
-        var platform = new KubernetesExecutionPlatform(logger, "~/.kube/config");
-
-        // Act & Assert
-        var act = async () => await platform.IsAvailableAsync();
-        await act.Should().NotThrowAsync();
     }
 
     [Fact]
@@ -149,48 +97,6 @@ public class ExecutionPlatformTests
         // Assert
         result.Success.Should().BeFalse();
         result.ExitCode.Should().NotBe(0);
-    }
-
-    [Fact]
-    public async Task RancherExecutionPlatform_BuildImageAsync_ShouldReturnNotImplemented()
-    {
-        // Arrange
-        var logger = _loggerFactory.CreateLogger<RancherExecutionPlatform>();
-        var platform = new RancherExecutionPlatform(logger, "https://rancher.example.com");
-
-        // Act
-        var result = await platform.BuildImageAsync(
-            "Dockerfile",
-            "test-image:latest",
-            Path.GetTempPath(),
-            null,
-            null,
-            CancellationToken.None);
-
-        // Assert
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("not yet implemented");
-    }
-
-    [Fact]
-    public async Task KubernetesExecutionPlatform_BuildImageAsync_ShouldReturnNotImplemented()
-    {
-        // Arrange
-        var logger = _loggerFactory.CreateLogger<KubernetesExecutionPlatform>();
-        var platform = new KubernetesExecutionPlatform(logger, "~/.kube/config");
-
-        // Act
-        var result = await platform.BuildImageAsync(
-            "Dockerfile",
-            "test-image:latest",
-            Path.GetTempPath(),
-            null,
-            null,
-            CancellationToken.None);
-
-        // Assert
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("not yet implemented");
     }
 
     [Fact]

@@ -200,9 +200,9 @@ public class ProviderFactory : IProviderFactory
         var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
         baseUrl = baseUrl.TrimEnd('/');
         var hasImages = imageBytesList is { Count: > 0 };
-        // Vision calls require a vision-capable model. Multi-frame works with Llama 3.2 Vision, Gemma 3, Qwen 2.5 VL.
+        // Vision: prefer SmolVLM2 (smol, 2.2B, video-capable); fallback llava. Override with OLLAMA_VISION_MODEL.
         var requestedModel = hasImages
-            ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llava:7b")
+            ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "richardyoung/smolvlm2-2.2b-instruct")
             : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1");
         var model = await ResolveOllamaModelAsync(baseUrl, requestedModel, hasImages, ct);
         var url = $"{baseUrl}/api/chat";
@@ -255,7 +255,7 @@ public class ProviderFactory : IProviderFactory
             var available = await GetOllamaModelNamesAsync(baseUrl, ct);
             throw new InvalidOperationException(
                 $"Ollama model '{model}' not found (404). Available: {string.Join(", ", available)}. " +
-                "Pull a model with: ollama pull " + (hasImages ? "llava:7b" : "llama3.2:3b"));
+                "Pull a model with: ollama pull " + (hasImages ? "richardyoung/smolvlm2-2.2b-instruct" : "llama3.2:3b") + " (or llava:7b)");
         }
 
         resp.EnsureSuccessStatusCode();
@@ -285,7 +285,8 @@ public class ProviderFactory : IProviderFactory
 
         if (forVision)
         {
-            var vision = available.FirstOrDefault(m => m.Contains("llava", StringComparison.OrdinalIgnoreCase));
+            var vision = available.FirstOrDefault(m => m.Contains("smolvlm", StringComparison.OrdinalIgnoreCase))
+                ?? available.FirstOrDefault(m => m.Contains("llava", StringComparison.OrdinalIgnoreCase));
             if (vision != null)
             {
                 _logger.LogInformation("Ollama model '{Requested}' not found; using vision model '{Resolved}'", requestedModel, vision);
@@ -354,7 +355,7 @@ public class ProviderFactory : IProviderFactory
             return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes, cancellationToken);
 
         if (provider is "openai" or "azure")
-            throw new NotSupportedException($"Vision API not yet implemented for provider: {provider}. Use ollama with a vision model (e.g. llava:7b).");
+            throw new NotSupportedException($"Vision API not yet implemented for provider: {provider}. Use ollama with a vision model (e.g. richardyoung/smolvlm2-2.2b-instruct, llava:7b).");
 
         throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}. Use ollama, auto, or local.");
     }
@@ -424,14 +425,14 @@ public class ProviderFactory : IProviderFactory
 
         if (models.Count == 0)
             throw new InvalidOperationException(
-                $"Ollama at {baseUrl} returned no models. Pull a model: ollama pull llama3.2:3b (and for vision: ollama pull llava:7b).");
+                $"Ollama at {baseUrl} returned no models. Pull a model: ollama pull llama3.2:3b (and for vision: ollama pull richardyoung/smolvlm2-2.2b-instruct or llava:7b).");
 
         if (requireVisionModel)
         {
-            var hasVision = models.Any(m => m.Contains("llava", StringComparison.OrdinalIgnoreCase));
+            var hasVision = models.Any(m => m.Contains("smolvlm", StringComparison.OrdinalIgnoreCase) || m.Contains("llava", StringComparison.OrdinalIgnoreCase));
             if (!hasVision)
                 throw new InvalidOperationException(
-                    $"No vision model found at {baseUrl}. Available: {string.Join(", ", models)}. Pull one: ollama pull llava:7b");
+                    $"No vision model found at {baseUrl}. Available: {string.Join(", ", models)}. Pull one: ollama pull richardyoung/smolvlm2-2.2b-instruct (or llava:7b)");
         }
     }
 

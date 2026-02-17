@@ -15,7 +15,7 @@ public static class TestGuideAgenticCommand
     public static Command CreateCommand()
     {
         var dockerOpt = new Option<bool>("--docker", () => false,
-            "Start Ollama in Docker and pull vision model (llava:7b) before running the test");
+            "Start Ollama in Docker and pull vision model (SmolVLM2/llava) before running the test");
         var skipUiOpt = new Option<bool>("--skip-ui", () => false,
             "Skip when NEXO_SKIP_UI_TESTS=1 or no display (e.g. in CI)");
 
@@ -68,7 +68,7 @@ public static class TestGuideAgenticCommand
             }
 
             var ollamaModel = Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.2:3b";
-            var ollamaVision = Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? "llava:7b";
+            var ollamaVision = Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? "richardyoung/smolvlm2-2.2b-instruct";
             var container = Environment.GetEnvironmentVariable("OLLAMA_CONTAINER") ?? "ollama";
 
             // Start Ollama container if not running

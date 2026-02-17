@@ -29,22 +29,25 @@ public sealed class YoutubeTestCommand : Command
     {
         var urlOpt = new Option<string>("--url", () => "https://www.youtube.com/watch?v=psbAgsMD8QM", "YouTube video URL");
         var outputOpt = new Option<FileInfo?>("--output", "Output report path");
+        var transcriptOpt = new Option<string?>("--transcript", "Audio transcript to augment vision (or set AUDIO_TRANSCRIPT env)");
         var verboseOpt = new Option<bool>("--verbose", () => false, "Verbose output");
 
         AddOption(urlOpt);
         AddOption(outputOpt);
+        AddOption(transcriptOpt);
         AddOption(verboseOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var url = ctx.ParseResult.GetValueForOption(urlOpt)!;
             var output = ctx.ParseResult.GetValueForOption(outputOpt);
+            var transcript = ctx.ParseResult.GetValueForOption(transcriptOpt) ?? Environment.GetEnvironmentVariable("AUDIO_TRANSCRIPT");
             var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
-            await ExecuteAsync(url, output, verbose);
+            await ExecuteAsync(url, output, transcript, verbose);
         });
     }
 
-    private static async Task ExecuteAsync(string videoUrl, FileInfo? output, bool verbose)
+    private static async Task ExecuteAsync(string videoUrl, FileInfo? output, string? transcript, bool verbose)
     {
         var console = new CliConsole(verbose);
         var root = DiscoverProjectRoot();
@@ -60,7 +63,7 @@ public sealed class YoutubeTestCommand : Command
             return;
         }
 
-        console.WriteHeader("YouTube Video Summary Test (Desktop Adapter + Multi-Frame Vision)");
+        console.WriteHeader("YouTube Video Summary Test (Desktop Adapter + Vision)");
         console.WritePair("Video", videoUrl);
         console.WritePair("Browser", browserApp);
         console.WritePair("Target", $"process://{browserProcess}");
@@ -83,9 +86,10 @@ public sealed class YoutubeTestCommand : Command
                 Target = $"process://{browserProcess}",
                 Goal = YoutubeGoals.SummaryGoal,
                 Depth = TestingDepth.Thorough,
-                MaxDuration = TimeSpan.FromMinutes(25)
+                MaxDuration = TimeSpan.FromMinutes(25),
+                AudioTranscript = !string.IsNullOrWhiteSpace(transcript) ? transcript : null
             };
-            var runtime = new UniversalTesterRuntimeConfig { MultiFrameCount = 6 };
+            var runtime = UniversalTesterRuntimeConfig.Default() with { MultiFrameCount = 1 };
             var report = await RunAgentAsync(config, runtime, "ollama", reportPath);
             DisplayAndSave(report, reportPath, console);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && File.Exists(reportPath))

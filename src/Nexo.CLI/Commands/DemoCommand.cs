@@ -22,12 +22,13 @@ public class DemoCommand
         demoCmd.AddCommand(new YoutubeTestCommand());
         demoCmd.AddCommand(new YoutubeTestDockerCommand());
         demoCmd.AddCommand(new YoutubeTestContainerCommand());
+        demoCmd.AddCommand(new YoutubeTranscribeCommand());
         demoCmd.AddCommand(new VideollmDockerCommand());
         demoCmd.AddCommand(new AutonomousDevCommand());
         demoCmd.AddCommand(new DemoSelfExtendCommand());
         
         // nexo demo smoke-test
-        var smokeTestCmd = new Command("smoke-test", "Run smoke tests to validate demo scripts for portability");
+        var smokeTestCmd = new Command("smoke-test", "Run smoke tests to validate scripts for portability (hardcoded paths)");
         smokeTestCmd.SetHandler(async (InvocationContext ctx) =>
         {
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
@@ -106,12 +107,11 @@ public class DemoCommand
             }
 
             var errors = 0;
-            var warnings = 0;
-            var unityBinCount = 0;
-            var scriptDirCount = 0;
-
-            // Check Unity-related scripts
-            var unityScripts = Directory.GetFiles(scriptsDir, "*unity*.sh", SearchOption.TopDirectoryOnly);
+            var scripts = Directory.GetFiles(scriptsDir, "*.*", SearchOption.TopDirectoryOnly)
+                .Where(f => f.EndsWith(".sh", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+                            f.EndsWith(".csx", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
 
             if (!json && console != null)
             {
@@ -119,56 +119,28 @@ public class DemoCommand
                 console.WriteLine();
             }
 
-            foreach (var scriptPath in unityScripts)
+            foreach (var scriptPath in scripts)
             {
                 var scriptName = Path.GetFileName(scriptPath);
                 var content = await File.ReadAllTextAsync(scriptPath);
-
-                // Check for hardcoded user paths
                 if (content.Contains("/Users/") && content.Contains("ianfrelinger"))
                 {
                     errors++;
                     if (!json && console != null)
-                    {
                         console.WriteError($"❌ FAIL: {scriptName} contains hardcoded user path");
-                    }
                 }
-                else
+                else if (!json && console != null && verbose)
                 {
-                    if (!json && console != null && verbose)
-                    {
-                        console.WriteSuccess($"✅ PASS: {scriptName} - No hardcoded user paths");
-                    }
-                }
-
-                // Check for UNITY_BIN support
-                if (content.Contains("UNITY_BIN") || content.Contains("${UNITY_BIN"))
-                {
-                    unityBinCount++;
-                }
-
-                // Check for SCRIPT_DIR pattern
-                if (content.Contains("SCRIPT_DIR="))
-                {
-                    scriptDirCount++;
+                    console.WriteSuccess($"✅ PASS: {scriptName}");
                 }
             }
 
             if (!json && console != null)
             {
                 console.WriteLine();
-                console.WriteLine("Checking for UNITY_BIN environment variable support...");
-                console.WritePair("Scripts with UNITY_BIN support", unityBinCount.ToString());
-                console.WriteLine();
-                console.WriteLine("Checking for portable path detection pattern...");
-                console.WritePair("Scripts using SCRIPT_DIR pattern", scriptDirCount.ToString());
-                console.WriteLine();
                 console.WriteHeader("Summary");
-                console.WritePair("Scripts checked", unityScripts.Length.ToString());
-                console.WritePair("Scripts with UNITY_BIN support", unityBinCount.ToString());
-                console.WritePair("Scripts with SCRIPT_DIR pattern", scriptDirCount.ToString());
+                console.WritePair("Scripts checked", scripts.Length.ToString());
                 console.WritePair("Errors (hardcoded paths)", errors.ToString());
-                console.WritePair("Warnings", warnings.ToString());
                 console.WriteLine();
             }
 
@@ -179,17 +151,7 @@ public class DemoCommand
                     console.WriteSuccess("✅ SUCCESS: No hardcoded user paths found");
                 }
                 else if (json)
-                {
-                    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        success = true,
-                        scriptsChecked = unityScripts.Length,
-                        unityBinSupport = unityBinCount,
-                        scriptDirPattern = scriptDirCount,
-                        errors = errors,
-                        warnings = warnings
-                    }));
-                }
+                    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { success = true, scriptsChecked = scripts.Length, errors = 0 }));
                 Environment.ExitCode = 0;
             }
             else
@@ -199,15 +161,7 @@ public class DemoCommand
                     console.WriteError($"❌ FAILURE: Found {errors} script(s) with hardcoded paths");
                 }
                 else if (json)
-                {
-                    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        success = false,
-                        scriptsChecked = unityScripts.Length,
-                        errors = errors,
-                        warnings = warnings
-                    }));
-                }
+                    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { success = false, scriptsChecked = scripts.Length, errors }));
                 Environment.ExitCode = 1;
             }
         }

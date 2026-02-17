@@ -14,7 +14,6 @@
     <Color x:Key="TextTertiaryColor">#4DFFFFFF</Color>
     <Color x:Key="AccentColor">#6EE7B7</Color>
     <Color x:Key="AccentDimColor">#1F6EE7B7</Color>
-    <!-- Legacy keys for template -->
     <Color x:Key="Primary">#6EE7B7</Color>
     <Color x:Key="White">#F5F5F7</Color>
     <Color x:Key="Black">#000000</Color>

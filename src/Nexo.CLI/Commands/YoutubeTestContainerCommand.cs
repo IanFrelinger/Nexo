@@ -30,6 +30,10 @@ public sealed class YoutubeTestContainerCommand : Command
         var ollamaUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://host.docker.internal:11434";
         var reportDir = Environment.GetEnvironmentVariable("REPORT_DIR") ?? "/workspace/reports";
         var displayNum = Environment.GetEnvironmentVariable("DISPLAY_NUM") ?? "99";
+        var audioTranscript = Environment.GetEnvironmentVariable("AUDIO_TRANSCRIPT");
+        var audioTranscriptFile = Environment.GetEnvironmentVariable("AUDIO_TRANSCRIPT_FILE");
+        if (string.IsNullOrWhiteSpace(audioTranscript) && !string.IsNullOrWhiteSpace(audioTranscriptFile) && File.Exists(audioTranscriptFile))
+            audioTranscript = File.ReadAllText(audioTranscriptFile).Trim();
 
         Directory.CreateDirectory(reportDir);
 
@@ -38,6 +42,8 @@ public sealed class YoutubeTestContainerCommand : Command
         console.WritePair("Video", videoUrl);
         console.WritePair("Browser process", browserProcess);
         console.WritePair("Ollama", ollamaUrl);
+        if (!string.IsNullOrEmpty(audioTranscript))
+            console.WritePair("Audio transcript", $"{audioTranscript.Length} chars");
         console.WriteLine();
 
         Process? xvfb = null;
@@ -70,9 +76,10 @@ public sealed class YoutubeTestContainerCommand : Command
                 Target = $"process://{browserProcess}",
                 Goal = YoutubeGoals.SummaryGoal,
                 Depth = TestingDepth.Thorough,
-                MaxDuration = TimeSpan.FromMinutes(25)
+                MaxDuration = TimeSpan.FromMinutes(25),
+                AudioTranscript = !string.IsNullOrWhiteSpace(audioTranscript) ? audioTranscript : null
             };
-            var runtime = new UniversalTesterRuntimeConfig { MultiFrameCount = 6 };
+            var runtime = UniversalTesterRuntimeConfig.Default() with { MultiFrameCount = 1 };
             var reportPath = Path.Combine(reportDir, $"youtube-summary-{DateTime.UtcNow:yyyyMMdd-HHmmss}.html");
             var report = await RunAgentAsync(config, runtime, "ollama");
             var html = report.HtmlReport ?? GenerateHtml(report);

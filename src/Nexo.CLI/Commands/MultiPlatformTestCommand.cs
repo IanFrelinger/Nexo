@@ -260,12 +260,6 @@ public class MultiPlatformTestCommand : Command
             return platformName.ToLowerInvariant() switch
             {
                 "docker" => (IExecutionPlatform)new DockerExecutionPlatform(loggerFactory.CreateLogger<DockerExecutionPlatform>()),
-                "rancher" => (IExecutionPlatform)new RancherExecutionPlatform(
-                    loggerFactory.CreateLogger<RancherExecutionPlatform>(),
-                    Environment.GetEnvironmentVariable("RANCHER_ENDPOINT") ?? "https://rancher.example.com"),
-                "kubernetes" => (IExecutionPlatform)new KubernetesExecutionPlatform(
-                    loggerFactory.CreateLogger<KubernetesExecutionPlatform>(),
-                    Environment.GetEnvironmentVariable("KUBECONFIG") ?? "~/.kube/config"),
                 _ => null
             };
         }

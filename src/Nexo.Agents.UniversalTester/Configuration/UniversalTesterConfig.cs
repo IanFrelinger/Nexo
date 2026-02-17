@@ -57,6 +57,12 @@ public record UniversalTesterConfig
     /// Example: "User should be able to complete purchase and see confirmation"
     /// </summary>
     public string? SuccessCriteria { get; init; }
+
+    /// <summary>
+    /// Optional: Audio transcript (e.g. from Whisper) to augment vision understanding.
+    /// Used for video tests: combine screenshot + transcript for richer context.
+    /// </summary>
+    public string? AudioTranscript { get; init; }
 }
 
 /// <summary>

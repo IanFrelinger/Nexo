@@ -11,8 +11,8 @@ namespace Nexo.Tests.Infrastructure.Tests.ExecutionPlatform;
 /// These tests verify:
 /// - Platforms can be instantiated without external dependencies
 /// - Availability detection works gracefully when platforms are unavailable
-/// - The abstraction doesn't require Docker/Rancher/Kubernetes to be running
-/// - All platforms follow the same interface contract
+/// - The abstraction doesn't require Docker to be running
+/// - Platform follows the IExecutionPlatform interface contract
 /// </summary>
 public class ExecutionPlatformPortabilityTests
 {
@@ -24,27 +24,15 @@ public class ExecutionPlatformPortabilityTests
     }
 
     [Fact]
-    public void AllExecutionPlatforms_ShouldBeInstantiable_WithoutExternalDependencies()
+    public void DockerExecutionPlatform_ShouldBeInstantiable_WithoutExternalDependencies()
     {
-        // Arrange & Act - Should not throw even if Docker/Rancher/Kubernetes are not available
+        // Arrange & Act - Should not throw even if Docker is not available
         var dockerLogger = _loggerFactory.CreateLogger<DockerExecutionPlatform>();
         var dockerPlatform = new DockerExecutionPlatform(dockerLogger);
 
-        var rancherLogger = _loggerFactory.CreateLogger<RancherExecutionPlatform>();
-        var rancherPlatform = new RancherExecutionPlatform(rancherLogger, "https://rancher.example.com");
-
-        var k8sLogger = _loggerFactory.CreateLogger<KubernetesExecutionPlatform>();
-        var k8sPlatform = new KubernetesExecutionPlatform(k8sLogger, "~/.kube/config");
-
-        // Assert - All platforms should be created successfully
+        // Assert - Platform should be created successfully
         dockerPlatform.Should().NotBeNull();
         dockerPlatform.PlatformName.Should().Be("Docker");
-
-        rancherPlatform.Should().NotBeNull();
-        rancherPlatform.PlatformName.Should().Be("Rancher");
-
-        k8sPlatform.Should().NotBeNull();
-        k8sPlatform.PlatformName.Should().Be("Kubernetes");
     }
 
     [Fact]
@@ -69,21 +57,9 @@ public class ExecutionPlatformPortabilityTests
         var dockerLogger = _loggerFactory.CreateLogger<DockerExecutionPlatform>();
         var dockerPlatform = new DockerExecutionPlatform(dockerLogger);
 
-        var rancherLogger = _loggerFactory.CreateLogger<RancherExecutionPlatform>();
-        var rancherPlatform = new RancherExecutionPlatform(rancherLogger, "https://rancher.example.com");
-
-        var k8sLogger = _loggerFactory.CreateLogger<KubernetesExecutionPlatform>();
-        var k8sPlatform = new KubernetesExecutionPlatform(k8sLogger, "~/.kube/config");
-
-        // Act & Assert - All platforms should implement IExecutionPlatform
+        // Act & Assert - Platform should implement IExecutionPlatform
         dockerPlatform.Should().BeAssignableTo<IExecutionPlatform>();
-        rancherPlatform.Should().BeAssignableTo<IExecutionPlatform>();
-        k8sPlatform.Should().BeAssignableTo<IExecutionPlatform>();
-
-        // All should have PlatformName property
         dockerPlatform.PlatformName.Should().NotBeNullOrEmpty();
-        rancherPlatform.PlatformName.Should().NotBeNullOrEmpty();
-        k8sPlatform.PlatformName.Should().NotBeNullOrEmpty();
     }
 
     [Fact]

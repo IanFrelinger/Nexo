@@ -74,7 +74,7 @@ public class WebAdapter : ITargetAdapter
     
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default)
     {
-        // Accessibility API is deprecated in Playwright
+        // Accessibility tree not available for web targets
         return Task.FromResult<string?>(null);
     }
     

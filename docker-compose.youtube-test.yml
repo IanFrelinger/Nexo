@@ -3,7 +3,8 @@
 # Run multiple instances in parallel: docker compose -f docker-compose.youtube-test.yml up --scale youtube-test=3
 #
 # Prerequisites:
-#   - Ollama running (host or as a service). Pull a vision model: ollama pull llava:7b
+#   - Ollama running (host or as a service). Pull a vision model (smol): ollama pull richardyoung/smolvlm2-2.2b-instruct (or llava:7b)
+#   - Optional audio: nexo demo youtube-transcribe URL > transcript.txt, then -e AUDIO_TRANSCRIPT_FILE=/path/transcript.txt
 #
 # Usage:
 #   # Full stack (Ollama + test in Compose):

@@ -36,7 +36,8 @@ public class UnderstandingBrick : Brick
                 new BrickInputDefinition("constraints", "string[]", "Testing constraints", required: false),
                 new BrickInputDefinition("actionHistory", "TestAction[]", "Previous actions", required: false),
                 new BrickInputDefinition("previousUnderstanding", "Understanding", "Previous understanding", required: false),
-                new BrickInputDefinition("recentScreenshots", "IReadOnlyList<byte[]>", "Recent screenshots for multi-frame vision", required: false)
+                new BrickInputDefinition("recentScreenshots", "IReadOnlyList<byte[]>", "Recent screenshots for multi-frame vision", required: false),
+                new BrickInputDefinition("audioTranscript", "string", "Audio transcript to augment vision (e.g. from Whisper)", required: false)
             ],
             Outputs = [
                 new BrickOutputDefinition("understanding", "Understanding", "AI's understanding of the state")
@@ -95,6 +96,7 @@ public class UnderstandingBrick : Brick
         var constraints = input.Get<string[]>("constraints", Array.Empty<string>()) ?? Array.Empty<string>();
         var actionHistory = input.Get<TestAction[]>("actionHistory", Array.Empty<TestAction>()) ?? Array.Empty<TestAction>();
         var recentScreenshots = input.Get<IReadOnlyList<byte[]>>("recentScreenshots", null);
+        var audioTranscript = input.Get<string>("audioTranscript");
 
         if (implementation == ImplementationType.Deterministic || context.IsAirGapped)
         {
@@ -113,7 +115,7 @@ public class UnderstandingBrick : Brick
 
         if (useVision && perception.Screenshot != null)
         {
-            var visionPrompt = BuildVisionUnderstandingPrompt(perception, goal, constraints, recentScreenshots?.Count ?? 0);
+            var visionPrompt = BuildVisionUnderstandingPrompt(perception, goal, constraints, recentScreenshots?.Count ?? 0, audioTranscript);
             var frames = recentScreenshots is { Count: > 1 }
                 ? recentScreenshots
                 : new[] { perception.Screenshot };
@@ -162,11 +164,19 @@ public class UnderstandingBrick : Brick
         PerceptionState perception,
         string goal,
         string[] constraints,
-        int frameCount = 0)
+        int frameCount = 0,
+        string? audioTranscript = null)
     {
         var sb = new StringBuilder();
         if (frameCount > 1)
             sb.AppendLine($"These {frameCount} images are consecutive screenshots over time (oldest first). Focus on the most recent but note any changes.");
+        if (!string.IsNullOrWhiteSpace(audioTranscript))
+        {
+            sb.AppendLine("## Audio Transcript (from the video):");
+            sb.AppendLine(audioTranscript.Trim());
+            sb.AppendLine("Use this transcript alongside the screenshot to understand the video content.");
+            sb.AppendLine();
+        }
         sb.AppendLine($"## Testing Goal: {goal}");
         if (constraints.Length > 0)
         {
