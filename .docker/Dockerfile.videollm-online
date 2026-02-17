@@ -1,0 +1,69 @@
+# VideoLLM-online: streaming video LLM for real-time video understanding
+# See https://github.com/showlab/videollm-online
+#
+# Build: docker build -f .docker/Dockerfile.videollm-online -t videollm-online .
+# Run:   docker run --gpus all -p 7860:7860 videollm-online
+#
+# Requires: NVIDIA GPU, nvidia-container-toolkit
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.10 \
+    python3-pip \
+    python3.10-venv \
+    git \
+    curl \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/bin/python3.10 /usr/bin/python && ln -sf /usr/bin/python3.10 /usr/bin/python3
+
+WORKDIR /app
+
+# PyTorch with CUDA 12.1
+RUN pip install --no-cache-dir \
+    torch==2.1.0 \
+    torchvision==0.16.0 \
+    torchaudio==2.1.0 \
+    --index-url https://download.pytorch.org/whl/cu121
+
+# Core deps (skip flash-attn; use sdpa fallback for Docker compatibility)
+RUN pip install --no-cache-dir \
+    transformers>=4.36 \
+    accelerate \
+    deepspeed \
+    peft \
+    editdistance \
+    Levenshtein \
+    tensorboard \
+    gradio>=4.0 \
+    moviepy \
+    submitit \
+    tqdm
+
+# Clone VideoLLM-online
+ARG VIDELLM_COMMIT=main
+RUN git clone https://github.com/showlab/videollm-online.git . \
+    && git checkout ${VIDELLM_COMMIT}
+
+# Patch demo to bind to 0.0.0.0 for container access
+RUN sed -i "s/demo.launch(share=False)/demo.launch(share=False, server_name='0.0.0.0', server_port=7860)/" demo/app.py
+
+# HuggingFace cache
+ENV HF_HOME=/app/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+
+# Default checkpoint (downloaded on first run)
+ENV VIDELLM_CHECKPOINT=chenjoya/videollm-online-8b-v1plus
+
+# Expose Gradio
+EXPOSE 7860
+
+# Run Gradio demo; use sdpa to avoid flash-attn build issues in Docker
+CMD ["python", "-m", "demo.app", \
+     "--resume_from_checkpoint", "chenjoya/videollm-online-8b-v1plus", \
+     "--attn_implementation", "sdpa"]

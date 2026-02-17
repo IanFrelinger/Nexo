@@ -491,6 +491,7 @@ static class Program
         testCmd.AddCommand(TestPortableCommand.CreateCommand());
         testCmd.AddCommand(TestMultiEnvCommand.CreateCommand());
         testCmd.AddCommand(TestGuideAgenticCommand.CreateCommand());
+        testCmd.AddCommand(new GuideHeadlessCommand());
 
         // nexo orchestrate
         var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
@@ -1119,6 +1120,9 @@ static class Program
 
         // nexo review (replaces review-summary-md.sh)
         root.AddCommand(new ReviewCommand());
+
+        // nexo guide-run (replaces run-guide-maccatalyst.sh, run-guide-ios-simulator.sh)
+        root.AddCommand(new GuideRunCommand());
 
         // nexo report
         var reportCmd = new ReportCommand();

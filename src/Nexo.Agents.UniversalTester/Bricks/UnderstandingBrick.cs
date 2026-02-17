@@ -35,7 +35,8 @@ public class UnderstandingBrick : Brick
                 new BrickInputDefinition("goal", "string", "Testing goal"),
                 new BrickInputDefinition("constraints", "string[]", "Testing constraints", required: false),
                 new BrickInputDefinition("actionHistory", "TestAction[]", "Previous actions", required: false),
-                new BrickInputDefinition("previousUnderstanding", "Understanding", "Previous understanding", required: false)
+                new BrickInputDefinition("previousUnderstanding", "Understanding", "Previous understanding", required: false),
+                new BrickInputDefinition("recentScreenshots", "IReadOnlyList<byte[]>", "Recent screenshots for multi-frame vision", required: false)
             ],
             Outputs = [
                 new BrickOutputDefinition("understanding", "Understanding", "AI's understanding of the state")
@@ -93,6 +94,7 @@ public class UnderstandingBrick : Brick
         var goal = input.Get<string>("goal");
         var constraints = input.Get<string[]>("constraints", Array.Empty<string>()) ?? Array.Empty<string>();
         var actionHistory = input.Get<TestAction[]>("actionHistory", Array.Empty<TestAction>()) ?? Array.Empty<TestAction>();
+        var recentScreenshots = input.Get<IReadOnlyList<byte[]>>("recentScreenshots", null);
 
         if (implementation == ImplementationType.Deterministic || context.IsAirGapped)
         {
@@ -111,14 +113,31 @@ public class UnderstandingBrick : Brick
 
         if (useVision && perception.Screenshot != null)
         {
-            var visionPrompt = BuildVisionUnderstandingPrompt(perception, goal, constraints);
-            response = await _providerFactory.ExecuteVisionAsync(
-                context.Provider,
-                "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.",
-                visionPrompt,
-                perception.Screenshot,
-                new { },
-                cancellationToken);
+            var visionPrompt = BuildVisionUnderstandingPrompt(perception, goal, constraints, recentScreenshots?.Count ?? 0);
+            var frames = recentScreenshots is { Count: > 1 }
+                ? recentScreenshots
+                : new[] { perception.Screenshot };
+
+            if (frames.Count > 1)
+            {
+                response = await _providerFactory.ExecuteVisionMultiFrameAsync(
+                    context.Provider,
+                    "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.",
+                    visionPrompt,
+                    frames,
+                    new { },
+                    cancellationToken);
+            }
+            else
+            {
+                response = await _providerFactory.ExecuteVisionAsync(
+                    context.Provider,
+                    "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.",
+                    visionPrompt,
+                    perception.Screenshot,
+                    new { },
+                    cancellationToken);
+            }
         }
         else
         {
@@ -142,9 +161,12 @@ public class UnderstandingBrick : Brick
     private static string BuildVisionUnderstandingPrompt(
         PerceptionState perception,
         string goal,
-        string[] constraints)
+        string[] constraints,
+        int frameCount = 0)
     {
         var sb = new StringBuilder();
+        if (frameCount > 1)
+            sb.AppendLine($"These {frameCount} images are consecutive screenshots over time (oldest first). Focus on the most recent but note any changes.");
         sb.AppendLine($"## Testing Goal: {goal}");
         if (constraints.Length > 0)
         {

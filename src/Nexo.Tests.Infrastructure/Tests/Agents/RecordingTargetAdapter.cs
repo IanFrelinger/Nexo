@@ -11,6 +11,12 @@ namespace Nexo.Tests.Infrastructure.Tests.Agents;
 public sealed class RecordingTargetAdapter : ITargetAdapter
 {
     private readonly List<TestAction> _executedActions = new();
+    private readonly byte[]? _screenshotOverride;
+
+    public RecordingTargetAdapter(byte[]? screenshotOverride = null)
+    {
+        _screenshotOverride = screenshotOverride;
+    }
 
     public TargetType TargetType => TargetType.DesktopApp;
     public bool IsConnected => true;
@@ -21,7 +27,7 @@ public sealed class RecordingTargetAdapter : ITargetAdapter
     public Task DisconnectAsync(CancellationToken ct = default) => Task.CompletedTask;
 
     public Task<byte[]?> CaptureScreenshotAsync(CancellationToken ct = default) =>
-        Task.FromResult<byte[]?>(Array.Empty<byte>());
+        Task.FromResult<byte[]?>(_screenshotOverride ?? Array.Empty<byte>());
 
     public Task<string?> GetStructureAsync(CancellationToken ct = default) => Task.FromResult<string?>(null);
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default) => Task.FromResult<string?>(null);

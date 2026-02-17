@@ -187,32 +187,41 @@ public class ProviderFactory : IProviderFactory
 
     private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, CancellationToken ct)
     {
-        return await ExecuteOllamaAsync(systemPrompt, userPrompt, null, ct);
+        return await ExecuteOllamaAsync(systemPrompt, userPrompt, (IReadOnlyList<byte[]>?)null, ct);
     }
 
     private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, byte[]? imageBytes, CancellationToken ct)
     {
+        return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes != null ? [imageBytes] : null, ct);
+    }
+
+    private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]>? imageBytesList, CancellationToken ct)
+    {
         var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
         baseUrl = baseUrl.TrimEnd('/');
-        // Vision calls require a vision-capable model (e.g. llava). Use OLLAMA_VISION_MODEL when passing an image.
-        var requestedModel = imageBytes != null
+        var hasImages = imageBytesList is { Count: > 0 };
+        // Vision calls require a vision-capable model. Multi-frame works with Llama 3.2 Vision, Gemma 3, Qwen 2.5 VL.
+        var requestedModel = hasImages
             ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llava:7b")
             : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1");
-        var model = await ResolveOllamaModelAsync(baseUrl, requestedModel, imageBytes != null, ct);
+        var model = await ResolveOllamaModelAsync(baseUrl, requestedModel, hasImages, ct);
         var url = $"{baseUrl}/api/chat";
 
         using var req = new HttpRequestMessage(HttpMethod.Post, url);
 
-        // Build message payload - support vision if image provided
+        // Build message payload - support single or multiple images
         object userMessage;
-        if (imageBytes != null)
+        if (hasImages && imageBytesList != null)
         {
-            var imageBase64 = Convert.ToBase64String(imageBytes);
+            var imageBase64Array = imageBytesList
+                .Where(b => b != null && b.Length > 0)
+                .Select(b => Convert.ToBase64String(b!))
+                .ToArray();
             userMessage = new
             {
                 role = "user",
                 content = userPrompt ?? "",
-                images = new[] { imageBase64 }
+                images = imageBase64Array
             };
         }
         else
@@ -246,7 +255,7 @@ public class ProviderFactory : IProviderFactory
             var available = await GetOllamaModelNamesAsync(baseUrl, ct);
             throw new InvalidOperationException(
                 $"Ollama model '{model}' not found (404). Available: {string.Join(", ", available)}. " +
-                "Pull a model with: ollama pull " + (imageBytes != null ? "llava:7b" : "llama3.2:3b"));
+                "Pull a model with: ollama pull " + (hasImages ? "llava:7b" : "llama3.2:3b"));
         }
 
         resp.EnsureSuccessStatusCode();
@@ -348,6 +357,40 @@ public class ProviderFactory : IProviderFactory
             throw new NotSupportedException($"Vision API not yet implemented for provider: {provider}. Use ollama with a vision model (e.g. llava:7b).");
 
         throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}. Use ollama, auto, or local.");
+    }
+
+    /// <inheritdoc />
+    public async Task<string> ExecuteVisionMultiFrameAsync(
+        string provider,
+        string systemPrompt,
+        string userPrompt,
+        IReadOnlyList<byte[]> frameBytes,
+        object config,
+        CancellationToken cancellationToken = default)
+    {
+        provider = (provider ?? "mock").Trim().ToLowerInvariant();
+        var frames = (frameBytes ?? Array.Empty<byte[]>()).Where(b => b != null && b.Length > 0).ToList();
+
+        if (frames.Count == 0)
+            throw new ArgumentException("At least one non-empty frame is required.", nameof(frameBytes));
+
+        // Single frame: delegate to existing path
+        if (frames.Count == 1)
+            return await ExecuteVisionAsync(provider, systemPrompt, userPrompt, frames[0], config, cancellationToken);
+
+        _logger.LogInformation("Executing multi-frame vision request with provider {Provider}, {Count} frames", provider, frames.Count);
+
+        // Mock/echo: use last frame only (poor man's fallback)
+        if (provider is "mock" or "offline" or "mock-json" or "echo")
+            return await ExecuteVisionAsync(provider, systemPrompt, userPrompt + $"\n[Note: {frames.Count} frames provided, analyzing most recent.]", frames[^1], config, cancellationToken);
+
+        if (provider is "ollama" or "auto" or "local")
+            return await ExecuteOllamaAsync(systemPrompt, userPrompt, frames, cancellationToken);
+
+        if (provider is "openai" or "azure")
+            throw new NotSupportedException($"Multi-frame vision not yet implemented for provider: {provider}. Use ollama.");
+
+        throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}.");
     }
 
     /// <inheritdoc />

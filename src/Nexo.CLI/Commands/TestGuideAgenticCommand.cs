@@ -61,39 +61,69 @@ public static class TestGuideAgenticCommand
 
         if (useDocker)
         {
-            var scriptPath = Path.Combine(root, "scripts", "run-guide-agentic-test-docker.sh");
-            if (!File.Exists(scriptPath))
-            {
-                if (!json && console != null) console.WriteError($"Script not found: {scriptPath}");
-                return 1;
-            }
-
             if (!json && console != null)
             {
                 console.WriteHeader("Agentic Guide test (Ollama via Docker)");
                 console.WriteLine("Starting Ollama in Docker, then running test...");
             }
 
-            var psi = new ProcessStartInfo
+            var ollamaModel = Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.2:3b";
+            var ollamaVision = Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? "llava:7b";
+            var container = Environment.GetEnvironmentVariable("OLLAMA_CONTAINER") ?? "ollama";
+
+            // Start Ollama container if not running
+            var psOutput = await RunProcessOutputAsync("docker", "ps --format '{{.Names}}'");
+            if (!psOutput.Trim().Split('\n', StringSplitOptions.RemoveEmptyEntries).Contains(container))
             {
-                FileName = "bash",
-                ArgumentList = { scriptPath },
-                WorkingDirectory = root,
-                UseShellExecute = false
-            };
-            using var p = Process.Start(psi);
-            if (p == null)
-            {
-                if (!json && console != null) console.WriteError("Failed to start script.");
-                return 1;
+                var psAOutput = await RunProcessOutputAsync("docker", "ps -a --format '{{.Names}}'");
+                if (psAOutput.Trim().Split('\n', StringSplitOptions.RemoveEmptyEntries).Contains(container))
+                {
+                    if (!json && console != null) console.WriteLine($"Starting existing container {container}...");
+                    _ = await RunProcessAsync("docker", $"start {container}", root);
+                }
+                else
+                {
+                    var image = Environment.GetEnvironmentVariable("OLLAMA_IMAGE") ?? "ollama/ollama";
+                    if (!json && console != null) console.WriteLine($"Pulling {image} and starting {container}...");
+                    _ = await RunProcessAsync("docker", $"run -d -p 11434:11434 --name {container} {image}", root);
+                }
+
+                if (!json && console != null) console.WriteLine("Waiting for Ollama to be ready...");
+                for (var i = 0; i < 30; i++)
+                {
+                    try
+                    {
+                        using var c = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+                        var r = await c.GetAsync("http://localhost:11434/api/tags");
+                        if (r.IsSuccessStatusCode) break;
+                    }
+                    catch { /* ignore */ }
+                    await Task.Delay(1000);
+                }
             }
 
-            await p.WaitForExitAsync();
-            return p.ExitCode;
+            // Ensure models are available
+            var tags = await RunProcessOutputAsync("curl", "-s http://localhost:11434/api/tags");
+            if (!tags.Contains($"\"name\":\"{ollamaModel}\""))
+            {
+                if (!json && console != null) console.WriteLine($"Pulling text model {ollamaModel}...");
+                _ = await RunProcessAsync("docker", $"exec {container} ollama pull {ollamaModel}", root);
+            }
+            if (!tags.Contains($"\"name\":\"{ollamaVision}\""))
+            {
+                if (!json && console != null) console.WriteLine($"Pulling vision model {ollamaVision}...");
+                _ = await RunProcessAsync("docker", $"exec {container} ollama pull {ollamaVision}", root);
+            }
+
+            Environment.SetEnvironmentVariable("NEXO_RUN_AGENTIC_GUIDE_TEST", "1");
+            Environment.SetEnvironmentVariable("OLLAMA_MODEL", ollamaModel);
+            Environment.SetEnvironmentVariable("OLLAMA_VISION_MODEL", ollamaVision);
         }
 
-        // Run test directly (Ollama must already be running)
+        // Run test (Ollama must already be running when useDocker is false)
         Environment.SetEnvironmentVariable("NEXO_RUN_AGENTIC_GUIDE_TEST", "1");
+        Environment.SetEnvironmentVariable("NEXO_SKIP_UI_TESTS", "");
+
         var testProject = Path.Combine(root, "src", "Nexo.Tests.Infrastructure", "Nexo.Tests.Infrastructure.csproj");
         if (!File.Exists(testProject))
         {
@@ -101,36 +131,51 @@ public static class TestGuideAgenticCommand
             return 1;
         }
 
-        if (!json && console != null)
+        if (!json && console != null && !useDocker)
         {
             console.WriteHeader("Agentic Guide test");
             console.WriteLine("Ensure Ollama is running (e.g. ollama serve, ollama pull llava:7b).");
             console.WriteLine("Running test...");
         }
 
-        var startInfo = new ProcessStartInfo
+        var filter = useDocker
+            ? "FullyQualifiedName~Guide_Agentic_UniversalTester_ShouldTestAllInteractions_WhenRunWithOllama"
+            : "FullyQualifiedName~Guide_Agentic_UniversalTester_ShouldTestAllInteractions|FullyQualifiedName~Guide_AvaloniaApp_UniversalTester_ShouldPerformClicksAndKeystrokes";
+
+        var exitCode = await RunProcessAsync("dotnet", $"test \"{testProject}\" -f net8.0 --filter \"{filter}\" -p:TreatWarningsAsErrors=false --logger \"console;verbosity=normal\"", root);
+        return exitCode;
+    }
+
+    private static async Task<int> RunProcessAsync(string fileName, string arguments, string? workingDir = null)
+    {
+        var psi = new ProcessStartInfo
         {
-            FileName = "dotnet",
-            ArgumentList =
-            {
-                "test", testProject, "-f", "net8.0",
-                "--filter", "FullyQualifiedName~Guide_Agentic_UniversalTester_ShouldTestAllInteractions_WhenRunWithOllama",
-                "-p:TreatWarningsAsErrors=false",
-                "--logger", "console;verbosity=normal"
-            },
-            WorkingDirectory = root,
-            UseShellExecute = false
+            FileName = fileName,
+            Arguments = arguments,
+            WorkingDirectory = workingDir ?? Environment.CurrentDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
         };
+        using var p = Process.Start(psi);
+        if (p == null) return -1;
+        await p.WaitForExitAsync();
+        return p.ExitCode;
+    }
 
-        using var testProc = Process.Start(startInfo);
-        if (testProc == null)
+    private static async Task<string> RunProcessOutputAsync(string fileName, string arguments)
+    {
+        var psi = new ProcessStartInfo
         {
-            if (!json && console != null) console.WriteError("Failed to start dotnet test.");
-            return 1;
-        }
-
-        await testProc.WaitForExitAsync();
-        return testProc.ExitCode;
+            FileName = fileName,
+            Arguments = arguments,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        using var p = Process.Start(psi);
+        if (p == null) return "";
+        return await p.StandardOutput.ReadToEndAsync();
     }
 
     private static string FindRepoRoot()

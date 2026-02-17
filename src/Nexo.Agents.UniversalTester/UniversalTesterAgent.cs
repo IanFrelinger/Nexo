@@ -66,7 +66,7 @@ public class UniversalTesterAgent
         // Initialize bricks - create logger factory if needed
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         
-        var perceptionBrick = new PerceptionBrick(loggerFactory.CreateLogger<PerceptionBrick>());
+        var perceptionBrick = new PerceptionBrick(_providerFactory, loggerFactory.CreateLogger<PerceptionBrick>());
         var understandingBrick = new UnderstandingBrick(_providerFactory, loggerFactory.CreateLogger<UnderstandingBrick>());
         var explorationBrick = new ExplorationBrick(_providerFactory, loggerFactory.CreateLogger<ExplorationBrick>());
         var actionBrick = new ActionExecutorBrick(loggerFactory.CreateLogger<ActionExecutorBrick>());
@@ -86,6 +86,7 @@ public class UniversalTesterAgent
         var actionHistory = new List<TestAction>();
         PerceptionState? previousPerception = null;
         Understanding? previousUnderstanding = null;
+        var frameBuffer = new List<byte[]>();
         var startTime = DateTime.UtcNow;
         
         // Main test loop
@@ -116,16 +117,27 @@ public class UniversalTesterAgent
                 ct: ct);
             
             var perception = perceptionOutput.Get<PerceptionState>("perception");
+
+            // Maintain rolling frame buffer for multi-frame vision
+            if (perception?.Screenshot is { Length: > 0 } screenshot)
+            {
+                frameBuffer.Add(screenshot);
+                var maxFrames = Math.Max(1, runtime.MultiFrameCount);
+                while (frameBuffer.Count > maxFrames)
+                    frameBuffer.RemoveAt(0);
+            }
             
             // 2. UNDERSTAND
             var understandingInput = new BrickInput();
-            understandingInput.Set("perception", perception);
-            understandingInput.Set("goal", config.Goal);
+            understandingInput.Set("perception", perception!);
+            understandingInput.Set("goal", config.Goal ?? "");
             understandingInput.Set("constraints", config.Constraints ?? Array.Empty<string>());
             understandingInput.Set("actionHistory", actionHistory.ToArray());
             if (previousUnderstanding != null)
                 understandingInput.Set("previousUnderstanding", previousUnderstanding);
-            
+            if (frameBuffer.Count > 0)
+                understandingInput.Set("recentScreenshots", frameBuffer.ToList());
+
             var understandingOutput = await ExecuteBrickWithRuntimeFallbackAsync(
                 brickKey: "understanding",
                 brick: understandingBrick,
@@ -143,7 +155,7 @@ public class UniversalTesterAgent
             // 3. DECIDE (Exploration)
             var explorationInput = new BrickInput();
             explorationInput.Set("understanding", understanding);
-            explorationInput.Set("goal", config.Goal);
+            explorationInput.Set("goal", config.Goal ?? "");
             explorationInput.Set("depth", config.Depth);
             explorationInput.Set("actionHistory", actionHistory.ToArray());
             
@@ -193,7 +205,7 @@ public class UniversalTesterAgent
             var validationInput = new BrickInput();
             validationInput.Set("action", nextAction);
             validationInput.Set("executionResult", executionResult);
-            validationInput.Set("goal", config.Goal);
+            validationInput.Set("goal", config.Goal ?? "");
             if (!string.IsNullOrEmpty(nextAction.ExpectedOutcome))
                 validationInput.Set("expectedOutcome", nextAction.ExpectedOutcome);
             
@@ -359,6 +371,8 @@ public class UniversalTesterAgent
             return TargetType.Api;
         if (target.StartsWith("cli://", StringComparison.OrdinalIgnoreCase))
             return TargetType.Cli;
+        if (target.StartsWith("process://", StringComparison.OrdinalIgnoreCase))
+            return TargetType.DesktopApp;
         if (target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || 
             target.EndsWith(".app", StringComparison.OrdinalIgnoreCase))
             return target.Contains("Unity", StringComparison.OrdinalIgnoreCase) || 
