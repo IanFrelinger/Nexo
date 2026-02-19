@@ -18,14 +18,21 @@ public class ApiAdapter : ITargetAdapter
     private readonly List<ApiEndpoint> _discoveredEndpoints = new();
     private readonly ILogger<ApiAdapter>? _logger;
     
+    /// <inheritdoc />
     public TargetType TargetType => TargetType.Api;
+    /// <inheritdoc />
     public bool IsConnected => _httpClient != null;
     
+    /// <summary>
+    /// Creates a new API adapter instance.
+    /// </summary>
+    /// <param name="logger">Optional logger for diagnostics.</param>
     public ApiAdapter(ILogger<ApiAdapter>? logger = null)
     {
         _logger = logger;
     }
     
+    /// <inheritdoc />
     public async Task ConnectAsync(string target, CancellationToken ct = default)
     {
         // target format: "api://https://api.example.com"
@@ -45,6 +52,7 @@ public class ApiAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task DisconnectAsync(CancellationToken ct = default)
     {
         _httpClient?.Dispose();
@@ -52,15 +60,19 @@ public class ApiAdapter : ITargetAdapter
         return Task.CompletedTask;
     }
     
+    /// <inheritdoc />
     public Task<byte[]?> CaptureScreenshotAsync(CancellationToken ct = default) =>
         Task.FromResult<byte[]?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetStructureAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<InteractiveElement>> GetInteractiveElementsAsync(CancellationToken ct = default)
     {
         // Convert endpoints to "interactive elements"
@@ -78,6 +90,7 @@ public class ApiAdapter : ITargetAdapter
         return Task.FromResult<IReadOnlyList<InteractiveElement>>(elements);
     }
     
+    /// <inheritdoc />
     public async Task<string?> ExecuteActionAsync(TestAction action, CancellationToken ct = default)
     {
         if (_httpClient == null || action.Type != ActionType.ApiRequest)
@@ -118,42 +131,55 @@ public class ApiAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task<ApiResponse?> GetLastApiResponseAsync(CancellationToken ct = default) =>
         Task.FromResult(_lastResponse);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<ApiEndpoint>> GetAvailableEndpointsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<ApiEndpoint>>(_discoveredEndpoints);
     
+    /// <inheritdoc />
     public Task<GameState?> GetGameStateAsync(CancellationToken ct = default) =>
         Task.FromResult<GameState?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<GameObject>> GetVisibleObjectsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<GameObject>>(Array.Empty<GameObject>());
     
+    /// <inheritdoc />
     public Task<PlayerState?> GetPlayerStateAsync(CancellationToken ct = default) =>
         Task.FromResult<PlayerState?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetTerminalOutputAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentPromptAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetConsoleLogAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetErrorsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetWarningsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<PerformanceMetrics?> GetPerformanceAsync(CancellationToken ct = default) =>
         Task.FromResult<PerformanceMetrics?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentUrlAsync(CancellationToken ct = default) =>
         Task.FromResult(_baseUrl);
     
+    /// <inheritdoc />
     public Task<string?> GetWindowTitleAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
@@ -188,6 +214,7 @@ public class ApiAdapter : ITargetAdapter
         return endpoints;
     }
     
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync();

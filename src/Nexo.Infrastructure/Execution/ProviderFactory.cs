@@ -31,23 +31,26 @@ public class ProviderFactory : IProviderFactory
     }
     private readonly HashSet<string> _availableProviders = new()
     {
-        // Real providers (may be wired later)
         "openai",
         "azure",
         "ollama",
-
-        // Offline/demo providers
+        "video", // SmolVLM2-Video in Docker; requires VIDEO_SERVICE_URL
         "mock",
         "offline",
         "mock-json",
         "echo"
     };
     
+    /// <summary>
+    /// Creates a new provider factory.
+    /// </summary>
+    /// <param name="logger">Logger for diagnostics.</param>
     public ProviderFactory(ILogger<ProviderFactory> logger)
     {
         _logger = logger;
     }
     
+    /// <inheritdoc />
     public bool IsProviderAvailable(string provider)
     {
         provider = (provider ?? "").Trim().ToLowerInvariant();
@@ -64,11 +67,13 @@ public class ProviderFactory : IProviderFactory
             "azure" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT"))
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY"))
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")),
-            "ollama" => true, // local service may or may not be running; caller can try
+            "ollama" => true,
+            "video" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("VIDEO_SERVICE_URL")),
             _ => false
         };
     }
     
+    /// <inheritdoc />
     public async Task<string> ExecuteLLMAsync(
         string provider,
         string systemPrompt,
@@ -108,7 +113,7 @@ public class ProviderFactory : IProviderFactory
         }
 
         if (provider is "ollama")
-            return await ExecuteOllamaAsync(systemPrompt, userPrompt, cancellationToken);
+            return await ExecuteOllamaAsync(systemPrompt, userPrompt, null, config, cancellationToken);
 
         throw new InvalidOperationException($"Unknown or unsupported provider: {provider}. Use mock, offline, openai, azure, or ollama.");
     }
@@ -185,25 +190,28 @@ public class ProviderFactory : IProviderFactory
         return content ?? throw new InvalidOperationException("Azure OpenAI response content was null");
     }
 
-    private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, CancellationToken ct)
+    private static string? GetModelFromConfig(object? config)
     {
-        return await ExecuteOllamaAsync(systemPrompt, userPrompt, (IReadOnlyList<byte[]>?)null, ct);
+        if (config == null) return null;
+        if (config is IReadOnlyDictionary<string, object> rod && rod.TryGetValue("model", out var v))
+            return v as string;
+        var t = config.GetType();
+        var prop = t.GetProperty("model", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase)
+            ?? t.GetProperty("Model", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+        return prop?.GetValue(config) as string;
     }
 
-    private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, byte[]? imageBytes, CancellationToken ct)
-    {
-        return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes != null ? [imageBytes] : null, ct);
-    }
-
-    private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]>? imageBytesList, CancellationToken ct)
+    private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]>? imageBytesList, object? config, CancellationToken ct)
     {
         var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
         baseUrl = baseUrl.TrimEnd('/');
         var hasImages = imageBytesList is { Count: > 0 };
-        // Vision: prefer SmolVLM2 (smol, 2.2B, video-capable); fallback llava. Override with OLLAMA_VISION_MODEL.
-        var requestedModel = hasImages
-            ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "richardyoung/smolvlm2-2.2b-instruct")
-            : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1");
+        // Per-brick model override from config; else env vars; else defaults.
+        var configModel = GetModelFromConfig(config);
+        var requestedModel = configModel
+            ?? (hasImages
+                ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "richardyoung/smolvlm2-2.2b-instruct")
+                : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1"));
         var model = await ResolveOllamaModelAsync(baseUrl, requestedModel, hasImages, ct);
         var url = $"{baseUrl}/api/chat";
 
@@ -337,9 +345,7 @@ public class ProviderFactory : IProviderFactory
         }
     }
 
-    /// <summary>
-    /// Execute LLM with vision support (image analysis).
-    /// </summary>
+    /// <inheritdoc />
     public async Task<string> ExecuteVisionAsync(
         string provider,
         string systemPrompt,
@@ -352,7 +358,7 @@ public class ProviderFactory : IProviderFactory
         _logger.LogInformation("Executing vision request with provider {Provider}", provider);
 
         if (provider is "ollama" or "auto" or "local")
-            return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes, cancellationToken);
+            return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes != null ? [imageBytes] : null, config, cancellationToken);
 
         if (provider is "openai" or "azure")
             throw new NotSupportedException($"Vision API not yet implemented for provider: {provider}. Use ollama with a vision model (e.g. richardyoung/smolvlm2-2.2b-instruct, llava:7b).");
@@ -386,12 +392,106 @@ public class ProviderFactory : IProviderFactory
             return await ExecuteVisionAsync(provider, systemPrompt, userPrompt + $"\n[Note: {frames.Count} frames provided, analyzing most recent.]", frames[^1], config, cancellationToken);
 
         if (provider is "ollama" or "auto" or "local")
-            return await ExecuteOllamaAsync(systemPrompt, userPrompt, frames, cancellationToken);
+            return await ExecuteOllamaAsync(systemPrompt, userPrompt, frames, config, cancellationToken);
+
+        if (provider is "video")
+            return await ExecuteVideoAsync(systemPrompt, userPrompt, frames, config, cancellationToken);
 
         if (provider is "openai" or "azure")
-            throw new NotSupportedException($"Multi-frame vision not yet implemented for provider: {provider}. Use ollama.");
+            throw new NotSupportedException($"Multi-frame vision not yet implemented for provider: {provider}. Use ollama or video.");
 
         throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}.");
+    }
+
+    /// <inheritdoc />
+    public async Task<string> ExecuteVideoAsync(
+        string systemPrompt,
+        string userPrompt,
+        IReadOnlyList<byte[]> frameBytes,
+        object config,
+        CancellationToken cancellationToken = default)
+    {
+        var frames = (frameBytes ?? Array.Empty<byte[]>()).Where(b => b != null && b.Length > 0).ToList();
+        if (frames.Count == 0)
+            throw new ArgumentException("At least one frame is required for video analysis.", nameof(frameBytes));
+
+        var baseUrl = (Environment.GetEnvironmentVariable("VIDEO_SERVICE_URL") ?? "").TrimEnd('/');
+        if (string.IsNullOrEmpty(baseUrl))
+            throw new InvalidOperationException("VIDEO_SERVICE_URL is not set. Start the SmolVLM2 video container and set VIDEO_SERVICE_URL.");
+
+        var fps = 5;
+        var tmpDir = Path.Combine(Path.GetTempPath(), "nexo-video-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tmpDir);
+        try
+        {
+            for (var i = 0; i < frames.Count; i++)
+                await File.WriteAllBytesAsync(Path.Combine(tmpDir, $"frame_{i:D5}.png"), frames[i], cancellationToken);
+
+            var mp4Path = Path.Combine(tmpDir, "clip.mp4");
+            var ffmpeg = FindFfmpeg();
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = ffmpeg,
+                ArgumentList =
+                {
+                    "-y", "-framerate", fps.ToString(), "-i", Path.Combine(tmpDir, "frame_%05d.png"),
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p", "-t", (frames.Count / (double)fps).ToString("F2"), mp4Path
+                },
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true
+            };
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc == null)
+                throw new InvalidOperationException("Failed to start ffmpeg. Install ffmpeg.");
+            var err = await proc.StandardError.ReadToEndAsync(cancellationToken);
+            await proc.WaitForExitAsync(cancellationToken);
+            if (proc.ExitCode != 0 || !File.Exists(mp4Path))
+                throw new InvalidOperationException($"ffmpeg failed: {err}");
+
+            using var content = new MultipartFormDataContent();
+            content.Add(new StringContent(userPrompt), "prompt");
+            content.Add(new StringContent(systemPrompt), "system_prompt");
+            var videoBytes = await File.ReadAllBytesAsync(mp4Path, cancellationToken);
+            content.Add(new ByteArrayContent(videoBytes) { Headers = { ContentType = new MediaTypeHeaderValue("video/mp4") } }, "video", "clip.mp4");
+
+            using var req = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/v1/analyze") { Content = content };
+            using var resp = await Http.SendAsync(req, cancellationToken);
+            var body = await resp.Content.ReadAsStringAsync(cancellationToken);
+            if (!resp.IsSuccessStatusCode)
+                throw new InvalidOperationException($"Video service error {resp.StatusCode}: {body}");
+
+            using var doc = JsonDocument.Parse(body);
+            var summary = doc.RootElement.TryGetProperty("summary", out var s) ? s.GetString() ?? "" : body;
+            var understanding = new
+            {
+                screenType = "Video",
+                currentContext = summary,
+                availableActions = Array.Empty<object>(),
+                currentObjective = "Observation",
+                progressPercent = 0,
+                issues = Array.Empty<object>(),
+                unexploredAreas = Array.Empty<string>(),
+                confidence = 0.9
+            };
+            return JsonSerializer.Serialize(understanding);
+        }
+        finally
+        {
+            try { Directory.Delete(tmpDir, recursive: true); } catch { /* ignore */ }
+        }
+    }
+
+    private static string FindFfmpeg()
+    {
+        var name = OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg";
+        var path = Environment.GetEnvironmentVariable("PATH") ?? "";
+        foreach (var dir in path.Split(Path.PathSeparator))
+        {
+            var full = Path.Combine(dir.Trim(), name);
+            if (File.Exists(full)) return full;
+        }
+        return name;
     }
 
     /// <inheritdoc />

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Agents.UniversalTester.Configuration;
 using Nexo.Agents.UniversalTester.Models;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
@@ -14,11 +15,16 @@ namespace Nexo.Agents.UniversalTester.Bricks;
 public class UnderstandingBrick : Brick
 {
     private readonly IProviderFactory _providerFactory;
+    private readonly IPromptTemplateRegistry? _promptRegistry;
     private readonly ILogger<UnderstandingBrick>? _logger;
     
     public UnderstandingBrick(IProviderFactory providerFactory, ILogger<UnderstandingBrick>? logger = null)
+        : this(providerFactory, null, logger) { }
+    
+    public UnderstandingBrick(IProviderFactory providerFactory, IPromptTemplateRegistry? promptRegistry, ILogger<UnderstandingBrick>? logger = null)
     {
         _providerFactory = providerFactory;
+        _promptRegistry = promptRegistry;
         _logger = logger;
         
         Id = "universal-tester.understanding";
@@ -37,7 +43,11 @@ public class UnderstandingBrick : Brick
                 new BrickInputDefinition("actionHistory", "TestAction[]", "Previous actions", required: false),
                 new BrickInputDefinition("previousUnderstanding", "Understanding", "Previous understanding", required: false),
                 new BrickInputDefinition("recentScreenshots", "IReadOnlyList<byte[]>", "Recent screenshots for multi-frame vision", required: false),
-                new BrickInputDefinition("audioTranscript", "string", "Audio transcript to augment vision (e.g. from Whisper)", required: false)
+                new BrickInputDefinition("audioTranscript", "string", "Audio transcript to augment vision (e.g. from Whisper)", required: false),
+                new BrickInputDefinition("watchMode", "bool", "When true, produce summary/analysis instead of action suggestions", required: false),
+                new BrickInputDefinition("understandingMode", "UnderstandingMode", "How to interpret perception: auto, pixelOnly, gameStateFirst, temporal", required: false),
+                new BrickInputDefinition("modelOverride", "string", "Per-brick model override (e.g. llava:7b for Ollama)", required: false),
+                new BrickInputDefinition("promptTemplate", "string", "Named template from prompt registry (e.g. temporal-gameplay)", required: false)
             ],
             Outputs = [
                 new BrickOutputDefinition("understanding", "Understanding", "AI's understanding of the state")
@@ -96,7 +106,11 @@ public class UnderstandingBrick : Brick
         var constraints = input.Get<string[]>("constraints", Array.Empty<string>()) ?? Array.Empty<string>();
         var actionHistory = input.Get<TestAction[]>("actionHistory", Array.Empty<TestAction>()) ?? Array.Empty<TestAction>();
         var recentScreenshots = input.Get<IReadOnlyList<byte[]>>("recentScreenshots", null);
-        var audioTranscript = input.Get<string>("audioTranscript");
+        var audioTranscript = input.Get<string>("audioTranscript", null);
+        var watchMode = input.Get<bool>("watchMode", false);
+        var understandingMode = input.Get<UnderstandingMode?>("understandingMode", null) ?? UnderstandingMode.Auto;
+        var modelOverride = input.Get<string>("modelOverride", null);
+        var promptTemplateName = input.Get<string>("promptTemplate", null);
 
         if (implementation == ImplementationType.Deterministic || context.IsAirGapped)
         {
@@ -115,29 +129,56 @@ public class UnderstandingBrick : Brick
 
         if (useVision && perception.Screenshot != null)
         {
-            var visionPrompt = BuildVisionUnderstandingPrompt(perception, goal, constraints, recentScreenshots?.Count ?? 0, audioTranscript);
+            var effectiveMode = ResolveEffectiveMode(understandingMode, perception, recentScreenshots?.Count ?? 0);
+            var frameCount = recentScreenshots?.Count ?? 0;
             var frames = recentScreenshots is { Count: > 1 }
                 ? recentScreenshots
                 : new[] { perception.Screenshot };
+
+            string systemPrompt;
+            string visionPrompt;
+            var customTemplate = !string.IsNullOrWhiteSpace(promptTemplateName) && _promptRegistry != null
+                ? _promptRegistry.TryGetTemplate(promptTemplateName)
+                : null;
+
+            if (customTemplate != null)
+            {
+                var vars = BuildTemplateVars(perception, goal, constraints, frameCount, audioTranscript, watchMode, effectiveMode);
+                systemPrompt = !string.IsNullOrWhiteSpace(customTemplate.SystemPrompt)
+                    ? PromptTemplate.Substitute(customTemplate.SystemPrompt, vars)
+                    : (watchMode
+                        ? "You are analyzing video game gameplay. Summarize what is happening: game state, player actions, combat, UI, notable events. Put the summary in currentContext. Return only valid JSON with screenType, currentContext (your summary), availableActions (empty array), currentObjective, progressPercent, issues, unexploredAreas, confidence."
+                        : "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.");
+                visionPrompt = !string.IsNullOrWhiteSpace(customTemplate.UserPromptTemplate)
+                    ? PromptTemplate.Substitute(customTemplate.UserPromptTemplate, vars)
+                    : BuildVisionUnderstandingPrompt(perception, goal, constraints, frameCount, audioTranscript, watchMode, effectiveMode);
+            }
+            else
+            {
+                visionPrompt = BuildVisionUnderstandingPrompt(perception, goal, constraints, frameCount, audioTranscript, watchMode, effectiveMode);
+                systemPrompt = watchMode
+                    ? "You are analyzing video game gameplay. Summarize what is happening: game state, player actions, combat, UI, notable events. Put the summary in currentContext. Return only valid JSON with screenType, currentContext (your summary), availableActions (empty array), currentObjective, progressPercent, issues, unexploredAreas, confidence."
+                    : "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.";
+            }
 
             if (frames.Count > 1)
             {
                 response = await _providerFactory.ExecuteVisionMultiFrameAsync(
                     context.Provider,
-                    "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.",
+                    systemPrompt,
                     visionPrompt,
                     frames,
-                    new { },
+                    modelOverride != null ? new { model = modelOverride } : new { },
                     cancellationToken);
             }
             else
             {
                 response = await _providerFactory.ExecuteVisionAsync(
                     context.Provider,
-                    "You are simulating a human user looking at their screen. Describe what you see: windows, buttons, text fields, labels, menus. The app is intended for humans, so identify where a human would click or type. For each action, provide target as screen pixel coordinates \"x,y\" (origin top-left). Return only valid JSON.",
+                    systemPrompt,
                     visionPrompt,
                     perception.Screenshot,
-                    new { },
+                    modelOverride != null ? new { model = modelOverride } : new { },
                     cancellationToken);
             }
         }
@@ -147,7 +188,7 @@ public class UnderstandingBrick : Brick
                 context.Provider,
                 "You are a universal testing agent analyzing an application.",
                 prompt,
-                new { },
+                modelOverride != null ? new { model = modelOverride } : new { },
                 cancellationToken);
         }
 
@@ -160,16 +201,116 @@ public class UnderstandingBrick : Brick
         };
     }
 
+    private static UnderstandingMode ResolveEffectiveMode(UnderstandingMode mode, PerceptionState perception, int frameCount)
+    {
+        if (mode != UnderstandingMode.Auto)
+            return mode;
+        if (perception.GameState != null)
+            return UnderstandingMode.GameStateFirst;
+        if (frameCount > 1)
+            return UnderstandingMode.Temporal;
+        return UnderstandingMode.PixelOnly;
+    }
+
+    private static IReadOnlyDictionary<string, string> BuildTemplateVars(
+        PerceptionState perception,
+        string goal,
+        string[] constraints,
+        int frameCount,
+        string? audioTranscript,
+        bool watchMode,
+        UnderstandingMode effectiveMode)
+    {
+        var vars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["goal"] = goal ?? "",
+            ["frameCount"] = frameCount.ToString(),
+            ["constraintsSection"] = constraints is { Length: > 0 }
+                ? "## Constraints:\n" + string.Join("\n", constraints.Select(c => $"- {c}")) + "\n"
+                : "",
+            ["gameStateSection"] = "",
+            ["audioSection"] = "",
+            ["multiFrameIntro"] = "",
+            ["firstTimeUserHint"] = ""
+        };
+
+        if (effectiveMode == UnderstandingMode.GameStateFirst && perception.GameState != null)
+        {
+            var gs = perception.GameState;
+            var sb = new StringBuilder();
+            sb.AppendLine("## Game State (from game engine - prioritize this over pixel inference):");
+            sb.AppendLine($"- Scene: {gs.CurrentScene ?? "unknown"}");
+            sb.AppendLine($"- Level: {gs.CurrentLevel ?? "unknown"}");
+            sb.AppendLine($"- Paused: {gs.IsPaused}, InMenu: {gs.IsInMenu}, Loading: {gs.IsLoading}");
+            if (perception.PlayerState != null)
+            {
+                sb.AppendLine($"- Player: Health={perception.PlayerState.Health}");
+                if (perception.PlayerState.Inventory.Count > 0)
+                    sb.AppendLine($"- Inventory: {string.Join(", ", perception.PlayerState.Inventory)}");
+            }
+            sb.AppendLine();
+            sb.AppendLine("Use this structured state as the primary source of truth. Use the screenshot to identify UI elements (buttons, HUD) and pixel coordinates for actions.");
+            sb.AppendLine();
+            vars["gameStateSection"] = sb.ToString();
+        }
+
+        if (!string.IsNullOrWhiteSpace(audioTranscript))
+        {
+            vars["audioSection"] = "## Audio Transcript (from the video):\n" + audioTranscript.Trim() + "\n\nUse this transcript alongside the screenshot to understand the video content.\n\n";
+        }
+
+        vars["multiFrameIntro"] = frameCount > 1
+            ? (watchMode || effectiveMode == UnderstandingMode.Temporal
+                ? $"These {frameCount} images are consecutive video frames over time (oldest first). Describe the gameplay flow, changes, and notable moments.\n"
+                : $"These {frameCount} images are consecutive screenshots over time (oldest first). Focus on the most recent but note any changes.\n")
+            : "";
+
+        var isFirstTimeUserGoal = !string.IsNullOrEmpty(goal) && (
+            goal.Contains("first time", StringComparison.OrdinalIgnoreCase) ||
+            goal.Contains("new user", StringComparison.OrdinalIgnoreCase) ||
+            goal.Contains("come up with your own", StringComparison.OrdinalIgnoreCase) ||
+            goal.Contains("your own questions", StringComparison.OrdinalIgnoreCase));
+        vars["firstTimeUserHint"] = isFirstTimeUserGoal && !watchMode
+            ? "The tester is simulating a new user. For type actions, suggest varied natural questions or messages a real first-time user might ask (e.g. 'What is this app?', 'How do I get started?', 'What can you help with?'), not generic placeholders like 'hello'.\n"
+            : "";
+
+        return vars;
+    }
+
     private static string BuildVisionUnderstandingPrompt(
         PerceptionState perception,
         string goal,
         string[] constraints,
         int frameCount = 0,
-        string? audioTranscript = null)
+        string? audioTranscript = null,
+        bool watchMode = false,
+        UnderstandingMode effectiveMode = UnderstandingMode.PixelOnly)
     {
         var sb = new StringBuilder();
+
+        // GameState-first: lead with structured state when available (Option C)
+        if (effectiveMode == UnderstandingMode.GameStateFirst && perception.GameState != null)
+        {
+            sb.AppendLine("## Game State (from game engine - prioritize this over pixel inference):");
+            var gs = perception.GameState;
+            sb.AppendLine($"- Scene: {gs.CurrentScene ?? "unknown"}");
+            sb.AppendLine($"- Level: {gs.CurrentLevel ?? "unknown"}");
+            sb.AppendLine($"- Paused: {gs.IsPaused}, InMenu: {gs.IsInMenu}, Loading: {gs.IsLoading}");
+            if (perception.PlayerState != null)
+            {
+                sb.AppendLine($"- Player: Health={perception.PlayerState.Health}");
+                if (perception.PlayerState.Inventory.Count > 0)
+                    sb.AppendLine($"- Inventory: {string.Join(", ", perception.PlayerState.Inventory)}");
+            }
+            sb.AppendLine();
+            sb.AppendLine("Use this structured state as the primary source of truth. Use the screenshot to identify UI elements (buttons, HUD) and pixel coordinates for actions.");
+            sb.AppendLine();
+        }
+
         if (frameCount > 1)
-            sb.AppendLine($"These {frameCount} images are consecutive screenshots over time (oldest first). Focus on the most recent but note any changes.");
+            sb.AppendLine(watchMode || effectiveMode == UnderstandingMode.Temporal
+                ? $"These {frameCount} images are consecutive video frames over time (oldest first). Describe the gameplay flow, changes, and notable moments."
+                : $"These {frameCount} images are consecutive screenshots over time (oldest first). Focus on the most recent but note any changes.");
         if (!string.IsNullOrWhiteSpace(audioTranscript))
         {
             sb.AppendLine("## Audio Transcript (from the video):");
@@ -177,13 +318,29 @@ public class UnderstandingBrick : Brick
             sb.AppendLine("Use this transcript alongside the screenshot to understand the video content.");
             sb.AppendLine();
         }
-        sb.AppendLine($"## Testing Goal: {goal}");
+        sb.AppendLine(watchMode ? "## Analysis Request:" : "## Testing Goal:");
+        sb.AppendLine(goal);
         if (constraints.Length > 0)
         {
             sb.AppendLine("## Constraints:");
             foreach (var c in constraints) sb.AppendLine($"- {c}");
         }
         sb.AppendLine();
+        if (watchMode)
+        {
+            sb.AppendLine("Return JSON only (no markdown):");
+            sb.AppendLine(@"{
+  ""screenType"": ""e.g. Action game combat, RPG menu, platformer level"",
+  ""currentContext"": ""Your live summary: what is happening, game state, player actions, notable events"",
+  ""availableActions"": [],
+  ""currentObjective"": ""Observation/summary"",
+  ""progressPercent"": 0,
+  ""issues"": [],
+  ""unexploredAreas"": [],
+  ""confidence"": 0.8
+}");
+            return sb.ToString();
+        }
         var isFirstTimeUserGoal = goal.Contains("first time", StringComparison.OrdinalIgnoreCase)
             || goal.Contains("new user", StringComparison.OrdinalIgnoreCase)
             || goal.Contains("come up with your own", StringComparison.OrdinalIgnoreCase)

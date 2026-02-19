@@ -13,8 +13,14 @@ using Nexo.Infrastructure.IO;
 
 namespace Nexo.CLI.Commands;
 
+/// <summary>
+/// Shared goal strings for YouTube test commands.
+/// </summary>
 internal static class YoutubeGoals
 {
+    /// <summary>
+    /// Goal for summarizing a YouTube video: play, watch until end, then provide a detailed summary.
+    /// </summary>
     public const string SummaryGoal = "This browser is showing a YouTube video. Your task: (1) Click Play if the video has not started. (2) Watch the video until it finishes - you will see the replay button or end screen when it is done. (3) When the video has ended, provide a detailed summary of the video content in your final report. Describe the main topics, key points, and any notable visuals or information presented.";
 }
 

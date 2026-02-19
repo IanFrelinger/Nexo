@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Agents.UniversalTester.Models;
 using Microsoft.Extensions.Logging;
 using Nexo.Agents.UniversalTester;
+using Nexo.Agents.UniversalTester.Adapters;
 using Nexo.Agents.UniversalTester.Configuration;
 using Nexo.CLI.Output;
 using Nexo.Infrastructure.Execution;
@@ -30,10 +31,16 @@ public sealed class YoutubeTestContainerCommand : Command
         var ollamaUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://host.docker.internal:11434";
         var reportDir = Environment.GetEnvironmentVariable("REPORT_DIR") ?? "/workspace/reports";
         var displayNum = Environment.GetEnvironmentVariable("DISPLAY_NUM") ?? "99";
+        var watchMode = bool.TryParse(Environment.GetEnvironmentVariable("WATCH_MODE"), out var w) && w
+            || Environment.GetEnvironmentVariable("WATCH_MODE") == "1";
+        var captureIntervalMs = int.TryParse(Environment.GetEnvironmentVariable("CAPTURE_INTERVAL_MS"), out var ci) ? Math.Max(100, ci) : 200;
+        var summaryIntervalSec = int.TryParse(Environment.GetEnvironmentVariable("SUMMARY_INTERVAL_SECONDS"), out var si) ? Math.Max(5, si) : 15;
+        var maxDurationMin = int.TryParse(Environment.GetEnvironmentVariable("MAX_DURATION_MINUTES"), out var md) ? Math.Max(1, md) : 10;
         var audioTranscript = Environment.GetEnvironmentVariable("AUDIO_TRANSCRIPT");
         var audioTranscriptFile = Environment.GetEnvironmentVariable("AUDIO_TRANSCRIPT_FILE");
         if (string.IsNullOrWhiteSpace(audioTranscript) && !string.IsNullOrWhiteSpace(audioTranscriptFile) && File.Exists(audioTranscriptFile))
             audioTranscript = File.ReadAllText(audioTranscriptFile).Trim();
+        var videoServiceUrl = Environment.GetEnvironmentVariable("VIDEO_SERVICE_URL");
 
         Directory.CreateDirectory(reportDir);
 
@@ -44,6 +51,14 @@ public sealed class YoutubeTestContainerCommand : Command
         console.WritePair("Ollama", ollamaUrl);
         if (!string.IsNullOrEmpty(audioTranscript))
             console.WritePair("Audio transcript", $"{audioTranscript.Length} chars");
+        if (watchMode)
+        {
+            console.WritePair("Mode", "Watch (live summaries)");
+            console.WritePair("Capture interval", $"{captureIntervalMs}ms");
+            console.WritePair("Summary interval", $"{summaryIntervalSec}s");
+            if (!string.IsNullOrEmpty(videoServiceUrl))
+                console.WritePair("Video service", videoServiceUrl);
+        }
         console.WriteLine();
 
         Process? xvfb = null;
@@ -66,6 +81,9 @@ public sealed class YoutubeTestContainerCommand : Command
                 Environment.ExitCode = 1;
                 return;
             }
+            var processName = chrome.ProcessName;
+            if (processName != browserProcess)
+                console.WritePair("Browser process (detected)", processName);
 
             console.WriteLine("3. Waiting 20s for page load...");
             await Task.Delay(20_000);
@@ -73,18 +91,33 @@ public sealed class YoutubeTestContainerCommand : Command
             console.WriteLine("4. Running Universal Tester agent...");
             var config = new UniversalTesterConfig
             {
-                Target = $"process://{browserProcess}",
-                Goal = YoutubeGoals.SummaryGoal,
-                Depth = TestingDepth.Thorough,
-                MaxDuration = TimeSpan.FromMinutes(25),
-                AudioTranscript = !string.IsNullOrWhiteSpace(audioTranscript) ? audioTranscript : null
+                Target = $"process://{processName}",
+                TargetType = TargetType.DesktopApp,
+                Goal = watchMode ? "Summarize the video content and describe what is happening." : YoutubeGoals.SummaryGoal,
+                Depth = watchMode ? TestingDepth.Standard : TestingDepth.Thorough,
+                MaxDuration = TimeSpan.FromMinutes(maxDurationMin),
+                AudioTranscript = !string.IsNullOrWhiteSpace(audioTranscript) ? audioTranscript : null,
+                WatchOnly = watchMode,
+                CaptureIntervalMs = captureIntervalMs,
+                SummaryIntervalSeconds = summaryIntervalSec
             };
-            var runtime = UniversalTesterRuntimeConfig.Default() with { MultiFrameCount = 1 };
-            var reportPath = Path.Combine(reportDir, $"youtube-summary-{DateTime.UtcNow:yyyyMMdd-HHmmss}.html");
-            var report = await RunAgentAsync(config, runtime, "ollama");
-            var html = report.HtmlReport ?? GenerateHtml(report);
-            await File.WriteAllTextAsync(reportPath, html);
-            console.WriteSuccess($"Report: {reportPath}");
+            var runtime = UniversalTesterRuntimeConfig.Default() with { MultiFrameCount = watchMode ? 8 : 1 };
+            var provider = (watchMode && !string.IsNullOrWhiteSpace(videoServiceUrl)) ? "video" : "ollama";
+            var report = await RunAgentAsync(config, runtime, provider);
+            if (watchMode)
+            {
+                var reportPath = Path.Combine(reportDir, $"youtube-watch-{DateTime.UtcNow:yyyyMMdd-HHmmss}.txt");
+                var content = string.Join("\n\n", report.Summary.KeyFindings) + "\n\nSummaries: " + report.Summary.TotalTests;
+                await File.WriteAllTextAsync(reportPath, content);
+                console.WriteSuccess($"Report: {reportPath}");
+            }
+            else
+            {
+                var reportPath = Path.Combine(reportDir, $"youtube-summary-{DateTime.UtcNow:yyyyMMdd-HHmmss}.html");
+                var html = report.HtmlReport ?? GenerateHtml(report);
+                await File.WriteAllTextAsync(reportPath, html);
+                console.WriteSuccess($"Report: {reportPath}");
+            }
             Environment.ExitCode = report.Summary.OverallScore >= 80 ? 0 : 1;
         }
         finally
@@ -153,9 +186,11 @@ public sealed class YoutubeTestContainerCommand : Command
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
             .AddSingleton<IProviderFactory, ProviderFactory>()
+            .AddSingleton<IAdapterRegistry, DefaultAdapterRegistry>()
             .BuildServiceProvider();
         var agent = new UniversalTesterAgent(
             services.GetRequiredService<IProviderFactory>(),
+            services.GetRequiredService<IAdapterRegistry>(),
             services.GetRequiredService<ILoggerFactory>().CreateLogger<UniversalTesterAgent>());
         var context = new Nexo.Infrastructure.Execution.ExecutionContext { Provider = provider, Variables = new Dictionary<string, object>() };
         return await agent.ExecuteAsync(config, context, runtime, CancellationToken.None);

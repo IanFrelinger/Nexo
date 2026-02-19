@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Nexo.Agents.UniversalTester.Adapters;
@@ -18,11 +19,16 @@ namespace Nexo.Agents.UniversalTester;
 public class UniversalTesterAgent
 {
     private readonly IProviderFactory _providerFactory;
+    private readonly IAdapterRegistry? _adapterRegistry;
     private readonly ILogger<UniversalTesterAgent>? _logger;
-    
+
     public UniversalTesterAgent(IProviderFactory providerFactory, ILogger<UniversalTesterAgent>? logger = null)
+        : this(providerFactory, null, logger) { }
+
+    public UniversalTesterAgent(IProviderFactory providerFactory, IAdapterRegistry? adapterRegistry, ILogger<UniversalTesterAgent>? logger = null)
     {
         _providerFactory = providerFactory;
+        _adapterRegistry = adapterRegistry;
         _logger = logger;
     }
     
@@ -59,19 +65,35 @@ public class UniversalTesterAgent
             await _providerFactory.EnsureOllamaReachableAsync(requireVision, ct);
         }
 
-        // Create appropriate adapter
-        await using var adapter = CreateAdapter(targetType);
+        // Create appropriate adapter (registry allows config overrides; fallback to built-in)
+        runtime ??= UniversalTesterRuntimeConfig.Default();
+        await using var adapter = CreateAdapter(targetType, runtime);
         await adapter.ConnectAsync(config.Target, ct);
+
+        if (config.WatchOnly)
+        {
+            return await ExecuteWatchModeAsync(config, context, adapter, runtime ?? UniversalTesterRuntimeConfig.Default(), ct);
+        }
         
-        // Initialize bricks - create logger factory if needed
+        // Initialize bricks and registry (pipeline config controls which run)
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        
+        var promptRegistry = DefaultPromptTemplateRegistry.FromPath(runtime.PromptTemplatesPath);
         var perceptionBrick = new PerceptionBrick(_providerFactory, loggerFactory.CreateLogger<PerceptionBrick>());
-        var understandingBrick = new UnderstandingBrick(_providerFactory, loggerFactory.CreateLogger<UnderstandingBrick>());
+        var understandingBrick = new UnderstandingBrick(_providerFactory, promptRegistry, loggerFactory.CreateLogger<UnderstandingBrick>());
         var explorationBrick = new ExplorationBrick(_providerFactory, loggerFactory.CreateLogger<ExplorationBrick>());
         var actionBrick = new ActionExecutorBrick(loggerFactory.CreateLogger<ActionExecutorBrick>());
         var validationBrick = new ValidationBrick(_providerFactory, loggerFactory.CreateLogger<ValidationBrick>());
         var reportingBrick = new ReportingBrick(_providerFactory, loggerFactory.CreateLogger<ReportingBrick>());
+        var brickRegistry = new UniversalTesterBrickRegistry(new Dictionary<string, Brick>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["perception"] = perceptionBrick,
+            ["understanding"] = understandingBrick,
+            ["exploration"] = explorationBrick,
+            ["action"] = actionBrick,
+            ["validation"] = validationBrick,
+            ["reporting"] = reportingBrick
+        });
+        var pipeline = GetPipelineOrder(runtime);
         
         // Test session state
         var session = new TestSession
@@ -106,12 +128,13 @@ public class UniversalTesterAgent
             perceptionInput.Set("captureScreenshot", true);
             perceptionInput.Set("captureDOM", true);
             perceptionInput.Set("capturePerformance", true);
-            
+            AddBrickOverrides(perceptionInput, runtime, "perception");
+
             var perceptionOutput = await ExecuteBrickWithRuntimeFallbackAsync(
                 brickKey: "perception",
                 brick: perceptionBrick,
                 input: perceptionInput,
-                context: context,
+                context: ResolveBrickContext(context, runtime, "perception"),
                 runtime: runtime,
                 validate: o => o.Get<PerceptionState>("perception") != null,
                 ct: ct);
@@ -139,12 +162,14 @@ public class UniversalTesterAgent
                 understandingInput.Set("recentScreenshots", frameBuffer.ToList());
             if (!string.IsNullOrWhiteSpace(config.AudioTranscript))
                 understandingInput.Set("audioTranscript", config.AudioTranscript);
+            understandingInput.Set("understandingMode", ResolveUnderstandingMode(runtime, perception));
+            AddBrickOverrides(understandingInput, runtime, "understanding");
 
             var understandingOutput = await ExecuteBrickWithRuntimeFallbackAsync(
                 brickKey: "understanding",
                 brick: understandingBrick,
                 input: understandingInput,
-                context: context,
+                context: ResolveBrickContext(context, runtime, "understanding"),
                 runtime: runtime,
                 validate: o => o.Get<Understanding>("understanding") != null,
                 ct: ct);
@@ -160,12 +185,13 @@ public class UniversalTesterAgent
             explorationInput.Set("goal", config.Goal ?? "");
             explorationInput.Set("depth", config.Depth);
             explorationInput.Set("actionHistory", actionHistory.ToArray());
-            
+            AddBrickOverrides(explorationInput, runtime, "exploration");
+
             var explorationOutput = await ExecuteBrickWithRuntimeFallbackAsync(
                 brickKey: "exploration",
                 brick: explorationBrick,
                 input: explorationInput,
-                context: context,
+                context: ResolveBrickContext(context, runtime, "exploration"),
                 runtime: runtime,
                 validate: o => o.Get<TestAction>("nextAction") != null,
                 ct: ct);
@@ -191,36 +217,45 @@ public class UniversalTesterAgent
             var actionInput = new BrickInput();
             actionInput.Set("action", nextAction);
             actionInput.Set("adapter", adapter);
-            
+
             var actionOutput = await ExecuteBrickWithRuntimeFallbackAsync(
                 brickKey: "action",
                 brick: actionBrick,
                 input: actionInput,
-                context: context,
+                context: ResolveBrickContext(context, runtime, "action"),
                 runtime: runtime,
                 validate: o => o.Get<ActionExecutionResult>("result") != null,
                 ct: ct);
             
             var executionResult = actionOutput.Get<ActionExecutionResult>("result");
             
-            // 5. VALIDATE
-            var validationInput = new BrickInput();
-            validationInput.Set("action", nextAction);
-            validationInput.Set("executionResult", executionResult);
-            validationInput.Set("goal", config.Goal ?? "");
-            if (!string.IsNullOrEmpty(nextAction.ExpectedOutcome))
-                validationInput.Set("expectedOutcome", nextAction.ExpectedOutcome);
-            
-            var validationOutput = await ExecuteBrickWithRuntimeFallbackAsync(
-                brickKey: "validation",
-                brick: validationBrick,
-                input: validationInput,
-                context: context,
-                runtime: runtime,
-                validate: o => o.Get<ValidationResult>("validation") != null,
-                ct: ct);
-            
-            var validation = validationOutput.Get<ValidationResult>("validation");
+            // 5. VALIDATE (skip if not in pipeline)
+            ValidationResult validation;
+            if (IsInPipeline(pipeline, "validation"))
+            {
+                var validationInput = new BrickInput();
+                validationInput.Set("action", nextAction);
+                validationInput.Set("executionResult", executionResult);
+                validationInput.Set("goal", config.Goal ?? "");
+                if (!string.IsNullOrEmpty(nextAction.ExpectedOutcome))
+                    validationInput.Set("expectedOutcome", nextAction.ExpectedOutcome);
+                AddBrickOverrides(validationInput, runtime, "validation");
+
+                var validationOutput = await ExecuteBrickWithRuntimeFallbackAsync(
+                    brickKey: "validation",
+                    brick: validationBrick,
+                    input: validationInput,
+                    context: ResolveBrickContext(context, runtime, "validation"),
+                    runtime: runtime,
+                    validate: o => o.Get<ValidationResult>("validation") != null,
+                    ct: ct);
+
+                validation = validationOutput.Get<ValidationResult>("validation");
+            }
+            else
+            {
+                validation = new ValidationResult { Passed = executionResult.Success, Reasoning = "Skipped (not in pipeline)", Confidence = 0.5 };
+            }
             
             allIssues.AddRange(validation.IssuesFound);
             
@@ -251,31 +286,197 @@ public class UniversalTesterAgent
         var reportingInput = new BrickInput();
         reportingInput.Set("session", session);
         reportingInput.Set("format", "html");
-        
-        var reportOutput = await ExecuteBrickWithRuntimeFallbackAsync(
-            brickKey: "reporting",
-            brick: reportingBrick,
-            input: reportingInput,
-            context: context,
-            runtime: runtime,
-            validate: o => o.Get<TestReport>("report") != null,
-            ct: ct);
-        
-        var report = reportOutput.Get<TestReport>("report");
-        
+        AddBrickOverrides(reportingInput, runtime, "reporting");
+
+        // 6. REPORT (always run; pipeline config can omit but we default to including it)
+        var reportOutput = IsInPipeline(pipeline, "reporting")
+            ? await ExecuteBrickWithRuntimeFallbackAsync(
+                brickKey: "reporting",
+                brick: reportingBrick,
+                input: reportingInput,
+                context: ResolveBrickContext(context, runtime, "reporting"),
+                runtime: runtime,
+                validate: o => o.Get<TestReport>("report") != null,
+                ct: ct)
+            : null;
+        var report = reportOutput?.Get<TestReport>("report");
+        if (report == null)
+        {
+            report = new TestReport
+            {
+                Summary = new TestSummary
+                {
+                    TotalTests = steps.Count,
+                    Passed = steps.Count(s => s.Validation?.Passed ?? false),
+                    Failed = steps.Count(s => s.Validation != null && !s.Validation.Passed),
+                    Warnings = allIssues.Count,
+                    Duration = DateTime.UtcNow - startTime,
+                    OverallScore = steps.Count > 0 ? (steps.Count(s => s.Validation?.Passed ?? false) * 100.0 / steps.Count) : 0,
+                    KeyFindings = allIssues.Select(i => i.Description).ToList(),
+                    Recommendations = new List<string>()
+                },
+                HtmlReport = null
+            };
+        }
+
         _logger?.LogInformation("Testing complete. Score: {Score:F0}, Issues: {Issues}",
             report.Summary.OverallScore, allIssues.Count);
         
-        return report ?? new TestReport
+        return report;
+    }
+
+    private static readonly string[] DefaultPipeline = ["perception", "understanding", "exploration", "action", "validation", "reporting"];
+
+    /// <summary>Returns pipeline order from runtime config, or default ordered list.</summary>
+    private static IReadOnlyList<string> GetPipelineOrder(UniversalTesterRuntimeConfig runtime) =>
+        runtime.Pipeline is { Count: > 0 } p ? p : DefaultPipeline;
+
+    /// <summary>Returns true if brickId is in the pipeline (case-insensitive).</summary>
+    private static bool IsInPipeline(IReadOnlyList<string> pipeline, string brickId) =>
+        pipeline.Any(id => string.Equals(id, brickId, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Injects BrickOverrides (modelOverride, promptTemplate) into brick input for the given brick key.</summary>
+    private static void AddBrickOverrides(BrickInput input, UniversalTesterRuntimeConfig runtime, string brickKey)
+    {
+        if (!runtime.BrickOverrides.TryGetValue(brickKey, out var o) || o == null) return;
+        if (!string.IsNullOrWhiteSpace(o.Model))
+            input.Set("modelOverride", o.Model);
+        if (!string.IsNullOrWhiteSpace(o.PromptTemplate))
+            input.Set("promptTemplate", o.PromptTemplate.Trim());
+    }
+
+    /// <summary>Returns execution context with provider override when BrickOverrides specifies one for this brick.</summary>
+    private static IExecutionContext ResolveBrickContext(IExecutionContext context, UniversalTesterRuntimeConfig runtime, string brickKey)
+    {
+        if (!runtime.BrickOverrides.TryGetValue(brickKey, out var o) || string.IsNullOrWhiteSpace(o.Provider))
+            return context;
+        return new OverrideProviderExecutionContext(context, o.Provider.Trim());
+    }
+
+    /// <summary>
+    /// Watch-only mode: captures frames in background, periodically runs Understanding brick for live summaries.
+    /// No actions executed; used for gameplay commentary or video analysis.
+    /// </summary>
+    private async Task<TestReport> ExecuteWatchModeAsync(
+        UniversalTesterConfig config,
+        IExecutionContext context,
+        ITargetAdapter adapter,
+        UniversalTesterRuntimeConfig runtime,
+        CancellationToken ct)
+    {
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var watchPromptRegistry = DefaultPromptTemplateRegistry.FromPath(runtime.PromptTemplatesPath);
+        var understandingBrick = new UnderstandingBrick(_providerFactory, watchPromptRegistry, loggerFactory.CreateLogger<UnderstandingBrick>());
+
+        var frameBuffer = new ConcurrentQueue<byte[]>();
+        var maxFrames = Math.Max(8, Math.Min(16, runtime.MultiFrameCount * 4));
+        var captureInterval = TimeSpan.FromMilliseconds(Math.Max(100, config.CaptureIntervalMs));
+        var summaryInterval = TimeSpan.FromSeconds(Math.Max(5, config.SummaryIntervalSeconds));
+        var startTime = DateTime.UtcNow;
+        var summaryCount = 0;
+
+        _logger?.LogInformation("Watch mode: capturing at {Interval}ms, summarizing every {Seconds}s", captureInterval.TotalMilliseconds, summaryInterval.TotalSeconds);
+        _logger?.LogInformation("Bring the game window to the foreground. Starting in 3 seconds...");
+        await Task.Delay(3000, ct);
+
+        using var captureCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var captureTask = Task.Run(async () =>
+        {
+            while (!captureCts.Token.IsCancellationRequested && DateTime.UtcNow - startTime < config.MaxDuration)
+            {
+                try
+                {
+                    var screenshot = await adapter.CaptureScreenshotAsync(captureCts.Token);
+                    if (screenshot is { Length: > 0 })
+                    {
+                        frameBuffer.Enqueue(screenshot);
+                        while (frameBuffer.Count > maxFrames && frameBuffer.TryDequeue(out _)) { }
+                    }
+                }
+                catch (OperationCanceledException) { break; }
+                catch (Exception ex) { _logger?.LogDebug(ex, "Capture failed"); }
+                await Task.Delay(captureInterval, captureCts.Token);
+            }
+        }, captureCts.Token);
+
+        var lastSummaryTime = DateTime.UtcNow;
+        PerceptionState? previousPerception = null;
+
+        while (DateTime.UtcNow - startTime < config.MaxDuration && !ct.IsCancellationRequested)
+        {
+            var elapsed = DateTime.UtcNow - lastSummaryTime;
+            if (elapsed < summaryInterval)
+            {
+                await Task.Delay(1000, ct);
+                continue;
+            }
+            lastSummaryTime = DateTime.UtcNow;
+
+            var frames = new List<byte[]>();
+            while (frameBuffer.TryDequeue(out var f) && frames.Count < maxFrames)
+                frames.Add(f!);
+            if (frames.Count == 0)
+            {
+                _logger?.LogWarning("No frames captured yet. Ensure the game window is visible.");
+                continue;
+            }
+
+            var latestFrame = frames[^1];
+            var perception = new PerceptionState
+            {
+                Timestamp = DateTime.UtcNow,
+                Screenshot = latestFrame,
+                InteractiveElements = Array.Empty<InteractiveElement>(),
+                Errors = new List<string>(),
+                Warnings = new List<string>()
+            };
+            previousPerception = perception;
+
+            var understandingInput = new BrickInput();
+            understandingInput.Set("perception", perception);
+            understandingInput.Set("goal", config.Goal ?? "Summarize the video game gameplay.");
+            understandingInput.Set("constraints", config.Constraints ?? Array.Empty<string>());
+            understandingInput.Set("actionHistory", Array.Empty<TestAction>());
+            understandingInput.Set("recentScreenshots", frames);
+            understandingInput.Set("watchMode", true);
+            understandingInput.Set("understandingMode", ResolveUnderstandingMode(runtime, perception));
+            if (!string.IsNullOrWhiteSpace(config.AudioTranscript))
+                understandingInput.Set("audioTranscript", config.AudioTranscript);
+            AddBrickOverrides(understandingInput, runtime, "understanding");
+
+            try
+            {
+                var understandingOutput = await ExecuteBrickWithRuntimeFallbackAsync(
+                    "understanding", understandingBrick, understandingInput, context, runtime,
+                    o => o.Get<Understanding>("understanding") != null, ct);
+                var understanding = understandingOutput.Get<Understanding>("understanding");
+                summaryCount++;
+                var timestamp = DateTime.UtcNow.ToString("HH:mm:ss");
+                Console.WriteLine();
+                Console.WriteLine($"[{timestamp}] --- Live Summary #{summaryCount} ---");
+                Console.WriteLine(understanding.CurrentContext);
+                Console.WriteLine();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Understanding failed, retrying next interval");
+            }
+        }
+
+        captureCts.Cancel();
+        try { await captureTask; } catch (OperationCanceledException) { }
+
+        return new TestReport
         {
             Summary = new TestSummary
             {
-                TotalTests = 0,
-                Passed = 0,
+                TotalTests = summaryCount,
+                Passed = summaryCount,
                 Failed = 0,
                 Warnings = 0,
-                Duration = TimeSpan.Zero,
-                OverallScore = 0
+                Duration = DateTime.UtcNow - startTime,
+                OverallScore = 100,
+                KeyFindings = new List<string> { $"Generated {summaryCount} live gameplay summaries." }
             }
         };
     }
@@ -364,6 +565,27 @@ public class UniversalTesterAgent
         };
     }
     
+    private static UnderstandingMode ResolveUnderstandingMode(UniversalTesterRuntimeConfig runtime, PerceptionState? perception)
+    {
+        if (perception == null)
+            return UnderstandingMode.PixelOnly;
+        if (runtime.BrickOverrides.TryGetValue("understanding", out var o) && !string.IsNullOrWhiteSpace(o.Mode))
+        {
+            if (Enum.TryParse<UnderstandingMode>(o.Mode, true, out var parsed))
+                return parsed;
+        }
+        if (runtime.UnderstandingMode != UnderstandingMode.Auto)
+            return runtime.UnderstandingMode;
+
+        // Auto: infer from context
+        if (perception.GameState != null)
+            return UnderstandingMode.GameStateFirst;
+        var frameCount = perception.Screenshot != null ? 1 : 0;
+        if (frameCount > 1 || runtime.MultiFrameCount > 1)
+            return UnderstandingMode.Temporal;
+        return UnderstandingMode.PixelOnly;
+    }
+
     private static TargetType InferTargetType(string target)
     {
         if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || 
@@ -385,19 +607,46 @@ public class UniversalTesterAgent
         return TargetType.WebApp; // Default
     }
     
-    private ITargetAdapter CreateAdapter(TargetType type)
+    private ITargetAdapter CreateAdapter(TargetType type, UniversalTesterRuntimeConfig runtime)
     {
-        // In a real implementation, these would be injected via DI
+        var config = GetAdapterConfig(type, runtime);
+        if (_adapterRegistry != null)
+            return _adapterRegistry.CreateAdapter(type, config);
+
+        // Fallback: built-in factory
         var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        
+        string? gameHost = config != null && config.TryGetValue("host", out var h) ? h as string : null;
+        int? gamePort = null;
+        if (config != null && config.TryGetValue("port", out var p) && p is int pi)
+            gamePort = pi;
         return type switch
         {
             TargetType.WebApp => new WebAdapter(loggerFactory.CreateLogger<WebAdapter>()),
-            TargetType.Game => new GameAdapter(loggerFactory.CreateLogger<GameAdapter>()),
+            TargetType.Game => new GameAdapter(loggerFactory.CreateLogger<GameAdapter>(), gameHost, gamePort),
             TargetType.Api => new ApiAdapter(loggerFactory.CreateLogger<ApiAdapter>()),
             TargetType.Cli => new CliAdapter(loggerFactory.CreateLogger<CliAdapter>()),
             TargetType.DesktopApp => new DesktopAdapter(loggerFactory.CreateLogger<DesktopAdapter>()),
             _ => new WebAdapter(loggerFactory.CreateLogger<WebAdapter>())
         };
+    }
+
+    private static IReadOnlyDictionary<string, object>? GetAdapterConfig(TargetType type, UniversalTesterRuntimeConfig runtime)
+    {
+        var key = type switch
+        {
+            TargetType.Game => "game",
+            TargetType.WebApp => "webapp",
+            TargetType.DesktopApp => "desktop",
+            TargetType.Api => "api",
+            TargetType.Cli => "cli",
+            _ => null
+        };
+        if (key == null || !runtime.Adapters.TryGetValue(key, out var cfg) || cfg == null)
+            return null;
+
+        var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrEmpty(cfg.Host)) dict["host"] = cfg.Host;
+        if (cfg.Port.HasValue) dict["port"] = cfg.Port.Value;
+        return dict.Count > 0 ? dict : null;
     }
 }

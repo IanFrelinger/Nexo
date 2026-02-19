@@ -19,6 +19,7 @@ public class DemoCommand
         
         // Use the new command classes
         demoCmd.AddCommand(new UniversalTestCommand());
+        demoCmd.AddCommand(new GameWatchCommand());
         demoCmd.AddCommand(new YoutubeTestCommand());
         demoCmd.AddCommand(new YoutubeTestDockerCommand());
         demoCmd.AddCommand(new YoutubeTestContainerCommand());

@@ -219,6 +219,8 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             => Task.FromResult("{}");
         public Task<string> ExecuteVisionMultiFrameAsync(string provider, string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default)
             => Task.FromResult("{}");
+        public Task<string> ExecuteVideoAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default)
+            => Task.FromResult("{}");
         public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
     }

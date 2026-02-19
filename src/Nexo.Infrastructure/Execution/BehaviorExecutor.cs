@@ -24,6 +24,14 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     private readonly ILoopKernel _loops;
     private readonly ILogger<BehaviorExecutor> _logger;
     
+    /// <summary>
+    /// Creates a new behavior executor.
+    /// </summary>
+    /// <param name="brickRegistry">Registry of available bricks.</param>
+    /// <param name="providerFactory">Factory for LLM providers.</param>
+    /// <param name="semanticCache">Semantic cache for brick outputs.</param>
+    /// <param name="loops">Loop kernel for step iteration.</param>
+    /// <param name="logger">Logger for diagnostics.</param>
     public BehaviorExecutor(
         Nexo.Core.Domain.Execution.IBrickRegistry brickRegistry,
         IProviderFactory providerFactory,
@@ -38,6 +46,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         _logger = logger;
     }
     
+    /// <inheritdoc />
     public async Task<Nexo.Core.Domain.Execution.BehaviorResult> ExecuteAsync(
         AgentCard agent,
         Behavior behavior,
@@ -72,6 +81,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         };
     }
     
+    /// <inheritdoc />
     public async IAsyncEnumerable<ExecutionEvent> ExecuteWithEventsAsync(
         AgentCard agent,
         Behavior behavior,

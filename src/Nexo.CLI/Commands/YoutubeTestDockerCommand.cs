@@ -8,10 +8,16 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// Runs the YouTube video summary test in Docker (headless, virtualized).
+/// Launches docker-compose.youtube-test.yml with Chrome, optional audio transcription,
+/// and optional SmolVLM2-Video service for temporal analysis.
 /// Replaces scripts/run-youtube-test-docker.sh
 /// </summary>
 public sealed class YoutubeTestDockerCommand : Command
 {
+    /// <summary>
+    /// Registers the youtube-docker command and its options (URL, parallel videos,
+    /// Ollama URL, audio transcription, watch mode, video model, capture interval, duration).
+    /// </summary>
     public YoutubeTestDockerCommand() : base("youtube-docker", "Run YouTube video summary test in Docker (headless, parallel-safe)")
     {
         var urlOpt = new Option<string>("--url", () => "https://www.youtube.com/watch?v=psbAgsMD8QM", "YouTube video URL");
@@ -21,12 +27,20 @@ public sealed class YoutubeTestDockerCommand : Command
         };
         var ollamaOpt = new Option<string>("--ollama-url", () => "http://host.docker.internal:11434", "Ollama base URL for containers");
         var withAudioOpt = new Option<bool>("--with-audio", () => false, "Transcribe video audio first (Whisper tiny) and pass to vision");
+        var watchOpt = new Option<bool>("--watch", () => false, "Watch mode: live summaries at high capture rate (virtual desktop in Docker)");
+        var useVideoModelOpt = new Option<bool>("--use-video-model", () => false, "Use SmolVLM2-Video container for temporal video analysis (watch mode; starts video-service)");
+        var captureIntervalOpt = new Option<int>("--capture-interval", () => 200, "Watch mode: ms between frame captures (100=10fps, 200=5fps)");
+        var durationOpt = new Option<string>("--duration", () => "10m", "Watch mode: how long (e.g. 5m, 30m)");
         var verboseOpt = new Option<bool>("--verbose", () => false, "Verbose output");
 
         AddOption(urlOpt);
         AddOption(parallelOpt);
         AddOption(ollamaOpt);
         AddOption(withAudioOpt);
+        AddOption(watchOpt);
+        AddOption(useVideoModelOpt);
+        AddOption(captureIntervalOpt);
+        AddOption(durationOpt);
         AddOption(verboseOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
@@ -35,12 +49,19 @@ public sealed class YoutubeTestDockerCommand : Command
             var parallel = ctx.ParseResult.GetValueForOption(parallelOpt) ?? Array.Empty<string>();
             var ollamaUrl = ctx.ParseResult.GetValueForOption(ollamaOpt)!;
             var withAudio = ctx.ParseResult.GetValueForOption(withAudioOpt);
+            var watch = ctx.ParseResult.GetValueForOption(watchOpt);
+            var useVideoModel = ctx.ParseResult.GetValueForOption(useVideoModelOpt);
+            var captureInterval = ctx.ParseResult.GetValueForOption(captureIntervalOpt);
+            var duration = ctx.ParseResult.GetValueForOption(durationOpt)!;
             var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
-            await ExecuteAsync(url, parallel, ollamaUrl, withAudio, verbose);
+            await ExecuteAsync(url, parallel, ollamaUrl, withAudio, watch, useVideoModel, captureInterval, duration, verbose);
         });
     }
 
-    private static async Task ExecuteAsync(string defaultUrl, string[] parallel, string ollamaUrl, bool withAudio, bool verbose)
+    /// <summary>
+    /// Main execution: discovers project root, ensures video-service if needed, runs one or more videos.
+    /// </summary>
+    private static async Task ExecuteAsync(string defaultUrl, string[] parallel, string ollamaUrl, bool withAudio, bool watch, bool useVideoModel, int captureInterval, string duration, bool verbose)
     {
         var console = new CliConsole(verbose);
         var root = DiscoverProjectRoot();
@@ -55,9 +76,14 @@ public sealed class YoutubeTestDockerCommand : Command
         var reportDir = Path.Combine(root, "test-results", "youtube-reports");
         Directory.CreateDirectory(reportDir);
 
+        if (useVideoModel)
+        {
+            await EnsureVideoServiceRunningAsync(root, composePath, console);
+        }
+
         if (parallel.Length > 0)
         {
-            var tasks = parallel.Select(vid => RunOneAsync(NormalizeUrl(vid), ollamaUrl, withAudio, root, composePath, console));
+            var tasks = parallel.Select(vid => RunOneAsync(NormalizeUrl(vid), ollamaUrl, withAudio, watch, useVideoModel, captureInterval, duration, root, composePath, console));
             var results = await Task.WhenAll(tasks);
             var failed = results.Count(r => r != 0);
             console.WriteLine();
@@ -66,21 +92,55 @@ public sealed class YoutubeTestDockerCommand : Command
         }
         else
         {
-            Environment.ExitCode = await RunOneAsync(defaultUrl, ollamaUrl, withAudio, root, composePath, console);
+            Environment.ExitCode = await RunOneAsync(defaultUrl, ollamaUrl, withAudio, watch, useVideoModel, captureInterval, duration, root, composePath, console);
             console.WriteLine();
             console.WriteSuccess($"Report: {reportDir}");
         }
     }
 
-    private static async Task<int> RunOneAsync(string url, string ollamaUrl, bool withAudio, string root, string composePath, CliConsole console)
+    /// <summary>Parses duration string (e.g. "5m", "1h") to minutes.</summary>
+    private static int ParseDurationMinutes(string s)
     {
-        console.WriteLine($"Starting test for: {url}");
+        s = s.Trim().ToLowerInvariant();
+        if (s.EndsWith("m")) return int.TryParse(s[..^1], out var v) ? v : 10;
+        if (s.EndsWith("h")) return (int.TryParse(s[..^1], out var v) ? v : 1) * 60;
+        return int.TryParse(s, out var mins) ? mins : 10;
+    }
+
+    /// <summary>
+    /// Runs a single YouTube test/watch in Docker. Builds docker compose args (env vars for URL, watch mode, video service),
+    /// optionally transcribes audio first, and invokes docker compose run.
+    /// </summary>
+    private static async Task<int> RunOneAsync(string url, string ollamaUrl, bool withAudio, bool watch, bool useVideoModel, int captureInterval, string duration, string root, string composePath, CliConsole console)
+    {
+        console.WriteLine($"Starting {(watch ? "watch" : "test")} for: {url}");
         var argList = new List<string>
         {
             "compose", "-f", composePath, "run", "--rm", "--no-deps",
             "-e", $"VIDEO_URL={url}",
             "-e", $"OLLAMA_BASE_URL={ollamaUrl}"
         };
+        if (watch)
+        {
+            argList.Add("-e");
+            argList.Add("WATCH_MODE=1");
+            argList.Add("-e");
+            argList.Add($"CAPTURE_INTERVAL_MS={captureInterval}");
+            argList.Add("-e");
+            argList.Add($"MAX_DURATION_MINUTES={ParseDurationMinutes(duration)}");
+        }
+
+        if (useVideoModel)
+        {
+            if (!watch)
+            {
+                console.WriteWarning("--use-video-model requires --watch; enabling watch mode.");
+                argList.Add("-e");
+                argList.Add("WATCH_MODE=1");
+            }
+            argList.Add("-e");
+            argList.Add("VIDEO_SERVICE_URL=http://video-service:8080");
+        }
 
         string? transcriptFile = null;
         if (withAudio)
@@ -132,6 +192,33 @@ public sealed class YoutubeTestDockerCommand : Command
         return process.ExitCode;
     }
 
+    /// <summary>Starts the video-service container (SmolVLM2-Video) and waits for model load.</summary>
+    private static async Task EnsureVideoServiceRunningAsync(string root, string composePath, CliConsole console)
+    {
+        console.WriteLine("Starting video-service (SmolVLM2-Video)...");
+        var psi = new ProcessStartInfo
+        {
+            FileName = "docker",
+            ArgumentList = { "compose", "-f", composePath, "up", "-d", "video-service" },
+            WorkingDirectory = root,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        using var p = Process.Start(psi);
+        if (p == null) return;
+        await p.WaitForExitAsync();
+        if (p.ExitCode != 0)
+        {
+            var err = await p.StandardError.ReadToEndAsync();
+            console.WriteError($"Failed to start video-service: {err}");
+            return;
+        }
+        console.WriteLine("Waiting 30s for video-service to load model...");
+        await Task.Delay(30_000);
+    }
+
+    /// <summary>Runs nexo demo youtube-transcribe to capture audio transcript for the video.</summary>
     private static async Task<string> RunTranscribeAsync(string url, string root, CliConsole console)
     {
         var nexoPath = FindNexoPath();
@@ -156,6 +243,7 @@ public sealed class YoutubeTestDockerCommand : Command
         return p.ExitCode == 0 ? stdout.Trim() : "";
     }
 
+    /// <summary>Locates the nexo executable in PATH or from current process.</summary>
     private static string? FindNexoPath()
     {
         var exe = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "nexo.exe" : "nexo";
@@ -171,6 +259,7 @@ public sealed class YoutubeTestDockerCommand : Command
         return null;
     }
 
+    /// <summary>Converts a video ID or partial URL to a full YouTube watch URL.</summary>
     private static string NormalizeUrl(string vid)
     {
         if (vid.Contains("youtube") || vid.Contains("watch"))
@@ -178,6 +267,7 @@ public sealed class YoutubeTestDockerCommand : Command
         return $"https://www.youtube.com/watch?v={vid}";
     }
 
+    /// <summary>Walks up from current directory to find the folder containing Nexo.sln.</summary>
     private static string DiscoverProjectRoot()
     {
         var dir = new DirectoryInfo(Directory.GetCurrentDirectory());

@@ -18,14 +18,18 @@ public class WebAdapter : ITargetAdapter
     private readonly List<string> _errors = new();
     private readonly ILogger<WebAdapter>? _logger;
     
+    /// <inheritdoc />
     public TargetType TargetType => TargetType.WebApp;
+    /// <inheritdoc />
     public bool IsConnected => _page != null;
     
+    /// <summary>Creates a WebAdapter using Playwright for Chromium automation.</summary>
     public WebAdapter(ILogger<WebAdapter>? logger = null)
     {
         _logger = logger;
     }
     
+    /// <inheritdoc />
     public async Task ConnectAsync(string target, CancellationToken ct = default)
     {
         try
@@ -48,6 +52,7 @@ public class WebAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public async Task DisconnectAsync(CancellationToken ct = default)
     {
         if (_browser != null)
@@ -60,24 +65,28 @@ public class WebAdapter : ITargetAdapter
         _page = null;
     }
     
+    /// <inheritdoc />
     public async Task<byte[]?> CaptureScreenshotAsync(CancellationToken ct = default)
     {
         if (_page == null) return null;
         return await _page.ScreenshotAsync(new PageScreenshotOptions { FullPage = true });
     }
     
+    /// <inheritdoc />
     public async Task<string?> GetStructureAsync(CancellationToken ct = default)
     {
         if (_page == null) return null;
         return await _page.ContentAsync();
     }
     
+    /// <inheritdoc />
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default)
     {
         // Accessibility tree not available for web targets
         return Task.FromResult<string?>(null);
     }
     
+    /// <inheritdoc />
     public async Task<IReadOnlyList<InteractiveElement>> GetInteractiveElementsAsync(CancellationToken ct = default)
     {
         if (_page == null) return Array.Empty<InteractiveElement>();
@@ -109,6 +118,7 @@ public class WebAdapter : ITargetAdapter
         return elements ?? new List<InteractiveElement>();
     }
     
+    /// <inheritdoc />
     public async Task<string?> ExecuteActionAsync(TestAction action, CancellationToken ct = default)
     {
         if (_page == null) return "Not connected";
@@ -164,51 +174,65 @@ public class WebAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task<GameState?> GetGameStateAsync(CancellationToken ct = default) => 
         Task.FromResult<GameState?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<GameObject>> GetVisibleObjectsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<GameObject>>(Array.Empty<GameObject>());
     
+    /// <inheritdoc />
     public Task<PlayerState?> GetPlayerStateAsync(CancellationToken ct = default) =>
         Task.FromResult<PlayerState?>(null);
     
+    /// <inheritdoc />
     public Task<ApiResponse?> GetLastApiResponseAsync(CancellationToken ct = default) =>
         Task.FromResult<ApiResponse?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<ApiEndpoint>> GetAvailableEndpointsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<ApiEndpoint>>(Array.Empty<ApiEndpoint>());
     
+    /// <inheritdoc />
     public Task<string?> GetTerminalOutputAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentPromptAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetConsoleLogAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(_consoleLog);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetErrorsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(_errors);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetWarningsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<PerformanceMetrics?> GetPerformanceAsync(CancellationToken ct = default) =>
         Task.FromResult<PerformanceMetrics?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentUrlAsync(CancellationToken ct = default)
     {
         if (_page == null) return Task.FromResult<string?>(null);
         return Task.FromResult<string?>(_page.Url);
     }
     
+    /// <inheritdoc />
     public async Task<string?> GetWindowTitleAsync(CancellationToken ct = default)
     {
         if (_page == null) return null;
         return await _page.TitleAsync();
     }
     
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync();

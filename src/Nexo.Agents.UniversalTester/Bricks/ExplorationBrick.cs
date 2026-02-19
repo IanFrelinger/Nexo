@@ -35,7 +35,8 @@ public class ExplorationBrick : Brick
                 new BrickInputDefinition("understanding", "Understanding", "Current understanding"),
                 new BrickInputDefinition("goal", "string", "Testing goal"),
                 new BrickInputDefinition("depth", "TestingDepth", "Testing depth"),
-                new BrickInputDefinition("actionHistory", "TestAction[]", "Previous actions", required: false)
+                new BrickInputDefinition("actionHistory", "TestAction[]", "Previous actions", required: false),
+                new BrickInputDefinition("modelOverride", "string", "Per-brick model override", required: false)
             ],
             Outputs = [
                 new BrickOutputDefinition("nextAction", "TestAction", "Next action to execute"),
@@ -89,7 +90,8 @@ public class ExplorationBrick : Brick
         var goal = input.Get<string>("goal");
         var depth = input.Get<TestingDepth>("depth");
         var actionHistory = input.Get<TestAction[]>("actionHistory", Array.Empty<TestAction>()) ?? Array.Empty<TestAction>();
-        
+        var modelOverride = input.Get<string>("modelOverride", null);
+
         if (implementation == ImplementationType.Deterministic)
         {
             return ExecuteDeterministic(understanding, depth, actionHistory);
@@ -102,7 +104,7 @@ public class ExplorationBrick : Brick
             context.Provider,
             "You are deciding what action to take next in testing.",
             prompt,
-            new { },
+            modelOverride != null ? new { model = modelOverride } : new { },
             cancellationToken);
         
         var (nextAction, reasoning, shouldStop) = ParseExplorationOutput(response, understanding);

@@ -1,25 +1,35 @@
 # Dockerfile for headless YouTube video summary tests via Universal Tester
-# Uses Xvfb (virtual X display) + Chromium + DesktopAdapter (scrot screenshots)
+# Uses Xvfb (virtual X display) + Chrome/Chromium + DesktopAdapter (scrot screenshots)
 # Fully virtualized - no physical display required. Parallel-safe in separate containers.
+# Portable: amd64 (PC) and arm64 (MacBook Apple Silicon).
 #
-# Build: docker build -f .docker/Dockerfile.youtube-test -t nexo-youtube-test .
+# Build (multi-arch): docker buildx build -f .docker/Dockerfile.youtube-test -t nexo-youtube-test --platform linux/amd64,linux/arm64 .
+# Build (host arch):  docker build -f .docker/Dockerfile.youtube-test -t nexo-youtube-test .
 # Run:   docker run --rm -e VIDEO_URL="https://..." -e OLLAMA_BASE_URL="http://host.docker.internal:11434" nexo-youtube-test
 #
 ARG DOTNET_VERSION=8.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
 
-# Install Xvfb (virtual display), Google Chrome, scrot (screenshot capture)
-# Note: chromium-browser on Ubuntu pulls Snap (doesn't work in Docker); use Google Chrome .deb
+# TARGETARCH is set by Docker buildx when using --platform (e.g. amd64, arm64)
+ARG TARGETARCH=amd64
+
+# Install Xvfb, scrot, ffmpeg, xdotool (for virtual desktop interaction), browser.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb \
     scrot \
+    ffmpeg \
+    xdotool \
     curl \
     wget \
     gnupg \
     ca-certificates \
-    && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get install -y --no-install-recommends google-chrome-stable \
+    && if [ "$TARGETARCH" = "amd64" ]; then \
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-linux-signing-key.gpg \
+        && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-linux-signing-key.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+        && apt-get update && apt-get install -y --no-install-recommends google-chrome-stable; \
+    else \
+        apt-get install -y --no-install-recommends chromium; \
+    fi \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace

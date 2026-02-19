@@ -34,7 +34,8 @@ public class ValidationBrick : Brick
                 new BrickInputDefinition("action", "TestAction", "Action that was executed"),
                 new BrickInputDefinition("executionResult", "ActionExecutionResult", "Execution result"),
                 new BrickInputDefinition("goal", "string", "Testing goal"),
-                new BrickInputDefinition("expectedOutcome", "string", "Expected outcome", required: false)
+                new BrickInputDefinition("expectedOutcome", "string", "Expected outcome", required: false),
+                new BrickInputDefinition("modelOverride", "string", "Per-brick model override", required: false)
             ],
             Outputs = [
                 new BrickOutputDefinition("validation", "ValidationResult", "Validation result")
@@ -86,7 +87,8 @@ public class ValidationBrick : Brick
         var executionResult = input.Get<ActionExecutionResult>("executionResult");
         var goal = input.Get<string>("goal");
         var expectedOutcome = input.Get<string?>("expectedOutcome", null);
-        
+        var modelOverride = input.Get<string>("modelOverride", null);
+
         if (implementation == ImplementationType.Deterministic)
         {
             return ExecuteDeterministic(executionResult);
@@ -99,7 +101,7 @@ public class ValidationBrick : Brick
             context.Provider,
             "You are validating the result of a test action.",
             prompt,
-            new { },
+            modelOverride != null ? new { model = modelOverride } : new { },
             cancellationToken);
         
         var validation = ParseValidationOutput(response);

@@ -23,14 +23,21 @@ public class DesktopAdapter : ITargetAdapter
     private readonly List<string> _errors = new();
     private ITargetAdapter? _platformAdapter;
     
+    /// <inheritdoc />
     public TargetType TargetType => TargetType.DesktopApp;
+    /// <inheritdoc />
     public bool IsConnected => _platformAdapter?.IsConnected ?? (_process != null && !_process.HasExited);
     
+    /// <summary>
+    /// Creates a new desktop adapter instance.
+    /// </summary>
+    /// <param name="logger">Optional logger for diagnostics.</param>
     public DesktopAdapter(ILogger<DesktopAdapter>? logger = null)
     {
         _logger = logger;
     }
     
+    /// <inheritdoc />
     public async Task ConnectAsync(string target, CancellationToken ct = default)
     {
         // If we're on Windows and the Windows automation adapter is available, delegate to it.
@@ -99,6 +106,7 @@ public class DesktopAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task DisconnectAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null)
@@ -115,6 +123,7 @@ public class DesktopAdapter : ITargetAdapter
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task<byte[]?> CaptureScreenshotAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.CaptureScreenshotAsync(ct);
@@ -190,6 +199,7 @@ public class DesktopAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task<string?> GetStructureAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.GetStructureAsync(ct);
@@ -198,6 +208,7 @@ public class DesktopAdapter : ITargetAdapter
         return Task.FromResult<string?>(null);
     }
     
+    /// <inheritdoc />
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.GetAccessibilityTreeAsync(ct);
@@ -206,6 +217,7 @@ public class DesktopAdapter : ITargetAdapter
         return Task.FromResult<string?>(null);
     }
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<InteractiveElement>> GetInteractiveElementsAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.GetInteractiveElementsAsync(ct);
@@ -215,6 +227,7 @@ public class DesktopAdapter : ITargetAdapter
         return Task.FromResult<IReadOnlyList<InteractiveElement>>(Array.Empty<InteractiveElement>());
     }
     
+    /// <inheritdoc />
     public Task<string?> ExecuteActionAsync(TestAction action, CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.ExecuteActionAsync(action, ct);
@@ -348,47 +361,184 @@ tell application ""System Events"" to key code {code}
 
     private async Task<string?> ExecuteActionLinuxAsync(TestAction action, CancellationToken ct)
     {
+        var processName = _processName ?? _process?.ProcessName ?? "chrome";
         switch (action.Type)
         {
             case ActionType.Wait:
                 await Task.Delay(action.Duration ?? TimeSpan.FromMilliseconds(500), ct);
                 return "Waited";
+            case ActionType.Click:
+            case ActionType.DoubleClick:
+            case ActionType.RightClick:
+                return ExecuteClickXdotool(processName, action);
+            case ActionType.Type:
+            case ActionType.Fill:
+                return ExecuteTypeXdotool(processName, action);
+            case ActionType.KeyPress:
+                return ExecuteKeyPressXdotool(processName, action);
+            case ActionType.SwitchWindow:
+                var wmClass = processName.Contains("chrome", StringComparison.OrdinalIgnoreCase)
+                    ? "google-chrome" : "chromium";
+                return RunXdotool("search", "--onlyvisible", "--class", wmClass, "windowactivate", "--sync");
             default:
-                _logger?.LogWarning("Linux desktop automation only supports Wait (install xdotool for click/type)");
-                return "Linux action not implemented";
+                _logger?.LogWarning("Linux xdotool: unsupported action {ActionType}", action.Type);
+                return $"Unsupported action: {action.Type}";
+        }
+    }
+
+    private string? ExecuteClickXdotool(string processName, TestAction action)
+    {
+        ActivateWindowXdotool(processName);
+
+        int x, y;
+        if (action.Coordinates != null)
+        {
+            x = (int)action.Coordinates.X;
+            y = (int)action.Coordinates.Y;
+        }
+        else if (TryParseCoordinates(action.Selector ?? action.ElementId, out x, out y))
+        { /* Target was "x,y" from vision */ }
+        else
+            return "No coordinates or selector for click";
+
+        var btn = action.Type == ActionType.RightClick ? "3" : "1";
+        var result = RunXdotool("mousemove", "--sync", x.ToString(), y.ToString());
+        if (result != "OK") return result;
+
+        if (action.Type == ActionType.DoubleClick)
+        {
+            RunXdotool("click", "--repeat", "2", "--delay", "50", btn);
+        }
+        else
+        {
+            RunXdotool("click", btn);
+        }
+        return "Clicked";
+    }
+
+    private string? ExecuteTypeXdotool(string processName, TestAction action)
+    {
+        ActivateWindowXdotool(processName);
+
+        var value = action.InputValue ?? "";
+        if (string.IsNullOrEmpty(value)) return "No text to type";
+
+        var result = RunXdotool("type", "--clearmodifiers", "--delay", "20", "--", value);
+        return result == "OK" ? "Typed" : result;
+    }
+
+    private string? ExecuteKeyPressXdotool(string processName, TestAction action)
+    {
+        ActivateWindowXdotool(processName);
+
+        var key = (action.Key ?? action.InputValue ?? "").Trim();
+        if (string.IsNullOrEmpty(key)) return "No key specified";
+
+        var xdotoolKey = KeyToXdotool(key);
+        var result = RunXdotool("key", "--clearmodifiers", xdotoolKey);
+        return result == "OK" ? "Key pressed" : result;
+    }
+
+    private static string KeyToXdotool(string key)
+    {
+        return key.ToLowerInvariant() switch
+        {
+            "enter" or "return" => "Return",
+            "tab" => "Tab",
+            "escape" or "esc" => "Escape",
+            "backspace" or "delete" => "BackSpace",
+            "space" => "space",
+            "up" => "Up",
+            "down" => "Down",
+            "left" => "Left",
+            "right" => "Right",
+            _ => key
+        };
+    }
+
+    private void ActivateWindowXdotool(string processName)
+    {
+        // Focus the target window so clicks/keystrokes go to it.
+        // Use WM_CLASS: Chrome uses "google-chrome", Chromium uses "chromium".
+        var wmClass = processName.Contains("chrome", StringComparison.OrdinalIgnoreCase)
+            ? "google-chrome"
+            : "chromium";
+        RunXdotool("search", "--onlyvisible", "--class", wmClass, "windowactivate", "--sync");
+        Task.Delay(100).Wait(); // Brief delay for focus
+    }
+
+    private string? RunXdotool(params string[] args)
+    {
+        try
+        {
+            var display = Environment.GetEnvironmentVariable("DISPLAY") ?? ":0";
+            var psi = new ProcessStartInfo
+            {
+                FileName = "xdotool",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardError = true,
+                RedirectStandardOutput = true
+            };
+            foreach (var a in args)
+                psi.ArgumentList.Add(a);
+            psi.Environment["DISPLAY"] = display;
+
+            using var p = Process.Start(psi);
+            if (p == null) return "Failed to start xdotool";
+            var err = p.StandardError.ReadToEnd();
+            var stdout = p.StandardOutput.ReadToEnd();
+            p.WaitForExit(5000);
+            return p.ExitCode == 0 ? "OK" : (string.IsNullOrWhiteSpace(err) ? stdout : err);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "xdotool failed");
+            return ex.Message;
         }
     }
     
+    /// <inheritdoc />
     public Task<GameState?> GetGameStateAsync(CancellationToken ct = default) =>
         Task.FromResult<GameState?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<GameObject>> GetVisibleObjectsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<GameObject>>(Array.Empty<GameObject>());
     
+    /// <inheritdoc />
     public Task<PlayerState?> GetPlayerStateAsync(CancellationToken ct = default) =>
         Task.FromResult<PlayerState?>(null);
     
+    /// <inheritdoc />
     public Task<ApiResponse?> GetLastApiResponseAsync(CancellationToken ct = default) =>
         Task.FromResult<ApiResponse?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<ApiEndpoint>> GetAvailableEndpointsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<ApiEndpoint>>(Array.Empty<ApiEndpoint>());
     
+    /// <inheritdoc />
     public Task<string?> GetTerminalOutputAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentPromptAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetConsoleLogAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetErrorsAsync(CancellationToken ct = default) =>
         _platformAdapter != null ? _platformAdapter.GetErrorsAsync(ct) : Task.FromResult<IReadOnlyList<string>>(_errors);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetWarningsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<PerformanceMetrics?> GetPerformanceAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.GetPerformanceAsync(ct);
@@ -412,9 +562,11 @@ tell application ""System Events"" to key code {code}
         return Task.FromResult<PerformanceMetrics?>(null);
     }
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentUrlAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetWindowTitleAsync(CancellationToken ct = default)
     {
         if (_platformAdapter != null) return _platformAdapter.GetWindowTitleAsync(ct);
@@ -437,6 +589,7 @@ tell application ""System Events"" to key code {code}
         return Task.FromResult<string?>(null);
     }
     
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync();

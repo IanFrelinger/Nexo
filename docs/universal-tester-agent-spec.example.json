@@ -1,0 +1,24 @@
+{
+  "prefer": "agentic",
+  "multiFrameCount": 4,
+  "understandingMode": "auto",
+  "pipeline": ["perception", "understanding", "exploration", "action", "validation", "reporting"],
+  "bricks": {
+    "perception": { "prefer": "agentic", "fallback": ["agentic", "deterministic"] },
+    "understanding": { "prefer": "agentic", "fallback": ["agentic"] },
+    "exploration": { "prefer": "agentic" },
+    "action": { "prefer": "deterministic", "fallback": ["deterministic"] },
+    "validation": { "prefer": "agentic", "fallback": ["agentic", "deterministic"] },
+    "reporting": { "prefer": "agentic", "fallback": ["agentic", "deterministic"] }
+  },
+  "brickOverrides": {
+    "understanding": {
+      "mode": "gameStateFirst",
+      "model": "llava:7b",
+      "provider": "ollama",
+      "promptTemplate": "temporal-gameplay"
+    }
+  },
+  "adapters": { "game": { "host": "localhost", "port": 9999 } },
+  "promptTemplatesPath": "./prompts/understanding-templates.json"
+}

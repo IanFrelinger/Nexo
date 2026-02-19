@@ -63,6 +63,21 @@ public record UniversalTesterConfig
     /// Used for video tests: combine screenshot + transcript for richer context.
     /// </summary>
     public string? AudioTranscript { get; init; }
+
+    /// <summary>
+    /// Watch-only mode: observe and summarize, no actions. Uses high-frequency frame capture.
+    /// </summary>
+    public bool WatchOnly { get; init; }
+
+    /// <summary>
+    /// For watch mode: interval between frame captures (ms). Default 200 = 5 fps.
+    /// </summary>
+    public int CaptureIntervalMs { get; init; } = 200;
+
+    /// <summary>
+    /// For watch mode: interval between live summaries (seconds). Default 15.
+    /// </summary>
+    public int SummaryIntervalSeconds { get; init; } = 15;
 }
 
 /// <summary>

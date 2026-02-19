@@ -163,7 +163,7 @@ public class UniversalTestCommand : Command
             var loggerFactory = services.GetRequiredService<ILoggerFactory>();
             var agentLogger = loggerFactory.CreateLogger<UniversalTesterAgent>();
             var providerFactory = services.GetRequiredService<IProviderFactory>();
-            var agent = new UniversalTesterAgent(providerFactory, agentLogger);
+            var agent = new UniversalTesterAgent(providerFactory, services.GetRequiredService<Nexo.Agents.UniversalTester.Adapters.IAdapterRegistry>(), agentLogger);
             
             // Create execution context
             var context = CreateExecutionContext(mode, provider);
@@ -384,6 +384,7 @@ public class UniversalTestCommand : Command
         
         // Always register IProviderFactory (it handles deterministic mode internally)
         services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
+        services.AddSingleton<Nexo.Agents.UniversalTester.Adapters.IAdapterRegistry, Nexo.Agents.UniversalTester.Adapters.DefaultAdapterRegistry>();
         
         return services.BuildServiceProvider();
     }

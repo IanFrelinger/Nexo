@@ -9,9 +9,9 @@ using System.Text.Json;
 namespace Nexo.Agents.UniversalTester.Adapters;
 
 /// <summary>
-/// Adapter for Unity games. Communicates via:
-/// 1. Screenshot capture (external)
-/// 2. TCP/WebSocket to a Nexo plugin running in-game
+/// Adapter for games with a Nexo plugin (e.g., Unity). Communicates via TCP to an in-game server.
+/// Protocol: HELLO, SCREENSHOT (base64 PNG), GAMESTATE, PLAYERSTATE, INTERACTABLES, and action commands
+/// (CLICK, MOVE, LOOK, JUMP, ATTACK, INTERACT, etc.). Target format: game://host:port or tcp://host:port.
 /// </summary>
 public class GameAdapter : ITargetAdapter
 {
@@ -27,11 +27,22 @@ public class GameAdapter : ITargetAdapter
     public TargetType TargetType => TargetType.Game;
     public bool IsConnected => _gameConnection?.Connected ?? false;
     
-    public GameAdapter(ILogger<GameAdapter>? logger = null)
+    private readonly bool _hasConfigOverride;
+
+    /// <summary>
+    /// Creates a GameAdapter. configHost/configPort override target parsing when provided (e.g., from runtime config).
+    /// </summary>
+    public GameAdapter(ILogger<GameAdapter>? logger = null, string? configHost = null, int? configPort = null)
     {
         _logger = logger;
+        _hasConfigOverride = !string.IsNullOrWhiteSpace(configHost) || (configPort is > 0 and < 65536);
+        if (!string.IsNullOrWhiteSpace(configHost))
+            _host = configHost;
+        if (configPort is > 0 and < 65536)
+            _port = configPort.Value;
     }
     
+    /// <summary>Parses target (path, game://, tcp://), launches game if path given, connects to plugin TCP server.</summary>
     public async Task ConnectAsync(string target, CancellationToken ct = default)
     {
         ParseTarget(target);
@@ -67,6 +78,7 @@ public class GameAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task DisconnectAsync(CancellationToken ct = default)
     {
         _gameConnection?.Dispose();
@@ -78,6 +90,7 @@ public class GameAdapter : ITargetAdapter
         return Task.CompletedTask;
     }
     
+    /// <summary>Sends SCREENSHOT command; returns base64-decoded PNG bytes from plugin.</summary>
     public async Task<byte[]?> CaptureScreenshotAsync(CancellationToken ct = default)
     {
         if (_writer == null) return null;
@@ -100,6 +113,7 @@ public class GameAdapter : ITargetAdapter
         return null;
     }
     
+    /// <summary>Sends GAMESTATE command; returns deserialized GameState JSON from plugin.</summary>
     public async Task<GameState?> GetGameStateAsync(CancellationToken ct = default)
     {
         if (_writer == null) return null;
@@ -117,6 +131,7 @@ public class GameAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public async Task<PlayerState?> GetPlayerStateAsync(CancellationToken ct = default)
     {
         if (_writer == null) return null;
@@ -134,6 +149,7 @@ public class GameAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public async Task<IReadOnlyList<InteractiveElement>> GetInteractiveElementsAsync(CancellationToken ct = default)
     {
         if (_writer == null) return Array.Empty<InteractiveElement>();
@@ -153,6 +169,7 @@ public class GameAdapter : ITargetAdapter
         }
     }
     
+    /// <summary>Maps TestAction to plugin command (CLICK, MOVE, INTERACT, etc.) and sends it; returns plugin response.</summary>
     public async Task<string?> ExecuteActionAsync(TestAction action, CancellationToken ct = default)
     {
         if (_writer == null) return "Not connected";
@@ -184,6 +201,7 @@ public class GameAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task<PerformanceMetrics?> GetPerformanceAsync(CancellationToken ct = default)
     {
         if (_writer == null) return Task.FromResult<PerformanceMetrics?>(null);
@@ -200,53 +218,66 @@ public class GameAdapter : ITargetAdapter
         }
     }
     
+    /// <inheritdoc />
     public Task<string?> GetStructureAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetAccessibilityTreeAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<GameObject>> GetVisibleObjectsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<GameObject>>(Array.Empty<GameObject>());
     
+    /// <inheritdoc />
     public Task<ApiResponse?> GetLastApiResponseAsync(CancellationToken ct = default) =>
         Task.FromResult<ApiResponse?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<ApiEndpoint>> GetAvailableEndpointsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<ApiEndpoint>>(Array.Empty<ApiEndpoint>());
     
+    /// <inheritdoc />
     public Task<string?> GetTerminalOutputAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentPromptAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetConsoleLogAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetErrorsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<IReadOnlyList<string>> GetWarningsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     
+    /// <inheritdoc />
     public Task<string?> GetCurrentUrlAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public Task<string?> GetWindowTitleAsync(CancellationToken ct = default) =>
         Task.FromResult<string?>(null);
     
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         await DisconnectAsync();
     }
 
+    /// <summary>Extracts host/port from target (tcp://host:port, game://host:port) unless config override is set.</summary>
     private void ParseTarget(string target)
     {
-        // Supports:
-        // - file path to game executable
-        // - tcp://host:port
-        // - game://host:port
+        if (_hasConfigOverride)
+            return; // Constructor host/port take precedence
+        // Supports: file path, tcp://host:port, game://host:port
         if (target.StartsWith("tcp://", StringComparison.OrdinalIgnoreCase) ||
             target.StartsWith("game://", StringComparison.OrdinalIgnoreCase))
         {
@@ -263,6 +294,7 @@ public class GameAdapter : ITargetAdapter
         }
     }
 
+    /// <summary>Sends HELLO; expects NEXO_PLUGIN 1.0 response for protocol versioning.</summary>
     private async Task TryHandshakeAsync(CancellationToken ct)
     {
         if (_handshakeAttempted || _writer == null) return;

@@ -32,7 +32,8 @@ public class ReportingBrick : Brick
         {
             Inputs = [
                 new BrickInputDefinition("session", "TestSession", "Test session data"),
-                new BrickInputDefinition("format", "string", "Report format (html/json)", required: false, defaultValue: "html")
+                new BrickInputDefinition("format", "string", "Report format (html/json)", required: false, defaultValue: "html"),
+                new BrickInputDefinition("modelOverride", "string", "Per-brick model override", required: false)
             ],
             Outputs = [
                 new BrickOutputDefinition("report", "TestReport", "Generated test report")
@@ -82,7 +83,8 @@ public class ReportingBrick : Brick
     {
         var session = input.Get<TestSession>("session");
         var format = input.Get<string>("format", "html");
-        
+        var modelOverride = input.Get<string>("modelOverride", null);
+
         var totalSteps = session.Steps.Count;
         var passedSteps = session.Steps.Count(s => s.Validation.Passed);
         var failedSteps = totalSteps - passedSteps;
@@ -110,7 +112,7 @@ public class ReportingBrick : Brick
         // Agentic: AI-generated summary
         if (implementation == ImplementationType.Agentic && _providerFactory != null)
         {
-            var aiSummary = await GenerateAiSummaryAsync(session, context, cancellationToken);
+            var aiSummary = await GenerateAiSummaryAsync(session, context, modelOverride, cancellationToken);
             keyFindings.AddRange(aiSummary.Findings);
             recommendations.AddRange(aiSummary.Recommendations);
         }
@@ -176,7 +178,7 @@ public class ReportingBrick : Brick
     }
     
     private async Task<(List<string> Findings, List<string> Recommendations)> GenerateAiSummaryAsync(
-        TestSession session, IExecutionContext context, CancellationToken ct)
+        TestSession session, IExecutionContext context, string? modelOverride, CancellationToken ct)
     {
         if (_providerFactory == null) return (new List<string>(), new List<string>());
         
@@ -195,7 +197,7 @@ Provide JSON: {{ ""findings"": [], ""recommendations"": [] }}";
                 context.Provider,
                 "You are generating a test report summary.",
                 prompt,
-                new { },
+                modelOverride != null ? new { model = modelOverride } : new { },
                 ct);
             
             var doc = JsonDocument.Parse(response);

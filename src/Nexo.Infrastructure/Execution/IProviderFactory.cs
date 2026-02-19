@@ -5,7 +5,9 @@ namespace Nexo.Infrastructure.Execution;
 /// </summary>
 public interface IProviderFactory
 {
+    /// <summary>Returns true if the provider is configured and available.</summary>
     bool IsProviderAvailable(string provider);
+    /// <summary>Executes an LLM text request; returns model response as string.</summary>
     Task<string> ExecuteLLMAsync(
         string provider,
         string systemPrompt,
@@ -31,6 +33,18 @@ public interface IProviderFactory
     /// </summary>
     Task<string> ExecuteVisionMultiFrameAsync(
         string provider,
+        string systemPrompt,
+        string userPrompt,
+        IReadOnlyList<byte[]> frameBytes,
+        object config,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Execute video analysis via a model container (e.g. SmolVLM2-Video in Docker).
+    /// Encodes frames to video, POSTs to VIDEO_SERVICE_URL, returns response as Understanding JSON.
+    /// Used when provider is "video" and VIDEO_SERVICE_URL is set.
+    /// </summary>
+    Task<string> ExecuteVideoAsync(
         string systemPrompt,
         string userPrompt,
         IReadOnlyList<byte[]> frameBytes,

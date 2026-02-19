@@ -1,0 +1,25 @@
+# SmolVLM2 Video Understanding - model runs in container, C# service calls HTTP API
+# Portable: amd64 (PC) and arm64 (Mac). Uses CPU when no CUDA.
+#
+# Build: docker build -f .docker/Dockerfile.smolvlm2-video -t nexo-smolvlm2-video .
+# Run:   docker run -p 8080:8080 -e PORT=8080 nexo-smolvlm2-video
+#
+ARG PYTHON_VERSION=3.11
+FROM python:${PYTHON_VERSION}-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY .docker/smolvlm2-video-service/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY .docker/smolvlm2-video-service/app.py ./
+
+ENV PORT=8080
+ENV SMOLVLM_MODEL=HuggingFaceTB/SmolVLM2-500M-Video-Instruct
+EXPOSE 8080
+
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

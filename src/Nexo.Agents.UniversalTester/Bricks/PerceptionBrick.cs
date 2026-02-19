@@ -39,7 +39,8 @@ public class PerceptionBrick : Brick
                 new BrickInputDefinition("previousState", "PerceptionState", "Previous perception state for comparison", required: false),
                 new BrickInputDefinition("captureScreenshot", "bool", "Whether to capture screenshot", required: false, defaultValue: true),
                 new BrickInputDefinition("captureDOM", "bool", "Whether to capture DOM/structure", required: false, defaultValue: true),
-                new BrickInputDefinition("capturePerformance", "bool", "Whether to capture performance metrics", required: false, defaultValue: true)
+                new BrickInputDefinition("capturePerformance", "bool", "Whether to capture performance metrics", required: false, defaultValue: true),
+                new BrickInputDefinition("modelOverride", "string", "Per-brick model override (e.g. llava:7b for Ollama)", required: false)
             ],
             Outputs = [
                 new BrickOutputDefinition("perception", "PerceptionState", "Captured perception state")
@@ -92,6 +93,7 @@ public class PerceptionBrick : Brick
         var captureScreenshot = input.Get<bool>("captureScreenshot", true);
         var captureDOM = input.Get<bool>("captureDOM", true);
         var capturePerformance = input.Get<bool>("capturePerformance", true);
+        var modelOverride = input.Get<string>("modelOverride", null);
 
         var state = await CaptureFromAdapterAsync(adapter, previousState, captureScreenshot, captureDOM, capturePerformance, cancellationToken);
 
@@ -106,7 +108,7 @@ public class PerceptionBrick : Brick
         {
             try
             {
-                var augmentedElements = await AugmentWithVisionAsync(state, context, cancellationToken);
+                var augmentedElements = await AugmentWithVisionAsync(state, context, modelOverride, cancellationToken);
                 if (augmentedElements.Count > 0)
                 {
                     state = state with { InteractiveElements = augmentedElements };
@@ -177,6 +179,7 @@ public class PerceptionBrick : Brick
     private async Task<IReadOnlyList<InteractiveElement>> AugmentWithVisionAsync(
         PerceptionState state,
         IExecutionContext context,
+        string? modelOverride,
         CancellationToken cancellationToken)
     {
         if (_providerFactory == null || state.Screenshot == null)
@@ -188,7 +191,7 @@ public class PerceptionBrick : Brick
             "You are a UI analyzer. Identify interactive elements (buttons, inputs, links, menus) from the screenshot. Return only valid JSON.",
             prompt,
             state.Screenshot,
-            new { },
+            modelOverride != null ? new { model = modelOverride } : new { },
             cancellationToken);
 
         return ParseVisionElements(response);
