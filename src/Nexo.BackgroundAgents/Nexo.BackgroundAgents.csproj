@@ -8,12 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
     <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
     <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="DataSensitivity\DataTaxonomy.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="DataTaxonomy.json" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />

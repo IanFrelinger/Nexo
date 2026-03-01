@@ -16,7 +16,7 @@ public class TestPortableCommand
     public static Command CreateCommand()
     {
         var listOpt = new Option<bool>("--list", "List targets that will run or be skipped on this host");
-        var scopeOpt = new Option<string>("--scope", () => "persistence", "Scope: smoke (native only), persistence (multi-env), or all");
+        var scopeOpt = new Option<string>("--scope", () => "persistence", "Scope: smoke (native only), persistence (multi-env), trust (multi-env), or all");
 
         var cmd = new Command("portable", "Run portable cross-platform tests (replaces portable-test.sh)")
         {
@@ -68,15 +68,22 @@ public class TestPortableCommand
             return await RunPersistenceMultiEnvAsync(console, json, verbose);
         }
 
+        if (scope.Equals("trust", StringComparison.OrdinalIgnoreCase))
+        {
+            return await TestMultiEnvCommand.ExecuteAsync("trust", null, true, json, verbose);
+        }
+
         if (scope.Equals("all", StringComparison.OrdinalIgnoreCase))
         {
             var persistenceExit = await RunPersistenceMultiEnvAsync(console, json, verbose);
             if (persistenceExit != 0) return persistenceExit;
+            var trustExit = await TestMultiEnvCommand.ExecuteAsync("trust", null, true, json, verbose);
+            if (trustExit != 0) return trustExit;
             return await RunSmokeAsync(console, json, verbose);
         }
 
         if (!json && console != null)
-            console.WriteError($"Unknown scope: {scope} (use smoke|persistence|all)");
+            console.WriteError($"Unknown scope: {scope} (use smoke|persistence|trust|all)");
         else if (json)
             Console.WriteLine(JsonSerializer.Serialize(new { error = $"Unknown scope: {scope}" }));
         return 1;

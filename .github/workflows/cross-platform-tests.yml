@@ -14,14 +14,17 @@ on:
         options:
           - smoke
           - persistence
+          - trust
           - full
   push:
     branches: [ master, main ]
     paths:
       - '.github/workflows/cross-platform-tests.yml'
       - 'src/Nexo.Tests.Infrastructure/**'
+      - 'src/Nexo.Tests.BackgroundAgents/**'
       - 'src/Nexo.Core.Application/**'
       - 'src/Nexo.Infrastructure/**'
+      - 'src/Nexo.BackgroundAgents/**'
 
 jobs:
   cross-platform:
@@ -48,7 +51,7 @@ jobs:
         run: dotnet build --no-restore -v minimal
 
       - name: Run tests (smoke)
-        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'full'
+        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full'
         shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
@@ -67,6 +70,23 @@ jobs:
             --filter "FullyQualifiedName~InMemoryPersistenceTests" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=persistence-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (trust)
+        if: github.event.inputs.scope == 'trust' || github.event.inputs.scope == 'full'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --filter "FullyQualifiedName~Trust" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=trust-infra-${{ matrix.os }}.trx" \
+            --results-directory test-results
+          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+            --no-build \
+            --filter "FullyQualifiedName~Trust" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=trust-bg-${{ matrix.os }}.trx" \
             --results-directory test-results
 
       - name: Run tests (full Infrastructure)

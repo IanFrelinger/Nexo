@@ -28,7 +28,8 @@
         <PackageReference Include="Docker.DotNet" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
         <PackageReference Include="ICSharpCode.Decompiler" />
-    </ItemGroup>
+    <PackageReference Include="LiteDB" />
+  </ItemGroup>
 
 </Project>
 

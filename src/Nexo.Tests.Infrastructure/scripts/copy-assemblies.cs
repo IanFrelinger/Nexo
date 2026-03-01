@@ -39,17 +39,24 @@ if (!root.TryGetProperty("targets", out var targetsElement))
     Environment.Exit(1);
 }
 
-// Find the .NET 8.0 runtime target
-var runtimeTarget = targetsElement.EnumerateObject()
-    .FirstOrDefault(p => p.Name.Contains("NETCoreApp") && p.Name.Contains("8.0"));
+// Find the runtime target (use runtimeTarget from root, or first NETCoreApp target)
+string? targetName = null;
+if (root.TryGetProperty("runtimeTarget", out var rtElement) && rtElement.TryGetProperty("name", out var rtName))
+    targetName = rtName.GetString();
 
-if (runtimeTarget.Value.ValueKind == JsonValueKind.Undefined)
+JsonElement runtime;
+if (!string.IsNullOrEmpty(targetName) && targetsElement.TryGetProperty(targetName, out var rtValue))
+    runtime = rtValue;
+else
 {
-    Console.Error.WriteLine("Could not find .NET 8.0 runtime target in deps.json");
-    Environment.Exit(1);
+    var first = targetsElement.EnumerateObject().FirstOrDefault(p => p.Name.Contains("NETCoreApp", StringComparison.OrdinalIgnoreCase));
+    if (first.Value.ValueKind == JsonValueKind.Undefined)
+    {
+        Console.Error.WriteLine("Could not find runtime target in deps.json");
+        Environment.Exit(1);
+    }
+    runtime = first.Value;
 }
-
-var runtime = runtimeTarget.Value;
 int copied = 0;
 int failed = 0;
 

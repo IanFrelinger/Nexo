@@ -1,0 +1,103 @@
+# Run Trust tests across Ubuntu, Alpine, and Debian Docker containers.
+# Validates Trust & Information Architecture features (sanitization, knowledge log, access boundary, audit).
+name: Trust Tests (Multi-Env Docker)
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'src/Nexo.BackgroundAgents/**'
+      - 'src/Nexo.Infrastructure/Trust/**'
+      - 'src/Nexo.Core.Application/Trust/**'
+      - 'src/Nexo.Tests.BackgroundAgents/Trust/**'
+      - 'src/Nexo.Tests.Infrastructure/Tests/Trust/**'
+      - '.docker/Dockerfile.test-caching*'
+      - '.docker/Dockerfile.test-caching-unity'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'src/Nexo.BackgroundAgents/**'
+      - 'src/Nexo.Infrastructure/Trust/**'
+      - 'src/Nexo.Core.Application/Trust/**'
+      - 'src/Nexo.Tests.BackgroundAgents/Trust/**'
+      - 'src/Nexo.Tests.Infrastructure/Tests/Trust/**'
+      - '.docker/Dockerfile.test-caching*'
+      - '.docker/Dockerfile.test-caching-unity'
+  workflow_dispatch:
+
+jobs:
+  trust-ubuntu:
+    name: Trust - Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & run Trust tests (Ubuntu)
+        run: |
+          docker build -f .docker/Dockerfile.test-caching -t nexo-trust:ubuntu .
+          mkdir -p test-results/trust
+          docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:ubuntu bash -c \
+            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-ubuntu.trx' --results-directory /workspace/test-results && \
+             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-ubuntu.trx' --results-directory /workspace/test-results"
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: test-results/trust/**/*.trx
+          check_name: Trust Tests - Ubuntu
+
+  trust-alpine:
+    name: Trust - Alpine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & run Trust tests (Alpine)
+        run: |
+          docker build -f .docker/Dockerfile.test-caching-alpine -t nexo-trust:alpine .
+          mkdir -p test-results/trust
+          docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:alpine bash -c \
+            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-alpine.trx' --results-directory /workspace/test-results && \
+             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-alpine.trx' --results-directory /workspace/test-results"
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: test-results/trust/**/*.trx
+          check_name: Trust Tests - Alpine
+
+  trust-debian:
+    name: Trust - Debian
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & run Trust tests (Debian)
+        run: |
+          docker build -f .docker/Dockerfile.test-caching-debian -t nexo-trust:debian .
+          mkdir -p test-results/trust
+          docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:debian bash -c \
+            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-debian.trx' --results-directory /workspace/test-results && \
+             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-debian.trx' --results-directory /workspace/test-results"
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: test-results/trust/**/*.trx
+          check_name: Trust Tests - Debian
+
+  trust-unity:
+    name: Trust - Unity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & run Trust tests (Unity)
+        run: |
+          docker build -f .docker/Dockerfile.test-caching-unity -t nexo-trust:unity .
+          mkdir -p test-results/trust
+          docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:unity bash -c \
+            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-unity.trx' --results-directory /workspace/test-results && \
+             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-unity.trx' --results-directory /workspace/test-results"
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: test-results/trust/**/*.trx
+          check_name: Trust Tests - Unity

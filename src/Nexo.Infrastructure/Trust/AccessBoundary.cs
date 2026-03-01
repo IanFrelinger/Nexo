@@ -1,0 +1,210 @@
+using System.Collections.Concurrent;
+using System.Text.Json;
+using Nexo.Core.Application.Trust.Models;
+using Nexo.Core.Application.Trust.Ports;
+
+namespace Nexo.Infrastructure.Trust;
+
+/// <summary>
+/// In-memory access boundary with optional JSON file persistence.
+/// </summary>
+public sealed class AccessBoundary : IAccessBoundary
+{
+    private readonly string? _configPath;
+    private readonly SemaphoreSlim _saveLock = new(1, 1);
+
+    private volatile bool _isPaused;
+    private readonly ConcurrentDictionary<string, bool> _categoryAllowed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, bool> _sourceAllowed = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, bool>> _projectOverrides = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+    };
+
+    /// <summary>
+    /// Creates an access boundary. When configPath is set, loads/saves state to JSON.
+    /// </summary>
+    /// <param name="configPath">Optional path to JSON config file. If null, uses in-memory only.</param>
+    public AccessBoundary(string? configPath = null)
+    {
+        _configPath = configPath;
+        if (!string.IsNullOrWhiteSpace(_configPath) && File.Exists(_configPath))
+            LoadFromFile();
+    }
+
+    /// <inheritdoc />
+    public bool IsObservationPaused => _isPaused;
+
+    /// <inheritdoc />
+    public bool IsCategoryAllowed(string category)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+            return false;
+        return _categoryAllowed.TryGetValue(category.Trim(), out var allowed) ? allowed : true;
+    }
+
+    /// <inheritdoc />
+    public bool IsSourceAllowed(string sourceId)
+    {
+        if (string.IsNullOrWhiteSpace(sourceId))
+            return false;
+        return _sourceAllowed.TryGetValue(sourceId.Trim(), out var allowed) ? allowed : true;
+    }
+
+    /// <inheritdoc />
+    public bool IsSourceAllowedForProject(string sourceId, string? projectPath)
+    {
+        if (string.IsNullOrWhiteSpace(sourceId))
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(projectPath) && _projectOverrides.TryGetValue(projectPath.Trim(), out var overrides) && overrides != null)
+        {
+            if (overrides.TryGetValue(sourceId.Trim(), out var projectAllowed))
+                return projectAllowed;
+        }
+
+        return IsSourceAllowed(sourceId);
+    }
+
+    /// <inheritdoc />
+    public void SetPause(bool paused)
+    {
+        if (_isPaused == paused)
+            return;
+        var prev = _isPaused;
+        _isPaused = paused;
+        RaiseBoundaryChanged(new BoundaryChangeEvent
+        {
+            ChangeType = "pause",
+            PreviousState = prev ? "paused" : "resumed",
+            NewState = paused ? "paused" : "resumed",
+        });
+        _ = SaveToFileAsync();
+    }
+
+    /// <inheritdoc />
+    public void SetCategoryAllowed(string category, bool allowed)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+            return;
+        var key = category.Trim();
+        var hadValue = _categoryAllowed.TryGetValue(key, out var prev);
+        if (hadValue && prev == allowed)
+            return;
+        _categoryAllowed[key] = allowed;
+        RaiseBoundaryChanged(new BoundaryChangeEvent
+        {
+            ChangeType = "category",
+            Category = key,
+            PreviousState = hadValue ? (prev ? "allowed" : "denied") : null,
+            NewState = allowed ? "allowed" : "denied",
+        });
+        _ = SaveToFileAsync();
+    }
+
+    /// <inheritdoc />
+    public void SetSourceAllowed(string sourceId, bool allowed)
+    {
+        if (string.IsNullOrWhiteSpace(sourceId))
+            return;
+        var key = sourceId.Trim();
+        var hadValue = _sourceAllowed.TryGetValue(key, out var prev);
+        if (hadValue && prev == allowed)
+            return;
+        _sourceAllowed[key] = allowed;
+        RaiseBoundaryChanged(new BoundaryChangeEvent
+        {
+            ChangeType = "source",
+            SourceId = key,
+            PreviousState = hadValue ? (prev ? "allowed" : "denied") : null,
+            NewState = allowed ? "allowed" : "denied",
+        });
+        _ = SaveToFileAsync();
+    }
+
+    /// <inheritdoc />
+    public void SetProjectOverride(string projectPath, IReadOnlyDictionary<string, bool>? overrides)
+    {
+        if (string.IsNullOrWhiteSpace(projectPath))
+            return;
+        var key = projectPath.Trim();
+        if (overrides == null)
+            _projectOverrides.TryRemove(key, out _);
+        else
+            _projectOverrides[key] = overrides;
+        RaiseBoundaryChanged(new BoundaryChangeEvent
+        {
+            ChangeType = "project",
+            ProjectPath = key,
+            NewState = overrides != null ? "overrides set" : "overrides cleared",
+        });
+        _ = SaveToFileAsync();
+    }
+
+    /// <inheritdoc />
+    public event Action<BoundaryChangeEvent>? BoundaryChanged;
+
+    private void RaiseBoundaryChanged(BoundaryChangeEvent evt)
+    {
+        BoundaryChanged?.Invoke(evt);
+    }
+
+    private void LoadFromFile()
+    {
+        try
+        {
+            var json = File.ReadAllText(_configPath!);
+            var model = JsonSerializer.Deserialize<AccessBoundaryConfig>(json);
+            if (model == null)
+                return;
+            _isPaused = model.IsPaused;
+            foreach (var kv in model.CategoryAllowed ?? new Dictionary<string, bool>())
+                _categoryAllowed[kv.Key] = kv.Value;
+            foreach (var kv in model.SourceAllowed ?? new Dictionary<string, bool>())
+                _sourceAllowed[kv.Key] = kv.Value;
+            foreach (var kv in model.ProjectOverrides ?? new Dictionary<string, Dictionary<string, bool>>())
+                _projectOverrides[kv.Key] = kv.Value;
+        }
+        catch
+        {
+            // Ignore load errors; start fresh
+        }
+    }
+
+    private async Task SaveToFileAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_configPath))
+            return;
+        await _saveLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var model = new AccessBoundaryConfig
+            {
+                IsPaused = _isPaused,
+                CategoryAllowed = new Dictionary<string, bool>(_categoryAllowed),
+                SourceAllowed = new Dictionary<string, bool>(_sourceAllowed),
+                ProjectOverrides = _projectOverrides.ToDictionary(kv => kv.Key, kv => new Dictionary<string, bool>(kv.Value ?? new Dictionary<string, bool>()), StringComparer.OrdinalIgnoreCase),
+            };
+            var json = JsonSerializer.Serialize(model, JsonOptions);
+            await File.WriteAllTextAsync(_configPath!, json).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Ignore save errors
+        }
+        finally
+        {
+            _saveLock.Release();
+        }
+    }
+
+    private sealed class AccessBoundaryConfig
+    {
+        public bool IsPaused { get; set; }
+        public Dictionary<string, bool>? CategoryAllowed { get; set; }
+        public Dictionary<string, bool>? SourceAllowed { get; set; }
+        public Dictionary<string, Dictionary<string, bool>>? ProjectOverrides { get; set; }
+    }
+}

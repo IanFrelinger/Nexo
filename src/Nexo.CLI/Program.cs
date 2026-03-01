@@ -19,6 +19,7 @@ using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
+using Nexo.Infrastructure;
 using Nexo.Infrastructure.Persistence;
 
 namespace Nexo.CLI;
@@ -97,6 +98,7 @@ static class Program
             analyzeCmd.Options[0] as Option<DirectoryInfo> ?? throw new InvalidOperationException(),
             jsonOpt,
             verboseOpt);
+        analyzeCmd.AddCommand(new AnalyzeBricksCommand());
 
         // nexo validate
         var validateCmd = new Command("validate", "Run architecture tests/contract checks quickly")
@@ -426,6 +428,31 @@ static class Program
             jsonOpt);
         webSearchCmd.AddCommand(webSearchTestCmd);
         backgroundAgentCmd.AddCommand(webSearchCmd);
+
+        // nexo trust - Audit and access boundary (Phase 4)
+        var trustCommand = serviceProvider.GetRequiredService<TrustCommand>();
+        var trustCmd = new Command("trust", "Trust & Information Architecture: audit log and access boundary");
+        var trustAuditCmd = new Command("audit", "Show or export data decision audit log")
+        {
+            new Option<int>("--count", () => 50, "Max entries to show"),
+            new Option<string?>("--since", "Filter by time (e.g. 1h, 30m, or ISO date)"),
+            new Option<bool>("--json", "Export as JSON (compliance format)"),
+            new Option<bool>("--md", "Export as Markdown")
+        };
+        trustAuditCmd.SetHandler(
+            async (int count, string? since, bool json, bool md) =>
+                Environment.Exit(await trustCommand.AuditAsync(count, since, json, md)),
+            trustAuditCmd.Options[0] as Option<int> ?? throw new InvalidOperationException(),
+            trustAuditCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
+            trustAuditCmd.Options[2] as Option<bool> ?? throw new InvalidOperationException(),
+            trustAuditCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException());
+        trustCmd.AddCommand(trustAuditCmd);
+        var trustBoundaryCmd = new Command("boundary", "Show access boundary status");
+        trustBoundaryCmd.SetHandler(
+            async (bool formatJson) => Environment.Exit(await trustCommand.BoundaryAsync(formatJson)),
+            jsonOpt);
+        trustCmd.AddCommand(trustBoundaryCmd);
+        root.AddCommand(trustCmd);
 
         // nexo test - Multi-platform test execution
         var testCmd = new Command("test", "Run tests across multiple platforms")
@@ -1132,6 +1159,9 @@ static class Program
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
         root.AddCommand(configCmd);
+        root.AddCommand(new ObserveCommand());
+        root.AddCommand(new AdaptCommand());
+        root.AddCommand(new ImproveCommand());
         root.AddCommand(backgroundAgentCmd);
         root.AddCommand(testCmd);
         root.AddCommand(escalateCmd);
@@ -1200,6 +1230,9 @@ static class Program
         // Persistence (in-memory by default; replace with adapter for SQLite/Postgres/etc. to avoid DB lock-in)
         services.AddNexoPersistence();
 
+        // Adaptation engine (Block 3: decomposer, fix generator, recompiler, rewirer)
+        services.AddAdaptationInfrastructure();
+
         // Background agents (CLI-only: no hosted service)
         services.AddBackgroundAgents(registerHostedService: false);
         services.AddBackgroundAgentsRAG();
@@ -1236,8 +1269,11 @@ static class Program
                 sp.GetRequiredService<ILogger<OrchestrationRuntimeModelDecorator>>());
         });
         
-        // Register IProviderFactory for agent execution
-        services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
+        // Trust & Information Architecture: when NEXO_TRUST_ENABLED=1, use SanitizingProviderFactory
+        var trustEnabled = string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
+        services.AddTrustServices(useSanitizingProviderFactory: trustEnabled);
+        if (!trustEnabled)
+            services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
 
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();
@@ -1262,6 +1298,7 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+        services.AddScoped<TrustCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
 

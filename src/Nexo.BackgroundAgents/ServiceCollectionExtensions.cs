@@ -11,6 +11,12 @@ using Nexo.BackgroundAgents.RAG;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Services;
 using Nexo.BackgroundAgents.Tools;
+using Nexo.BackgroundAgents.Trust;
+using Nexo.BackgroundAgents.WebSearch;
+using Nexo.BackgroundAgents.Observation;
+using Nexo.Core.Application.Trust.Ports;
+using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.Trust;
 using Nexo.Orchestration.Agents;
 
 namespace Nexo.BackgroundAgents;
@@ -70,6 +76,69 @@ public static class ServiceCollectionExtensions
         });
         services.TryAddSingleton<IRAGService, RAGService>();
         services.TryAddSingleton<IKnowledgeBaseIndexer, KnowledgeBaseIndexer>();
+        return services;
+    }
+
+    /// <summary>
+    /// Adds Trust &amp; Information Architecture services: data taxonomy, cloud sanitization proxy, audit log.
+    /// Call before registering IProviderFactory. When useSanitizingProviderFactory is true, IProviderFactory
+    /// will be a SanitizingProviderFactory that wraps the inner ProviderFactory.
+    /// </summary>
+    /// <param name="useSanitizingProviderFactory">If true, IProviderFactory is registered as SanitizingProviderFactory wrapping ProviderFactory.</param>
+    public static IServiceCollection AddTrustServices(this IServiceCollection services, bool useSanitizingProviderFactory = false)
+    {
+        services.TryAddSingleton<IDataTaxonomy, DataTaxonomy>();
+        services.TryAddSingleton<ISensitiveContentFilter, SensitiveContentFilter>();
+        services.AddUserKnowledgeLog(Environment.GetEnvironmentVariable("NEXO_KNOWLEDGE_LOG_PATH"));
+        services.AddAccessBoundary(Environment.GetEnvironmentVariable("NEXO_ACCESS_BOUNDARY_CONFIG"));
+        var dataAuditLog = new Nexo.BackgroundAgents.Trust.DataDecisionAuditLog();
+        services.TryAddSingleton<IDataDecisionAuditLog>(dataAuditLog);
+        services.TryAddSingleton<ISanitizationAuditLog>(dataAuditLog);
+        services.TryAddSingleton<ICloudSanitizationProxy>(sp =>
+        {
+            var filter = sp.GetService<ISensitiveContentFilter>();
+            var taxonomy = sp.GetService<IDataTaxonomy>();
+            var audit = sp.GetService<ISanitizationAuditLog>();
+            return new CloudSanitizationProxy(filter, taxonomy, audit);
+        });
+
+        if (useSanitizingProviderFactory)
+        {
+            services.AddSingleton<Nexo.Infrastructure.Execution.ProviderFactory>();
+            services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory>(sp =>
+            {
+                var inner = sp.GetRequiredService<Nexo.Infrastructure.Execution.ProviderFactory>();
+                var proxy = sp.GetRequiredService<ICloudSanitizationProxy>();
+                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>();
+                return new SanitizingProviderFactory(inner, proxy, logger);
+            });
+        }
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the observation pipeline: event sources, pattern detection, pattern store.
+    /// Registers ObservationPipelineService as a hosted service when registerHostedService is true.
+    /// </summary>
+    /// <param name="configure">Optional configuration of pipeline options.</param>
+    /// <param name="registerHostedService">If true, registers ObservationPipelineService (default true).</param>
+    public static IServiceCollection AddObservationPipeline(this IServiceCollection services, Action<ObservationPipelineOptions>? configure = null, bool registerHostedService = true)
+    {
+        services.Configure<ObservationPipelineOptions>(opts =>
+        {
+            configure?.Invoke(opts);
+        });
+        services.AddSingleton<Nexo.Core.Application.Observation.Ports.IPatternStore>(sp =>
+        {
+            var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ObservationPipelineOptions>>().Value;
+            var repoRoot = opts.RepoRoot ?? Directory.GetCurrentDirectory();
+            var storePath = Path.Combine(repoRoot, opts.StorePath);
+            return new LiteDbPatternStore(storePath);
+        });
+        services.AddSingleton<Nexo.Core.Application.Observation.Ports.IContextAssembler, ContextAssembler>();
+        if (registerHostedService)
+            services.AddHostedService<ObservationPipelineService>();
         return services;
     }
 }

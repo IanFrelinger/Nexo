@@ -9,18 +9,18 @@
       <CopyScriptDir>$(MSBuildThisFileDirectory)scripts</CopyScriptDir>
       <CopyScriptProj>$(CopyScriptDir)\copy-assemblies.csproj</CopyScriptProj>
       <CopyScriptProj Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/copy-assemblies.csproj</CopyScriptProj>
-      <CopyScriptExe>$(CopyScriptDir)\bin\Debug\net8.0\copy-assemblies.dll</CopyScriptExe>
-      <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/net8.0/copy-assemblies.dll</CopyScriptExe>
+      <CopyScriptExe>$(CopyScriptDir)\bin\Debug\$(TargetFramework)\copy-assemblies.dll</CopyScriptExe>
+      <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/$(TargetFramework)/copy-assemblies.dll</CopyScriptExe>
     </PropertyGroup>
     
-    <!-- Build the C# assembly copying tool if needed (skip in Docker/CI to avoid targeting pack issues) -->
+    <!-- Build the C# assembly copying tool (net9.0, runs in container on SDK 9 images) -->
     <MSBuild Projects="$(CopyScriptProj)" 
              Targets="Build" 
-             Properties="Configuration=Debug"
+             Properties="Configuration=Debug;TargetFramework=$(TargetFramework)"
              Condition="Exists('$(CopyScriptProj)') AND '$(SkipCopyAssemblies)' != 'true'"
              ContinueOnError="false" />
     
-    <!-- Use C# program to automatically copy all assemblies from deps.json -->
+    <!-- Use C# program to copy all assemblies from deps.json (including Avalonia, Castle.Core, etc.) -->
     <Exec Command="dotnet &quot;$(CopyScriptExe)&quot; &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
           Condition="Exists('$(CopyScriptExe)') AND Exists('$(DepsJsonPath)') AND '$(SkipCopyAssemblies)' != 'true'"
           ContinueOnError="true" />

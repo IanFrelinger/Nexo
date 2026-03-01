@@ -1,4 +1,5 @@
 using Nexo.BackgroundAgents.DataSensitivity;
+using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.BackgroundAgents.RAG;
 
@@ -27,6 +28,7 @@ public sealed class KnowledgeBaseIndexer : IKnowledgeBaseIndexer
 {
     private readonly IRAGService _ragService;
     private readonly IDataSensitivityRegistry? _sensitivityRegistry;
+    private readonly IObservationGate? _observationGate;
     private static readonly string[] DefaultTextExtensions = { ".txt", ".md", ".json", ".xml", ".csv", ".log" };
 
     /// <summary>
@@ -39,14 +41,17 @@ public sealed class KnowledgeBaseIndexer : IKnowledgeBaseIndexer
     /// </summary>
     /// <param name="ragService">RAG service for indexing.</param>
     /// <param name="sensitivityRegistry">Optional registry to validate sensitivity level names.</param>
+    /// <param name="observationGate">Optional gate; when present, skips files when observation is disallowed.</param>
     /// <param name="textExtensions">Optional list of file extensions to index (default: .txt, .md, etc.).</param>
     public KnowledgeBaseIndexer(
         IRAGService ragService,
         IDataSensitivityRegistry? sensitivityRegistry = null,
+        IObservationGate? observationGate = null,
         IEnumerable<string>? textExtensions = null)
     {
         _ragService = ragService ?? throw new ArgumentNullException(nameof(ragService));
         _sensitivityRegistry = sensitivityRegistry;
+        _observationGate = observationGate;
         TextExtensions = textExtensions?.ToList() ?? DefaultTextExtensions.ToList();
     }
 
@@ -70,6 +75,14 @@ public sealed class KnowledgeBaseIndexer : IKnowledgeBaseIndexer
         foreach (var file in files)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            if (_observationGate != null)
+            {
+                var projectPath = Path.GetDirectoryName(file);
+                if (!_observationGate.ShouldObserve("file-contents", "knowledge-indexer", projectPath))
+                    continue;
+            }
+
             try
             {
                 var text = await File.ReadAllTextAsync(file, cancellationToken).ConfigureAwait(false);

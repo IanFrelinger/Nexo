@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "mappings": {
+    "editor-events": "Public",
+    "file-paths": "TopSecret",
+    "file-contents": "TopSecret",
+    "git-metadata": "Public",
+    "inferred-preferences": null,
+    "api-keys": "Secret",
+    "tokens": "Secret",
+    "terminal-output": "TopSecret",
+    "process-names": "Public",
+    "behavioral-patterns": "TopSecret",
+    "user-declared-context": null
+  }
+}
