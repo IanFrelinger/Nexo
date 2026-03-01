@@ -43,7 +43,7 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(CachedAnalysisServiceAdapterTests),
+                Name = nameof(CachedAnalysisServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All CachedAnalysisServiceAdapter tests passed"
@@ -53,7 +53,7 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(CachedAnalysisServiceAdapterTests),
+                Name = nameof(CachedAnalysisServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -64,7 +64,7 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(CachedAnalysisServiceAdapterTests),
+                Name = nameof(CachedAnalysisServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

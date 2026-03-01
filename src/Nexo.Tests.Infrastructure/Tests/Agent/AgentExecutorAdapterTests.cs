@@ -4,7 +4,6 @@ using Moq;
 using Nexo.Abstractions;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Domain.Exceptions;
 using Nexo.Infrastructure.Agent.Adapters;
 using Nexo.Tests.Application.Helpers;
@@ -30,7 +29,7 @@ public class AgentExecutorAdapterTests : UnitTestBase
         return Task.CompletedTask;
     }
 
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -42,9 +41,9 @@ public class AgentExecutorAdapterTests : UnitTestBase
             await TestGeneralException();
             await TestCancellation();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AgentExecutorAdapterTests),
+                Name = nameof(AgentExecutorAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All AgentExecutorAdapter tests passed"
@@ -52,9 +51,9 @@ public class AgentExecutorAdapterTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AgentExecutorAdapterTests),
+                Name = nameof(AgentExecutorAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -63,9 +62,9 @@ public class AgentExecutorAdapterTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AgentExecutorAdapterTests),
+                Name = nameof(AgentExecutorAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

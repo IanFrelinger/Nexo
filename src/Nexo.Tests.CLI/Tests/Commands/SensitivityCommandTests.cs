@@ -18,7 +18,7 @@ public class SensitivityCommandTests : UnitTestBase
             await TestShowPublic();
             return new TestResult
             {
-                TestName = nameof(SensitivityCommandTests),
+                Name = nameof(SensitivityCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All SensitivityCommand tests passed"
@@ -28,7 +28,7 @@ public class SensitivityCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(SensitivityCommandTests),
+                Name = nameof(SensitivityCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -39,7 +39,7 @@ public class SensitivityCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(SensitivityCommandTests),
+                Name = nameof(SensitivityCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

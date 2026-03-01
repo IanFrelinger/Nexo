@@ -45,7 +45,7 @@ public class DomainExceptionsTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(DomainExceptionsTests),
+                Name = nameof(DomainExceptionsTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All domain exception tests passed"
@@ -55,7 +55,7 @@ public class DomainExceptionsTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(DomainExceptionsTests),
+                Name = nameof(DomainExceptionsTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = ex.Message,

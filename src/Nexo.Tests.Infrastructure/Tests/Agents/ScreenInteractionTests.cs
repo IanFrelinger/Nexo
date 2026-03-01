@@ -39,7 +39,7 @@ public class ScreenInteractionTests : UnitTestBase
             await TestDesktopAdapter_AcceptsClickWithCoordinates_WithoutThrowing();
             return new TestResult
             {
-                TestName = nameof(ScreenInteractionTests),
+                Name = nameof(ScreenInteractionTests),
                 Category = "Agents",
                 Passed = true,
                 Message = "All screen interaction tests passed"
@@ -49,7 +49,7 @@ public class ScreenInteractionTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ScreenInteractionTests),
+                Name = nameof(ScreenInteractionTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -60,7 +60,7 @@ public class ScreenInteractionTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ScreenInteractionTests),
+                Name = nameof(ScreenInteractionTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

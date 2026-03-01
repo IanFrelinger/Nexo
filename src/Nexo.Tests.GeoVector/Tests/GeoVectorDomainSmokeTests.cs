@@ -91,7 +91,7 @@ public sealed class GeoVectorDomainSmokeTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(GeoVectorDomainSmokeTests),
+                Name = nameof(GeoVectorDomainSmokeTests),
                 Category = "Tests",
                 Passed = true,
                 Message = "GeoVector domain smoke tests passed"
@@ -101,7 +101,7 @@ public sealed class GeoVectorDomainSmokeTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(GeoVectorDomainSmokeTests),
+                Name = nameof(GeoVectorDomainSmokeTests),
                 Category = "Tests",
                 Passed = false,
                 ErrorMessage = ex.Message,

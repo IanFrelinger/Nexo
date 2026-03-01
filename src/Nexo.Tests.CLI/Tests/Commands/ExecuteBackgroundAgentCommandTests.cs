@@ -20,7 +20,7 @@ public class ExecuteBackgroundAgentCommandTests : UnitTestBase
             await TestExecuteOnceSucceeds();
             return new TestResult
             {
-                TestName = nameof(ExecuteBackgroundAgentCommandTests),
+                Name = nameof(ExecuteBackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All ExecuteBackgroundAgentCommand tests passed"
@@ -30,7 +30,7 @@ public class ExecuteBackgroundAgentCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExecuteBackgroundAgentCommandTests),
+                Name = nameof(ExecuteBackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -41,7 +41,7 @@ public class ExecuteBackgroundAgentCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExecuteBackgroundAgentCommandTests),
+                Name = nameof(ExecuteBackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

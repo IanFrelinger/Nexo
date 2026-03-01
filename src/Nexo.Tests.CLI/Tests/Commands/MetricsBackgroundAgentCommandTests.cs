@@ -18,7 +18,7 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
             await TestMetricsSucceeds();
             return new TestResult
             {
-                TestName = nameof(MetricsBackgroundAgentCommandTests),
+                Name = nameof(MetricsBackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All MetricsBackgroundAgentCommand tests passed"
@@ -28,7 +28,7 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(MetricsBackgroundAgentCommandTests),
+                Name = nameof(MetricsBackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -39,7 +39,7 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(MetricsBackgroundAgentCommandTests),
+                Name = nameof(MetricsBackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

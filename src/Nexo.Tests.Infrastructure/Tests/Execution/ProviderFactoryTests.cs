@@ -30,7 +30,7 @@ public class ProviderFactoryTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(ProviderFactoryTests),
+                Name = nameof(ProviderFactoryTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All ProviderFactory tests passed"
@@ -40,7 +40,7 @@ public class ProviderFactoryTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ProviderFactoryTests),
+                Name = nameof(ProviderFactoryTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -51,7 +51,7 @@ public class ProviderFactoryTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ProviderFactoryTests),
+                Name = nameof(ProviderFactoryTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

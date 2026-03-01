@@ -15,7 +15,7 @@ public sealed class GameAdapterMockPluginTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GameAdapterMockPluginTests),
+                Name = nameof(GameAdapterMockPluginTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "GameAdapter mock plugin test passed"
@@ -25,7 +25,7 @@ public sealed class GameAdapterMockPluginTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GameAdapterMockPluginTests),
+                Name = nameof(GameAdapterMockPluginTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -36,7 +36,7 @@ public sealed class GameAdapterMockPluginTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GameAdapterMockPluginTests),
+                Name = nameof(GameAdapterMockPluginTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

@@ -14,7 +14,7 @@ public sealed class GeoTerrainMapboxRasterTileDownloaderTests : UnitTestBase
             await TestBuildsExpectedUrlAndReturnsBytesAsync(cancellationToken);
             return new TestResult
             {
-                TestName = nameof(GeoTerrainMapboxRasterTileDownloaderTests),
+                Name = nameof(GeoTerrainMapboxRasterTileDownloaderTests),
                 Category = "Adapters",
                 Passed = true,
                 Message = "Mapbox raster tile downloader tests passed"
@@ -24,7 +24,7 @@ public sealed class GeoTerrainMapboxRasterTileDownloaderTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoTerrainMapboxRasterTileDownloaderTests),
+                Name = nameof(GeoTerrainMapboxRasterTileDownloaderTests),
                 Category = "Adapters",
                 Passed = false,
                 ErrorMessage = ex.Message,

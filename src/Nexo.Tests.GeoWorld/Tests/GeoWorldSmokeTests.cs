@@ -23,7 +23,7 @@ public sealed class GeoWorldSmokeTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GeoWorldSmokeTests),
+                Name = nameof(GeoWorldSmokeTests),
                 Category = "GeoWorld",
                 Passed = true,
                 Message = "GeoWorld smoke tests passed"
@@ -33,7 +33,7 @@ public sealed class GeoWorldSmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoWorldSmokeTests),
+                Name = nameof(GeoWorldSmokeTests),
                 Category = "GeoWorld",
                 Passed = false,
                 ErrorMessage = ex.Message,

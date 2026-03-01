@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
-using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
@@ -15,7 +14,7 @@ namespace Nexo.Tests.Application.Tests;
 /// </summary>
 public class ValidationHandlerTests : UnitTestBase
 {
-    public override async Task<Nexo.Core.Application.Testing.Models.TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<Nexo.Core.Application.Common.Models.TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -47,9 +46,9 @@ public class ValidationHandlerTests : UnitTestBase
             AssertEqual(10, result.TestsRun);
             AssertEqual(10, result.TestsPassed);
 
-            return new Nexo.Core.Application.Testing.Models.TestResult
+            return new Nexo.Core.Application.Common.Models.TestResult
             {
-                TestName = nameof(ValidationHandlerTests),
+                Name = nameof(ValidationHandlerTests),
                 Category = "Application",
                 Passed = true,
                 Message = "Validation handler tests passed"
@@ -57,9 +56,9 @@ public class ValidationHandlerTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new Nexo.Core.Application.Testing.Models.TestResult
+            return new Nexo.Core.Application.Common.Models.TestResult
             {
-                TestName = nameof(ValidationHandlerTests),
+                Name = nameof(ValidationHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

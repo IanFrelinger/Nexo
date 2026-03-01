@@ -22,7 +22,7 @@ public class ExecutionStateManagerTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(ExecutionStateManagerTests),
+                Name = nameof(ExecutionStateManagerTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All ExecutionStateManager tests passed"
@@ -32,7 +32,7 @@ public class ExecutionStateManagerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExecutionStateManagerTests),
+                Name = nameof(ExecutionStateManagerTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -43,7 +43,7 @@ public class ExecutionStateManagerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExecutionStateManagerTests),
+                Name = nameof(ExecutionStateManagerTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

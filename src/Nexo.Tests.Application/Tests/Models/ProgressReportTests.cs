@@ -18,7 +18,7 @@ public class ProgressReportTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(ProgressReportTests),
+                Name = nameof(ProgressReportTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All ProgressReport model tests passed"
@@ -28,7 +28,7 @@ public class ProgressReportTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(ProgressReportTests),
+                Name = nameof(ProgressReportTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

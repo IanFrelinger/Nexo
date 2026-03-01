@@ -20,7 +20,7 @@ public class ClusterRegistrySmokeTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(ClusterRegistrySmokeTests),
+                Name = nameof(ClusterRegistrySmokeTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All ClusterRegistry smoke tests passed"
@@ -30,7 +30,7 @@ public class ClusterRegistrySmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ClusterRegistrySmokeTests),
+                Name = nameof(ClusterRegistrySmokeTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -41,7 +41,7 @@ public class ClusterRegistrySmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ClusterRegistrySmokeTests),
+                Name = nameof(ClusterRegistrySmokeTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

@@ -7,6 +7,7 @@ using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
 using Nexo.Core.Application.Observation.Ports;
+using Nexo.Core.Application.Paths;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
@@ -39,16 +40,14 @@ public sealed class ImproveCommand : Command
 
     private static async Task ExecuteAsync(string? path, bool dryRun)
     {
-        var repoRoot = FindRepoRoot();
+        var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = Path.Combine(repoRoot, "nexo-patterns.db");
-        var targetPath = path ?? FindBlock1ObservationPath();
+        var targetPath = path ?? RepoPathResolver.FindBlock1ObservationPath(repoRoot);
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
-            .AddSingleton<Nexo.Core.Application.Observation.Ports.IPatternStore>(_ => new LiteDbPatternStore(storePath))
-            .AddSingleton<IContextAssembler, Nexo.Infrastructure.Observation.ContextAssembler>()
             .AddCodeAnalyzers()
-            .AddAdaptationInfrastructure()
+            .AddAdaptationInfrastructure(storePath)
             .BuildServiceProvider();
 
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger<ImproveCommand>();
@@ -160,36 +159,5 @@ public sealed class ImproveCommand : Command
         if (brickAdapted > 0)
             Console.WriteLine($"Applied {brickAdapted} brick adaptation(s).");
         Environment.ExitCode = analysisResult.Passed ? 0 : 1;
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
-    }
-
-    private static string FindBlock1ObservationPath()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-            {
-                var infraObs = Path.Combine(dir.FullName, "src", "Nexo.Infrastructure", "Observation");
-                var bgObs = Path.Combine(dir.FullName, "src", "Nexo.BackgroundAgents", "Observation");
-                if (Directory.Exists(infraObs))
-                    return infraObs;
-                if (Directory.Exists(bgObs))
-                    return bgObs;
-            }
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
     }
 }

@@ -25,7 +25,7 @@ public class ErrorCodesTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(ErrorCodesTests),
+                Name = nameof(ErrorCodesTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All error code tests passed"
@@ -35,7 +35,7 @@ public class ErrorCodesTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(ErrorCodesTests),
+                Name = nameof(ErrorCodesTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = ex.Message,

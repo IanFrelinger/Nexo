@@ -97,55 +97,14 @@ public sealed class LiteDbUserKnowledgeLogStore : IUserKnowledgeLogStore
     public async Task<string> ExportToJsonAsync(int maxCount = 1000, CancellationToken cancellationToken = default)
     {
         var entries = await GetAsync(null, maxCount, cancellationToken).ConfigureAwait(false);
-        var export = new
-        {
-            exportedAt = DateTimeOffset.UtcNow,
-            count = entries.Count,
-            entries = entries.Select(e => new
-            {
-                e.Id,
-                e.DataType,
-                e.Content,
-                e.SourceObservationIds,
-                e.Version,
-                e.CreatedAt,
-                e.UpdatedAt,
-            }).ToList(),
-        };
-        return System.Text.Json.JsonSerializer.Serialize(export, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        return UserKnowledgeLogExportHelper.ToJson(entries);
     }
 
     /// <inheritdoc />
     public async Task<string> ExportToMarkdownAsync(int maxCount = 1000, CancellationToken cancellationToken = default)
     {
         var entries = await GetAsync(null, maxCount, cancellationToken).ConfigureAwait(false);
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine("# Nexo User Knowledge Log");
-        sb.AppendLine();
-        sb.AppendLine($"Exported: {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        sb.AppendLine($"Entries: {entries.Count}");
-        sb.AppendLine();
-
-        foreach (var e in entries)
-        {
-            sb.AppendLine($"## {e.Id}");
-            sb.AppendLine();
-            sb.AppendLine($"- **DataType:** {e.DataType}");
-            sb.AppendLine($"- **Version:** {e.Version}");
-            sb.AppendLine($"- **Created:** {e.CreatedAt:yyyy-MM-dd HH:mm:ss} UTC");
-            sb.AppendLine($"- **Updated:** {e.UpdatedAt:yyyy-MM-dd HH:mm:ss} UTC");
-            if (e.SourceObservationIds is { Count: > 0 })
-            {
-                sb.AppendLine("- **Provenance:**");
-                foreach (var sid in e.SourceObservationIds)
-                    sb.AppendLine($"  - {sid}");
-            }
-            sb.AppendLine();
-            sb.AppendLine(e.Content);
-            sb.AppendLine();
-        }
-
-        return sb.ToString();
+        return UserKnowledgeLogExportHelper.ToMarkdown(entries);
     }
 
     private static void EnsureIndex(ILiteCollection<KnowledgeLogDoc> col)

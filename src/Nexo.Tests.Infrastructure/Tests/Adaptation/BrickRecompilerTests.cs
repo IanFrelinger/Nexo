@@ -2,11 +2,10 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Adaptation.Models;
 using Nexo.Core.Application.Adaptation.Ports;
-using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Infrastructure;
-using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.Adaptation;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
@@ -20,9 +19,7 @@ public sealed class BrickRecompilerTests
         try
         {
             var services = new ServiceCollection()
-                .AddSingleton<IPatternStore>(_ => new LiteDbPatternStore(dbPath))
-                .AddSingleton<IContextAssembler, ContextAssembler>()
-                .AddAdaptationInfrastructure()
+                .AddAdaptationInfrastructure(dbPath)
                 .BuildServiceProvider();
 
             var recompiler = services.GetRequiredService<IBrickRecompiler>();

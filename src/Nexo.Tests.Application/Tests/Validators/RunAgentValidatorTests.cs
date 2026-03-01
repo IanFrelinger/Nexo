@@ -1,5 +1,6 @@
 using FluentValidation;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -59,7 +60,7 @@ public class RunAgentValidatorTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(RunAgentValidatorTests),
+                Name = nameof(RunAgentValidatorTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All RunAgentValidator tests passed"
@@ -69,7 +70,7 @@ public class RunAgentValidatorTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(RunAgentValidatorTests),
+                Name = nameof(RunAgentValidatorTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

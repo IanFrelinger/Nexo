@@ -43,7 +43,7 @@ public class Ios80Test : MultiPlatformTestBase
         {
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = false,
                 Message = "iOS testing requires macOS (cannot run in Docker)",
@@ -57,7 +57,7 @@ public class Ios80Test : MultiPlatformTestBase
         {
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = false,
                 Message = "Xcode is not installed (required for iOS testing)",
@@ -73,7 +73,7 @@ public class Ios80Test : MultiPlatformTestBase
             {
                 return new TestResult
                 {
-                    TestName = TestName,
+                    Name = TestName,
                     Category = Category,
                     Passed = false,
                     Message = $"Test project not found: {testProject}",
@@ -101,7 +101,7 @@ public class Ios80Test : MultiPlatformTestBase
 
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = result.ExitCode == 0 && (total == 0 || failed == 0),
                 Message = $"iOS (macOS native): {total} total, {passed} passed, {failed} failed",
@@ -122,7 +122,7 @@ public class Ios80Test : MultiPlatformTestBase
         {
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = false,
                 Message = $"Error running iOS tests: {ex.Message}",

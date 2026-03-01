@@ -3,6 +3,7 @@ using Moq;
 using Nexo.Core.Application.Configuration.Models;
 using Nexo.Core.Application.Configuration.Ports;
 using Nexo.Core.Application.Configuration.UseCases.GetConfiguration;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -20,7 +21,7 @@ public class GetConfigurationHandlerTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GetConfigurationHandlerTests),
+                Name = nameof(GetConfigurationHandlerTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All GetConfigurationHandler tests passed"
@@ -30,7 +31,7 @@ public class GetConfigurationHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GetConfigurationHandlerTests),
+                Name = nameof(GetConfigurationHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -41,7 +42,7 @@ public class GetConfigurationHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GetConfigurationHandlerTests),
+                Name = nameof(GetConfigurationHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

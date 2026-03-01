@@ -22,7 +22,7 @@ public sealed class MapboxVectorTileProviderTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(MapboxVectorTileProviderTests),
+                Name = nameof(MapboxVectorTileProviderTests),
                 Category = "Adapters",
                 Passed = true,
                 Message = "Mapbox vector tile provider tests passed"
@@ -32,7 +32,7 @@ public sealed class MapboxVectorTileProviderTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(MapboxVectorTileProviderTests),
+                Name = nameof(MapboxVectorTileProviderTests),
                 Category = "Adapters",
                 Passed = false,
                 ErrorMessage = ex.Message,

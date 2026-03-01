@@ -16,7 +16,7 @@ public sealed class GeoTerrainTerrainRgbProviderTests : UnitTestBase
             await TestDecodes2x2TileAsync(cancellationToken);
             return new TestResult
             {
-                TestName = nameof(GeoTerrainTerrainRgbProviderTests),
+                Name = nameof(GeoTerrainTerrainRgbProviderTests),
                 Category = "Adapters",
                 Passed = true,
                 Message = "Terrain-RGB provider tests passed"
@@ -26,7 +26,7 @@ public sealed class GeoTerrainTerrainRgbProviderTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoTerrainTerrainRgbProviderTests),
+                Name = nameof(GeoTerrainTerrainRgbProviderTests),
                 Category = "Adapters",
                 Passed = false,
                 ErrorMessage = ex.Message,

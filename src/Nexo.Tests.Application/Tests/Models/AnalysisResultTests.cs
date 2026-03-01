@@ -1,4 +1,5 @@
 using Nexo.Core.Application.Analysis.Models;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 using Nexo.Core.Domain.Values;
@@ -20,7 +21,7 @@ public class AnalysisResultTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AnalysisResultTests),
+                Name = nameof(AnalysisResultTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All AnalysisResult model tests passed"
@@ -30,7 +31,7 @@ public class AnalysisResultTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AnalysisResultTests),
+                Name = nameof(AnalysisResultTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

@@ -2,17 +2,15 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Infrastructure.Validation.Adapters;
 using Nexo.Infrastructure.Validation.Parsers;
-using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
 public class ValidationServiceAdapterTests : UnitTestBase
 {
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -21,9 +19,9 @@ public class ValidationServiceAdapterTests : UnitTestBase
             await TestCancellation();
             await TestExceptionHandling();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ValidationServiceAdapterTests),
+                Name = nameof(ValidationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All ValidationServiceAdapter tests passed"
@@ -31,9 +29,9 @@ public class ValidationServiceAdapterTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ValidationServiceAdapterTests),
+                Name = nameof(ValidationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -42,9 +40,9 @@ public class ValidationServiceAdapterTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ValidationServiceAdapterTests),
+                Name = nameof(ValidationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

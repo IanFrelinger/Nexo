@@ -9,6 +9,8 @@ using Nexo.CLI.Commands.World;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Infrastructure.Execution;
+using Nexo.Tests.Application.Extensions;
+using Nexo.Tests.Application.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.GeospatialE2E.Tests;
@@ -20,23 +22,18 @@ namespace Nexo.Tests.GeospatialE2E.Tests;
 public class GeospatialE2ESmokeTests : IDisposable
 {
     private readonly string _testOutputDir;
+    private readonly IDisposable _tempDirCleanup;
     private readonly IJobRepository _jobRepository;
     private readonly ServiceProvider _serviceProvider;
 
     public GeospatialE2ESmokeTests()
     {
-        _testOutputDir = Path.Combine(Path.GetTempPath(), $"nexo-e2e-tests-{Guid.NewGuid()}");
-        Directory.CreateDirectory(_testOutputDir);
+        (_testOutputDir, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-e2e-tests");
 
         // Setup service provider for testing
         var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddConsole());
-        services.AddHttpClient();
-        services.AddHttpClient("geoterrain.srtm");
-        services.AddHttpClient("geovector.mapbox");
-        services.AddScoped<IProviderFactory, ProviderFactory>();
-        services.AddScoped<ILoopKernel, Nexo.Core.Application.Common.Services.SequentialLoopKernel>();
-        
+        services.AddGeospatialTestServices();
+
         // Register command implementations and their interfaces
         services.AddScoped<GeoTerrainCommand>();
         services.AddScoped<IGeoTerrainCommand>(sp => sp.GetRequiredService<GeoTerrainCommand>());
@@ -629,12 +626,9 @@ public class GeospatialE2ESmokeTests : IDisposable
         {
             // Wait a bit for async operations to complete
             Task.Delay(1000).Wait();
-            
+
             _serviceProvider?.Dispose();
-            if (Directory.Exists(_testOutputDir))
-            {
-                Directory.Delete(_testOutputDir, recursive: true);
-            }
+            _tempDirCleanup?.Dispose();
         }
         catch
         {

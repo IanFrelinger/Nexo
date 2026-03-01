@@ -7,13 +7,12 @@ using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Agent.UseCases.ListAgents;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
 public class ListAgentsCommandTests : UnitTestBase
 {
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -23,9 +22,9 @@ public class ListAgentsCommandTests : UnitTestBase
             await TestVerboseOutput();
             await TestGeneralException();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ListAgentsCommandTests),
+                Name = nameof(ListAgentsCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All ListAgentsCommand tests passed"
@@ -33,9 +32,9 @@ public class ListAgentsCommandTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ListAgentsCommandTests),
+                Name = nameof(ListAgentsCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -44,9 +43,9 @@ public class ListAgentsCommandTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ListAgentsCommandTests),
+                Name = nameof(ListAgentsCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

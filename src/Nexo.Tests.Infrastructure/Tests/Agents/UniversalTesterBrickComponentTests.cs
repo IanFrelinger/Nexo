@@ -55,7 +55,7 @@ public class UniversalTesterBrickComponentTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(UniversalTesterBrickComponentTests),
+                Name = nameof(UniversalTesterBrickComponentTests),
                 Category = "Agents",
                 Passed = true,
                 Message = "All Universal Tester brick component tests passed"
@@ -65,7 +65,7 @@ public class UniversalTesterBrickComponentTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(UniversalTesterBrickComponentTests),
+                Name = nameof(UniversalTesterBrickComponentTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -76,7 +76,7 @@ public class UniversalTesterBrickComponentTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(UniversalTesterBrickComponentTests),
+                Name = nameof(UniversalTesterBrickComponentTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

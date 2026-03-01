@@ -34,7 +34,7 @@ public class UnderstandingBrickTests : UnitTestBase
             await TestVisualModel_WhenScreenshotProvided_VisionResponseParsedIntoCoordinateActions();
             return new TestResult
             {
-                TestName = nameof(UnderstandingBrickTests),
+                Name = nameof(UnderstandingBrickTests),
                 Category = "Agents",
                 Passed = true,
                 Message = "All UnderstandingBrick tests passed"
@@ -44,7 +44,7 @@ public class UnderstandingBrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(UnderstandingBrickTests),
+                Name = nameof(UnderstandingBrickTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -55,7 +55,7 @@ public class UnderstandingBrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(UnderstandingBrickTests),
+                Name = nameof(UnderstandingBrickTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

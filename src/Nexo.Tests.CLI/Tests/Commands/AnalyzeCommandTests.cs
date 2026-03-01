@@ -8,7 +8,6 @@ using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Domain.Exceptions;
 using Nexo.Core.Domain.Values;
 using Nexo.Tests.Application.Helpers;
@@ -34,7 +33,7 @@ public class AnalyzeCommandTests : UnitTestBase
         return Task.CompletedTask;
     }
 
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -46,9 +45,9 @@ public class AnalyzeCommandTests : UnitTestBase
             await TestUnauthorizedAccessException();
             await TestGeneralException();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AnalyzeCommandTests),
+                Name = nameof(AnalyzeCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All AnalyzeCommand tests passed"
@@ -56,9 +55,9 @@ public class AnalyzeCommandTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AnalyzeCommandTests),
+                Name = nameof(AnalyzeCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -67,9 +66,9 @@ public class AnalyzeCommandTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AnalyzeCommandTests),
+                Name = nameof(AnalyzeCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

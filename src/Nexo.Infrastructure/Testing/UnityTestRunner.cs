@@ -134,7 +134,7 @@ public class UnityTestRunner
             {
                 return new TestResult
                 {
-                    TestName = "DomainTests_UnityCompatibility",
+                    Name = "DomainTests_UnityCompatibility",
                     Category = "Unity",
                     Passed = false,
                     Message = "Domain test project not found",
@@ -160,7 +160,7 @@ public class UnityTestRunner
 
             return new TestResult
             {
-                TestName = "DomainTests_UnityCompatibility",
+                Name = "DomainTests_UnityCompatibility",
                 Category = "Unity",
                 Passed = passed,
                 Message = passed ? "Domain tests passed (Unity-compatible)" : "Domain tests failed",
@@ -172,7 +172,7 @@ public class UnityTestRunner
         {
             return new TestResult
             {
-                TestName = "DomainTests_UnityCompatibility",
+                Name = "DomainTests_UnityCompatibility",
                 Category = "Unity",
                 Passed = false,
                 Message = $"Error running domain tests: {ex.Message}",
@@ -193,7 +193,7 @@ public class UnityTestRunner
             {
                 return new TestResult
                 {
-                    TestName = "CoreDomain_Build",
+                    Name = "CoreDomain_Build",
                     Category = "Unity",
                     Passed = false,
                     Message = "Core.Domain project not found",
@@ -218,7 +218,7 @@ public class UnityTestRunner
 
             return new TestResult
             {
-                TestName = "CoreDomain_Build",
+                Name = "CoreDomain_Build",
                 Category = "Unity",
                 Passed = passed,
                 Message = passed ? "Core.Domain builds for .NET Standard 2.0 (Unity compatible)" : "Core.Domain build failed",
@@ -230,7 +230,7 @@ public class UnityTestRunner
         {
             return new TestResult
             {
-                TestName = "CoreDomain_Build",
+                Name = "CoreDomain_Build",
                 Category = "Unity",
                 Passed = false,
                 Message = $"Error building Core.Domain: {ex.Message}",
@@ -251,7 +251,7 @@ public class UnityTestRunner
             {
                 return new TestResult
                 {
-                    TestName = "UnityUI_Build",
+                    Name = "UnityUI_Build",
                     Category = "Unity",
                     Passed = false,
                     Message = "Unity UI project not found",
@@ -276,7 +276,7 @@ public class UnityTestRunner
 
             return new TestResult
             {
-                TestName = "UnityUI_Build",
+                Name = "UnityUI_Build",
                 Category = "Unity",
                 Passed = passed,
                 Message = passed ? "Unity UI components build successfully" : "Unity UI build failed",
@@ -288,7 +288,7 @@ public class UnityTestRunner
         {
             return new TestResult
             {
-                TestName = "UnityUI_Build",
+                Name = "UnityUI_Build",
                 Category = "Unity",
                 Passed = false,
                 Message = $"Error building Unity UI: {ex.Message}",
@@ -343,7 +343,7 @@ public class UnityTestRunner
 
             return new TestResult
             {
-                TestName = "UnityTestRunner_Execution",
+                Name = "UnityTestRunner_Execution",
                 Category = "Unity",
                 Passed = passed,
                 Message = passed ? "Unity Test Runner completed successfully" : "Unity Test Runner failed or produced no results",
@@ -355,7 +355,7 @@ public class UnityTestRunner
         {
             return new TestResult
             {
-                TestName = "UnityTestRunner_Execution",
+                Name = "UnityTestRunner_Execution",
                 Category = "Unity",
                 Passed = false,
                 Message = $"Error running Unity Test Runner: {ex.Message}",

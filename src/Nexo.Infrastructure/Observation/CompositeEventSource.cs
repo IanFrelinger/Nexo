@@ -39,11 +39,11 @@ public sealed class CompositeEventSource : IObservableEventSource
             }
             catch (OperationCanceledException)
             {
-                System.Diagnostics.Trace.WriteLine("Caught");
+                // Expected when subscription is cancelled
             }
             catch (Exception)
             {
-                System.Diagnostics.Trace.WriteLine("Caught");
+                // Swallow to avoid breaking the composite stream
             }
         }).ToList();
         _ = Task.WhenAll(tasks).ContinueWith(_ => writer.Complete(), CancellationToken.None);

@@ -20,7 +20,7 @@ public class AgentCardTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(AgentCardTests),
+                Name = nameof(AgentCardTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All agent card tests passed"
@@ -30,7 +30,7 @@ public class AgentCardTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AgentCardTests),
+                Name = nameof(AgentCardTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -41,7 +41,7 @@ public class AgentCardTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AgentCardTests),
+                Name = nameof(AgentCardTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

@@ -24,7 +24,7 @@ public class UniversalTesterAgentSmokeTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(UniversalTesterAgentSmokeTests),
+                Name = nameof(UniversalTesterAgentSmokeTests),
                 Category = "Agents",
                 Passed = true,
                 Message = "All Universal Testing Agent smoke tests passed"
@@ -34,7 +34,7 @@ public class UniversalTesterAgentSmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(UniversalTesterAgentSmokeTests),
+                Name = nameof(UniversalTesterAgentSmokeTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -45,7 +45,7 @@ public class UniversalTesterAgentSmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(UniversalTesterAgentSmokeTests),
+                Name = nameof(UniversalTesterAgentSmokeTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

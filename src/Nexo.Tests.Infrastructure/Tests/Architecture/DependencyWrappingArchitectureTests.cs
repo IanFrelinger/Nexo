@@ -25,7 +25,7 @@ public sealed class DependencyWrappingArchitectureTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(DependencyWrappingArchitectureTests),
+                Name = nameof(DependencyWrappingArchitectureTests),
                 Category = "Architecture",
                 Passed = true,
                 Message = "Raw platform dependencies are confined to platform-specific namespaces"
@@ -35,7 +35,7 @@ public sealed class DependencyWrappingArchitectureTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(DependencyWrappingArchitectureTests),
+                Name = nameof(DependencyWrappingArchitectureTests),
                 Category = "Architecture",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -46,7 +46,7 @@ public sealed class DependencyWrappingArchitectureTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(DependencyWrappingArchitectureTests),
+                Name = nameof(DependencyWrappingArchitectureTests),
                 Category = "Architecture",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

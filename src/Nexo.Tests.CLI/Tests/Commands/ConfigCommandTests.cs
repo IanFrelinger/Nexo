@@ -7,13 +7,12 @@ using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Configuration.Models;
 using Nexo.Core.Application.Configuration.UseCases.GetConfiguration;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
 public class ConfigCommandTests : UnitTestBase
 {
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -22,9 +21,9 @@ public class ConfigCommandTests : UnitTestBase
             await TestVerboseOutput();
             await TestGeneralException();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ConfigCommandTests),
+                Name = nameof(ConfigCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All ConfigCommand tests passed"
@@ -32,9 +31,9 @@ public class ConfigCommandTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ConfigCommandTests),
+                Name = nameof(ConfigCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -43,9 +42,9 @@ public class ConfigCommandTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ConfigCommandTests),
+                Name = nameof(ConfigCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

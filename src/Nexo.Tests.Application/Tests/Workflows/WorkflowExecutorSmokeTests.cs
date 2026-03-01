@@ -9,6 +9,7 @@ using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -33,7 +34,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(WorkflowExecutorSmokeTests),
+                Name = nameof(WorkflowExecutorSmokeTests),
                 Category = "Application.Workflows",
                 Passed = true,
                 Message = "All WorkflowExecutor smoke tests passed"
@@ -43,7 +44,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(WorkflowExecutorSmokeTests),
+                Name = nameof(WorkflowExecutorSmokeTests),
                 Category = "Application.Workflows",
                 Passed = false,
                 ErrorMessage = ex.Message,

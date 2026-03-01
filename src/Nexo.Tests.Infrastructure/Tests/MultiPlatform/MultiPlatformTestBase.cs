@@ -104,7 +104,7 @@ public abstract class MultiPlatformTestBase : TestBase
         // No execution method available
         return new TestResult
         {
-            TestName = TestName,
+            Name = TestName,
             Category = Category,
             Passed = false,
             Message = $"No execution method available for {_platformName}",
@@ -127,7 +127,7 @@ public abstract class MultiPlatformTestBase : TestBase
         {
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = false,
                 Message = $"Dockerfile not found: {dockerfilePath}",
@@ -140,7 +140,7 @@ public abstract class MultiPlatformTestBase : TestBase
         {
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = false,
                 Message = $"{_executionPlatform.PlatformName} is not available for {_platformName}",
@@ -169,7 +169,7 @@ public abstract class MultiPlatformTestBase : TestBase
             {
                 return new TestResult
                 {
-                    TestName = TestName,
+                    Name = TestName,
                     Category = Category,
                     Passed = false,
                     Message = $"{_executionPlatform.PlatformName} build failed for {_platformName}",
@@ -203,7 +203,7 @@ public abstract class MultiPlatformTestBase : TestBase
 
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = runResult.Success && (total == 0 || failed == 0),
                 Message = $"{_description}: {total} total, {passed} passed, {failed} failed",
@@ -226,7 +226,7 @@ public abstract class MultiPlatformTestBase : TestBase
         {
             return new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = false,
                 Message = $"Error running {_platformName} tests: {ex.Message}",

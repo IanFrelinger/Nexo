@@ -7,7 +7,6 @@ using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Domain.Exceptions;
 using Nexo.Tests.Application.Helpers;
 
@@ -32,7 +31,7 @@ public class AgentCommandTests : UnitTestBase
         return Task.CompletedTask;
     }
 
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -44,9 +43,9 @@ public class AgentCommandTests : UnitTestBase
             await TestTimeoutException();
             await TestGeneralException();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AgentCommandTests),
+                Name = nameof(AgentCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All AgentCommand tests passed"
@@ -54,9 +53,9 @@ public class AgentCommandTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AgentCommandTests),
+                Name = nameof(AgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -65,9 +64,9 @@ public class AgentCommandTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(AgentCommandTests),
+                Name = nameof(AgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

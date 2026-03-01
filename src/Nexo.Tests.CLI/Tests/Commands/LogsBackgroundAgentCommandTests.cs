@@ -15,15 +15,15 @@ public class LogsBackgroundAgentCommandTests : UnitTestBase
         {
             await TestLogsEmptyWhenNoStore();
             await TestLogsFromStore();
-            return new TestResult { TestName = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = true, Message = "All LogsBackgroundAgentCommand tests passed" };
+            return new TestResult { Name = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = true, Message = "All LogsBackgroundAgentCommand tests passed" };
         }
         catch (AssertionException ex)
         {
-            return new TestResult { TestName = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = false, ErrorMessage = $"Assertion failed: {ex.Message}", StackTrace = ex.StackTrace };
+            return new TestResult { Name = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = false, ErrorMessage = $"Assertion failed: {ex.Message}", StackTrace = ex.StackTrace };
         }
         catch (Exception ex)
         {
-            return new TestResult { TestName = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = false, ErrorMessage = ex.Message, StackTrace = ex.StackTrace };
+            return new TestResult { Name = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = false, ErrorMessage = ex.Message, StackTrace = ex.StackTrace };
         }
     }
 

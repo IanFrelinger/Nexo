@@ -22,7 +22,7 @@ public class MemoryMetricsCollectorTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(MemoryMetricsCollectorTests),
+                Name = nameof(MemoryMetricsCollectorTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All MemoryMetricsCollector tests passed"
@@ -32,7 +32,7 @@ public class MemoryMetricsCollectorTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(MemoryMetricsCollectorTests),
+                Name = nameof(MemoryMetricsCollectorTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -43,7 +43,7 @@ public class MemoryMetricsCollectorTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(MemoryMetricsCollectorTests),
+                Name = nameof(MemoryMetricsCollectorTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

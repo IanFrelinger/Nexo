@@ -37,7 +37,7 @@ public class CodeQualityRuleTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(CodeQualityRuleTests),
+                Name = nameof(CodeQualityRuleTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All CodeQualityRule tests passed"
@@ -47,7 +47,7 @@ public class CodeQualityRuleTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(CodeQualityRuleTests),
+                Name = nameof(CodeQualityRuleTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -58,7 +58,7 @@ public class CodeQualityRuleTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(CodeQualityRuleTests),
+                Name = nameof(CodeQualityRuleTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

@@ -145,7 +145,7 @@ public sealed class PatternDetector
         }
         catch
         {
-            System.Diagnostics.Trace.WriteLine("Caught");
+            // Ignore malformed payload
         }
 
         return null;
@@ -163,7 +163,7 @@ public sealed class PatternDetector
         }
         catch
         {
-            System.Diagnostics.Trace.WriteLine("Caught");
+            // Ignore malformed payload
         }
 
         return null;

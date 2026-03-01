@@ -34,7 +34,7 @@ public class ExplorationBrickTests : UnitTestBase
             await TestDeterministic_NoActions_ReturnsWaitAndShouldStop();
             return new TestResult
             {
-                TestName = nameof(ExplorationBrickTests),
+                Name = nameof(ExplorationBrickTests),
                 Category = "Agents",
                 Passed = true,
                 Message = "All ExplorationBrick tests passed"
@@ -44,7 +44,7 @@ public class ExplorationBrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExplorationBrickTests),
+                Name = nameof(ExplorationBrickTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -55,7 +55,7 @@ public class ExplorationBrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExplorationBrickTests),
+                Name = nameof(ExplorationBrickTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

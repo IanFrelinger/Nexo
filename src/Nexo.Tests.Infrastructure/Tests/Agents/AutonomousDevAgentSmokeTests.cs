@@ -62,7 +62,7 @@ public class AutonomousDevAgentSmokeTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(AutonomousDevAgentSmokeTests),
+                Name = nameof(AutonomousDevAgentSmokeTests),
                 Category = "Agents",
                 Passed = true,
                 Message = "All Autonomous Development Agent smoke tests passed"
@@ -72,7 +72,7 @@ public class AutonomousDevAgentSmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AutonomousDevAgentSmokeTests),
+                Name = nameof(AutonomousDevAgentSmokeTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -83,7 +83,7 @@ public class AutonomousDevAgentSmokeTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AutonomousDevAgentSmokeTests),
+                Name = nameof(AutonomousDevAgentSmokeTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

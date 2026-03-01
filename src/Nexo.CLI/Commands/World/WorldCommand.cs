@@ -1427,7 +1427,7 @@ public class WorldCommand : IWorldCommand
         bool enableCache,
         bool airGapped)
     {
-        return new EchoElevationProvider();
+        return new Nexo.Adapters.GeoTerrain.Providers.EchoElevationProvider();
     }
 
     private IVectorProvider BuildVectorProvider(

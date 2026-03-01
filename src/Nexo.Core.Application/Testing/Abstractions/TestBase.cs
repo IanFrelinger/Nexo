@@ -1,3 +1,4 @@
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Core.Application.Testing.Abstractions;

@@ -28,7 +28,7 @@ public sealed class GeoVectorBehaviorTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GeoVectorBehaviorTests),
+                Name = nameof(GeoVectorBehaviorTests),
                 Category = "Execution",
                 Passed = true,
                 Message = "GeoVector behavior tests passed"
@@ -38,7 +38,7 @@ public sealed class GeoVectorBehaviorTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoVectorBehaviorTests),
+                Name = nameof(GeoVectorBehaviorTests),
                 Category = "Execution",
                 Passed = false,
                 ErrorMessage = ex.Message,

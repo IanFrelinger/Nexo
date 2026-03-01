@@ -47,7 +47,7 @@ public class AnalysisHandlerTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(AnalysisHandlerTests),
+                Name = nameof(AnalysisHandlerTests),
                 Category = "Application",
                 Passed = true,
                 Message = "Analysis handler tests passed"
@@ -57,7 +57,7 @@ public class AnalysisHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AnalysisHandlerTests),
+                Name = nameof(AnalysisHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

@@ -17,7 +17,7 @@ public sealed class RoslynAnalyzeToolTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(RoslynAnalyzeToolTests),
+                Name = nameof(RoslynAnalyzeToolTests),
                 Category = "Tools",
                 Passed = true,
                 Message = "RoslynAnalyzeTool tests passed"
@@ -27,7 +27,7 @@ public sealed class RoslynAnalyzeToolTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(RoslynAnalyzeToolTests),
+                Name = nameof(RoslynAnalyzeToolTests),
                 Category = "Tools",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -38,7 +38,7 @@ public sealed class RoslynAnalyzeToolTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(RoslynAnalyzeToolTests),
+                Name = nameof(RoslynAnalyzeToolTests),
                 Category = "Tools",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

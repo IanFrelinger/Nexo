@@ -1,29 +1,6 @@
-namespace Nexo.Core.Application.Testing.Models;
+using Nexo.Core.Application.Common.Models;
 
-/// <summary>
-/// Result of a single test execution.
-/// 
-/// Contains:
-/// - Test name and category
-/// - Pass/fail status
-/// - Optional message, error message, and stack trace
-/// - Execution duration
-/// - Optional metadata
-/// 
-/// Produced by TestBase.ExecuteAsync.
-/// Used by ITestRunner to aggregate test results.
-/// </summary>
-public record TestResult
-{
-    public required string TestName { get; init; }
-    public required string Category { get; init; }
-    public required bool Passed { get; init; }
-    public string? Message { get; init; }
-    public TimeSpan Duration { get; init; }
-    public string? ErrorMessage { get; init; }
-    public string? StackTrace { get; init; }
-    public Dictionary<string, object>? Metadata { get; init; }
-}
+namespace Nexo.Core.Application.Testing.Models;
 
 /// <summary>
 /// Aggregated test execution results.

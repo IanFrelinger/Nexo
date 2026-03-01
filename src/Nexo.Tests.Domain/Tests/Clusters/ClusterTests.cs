@@ -25,7 +25,7 @@ public class ClusterTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(ClusterTests),
+                Name = nameof(ClusterTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All cluster smoke tests passed"
@@ -35,7 +35,7 @@ public class ClusterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ClusterTests),
+                Name = nameof(ClusterTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -46,7 +46,7 @@ public class ClusterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ClusterTests),
+                Name = nameof(ClusterTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

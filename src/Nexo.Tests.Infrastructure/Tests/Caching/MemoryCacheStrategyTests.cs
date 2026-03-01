@@ -23,7 +23,7 @@ public class MemoryCacheStrategyTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(MemoryCacheStrategyTests),
+                Name = nameof(MemoryCacheStrategyTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All MemoryCacheStrategy tests passed"
@@ -33,7 +33,7 @@ public class MemoryCacheStrategyTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(MemoryCacheStrategyTests),
+                Name = nameof(MemoryCacheStrategyTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -44,7 +44,7 @@ public class MemoryCacheStrategyTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(MemoryCacheStrategyTests),
+                Name = nameof(MemoryCacheStrategyTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

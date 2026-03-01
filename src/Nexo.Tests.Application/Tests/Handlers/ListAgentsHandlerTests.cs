@@ -3,6 +3,7 @@ using Moq;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Agent.Ports;
 using Nexo.Core.Application.Agent.UseCases.ListAgents;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -20,7 +21,7 @@ public class ListAgentsHandlerTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(ListAgentsHandlerTests),
+                Name = nameof(ListAgentsHandlerTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All ListAgentsHandler tests passed"
@@ -30,7 +31,7 @@ public class ListAgentsHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ListAgentsHandlerTests),
+                Name = nameof(ListAgentsHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -41,7 +42,7 @@ public class ListAgentsHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ListAgentsHandlerTests),
+                Name = nameof(ListAgentsHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

@@ -26,7 +26,7 @@ public sealed class GeoTerrainBehaviorPhase4Tests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GeoTerrainBehaviorPhase4Tests),
+                Name = nameof(GeoTerrainBehaviorPhase4Tests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "GeoTerrain Phase 4 behavior tests passed"
@@ -36,7 +36,7 @@ public sealed class GeoTerrainBehaviorPhase4Tests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoTerrainBehaviorPhase4Tests),
+                Name = nameof(GeoTerrainBehaviorPhase4Tests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = ex.Message,

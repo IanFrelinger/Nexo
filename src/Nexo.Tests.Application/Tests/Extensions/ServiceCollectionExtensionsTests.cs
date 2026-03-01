@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Agents;
 using Nexo.Core.Application.Extensions;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -16,7 +17,7 @@ public class ServiceCollectionExtensionsTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(ServiceCollectionExtensionsTests),
+                Name = nameof(ServiceCollectionExtensionsTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All ServiceCollectionExtensions tests passed"
@@ -26,7 +27,7 @@ public class ServiceCollectionExtensionsTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ServiceCollectionExtensionsTests),
+                Name = nameof(ServiceCollectionExtensionsTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -37,7 +38,7 @@ public class ServiceCollectionExtensionsTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ServiceCollectionExtensionsTests),
+                Name = nameof(ServiceCollectionExtensionsTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

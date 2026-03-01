@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Nexo.Tests.Application.Helpers;
 using Nexo.Tests.Infrastructure;
 using Xunit;
 
@@ -12,20 +13,17 @@ public sealed class Phases14CliE2ETests : IDisposable
 {
     private readonly string _repoRoot;
     private readonly string _tempDir;
+    private readonly IDisposable _tempDirCleanup;
 
     public Phases14CliE2ETests()
     {
         _repoRoot = TestPaths.FindRepoRoot();
-        _tempDir = Path.Combine(Path.GetTempPath(), "nexo-phases14-e2e", Guid.NewGuid().ToString("N")[..8]);
-        Directory.CreateDirectory(_tempDir);
+        (_tempDir, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-phases14-e2e");
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(_tempDir))
-        {
-            try { Directory.Delete(_tempDir, recursive: true); } catch { /* ignore */ }
-        }
+        _tempDirCleanup.Dispose();
     }
 
     [Fact]

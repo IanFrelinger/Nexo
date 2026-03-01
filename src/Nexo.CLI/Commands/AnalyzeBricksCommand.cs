@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure.Analysis;
 
 namespace Nexo.CLI.Commands;
@@ -33,7 +34,7 @@ public sealed class AnalyzeBricksCommand : Command
             .BuildServiceProvider();
 
         var analyzer = services.GetRequiredService<IBrickStaticAnalyzer>();
-        var targetPath = path ?? FindBlock1ObservationPath();
+        var targetPath = path ?? RepoPathResolver.FindBlock1ObservationPath();
 
         Console.WriteLine($"Brick static analyzer (Block 2)");
         Console.WriteLine($"  Target: {targetPath}");
@@ -57,24 +58,5 @@ public sealed class AnalyzeBricksCommand : Command
         }
 
         Environment.ExitCode = 1;
-    }
-
-    private static string FindBlock1ObservationPath()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-            {
-                var infraObs = Path.Combine(dir.FullName, "src", "Nexo.Infrastructure", "Observation");
-                var bgObs = Path.Combine(dir.FullName, "src", "Nexo.BackgroundAgents", "Observation");
-                if (Directory.Exists(infraObs))
-                    return infraObs;
-                if (Directory.Exists(bgObs))
-                    return bgObs;
-            }
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
     }
 }

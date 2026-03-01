@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using Nexo.CLI.Output;
+using Nexo.Core.Application.Paths;
 
 namespace Nexo.CLI.Commands;
 
@@ -25,7 +26,7 @@ public sealed class GuideHeadlessCommand : Command
     private static async Task ExecuteAsync(bool verbose)
     {
         var console = new CliConsole(verbose);
-        var root = FindRepoRoot();
+        var root = RepoPathResolver.FindRepoRoot();
         var testProject = Path.Combine(root, "src", "Nexo.Tests.Infrastructure", "Nexo.Tests.Infrastructure.csproj");
         var guideProject = Path.Combine(root, "src", "Nexo.Guide", "Nexo.Guide.csproj");
 
@@ -116,17 +117,5 @@ public sealed class GuideHeadlessCommand : Command
         if (p == null) return -1;
         await p.WaitForExitAsync();
         return p.ExitCode;
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Environment.CurrentDirectory);
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Environment.CurrentDirectory;
     }
 }

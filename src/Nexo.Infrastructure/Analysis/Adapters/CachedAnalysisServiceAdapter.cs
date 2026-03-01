@@ -3,8 +3,7 @@ using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Analysis.Ports;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Common.Ports;
-using System.Security.Cryptography;
-using System.Text;
+using Nexo.Infrastructure.Caching;
 
 namespace Nexo.Infrastructure.Analysis.Adapters;
 
@@ -76,18 +75,8 @@ public class CachedAnalysisServiceAdapter : IAnalysisService
             .Select(f => $"{f.FullName}:{f.LastWriteTimeUtc.Ticks}");
 
         var content = string.Join("|", files);
-        var hash = await ComputeHashAsync(content, cancellationToken);
+        var hash = await CacheKeyGenerator.ComputeHashAsync(content, cancellationToken);
         return $"analysis:{hash}";
-    }
-
-    private static Task<string> ComputeHashAsync(string content, CancellationToken cancellationToken)
-    {
-        return Task.Run(() =>
-        {
-            var bytes = Encoding.UTF8.GetBytes(content);
-            var hash = SHA256.HashData(bytes);
-            return Convert.ToBase64String(hash);
-        }, cancellationToken);
     }
 }
 

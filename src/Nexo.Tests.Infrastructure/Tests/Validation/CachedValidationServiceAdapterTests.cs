@@ -3,17 +3,15 @@ using Moq;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Infrastructure.Validation.Adapters;
-using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
 public class CachedValidationServiceAdapterTests : UnitTestBase
 {
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -24,9 +22,9 @@ public class CachedValidationServiceAdapterTests : UnitTestBase
             await TestProgressReportingWithCacheMiss();
             await TestCancellation();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(CachedValidationServiceAdapterTests),
+                Name = nameof(CachedValidationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All CachedValidationServiceAdapter tests passed"
@@ -34,9 +32,9 @@ public class CachedValidationServiceAdapterTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(CachedValidationServiceAdapterTests),
+                Name = nameof(CachedValidationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -45,9 +43,9 @@ public class CachedValidationServiceAdapterTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(CachedValidationServiceAdapterTests),
+                Name = nameof(CachedValidationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",
@@ -100,10 +98,10 @@ public class CachedValidationServiceAdapterTests : UnitTestBase
             TestsRun = 5,
             TestsPassed = 3,
             TestsFailed = 2,
-            TestResults = new List<ValidationTestResult>
+            TestResults = new List<TestResult>
             {
-                new ValidationTestResult { Name = "Test1", Passed = true },
-                new ValidationTestResult { Name = "Test2", Passed = false }
+                new TestResult { Name = "Test1", Passed = true },
+                new TestResult { Name = "Test2", Passed = false }
             }
         };
 

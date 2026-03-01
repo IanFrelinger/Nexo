@@ -1,4 +1,4 @@
-using Nexo.Core.Application.Validation.Models;
+using Nexo.Core.Application.Common.Models;
 
 namespace Nexo.Infrastructure.Validation.Parsers;
 

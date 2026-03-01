@@ -46,7 +46,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(AnalysisServiceAdapterComprehensiveTests),
+                Name = nameof(AnalysisServiceAdapterComprehensiveTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All AnalysisServiceAdapter tests passed"
@@ -56,7 +56,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AnalysisServiceAdapterComprehensiveTests),
+                Name = nameof(AnalysisServiceAdapterComprehensiveTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -67,7 +67,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AnalysisServiceAdapterComprehensiveTests),
+                Name = nameof(AnalysisServiceAdapterComprehensiveTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

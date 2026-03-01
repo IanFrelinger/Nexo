@@ -25,7 +25,7 @@ public class BrickTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(BrickTests),
+                Name = nameof(BrickTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All brick tests passed"
@@ -35,7 +35,7 @@ public class BrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BrickTests),
+                Name = nameof(BrickTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -46,7 +46,7 @@ public class BrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BrickTests),
+                Name = nameof(BrickTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

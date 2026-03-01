@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Nexo.CLI.Output;
+using Nexo.Core.Application.Paths;
 
 namespace Nexo.CLI.Commands;
 
@@ -45,7 +46,7 @@ public static class TestGuideAgenticCommand
     public static async Task<int> ExecuteAsync(bool useDocker, bool skipUi, bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);
-        var root = FindRepoRoot();
+        var root = RepoPathResolver.FindRepoRoot();
 
         if (skipUi && string.Equals(Environment.GetEnvironmentVariable("NEXO_SKIP_UI_TESTS"), "1", StringComparison.OrdinalIgnoreCase))
         {
@@ -176,17 +177,5 @@ public static class TestGuideAgenticCommand
         using var p = Process.Start(psi);
         if (p == null) return "";
         return await p.StandardOutput.ReadToEndAsync();
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Environment.CurrentDirectory);
-        while (dir != null)
-        {
-            var sln = Path.Combine(dir.FullName, "Nexo.sln");
-            if (File.Exists(sln)) return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Environment.CurrentDirectory;
     }
 }

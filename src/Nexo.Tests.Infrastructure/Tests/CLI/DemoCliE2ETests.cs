@@ -43,7 +43,7 @@ public sealed class DemoCliE2ETests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(DemoCliE2ETests),
+                Name = nameof(DemoCliE2ETests),
                 Category = "E2E",
                 Passed = true,
                 Message = "CLI demo E2E tests passed (offline)"
@@ -53,7 +53,7 @@ public sealed class DemoCliE2ETests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(DemoCliE2ETests),
+                Name = nameof(DemoCliE2ETests),
                 Category = "E2E",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -64,7 +64,7 @@ public sealed class DemoCliE2ETests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(DemoCliE2ETests),
+                Name = nameof(DemoCliE2ETests),
                 Category = "E2E",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

@@ -22,7 +22,7 @@ public class BehaviorTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(BehaviorTests),
+                Name = nameof(BehaviorTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All behavior tests passed"
@@ -32,7 +32,7 @@ public class BehaviorTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BehaviorTests),
+                Name = nameof(BehaviorTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -43,7 +43,7 @@ public class BehaviorTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BehaviorTests),
+                Name = nameof(BehaviorTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

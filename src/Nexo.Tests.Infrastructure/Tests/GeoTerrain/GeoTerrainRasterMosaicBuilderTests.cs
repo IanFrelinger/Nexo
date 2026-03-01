@@ -17,7 +17,7 @@ public sealed class GeoTerrainRasterMosaicBuilderTests : UnitTestBase
             await TestBuildsMosaicDimensionsAsync(cancellationToken);
             return new TestResult
             {
-                TestName = nameof(GeoTerrainRasterMosaicBuilderTests),
+                Name = nameof(GeoTerrainRasterMosaicBuilderTests),
                 Category = "Adapters",
                 Passed = true,
                 Message = "Raster mosaic builder tests passed"
@@ -27,7 +27,7 @@ public sealed class GeoTerrainRasterMosaicBuilderTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoTerrainRasterMosaicBuilderTests),
+                Name = nameof(GeoTerrainRasterMosaicBuilderTests),
                 Category = "Adapters",
                 Passed = false,
                 ErrorMessage = ex.Message,

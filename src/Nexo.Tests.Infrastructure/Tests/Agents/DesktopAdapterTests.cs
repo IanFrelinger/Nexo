@@ -29,7 +29,7 @@ public class DesktopAdapterTests : UnitTestBase
             await TestIsConnected_BeforeConnect_IsFalse();
             return new TestResult
             {
-                TestName = nameof(DesktopAdapterTests),
+                Name = nameof(DesktopAdapterTests),
                 Category = "Agents",
                 Passed = true,
                 Message = "All DesktopAdapter tests passed"
@@ -39,7 +39,7 @@ public class DesktopAdapterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(DesktopAdapterTests),
+                Name = nameof(DesktopAdapterTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -50,7 +50,7 @@ public class DesktopAdapterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(DesktopAdapterTests),
+                Name = nameof(DesktopAdapterTests),
                 Category = "Agents",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Core.Application.Configuration.Models;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Domain.Exceptions;
 using Nexo.Infrastructure.Configuration;
 using Nexo.Tests.Application.Helpers;
@@ -29,7 +28,7 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         return Task.CompletedTask;
     }
 
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -42,9 +41,9 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
             await TestGetDefault();
             await TestCancellation();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ConfigurationServiceAdapterTests),
+                Name = nameof(ConfigurationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All ConfigurationServiceAdapter tests passed"
@@ -52,9 +51,9 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ConfigurationServiceAdapterTests),
+                Name = nameof(ConfigurationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -63,9 +62,9 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ConfigurationServiceAdapterTests),
+                Name = nameof(ConfigurationServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

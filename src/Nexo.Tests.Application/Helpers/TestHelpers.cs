@@ -6,6 +6,31 @@ namespace Nexo.Tests.Application.Helpers;
 public static class TestHelpers
 {
     /// <summary>
+    /// Creates a temporary directory with disposable cleanup. Use in using statements or with IDisposable.
+    /// </summary>
+    /// <param name="prefix">Prefix for the temp dir name (default: nexo-test).</param>
+    /// <returns>Path and a disposable that deletes the directory on Dispose.</returns>
+    public static (string Path, IDisposable Cleanup) CreateTempDirectoryWithCleanup(string prefix = "nexo-test")
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"{prefix}-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(path);
+        return (path, new TempDirCleanup(path));
+    }
+
+    private sealed class TempDirCleanup : IDisposable
+    {
+        private readonly string _path;
+        public TempDirCleanup(string path) => _path = path;
+        public void Dispose()
+        {
+            if (Directory.Exists(_path))
+            {
+                try { Directory.Delete(_path, recursive: true); } catch { /* ignore */ }
+            }
+        }
+    }
+
+    /// <summary>
     /// Creates a temporary directory for testing.
     /// </summary>
     public static DirectoryInfo CreateTempDirectory()

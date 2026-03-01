@@ -24,6 +24,7 @@
     <ProjectReference Include="..\Nexo.GeoVector\Nexo.GeoVector.csproj" />
     <ProjectReference Include="..\Nexo.Adapters.GeoVector\Nexo.Adapters.GeoVector.csproj" />
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+    <ProjectReference Include="..\Nexo.Tests.Application\Nexo.Tests.Application.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexo.Agents.UniversalTester\Nexo.Agents.UniversalTester.csproj" />
   </ItemGroup>

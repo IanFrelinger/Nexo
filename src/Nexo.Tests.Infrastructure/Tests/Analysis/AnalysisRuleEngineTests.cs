@@ -41,7 +41,7 @@ public class AnalysisRuleEngineTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(AnalysisRuleEngineTests),
+                Name = nameof(AnalysisRuleEngineTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All AnalysisRuleEngine tests passed"
@@ -51,7 +51,7 @@ public class AnalysisRuleEngineTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AnalysisRuleEngineTests),
+                Name = nameof(AnalysisRuleEngineTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -62,7 +62,7 @@ public class AnalysisRuleEngineTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AnalysisRuleEngineTests),
+                Name = nameof(AnalysisRuleEngineTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

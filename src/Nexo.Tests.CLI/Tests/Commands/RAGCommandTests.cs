@@ -18,7 +18,7 @@ public class RAGCommandTests : UnitTestBase
             await TestSearchEmpty();
             return new TestResult
             {
-                TestName = nameof(RAGCommandTests),
+                Name = nameof(RAGCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All RAGCommand tests passed"
@@ -28,7 +28,7 @@ public class RAGCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(RAGCommandTests),
+                Name = nameof(RAGCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -39,7 +39,7 @@ public class RAGCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(RAGCommandTests),
+                Name = nameof(RAGCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

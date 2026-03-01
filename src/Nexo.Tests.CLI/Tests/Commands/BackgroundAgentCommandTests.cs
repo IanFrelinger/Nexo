@@ -21,7 +21,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
             await TestListFormatJson();
             return new TestResult
             {
-                TestName = nameof(BackgroundAgentCommandTests),
+                Name = nameof(BackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All BackgroundAgentCommand tests passed"
@@ -31,7 +31,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BackgroundAgentCommandTests),
+                Name = nameof(BackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -42,7 +42,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BackgroundAgentCommandTests),
+                Name = nameof(BackgroundAgentCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

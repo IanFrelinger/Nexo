@@ -18,7 +18,7 @@ public class AnalysisServiceAdapterTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AnalysisServiceAdapterTests),
+                Name = nameof(AnalysisServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "AnalysisServiceAdapter tests passed"
@@ -28,7 +28,7 @@ public class AnalysisServiceAdapterTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AnalysisServiceAdapterTests),
+                Name = nameof(AnalysisServiceAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = ex.Message,

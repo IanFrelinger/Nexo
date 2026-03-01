@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Observation.Ports;
+using Nexo.Core.Application.Paths;
 using Nexo.BackgroundAgents.Observation;
 using Nexo.Infrastructure.Observation;
 
@@ -61,7 +62,7 @@ public sealed class ObserveCommand : Command
 
     private static async Task ExecuteAsync(string? path, TimeSpan maxDuration, bool dump, bool verbose)
     {
-        var repoRoot = path ?? FindRepoRoot();
+        var repoRoot = path ?? RepoPathResolver.FindRepoRoot();
         var storePath = Path.Combine(repoRoot, "nexo-patterns.db");
 
         var services = new ServiceCollection()
@@ -176,17 +177,5 @@ public sealed class ObserveCommand : Command
         }
 
         Environment.ExitCode = 0;
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
     }
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Adapters.GeoVector.Providers;
+using Nexo.Adapters.GeoTerrain.Providers;
 using Nexo.CLI.Commands;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Common.Ports;

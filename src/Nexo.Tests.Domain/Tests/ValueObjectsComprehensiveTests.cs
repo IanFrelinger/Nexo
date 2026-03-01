@@ -49,7 +49,7 @@ public class ValueObjectsComprehensiveTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = true,
                 Message = "All value object tests passed"
@@ -59,7 +59,7 @@ public class ValueObjectsComprehensiveTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = TestName,
+                Name = TestName,
                 Category = Category,
                 Passed = false,
                 ErrorMessage = ex.Message,

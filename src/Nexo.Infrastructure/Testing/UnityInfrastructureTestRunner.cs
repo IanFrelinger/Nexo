@@ -61,7 +61,7 @@ public class UnityInfrastructureTestRunner
                 {
                     new TestResult
                     {
-                        TestName = "UnityInfrastructureTests",
+                        Name = "UnityInfrastructureTests",
                         Category = "Unity",
                         Passed = false,
                         Message = $"Unity test script not found: {scriptPath}",
@@ -113,7 +113,7 @@ public class UnityInfrastructureTestRunner
             // Create test result
             var testResult = new TestResult
             {
-                TestName = "UnityInfrastructureTests",
+                Name = "UnityInfrastructureTests",
                 Category = "Unity",
                 Passed = result.ExitCode == 0 && failed == 0,
                 Message = $"Unity infrastructure tests: {total} total, {passed} passed, {failed} failed",
@@ -152,7 +152,7 @@ public class UnityInfrastructureTestRunner
                 {
                     new TestResult
                     {
-                        TestName = "UnityInfrastructureTests",
+                        Name = "UnityInfrastructureTests",
                         Category = "Unity",
                         Passed = false,
                         Message = $"Error running Unity tests: {ex.Message}",

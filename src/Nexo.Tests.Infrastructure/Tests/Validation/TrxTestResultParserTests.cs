@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Infrastructure.Validation.Parsers;
 using Nexo.Tests.Application.Helpers;
@@ -28,7 +27,7 @@ public class TrxTestResultParserTests : UnitTestBase
         return Task.CompletedTask;
     }
 
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -41,9 +40,9 @@ public class TrxTestResultParserTests : UnitTestBase
             await TestEmptyTrxFile();
             await TestCancellation();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TrxTestResultParserTests),
+                Name = nameof(TrxTestResultParserTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All TrxTestResultParser tests passed"
@@ -51,9 +50,9 @@ public class TrxTestResultParserTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TrxTestResultParserTests),
+                Name = nameof(TrxTestResultParserTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -62,9 +61,9 @@ public class TrxTestResultParserTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TrxTestResultParserTests),
+                Name = nameof(TrxTestResultParserTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

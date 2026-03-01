@@ -59,7 +59,7 @@ public class DomainValueObjectsTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(DomainValueObjectsTests),
+                Name = nameof(DomainValueObjectsTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All domain value object tests passed"
@@ -69,7 +69,7 @@ public class DomainValueObjectsTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(DomainValueObjectsTests),
+                Name = nameof(DomainValueObjectsTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = ex.Message,

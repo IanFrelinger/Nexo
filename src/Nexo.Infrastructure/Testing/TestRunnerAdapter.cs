@@ -107,7 +107,7 @@ public class TestRunnerAdapter : ITestRunner
             FailedTests = failedTests,
             TotalDuration = duration,
             Results = results,
-            Categories = results.Select(r => r.Category).Distinct().ToList()
+            Categories = results.Select(r => r.Category).Where(c => c != null).Distinct().Select(c => c!).ToList()
         };
     }
 
@@ -298,7 +298,7 @@ public class TestRunnerAdapter : ITestRunner
 
             return result with
             {
-                TestName = testName,
+                Name = testName,
                 Category = category,
                 Duration = duration
             };
@@ -310,7 +310,7 @@ public class TestRunnerAdapter : ITestRunner
 
             return new TestResult
             {
-                TestName = testName,
+                Name = testName,
                 Category = category,
                 Passed = false,
                 Duration = duration,

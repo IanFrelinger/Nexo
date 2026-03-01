@@ -28,7 +28,7 @@ public class OWASPScannerBrickTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(OWASPScannerBrickTests),
+                Name = nameof(OWASPScannerBrickTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All OWASPScannerBrick tests passed"
@@ -38,7 +38,7 @@ public class OWASPScannerBrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(OWASPScannerBrickTests),
+                Name = nameof(OWASPScannerBrickTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -49,7 +49,7 @@ public class OWASPScannerBrickTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(OWASPScannerBrickTests),
+                Name = nameof(OWASPScannerBrickTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

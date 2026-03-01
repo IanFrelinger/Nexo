@@ -45,7 +45,7 @@ public sealed class GeoTerrainCliE2ETests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GeoTerrainCliE2ETests),
+                Name = nameof(GeoTerrainCliE2ETests),
                 Category = "E2E",
                 Passed = true,
                 Message = "GeoTerrain CLI E2E tests passed"
@@ -55,7 +55,7 @@ public sealed class GeoTerrainCliE2ETests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoTerrainCliE2ETests),
+                Name = nameof(GeoTerrainCliE2ETests),
                 Category = "E2E",
                 Passed = false,
                 ErrorMessage = ex.Message,

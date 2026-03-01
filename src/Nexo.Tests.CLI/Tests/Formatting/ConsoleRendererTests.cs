@@ -4,7 +4,6 @@ using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Domain.Values;
 using System.Text.Json;
 using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
@@ -13,7 +12,7 @@ namespace Nexo.Tests.CLI.Tests.Formatting;
 
 public class ConsoleRendererTests : UnitTestBase
 {
-    public override Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -32,9 +31,9 @@ public class ConsoleRendererTests : UnitTestBase
             TestRenderAgentList();
             TestRenderAgentListJson();
 
-            return Task.FromResult(new TestingTestResult
+            return Task.FromResult(new TestResult
             {
-                TestName = nameof(ConsoleRendererTests),
+                Name = nameof(ConsoleRendererTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All ConsoleRenderer tests passed"
@@ -42,9 +41,9 @@ public class ConsoleRendererTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return Task.FromResult(new TestingTestResult
+            return Task.FromResult(new TestResult
             {
-                TestName = nameof(ConsoleRendererTests),
+                Name = nameof(ConsoleRendererTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -53,9 +52,9 @@ public class ConsoleRendererTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return Task.FromResult(new TestingTestResult
+            return Task.FromResult(new TestResult
             {
-                TestName = nameof(ConsoleRendererTests),
+                Name = nameof(ConsoleRendererTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

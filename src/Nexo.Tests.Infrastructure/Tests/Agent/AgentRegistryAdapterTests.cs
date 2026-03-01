@@ -24,7 +24,7 @@ public class AgentRegistryAdapterTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(AgentRegistryAdapterTests),
+                Name = nameof(AgentRegistryAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All AgentRegistryAdapter tests passed"
@@ -34,7 +34,7 @@ public class AgentRegistryAdapterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AgentRegistryAdapterTests),
+                Name = nameof(AgentRegistryAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -45,7 +45,7 @@ public class AgentRegistryAdapterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AgentRegistryAdapterTests),
+                Name = nameof(AgentRegistryAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

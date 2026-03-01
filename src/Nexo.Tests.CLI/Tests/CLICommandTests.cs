@@ -17,7 +17,7 @@ public class CLICommandTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(CLICommandTests),
+                Name = nameof(CLICommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "CLI command tests passed"
@@ -27,7 +27,7 @@ public class CLICommandTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(CLICommandTests),
+                Name = nameof(CLICommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

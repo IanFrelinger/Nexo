@@ -1,6 +1,6 @@
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
-using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 using ValidationResult = Nexo.Core.Application.Validation.Models.ValidationResult;
 
 namespace Nexo.Tests.Application.Tests.Models;
@@ -15,12 +15,12 @@ public class ValidationResultTests : UnitTestBase
             TestRecordInequality();
             TestInitializationWithTestResults();
             TestInitializationWithoutTestResults();
-            TestValidationTestResultEquality();
-            TestValidationTestResultWithOptionalProperties();
+            TestTestResultEquality();
+            TestTestResultWithOptionalProperties();
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(ValidationResultTests),
+                Name = nameof(ValidationResultTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All ValidationResult model tests passed"
@@ -30,7 +30,7 @@ public class ValidationResultTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(ValidationResultTests),
+                Name = nameof(ValidationResultTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,
@@ -94,16 +94,16 @@ public class ValidationResultTests : UnitTestBase
 
     private void TestInitializationWithTestResults()
     {
-        var testResults = new List<ValidationTestResult>
+        var testResults = new List<TestResult>
         {
-            new ValidationTestResult
+            new TestResult
             {
                 Name = "Test1",
                 Passed = true,
                 Message = "Test passed",
                 Category = "Category1"
             },
-            new ValidationTestResult
+            new TestResult
             {
                 Name = "Test2",
                 Passed = false,
@@ -149,9 +149,9 @@ public class ValidationResultTests : UnitTestBase
         AssertNull(result.TestResults);
     }
 
-    private void TestValidationTestResultEquality()
+    private void TestTestResultEquality()
     {
-        var testResult1 = new ValidationTestResult
+        var testResult1 = new TestResult
         {
             Name = "Test1",
             Passed = true,
@@ -159,7 +159,7 @@ public class ValidationResultTests : UnitTestBase
             Category = "Category1"
         };
 
-        var testResult2 = new ValidationTestResult
+        var testResult2 = new TestResult
         {
             Name = "Test1",
             Passed = true,
@@ -172,10 +172,10 @@ public class ValidationResultTests : UnitTestBase
         AssertEqual(testResult1.GetHashCode(), testResult2.GetHashCode());
     }
 
-    private void TestValidationTestResultWithOptionalProperties()
+    private void TestTestResultWithOptionalProperties()
     {
         // Test with all properties
-        var testResult1 = new ValidationTestResult
+        var testResult1 = new TestResult
         {
             Name = "Test1",
             Passed = true,
@@ -189,7 +189,7 @@ public class ValidationResultTests : UnitTestBase
         AssertEqual("Category1", testResult1.Category);
 
         // Test with optional properties as null
-        var testResult2 = new ValidationTestResult
+        var testResult2 = new TestResult
         {
             Name = "Test2",
             Passed = false,

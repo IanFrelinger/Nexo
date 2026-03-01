@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
-using Xunit;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Infrastructure;
-using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.Adaptation;
+using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
@@ -14,10 +14,9 @@ public sealed class BrickDecomposerTests
     [Fact]
     public async Task DecomposeAsync_ObservationContextBrick_ReturnsManifest()
     {
+        var storePath = Path.Combine(Path.GetTempPath(), "nexo-adapt-test.db");
         var services = new ServiceCollection()
-            .AddSingleton<IPatternStore>(_ => new Nexo.Infrastructure.Observation.LiteDbPatternStore(Path.Combine(Path.GetTempPath(), "nexo-adapt-test.db")))
-            .AddSingleton<IContextAssembler, Nexo.Infrastructure.Observation.ContextAssembler>()
-            .AddAdaptationInfrastructure()
+            .AddAdaptationInfrastructure(storePath)
             .BuildServiceProvider();
 
         var decomposer = services.GetRequiredService<IBrickDecomposer>();

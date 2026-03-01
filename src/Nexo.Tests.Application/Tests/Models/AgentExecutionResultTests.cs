@@ -1,4 +1,5 @@
 using Nexo.Core.Application.Agent.Models;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -18,7 +19,7 @@ public class AgentExecutionResultTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AgentExecutionResultTests),
+                Name = nameof(AgentExecutionResultTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All AgentExecutionResult model tests passed"
@@ -28,7 +29,7 @@ public class AgentExecutionResultTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AgentExecutionResultTests),
+                Name = nameof(AgentExecutionResultTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

@@ -1,3 +1,4 @@
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -18,7 +19,7 @@ public class TestResultTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(TestResultTests),
+                Name = nameof(TestResultTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All TestResult model tests passed"
@@ -28,7 +29,7 @@ public class TestResultTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(TestResultTests),
+                Name = nameof(TestResultTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,
@@ -41,7 +42,7 @@ public class TestResultTests : UnitTestBase
     {
         var result1 = new TestResult
         {
-            TestName = "Test1",
+            Name = "Test1",
             Category = "Category1",
             Passed = true,
             Message = "Test passed",
@@ -53,7 +54,7 @@ public class TestResultTests : UnitTestBase
 
         var result2 = new TestResult
         {
-            TestName = "Test1",
+            Name = "Test1",
             Category = "Category1",
             Passed = true,
             Message = "Test passed",
@@ -73,7 +74,7 @@ public class TestResultTests : UnitTestBase
     {
         var result1 = new TestResult
         {
-            TestName = "Test1",
+            Name = "Test1",
             Category = "Category1",
             Passed = true,
             Duration = TimeSpan.FromMilliseconds(100)
@@ -81,7 +82,7 @@ public class TestResultTests : UnitTestBase
 
         var result2 = new TestResult
         {
-            TestName = "Test2",
+            Name = "Test2",
             Category = "Category2",
             Passed = false,
             Duration = TimeSpan.FromMilliseconds(200)
@@ -102,7 +103,7 @@ public class TestResultTests : UnitTestBase
 
         var result = new TestResult
         {
-            TestName = "Test1",
+            Name = "Test1",
             Category = "Category1",
             Passed = false,
             Message = "Test failed",
@@ -127,7 +128,7 @@ public class TestResultTests : UnitTestBase
     {
         var result = new TestResult
         {
-            TestName = "Test1",
+            Name = "Test1",
             Category = "Category1",
             Passed = true,
             Message = null,
@@ -151,8 +152,8 @@ public class TestResultTests : UnitTestBase
     {
         var testResults = new List<TestResult>
         {
-            new TestResult { TestName = "Test1", Category = "Cat1", Passed = true, Duration = TimeSpan.Zero },
-            new TestResult { TestName = "Test2", Category = "Cat1", Passed = true, Duration = TimeSpan.Zero }
+            new TestResult { Name = "Test1", Category = "Cat1", Passed = true, Duration = TimeSpan.Zero },
+            new TestResult { Name = "Test2", Category = "Cat1", Passed = true, Duration = TimeSpan.Zero }
         };
 
         var executionResult1 = new TestExecutionResult
@@ -184,8 +185,8 @@ public class TestResultTests : UnitTestBase
     {
         var testResults = new List<TestResult>
         {
-            new TestResult { TestName = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.Zero },
-            new TestResult { TestName = "Test2", Category = "Category2", Passed = true, Duration = TimeSpan.Zero }
+            new TestResult { Name = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.Zero },
+            new TestResult { Name = "Test2", Category = "Category2", Passed = true, Duration = TimeSpan.Zero }
         };
 
         var categories = new List<string> { "Category1", "Category2" };

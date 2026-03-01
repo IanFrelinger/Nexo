@@ -5,9 +5,10 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Adaptation.Models;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
+using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure;
-using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.Adaptation;
 
 namespace Nexo.CLI.Commands;
 
@@ -38,14 +39,12 @@ public sealed class AdaptCommand : Command
 
     private static async Task ExecuteAsync(string brickId, string? fixType, bool dryRun)
     {
-        var repoRoot = FindRepoRoot();
+        var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = Path.Combine(repoRoot, "nexo-patterns.db");
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
-            .AddSingleton<IPatternStore>(_ => new LiteDbPatternStore(storePath))
-            .AddSingleton<IContextAssembler, ContextAssembler>()
-            .AddAdaptationInfrastructure()
+            .AddAdaptationInfrastructure(storePath)
             .BuildServiceProvider();
 
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger<AdaptCommand>();
@@ -105,17 +104,5 @@ public sealed class AdaptCommand : Command
         }
 
         Environment.ExitCode = 0;
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
     }
 }

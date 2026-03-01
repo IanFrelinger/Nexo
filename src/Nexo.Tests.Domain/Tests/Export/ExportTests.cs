@@ -20,7 +20,7 @@ public class ExportTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(ExportTests),
+                Name = nameof(ExportTests),
                 Category = "Domain",
                 Passed = true,
                 Message = "All export smoke tests passed"
@@ -30,7 +30,7 @@ public class ExportTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExportTests),
+                Name = nameof(ExportTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -41,7 +41,7 @@ public class ExportTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ExportTests),
+                Name = nameof(ExportTests),
                 Category = "Domain",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

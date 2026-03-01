@@ -1,4 +1,5 @@
 using FluentValidation;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
@@ -51,7 +52,7 @@ public class RunValidationValidatorTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(RunValidationValidatorTests),
+                Name = nameof(RunValidationValidatorTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All RunValidationValidator tests passed"
@@ -61,7 +62,7 @@ public class RunValidationValidatorTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(RunValidationValidatorTests),
+                Name = nameof(RunValidationValidatorTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

@@ -4,7 +4,6 @@ using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
-using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
@@ -17,7 +16,7 @@ namespace Nexo.Tests.Application.Tests.Handlers;
 /// </summary>
 public class RunValidationHandlerComprehensiveTests : UnitTestBase
 {
-    public override async Task<Nexo.Core.Application.Testing.Models.TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<Nexo.Core.Application.Common.Models.TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -29,9 +28,9 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
             await RunTestWithErrorHandling("TestProgressReporting", TestProgressReporting);
             await RunTestWithErrorHandling("TestMetricsCollection", TestMetricsCollection);
 
-            return new Nexo.Core.Application.Testing.Models.TestResult
+            return new Nexo.Core.Application.Common.Models.TestResult
             {
-                TestName = nameof(RunValidationHandlerComprehensiveTests),
+                Name = nameof(RunValidationHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All RunValidationHandler tests passed"
@@ -39,9 +38,9 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new Nexo.Core.Application.Testing.Models.TestResult
+            return new Nexo.Core.Application.Common.Models.TestResult
             {
-                TestName = nameof(RunValidationHandlerComprehensiveTests),
+                Name = nameof(RunValidationHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -50,9 +49,9 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new Nexo.Core.Application.Testing.Models.TestResult
+            return new Nexo.Core.Application.Common.Models.TestResult
             {
-                TestName = nameof(RunValidationHandlerComprehensiveTests),
+                Name = nameof(RunValidationHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.GetType().Name}: {ex.Message}",
@@ -105,7 +104,7 @@ public class RunValidationHandlerComprehensiveTests : UnitTestBase
             TestsRun = 10,
             TestsPassed = 10,
             TestsFailed = 0,
-            TestResults = new List<ValidationTestResult>()
+            TestResults = new List<TestResult>()
         };
 
         mockService

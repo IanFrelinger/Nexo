@@ -43,7 +43,7 @@ public sealed class GeoVectorCliE2ETests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GeoVectorCliE2ETests),
+                Name = nameof(GeoVectorCliE2ETests),
                 Category = "CLI",
                 Passed = true,
                 Message = "GeoVector CLI E2E tests passed"
@@ -53,7 +53,7 @@ public sealed class GeoVectorCliE2ETests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoVectorCliE2ETests),
+                Name = nameof(GeoVectorCliE2ETests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

@@ -38,7 +38,7 @@ public class SecurityAnalysisRuleTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(SecurityAnalysisRuleTests),
+                Name = nameof(SecurityAnalysisRuleTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All SecurityAnalysisRule tests passed"
@@ -48,7 +48,7 @@ public class SecurityAnalysisRuleTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(SecurityAnalysisRuleTests),
+                Name = nameof(SecurityAnalysisRuleTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -59,7 +59,7 @@ public class SecurityAnalysisRuleTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(SecurityAnalysisRuleTests),
+                Name = nameof(SecurityAnalysisRuleTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

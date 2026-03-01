@@ -1,5 +1,6 @@
 using FluentValidation;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -48,7 +49,7 @@ public class AnalyzeCodeValidatorTests : UnitTestBase
 
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AnalyzeCodeValidatorTests),
+                Name = nameof(AnalyzeCodeValidatorTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All AnalyzeCodeValidator tests passed"
@@ -58,7 +59,7 @@ public class AnalyzeCodeValidatorTests : UnitTestBase
         {
             return Task.FromResult(new TestResult
             {
-                TestName = nameof(AnalyzeCodeValidatorTests),
+                Name = nameof(AnalyzeCodeValidatorTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

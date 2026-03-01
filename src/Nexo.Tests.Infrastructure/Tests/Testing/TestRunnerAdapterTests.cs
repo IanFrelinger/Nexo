@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Application.Testing.Ports;
 using Nexo.Infrastructure.Testing;
 using Nexo.Tests.Application.Helpers;
@@ -13,11 +12,11 @@ namespace Nexo.Tests.Infrastructure.Tests.Testing;
 // Simple test class for testing TestRunnerAdapter
 public class SimpleTestForRunner : UnitTestBase
 {
-    public override Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(new TestingTestResult
+        return Task.FromResult(new TestResult
         {
-            TestName = nameof(SimpleTestForRunner),
+            Name = nameof(SimpleTestForRunner),
             Category = "TestRunner",
             Passed = true,
             Message = "Simple test for TestRunnerAdapter"
@@ -27,7 +26,7 @@ public class SimpleTestForRunner : UnitTestBase
 
 public class TestRunnerAdapterTests : UnitTestBase
 {
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -38,9 +37,9 @@ public class TestRunnerAdapterTests : UnitTestBase
             await TestCancellation();
             await TestExceptionHandling();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TestRunnerAdapterTests),
+                Name = nameof(TestRunnerAdapterTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All TestRunnerAdapter tests passed"
@@ -48,9 +47,9 @@ public class TestRunnerAdapterTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TestRunnerAdapterTests),
+                Name = nameof(TestRunnerAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -59,9 +58,9 @@ public class TestRunnerAdapterTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TestRunnerAdapterTests),
+                Name = nameof(TestRunnerAdapterTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

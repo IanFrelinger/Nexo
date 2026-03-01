@@ -8,7 +8,6 @@ using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 using Nexo.Core.Domain.Exceptions;
 using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 
@@ -16,7 +15,7 @@ namespace Nexo.Tests.CLI.Tests.Commands;
 
 public class ValidateCommandTests : UnitTestBase
 {
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -27,9 +26,9 @@ public class ValidateCommandTests : UnitTestBase
             await TestValidationException();
             await TestGeneralException();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ValidateCommandTests),
+                Name = nameof(ValidateCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All ValidateCommand tests passed"
@@ -37,9 +36,9 @@ public class ValidateCommandTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ValidateCommandTests),
+                Name = nameof(ValidateCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -48,9 +47,9 @@ public class ValidateCommandTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(ValidateCommandTests),
+                Name = nameof(ValidateCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

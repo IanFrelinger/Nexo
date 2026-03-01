@@ -47,7 +47,7 @@ public sealed class WorldCliE2ETests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(WorldCliE2ETests),
+                Name = nameof(WorldCliE2ETests),
                 Category = "CLI",
                 Passed = true,
                 Message = "World CLI E2E tests passed"
@@ -57,7 +57,7 @@ public sealed class WorldCliE2ETests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(WorldCliE2ETests),
+                Name = nameof(WorldCliE2ETests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = ex.Message,

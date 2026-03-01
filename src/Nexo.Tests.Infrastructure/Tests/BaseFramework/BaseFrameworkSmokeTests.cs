@@ -1,10 +1,11 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Infrastructure.Execution;
+using Nexo.Tests.Application.Extensions;
+using Nexo.Tests.Application.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.BaseFramework;
@@ -17,26 +18,14 @@ public class BaseFrameworkSmokeTests : IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly string _testOutputDir;
+    private readonly IDisposable _tempDirCleanup;
 
     public BaseFrameworkSmokeTests()
     {
-        _testOutputDir = Path.Combine(Path.GetTempPath(), $"nexo-base-framework-{Guid.NewGuid()}");
-        Directory.CreateDirectory(_testOutputDir);
+        (_testOutputDir, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-base-framework");
 
         var services = new ServiceCollection();
-        
-        // Test logging infrastructure
-        services.AddLogging(builder => builder.AddConsole());
-        
-        // Test HTTP client factory
-        services.AddHttpClient();
-        services.AddHttpClient("geoterrain.srtm");
-        services.AddHttpClient("geovector.mapbox");
-        
-        // Test dependency injection
-        services.AddScoped<IProviderFactory, ProviderFactory>();
-        services.AddScoped<ILoopKernel, SequentialLoopKernel>();
-
+        services.AddGeospatialTestServices();
         _serviceProvider = services.BuildServiceProvider();
     }
 
@@ -214,10 +203,7 @@ public class BaseFrameworkSmokeTests : IDisposable
         try
         {
             _serviceProvider?.Dispose();
-            if (Directory.Exists(_testOutputDir))
-            {
-                Directory.Delete(_testOutputDir, recursive: true);
-            }
+            _tempDirCleanup?.Dispose();
         }
         catch
         {

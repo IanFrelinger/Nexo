@@ -22,7 +22,7 @@ public class RunTestsHandlerTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(RunTestsHandlerTests),
+                Name = nameof(RunTestsHandlerTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All RunTestsHandler tests passed"
@@ -32,7 +32,7 @@ public class RunTestsHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(RunTestsHandlerTests),
+                Name = nameof(RunTestsHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -43,7 +43,7 @@ public class RunTestsHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(RunTestsHandlerTests),
+                Name = nameof(RunTestsHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",
@@ -66,9 +66,9 @@ public class RunTestsHandlerTests : UnitTestBase
             TotalDuration = TimeSpan.FromMilliseconds(100),
             Results = new List<TestResult>
             {
-                new TestResult { TestName = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(50) },
-                new TestResult { TestName = "Test2", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(30) },
-                new TestResult { TestName = "Test3", Category = "Category2", Passed = false, Duration = TimeSpan.FromMilliseconds(20) }
+                new TestResult { Name = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(50) },
+                new TestResult { Name = "Test2", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(30) },
+                new TestResult { Name = "Test3", Category = "Category2", Passed = false, Duration = TimeSpan.FromMilliseconds(20) }
             }
         };
 
@@ -103,7 +103,7 @@ public class RunTestsHandlerTests : UnitTestBase
             TotalDuration = TimeSpan.FromMilliseconds(50),
             Results = new List<TestResult>
             {
-                new TestResult { TestName = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(50) }
+                new TestResult { Name = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(50) }
             }
         };
 
@@ -154,7 +154,7 @@ public class RunTestsHandlerTests : UnitTestBase
             TotalDuration = TimeSpan.FromMilliseconds(50),
             Results = new List<TestResult>
             {
-                new TestResult { TestName = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(50) }
+                new TestResult { Name = "Test1", Category = "Category1", Passed = true, Duration = TimeSpan.FromMilliseconds(50) }
             }
         };
 

@@ -1,5 +1,6 @@
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -18,7 +19,7 @@ public sealed class LoopKernelTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(LoopKernelTests),
+                Name = nameof(LoopKernelTests),
                 Category = "Application.Common",
                 Passed = true,
                 Message = "All loop kernel tests passed"
@@ -28,7 +29,7 @@ public sealed class LoopKernelTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(LoopKernelTests),
+                Name = nameof(LoopKernelTests),
                 Category = "Application.Common",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -39,7 +40,7 @@ public sealed class LoopKernelTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(LoopKernelTests),
+                Name = nameof(LoopKernelTests),
                 Category = "Application.Common",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

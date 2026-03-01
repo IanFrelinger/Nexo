@@ -94,8 +94,7 @@ public sealed class LiteDbPatternStore : IPatternStore
             }
             catch
             {
-                System.Diagnostics.Trace.WriteLine("Caught");
-            // Ignore invalid JSON
+                // Ignore invalid JSON
             }
         }
 

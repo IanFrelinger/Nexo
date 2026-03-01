@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Nexo.CLI.Output;
+using Nexo.Core.Application.Paths;
 
 namespace Nexo.CLI.Commands;
 
@@ -33,7 +34,7 @@ public sealed class GuideRunCommand : Command
     private static async Task ExecuteAsync(string target, string[] args)
     {
         var console = new CliConsole(verbose: true);
-        var root = FindRepoRoot();
+        var root = RepoPathResolver.FindRepoRoot();
         var guideProject = Path.Combine(root, "src", "Nexo.Guide", "Nexo.Guide.csproj");
 
         if (!File.Exists(guideProject))
@@ -80,17 +81,5 @@ public sealed class GuideRunCommand : Command
         if (p == null) return -1;
         await p.WaitForExitAsync();
         return p.ExitCode;
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Environment.CurrentDirectory);
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Environment.CurrentDirectory;
     }
 }

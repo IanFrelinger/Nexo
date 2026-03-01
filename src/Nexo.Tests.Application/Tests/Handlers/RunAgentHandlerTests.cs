@@ -4,6 +4,7 @@ using Nexo.Core.Application.Agent.Models;
 using Nexo.Core.Application.Agent.Ports;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 using Nexo.Core.Domain.Exceptions;
@@ -29,7 +30,7 @@ public class RunAgentHandlerTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(RunAgentHandlerTests),
+                Name = nameof(RunAgentHandlerTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All RunAgentHandler tests passed"
@@ -39,7 +40,7 @@ public class RunAgentHandlerTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(RunAgentHandlerTests),
+                Name = nameof(RunAgentHandlerTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = ex.Message,

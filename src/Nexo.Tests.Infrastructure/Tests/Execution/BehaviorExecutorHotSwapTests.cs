@@ -27,7 +27,7 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(BehaviorExecutorHotSwapTests),
+                Name = nameof(BehaviorExecutorHotSwapTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "BehaviorExecutor hot-swap tests passed"
@@ -37,7 +37,7 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BehaviorExecutorHotSwapTests),
+                Name = nameof(BehaviorExecutorHotSwapTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -48,7 +48,7 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(BehaviorExecutorHotSwapTests),
+                Name = nameof(BehaviorExecutorHotSwapTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

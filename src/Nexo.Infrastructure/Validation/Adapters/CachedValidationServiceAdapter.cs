@@ -3,8 +3,7 @@ using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Common.Ports;
-using System.Security.Cryptography;
-using System.Text;
+using Nexo.Infrastructure.Caching;
 
 namespace Nexo.Infrastructure.Validation.Adapters;
 
@@ -40,10 +39,8 @@ public class CachedValidationServiceAdapter : IValidationService
         IProgress<ProgressReport>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        // Generate cache key from filter + project hash
         var cacheKey = await GenerateCacheKeyAsync(filter, cancellationToken);
 
-        // Try to get from cache
         var cachedResult = await _cache.GetAsync<ValidationResult>(cacheKey, cancellationToken);
         if (cachedResult != null)
         {
@@ -57,11 +54,8 @@ public class CachedValidationServiceAdapter : IValidationService
             return cachedResult;
         }
 
-        // Cache miss, call inner service
         _logger.LogInformation("Cache miss, running validation with filter: {Filter}", filter ?? "none");
         var result = await _inner.ValidateAsync(filter, progress, cancellationToken);
-
-        // Store in cache (15 minute expiration for test results)
         await _cache.SetAsync(cacheKey, result, TimeSpan.FromMinutes(15), cancellationToken);
 
         return result;
@@ -79,18 +73,8 @@ public class CachedValidationServiceAdapter : IValidationService
             .Select(f => $"{f.FullName}:{f.LastWriteTimeUtc.Ticks}");
 
         var content = $"{filter ?? "none"}|{string.Join("|", testProjects)}";
-        var hash = await ComputeHashAsync(content, cancellationToken);
+        var hash = await CacheKeyGenerator.ComputeHashAsync(content, cancellationToken);
         return $"validation:{hash}";
-    }
-
-    private static Task<string> ComputeHashAsync(string content, CancellationToken cancellationToken)
-    {
-        return Task.Run(() =>
-        {
-            var bytes = Encoding.UTF8.GetBytes(content);
-            var hash = SHA256.HashData(bytes);
-            return Convert.ToBase64String(hash);
-        }, cancellationToken);
     }
 }
 

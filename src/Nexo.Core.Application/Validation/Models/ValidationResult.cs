@@ -1,3 +1,5 @@
+using Nexo.Core.Application.Common.Models;
+
 namespace Nexo.Core.Application.Validation.Models;
 
 /// <summary>
@@ -20,23 +22,5 @@ public record ValidationResult
     public required int TestsPassed { get; init; }
     public required int TestsFailed { get; init; }
     public IReadOnlyList<TestResult>? TestResults { get; init; }
-}
-
-/// <summary>
-/// Represents a single test result.
-/// 
-/// Contains:
-/// - Test name and category
-/// - Whether the test passed
-/// - Optional message and error details
-/// 
-/// Used to report individual test execution outcomes.
-/// </summary>
-public record TestResult
-{
-    public required string Name { get; init; }
-    public required bool Passed { get; init; }
-    public string? Message { get; init; }
-    public string? Category { get; init; }
 }
 

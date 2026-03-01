@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Agents;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -16,7 +17,7 @@ public class AgentFactoryTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(AgentFactoryTests),
+                Name = nameof(AgentFactoryTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All AgentFactory tests passed"
@@ -26,7 +27,7 @@ public class AgentFactoryTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AgentFactoryTests),
+                Name = nameof(AgentFactoryTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -37,7 +38,7 @@ public class AgentFactoryTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AgentFactoryTests),
+                Name = nameof(AgentFactoryTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

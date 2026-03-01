@@ -101,7 +101,7 @@ public sealed class ProcessEventSource : IObservableEventSource
                     }
                     catch
                     {
-                        System.Diagnostics.Trace.WriteLine("Caught");
+                        // Swallow per-process exceptions to keep polling
                     }
                     finally
                     {

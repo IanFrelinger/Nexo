@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Observation.Ports;
+using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure.Observation;
 
@@ -39,7 +40,7 @@ public sealed class ObservationPipelineService : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var repoRoot = _options.RepoRoot ?? FindRepoRoot();
+        var repoRoot = _options.RepoRoot ?? RepoPathResolver.FindRepoRoot();
         var projectPath = repoRoot;
 
         var watchPaths = _options.WatchPaths
@@ -93,18 +94,5 @@ public sealed class ObservationPipelineService : BackgroundService
             _logger.LogError(ex, "Observation pipeline failed: {Error}", ex.Message);
             throw;
         }
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (dir != null)
-        {
-            var sln = Path.Combine(dir.FullName, "Nexo.sln");
-            if (File.Exists(sln))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Directory.GetCurrentDirectory();
     }
 }

@@ -8,13 +8,12 @@ using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Testing.Models;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Core.Application.Testing.Abstractions;
-using TestingTestResult = Nexo.Core.Application.Testing.Models.TestResult;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
 public class TestCommandTests : UnitTestBase
 {
-    public override async Task<TestingTestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -25,9 +24,9 @@ public class TestCommandTests : UnitTestBase
             await TestWithFilter();
             await TestGeneralException();
 
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TestCommandTests),
+                Name = nameof(TestCommandTests),
                 Category = "CLI",
                 Passed = true,
                 Message = "All TestCommand tests passed"
@@ -35,9 +34,9 @@ public class TestCommandTests : UnitTestBase
         }
         catch (AssertionException ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TestCommandTests),
+                Name = nameof(TestCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -46,9 +45,9 @@ public class TestCommandTests : UnitTestBase
         }
         catch (Exception ex)
         {
-            return new TestingTestResult
+            return new TestResult
             {
-                TestName = nameof(TestCommandTests),
+                Name = nameof(TestCommandTests),
                 Category = "CLI",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",
@@ -71,8 +70,8 @@ public class TestCommandTests : UnitTestBase
             TotalDuration = TimeSpan.FromMilliseconds(100),
             Results = new List<TestResult>
             {
-                new TestResult { TestName = "Test1", Category = "Unit", Passed = true },
-                new TestResult { TestName = "Test2", Category = "Unit", Passed = true }
+                new TestResult { Name = "Test1", Category = "Unit", Passed = true },
+                new TestResult { Name = "Test2", Category = "Unit", Passed = true }
             },
             Categories = new List<string> { "Unit" }
         };
@@ -102,8 +101,8 @@ public class TestCommandTests : UnitTestBase
             TotalDuration = TimeSpan.FromMilliseconds(100),
             Results = new List<TestResult>
             {
-                new TestResult { TestName = "Test1", Category = "Unit", Passed = true },
-                new TestResult { TestName = "Test2", Category = "Unit", Passed = false, ErrorMessage = "Test failed" }
+                new TestResult { Name = "Test1", Category = "Unit", Passed = true },
+                new TestResult { Name = "Test2", Category = "Unit", Passed = false, ErrorMessage = "Test failed" }
             },
             Categories = new List<string> { "Unit" }
         };
@@ -202,7 +201,7 @@ public class TestCommandTests : UnitTestBase
             TotalDuration = TimeSpan.FromMilliseconds(10),
             Results = new List<TestResult>
             {
-                new TestResult { TestName = "FilteredTest", Category = "Unit", Passed = true }
+                new TestResult { Name = "FilteredTest", Category = "Unit", Passed = true }
             },
             Categories = new List<string> { "Unit" }
         };

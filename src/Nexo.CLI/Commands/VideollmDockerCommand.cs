@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using Nexo.CLI.Output;
+using Nexo.Core.Application.Paths;
 
 namespace Nexo.CLI.Commands;
 
@@ -29,7 +30,7 @@ public sealed class VideollmDockerCommand : Command
     private static async Task ExecuteAsync(string action, bool verbose)
     {
         var console = new CliConsole(verbose);
-        var root = FindRepoRoot();
+        var root = RepoPathResolver.FindRepoRoot();
         var composeFile = Path.Combine(root, "docker-compose.videollm-online.yml");
         if (!File.Exists(composeFile))
         {
@@ -87,17 +88,5 @@ public sealed class VideollmDockerCommand : Command
         if (p == null) return -1;
         await p.WaitForExitAsync();
         return p.ExitCode;
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(Environment.CurrentDirectory);
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Nexo.sln")))
-                return dir.FullName;
-            dir = dir.Parent;
-        }
-        return Environment.CurrentDirectory;
     }
 }

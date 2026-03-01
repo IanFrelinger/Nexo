@@ -21,7 +21,7 @@ public class SemanticCacheTests : UnitTestBase
             
             return new TestResult
             {
-                TestName = nameof(SemanticCacheTests),
+                Name = nameof(SemanticCacheTests),
                 Category = "Infrastructure",
                 Passed = true,
                 Message = "All SemanticCache tests passed"
@@ -31,7 +31,7 @@ public class SemanticCacheTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(SemanticCacheTests),
+                Name = nameof(SemanticCacheTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -42,7 +42,7 @@ public class SemanticCacheTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(SemanticCacheTests),
+                Name = nameof(SemanticCacheTests),
                 Category = "Infrastructure",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

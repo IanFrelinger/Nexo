@@ -19,7 +19,7 @@ public sealed class GeoTerrainElevationProviderAdapterTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(GeoTerrainElevationProviderAdapterTests),
+                Name = nameof(GeoTerrainElevationProviderAdapterTests),
                 Category = "Adapters",
                 Passed = true,
                 Message = "GeoTerrain elevation provider adapter tests passed"
@@ -29,7 +29,7 @@ public sealed class GeoTerrainElevationProviderAdapterTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(GeoTerrainElevationProviderAdapterTests),
+                Name = nameof(GeoTerrainElevationProviderAdapterTests),
                 Category = "Adapters",
                 Passed = false,
                 ErrorMessage = ex.Message,

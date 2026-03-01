@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Host;
 using Nexo.Core.Application.Interfaces;
 using Nexo.Core.Application.Orchestration;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -19,7 +20,7 @@ public class ServiceHostTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(ServiceHostTests),
+                Name = nameof(ServiceHostTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All ServiceHost tests passed"
@@ -29,7 +30,7 @@ public class ServiceHostTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ServiceHostTests),
+                Name = nameof(ServiceHostTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -40,7 +41,7 @@ public class ServiceHostTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ServiceHostTests),
+                Name = nameof(ServiceHostTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",

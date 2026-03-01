@@ -31,7 +31,7 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
+                Name = nameof(AnalyzeCodeHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All AnalyzeCodeHandler tests passed"
@@ -41,7 +41,7 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
+                Name = nameof(AnalyzeCodeHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -52,7 +52,7 @@ public class AnalyzeCodeHandlerComprehensiveTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(AnalyzeCodeHandlerComprehensiveTests),
+                Name = nameof(AnalyzeCodeHandlerComprehensiveTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.GetType().Name}: {ex.Message}",

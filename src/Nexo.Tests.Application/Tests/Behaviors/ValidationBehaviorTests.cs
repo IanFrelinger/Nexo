@@ -1,6 +1,7 @@
 using FluentValidation;
 using MediatR;
 using Nexo.Core.Application.Behaviors;
+using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
 
@@ -21,7 +22,7 @@ public class ValidationBehaviorTests : UnitTestBase
 
             return new TestResult
             {
-                TestName = nameof(ValidationBehaviorTests),
+                Name = nameof(ValidationBehaviorTests),
                 Category = "Application",
                 Passed = true,
                 Message = "All ValidationBehavior tests passed"
@@ -31,7 +32,7 @@ public class ValidationBehaviorTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ValidationBehaviorTests),
+                Name = nameof(ValidationBehaviorTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Assertion failed: {ex.Message}",
@@ -42,7 +43,7 @@ public class ValidationBehaviorTests : UnitTestBase
         {
             return new TestResult
             {
-                TestName = nameof(ValidationBehaviorTests),
+                Name = nameof(ValidationBehaviorTests),
                 Category = "Application",
                 Passed = false,
                 ErrorMessage = $"Unexpected exception: {ex.Message}",
