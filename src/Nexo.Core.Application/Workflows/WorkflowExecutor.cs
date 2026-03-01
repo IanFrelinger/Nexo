@@ -5,6 +5,7 @@ using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Clusters;
 using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;
@@ -22,6 +23,10 @@ public class WorkflowExecutor
     private readonly IBehaviorExecutor _behaviorExecutor;
     private readonly ILoopKernel _loops;
     private readonly ITextFileSystem _fs;
+    private readonly IWorkflowWebhookClient? _webhookClient;
+    private readonly IWorkflowDatabaseReader? _databaseReader;
+    private readonly IWorkflowDatabaseWriter? _databaseWriter;
+    private readonly IClusterStore? _clusterStore;
     private readonly ILogger<WorkflowExecutor> _logger;
     private readonly Subject<WorkflowExecutionEvent> _events = new();
     
@@ -34,7 +39,11 @@ public class WorkflowExecutor
         IBehaviorExecutor behaviorExecutor,
         ILoopKernel loops,
         ITextFileSystem fs,
-        ILogger<WorkflowExecutor> logger)
+        ILogger<WorkflowExecutor> logger,
+        IWorkflowWebhookClient? webhookClient = null,
+        IWorkflowDatabaseReader? databaseReader = null,
+        IWorkflowDatabaseWriter? databaseWriter = null,
+        IClusterStore? clusterStore = null)
     {
         _agents = agents;
         _bricks = bricks;
@@ -42,6 +51,10 @@ public class WorkflowExecutor
         _behaviorExecutor = behaviorExecutor;
         _loops = loops;
         _fs = fs;
+        _webhookClient = webhookClient;
+        _databaseReader = databaseReader;
+        _databaseWriter = databaseWriter;
+        _clusterStore = clusterStore;
         _logger = logger;
     }
     
@@ -150,11 +163,21 @@ public class WorkflowExecutor
                 data = node.Content;
                 break;
             case InputType.Webhook:
-                // TODO: Implement webhook input
-                throw new NotImplementedException("Webhook input not yet implemented");
+                if (_webhookClient == null)
+                    throw new InvalidOperationException("Webhook input requires IWorkflowWebhookClient to be registered");
+                if (string.IsNullOrWhiteSpace(node.WebhookUrl))
+                    throw new InvalidOperationException("Webhook input node requires WebhookUrl");
+                data = await _webhookClient.GetAsync(node.WebhookUrl!, ct);
+                break;
             case InputType.Database:
-                // TODO: Implement database input
-                throw new NotImplementedException("Database input not yet implemented");
+                if (_databaseReader == null)
+                    throw new InvalidOperationException("Database input requires IWorkflowDatabaseReader to be registered");
+                if (string.IsNullOrWhiteSpace(node.DatabaseConnectionString))
+                    throw new InvalidOperationException("Database input node requires DatabaseConnectionString");
+                if (string.IsNullOrWhiteSpace(node.Query))
+                    throw new InvalidOperationException("Database input node requires Query");
+                data = await _databaseReader.ExecuteQueryAsync(node.DatabaseConnectionString!, node.Query!, ct);
+                break;
         }
         
         return new NodeResult
@@ -305,80 +328,362 @@ public class WorkflowExecutor
     }
     
     /// <summary>
-    /// Executes a cluster node (pre-built combination of agents/bricks).
-    /// 
-    /// **STATUS: FUTURE FEATURE**
-    /// 
-    /// Cluster nodes allow grouping multiple agents/bricks into reusable components.
-    /// This feature is planned for future implementation.
-    /// 
-    /// When implemented, this will:
-    /// 1. Load the cluster definition by ClusterId
-    /// 2. Execute the cluster's internal workflow
-    /// 3. Return aggregated results
-    /// 
-    /// See: `Nexo.Core.Domain.Clusters.Cluster` for cluster definition structure.
+    /// Executes a cluster node by loading the cluster definition and running its bricks in topological order.
     /// </summary>
-    private Task<NodeResult> ExecuteClusterNodeAsync(
+    private async Task<NodeResult> ExecuteClusterNodeAsync(
         ClusterNode node,
         Dictionary<string, object> inputs,
         WorkflowExecutionContext context,
         CancellationToken ct)
     {
-        throw new NotImplementedException(
-            "Cluster execution is a planned future feature. " +
-            "Cluster nodes allow grouping agents/bricks into reusable components. " +
-            "See WorkflowExecutor documentation for implementation roadmap.");
+        if (_clusterStore == null)
+            throw new InvalidOperationException("Cluster execution requires IClusterStore. Register IClusterStore in DI.");
+
+        var cluster = await _clusterStore.GetByIdAsync(node.ClusterId, ct);
+        if (cluster == null)
+            throw new InvalidOperationException($"Cluster not found: {node.ClusterId}");
+
+        var resolvedParams = ResolveClusterParameters(cluster, inputs);
+        var plan = BuildClusterExecutionPlan(cluster);
+        var brickOutputs = new Dictionary<string, BrickOutput>();
+
+        foreach (var step in plan)
+        {
+            if (ct.IsCancellationRequested) break;
+
+            var clusterBrick = cluster.Bricks.FirstOrDefault(b => b.LocalId == step.LocalId);
+            if (clusterBrick == null) continue;
+
+            var brick = _bricks.GetBrick(clusterBrick.BrickId);
+            if (brick == null)
+            {
+                if (cluster.Interface.FailurePolicy == FailurePolicy.Abort)
+                    throw new InvalidOperationException($"Brick not found: {clusterBrick.BrickId}");
+                continue;
+            }
+
+            var preferred = clusterBrick.DefaultImplementation == ImplementationType.Auto ? brick.DefaultImplementation : clusterBrick.DefaultImplementation;
+            var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
+            var brickInput = BuildClusterBrickInput(step, cluster, resolvedParams, brickOutputs);
+
+            BrickOutput? result = null;
+            foreach (var impl in chain)
+            {
+                try
+                {
+                    result = await brick.ExecuteAsync(brickInput, impl, context.ExecutionContext, ct);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Brick {BrickId} failed with {Impl}, trying fallback", clusterBrick.BrickId, impl);
+                }
+            }
+
+            if (result == null)
+            {
+                if (cluster.Interface.FailurePolicy == FailurePolicy.Abort)
+                    throw new InvalidOperationException($"Brick execution failed: {clusterBrick.BrickId}");
+                continue;
+            }
+
+            brickOutputs[step.LocalId] = result;
+        }
+
+        var outputs = BuildClusterOutputs(cluster, brickOutputs);
+        return new NodeResult { NodeId = node.Id, Success = true, Outputs = outputs };
+    }
+
+    private static Dictionary<string, object> ResolveClusterParameters(Cluster cluster, Dictionary<string, object> inputs)
+    {
+        var resolved = new Dictionary<string, object>();
+        foreach (var p in cluster.Parameters)
+            if (p.Default != null) resolved[p.Name] = p.Default;
+        foreach (var kv in inputs)
+            resolved[kv.Key] = kv.Value;
+        return resolved;
+    }
+
+    private static List<(string LocalId, string BrickId)> BuildClusterExecutionPlan(Cluster cluster)
+    {
+        var steps = new List<(string, string)>();
+        var visited = new HashSet<string>();
+        var visiting = new HashSet<string>();
+
+        void Visit(string localId)
+        {
+            if (visited.Contains(localId)) return;
+            if (visiting.Contains(localId)) throw new InvalidOperationException($"Circular dependency in cluster: {localId}");
+            visiting.Add(localId);
+            foreach (var c in cluster.Connections.Where(c => c.ToBrickId == localId))
+                Visit(c.FromBrickId);
+            visiting.Remove(localId);
+            visited.Add(localId);
+            var cb = cluster.Bricks.First(b => b.LocalId == localId);
+            steps.Add((localId, cb.BrickId));
+        }
+
+        foreach (var b in cluster.Bricks) Visit(b.LocalId);
+        return steps;
+    }
+
+    private static BrickInput BuildClusterBrickInput(
+        (string LocalId, string BrickId) step,
+        Cluster cluster,
+        Dictionary<string, object> resolvedParams,
+        Dictionary<string, BrickOutput> brickOutputs)
+    {
+        var brickInput = new BrickInput();
+        var clusterBrick = cluster.Bricks.First(b => b.LocalId == step.LocalId);
+
+        foreach (var kv in clusterBrick.StaticParameters)
+            brickInput.Set(kv.Key, kv.Value);
+        foreach (var kv in clusterBrick.ParameterMappings)
+            if (resolvedParams.TryGetValue(kv.Value, out var v)) brickInput.Set(kv.Key, v);
+        foreach (var c in cluster.Connections.Where(c => c.ToBrickId == step.LocalId))
+            if (brickOutputs.TryGetValue(c.FromBrickId, out var o) && o.ToDictionary().TryGetValue(c.FromOutput, out var val))
+                brickInput.Set(c.ToInput, val);
+
+        return brickInput;
+    }
+
+    private static Dictionary<string, object> BuildClusterOutputs(Cluster cluster, Dictionary<string, BrickOutput> brickOutputs)
+    {
+        var output = new Dictionary<string, object>();
+        foreach (var port in cluster.Interface.Outputs)
+        {
+            var parts = port.InternalMapping.Split('.');
+            if (parts.Length == 2 && brickOutputs.TryGetValue(parts[0], out var o) && o.ToDictionary().TryGetValue(parts[1], out var v))
+                output[port.Name] = v;
+        }
+        if (output.Count == 0) output["data"] = brickOutputs.Values.LastOrDefault()?.ToDictionary() ?? new Dictionary<string, object>();
+        return output;
     }
     
     /// <summary>
     /// Executes a transform node for data manipulation.
-    /// 
-    /// **STATUS: FUTURE FEATURE**
-    /// 
-    /// Transform nodes allow data transformation operations (map, filter, reduce, etc.)
-    /// between workflow nodes. This feature is planned for future implementation.
-    /// 
-    /// When implemented, this will:
-    /// 1. Parse the transform expression
-    /// 2. Apply the operation to input data
-    /// 3. Return transformed output
-    /// 
-    /// Supported operations will include: Map, Filter, Reduce, Sort, Group, etc.
+    /// Supports Map, Filter, Reduce, Sort, GroupBy, Merge operations.
     /// </summary>
     private NodeResult ExecuteTransformNode(
         TransformNode node,
         Dictionary<string, object> inputs)
     {
-        throw new NotImplementedException(
-            "Transform operations are a planned future feature. " +
-            "Transform nodes allow data manipulation (map, filter, reduce) between workflow nodes. " +
-            "See WorkflowExecutor documentation for implementation roadmap.");
+        var data = inputs.Values.FirstOrDefault();
+        if (data == null)
+            return new NodeResult { NodeId = node.Id, Success = true, Outputs = new Dictionary<string, object> { ["data"] = new List<object>() } };
+
+        var list = ToListOfDictionaries(data);
+        object result = node.Operation switch
+        {
+            TransformOperation.Map => ApplyMap(list, node.Expression),
+            TransformOperation.Filter => ApplyFilter(list, node.Expression),
+            TransformOperation.Reduce => ApplyReduce(list, node.Expression),
+            TransformOperation.Sort => ApplySort(list, node.Expression),
+            TransformOperation.GroupBy => ApplyGroupBy(list, node.Expression),
+            TransformOperation.Merge => ApplyMerge(inputs),
+            _ => list
+        };
+
+        return new NodeResult
+        {
+            NodeId = node.Id,
+            Success = true,
+            Outputs = new Dictionary<string, object> { ["data"] = result }
+        };
+    }
+
+    private static List<Dictionary<string, object>> ToListOfDictionaries(object data)
+    {
+        if (data is List<Dictionary<string, object>> list) return list;
+        if (data is System.Collections.IEnumerable enumerable and not string)
+        {
+            var result = new List<Dictionary<string, object>>();
+            foreach (var item in enumerable)
+            {
+                if (item is Dictionary<string, object> d) result.Add(d);
+                else if (item != null) result.Add(new Dictionary<string, object> { ["value"] = item });
+            }
+            if (result.Count > 0) return result;
+        }
+        if (data is Dictionary<string, object> single)
+            return new List<Dictionary<string, object>> { single };
+        var json = System.Text.Json.JsonSerializer.Serialize(data);
+        var doc = System.Text.Json.JsonDocument.Parse(json);
+        if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            var arr = new List<Dictionary<string, object>>();
+            foreach (var e in doc.RootElement.EnumerateArray())
+            {
+                var dict = new Dictionary<string, object>();
+                if (e.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    foreach (var p in e.EnumerateObject())
+                        dict[p.Name] = GetJsonValue(p.Value);
+                else
+                    dict["value"] = GetJsonValue(e);
+                arr.Add(dict);
+            }
+            return arr;
+        }
+        if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            var dict = new Dictionary<string, object>();
+            foreach (var p in doc.RootElement.EnumerateObject())
+                dict[p.Name] = GetJsonValue(p.Value);
+            return new List<Dictionary<string, object>> { dict };
+        }
+        return new List<Dictionary<string, object>> { new Dictionary<string, object> { ["value"] = data } };
+    }
+
+    private static object GetJsonValue(System.Text.Json.JsonElement e)
+    {
+        return e.ValueKind switch
+        {
+            System.Text.Json.JsonValueKind.String => e.GetString() ?? "",
+            System.Text.Json.JsonValueKind.Number => e.TryGetInt64(out var i) ? i : e.GetDouble(),
+            System.Text.Json.JsonValueKind.True => true,
+            System.Text.Json.JsonValueKind.False => false,
+            System.Text.Json.JsonValueKind.Null => (object?)null!,
+            _ => e.GetRawText()
+        };
+    }
+
+    private static object ApplyMap(List<Dictionary<string, object>> list, string expression)
+    {
+        var key = string.IsNullOrWhiteSpace(expression) ? "value" : expression.Trim();
+        return list.Select(d => d.TryGetValue(key, out var v) ? v : (object)d).ToList();
+    }
+
+    private static object ApplyFilter(List<Dictionary<string, object>> list, string expression)
+    {
+        if (string.IsNullOrWhiteSpace(expression)) return list;
+        var parts = expression.Split(new[] { ' ', '=', '>', '<', '!', '\'' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2) return list;
+        var key = parts[0];
+        var op = expression.Contains(">=") ? ">=" : expression.Contains("<=") ? "<=" : expression.Contains("!=") ? "!=" : expression.Contains("==") ? "==" : expression.Contains(">") ? ">" : expression.Contains("<") ? "<" : "==";
+        var valStr = parts.Length > 1 ? parts[parts.Length - 1].Trim('\'') : "";
+        return list.Where(d =>
+        {
+            if (!d.TryGetValue(key, out var v) || v == null) return false;
+            var vStr = v.ToString() ?? "";
+            return op switch
+            {
+                "==" => vStr.Equals(valStr, StringComparison.OrdinalIgnoreCase),
+                "!=" => !vStr.Equals(valStr, StringComparison.OrdinalIgnoreCase),
+                ">" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn > cn,
+                "<" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn < cn,
+                ">=" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn >= cn,
+                "<=" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn <= cn,
+                _ => false
+            };
+        }).ToList();
+    }
+
+    private static object ApplyReduce(List<Dictionary<string, object>> list, string expression)
+    {
+        var op = (expression ?? "").Trim().ToLowerInvariant();
+        if (list.Count == 0) return new Dictionary<string, object> { ["result"] = (object?)null! };
+        return op switch
+        {
+            "sum" or "count" => new Dictionary<string, object> { ["result"] = list.Count },
+            "first" => list[0],
+            "last" => list[list.Count - 1],
+            _ => new Dictionary<string, object> { ["result"] = list, ["count"] = list.Count }
+        };
+    }
+
+    private static object ApplySort(List<Dictionary<string, object>> list, string expression)
+    {
+        var key = string.IsNullOrWhiteSpace(expression) ? "value" : expression.Trim();
+        return list.OrderBy(d => d.TryGetValue(key, out var v) ? v?.ToString() ?? "" : "").ToList();
+    }
+
+    private static object ApplyGroupBy(List<Dictionary<string, object>> list, string expression)
+    {
+        var key = string.IsNullOrWhiteSpace(expression) ? "value" : expression.Trim();
+        return list.GroupBy(d => d.TryGetValue(key, out var v) ? v?.ToString() ?? "" : "")
+            .ToDictionary(g => g.Key, g => (object)g.ToList());
+    }
+
+    private static object ApplyMerge(Dictionary<string, object> inputs)
+    {
+        var result = new List<Dictionary<string, object>>();
+        foreach (var v in inputs.Values)
+        {
+            result.AddRange(ToListOfDictionaries(v ?? new { }));
+        }
+        return result;
     }
     
     /// <summary>
     /// Executes a conditional node for branching logic.
-    /// 
-    /// **STATUS: FUTURE FEATURE**
-    /// 
-    /// Conditional nodes allow workflow branching based on conditions.
-    /// This feature is planned for future implementation.
-    /// 
-    /// When implemented, this will:
-    /// 1. Evaluate the condition expression
-    /// 2. Route execution to the appropriate output port (true/false)
-    /// 3. Return the selected branch result
-    /// 
-    /// Conditions will support: comparisons, boolean logic, data type checks, etc.
+    /// Evaluates the condition against inputs and returns condition=true/false for downstream routing.
     /// </summary>
     private NodeResult ExecuteConditionalNode(
         ConditionalNode node,
         Dictionary<string, object> inputs)
     {
-        throw new NotImplementedException(
-            "Conditional branching is a planned future feature. " +
-            "Conditional nodes allow workflow branching based on evaluated conditions. " +
-            "See WorkflowExecutor documentation for implementation roadmap.");
+        var condition = (node.Condition ?? "").Trim();
+        var result = true;
+        if (!string.IsNullOrEmpty(condition))
+            result = EvaluateCondition(condition, inputs);
+
+        return new NodeResult
+        {
+            NodeId = node.Id,
+            Success = true,
+            Outputs = new Dictionary<string, object>
+            {
+                ["condition"] = result,
+                ["result"] = inputs.Values.FirstOrDefault() ?? inputs
+            }
+        };
+    }
+
+    private static bool EvaluateCondition(string condition, Dictionary<string, object> inputs)
+    {
+        var data = inputs.Values.FirstOrDefault() ?? inputs;
+        var parts = condition.Split(new[] { ' ', '=', '>', '<', '!', '\'' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2) return GetBool(data, condition);
+
+        var path = parts[0];
+        var op = condition.Contains(">=") ? ">=" : condition.Contains("<=") ? "<=" : condition.Contains("!=") ? "!=" : condition.Contains("==") ? "==" : condition.Contains(">") ? ">" : condition.Contains("<") ? "<" : "";
+        var valStr = parts.Length > 1 ? parts[parts.Length - 1].Trim('\'') : "";
+
+        var v = GetValueByPath(data, path);
+        var vStr = v?.ToString() ?? "";
+
+        if (string.IsNullOrEmpty(op)) return GetBool(v, valStr);
+
+        return op switch
+        {
+            "==" => vStr.Equals(valStr, StringComparison.OrdinalIgnoreCase),
+            "!=" => !vStr.Equals(valStr, StringComparison.OrdinalIgnoreCase),
+            ">" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn > cn,
+            "<" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn < cn,
+            ">=" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn >= cn,
+            "<=" => double.TryParse(vStr, out var vn) && double.TryParse(valStr, out var cn) && vn <= cn,
+            _ => GetBool(v, valStr)
+        };
+    }
+
+    private static object? GetValueByPath(object? data, string path)
+    {
+        if (data == null || string.IsNullOrEmpty(path)) return data;
+        foreach (var p in path.Split('.'))
+        {
+            if (data is Dictionary<string, object> d && d.TryGetValue(p, out var v)) data = v;
+            else if (data is System.Collections.IDictionary id && id.Contains(p)) data = id[p];
+            else return null;
+        }
+        return data;
+    }
+
+    private static bool GetBool(object? v, string fallback)
+    {
+        if (v is bool b) return b;
+        if (v == null) return false;
+        var s = v.ToString() ?? "";
+        return s.Equals("true", StringComparison.OrdinalIgnoreCase) || s.Equals("1", StringComparison.OrdinalIgnoreCase);
     }
     
     private async Task<NodeResult> ExecuteOutputNodeAsync(
@@ -402,11 +707,21 @@ public class WorkflowExecutor
                 }
                 break;
             case OutputType.Webhook:
-                // TODO: Implement webhook output
-                throw new NotImplementedException("Webhook output not yet implemented");
+                if (_webhookClient == null)
+                    throw new InvalidOperationException("Webhook output requires IWorkflowWebhookClient to be registered");
+                if (string.IsNullOrWhiteSpace(node.WebhookUrl))
+                    throw new InvalidOperationException("Webhook output node requires WebhookUrl");
+                await _webhookClient.PostAsync(node.WebhookUrl!, data ?? new { }, ct);
+                break;
             case OutputType.Database:
-                // TODO: Implement database output
-                throw new NotImplementedException("Database output not yet implemented");
+                if (_databaseWriter == null)
+                    throw new InvalidOperationException("Database output requires IWorkflowDatabaseWriter to be registered");
+                if (string.IsNullOrWhiteSpace(node.DatabaseConnectionString))
+                    throw new InvalidOperationException("Database output node requires DatabaseConnectionString");
+                if (string.IsNullOrWhiteSpace(node.TableName))
+                    throw new InvalidOperationException("Database output node requires TableName");
+                await _databaseWriter.WriteAsync(node.DatabaseConnectionString!, node.TableName!, data ?? new { }, ct);
+                break;
         }
         
         return new NodeResult
@@ -618,13 +933,200 @@ public class WorkflowExecutor
         return format switch
         {
             OutputFormat.Json => System.Text.Json.JsonSerializer.Serialize(data),
-            OutputFormat.Xml => throw new NotImplementedException("XML serialization not implemented"),
-            OutputFormat.Csv => throw new NotImplementedException("CSV serialization not implemented"),
-            OutputFormat.Markdown => throw new NotImplementedException("Markdown serialization not implemented"),
-            OutputFormat.Html => throw new NotImplementedException("HTML serialization not implemented"),
-            OutputFormat.Pdf => throw new NotImplementedException("PDF serialization not implemented"),
+            OutputFormat.Xml => SerializeToXml(data),
+            OutputFormat.Csv => SerializeToCsv(data),
+            OutputFormat.Markdown => SerializeToMarkdown(data),
+            OutputFormat.Html => SerializeToHtml(data),
+            OutputFormat.Pdf => throw new NotSupportedException("PDF export not implemented; use Json, Xml, Markdown, or Html"),
             _ => data.ToString() ?? ""
         };
+    }
+
+    private static string SerializeToXml(object data)
+    {
+        if (data == null) return "<?xml version=\"1.0\" encoding=\"utf-8\"?><root/>";
+        var json = System.Text.Json.JsonSerializer.Serialize(data);
+        var doc = System.Text.Json.JsonDocument.Parse(json);
+        return "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + JsonToXml(doc.RootElement, "root");
+    }
+
+    private static string JsonToXml(System.Text.Json.JsonElement element, string name)
+    {
+        var safeName = SanitizeXmlName(name);
+        return element.ValueKind switch
+        {
+            System.Text.Json.JsonValueKind.Object => "<" + safeName + ">" +
+                string.Concat(element.EnumerateObject().Select(p => JsonToXml(p.Value, p.Name))) +
+                "</" + safeName + ">",
+            System.Text.Json.JsonValueKind.Array => string.Concat(
+                element.EnumerateArray().Select(e => JsonToXml(e, "item"))),
+            System.Text.Json.JsonValueKind.String => "<" + safeName + ">" + EscapeXml(element.GetString() ?? "") + "</" + safeName + ">",
+            System.Text.Json.JsonValueKind.Number => "<" + safeName + ">" + element.GetRawText() + "</" + safeName + ">",
+            System.Text.Json.JsonValueKind.True => "<" + safeName + ">true</" + safeName + ">",
+            System.Text.Json.JsonValueKind.False => "<" + safeName + ">false</" + safeName + ">",
+            System.Text.Json.JsonValueKind.Null => "",
+            _ => ""
+        };
+    }
+
+    private static string SanitizeXmlName(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "item";
+        var cleaned = new string(s.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
+        return string.IsNullOrEmpty(cleaned) ? "item" : (char.IsLetter(cleaned[0]) || cleaned[0] == '_' ? cleaned : "item" + cleaned);
+    }
+
+    private static string EscapeXml(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        return s
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;")
+            .Replace("'", "&apos;");
+    }
+
+    private static string SerializeToCsv(object data)
+    {
+        if (data == null) return "";
+        var json = System.Text.Json.JsonSerializer.Serialize(data);
+        var doc = System.Text.Json.JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        if (root.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            var rows = root.EnumerateArray().ToList();
+            if (rows.Count == 0) return "";
+            var first = rows[0];
+            if (first.ValueKind != System.Text.Json.JsonValueKind.Object) return CsvEscape(GetValue(first));
+            var keys = first.EnumerateObject().Select(p => p.Name).ToList();
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine(string.Join(",", keys.Select(CsvEscape)));
+            foreach (var row in rows)
+            {
+                if (row.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    sb.AppendLine(string.Join(",", keys.Select(k => row.TryGetProperty(k, out var v) ? CsvEscape(GetValue(v)) : "")));
+            }
+            return sb.ToString();
+        }
+        if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Key,Value");
+            foreach (var p in root.EnumerateObject())
+                sb.AppendLine(CsvEscape(p.Name) + "," + CsvEscape(GetValue(p.Value)));
+            return sb.ToString();
+        }
+        return CsvEscape(GetValue(root));
+    }
+
+    private static string GetValue(System.Text.Json.JsonElement e)
+    {
+        return e.ValueKind switch
+        {
+            System.Text.Json.JsonValueKind.String => e.GetString() ?? "",
+            System.Text.Json.JsonValueKind.Number => e.GetRawText(),
+            System.Text.Json.JsonValueKind.True => "true",
+            System.Text.Json.JsonValueKind.False => "false",
+            System.Text.Json.JsonValueKind.Null => "",
+            _ => e.GetRawText()
+        };
+    }
+
+    private static string CsvEscape(string s)
+    {
+        if (s == null) return "";
+        if (s.Contains(',') || s.Contains('"') || s.Contains('\n') || s.Contains('\r'))
+            return "\"" + s.Replace("\"", "\"\"") + "\"";
+        return s;
+    }
+
+    private static string SerializeToMarkdown(object data)
+    {
+        if (data == null) return "";
+        var json = System.Text.Json.JsonSerializer.Serialize(data);
+        var doc = System.Text.Json.JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        if (root.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            var rows = root.EnumerateArray().ToList();
+            if (rows.Count == 0) return "";
+            var first = rows[0];
+            if (first.ValueKind != System.Text.Json.JsonValueKind.Object) return "- " + GetValue(first);
+            var keys = first.EnumerateObject().Select(p => p.Name).ToList();
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("| " + string.Join(" | ", keys) + " |");
+            sb.AppendLine("| " + string.Join(" | ", keys.Select(_ => "---")) + " |");
+            foreach (var row in rows)
+            {
+                if (row.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    sb.AppendLine("| " + string.Join(" | ", keys.Select(k => row.TryGetProperty(k, out var v) ? GetValue(v).Replace("|", "\\|") : "")) + " |");
+            }
+            return sb.ToString();
+        }
+        if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var p in root.EnumerateObject())
+                sb.AppendLine("- **" + p.Name + ":** " + GetValue(p.Value).Replace("\n", " "));
+            return sb.ToString();
+        }
+        return GetValue(root);
+    }
+
+    private static string SerializeToHtml(object data)
+    {
+        if (data == null) return "<html><body></body></html>";
+        var json = System.Text.Json.JsonSerializer.Serialize(data);
+        var doc = System.Text.Json.JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        if (root.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            var rows = root.EnumerateArray().ToList();
+            if (rows.Count == 0) return "<html><body><table></table></body></html>";
+            var first = rows[0];
+            if (first.ValueKind != System.Text.Json.JsonValueKind.Object)
+                return "<html><body><pre>" + EscapeHtml(GetValue(first)) + "</pre></body></html>";
+            var keys = first.EnumerateObject().Select(p => p.Name).ToList();
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<html><body><table><tr>");
+            foreach (var k in keys) sb.Append("<th>").Append(EscapeHtml(k)).Append("</th>");
+            sb.AppendLine("</tr>");
+            foreach (var row in rows)
+            {
+                if (row.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    sb.Append("<tr>");
+                    foreach (var k in keys)
+                        sb.Append("<td>").Append(EscapeHtml(row.TryGetProperty(k, out var v) ? GetValue(v) : "")).Append("</td>");
+                    sb.AppendLine("</tr>");
+                }
+            }
+            sb.Append("</table></body></html>");
+            return sb.ToString();
+        }
+        if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<html><body><table><tr><th>Key</th><th>Value</th></tr>");
+            foreach (var p in root.EnumerateObject())
+            {
+                sb.Append("<tr><td>").Append(EscapeHtml(p.Name)).Append("</td><td>").Append(EscapeHtml(GetValue(p.Value))).Append("</td></tr>");
+            }
+            sb.Append("</table></body></html>");
+            return sb.ToString();
+        }
+        return "<html><body><pre>" + EscapeHtml(GetValue(root)) + "</pre></body></html>";
+    }
+
+    private static string EscapeHtml(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        return s
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;");
     }
 }
 

@@ -119,6 +119,27 @@ public class ConfigLoaderRegressionTests
     }
 
     [Fact]
+    public async Task LoadAsync_InvalidCronExpression_Throws()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BackgroundAgents:Agents:0:Id"] = "agent-1",
+                ["BackgroundAgents:Agents:0:Name"] = "Test",
+                ["BackgroundAgents:Agents:0:Role"] = "monitor",
+                ["BackgroundAgents:Agents:0:Commands:0"] = "ping",
+                ["BackgroundAgents:Agents:0:Schedule:Type"] = "Cron",
+                ["BackgroundAgents:Agents:0:Schedule:CronExpression"] = "invalid",
+                ["BackgroundAgents:Agents:0:MaxDataSensitivity"] = "Public"
+            })
+            .Build();
+        var loader = CreateLoader(config);
+        var act = () => loader.LoadAsync(default);
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*Invalid cron expression*invalid*");
+    }
+
+    [Fact]
     public async Task LoadAsync_RAGEnabledWithoutProvider_Throws()
     {
         var config = new ConfigurationBuilder()

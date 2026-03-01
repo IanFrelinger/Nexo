@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NCrontab;
 using Nexo.BackgroundAgents.DataSensitivity;
 
 namespace Nexo.BackgroundAgents.Configuration;
@@ -108,7 +109,15 @@ public class BackgroundAgentConfigLoader
             case ScheduleType.Cron:
                 if (string.IsNullOrWhiteSpace(schedule.CronExpression))
                     throw new InvalidOperationException("Cron schedule type requires CronExpression to be set");
-                // TODO: Validate cron expression format
+                try
+                {
+                    _ = CrontabSchedule.Parse(schedule.CronExpression);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid cron expression: {schedule.CronExpression}. {ex.Message}", ex);
+                }
                 break;
 
             case ScheduleType.Continuous:

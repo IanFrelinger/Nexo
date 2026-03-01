@@ -122,6 +122,8 @@ public record InputNode : WorkflowNode
     public string? FilePath { get; init; }
     public string? Content { get; init; }
     public string? WebhookUrl { get; init; }
+    public string? DatabaseConnectionString { get; init; }
+    public string? Query { get; init; }
 }
 
 /// <summary>
@@ -133,6 +135,8 @@ public record OutputNode : WorkflowNode
     public OutputFormat Format { get; init; } = OutputFormat.Json;
     public string? FilePath { get; init; }
     public string? WebhookUrl { get; init; }
+    public string? DatabaseConnectionString { get; init; }
+    public string? TableName { get; init; }
 }
 
 /// <summary>

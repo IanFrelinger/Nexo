@@ -17,7 +17,9 @@ public class CodeGenerator : ICodeGenerator
             ExportTarget.CSharp => GenerateCSharpDeterministic(brick),
             ExportTarget.Python => GeneratePythonDeterministic(brick),
             ExportTarget.TypeScript => GenerateTypeScriptDeterministic(brick),
-            _ => $"// Stub for {brick.Name}"
+            ExportTarget.BehaviorTree => GenerateBehaviorTreeStub(brick),
+            ExportTarget.StateMachine => GenerateStateMachineStub(brick),
+            _ => GenerateGenericStub(brick, target)
         };
         
         return Task.FromResult(code);
@@ -37,7 +39,9 @@ public class CodeGenerator : ICodeGenerator
             ExportTarget.CSharp => GenerateCSharpOrchestration(workflow),
             ExportTarget.Python => GeneratePythonOrchestration(workflow),
             ExportTarget.TypeScript => GenerateTypeScriptOrchestration(workflow),
-            _ => "// Orchestration stub"
+            ExportTarget.BehaviorTree => GenerateBehaviorTreeOrchestrationStub(workflow),
+            ExportTarget.StateMachine => GenerateStateMachineOrchestrationStub(workflow),
+            _ => GenerateGenericOrchestrationStub(workflow, target)
         };
         
         return Task.FromResult(code);
@@ -136,6 +140,68 @@ async def execute():
 export async function execute(): Promise<void> {{
     // Execute {workflow.Instances.Count} instances
 }}";
+    }
+
+    private static string GenerateBehaviorTreeStub(Brick brick)
+    {
+        var safeName = brick.Name.Replace(" ", "");
+        return $@"{{
+  ""name"": ""{safeName}"",
+  ""type"": ""sequence"",
+  ""children"": [
+    {{ ""type"": ""action"", ""name"": ""{brick.Name}"" }}
+  ]
+}}";
+    }
+
+    private static string GenerateStateMachineStub(Brick brick)
+    {
+        var safeName = brick.Name.Replace(" ", "");
+        return $@"{{
+  ""states"": [
+    {{ ""id"": ""initial"", ""transitions"": [{{ ""target"": ""{safeName}"" }}] }},
+    {{ ""id"": ""{safeName}"", ""transitions"": [] }}
+  ]
+}}";
+    }
+
+    private static string GenerateGenericStub(Brick brick, ExportTarget target)
+    {
+        return $@"// Generated stub for {brick.Name}
+// Target: {target}
+// Add implementation for this export target in CodeGenerator
+namespace Generated
+{{
+    public class {brick.Name.Replace(" ", "")}Brick
+    {{
+        public object Execute(object input) => new {{ result = ""stub"" }};
+    }}
+}}";
+    }
+
+    private static string GenerateBehaviorTreeOrchestrationStub(Workflow workflow)
+    {
+        return $@"{{
+  ""name"": ""{workflow.Name}"",
+  ""type"": ""sequence"",
+  ""children"": []
+}}";
+    }
+
+    private static string GenerateStateMachineOrchestrationStub(Workflow workflow)
+    {
+        return $@"{{
+  ""states"": [
+    {{ ""id"": ""start"", ""transitions"": [] }}
+  ]
+}}";
+    }
+
+    private static string GenerateGenericOrchestrationStub(Workflow workflow, ExportTarget target)
+    {
+        return $@"// Orchestration stub for {workflow.Name}
+// Target: {target}
+// Add implementation for this export target in CodeGenerator";
     }
 }
 

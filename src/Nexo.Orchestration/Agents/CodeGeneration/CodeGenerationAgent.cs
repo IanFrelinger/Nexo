@@ -243,22 +243,29 @@ Generate clean, well-documented, production-ready code. Include comments explain
 
     private string GeneratePlaceholderCode(CodeRequirements requirements, string language)
     {
+        var msg = requirements.Functionality;
         return language.ToLowerInvariant() switch
         {
-            "csharp" => $@"// Generated code for: {requirements.Functionality}
+            "csharp" => $@"// Generated placeholder for: {msg}
 public class GeneratedCode
 {{
-    // TODO: Implement {requirements.Functionality}
+    public void Execute()
+    {{
+        throw new NotImplementedException(""Implement: {msg}"");
+    }}
 }}",
-            "python" => $@"# Generated code for: {requirements.Functionality}
+            "python" => $@"# Generated placeholder for: {msg}
 def generated_code():
-    # TODO: Implement {requirements.Functionality}
-    pass",
-            "javascript" => $@"// Generated code for: {requirements.Functionality}
+    raise NotImplementedError(""Implement: {msg}"")",
+            "javascript" => $@"// Generated placeholder for: {msg}
 function generatedCode() {{
-    // TODO: Implement {requirements.Functionality}
+    throw new Error(""Implement: {msg}"");
 }}",
-            _ => $"// Generated code for: {requirements.Functionality}\n// Language: {language}"
+            "typescript" => $@"// Generated placeholder for: {msg}
+function generatedCode(): void {{
+    throw new Error(""Implement: {msg}"");
+}}",
+            _ => $"// Generated placeholder for: {msg}\n// Language: {language}"
         };
     }
 

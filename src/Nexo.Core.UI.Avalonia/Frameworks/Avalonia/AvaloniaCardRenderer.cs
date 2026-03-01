@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Input;
+using Avalonia.Styling;
 using Nexo.Core.UI.Primitives.Components;
 using Nexo.Core.UI.Primitives.DesignTokens;
 
@@ -112,10 +113,45 @@ public static class AvaloniaCardRenderer
         if (primitive.IsInteractive)
         {
             card.Cursor = new Cursor(StandardCursorType.Hand);
-            // TODO: Implement hover/selected states using Avalonia Styles/Triggers for full effect
+            if (primitive.IsSelected)
+            {
+                card.Classes.Add("selected");
+            }
+            AddInteractiveStyles(card, primitive);
         }
 
         return card;
+    }
+
+    private static void AddInteractiveStyles(Border card, CardPrimitive primitive)
+    {
+        var hoverStyle = new Style(x => x.OfType<Border>().Class(":pointerover"))
+        {
+            Setters =
+            {
+                new Setter(Border.BackgroundProperty, new SolidColorBrush(Color.Parse(primitive.HoverBackgroundColor))),
+                new Setter(Border.BorderBrushProperty, new SolidColorBrush(Color.Parse(primitive.HoverBorderColor)))
+            }
+        };
+        var pressedStyle = new Style(x => x.OfType<Border>().Class(":pressed"))
+        {
+            Setters =
+            {
+                new Setter(Border.BackgroundProperty, new SolidColorBrush(Color.Parse(primitive.HoverBackgroundColor))),
+                new Setter(Border.BorderBrushProperty, new SolidColorBrush(Color.Parse(primitive.HoverBorderColor)))
+            }
+        };
+        var selectedStyle = new Style(x => x.OfType<Border>().Class("selected"))
+        {
+            Setters =
+            {
+                new Setter(Border.BackgroundProperty, new SolidColorBrush(Color.Parse(primitive.SelectedBackgroundColor))),
+                new Setter(Border.BorderBrushProperty, new SolidColorBrush(Color.Parse(primitive.SelectedBorderColor)))
+            }
+        };
+        card.Styles.Add(hoverStyle);
+        card.Styles.Add(pressedStyle);
+        card.Styles.Add(selectedStyle);
     }
 
     private static FontWeight ConvertFontWeight(string fontWeight)
