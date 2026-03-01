@@ -4,7 +4,7 @@
 build:
 	dotnet build
 
-# Run tests locally (solution test projects: GeoTerrain, Orchestration, GeoVector, GeoWorld, BackgroundAgents)
+# Run tests locally
 test:
 	dotnet test
 

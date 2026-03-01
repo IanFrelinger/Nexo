@@ -151,14 +151,13 @@ static class ArgumentParser
         logger.LogInformation("  --strict           Treat unsupported platforms as failures (default in CI)");
         logger.LogInformation("  --no-strict        Skip unsupported platforms (default locally)");
         logger.LogInformation("  --quick            Skip build cache (reserved)");
-        logger.LogInformation("  --platform <name>  Run on specific platform (ubuntu, ios, android, unity)");
+        logger.LogInformation("  --platform <name>  Run on specific platform (ubuntu, ios, android)");
         logger.LogInformation("");
         logger.LogInformation("Examples:");
         logger.LogInformation("  dotnet run --                    # Linux only");
         logger.LogInformation("  dotnet run -- --mobile           # Linux + iOS + Android");
         logger.LogInformation("  dotnet run -- --platform ios     # iOS only");
         logger.LogInformation("  dotnet run -- --platform android # Android only");
-        logger.LogInformation("  dotnet run -- --platform unity    # Unity only");
         logger.LogInformation("");
     }
 }
@@ -334,8 +333,7 @@ sealed class RunnerRegistry
     {
         var runners = new List<ITestPlatformRunner>
         {
-            new UbuntuDockerRunner(context),
-            new UnityRunner(context)
+            new UbuntuDockerRunner(context)
         };
 
         if (includeMobile)
@@ -626,186 +624,6 @@ sealed class IosNativeRunner : ITestPlatformRunner
     }
 }
 
-sealed class UnityRunner : ITestPlatformRunner
-{
-    private readonly TestContext _context;
-
-    public UnityRunner(TestContext context)
-    {
-        _context = context;
-        PlatformIds = new ReadOnlyCollection<string>(new[] { "unity" });
-    }
-
-    public IReadOnlyCollection<string> PlatformIds { get; }
-    public bool IsMobile => false;
-    public bool IsEnabled => FindUnityExecutable() != null && FindUnityProject() != null;
-
-    public async Task<TestRunResult> RunAsync()
-    {
-        _context.Logger.LogInformation("Running Unity tests...");
-
-        var unityExe = FindUnityExecutable();
-        if (unityExe == null)
-        {
-            return TestRunResult.Failure("unity", "Unity executable not found. Please install Unity Hub or set UNITY_BIN environment variable.");
-        }
-
-        var unityProject = FindUnityProject();
-        if (unityProject == null)
-        {
-            return TestRunResult.Failure("unity", "Unity project not found.");
-        }
-
-        var resultsFile = Path.Combine(_context.ResultsDir, "unity-results.json");
-        var logsFile = Path.Combine(_context.ResultsDir, "unity-logs.txt");
-        var xmlResultsFile = Path.Combine(_context.ResultsDir, "unity-results.xml");
-
-        Directory.CreateDirectory(_context.ResultsDir);
-
-        // Run Unity tests in headless mode
-        // Try PlayMode first, then EditMode
-        var testPlatforms = new[] { "PlayMode", "EditMode" };
-        TestResultParser.TestResults? parsedResults = null;
-        string? lastError = null;
-
-        foreach (var platform in testPlatforms)
-        {
-            var testResult = await ProcessRunner.RunAsync(new ProcessStartInfo
-            {
-                FileName = unityExe,
-                Arguments = $"-batchmode -nographics -projectPath \"{unityProject}\" " +
-                           $"-runTests -testPlatform {platform} " +
-                           $"-testResults \"{xmlResultsFile}\" " +
-                           $"-logFile \"{logsFile}\" " +
-                           $"-quit",
-                WorkingDirectory = _context.ProjectRoot,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            });
-
-            var logContent = $"=== Unity {platform} Test Run ===\n" +
-                            $"Exit Code: {testResult.ExitCode}\n\n" +
-                            $"STDOUT:\n{testResult.StandardOutput}\n\n" +
-                            $"STDERR:\n{testResult.StandardError}\n\n";
-            
-            if (File.Exists(logsFile))
-            {
-                var existingLogs = await File.ReadAllTextAsync(logsFile);
-                logContent = existingLogs + "\n\n" + logContent;
-            }
-            
-            await File.WriteAllTextAsync(logsFile, logContent);
-
-            if (File.Exists(xmlResultsFile))
-            {
-                parsedResults = UnityTestResultParser.ParseXml(xmlResultsFile);
-                if (parsedResults != null && parsedResults.TotalTests > 0)
-                {
-                    break;
-                }
-            }
-
-            lastError = testResult.ExitCode != 0 
-                ? $"Unity {platform} tests failed with exit code {testResult.ExitCode}"
-                : $"Unity {platform} tests produced no results";
-        }
-
-        if (parsedResults == null)
-        {
-            return TestRunResult.Failure("unity", 
-                lastError ?? "Unable to parse Unity test results. Check logs for details.", 
-                logsFile);
-        }
-
-        var json = JsonSerializer.Serialize(parsedResults, new JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync(resultsFile, json);
-        var message = $"Unity: {parsedResults.TotalTests} total, {parsedResults.PassedTests} passed, {parsedResults.FailedTests} failed";
-
-        return parsedResults.FailedTests == 0
-            ? TestRunResult.SuccessResult("unity", message, logsFile, resultsFile)
-            : TestRunResult.Failure("unity", message, logsFile);
-    }
-
-    private string? FindUnityExecutable()
-    {
-        // Check environment variable first
-        var envUnity = Environment.GetEnvironmentVariable("UNITY_BIN");
-        if (!string.IsNullOrEmpty(envUnity) && File.Exists(envUnity))
-        {
-            return envUnity;
-        }
-
-        // Platform-specific discovery
-        if (_context.RuntimeInfo.IsMacOS)
-        {
-            var hubPath = "/Applications/Unity/Hub/Editor";
-            if (Directory.Exists(hubPath))
-            {
-                var versions = Directory.GetDirectories(hubPath)
-                    .OrderByDescending(d => d)
-                    .ToList();
-
-                foreach (var versionDir in versions)
-                {
-                    var unityPath = Path.Combine(versionDir, "Unity.app", "Contents", "MacOS", "Unity");
-                    if (File.Exists(unityPath))
-                    {
-                        return unityPath;
-                    }
-                }
-            }
-        }
-        else if (_context.RuntimeInfo.IsWindows)
-        {
-            var hubPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Unity", "Hub", "Editor");
-            if (Directory.Exists(hubPath))
-            {
-                var versions = Directory.GetDirectories(hubPath)
-                    .OrderByDescending(d => d)
-                    .ToList();
-
-                foreach (var versionDir in versions)
-                {
-                    var unityPath = Path.Combine(versionDir, "Editor", "Unity.exe");
-                    if (File.Exists(unityPath))
-                    {
-                        return unityPath;
-                    }
-                }
-            }
-        }
-        else if (_context.RuntimeInfo.IsLinux)
-        {
-            var hubPath = "/opt/unity/Editor";
-            var unityPath = Path.Combine(hubPath, "Unity");
-            if (File.Exists(unityPath))
-            {
-                return unityPath;
-            }
-        }
-
-        return null;
-    }
-
-    private string? FindUnityProject()
-    {
-        // Unity project support - add Unity project paths here if needed
-        var candidates = Array.Empty<string>();
-
-        foreach (var candidate in candidates)
-        {
-            var projectVersionFile = Path.Combine(candidate, "ProjectSettings", "ProjectVersion.txt");
-            if (File.Exists(projectVersionFile))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
-}
-
 #endregion
 
 #region Result & parsing helpers
@@ -877,99 +695,6 @@ static class TestResultParser
         public int TotalTests { get; set; }
         public int PassedTests { get; set; }
         public int FailedTests { get; set; }
-    }
-}
-
-static class UnityTestResultParser
-{
-    public static TestResultParser.TestResults? ParseXml(string xmlPath)
-    {
-        try
-        {
-            if (!File.Exists(xmlPath))
-            {
-                return null;
-            }
-
-            var doc = XDocument.Load(xmlPath);
-            var root = doc.Root;
-            if (root == null)
-            {
-                return null;
-            }
-
-            // Unity Test Runner XML format: <test-run> with attributes or child elements
-            var testRun = root.Name.LocalName == "test-run" ? root : root.Element("test-run");
-            if (testRun == null)
-            {
-                return null;
-            }
-
-            // Try to get from attributes first (NUnit-style)
-            var totalAttr = testRun.Attribute("total");
-            var passedAttr = testRun.Attribute("passed");
-            var failedAttr = testRun.Attribute("failed");
-
-            if (totalAttr != null && passedAttr != null && failedAttr != null)
-            {
-                if (int.TryParse(totalAttr.Value, out var total) &&
-                    int.TryParse(passedAttr.Value, out var passed) &&
-                    int.TryParse(failedAttr.Value, out var failed))
-                {
-                    return new TestResultParser.TestResults
-                    {
-                        TotalTests = total,
-                        PassedTests = passed,
-                        FailedTests = failed
-                    };
-                }
-            }
-
-            // Try to get from child elements or count test cases
-            var testCases = testRun.Descendants("test-case").ToList();
-            if (testCases.Count > 0)
-            {
-                var passed = testCases.Count(tc => 
-                    tc.Attribute("result")?.Value == "Passed" || 
-                    tc.Attribute("executed")?.Value == "True" && tc.Attribute("success")?.Value == "True");
-                var failed = testCases.Count(tc => 
-                    tc.Attribute("result")?.Value == "Failed" || 
-                    tc.Attribute("executed")?.Value == "True" && tc.Attribute("success")?.Value == "False");
-
-                return new TestResultParser.TestResults
-                {
-                    TotalTests = testCases.Count,
-                    PassedTests = passed,
-                    FailedTests = failed
-                };
-            }
-
-            // Fallback: try to parse summary from test-suite
-            var testSuite = testRun.Element("test-suite");
-            if (testSuite != null)
-            {
-                var total = int.TryParse(testSuite.Attribute("testcasecount")?.Value ?? "0", out var t) ? t : 0;
-                var result = testSuite.Attribute("result")?.Value ?? "Unknown";
-                var passed = result == "Passed" ? total : 0;
-                var failed = result == "Failed" ? total : 0;
-
-                if (total > 0)
-                {
-                    return new TestResultParser.TestResults
-                    {
-                        TotalTests = total,
-                        PassedTests = passed,
-                        FailedTests = failed
-                    };
-                }
-            }
-
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
     }
 }
 

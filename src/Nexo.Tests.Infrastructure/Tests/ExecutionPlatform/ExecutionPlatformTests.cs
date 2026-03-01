@@ -40,19 +40,17 @@ public class ExecutionPlatformTests
     }
 
     [Fact]
-    public async Task DockerExecutionPlatform_IsAvailableAsync_ShouldReturnFalse_WhenDockerNotAvailable()
+    public async Task DockerExecutionPlatform_IsAvailableAsync_ShouldNotThrow()
     {
         // Arrange
         var logger = _loggerFactory.CreateLogger<DockerExecutionPlatform>();
         var platform = new DockerExecutionPlatform(logger);
 
-        // Act
-        // Note: This will return false if Docker is not running, which is expected in CI/test environments
+        // Act - Returns true if Docker is running, false otherwise; must not throw
         var isAvailable = await platform.IsAvailableAsync();
 
-        // Assert
-        // We can't assert true/false definitively without Docker, but we can verify it doesn't throw
-        isAvailable.Should().BeFalse(); // Most test environments won't have Docker
+        // Assert - Result is a valid boolean; behavior depends on environment (Docker available or not)
+        (isAvailable == true || isAvailable == false).Should().BeTrue();
     }
 
     [Fact]

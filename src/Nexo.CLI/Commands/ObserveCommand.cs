@@ -4,8 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
+using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.BackgroundAgents.Observation;
+using Nexo.Infrastructure;
+using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.SelfContext;
 
 namespace Nexo.CLI.Commands;
 
@@ -72,6 +76,8 @@ public sealed class ObserveCommand : Command
                 if (verbose) b.SetMinimumLevel(LogLevel.Debug);
             })
             .AddOptions()
+            .AddAdaptationInfrastructure(storePath)
+            .AddSelfContextInfrastructure(storePath)
             .Configure<ObservationPipelineOptions>(opts =>
             {
                 opts.RepoRoot = repoRoot;
@@ -85,6 +91,9 @@ public sealed class ObserveCommand : Command
 
         var loggerFactory = services.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<ObserveCommand>();
+        var executionTracer = services.GetRequiredService<IExecutionTracer>();
+
+        await executionTracer.TraceAsync("observe.start", new Dictionary<string, object> { ["path"] = repoRoot }, path: repoRoot).ConfigureAwait(false);
 
         var watchPaths = new[] { "src", ".github", "tools" }
             .Select(p => Path.Combine(repoRoot, p.TrimStart('/', '\\')))
@@ -94,6 +103,7 @@ public sealed class ObserveCommand : Command
         if (watchPaths.Count == 0)
         {
             logger.LogError("No watch paths exist under {Root}. Create src/, .github/, or tools/ to observe.", repoRoot);
+            await executionTracer.TraceAsync("observe.end", null, repoRoot, "no_watch_paths").ConfigureAwait(false);
             Environment.ExitCode = 1;
             return;
         }
@@ -176,6 +186,7 @@ public sealed class ObserveCommand : Command
             }
         }
 
+        await executionTracer.TraceAsync("observe.end", new Dictionary<string, object> { ["eventCount"] = eventCount }, repoRoot, "completed").ConfigureAwait(false);
         Environment.ExitCode = 0;
     }
 }

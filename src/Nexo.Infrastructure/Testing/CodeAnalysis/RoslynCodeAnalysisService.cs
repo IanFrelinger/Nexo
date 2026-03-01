@@ -277,29 +277,78 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
 
     private static List<MetadataReference> GetDefaultReferences()
     {
-        // Get core .NET references
         var references = new List<MetadataReference>();
+        var addedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Add common system assemblies
-        var systemAssemblies = new[]
+        void TryAdd(string? path)
         {
-            typeof(object).Assembly,           // System.Runtime
-            typeof(Console).Assembly,          // System.Console
-            typeof(System.Linq.Enumerable).Assembly, // System.Linq
-        };
-
-        foreach (var assembly in systemAssemblies)
-        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path) || !addedPaths.Add(path))
+                return;
             try
             {
-                references.Add(MetadataReference.CreateFromFile(assembly.Location));
+                references.Add(MetadataReference.CreateFromFile(path));
             }
-            catch
+            catch { /* skip */ }
+        }
+
+        foreach (var assembly in new[] { typeof(object).Assembly, typeof(Console).Assembly, typeof(System.Linq.Enumerable).Assembly })
+        {
+            TryAdd(assembly.Location);
+        }
+
+        foreach (var path in GetPathsFromRuntimeDirectory())
+        {
+            TryAdd(path);
+        }
+
+        if (references.Count == 0)
+        {
+            foreach (var path in GetPathsFromTrustedPlatformAssemblies())
             {
-                // Skip if location is not available (e.g., in some runtime contexts)
+                TryAdd(path);
             }
         }
 
         return references;
+    }
+
+    private static IEnumerable<string> GetPathsFromRuntimeDirectory()
+    {
+        string? coreLocation = null;
+        string? runtimeDir = null;
+        try
+        {
+            coreLocation = typeof(object).Assembly.Location;
+            if (!string.IsNullOrEmpty(coreLocation))
+                runtimeDir = Path.GetDirectoryName(coreLocation);
+        }
+        catch { /* ignore */ }
+
+        if (string.IsNullOrEmpty(coreLocation)) yield break;
+        yield return coreLocation;
+
+        if (string.IsNullOrEmpty(runtimeDir)) yield break;
+
+        foreach (var name in new[] { "System.Runtime", "System.Console", "System.Linq", "netstandard" })
+        {
+            var path = Path.Combine(runtimeDir, name + ".dll");
+            if (File.Exists(path))
+                yield return path;
+        }
+    }
+
+    private static IEnumerable<string> GetPathsFromTrustedPlatformAssemblies()
+    {
+        var tpa = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES");
+        if (string.IsNullOrEmpty(tpa)) yield break;
+
+        var needed = new[] { "System.Runtime", "System.Console", "System.Linq" };
+        foreach (var path in tpa.Split(new[] { ';', Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) continue;
+            var fileName = Path.GetFileNameWithoutExtension(path);
+            if (needed.Any(n => fileName.StartsWith(n, StringComparison.OrdinalIgnoreCase)))
+                yield return path;
+        }
     }
 }

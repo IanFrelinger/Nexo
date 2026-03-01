@@ -49,23 +49,11 @@
     <ProjectReference Include="../Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="../Nexo.Orchestration/Nexo.Orchestration.csproj" />
     <ProjectReference Include="../Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj" />
-    <ProjectReference Include="../Nexo.Adapters.GeoVector/Nexo.Adapters.GeoVector.csproj" />
-    <ProjectReference Include="../Nexo.Adapters.GeoTerrain/Nexo.Adapters.GeoTerrain.csproj" />
-    <ProjectReference Include="../Nexo.GeoPrimitives/Nexo.GeoPrimitives.csproj" />
-    <ProjectReference Include="../Nexo.GeoTerrain/Nexo.GeoTerrain.csproj" />
-    <ProjectReference Include="../Nexo.GeoTerrain.Bricks/Nexo.GeoTerrain.Bricks.csproj" />
-    <ProjectReference Include="../Nexo.GeoVector.Bricks/Nexo.GeoVector.Bricks.csproj" />
-    <ProjectReference Include="../Nexo.GeoWorld/Nexo.GeoWorld.csproj" />
-    <ProjectReference Include="../Nexo.GeoWorld.Bricks/Nexo.GeoWorld.Bricks.csproj" />
-    <ProjectReference Include="../Nexo.Agents.UniversalTester/Nexo.Agents.UniversalTester.csproj" />
-    <ProjectReference Include="../Nexo.Agents.AutonomousDev/Nexo.Agents.AutonomousDev.csproj" />
     <ProjectReference Include="../Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
     <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
     <ProjectReference Include="../Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />
     <ProjectReference Include="../Nexo.Tests.Application/Nexo.Tests.Application.csproj" />
     <ProjectReference Include="../Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj" />
-    <ProjectReference Include="../Nexo.Tests.GeoVector/Nexo.Tests.GeoVector.csproj" />
-    <ProjectReference Include="../Nexo.Tests.GeoWorld/Nexo.Tests.GeoWorld.csproj" />
   </ItemGroup>
   
 

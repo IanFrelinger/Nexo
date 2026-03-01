@@ -181,11 +181,4 @@
   <ItemGroup>
     <PackageVersion Include="NCrontab" Version="3.3.3" />
   </ItemGroup>
-  <!-- Nexo.Guide MAUI Packages (CommunityToolkit.Mvvm already in Avalonia section) -->
-  <ItemGroup>
-    <PackageVersion Include="CommunityToolkit.Maui" Version="11.2.0" />
-    <PackageVersion Include="Microsoft.Maui.Controls" Version="9.0.120" />
-    <PackageVersion Include="Microsoft.Maui.Controls.Compatibility" Version="9.0.120" />
-    <PackageVersion Include="SkiaSharp.Views.Maui.Controls" Version="2.88.9" />
-  </ItemGroup>
 </Project>

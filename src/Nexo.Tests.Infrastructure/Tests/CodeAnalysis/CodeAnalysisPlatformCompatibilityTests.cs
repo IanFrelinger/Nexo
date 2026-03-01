@@ -13,7 +13,6 @@ namespace Nexo.Tests.Infrastructure.Tests.CodeAnalysis;
 /// - Windows, Linux, macOS
 /// - .NET 7.0, .NET 8.0
 /// - Mobile platforms (Android, iOS)
-/// - Unity (.NET Standard 2.0)
 /// </summary>
 public class CodeAnalysisPlatformCompatibilityTests
 {

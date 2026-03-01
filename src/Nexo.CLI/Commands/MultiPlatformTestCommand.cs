@@ -28,7 +28,7 @@ public class MultiPlatformTestCommand : Command
         var testProjectOption = new Option<string?>(
             "--project",
             () => (string?)null,
-            "Test project to run (e.g., Nexo.Tests.Infrastructure, Nexo.Tests.GeospatialE2E)"
+            "Test project to run (e.g., Nexo.Tests.Infrastructure)"
         );
 
         var filterOption = new Option<string?>(

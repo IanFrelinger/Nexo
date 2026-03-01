@@ -19,38 +19,6 @@ public static class AgentPlatformCompatibilityChecker
         var isCompatible = true;
         var issues = new List<string>();
 
-        // Check AutonomousDevAgent availability
-        try
-        {
-            var autonomousDevAvailable = CheckAutonomousDevAgentAvailable();
-            if (!autonomousDevAvailable)
-            {
-                isCompatible = false;
-                issues.Add("AutonomousDevAgent is not available");
-            }
-        }
-        catch (Exception ex)
-        {
-            isCompatible = false;
-            issues.Add($"AutonomousDevAgent check failed: {ex.Message}");
-        }
-
-        // Check UniversalTesterAgent availability
-        try
-        {
-            var universalTesterAvailable = CheckUniversalTesterAgentAvailable();
-            if (!universalTesterAvailable)
-            {
-                isCompatible = false;
-                issues.Add("UniversalTesterAgent is not available");
-            }
-        }
-        catch (Exception ex)
-        {
-            isCompatible = false;
-            issues.Add($"UniversalTesterAgent check failed: {ex.Message}");
-        }
-
         // Check Microsoft.Extensions.Logging availability
         try
         {
@@ -73,8 +41,7 @@ public static class AgentPlatformCompatibilityChecker
             var playwrightAvailable = CheckPlaywrightAvailable();
             if (!playwrightAvailable)
             {
-                // Playwright is optional for UniversalTesterAgent (only needed for web testing)
-                issues.Add("Microsoft.Playwright is not available (optional - only needed for web testing)");
+                issues.Add("Microsoft.Playwright is not available (optional)");
             }
         }
         catch (Exception ex)
@@ -84,34 +51,6 @@ public static class AgentPlatformCompatibilityChecker
         }
 
         return new AgentCompatibilityResult(platform, isCompatible, issues);
-    }
-
-    private static bool CheckAutonomousDevAgentAvailable()
-    {
-        try
-        {
-            // Try to use AutonomousDevAgent type
-            var agentType = Type.GetType("Nexo.Agents.AutonomousDev.AutonomousDevAgent, Nexo.Agents.AutonomousDev");
-            return agentType != null;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private static bool CheckUniversalTesterAgentAvailable()
-    {
-        try
-        {
-            // Try to use UniversalTesterAgent type
-            var agentType = Type.GetType("Nexo.Agents.UniversalTester.UniversalTesterAgent, Nexo.Agents.UniversalTester");
-            return agentType != null;
-        }
-        catch
-        {
-            return false;
-        }
     }
 
     private static bool CheckLoggingAvailable()

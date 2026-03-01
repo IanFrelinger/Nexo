@@ -68,6 +68,31 @@ public static class TestHelpers
     }
 
     /// <summary>
+    /// Creates a temporary .cs file with an EmptyCatch pattern for improve tests.
+    /// </summary>
+    /// <param name="dir">Directory to create the file in.</param>
+    /// <param name="name">Name of the file (default: EmptyCatch.cs).</param>
+    /// <returns>Path to the created file.</returns>
+    public static string CreateTempCsFileWithEmptyCatch(string dir, string name = "EmptyCatch.cs")
+    {
+        var path = Path.Combine(dir, name);
+        var content = """
+            using System;
+            namespace Test;
+            public class C
+            {
+                public void M()
+                {
+                    try { }
+                    catch (Exception) { }
+                }
+            }
+            """;
+        File.WriteAllText(path, content);
+        return path;
+    }
+
+    /// <summary>
     /// Creates a temporary test project file for testing.
     /// </summary>
     public static FileInfo CreateTempTestProjectFile(DirectoryInfo dir, string name = "TestProject.csproj")

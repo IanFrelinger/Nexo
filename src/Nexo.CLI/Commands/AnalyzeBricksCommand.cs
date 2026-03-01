@@ -18,15 +18,18 @@ public sealed class AnalyzeBricksCommand : Command
     public AnalyzeBricksCommand() : base("bricks", "Analyze brick code (schema, safety, performance). Dogfood: defaults to Block 1 Observation path.")
     {
         var pathOpt = new Option<string?>("--path", "Path to analyze (dir or .cs file). Default: Nexo Observation folders.");
+        var recursiveOpt = new Option<bool>("--recursive", () => false, "Also analyze analyzer code (Analysis, Adaptation folders).");
         AddOption(pathOpt);
+        AddOption(recursiveOpt);
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var path = ctx.ParseResult.GetValueForOption(pathOpt);
-            await ExecuteAsync(path);
+            var recursive = ctx.ParseResult.GetValueForOption(recursiveOpt);
+            await ExecuteAsync(path, recursive);
         });
     }
 
-    private static async Task ExecuteAsync(string? path)
+    private static async Task ExecuteAsync(string? path, bool recursive = false)
     {
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
@@ -38,9 +41,10 @@ public sealed class AnalyzeBricksCommand : Command
 
         Console.WriteLine($"Brick static analyzer (Block 2)");
         Console.WriteLine($"  Target: {targetPath}");
+        Console.WriteLine($"  Recursive: {recursive}");
         Console.WriteLine();
 
-        var result = await analyzer.AnalyzeSourceAsync(targetPath).ConfigureAwait(false);
+        var result = await analyzer.AnalyzeSourceAsync(targetPath, recursive).ConfigureAwait(false);
 
         if (result.Passed)
         {

@@ -52,7 +52,8 @@ public class TestClass
             CancellationToken.None);
 
         // Assert
-        result.Success.Should().BeTrue();
+        var errorDetail = result.Errors.Any() ? string.Join("; ", result.Errors) : "compilation failed";
+        result.Success.Should().BeTrue(errorDetail);
         result.AssemblyPath.Should().Be(outputPath);
         File.Exists(outputPath).Should().BeTrue();
         result.Errors.Should().BeEmpty();

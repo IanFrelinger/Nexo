@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Observation;
 
@@ -11,7 +12,8 @@ namespace Nexo.Infrastructure;
 public static class AdaptationServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers adaptation infrastructure: decomposer, fix generator, recompiler, rewirer, generators, source fixers.
+    /// Registers adaptation infrastructure: decomposer, fix generator, recompiler, rewirer, generators, source fixers,
+    /// adaptation log, promoter, rollback helper, conflict resolver, version manager.
     /// When <paramref name="patternStorePath"/> is provided, also registers observation core (IPatternStore, IContextAssembler)
     /// required for BrickRecompiler and ObservationContextBrick.
     /// </summary>
@@ -27,6 +29,25 @@ public static class AdaptationServiceCollectionExtensions
         services.AddSingleton<INewBrickGenerator, NewBrickGenerator>();
         services.AddSingleton<INewBehaviorAssembler, NewBehaviorAssembler>();
         services.AddSingleton<ISourceCodeFixer, EmptyCatchCodeFixer>();
+
+        // Block 4: inheritance system
+        var adaptationDbPath = !string.IsNullOrEmpty(patternStorePath)
+            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "nexo-adaptation.db")
+            : Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-adaptation.db");
+        services.AddSingleton<IAdaptationLog>(sp => new LiteDbAdaptationLog(adaptationDbPath));
+        services.AddSingleton<IAdaptationPromoter, AdaptationPromoter>();
+        services.AddSingleton<IInstanceResultAggregator, InstanceResultAggregator>();
+        services.AddSingleton<IConflictResolver, ConflictResolver>();
+        services.AddSingleton<ICoreVersionManager>(sp => new CoreVersionManager(RepoPathResolver.FindRepoRoot()));
+        services.AddTransient<AdaptationRollbackHelper>();
+
+        // Block 5: autonomy controls
+        var auditDbPath = !string.IsNullOrEmpty(patternStorePath)
+            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "nexo-adaptation-audit.db")
+            : Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-adaptation-audit.db");
+        services.AddSingleton<IAdaptationAuditLog>(sp => new LiteDbAdaptationAuditLog(auditDbPath));
+        services.AddSingleton<IUserFeedbackCapture, CliUserFeedbackCapture>();
+
         return services;
     }
 }

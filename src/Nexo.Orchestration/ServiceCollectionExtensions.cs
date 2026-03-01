@@ -96,8 +96,7 @@ public static class ServiceCollectionExtensions
         // services.AddSingleton<IAssetStorage, LocalAssetStorage>();
 
         // Build Tools
-        // Note: IBuildTool should be registered by consuming application
-        // services.AddSingleton<IBuildTool, UnityBuildTool>();
+        // Note: IBuildTool should be registered by consuming application for build domains.
 
         // Playtest Services
         // Note: ITelemetryStore and IGameRunner should be registered by consuming application

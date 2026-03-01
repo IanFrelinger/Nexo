@@ -1,9 +1,0 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="Nexo.Guide.Views.Controls.AudienceSelector">
-	<StackPanel Orientation="Horizontal" Spacing="2">
-		<Button x:Name="BtnGeneral" Content="Non-technical" Click="OnPillClicked" Padding="13,5" FontSize="12" FontWeight="Bold" CornerRadius="6" Background="#FF232326" Foreground="#FFF5F5F7" />
-		<Button x:Name="BtnDeveloper" Content="Developer" Click="OnPillClicked" Padding="13,5" FontSize="12" FontWeight="Bold" CornerRadius="6" Background="Transparent" Foreground="#4DFFFFFF" />
-		<Button x:Name="BtnDecision" Content="Decision-maker" Click="OnPillClicked" Padding="13,5" FontSize="12" FontWeight="Bold" CornerRadius="6" Background="Transparent" Foreground="#4DFFFFFF" />
-	</StackPanel>
-</UserControl>

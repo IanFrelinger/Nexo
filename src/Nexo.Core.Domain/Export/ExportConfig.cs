@@ -67,7 +67,7 @@ public enum ExportTarget
     CSharp,
     Python,
     TypeScript,
-    BehaviorTree,  // Unity Behavior Designer, etc.
+    BehaviorTree,
     StateMachine   // Generic FSM format
 }
 

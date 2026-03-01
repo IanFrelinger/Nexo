@@ -21,8 +21,7 @@ public class TestMultiEnvCommand
         ("alpine-8.0", ".docker/Dockerfile.test-framework-alpine", "8.0", "Alpine Linux"),
         ("debian-8.0", ".docker/Dockerfile.test-framework-debian", "8.0", "Debian 12"),
         ("android-8.0", ".docker/Dockerfile.test-framework-android", "8.0", "Android"),
-        ("windows-8.0", ".docker/Dockerfile.test-framework-windows", "8.0", "Windows"),
-        ("unity-8.0", ".docker/Dockerfile.test-framework-unity", "8.0", "Unity (.NET Standard 2.0)")
+        ("windows-8.0", ".docker/Dockerfile.test-framework-windows", "8.0", "Windows")
     };
 
     private static readonly (string Filter, string LogSuffix)[] FrameworkPhases =

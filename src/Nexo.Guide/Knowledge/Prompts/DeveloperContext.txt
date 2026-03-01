@@ -1,1 +1,0 @@
-Audience: Developer. You may use types (IBrick, IAgent, IBehavior), namespaces, patterns. Reference the codebase and architecture. Compare to similar frameworks where useful.

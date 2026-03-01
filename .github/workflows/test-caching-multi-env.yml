@@ -4,20 +4,12 @@ on:
   push:
     branches: [ master, main ]
     paths:
-      - 'src/Nexo.Adapters.GeoTerrain/**'
-      - 'src/Nexo.Adapters.GeoVector/**'
-      - 'src/Nexo.Tests.GeospatialUnit/**'
-      - 'src/Nexo.Tests.GeospatialE2E/**'
       - 'src/Nexo.Tests.Infrastructure/**'
       - '.docker/Dockerfile.test-caching*'
       - 'src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
   pull_request:
     branches: [ master, main ]
     paths:
-      - 'src/Nexo.Adapters.GeoTerrain/**'
-      - 'src/Nexo.Adapters.GeoVector/**'
-      - 'src/Nexo.Tests.GeospatialUnit/**'
-      - 'src/Nexo.Tests.GeospatialE2E/**'
       - 'src/Nexo.Tests.Infrastructure/**'
       - '.docker/Dockerfile.test-caching*'
       - 'src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
@@ -84,20 +76,6 @@ jobs:
                 --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' \
                 --logger 'console;verbosity=minimal' \
                 --logger 'trx;LogFileName=${{ matrix.environment.name }}-base.trx' \
-                --results-directory /workspace/test-results
-            "
-
-      - name: Run Geospatial Application Tests (Docker)
-        if: matrix.environment.type == 'docker'
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}/test-results:/workspace/test-results \
-            nexo-caching-test:${{ matrix.environment.name }} \
-            bash -c "
-              dotnet test src/Nexo.Tests.GeospatialE2E/Nexo.Tests.GeospatialE2E.csproj \
-                --filter 'FullyQualifiedName~GeospatialE2ESmokeTests' \
-                --logger 'console;verbosity=minimal' \
-                --logger 'trx;LogFileName=${{ matrix.environment.name }}-geo.trx' \
                 --results-directory /workspace/test-results
             "
 

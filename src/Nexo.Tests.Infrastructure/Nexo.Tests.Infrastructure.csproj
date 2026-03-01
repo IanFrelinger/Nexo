@@ -24,9 +24,9 @@
   <ItemGroup>
     <Compile Remove="scripts/**/*.cs" />
   </ItemGroup>
-  <!-- Guide tests use Nexo.Guide (Avalonia, net8.0) -->
-
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Moq" />
     <PackageReference Include="Castle.Core" />
     <PackageReference Include="Mono.Cecil" />
@@ -42,14 +42,6 @@
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Application\Nexo.Tests.Application.csproj" />
     <ProjectReference Include="..\Nexo.Demo.Bricks\Nexo.Demo.Bricks.csproj" />
-    <ProjectReference Include="..\Nexo.Agents.UniversalTester\Nexo.Agents.UniversalTester.csproj" />
-    <ProjectReference Include="..\Nexo.Agents.AutonomousDev\Nexo.Agents.AutonomousDev.csproj" />
-    <ProjectReference Include="..\Nexo.Adapters.GeoTerrain\Nexo.Adapters.GeoTerrain.csproj" />
-    <ProjectReference Include="..\Nexo.GeoTerrain.Bricks\Nexo.GeoTerrain.Bricks.csproj" />
-    <ProjectReference Include="..\Nexo.Adapters.GeoVector\Nexo.Adapters.GeoVector.csproj" />
-    <ProjectReference Include="..\Nexo.GeoVector.Bricks\Nexo.GeoVector.Bricks.csproj" />
-    <ProjectReference Include="..\Nexo.SDK\Nexo.SDK.csproj" />
-    <ProjectReference Include="..\Nexo.Guide\Nexo.Guide.csproj" />
   </ItemGroup>
 
 </Project>

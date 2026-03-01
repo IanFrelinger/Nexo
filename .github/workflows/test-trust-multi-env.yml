@@ -12,7 +12,6 @@ on:
       - 'src/Nexo.Tests.BackgroundAgents/Trust/**'
       - 'src/Nexo.Tests.Infrastructure/Tests/Trust/**'
       - '.docker/Dockerfile.test-caching*'
-      - '.docker/Dockerfile.test-caching-unity'
   pull_request:
     branches: [ master, main ]
     paths:
@@ -22,7 +21,6 @@ on:
       - 'src/Nexo.Tests.BackgroundAgents/Trust/**'
       - 'src/Nexo.Tests.Infrastructure/Tests/Trust/**'
       - '.docker/Dockerfile.test-caching*'
-      - '.docker/Dockerfile.test-caching-unity'
   workflow_dispatch:
 
 jobs:
@@ -82,22 +80,3 @@ jobs:
         with:
           files: test-results/trust/**/*.trx
           check_name: Trust Tests - Debian
-
-  trust-unity:
-    name: Trust - Unity
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - name: Build & run Trust tests (Unity)
-        run: |
-          docker build -f .docker/Dockerfile.test-caching-unity -t nexo-trust:unity .
-          mkdir -p test-results/trust
-          docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:unity bash -c \
-            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-unity.trx' --results-directory /workspace/test-results && \
-             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-unity.trx' --results-directory /workspace/test-results"
-      - uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          files: test-results/trust/**/*.trx
-          check_name: Trust Tests - Unity

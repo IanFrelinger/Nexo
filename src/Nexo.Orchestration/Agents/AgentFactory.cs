@@ -3,13 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Agents.Assets;
-using Nexo.Orchestration.Agents.Build;
 using Nexo.Orchestration.Agents.Playtest;
-using Nexo.Orchestration.Agents.Unity;
 using Nexo.Orchestration.Agents.Planning;
 using Nexo.Orchestration.Models;
 using Nexo.Orchestration.Assets.Ports;
-using Nexo.Orchestration.Build.Ports;
 using Nexo.Orchestration.Playtest.Ports;
 
 namespace Nexo.Orchestration.Agents;
@@ -18,9 +15,9 @@ namespace Nexo.Orchestration.Agents;
 /// Factory for creating specialized agents from AgentSpawnSpec.
 /// 
 /// Responsibilities:
-/// - Creates appropriate agent type based on domain (assets, build, playtest, Unity, etc.)
+/// - Creates appropriate agent type based on domain (assets, playtest, etc.)
 /// - Resolves dependencies from service provider
-/// - Instantiates domain-specific agents (ImageAssetAgent, UnityBuildAgent, etc.)
+/// - Instantiates domain-specific agents (ImageAssetAgent, etc.)
 /// - Falls back to PlanningAgent for unknown domains
 /// 
 /// Uses dependency injection to resolve agent dependencies (loggers, adapters, etc.).
@@ -46,9 +43,7 @@ public sealed class AgentFactory
     /// 
     /// Determines agent type based on domain and creates appropriate specialized agent:
     /// - Asset domains → ImageAssetAgent, AudioAssetAgent, Model3DAssetAgent
-    /// - Build domains → UnityBuildAgent
     /// - Playtest domains → AIPlayerAgent, BalanceAnalyzerAgent, FeedbackSynthesizerAgent
-    /// - Unity domains → UnityErrorAnalysisAgent, CodeFixAgent
     /// - Unknown domains → PlanningAgent (generic fallback)
     /// </summary>
     /// <param name="spec">Agent spawn specification from Architect</param>
@@ -69,22 +64,10 @@ public sealed class AgentFactory
             return CreateAssetAgent(spec);
         }
 
-        // Check if this is a build agent
-        if (IsBuildDomain(spec.Domain))
-        {
-            return CreateBuildAgent(spec);
-        }
-
         // Check if this is a playtest agent
         if (IsPlaytestDomain(spec.Domain))
         {
             return CreatePlaytestAgent(spec);
-        }
-
-        // Check if this is a Unity error analysis or code fix agent
-        if (IsUnityErrorDomain(spec.Domain))
-        {
-            return CreateUnityErrorAgent(spec);
         }
 
         // Check if this is a planning agent
@@ -220,30 +203,6 @@ public sealed class AgentFactory
         };
     }
 
-    private bool IsBuildDomain(string domain)
-    {
-        var buildDomains = new[] { "build", "unity", "unreal" };
-        return buildDomains.Contains(domain.ToLowerInvariant());
-    }
-
-    private BaseAgent CreateBuildAgent(AgentSpawnSpec spec)
-    {
-        var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
-            ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
-        var storage = _serviceProvider.GetRequiredService<IAssetStorage>();
-
-        return spec.Domain.ToLowerInvariant() switch
-        {
-            "build" or "unity" => new UnityBuildAgent(
-                spec,
-                _serviceProvider.GetRequiredService<IBuildTool>(),
-                storage,
-                baseLogger),
-
-            _ => throw new ArgumentException($"Unknown build domain: {spec.Domain}")
-        };
-    }
-
     private bool IsPlaytestDomain(string domain)
     {
         var playtestDomains = new[] { "playtest", "aiplayer", "balance", "telemetry", "feedback" };
@@ -277,34 +236,6 @@ public sealed class AgentFactory
                 baseLogger),
 
             _ => throw new ArgumentException($"Unknown playtest domain: {spec.Domain}")
-        };
-    }
-
-    private bool IsUnityErrorDomain(string domain)
-    {
-        var unityErrorDomains = new[] { "unityerror", "unity-error", "codefix", "code-fix", "syntaxfix", "syntax-fix" };
-        return unityErrorDomains.Contains(domain.ToLowerInvariant());
-    }
-
-    private BaseAgent CreateUnityErrorAgent(AgentSpawnSpec spec)
-    {
-        var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
-            ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
-        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
-
-        return spec.Domain.ToLowerInvariant() switch
-        {
-            "unityerror" or "unity-error" => new UnityErrorAnalysisAgent(
-                spec,
-                baseLogger,
-                model),
-
-            "codefix" or "code-fix" or "syntaxfix" or "syntax-fix" => new CodeFixAgent(
-                spec,
-                baseLogger,
-                model),
-
-            _ => throw new ArgumentException($"Unknown Unity error domain: {spec.Domain}")
         };
     }
 

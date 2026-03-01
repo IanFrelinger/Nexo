@@ -1,18 +1,17 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Infrastructure.Execution;
-using Nexo.Tests.Application.Extensions;
 using Nexo.Tests.Application.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.BaseFramework;
 
 /// <summary>
-/// Smoke tests for base framework components that geospatial applications depend on.
-/// These tests validate infrastructure before testing the geo application itself.
+/// Smoke tests for base framework components (logging, HTTP, DI, filesystem).
 /// </summary>
 public class BaseFrameworkSmokeTests : IDisposable
 {
@@ -25,7 +24,10 @@ public class BaseFrameworkSmokeTests : IDisposable
         (_testOutputDir, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-base-framework");
 
         var services = new ServiceCollection();
-        services.AddGeospatialTestServices();
+        services.AddLogging(builder => builder.AddConsole());
+        services.AddHttpClient();
+        services.AddScoped<IProviderFactory, ProviderFactory>();
+        services.AddScoped<ILoopKernel, SequentialLoopKernel>();
         _serviceProvider = services.BuildServiceProvider();
     }
 
@@ -52,11 +54,9 @@ public class BaseFrameworkSmokeTests : IDisposable
 
         // Act
         var defaultClient = httpClientFactory.CreateClient();
-        var namedClient = httpClientFactory.CreateClient("geoterrain.srtm");
 
         // Assert
         defaultClient.Should().NotBeNull("Default HTTP client should be created");
-        namedClient.Should().NotBeNull("Named HTTP client should be created");
         defaultClient.BaseAddress.Should().BeNull("Default client should have no base address");
     }
 
@@ -166,36 +166,6 @@ public class BaseFrameworkSmokeTests : IDisposable
 
         // Assert
         task.Invoking(t => t.Wait()).Should().Throw<AggregateException>("Task should be cancelled");
-    }
-
-    [Fact]
-    public void AutonomousDevAgent_ShouldBeAvailable()
-    {
-        // Arrange & Act
-        var agentType = Type.GetType("Nexo.Agents.AutonomousDev.AutonomousDevAgent, Nexo.Agents.AutonomousDev");
-
-        // Assert
-        agentType.Should().NotBeNull("AutonomousDevAgent should be available");
-    }
-
-    [Fact]
-    public void UniversalTesterAgent_ShouldBeAvailable()
-    {
-        // Arrange & Act
-        var agentType = Type.GetType("Nexo.Agents.UniversalTester.UniversalTesterAgent, Nexo.Agents.UniversalTester");
-
-        // Assert
-        agentType.Should().NotBeNull("UniversalTesterAgent should be available");
-    }
-
-    [Fact]
-    public void NexoGuide_ShouldBeAvailable()
-    {
-        // Arrange & Act - Guide (nexo-guide agent, GuideChatBrick, IUnitySceneSink) is used by the Guide MAUI app
-        var setupType = Type.GetType("Nexo.Guide.GuideNexoSetup, Nexo.Guide");
-
-        // Assert
-        setupType.Should().NotBeNull("Nexo Guide setup and agent types should be available");
     }
 
     public void Dispose()

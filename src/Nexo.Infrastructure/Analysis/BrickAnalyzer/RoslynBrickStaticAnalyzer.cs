@@ -22,10 +22,10 @@ public sealed class RoslynBrickStaticAnalyzer : IBrickStaticAnalyzer
     }
 
     /// <inheritdoc />
-    public Task<BrickStaticAnalysisResult> AnalyzeSourceAsync(string sourcePath, CancellationToken cancellationToken = default)
+    public Task<BrickStaticAnalysisResult> AnalyzeSourceAsync(string sourcePath, bool includeAnalyzers = false, CancellationToken cancellationToken = default)
     {
         var violations = new List<Violation>();
-        var files = GatherSourceFiles(sourcePath);
+        var files = GatherSourceFiles(sourcePath, includeAnalyzers);
 
         foreach (var file in files)
         {
@@ -59,18 +59,43 @@ public sealed class RoslynBrickStaticAnalyzer : IBrickStaticAnalyzer
         });
     }
 
-    private static List<string> GatherSourceFiles(string path)
+    private static List<string> GatherSourceFiles(string path, bool includeAnalyzers)
     {
         var list = new List<string>();
+        var dir = Directory.Exists(path) ? path : Path.GetDirectoryName(path);
         if (File.Exists(path) && path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
         {
             list.Add(Path.GetFullPath(path));
-            return list;
+            if (!includeAnalyzers)
+                return list;
         }
-        if (Directory.Exists(path))
+        else if (Directory.Exists(path))
         {
             foreach (var file in Directory.EnumerateFiles(path, "*.cs", SearchOption.AllDirectories))
                 list.Add(file);
+        }
+
+        if (includeAnalyzers && dir != null)
+        {
+            var repoRoot = dir;
+            while (repoRoot != null && !File.Exists(Path.Combine(repoRoot, "Nexo.sln")))
+                repoRoot = Path.GetDirectoryName(repoRoot);
+            if (repoRoot != null)
+            {
+                var analysisPath = Path.Combine(repoRoot, "src", "Nexo.Infrastructure", "Analysis");
+                var adaptationPath = Path.Combine(repoRoot, "src", "Nexo.Infrastructure", "Adaptation");
+                foreach (var d in new[] { analysisPath, adaptationPath })
+                {
+                    if (Directory.Exists(d))
+                    {
+                        foreach (var file in Directory.EnumerateFiles(d, "*.cs", SearchOption.AllDirectories))
+                        {
+                            if (!list.Contains(file))
+                                list.Add(file);
+                        }
+                    }
+                }
+            }
         }
         return list;
     }

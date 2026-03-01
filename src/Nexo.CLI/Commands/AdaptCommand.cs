@@ -6,9 +6,11 @@ using Nexo.Core.Application.Adaptation.Models;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
+using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Infrastructure;
-using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.SelfContext;
 
 namespace Nexo.CLI.Commands;
 
@@ -23,31 +25,38 @@ public sealed class AdaptCommand : Command
         var brickOpt = new Option<string>("--brick", () => "observation.context", "Brick ID to adapt");
         var fixOpt = new Option<string?>("--fix", "Apply fix for failure type (e.g. EmptyCatch, MissingOutput)");
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "Only decompose; do not recompile");
+        var storePathOpt = new Option<string?>("--store-path", "Directory for nexo-patterns.db and nexo-execution.db (default: repo root)");
 
         AddOption(brickOpt);
         AddOption(fixOpt);
         AddOption(dryRunOpt);
+        AddOption(storePathOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var brickId = ctx.ParseResult.GetValueForOption(brickOpt) ?? "observation.context";
             var fixType = ctx.ParseResult.GetValueForOption(fixOpt);
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
-            await ExecuteAsync(brickId, fixType, dryRun);
+            var storePathOverride = ctx.ParseResult.GetValueForOption(storePathOpt);
+            await ExecuteAsync(brickId, fixType, dryRun, storePathOverride);
         });
     }
 
-    private static async Task ExecuteAsync(string brickId, string? fixType, bool dryRun)
+    private static async Task ExecuteAsync(string brickId, string? fixType, bool dryRun, string? storePathOverride = null)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
-        var storePath = Path.Combine(repoRoot, "nexo-patterns.db");
+        var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
+            ? Path.Combine(Path.GetFullPath(storePathOverride), "nexo-patterns.db")
+            : Path.Combine(repoRoot, "nexo-patterns.db");
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
             .AddAdaptationInfrastructure(storePath)
+            .AddSelfContextInfrastructure(storePath)
             .BuildServiceProvider();
 
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger<AdaptCommand>();
+        var executionTracer = services.GetRequiredService<IExecutionTracer>();
 
         var decomposer = services.GetRequiredService<IBrickDecomposer>();
         var fixGenerator = services.GetRequiredService<IFixGenerator>();
@@ -60,9 +69,12 @@ public sealed class AdaptCommand : Command
         if (brick == null)
         {
             logger.LogError("Brick {Id} not supported for adapt. Use observation.context.", brickId);
+            await executionTracer.TraceAsync("adapt.end", null, null, "brick_not_found").ConfigureAwait(false);
             Environment.ExitCode = 1;
             return;
         }
+
+        await executionTracer.TraceAsync("adapt.start", new Dictionary<string, object> { ["brickId"] = brickId, ["fixType"] = fixType ?? "" }, null).ConfigureAwait(false);
 
         var manifest = await decomposer.DecomposeAsync(brick).ConfigureAwait(false);
         Console.WriteLine($"Decomposed {brickId} -> manifest {manifest.Id} v{manifest.Version}");
@@ -94,6 +106,8 @@ public sealed class AdaptCommand : Command
         }
 
         var recompiled = await recompiler.RecompileAsync(toRecompile).ConfigureAwait(false);
+        var outcome = recompiled != null ? "recompiled" : "recompile_null";
+        await executionTracer.TraceAsync("adapt.end", null, null, outcome).ConfigureAwait(false);
         if (recompiled != null)
         {
             Console.WriteLine($"  Recompiled OK: {recompiled.Id}");

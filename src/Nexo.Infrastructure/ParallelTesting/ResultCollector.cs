@@ -1,0 +1,24 @@
+using Nexo.Core.Application.ParallelTesting.Models;
+using Nexo.Core.Application.ParallelTesting.Ports;
+
+namespace Nexo.Infrastructure.ParallelTesting;
+
+/// <summary>
+/// Collects and aggregates test instance results.
+/// </summary>
+public sealed class ResultCollector : IResultCollector
+{
+    /// <inheritdoc />
+    public Task<AggregatedTestResult> CollectAsync(IReadOnlyList<TestInstance> instances, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var allPassed = instances.All(i => i.Passed);
+        var best = instances.FirstOrDefault(i => i.Passed) ?? instances.FirstOrDefault();
+        return Task.FromResult(new AggregatedTestResult
+        {
+            Results = instances,
+            BestCandidate = best,
+            AllPassed = allPassed,
+        });
+    }
+}

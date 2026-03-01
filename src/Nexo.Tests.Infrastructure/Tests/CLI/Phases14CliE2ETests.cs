@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using Nexo.Tests.Application.Helpers;
 using Nexo.Tests.Infrastructure;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.CLI;
@@ -9,6 +9,8 @@ namespace Nexo.Tests.Infrastructure.Tests.CLI;
 /// End-to-end smoke tests for Phases 1-4: observe, analyze bricks, adapt, improve.
 /// Uses prebuilt CLI (build once, run many) for faster execution.
 /// </summary>
+[Collection("E2E")]
+[Trait("Category", "E2E")]
 public sealed class Phases14CliE2ETests : IDisposable
 {
     private readonly string _repoRoot;
@@ -29,7 +31,7 @@ public sealed class Phases14CliE2ETests : IDisposable
     [Fact]
     public async Task AdaptCommand_DryRun_ExitsZero()
     {
-        var (code, stdout, _) = await RunCliAsync(_repoRoot, "adapt --dry-run");
+        var (code, stdout, _) = await CliRunner.RunAsync(_repoRoot, $"adapt --dry-run --store-path \"{_tempDir}\"");
 
         Assert.Equal(0, code);
         Assert.Contains("Decomposed", stdout, StringComparison.OrdinalIgnoreCase);
@@ -38,7 +40,7 @@ public sealed class Phases14CliE2ETests : IDisposable
     [Fact]
     public async Task ImproveCommand_DryRun_Exits()
     {
-        var (code, _, _) = await RunCliAsync(_repoRoot, "improve --dry-run");
+        var (code, _, _) = await CliRunner.RunAsync(_repoRoot, "improve --dry-run");
 
         Assert.True(code == 0 || code == 1);
     }
@@ -60,7 +62,7 @@ public sealed class Phases14CliE2ETests : IDisposable
             }
             """);
 
-        var (code, _, _) = await RunCliAsync(_repoRoot, $"improve --path \"{_tempDir}\"");
+        var (code, _, _) = await CliRunner.RunAsync(_repoRoot, $"improve --path \"{_tempDir}\" --yes --skip-regression --store-path \"{_tempDir}\"");
 
         Assert.True(code == 0 || code == 1);
         var content = await File.ReadAllTextAsync(csPath);
@@ -75,7 +77,7 @@ public sealed class Phases14CliE2ETests : IDisposable
         var obsPath = Path.Combine(_repoRoot, "src", "Nexo.Infrastructure", "Observation");
         var path = Directory.Exists(obsPath) ? obsPath : _repoRoot;
 
-        var (code, _, _) = await RunCliAsync(_repoRoot, $"analyze bricks --path \"{path}\"");
+        var (code, _, _) = await CliRunner.RunAsync(_repoRoot, $"analyze bricks --path \"{path}\"");
 
         Assert.True(code == 0 || code == 1);
     }
@@ -86,87 +88,19 @@ public sealed class Phases14CliE2ETests : IDisposable
         var watchPath = Path.Combine(_tempDir, "src");
         Directory.CreateDirectory(watchPath);
 
-        var (observeCode, _, _) = await RunCliAsync(_repoRoot, $"observe --path \"{_tempDir}\" --duration 1s");
+        var (observeCode, _, _) = await CliRunner.RunAsync(_repoRoot, $"observe --path \"{_tempDir}\" --duration 1s");
         Assert.Equal(0, observeCode);
 
         var obsPath = Path.Combine(_repoRoot, "src", "Nexo.Infrastructure", "Observation");
         var analyzePath = Directory.Exists(obsPath) ? obsPath : _repoRoot;
 
-        var (analyzeCode, _, _) = await RunCliAsync(_repoRoot, $"analyze bricks --path \"{analyzePath}\"");
+        var (analyzeCode, _, _) = await CliRunner.RunAsync(_repoRoot, $"analyze bricks --path \"{analyzePath}\"");
         Assert.True(analyzeCode == 0 || analyzeCode == 1);
 
-        var (adaptCode, _, _) = await RunCliAsync(_repoRoot, "adapt --dry-run");
+        var (adaptCode, _, _) = await CliRunner.RunAsync(_repoRoot, $"adapt --dry-run --store-path \"{_tempDir}\"");
         Assert.Equal(0, adaptCode);
 
-        var (improveCode, _, _) = await RunCliAsync(_repoRoot, "improve --dry-run");
+        var (improveCode, _, _) = await CliRunner.RunAsync(_repoRoot, "improve --dry-run");
         Assert.True(improveCode == 0 || improveCode == 1);
-    }
-
-    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunCliAsync(string workingDir, string args)
-    {
-        var cliPath = await EnsureCliBuiltAsync(workingDir);
-        var fullArgs = $"\"{cliPath}\" {args}";
-
-        var psi = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = fullArgs,
-            WorkingDirectory = workingDir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet process");
-        var stdoutTask = p.StandardOutput.ReadToEndAsync();
-        var stderrTask = p.StandardError.ReadToEndAsync();
-
-        await p.WaitForExitAsync();
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-
-        return (p.ExitCode, stdout, stderr);
-    }
-
-    private static readonly object _cliBuildLock = new();
-    private static string? _cachedCliPath;
-
-    private static Task<string> EnsureCliBuiltAsync(string repoRoot)
-    {
-        var cliDll = Path.Combine(repoRoot, "src", "Nexo.CLI", "bin", "Debug", "net8.0", "Nexo.CLI.dll");
-
-        lock (_cliBuildLock)
-        {
-            if (_cachedCliPath != null && File.Exists(_cachedCliPath))
-                return Task.FromResult(_cachedCliPath);
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = "build src/Nexo.CLI/Nexo.CLI.csproj --verbosity quiet",
-                WorkingDirectory = repoRoot,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet build");
-            var stderrTask = p.StandardError.ReadToEndAsync();
-            p.WaitForExit();
-
-            if (p.ExitCode != 0)
-            {
-                var err = stderrTask.GetAwaiter().GetResult();
-                throw new InvalidOperationException($"CLI build failed (exit {p.ExitCode}): {err}");
-            }
-
-            if (!File.Exists(cliDll))
-                throw new InvalidOperationException($"CLI DLL not found at {cliDll} after build");
-
-            _cachedCliPath = cliDll;
-            return Task.FromResult(cliDll);
-        }
     }
 }

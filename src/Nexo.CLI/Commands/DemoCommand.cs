@@ -6,7 +6,7 @@ using Nexo.Infrastructure.Execution;
 namespace Nexo.CLI.Commands;
 
 /// <summary>
-/// Command handler for demo operations showcasing Universal Testing Agent and Autonomous Development Agent.
+/// Command handler for demo operations: self-extension and smoke validation.
 /// </summary>
 public class DemoCommand
 {
@@ -15,17 +15,9 @@ public class DemoCommand
     /// </summary>
     public static Command CreateCommand(IServiceProvider serviceProvider, Option<bool> jsonOpt, Option<bool> verboseOpt)
     {
-        var demoCmd = new Command("demo", "Demo operations for Universal Testing and Autonomous Development");
+        var demoCmd = new Command("demo", "Demo operations for self-extension and smoke validation");
         
-        // Use the new command classes
-        demoCmd.AddCommand(new UniversalTestCommand());
-        demoCmd.AddCommand(new GameWatchCommand());
-        demoCmd.AddCommand(new YoutubeTestCommand());
-        demoCmd.AddCommand(new YoutubeTestDockerCommand());
-        demoCmd.AddCommand(new YoutubeTestContainerCommand());
-        demoCmd.AddCommand(new YoutubeTranscribeCommand());
-        demoCmd.AddCommand(new VideollmDockerCommand());
-        demoCmd.AddCommand(new AutonomousDevCommand());
+        // Core kernel demos: smoke-test, self-extend
         demoCmd.AddCommand(new DemoSelfExtendCommand());
         
         // nexo demo smoke-test

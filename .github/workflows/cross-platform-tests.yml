@@ -13,8 +13,10 @@ on:
         type: choice
         options:
           - smoke
+          - integration
           - persistence
           - trust
+          - e2e
           - full
   push:
     branches: [ master, main ]
@@ -51,7 +53,7 @@ jobs:
         run: dotnet build --no-restore -v minimal
 
       - name: Run tests (smoke)
-        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full'
+        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full' && github.event.inputs.scope != 'integration' && github.event.inputs.scope != 'e2e'
         shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
@@ -59,6 +61,17 @@ jobs:
             --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=smoke-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (integration)
+        if: github.event.inputs.scope == 'integration' || github.event.inputs.scope == 'full'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --filter "Category=Integration" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=integration-${{ matrix.os }}.trx" \
             --results-directory test-results
 
       - name: Run tests (persistence)
@@ -70,6 +83,17 @@ jobs:
             --filter "FullyQualifiedName~InMemoryPersistenceTests" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=persistence-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (e2e)
+        if: github.event.inputs.scope == 'e2e' || github.event.inputs.scope == 'full'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --filter "Category=E2E" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=e2e-${{ matrix.os }}.trx" \
             --results-directory test-results
 
       - name: Run tests (trust)
