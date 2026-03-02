@@ -6,7 +6,6 @@ using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Domain.Values;
 using System.Text.Json;
-using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 
 namespace Nexo.Tests.CLI.Tests.Formatting;
 
@@ -200,10 +199,10 @@ public class ConsoleRendererTests : UnitTestBase
             TestsRun = 5,
             TestsPassed = 3,
             TestsFailed = 2,
-            TestResults = new List<ValidationTestResult>
+            TestResults = new List<TestResult>
             {
-                new ValidationTestResult { Name = "Test1", Passed = true },
-                new ValidationTestResult { Name = "Test2", Passed = false, Message = "Failed" }
+                new TestResult { Name = "Test1", Passed = true },
+                new TestResult { Name = "Test2", Passed = false, Message = "Failed" }
             }
         };
         

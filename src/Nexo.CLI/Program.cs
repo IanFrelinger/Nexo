@@ -449,6 +449,14 @@ static class Program
             async (bool formatJson) => Environment.Exit(await trustCommand.BoundaryAsync(formatJson)),
             jsonOpt);
         trustCmd.AddCommand(trustBoundaryCmd);
+        var trustDashboardCmd = new Command("dashboard", "Compliance dashboard: boundary status + audit summary");
+        trustDashboardCmd.AddOption(new Option<int>("--count", () => 50, "Max audit entries to include"));
+        trustDashboardCmd.AddOption(jsonOpt);
+        trustDashboardCmd.SetHandler(
+            async (int count, bool formatJson) => Environment.Exit(await trustCommand.DashboardAsync(count, formatJson)),
+            trustDashboardCmd.Options[0] as Option<int> ?? throw new InvalidOperationException(),
+            trustDashboardCmd.Options[1] as Option<bool> ?? throw new InvalidOperationException());
+        trustCmd.AddCommand(trustDashboardCmd);
         root.AddCommand(trustCmd);
 
         // nexo test - Multi-platform test execution
@@ -899,7 +907,8 @@ static class Program
         // Register filesystem abstraction (keeps System.IO out of Core.Application)
         services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
 
-        // Register workflow webhook and database (for WorkflowExecutor)
+        // Register workflow webhook, database, and PDF exporter (for WorkflowExecutor)
+        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowPdfExporter, Nexo.Infrastructure.Workflows.QuestPdfWorkflowExporter>();
         services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowWebhookClient, Nexo.Infrastructure.Workflows.HttpWorkflowWebhookClient>();
         services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseReader, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseReader>();
         services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseWriter, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseWriter>();

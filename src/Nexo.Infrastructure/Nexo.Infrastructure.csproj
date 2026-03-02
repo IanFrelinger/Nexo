@@ -29,6 +29,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
         <PackageReference Include="ICSharpCode.Decompiler" />
     <PackageReference Include="LiteDB" />
+    <PackageReference Include="QuestPDF" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
   </ItemGroup>

@@ -190,6 +190,96 @@ public class ProviderFactory : IProviderFactory
         return content ?? throw new InvalidOperationException("Azure OpenAI response content was null");
     }
 
+    private async Task<string> ExecuteOpenAiVisionAsync(string apiKey, string systemPrompt, string userPrompt, byte[]? imageBytes, object? config, CancellationToken ct)
+    {
+        var model = Environment.GetEnvironmentVariable("OPENAI_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
+        var baseUrl = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com";
+        var url = baseUrl.EndsWith("/v1/chat/completions", StringComparison.OrdinalIgnoreCase)
+            ? baseUrl
+            : baseUrl.TrimEnd('/') + "/v1/chat/completions";
+
+        object[] contentParts;
+        if (imageBytes is { Length: > 0 })
+        {
+            var b64 = Convert.ToBase64String(imageBytes);
+            contentParts = new object[] { new { type = "text", text = userPrompt ?? "" }, new { type = "image_url", image_url = new { url = $"data:image/png;base64,{b64}" } } };
+        }
+        else
+        {
+            contentParts = new object[] { new { type = "text", text = userPrompt ?? "" } };
+        }
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+        var messages = new object[]
+        {
+            new { role = "system", content = systemPrompt ?? "" },
+            new { role = "user", content = (object)contentParts }
+        };
+        var payload = new { model, messages, temperature = 0.2, max_tokens = 4096 };
+
+        req.Content = new StringContent(JsonSerializer.Serialize(payload));
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        using var resp = await Http.SendAsync(req, ct);
+        var body = await resp.Content.ReadAsStringAsync(ct);
+        resp.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return content ?? throw new InvalidOperationException("OpenAI vision response content was null");
+    }
+
+    private async Task<string> ExecuteAzureOpenAiVisionAsync(string endpoint, string apiKey, string deployment, string systemPrompt, string userPrompt, byte[]? imageBytes, object? config, CancellationToken ct)
+    {
+        endpoint = endpoint.TrimEnd('/');
+        var apiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ?? "2024-06-01";
+        var url = $"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={apiVersion}";
+
+        object[] contentParts;
+        if (imageBytes is { Length: > 0 })
+        {
+            var b64 = Convert.ToBase64String(imageBytes);
+            contentParts = new object[] { new { type = "text", text = userPrompt ?? "" }, new { type = "image_url", image_url = new { url = $"data:image/png;base64,{b64}" } } };
+        }
+        else
+        {
+            contentParts = new object[] { new { type = "text", text = userPrompt ?? "" } };
+        }
+
+        using var req = new HttpRequestMessage(HttpMethod.Post, url);
+        req.Headers.Add("api-key", apiKey);
+
+        var messages = new object[]
+        {
+            new { role = "system", content = systemPrompt ?? "" },
+            new { role = "user", content = (object)contentParts }
+        };
+        var payload = new { messages, temperature = 0.2, max_tokens = 4096 };
+
+        req.Content = new StringContent(JsonSerializer.Serialize(payload));
+        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        using var resp = await Http.SendAsync(req, ct);
+        var body = await resp.Content.ReadAsStringAsync(ct);
+        resp.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(body);
+        var content = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return content ?? throw new InvalidOperationException("Azure OpenAI vision response content was null");
+    }
+
     private static string? GetModelFromConfig(object? config)
     {
         if (config == null) return null;
@@ -360,10 +450,25 @@ public class ProviderFactory : IProviderFactory
         if (provider is "ollama" or "auto" or "local")
             return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes != null ? [imageBytes] : null, config, cancellationToken);
 
-        if (provider is "openai" or "azure")
-            throw new NotSupportedException($"Vision API not yet implemented for provider: {provider}. Use ollama with a vision model (e.g. richardyoung/smolvlm2-2.2b-instruct, llava:7b).");
+        if (provider is "openai")
+        {
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+                throw new InvalidOperationException("OPENAI_API_KEY is not set. Set it or use provider ollama.");
+            return await ExecuteOpenAiVisionAsync(apiKey, systemPrompt, userPrompt, imageBytes, config, cancellationToken);
+        }
 
-        throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}. Use ollama, auto, or local.");
+        if (provider is "azure")
+        {
+            var endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+            var apiKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
+            var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT");
+            if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(deployment))
+                throw new InvalidOperationException("Azure OpenAI env vars not set (AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT). Set them or use provider ollama.");
+            return await ExecuteAzureOpenAiVisionAsync(endpoint, apiKey, deployment, systemPrompt, userPrompt, imageBytes, config, cancellationToken);
+        }
+
+        throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}. Use ollama, openai, azure, auto, or local.");
     }
 
     /// <inheritdoc />
@@ -397,8 +502,23 @@ public class ProviderFactory : IProviderFactory
         if (provider is "video")
             return await ExecuteVideoAsync(systemPrompt, userPrompt, frames, config, cancellationToken);
 
-        if (provider is "openai" or "azure")
-            throw new NotSupportedException($"Multi-frame vision not yet implemented for provider: {provider}. Use ollama or video.");
+        if (provider is "openai")
+        {
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+            if (string.IsNullOrWhiteSpace(apiKey))
+                throw new InvalidOperationException("OPENAI_API_KEY is not set. Set it or use provider ollama.");
+            return await ExecuteOpenAiVisionAsync(apiKey, systemPrompt, userPrompt, frames[^1], config, cancellationToken);
+        }
+
+        if (provider is "azure")
+        {
+            var endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+            var apiKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
+            var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT");
+            if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(deployment))
+                throw new InvalidOperationException("Azure OpenAI env vars not set. Set them or use provider ollama.");
+            return await ExecuteAzureOpenAiVisionAsync(endpoint, apiKey, deployment, systemPrompt, userPrompt, frames[^1], config, cancellationToken);
+        }
 
         throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}.");
     }

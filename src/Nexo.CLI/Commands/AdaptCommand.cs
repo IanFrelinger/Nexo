@@ -7,6 +7,7 @@ using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.SelfContext.Ports;
+using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Observation;
@@ -61,14 +62,15 @@ public sealed class AdaptCommand : Command
         var decomposer = services.GetRequiredService<IBrickDecomposer>();
         var fixGenerator = services.GetRequiredService<IFixGenerator>();
         var recompiler = services.GetRequiredService<IBrickRecompiler>();
+        var brickRegistry = services.GetRequiredService<IBrickRegistry>();
 
-        Nexo.Core.Domain.Bricks.Brick? brick = brickId == "observation.context"
-            ? new ObservationContextBrick(services.GetRequiredService<IContextAssembler>())
-            : null;
+        var brick = brickRegistry.GetBrick(brickId);
 
         if (brick == null)
         {
-            logger.LogError("Brick {Id} not supported for adapt. Use observation.context.", brickId);
+            var available = brickRegistry.GetAllBricks();
+            var ids = available.Count > 0 ? string.Join(", ", available.Select(b => b.Id)) : "observation.context (when store-path provided)";
+            logger.LogError("Brick {Id} not found. Available for adapt: {Available}", brickId, ids);
             await executionTracer.TraceAsync("adapt.end", null, null, "brick_not_found").ConfigureAwait(false);
             Environment.ExitCode = 1;
             return;

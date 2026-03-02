@@ -9,7 +9,6 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Domain.Exceptions;
-using ValidationTestResult = Nexo.Core.Application.Validation.Models.TestResult;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 

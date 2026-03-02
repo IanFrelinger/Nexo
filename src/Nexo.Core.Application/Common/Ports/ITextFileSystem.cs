@@ -8,5 +8,6 @@ public interface ITextFileSystem
 {
     Task<string> ReadAllTextAsync(string path, CancellationToken ct = default);
     Task WriteAllTextAsync(string path, string content, CancellationToken ct = default);
+    Task WriteAllBytesAsync(string path, byte[] content, CancellationToken ct = default);
 }
 

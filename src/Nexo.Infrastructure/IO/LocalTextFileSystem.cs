@@ -13,5 +13,8 @@ public sealed class LocalTextFileSystem : ITextFileSystem
 
     public Task WriteAllTextAsync(string path, string content, CancellationToken ct = default)
         => File.WriteAllTextAsync(path, content, ct);
+
+    public Task WriteAllBytesAsync(string path, byte[] content, CancellationToken ct = default)
+        => File.WriteAllBytesAsync(path, content, ct);
 }
 

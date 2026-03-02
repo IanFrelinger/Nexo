@@ -1,7 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Observation;
 
 namespace Nexo.Infrastructure;
@@ -21,6 +25,17 @@ public static class AdaptationServiceCollectionExtensions
     {
         if (!string.IsNullOrEmpty(patternStorePath))
             services.AddObservationCore(patternStorePath);
+
+        services.AddSingleton<Nexo.Core.Domain.Execution.IBrickRegistry>(sp =>
+        {
+            var bricks = new List<Brick>();
+            if (patternStorePath != null)
+            {
+                var contextAssembler = sp.GetRequiredService<IContextAssembler>();
+                bricks.Add(new ObservationContextBrick(contextAssembler));
+            }
+            return new Nexo.Infrastructure.Execution.BrickRegistry(bricks);
+        });
 
         services.AddSingleton<IBrickDecomposer, BrickDecomposer>();
         services.AddSingleton<IFixGenerator, FixGenerator>();

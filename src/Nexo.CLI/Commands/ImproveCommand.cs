@@ -9,6 +9,7 @@ using Nexo.Core.Application.Analysis.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Infrastructure.Adaptation;
@@ -255,13 +256,11 @@ public sealed class ImproveCommand : Command
             return;
         }
 
+        var brickRegistry = services.GetRequiredService<IBrickRegistry>();
         int brickAdapted = 0;
         foreach (var (brickId, violations) in violationsByBrick)
         {
-            Brick? brick = brickId == "observation.context"
-                ? new ObservationContextBrick(services.GetRequiredService<IContextAssembler>())
-                : null;
-
+            var brick = brickRegistry.GetBrick(brickId);
             if (brick == null) continue;
 
             var manifest = await decomposer.DecomposeAsync(brick).ConfigureAwait(false);

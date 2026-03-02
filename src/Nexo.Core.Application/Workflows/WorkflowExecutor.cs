@@ -23,6 +23,7 @@ public class WorkflowExecutor
     private readonly IBehaviorExecutor _behaviorExecutor;
     private readonly ILoopKernel _loops;
     private readonly ITextFileSystem _fs;
+    private readonly IWorkflowPdfExporter? _pdfExporter;
     private readonly IWorkflowWebhookClient? _webhookClient;
     private readonly IWorkflowDatabaseReader? _databaseReader;
     private readonly IWorkflowDatabaseWriter? _databaseWriter;
@@ -40,6 +41,7 @@ public class WorkflowExecutor
         ILoopKernel loops,
         ITextFileSystem fs,
         ILogger<WorkflowExecutor> logger,
+        IWorkflowPdfExporter? pdfExporter = null,
         IWorkflowWebhookClient? webhookClient = null,
         IWorkflowDatabaseReader? databaseReader = null,
         IWorkflowDatabaseWriter? databaseWriter = null,
@@ -51,6 +53,7 @@ public class WorkflowExecutor
         _behaviorExecutor = behaviorExecutor;
         _loops = loops;
         _fs = fs;
+        _pdfExporter = pdfExporter;
         _webhookClient = webhookClient;
         _databaseReader = databaseReader;
         _databaseWriter = databaseWriter;
@@ -702,8 +705,19 @@ public class WorkflowExecutor
             case OutputType.File:
                 if (node.FilePath != null && data != null)
                 {
-                    var content = SerializeOutput(data, node.Format);
-                    await _fs.WriteAllTextAsync(node.FilePath, content, ct);
+                    if (node.Format == OutputFormat.Pdf)
+                    {
+                        if (_pdfExporter == null)
+                            throw new NotSupportedException("PDF export requires IWorkflowPdfExporter to be registered");
+                        var markdown = SerializeOutput(data, OutputFormat.Markdown);
+                        var pdfBytes = await _pdfExporter.ExportToPdfAsync(markdown, ct);
+                        await _fs.WriteAllBytesAsync(node.FilePath, pdfBytes, ct);
+                    }
+                    else
+                    {
+                        var content = SerializeOutput(data, node.Format);
+                        await _fs.WriteAllTextAsync(node.FilePath, content, ct);
+                    }
                 }
                 break;
             case OutputType.Webhook:

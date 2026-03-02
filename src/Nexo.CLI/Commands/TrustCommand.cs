@@ -74,6 +74,75 @@ public class TrustCommand
     }
 
     /// <summary>
+    /// Show combined compliance dashboard: boundary status + audit summary.
+    /// </summary>
+    public Task<int> DashboardAsync(int auditCount, bool formatJson, CancellationToken ct = default)
+    {
+        try
+        {
+            if (formatJson)
+            {
+                var dashboard = new Dictionary<string, object>();
+                if (_accessBoundary != null)
+                {
+                    dashboard["boundary"] = new Dictionary<string, object>
+                    {
+                        ["isPaused"] = _accessBoundary.IsObservationPaused,
+                        ["status"] = _accessBoundary.IsObservationPaused ? "Observation paused" : "Observing"
+                    };
+                }
+                else
+                {
+                    dashboard["boundary"] = new Dictionary<string, object> { ["error"] = "Not registered" };
+                }
+                if (_auditLog != null)
+                {
+                    var entries = _auditLog.GetRecent(auditCount, null);
+                    var byType = entries.GroupBy(e => e.EventType).ToDictionary(g => g.Key, g => g.Count());
+                    dashboard["audit"] = new Dictionary<string, object>
+                    {
+                        ["recentCount"] = entries.Count,
+                        ["byEventType"] = byType
+                    };
+                }
+                else
+                {
+                    dashboard["audit"] = new Dictionary<string, object> { ["error"] = "Not registered" };
+                }
+                Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(dashboard, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                if (_accessBoundary != null)
+                {
+                    Console.Out.WriteLine("Access Boundary:");
+                    Console.Out.WriteLine($"  Paused: {(_accessBoundary.IsObservationPaused ? "Yes" : "No")}");
+                    Console.Out.WriteLine($"  Status: {(_accessBoundary.IsObservationPaused ? "Observation halted" : "Observing")}");
+                    Console.Out.WriteLine();
+                }
+                if (_auditLog != null)
+                {
+                    var entries = _auditLog.GetRecent(auditCount, null);
+                    var byType = entries.GroupBy(e => e.EventType).ToDictionary(g => g.Key, g => g.Count());
+                    Console.Out.WriteLine($"Audit Summary (last {entries.Count} entries):");
+                    foreach (var kv in byType.OrderByDescending(x => x.Value))
+                        Console.Out.WriteLine($"  {kv.Key}: {kv.Value}");
+                }
+            }
+            return Task.FromResult(0);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Trust dashboard failed");
+            if (formatJson)
+                Console.Out.WriteLine($"{{\"ok\":false,\"error\":\"{ex.Message}\"}}");
+            else
+                Console.Error.WriteLine(ex.Message);
+            return Task.FromResult(1);
+        }
+    }
+
+    /// <summary>
     /// Show access boundary status (pause state, categories, sources).
     /// </summary>
     public Task<int> BoundaryAsync(bool formatJson, CancellationToken ct = default)
