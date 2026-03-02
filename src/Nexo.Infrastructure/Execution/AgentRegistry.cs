@@ -1,11 +1,12 @@
 using Nexo.Core.Domain.Agents;
+using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
 /// In-memory registry for agent cards.
 /// </summary>
-public class AgentRegistry : IAgentRegistry
+public class AgentRegistry : Nexo.Core.Domain.Execution.IAgentRegistry
 {
     private readonly Dictionary<string, AgentCard> _agents = new();
     

@@ -91,9 +91,12 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ISensitiveContentFilter, SensitiveContentFilter>();
         services.AddUserKnowledgeLog(Environment.GetEnvironmentVariable("NEXO_KNOWLEDGE_LOG_PATH"));
         services.AddAccessBoundary(Environment.GetEnvironmentVariable("NEXO_ACCESS_BOUNDARY_CONFIG"));
-        var dataAuditLog = new Nexo.BackgroundAgents.Trust.DataDecisionAuditLog();
-        services.TryAddSingleton<IDataDecisionAuditLog>(dataAuditLog);
-        services.TryAddSingleton<ISanitizationAuditLog>(dataAuditLog);
+        var auditDbPath = Environment.GetEnvironmentVariable("NEXO_TRUST_AUDIT_DB");
+        object auditLogInstance = !string.IsNullOrWhiteSpace(auditDbPath)
+            ? new Nexo.BackgroundAgents.Trust.LiteDbDataDecisionAuditLog(auditDbPath)
+            : new Nexo.BackgroundAgents.Trust.DataDecisionAuditLog();
+        services.TryAddSingleton<IDataDecisionAuditLog>(sp => (IDataDecisionAuditLog)auditLogInstance);
+        services.TryAddSingleton<ISanitizationAuditLog>(sp => (ISanitizationAuditLog)auditLogInstance);
         services.TryAddSingleton<ICloudSanitizationProxy>(sp =>
         {
             var filter = sp.GetService<ISensitiveContentFilter>();

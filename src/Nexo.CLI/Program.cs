@@ -433,17 +433,61 @@ static class Program
         {
             new Option<int>("--count", () => 50, "Max entries to show"),
             new Option<string?>("--since", "Filter by time (e.g. 1h, 30m, or ISO date)"),
+            new Option<string?>("--until", "Filter until time (e.g. 1h, 30m, or ISO date)"),
+            new Option<string?>("--type", "Filter by event type (Sanitization, BoundaryChange, Classification)"),
             new Option<bool>("--json", "Export as JSON (compliance format)"),
-            new Option<bool>("--md", "Export as Markdown")
+            new Option<bool>("--md", "Export as Markdown"),
+            new Option<bool>("--csv", "Export as CSV (compliance)")
         };
         trustAuditCmd.SetHandler(
-            async (int count, string? since, bool json, bool md) =>
-                Environment.Exit(await trustCommand.AuditAsync(count, since, json, md)),
+            async (int count, string? since, string? until, string? type, bool json, bool md, bool csv) =>
+                Environment.Exit(await trustCommand.AuditAsync(count, since, until, type, json, md, csv)),
             trustAuditCmd.Options[0] as Option<int> ?? throw new InvalidOperationException(),
             trustAuditCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[2] as Option<bool> ?? throw new InvalidOperationException(),
-            trustAuditCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException());
+            trustAuditCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
+            trustAuditCmd.Options[3] as Option<string?> ?? throw new InvalidOperationException(),
+            trustAuditCmd.Options[4] as Option<bool> ?? throw new InvalidOperationException(),
+            trustAuditCmd.Options[5] as Option<bool> ?? throw new InvalidOperationException(),
+            trustAuditCmd.Options[6] as Option<bool> ?? throw new InvalidOperationException());
         trustCmd.AddCommand(trustAuditCmd);
+        var trustPauseCmd = new Command("pause", "Pause observation (halt all data collection)");
+        trustPauseCmd.AddOption(jsonOpt);
+        trustPauseCmd.SetHandler(
+            async (bool formatJson) => Environment.Exit(await trustCommand.PauseAsync(formatJson)),
+            jsonOpt);
+        trustCmd.AddCommand(trustPauseCmd);
+        var trustResumeCmd = new Command("resume", "Resume observation");
+        trustResumeCmd.AddOption(jsonOpt);
+        trustResumeCmd.SetHandler(
+            async (bool formatJson) => Environment.Exit(await trustCommand.ResumeAsync(formatJson)),
+            jsonOpt);
+        trustCmd.AddCommand(trustResumeCmd);
+        var trustAllowCmd = new Command("allow", "Allow a category or source");
+        trustAllowCmd.AddOption(new Option<string?>("--category", "Category to allow (e.g. file-paths, terminal-output)"));
+        trustAllowCmd.AddOption(new Option<string?>("--source", "Source to allow (e.g. git, vscode)"));
+        trustAllowCmd.AddOption(new Option<string?>("--project", "Project path for override (requires --source)"));
+        trustAllowCmd.AddOption(jsonOpt);
+        trustAllowCmd.SetHandler(
+            async (string? category, string? source, string? project, bool formatJson) =>
+                Environment.Exit(await trustCommand.AllowAsync(category, source, project, formatJson)),
+            trustAllowCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            trustAllowCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
+            trustAllowCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
+            trustAllowCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException());
+        trustCmd.AddCommand(trustAllowCmd);
+        var trustDenyCmd = new Command("deny", "Deny a category or source");
+        trustDenyCmd.AddOption(new Option<string?>("--category", "Category to deny"));
+        trustDenyCmd.AddOption(new Option<string?>("--source", "Source to deny"));
+        trustDenyCmd.AddOption(new Option<string?>("--project", "Project path for override (requires --source)"));
+        trustDenyCmd.AddOption(jsonOpt);
+        trustDenyCmd.SetHandler(
+            async (string? category, string? source, string? project, bool formatJson) =>
+                Environment.Exit(await trustCommand.DenyAsync(category, source, project, formatJson)),
+            trustDenyCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
+            trustDenyCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
+            trustDenyCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
+            trustDenyCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException());
+        trustCmd.AddCommand(trustDenyCmd);
         var trustBoundaryCmd = new Command("boundary", "Show access boundary status");
         trustBoundaryCmd.SetHandler(
             async (bool formatJson) => Environment.Exit(await trustCommand.BoundaryAsync(formatJson)),
@@ -914,6 +958,35 @@ static class Program
         services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseWriter, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseWriter>();
         services.AddSingleton<Nexo.Infrastructure.Execution.IClusterRegistry, Nexo.Infrastructure.Execution.ClusterRegistry>();
         services.AddSingleton<Nexo.Core.Application.Common.Ports.IClusterStore, Nexo.Infrastructure.Workflows.ClusterStoreAdapter>();
+
+        // WorkflowExecutor (for workflow run; requires brick/behavior registries from AddAdaptationInfrastructure)
+        services.TryAddSingleton<Nexo.Infrastructure.Execution.ISemanticCache>(sp =>
+            new Nexo.Infrastructure.Execution.SemanticCache(sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.SemanticCache>>()));
+        services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorRegistry>(_ =>
+            new Nexo.Infrastructure.Execution.BehaviorRegistry(Array.Empty<Nexo.Core.Domain.Behaviors.Behavior>()));
+        services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorExecutor>(sp =>
+            new Nexo.Infrastructure.Execution.BehaviorExecutor(
+                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBrickRegistry>(),
+                sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>(),
+                sp.GetRequiredService<Nexo.Infrastructure.Execution.ISemanticCache>(),
+                sp.GetRequiredService<ILoopKernel>(),
+                sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>()));
+        services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(_ =>
+            new Nexo.Infrastructure.Execution.AgentRegistry(Array.Empty<Nexo.Core.Domain.Agents.AgentCard>()));
+        services.AddScoped<Nexo.Core.Application.Workflows.WorkflowExecutor>(sp =>
+            new Nexo.Core.Application.Workflows.WorkflowExecutor(
+                sp.GetRequiredService<Nexo.Core.Domain.Execution.IAgentRegistry>(),
+                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBrickRegistry>(),
+                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBehaviorRegistry>(),
+                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBehaviorExecutor>(),
+                sp.GetRequiredService<ILoopKernel>(),
+                sp.GetRequiredService<Nexo.Core.Application.Common.Ports.ITextFileSystem>(),
+                sp.GetRequiredService<ILogger<Nexo.Core.Application.Workflows.WorkflowExecutor>>(),
+                pdfExporter: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowPdfExporter>(),
+                webhookClient: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowWebhookClient>(),
+                databaseReader: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseReader>(),
+                databaseWriter: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseWriter>(),
+                clusterStore: sp.GetService<Nexo.Core.Application.Common.Ports.IClusterStore>()));
 
         // Register agent registry
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentRegistry, Nexo.Infrastructure.Agent.Adapters.AgentRegistryAdapter>();

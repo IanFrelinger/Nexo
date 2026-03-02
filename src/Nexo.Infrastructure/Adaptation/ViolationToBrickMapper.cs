@@ -11,6 +11,7 @@ public static class ViolationToBrickMapper
     private static readonly IReadOnlyDictionary<string, string> FileToBrick = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["ObservationContextBrick"] = "observation.context",
+        ["OWASPScannerBrick"] = "owasp-scanner",
     };
 
     /// <summary>

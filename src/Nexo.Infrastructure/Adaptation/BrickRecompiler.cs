@@ -57,12 +57,19 @@ public sealed class BrickRecompiler : IBrickRecompiler
             return new ObservationContextBrick(assembler);
         }
 
-        var ctor = type.GetConstructor(Type.EmptyTypes);
-        if (ctor != null)
+        var parameterlessCtor = type.GetConstructor(Type.EmptyTypes);
+        if (parameterlessCtor != null)
         {
             return (Brick?)Activator.CreateInstance(type);
         }
 
-        return null;
+        try
+        {
+            return (Brick?)ActivatorUtilities.CreateInstance(_services, type);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }

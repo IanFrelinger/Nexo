@@ -8,6 +8,7 @@ using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Core.Domain.Execution;
+using Nexo.Demo.Bricks.Security;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Observation;
@@ -52,7 +53,9 @@ public sealed class AdaptCommand : Command
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
+            .AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>()
             .AddAdaptationInfrastructure(storePath)
+            .AddAdaptationBricks(typeof(OWASPScannerBrick))
             .AddSelfContextInfrastructure(storePath)
             .BuildServiceProvider();
 

@@ -1,28 +1,38 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using LiteDB;
 using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.BackgroundAgents.Trust;
 
 /// <summary>
-/// Unified in-memory audit log for sanitization, boundary changes, and classification.
-/// Implements both IDataDecisionAuditLog and ISanitizationAuditLog.
+/// LiteDB-backed audit log for data decisions. Persists across restarts for compliance.
 /// </summary>
-public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationAuditLog
+public sealed class LiteDbDataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationAuditLog
 {
-    private readonly ConcurrentQueue<DataDecisionAuditEntry> _entries = new();
-    private const int MaxEntries = 50_000;
+    private const string CollectionName = "data_decision_audit";
+    private readonly string _connectionString;
+    private readonly ConcurrentQueue<DataDecisionAuditEntry> _buffer = new();
+    private const int BufferFlushThreshold = 10;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
     };
 
+    public LiteDbDataDecisionAuditLog(string pathOrConnectionString)
+    {
+        if (string.IsNullOrWhiteSpace(pathOrConnectionString))
+            throw new ArgumentNullException(nameof(pathOrConnectionString));
+        var trimmed = pathOrConnectionString.Trim();
+        _connectionString = trimmed.StartsWith("Filename=", StringComparison.OrdinalIgnoreCase) ? trimmed : $"Filename={trimmed}";
+    }
+
     /// <inheritdoc />
     public void LogSanitization(SanitizationAuditEntryDto entry)
     {
-        Append(new DataDecisionAuditEntry
+        var e = new DataDecisionAuditEntry
         {
             EventType = "Sanitization",
             Timestamp = entry.Timestamp,
@@ -30,31 +40,14 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
             FieldOrType = entry.FieldOrType,
             Disposition = entry.Disposition,
             Reason = entry.Reason,
-        });
+        };
+        Append(e);
     }
 
     /// <inheritdoc />
     public void LogRedaction(DateTimeOffset timestamp, string ruleVersion, string fieldOrType, string disposition, string? reason)
     {
         LogSanitization(new SanitizationAuditEntryDto(timestamp, ruleVersion, fieldOrType, disposition, reason));
-    }
-
-    /// <inheritdoc />
-    IReadOnlyList<SanitizationAuditEntry> ISanitizationAuditLog.GetRecent(int maxCount, DateTimeOffset? since)
-    {
-        var all = GetRecentInternal(maxCount * 3, since, null, "Sanitization");
-        return all
-            .Where(e => e.EventType == "Sanitization")
-            .Take(maxCount)
-            .Select(e => new SanitizationAuditEntry
-            {
-                Timestamp = e.Timestamp,
-                RuleVersion = e.RuleVersion ?? "",
-                FieldOrType = e.FieldOrType ?? "",
-                Disposition = e.Disposition ?? "",
-                Reason = e.Reason,
-            })
-            .ToList();
     }
 
     /// <inheritdoc />
@@ -87,13 +80,43 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null) =>
-        GetRecentInternal(maxCount, since, until, eventType);
+    IReadOnlyList<SanitizationAuditEntry> ISanitizationAuditLog.GetRecent(int maxCount, DateTimeOffset? since)
+    {
+        var all = GetRecent(maxCount * 3, since, null, "Sanitization");
+        return all
+            .Select(e => new SanitizationAuditEntry
+            {
+                Timestamp = e.Timestamp,
+                RuleVersion = e.RuleVersion ?? "",
+                FieldOrType = e.FieldOrType ?? "",
+                Disposition = e.Disposition ?? "",
+                Reason = e.Reason,
+            })
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null)
+    {
+        FlushBuffer();
+        using var db = new LiteDatabase(_connectionString);
+        var col = db.GetCollection<AuditDoc>(CollectionName);
+        col.EnsureIndex(x => x.Timestamp);
+        var query = col.Query();
+        if (since.HasValue)
+            query = query.Where(x => x.Timestamp >= since.Value);
+        if (until.HasValue)
+            query = query.Where(x => x.Timestamp <= until.Value);
+        if (!string.IsNullOrEmpty(eventType))
+            query = query.Where(x => x.EventType == eventType);
+        var docs = query.OrderByDescending(x => x.Timestamp).Limit(maxCount).ToList();
+        return docs.Select(ToEntry).ToList();
+    }
 
     /// <inheritdoc />
     public string ExportToJson(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null)
     {
-        var entries = GetRecentInternal(maxCount, since, until, eventType);
+        var entries = GetRecent(maxCount, since, until, eventType);
         var export = new
         {
             exportedAt = DateTimeOffset.UtcNow,
@@ -119,13 +142,13 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
                 e.LevelName,
             }).ToList(),
         };
-        return JsonSerializer.Serialize(export, JsonOptions);
+        return System.Text.Json.JsonSerializer.Serialize(export, JsonOptions);
     }
 
     /// <inheritdoc />
     public string ExportToMarkdown(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null)
     {
-        var entries = GetRecentInternal(maxCount, since, until, eventType);
+        var entries = GetRecent(maxCount, since, until, eventType);
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("# Data Decision Audit Log");
         sb.AppendLine();
@@ -175,7 +198,7 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
     /// <inheritdoc />
     public string ExportToCsv(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null)
     {
-        var entries = GetRecentInternal(maxCount, since, until, eventType);
+        var entries = GetRecent(maxCount, since, until, eventType);
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("Timestamp,EventType,RuleVersion,FieldOrType,Disposition,Reason,ChangeType,Category,SourceId,ProjectPath,PreviousState,NewState,DataType,LevelName");
         foreach (var e in entries)
@@ -210,20 +233,84 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
 
     private void Append(DataDecisionAuditEntry entry)
     {
-        _entries.Enqueue(entry);
-        while (_entries.Count > MaxEntries && _entries.TryDequeue(out _)) { }
+        _buffer.Enqueue(entry);
+        if (_buffer.Count >= BufferFlushThreshold)
+            FlushBuffer();
     }
 
-    private IReadOnlyList<DataDecisionAuditEntry> GetRecentInternal(int maxCount, DateTimeOffset? since, DateTimeOffset? until, string? eventType)
+    private void FlushBuffer()
     {
-        var list = _entries.ToArray();
-        var filtered = list.AsEnumerable();
-        if (since.HasValue)
-            filtered = filtered.Where(e => e.Timestamp >= since.Value);
-        if (until.HasValue)
-            filtered = filtered.Where(e => e.Timestamp <= until.Value);
-        if (!string.IsNullOrEmpty(eventType))
-            filtered = filtered.Where(e => string.Equals(e.EventType, eventType, StringComparison.OrdinalIgnoreCase));
-        return filtered.OrderByDescending(e => e.Timestamp).Take(maxCount).ToList();
+        var toFlush = new List<DataDecisionAuditEntry>();
+        while (_buffer.TryDequeue(out var entry))
+            toFlush.Add(entry);
+        if (toFlush.Count == 0) return;
+        using var db = new LiteDatabase(_connectionString);
+        var col = db.GetCollection<AuditDoc>(CollectionName);
+        col.EnsureIndex(x => x.Timestamp);
+        foreach (var entry in toFlush)
+            col.Insert(ToDoc(entry));
+    }
+
+    private static AuditDoc ToDoc(DataDecisionAuditEntry e)
+    {
+        return new AuditDoc
+        {
+            Id = ObjectId.NewObjectId().ToString(),
+            EventType = e.EventType,
+            Timestamp = e.Timestamp,
+            RuleVersion = e.RuleVersion,
+            FieldOrType = e.FieldOrType,
+            Disposition = e.Disposition,
+            Reason = e.Reason,
+            ChangeType = e.ChangeType,
+            Category = e.Category,
+            SourceId = e.SourceId,
+            ProjectPath = e.ProjectPath,
+            PreviousState = e.PreviousState,
+            NewState = e.NewState,
+            DataType = e.DataType,
+            LevelName = e.LevelName,
+        };
+    }
+
+    private static DataDecisionAuditEntry ToEntry(AuditDoc d)
+    {
+        return new DataDecisionAuditEntry
+        {
+            EventType = d.EventType,
+            Timestamp = d.Timestamp,
+            RuleVersion = d.RuleVersion,
+            FieldOrType = d.FieldOrType,
+            Disposition = d.Disposition,
+            Reason = d.Reason,
+            ChangeType = d.ChangeType,
+            Category = d.Category,
+            SourceId = d.SourceId,
+            ProjectPath = d.ProjectPath,
+            PreviousState = d.PreviousState,
+            NewState = d.NewState,
+            DataType = d.DataType,
+            LevelName = d.LevelName,
+        };
+    }
+
+    private sealed class AuditDoc
+    {
+        [BsonId]
+        public string Id { get; set; } = string.Empty;
+        public string EventType { get; set; } = string.Empty;
+        public DateTimeOffset Timestamp { get; set; }
+        public string? RuleVersion { get; set; }
+        public string? FieldOrType { get; set; }
+        public string? Disposition { get; set; }
+        public string? Reason { get; set; }
+        public string? ChangeType { get; set; }
+        public string? Category { get; set; }
+        public string? SourceId { get; set; }
+        public string? ProjectPath { get; set; }
+        public string? PreviousState { get; set; }
+        public string? NewState { get; set; }
+        public string? DataType { get; set; }
+        public string? LevelName { get; set; }
     }
 }

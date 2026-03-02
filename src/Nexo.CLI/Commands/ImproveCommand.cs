@@ -10,6 +10,7 @@ using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
+using Nexo.Demo.Bricks.Security;
 using Nexo.Infrastructure;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Infrastructure.Adaptation;
@@ -63,8 +64,10 @@ public sealed class ImproveCommand : Command
 
         var serviceCollection = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
+            .AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>()
             .AddCodeAnalyzers()
             .AddAdaptationInfrastructure(storePath)
+            .AddAdaptationBricks(typeof(OWASPScannerBrick))
             .AddSelfContextInfrastructure(storePath);
 
         if (yes)

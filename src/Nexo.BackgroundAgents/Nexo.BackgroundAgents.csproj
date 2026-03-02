@@ -19,6 +19,7 @@
     <Content Include="DataSensitivity\DataTaxonomy.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="DataTaxonomy.json" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="LiteDB" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />

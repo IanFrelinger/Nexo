@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
@@ -26,6 +27,8 @@ public static class AdaptationServiceCollectionExtensions
         if (!string.IsNullOrEmpty(patternStorePath))
             services.AddObservationCore(patternStorePath);
 
+        services.AddOptions<AdaptationBrickOptions>();
+
         services.AddSingleton<Nexo.Core.Domain.Execution.IBrickRegistry>(sp =>
         {
             var bricks = new List<Brick>();
@@ -34,6 +37,25 @@ public static class AdaptationServiceCollectionExtensions
                 var contextAssembler = sp.GetRequiredService<IContextAssembler>();
                 bricks.Add(new ObservationContextBrick(contextAssembler));
             }
+
+            var options = sp.GetService<IOptions<AdaptationBrickOptions>>();
+            if (options?.Value?.AdditionalBrickTypes is { Count: > 0 } types)
+            {
+                foreach (var type in types)
+                {
+                    try
+                    {
+                        var brick = (Brick?)ActivatorUtilities.CreateInstance(sp, type);
+                        if (brick != null)
+                            bricks.Add(brick);
+                    }
+                    catch (Exception)
+                    {
+                        // Skip bricks that fail to instantiate (missing DI, etc.)
+                    }
+                }
+            }
+
             return new Nexo.Infrastructure.Execution.BrickRegistry(bricks);
         });
 
@@ -63,6 +85,18 @@ public static class AdaptationServiceCollectionExtensions
         services.AddSingleton<IAdaptationAuditLog>(sp => new LiteDbAdaptationAuditLog(auditDbPath));
         services.AddSingleton<IUserFeedbackCapture, CliUserFeedbackCapture>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers additional brick types for the adaptation pipeline.
+    /// Bricks are resolved via DI (e.g. <see cref="IProviderFactory"/> for OWASPScannerBrick).
+    /// Call after <see cref="AddAdaptationInfrastructure"/> and ensure required services (e.g. IProviderFactory) are registered.
+    /// </summary>
+    public static IServiceCollection AddAdaptationBricks(this IServiceCollection services, params Type[] brickTypes)
+    {
+        if (brickTypes.Length == 0) return services;
+        services.Configure<AdaptationBrickOptions>(o => o.AdditionalBrickTypes.AddRange(brickTypes));
         return services;
     }
 }

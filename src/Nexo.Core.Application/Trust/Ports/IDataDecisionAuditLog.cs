@@ -18,13 +18,16 @@ public interface IDataDecisionAuditLog
     void LogClassification(string dataType, string levelName, string? reason);
 
     /// <summary>Get recent audit entries (all types).</summary>
-    IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null);
+    IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);
 
     /// <summary>Export to structured JSON for compliance.</summary>
-    string ExportToJson(int maxCount = 1000, DateTimeOffset? since = null);
+    string ExportToJson(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);
 
     /// <summary>Export to human-readable Markdown.</summary>
-    string ExportToMarkdown(int maxCount = 1000, DateTimeOffset? since = null);
+    string ExportToMarkdown(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);
+
+    /// <summary>Export to CSV for compliance.</summary>
+    string ExportToCsv(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);
 }
 
 /// <summary>

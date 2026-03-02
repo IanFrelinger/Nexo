@@ -9,6 +9,7 @@ using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
+using Nexo.Infrastructure.Workflows;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
@@ -31,6 +32,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             await TestWorkflowValidation();
             await TestWorkflowExecutionPlan();
             await TestWorkflowEvents();
+            await TestWorkflowPdfOutput();
 
             return new TestResult
             {
@@ -549,6 +551,87 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertTrue(events.Count > 0);
         AssertTrue(events.Any(e => e is WorkflowStartedEvent));
         AssertTrue(events.Any(e => e is WorkflowCompletedEvent));
+    }
+
+    private async Task TestWorkflowPdfOutput()
+    {
+        var mockAgents = new Mock<IAgentRegistry>();
+        var mockBricks = new Mock<IBrickRegistry>();
+        var mockBehaviors = new Mock<IBehaviorRegistry>();
+        var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
+
+        byte[]? writtenBytes = null;
+        var mockFs = new Mock<ITextFileSystem>();
+        mockFs.Setup(x => x.WriteAllBytesAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .Callback<string, byte[], CancellationToken>((_, bytes, _) => writtenBytes = bytes)
+            .Returns(Task.CompletedTask);
+
+        var pdfExporter = new QuestPdfWorkflowExporter();
+        var executor = new WorkflowExecutor(
+            mockAgents.Object,
+            mockBricks.Object,
+            mockBehaviors.Object,
+            mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
+            mockFs.Object,
+            mockLogger.Object,
+            pdfExporter: pdfExporter);
+
+        var tempPath = Path.GetTempFileName();
+        var workflow = new WorkflowDefinition
+        {
+            Id = "pdf-workflow",
+            Name = "PDF Output Workflow",
+            Nodes = new List<WorkflowNode>
+            {
+                new InputNode
+                {
+                    Id = "input-1",
+                    Name = "Input",
+                    Type = InputType.Content,
+                    Content = "Hello PDF",
+                    Outputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "out-1", Name = "data", Direction = PortDirection.Output, DataType = "string" }
+                    }
+                },
+                new OutputNode
+                {
+                    Id = "output-1",
+                    Name = "Output",
+                    Type = OutputType.File,
+                    Format = OutputFormat.Pdf,
+                    FilePath = tempPath,
+                    Inputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "in-1", Name = "input", Direction = PortDirection.Input, DataType = "string" }
+                    }
+                }
+            },
+            Connections = new List<VisualWorkflowConnection>
+            {
+                new VisualWorkflowConnection
+                {
+                    Id = "conn-1",
+                    FromNodeId = "input-1",
+                    FromPortId = "out-1",
+                    ToNodeId = "output-1",
+                    ToPortId = "in-1",
+                    Type = ConnectionType.Data
+                }
+            }
+        };
+
+        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+
+        AssertTrue(result.Success);
+        AssertNotNull(writtenBytes);
+        AssertTrue(writtenBytes!.Length > 0);
+        var header = System.Text.Encoding.ASCII.GetString(writtenBytes.AsSpan(0, Math.Min(8, writtenBytes.Length)));
+        AssertTrue(header.StartsWith("%PDF"), $"Expected PDF header, got: {header}");
+
+        try { File.Delete(tempPath); } catch { }
     }
 
     private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(IEnumerable<T> items)
