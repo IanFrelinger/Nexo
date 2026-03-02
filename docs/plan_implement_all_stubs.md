@@ -1,26 +1,28 @@
 # Plan: Fully Implement All Stubs
 
+**Status:** All phases implemented.
+
 ## Stub Inventory
 
-| Location | Stub | Type |
-|----------|------|------|
-| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | ExecuteClusterNodeAsync | Node execution |
-| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | ExecuteTransformNode | Node execution |
-| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | ExecuteConditionalNode | Node execution |
-| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | SerializeOutput (Xml, Csv, Markdown, Html, Pdf) | Output format |
-| [LocalImageGenerator.cs](src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs) | GenerateOllamaAsync | Image generation |
-| [LocalImageGenerator.cs](src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs) | GenerateLocalAIVariationsAsync | Image variations |
-| [CodeGenerator.cs](src/Nexo.Infrastructure/Export/CodeGenerator.cs) | Fallback `_ => $"// Stub for {brick.Name}"` | Code generation |
+| Location | Stub | Type | Status |
+|----------|------|------|--------|
+| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | ExecuteClusterNodeAsync | Node execution | Implemented |
+| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | ExecuteTransformNode | Node execution | Implemented |
+| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | ExecuteConditionalNode | Node execution | Implemented |
+| [WorkflowExecutor.cs](src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs) | SerializeOutput (Xml, Csv, Markdown, Html, Pdf) | Output format | Implemented |
+| [LocalImageGenerator.cs](src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs) | GenerateOllamaAsync | Image generation | Implemented |
+| [LocalImageGenerator.cs](src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs) | GenerateLocalAIVariationsAsync | Image variations | Implemented |
+| [CodeGenerator.cs](src/Nexo.Infrastructure/Export/CodeGenerator.cs) | Fallback `GenerateGenericStub` | Code generation | Implemented |
 
 **Note:** Mesh uses real implementations: `FileBasedLocalTransport` and `MeshCapabilityRequester` (see `MeshServiceCollectionExtensions`). Stub variants were removed. `CompositionEngine` is implemented (rule-based keyword matching).
 
 ---
 
-## Phase 1: WorkflowExecutor Output Serialization
+## Phase 1: WorkflowExecutor Output Serialization — Implemented
 
 **File:** `src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs`
 
-**Current:** `SerializeOutput` throws for Xml, Csv, Markdown, Html, Pdf.
+**Current:** `SerializeOutput` implements Xml, Csv, Markdown, Html; PDF via `IWorkflowPdfExporter`.
 
 **Implementation:**
 
@@ -32,7 +34,7 @@
 
 ---
 
-## Phase 2: WorkflowExecutor TransformNode
+## Phase 2: WorkflowExecutor TransformNode — Implemented
 
 **File:** `src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs`
 
@@ -51,7 +53,7 @@ Use `System.Linq.Dynamic.Core` if available, or a minimal custom evaluator for `
 
 ---
 
-## Phase 3: WorkflowExecutor ConditionalNode
+## Phase 3: WorkflowExecutor ConditionalNode — Implemented
 
 **File:** `src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs`
 
@@ -63,7 +65,7 @@ Use `System.Linq.Dynamic.Core` if available, or a minimal custom evaluator for `
 
 ---
 
-## Phase 4: WorkflowExecutor ClusterNode
+## Phase 4: WorkflowExecutor ClusterNode — Implemented
 
 **File:** `src/Nexo.Core.Application/Workflows/WorkflowExecutor.cs`
 
@@ -75,7 +77,7 @@ Use `System.Linq.Dynamic.Core` if available, or a minimal custom evaluator for `
 
 ---
 
-## Phase 5: LocalImageGenerator — Ollama
+## Phase 5: LocalImageGenerator — Ollama — Implemented
 
 **File:** `src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs`
 
@@ -87,7 +89,7 @@ Use `System.Linq.Dynamic.Core` if available, or a minimal custom evaluator for `
 
 ---
 
-## Phase 6: LocalImageGenerator — LocalAI Variations
+## Phase 6: LocalImageGenerator — LocalAI Variations — Implemented
 
 **File:** `src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs`
 
@@ -99,7 +101,7 @@ Use `System.Linq.Dynamic.Core` if available, or a minimal custom evaluator for `
 
 ---
 
-## Phase 7: CodeGenerator Fallback
+## Phase 7: CodeGenerator Fallback — Implemented
 
 **File:** `src/Nexo.Infrastructure/Export/CodeGenerator.cs`
 
@@ -124,5 +126,5 @@ Use `System.Linq.Dynamic.Core` if available, or a minimal custom evaluator for `
 
 ## Verification
 
-- Add WorkflowExecutorSmokeTests for Transform, Conditional, output formats
+- WorkflowExecutorSmokeTests cover Transform, Conditional, and output formats (Xml, Csv, Markdown, Html) — see `TestWorkflowWithTransformNode`, `TestWorkflowWithConditionalNode`, `TestWorkflowOutputFormats`
 - `dotnet build Nexo.sln` and `dotnet test` pass
