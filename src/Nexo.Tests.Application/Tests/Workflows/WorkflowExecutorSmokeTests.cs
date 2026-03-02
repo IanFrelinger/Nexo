@@ -33,6 +33,9 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             await TestWorkflowExecutionPlan();
             await TestWorkflowEvents();
             await TestWorkflowPdfOutput();
+            await TestWorkflowWithTransformNode();
+            await TestWorkflowWithConditionalNode();
+            await TestWorkflowOutputFormats();
 
             return new TestResult
             {
@@ -634,6 +637,286 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         try { File.Delete(tempPath); } catch { }
     }
 
+    private async Task TestWorkflowWithTransformNode()
+    {
+        var listBrick = new TestBrickWithListOutput();
+        var mockAgents = new Mock<IAgentRegistry>();
+        var mockBricks = new Mock<IBrickRegistry>();
+        mockBricks.Setup(b => b.GetBrick("list-brick")).Returns(listBrick);
+        var mockBehaviors = new Mock<IBehaviorRegistry>();
+        var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
+        var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
+
+        var executor = new WorkflowExecutor(
+            mockAgents.Object,
+            mockBricks.Object,
+            mockBehaviors.Object,
+            mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
+            mockFs.Object,
+            mockLogger.Object);
+
+        var workflow = new WorkflowDefinition
+        {
+            Id = "transform-workflow",
+            Name = "Transform Workflow",
+            Nodes = new List<WorkflowNode>
+            {
+                new BrickNode
+                {
+                    Id = "brick-1",
+                    Name = "List Brick",
+                    BrickId = "list-brick",
+                    Implementation = ImplementationType.Deterministic,
+                    Inputs = new List<NodePort>(),
+                    Outputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "out-1", Name = "data", Direction = PortDirection.Output, DataType = "object" }
+                    }
+                },
+                new TransformNode
+                {
+                    Id = "transform-1",
+                    Name = "Map",
+                    Operation = TransformOperation.Map,
+                    Expression = "value",
+                    Inputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "in-1", Name = "data", Direction = PortDirection.Input, DataType = "object" }
+                    },
+                    Outputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "out-1", Name = "data", Direction = PortDirection.Output, DataType = "object" }
+                    }
+                },
+                new OutputNode
+                {
+                    Id = "output-1",
+                    Name = "Output",
+                    Type = OutputType.Display,
+                    Format = OutputFormat.Json,
+                    Inputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "in-1", Name = "input", Direction = PortDirection.Input, DataType = "object" }
+                    }
+                }
+            },
+            Connections = new List<VisualWorkflowConnection>
+            {
+                new VisualWorkflowConnection
+                {
+                    Id = "c1",
+                    FromNodeId = "brick-1",
+                    FromPortId = "out-1",
+                    ToNodeId = "transform-1",
+                    ToPortId = "in-1",
+                    Type = ConnectionType.Data
+                },
+                new VisualWorkflowConnection
+                {
+                    Id = "c2",
+                    FromNodeId = "transform-1",
+                    FromPortId = "out-1",
+                    ToNodeId = "output-1",
+                    ToPortId = "in-1",
+                    Type = ConnectionType.Data
+                }
+            }
+        };
+
+        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+
+        AssertNotNull(result);
+        AssertTrue(result.Success);
+        AssertTrue(result.NodeResults.ContainsKey("transform-1"));
+        var transformResult = result.NodeResults["transform-1"];
+        AssertTrue(transformResult.Outputs.ContainsKey("data"));
+        var data = transformResult.Outputs["data"];
+        AssertTrue(data is System.Collections.IEnumerable list && list.Cast<object>().Count() == 2);
+    }
+
+    private async Task TestWorkflowWithConditionalNode()
+    {
+        var structBrick = new TestBrickWithStructuredOutput();
+        var mockAgents = new Mock<IAgentRegistry>();
+        var mockBricks = new Mock<IBrickRegistry>();
+        mockBricks.Setup(b => b.GetBrick("struct-brick")).Returns(structBrick);
+        var mockBehaviors = new Mock<IBehaviorRegistry>();
+        var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+        var mockFs = new Mock<ITextFileSystem>();
+        var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
+
+        var executor = new WorkflowExecutor(
+            mockAgents.Object,
+            mockBricks.Object,
+            mockBehaviors.Object,
+            mockBehaviorExecutor.Object,
+            new SequentialLoopKernel(),
+            mockFs.Object,
+            mockLogger.Object);
+
+        var workflow = new WorkflowDefinition
+        {
+            Id = "conditional-workflow",
+            Name = "Conditional Workflow",
+            Nodes = new List<WorkflowNode>
+            {
+                new BrickNode
+                {
+                    Id = "brick-1",
+                    Name = "Struct Brick",
+                    BrickId = "struct-brick",
+                    Implementation = ImplementationType.Deterministic,
+                    Inputs = new List<NodePort>(),
+                    Outputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "out-1", Name = "result", Direction = PortDirection.Output, DataType = "object" }
+                    }
+                },
+                new ConditionalNode
+                {
+                    Id = "cond-1",
+                    Name = "Condition",
+                    Condition = "data.count > 0",
+                    Inputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "in-1", Name = "input", Direction = PortDirection.Input, DataType = "object" }
+                    },
+                    Outputs = new List<NodePort>
+                    {
+                        new NodePort { Id = "out-1", Name = "condition", Direction = PortDirection.Output, DataType = "bool" },
+                        new NodePort { Id = "out-2", Name = "result", Direction = PortDirection.Output, DataType = "object" }
+                    }
+                }
+            },
+            Connections = new List<VisualWorkflowConnection>
+            {
+                new VisualWorkflowConnection
+                {
+                    Id = "c1",
+                    FromNodeId = "brick-1",
+                    FromPortId = "out-1",
+                    ToNodeId = "cond-1",
+                    ToPortId = "in-1",
+                    Type = ConnectionType.Data
+                }
+            }
+        };
+
+        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+
+        AssertNotNull(result);
+        AssertTrue(result.Success);
+        AssertTrue(result.NodeResults.ContainsKey("cond-1"));
+        var condResult = result.NodeResults["cond-1"];
+        AssertTrue(condResult.Outputs.ContainsKey("condition"));
+        AssertTrue(condResult.Outputs["condition"] is bool b && b);
+        AssertTrue(condResult.Outputs.ContainsKey("result"));
+    }
+
+    private async Task TestWorkflowOutputFormats()
+    {
+        var formats = new[] { OutputFormat.Xml, OutputFormat.Csv, OutputFormat.Markdown, OutputFormat.Html };
+        var dataBrick = new TestBrickWithDataOutput();
+
+        foreach (var format in formats)
+        {
+            string? writtenContent = null;
+            var mockFs = new Mock<ITextFileSystem>();
+            mockFs.Setup(x => x.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Callback<string, string, CancellationToken>((_, content, _) => writtenContent = content)
+                .Returns(Task.CompletedTask);
+
+            var mockAgents = new Mock<IAgentRegistry>();
+            var mockBricks = new Mock<IBrickRegistry>();
+            mockBricks.Setup(b => b.GetBrick("data-brick")).Returns(dataBrick);
+            var mockBehaviors = new Mock<IBehaviorRegistry>();
+            var mockBehaviorExecutor = new Mock<IBehaviorExecutor>();
+            var mockLogger = new Mock<ILogger<WorkflowExecutor>>();
+
+            var executor = new WorkflowExecutor(
+                mockAgents.Object,
+                mockBricks.Object,
+                mockBehaviors.Object,
+                mockBehaviorExecutor.Object,
+                new SequentialLoopKernel(),
+                mockFs.Object,
+                mockLogger.Object);
+
+            var tempPath = Path.GetTempFileName();
+            var workflow = new WorkflowDefinition
+            {
+                Id = "format-workflow",
+                Name = "Output Format Workflow",
+                Nodes = new List<WorkflowNode>
+                {
+                    new BrickNode
+                    {
+                        Id = "brick-1",
+                        Name = "Data Brick",
+                        BrickId = "data-brick",
+                        Implementation = ImplementationType.Deterministic,
+                        Inputs = new List<NodePort>(),
+                        Outputs = new List<NodePort>
+                        {
+                            new NodePort { Id = "out-1", Name = "result", Direction = PortDirection.Output, DataType = "object" }
+                        }
+                    },
+                    new OutputNode
+                    {
+                        Id = "output-1",
+                        Name = "Output",
+                        Type = OutputType.File,
+                        Format = format,
+                        FilePath = tempPath,
+                        Inputs = new List<NodePort>
+                        {
+                            new NodePort { Id = "in-1", Name = "input", Direction = PortDirection.Input, DataType = "object" }
+                        }
+                    }
+                },
+                Connections = new List<VisualWorkflowConnection>
+                {
+                    new VisualWorkflowConnection
+                    {
+                        Id = "c1",
+                        FromNodeId = "brick-1",
+                        FromPortId = "out-1",
+                        ToNodeId = "output-1",
+                        ToPortId = "in-1",
+                        Type = ConnectionType.Data
+                    }
+                }
+            };
+
+            var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+
+            AssertNotNull(result);
+            AssertTrue(result.Success);
+            AssertNotNull(writtenContent);
+            AssertTrue(writtenContent!.Length > 0);
+
+            switch (format)
+            {
+                case OutputFormat.Xml:
+                    AssertTrue(writtenContent.Contains("<") || writtenContent.StartsWith("<?xml"), $"Expected XML for {format}");
+                    break;
+                case OutputFormat.Csv:
+                    AssertTrue(writtenContent.Contains(",") || writtenContent.Contains("\n"), $"Expected CSV for {format}");
+                    break;
+                case OutputFormat.Markdown:
+                    AssertTrue(writtenContent.Contains("|") || writtenContent.Contains("-"), $"Expected Markdown for {format}");
+                    break;
+                case OutputFormat.Html:
+                    AssertTrue(writtenContent.Contains("<") && (writtenContent.Contains("table") || writtenContent.Contains("pre")), $"Expected HTML for {format}");
+                    break;
+            }
+
+            try { File.Delete(tempPath); } catch { }
+        }
+    }
+
     private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(IEnumerable<T> items)
     {
         foreach (var item in items)
@@ -699,6 +982,140 @@ public class TestBrickForWorkflow : Brick
             Summary = "Brick executed"
         };
         output["result"] = "brick-output";
+        return output;
+    }
+}
+
+/// <summary>
+/// Test brick that outputs a list of dicts for Transform node tests.
+/// </summary>
+public class TestBrickWithListOutput : Brick
+{
+    public TestBrickWithListOutput()
+    {
+        Id = "list-brick";
+        Name = "List Brick";
+        Category = BrickCategory.Analysis;
+        Description = "Outputs list for transform tests";
+        Interface = new BrickInterface();
+        Implementations = new BrickImplementations
+        {
+            Deterministic = new DeterministicImplementation
+            {
+                Id = "list-det",
+                Name = "List",
+                Description = "Test",
+                Executor = "Test",
+                Characteristics = new ImplementationCharacteristics { Deterministic = true, RequiresNetwork = false }
+            }
+        };
+        DefaultImplementation = ImplementationType.Deterministic;
+        FallbackChain = Array.Empty<ImplementationType>();
+    }
+
+    public override async Task<BrickOutput> ExecuteAsync(
+        BrickInput input,
+        ImplementationType implementation,
+        IExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+        var output = new BrickOutput { Summary = "List" };
+        output["data"] = new List<Dictionary<string, object>>
+        {
+            new Dictionary<string, object> { ["value"] = 10 },
+            new Dictionary<string, object> { ["value"] = 5 }
+        };
+        return output;
+    }
+}
+
+/// <summary>
+/// Test brick that outputs structured data for Conditional node tests.
+/// </summary>
+public class TestBrickWithStructuredOutput : Brick
+{
+    public TestBrickWithStructuredOutput()
+    {
+        Id = "struct-brick";
+        Name = "Struct Brick";
+        Category = BrickCategory.Analysis;
+        Description = "Outputs struct for conditional tests";
+        Interface = new BrickInterface();
+        Implementations = new BrickImplementations
+        {
+            Deterministic = new DeterministicImplementation
+            {
+                Id = "struct-det",
+                Name = "Struct",
+                Description = "Test",
+                Executor = "Test",
+                Characteristics = new ImplementationCharacteristics { Deterministic = true, RequiresNetwork = false }
+            }
+        };
+        DefaultImplementation = ImplementationType.Deterministic;
+        FallbackChain = Array.Empty<ImplementationType>();
+    }
+
+    public override async Task<BrickOutput> ExecuteAsync(
+        BrickInput input,
+        ImplementationType implementation,
+        IExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+        var output = new BrickOutput { Summary = "Struct" };
+        output["result"] = new Dictionary<string, object>
+        {
+            ["data"] = new Dictionary<string, object> { ["count"] = 3 }
+        };
+        return output;
+    }
+}
+
+/// <summary>
+/// Test brick that outputs data for output format tests.
+/// </summary>
+public class TestBrickWithDataOutput : Brick
+{
+    public TestBrickWithDataOutput()
+    {
+        Id = "data-brick";
+        Name = "Data Brick";
+        Category = BrickCategory.Analysis;
+        Description = "Outputs data for format tests";
+        Interface = new BrickInterface();
+        Implementations = new BrickImplementations
+        {
+            Deterministic = new DeterministicImplementation
+            {
+                Id = "data-det",
+                Name = "Data",
+                Description = "Test",
+                Executor = "Test",
+                Characteristics = new ImplementationCharacteristics { Deterministic = true, RequiresNetwork = false }
+            }
+        };
+        DefaultImplementation = ImplementationType.Deterministic;
+        FallbackChain = Array.Empty<ImplementationType>();
+    }
+
+    public override async Task<BrickOutput> ExecuteAsync(
+        BrickInput input,
+        ImplementationType implementation,
+        IExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+        var output = new BrickOutput { Summary = "Data" };
+        output["result"] = new Dictionary<string, object>
+        {
+            ["items"] = new List<Dictionary<string, object>>
+            {
+                new Dictionary<string, object> { ["id"] = 1, ["name"] = "a" },
+                new Dictionary<string, object> { ["id"] = 2, ["name"] = "b" }
+            }
+        };
         return output;
     }
 }
