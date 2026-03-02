@@ -1,0 +1,39 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "Nexo.Hosting/Nexo.Hosting.csproj",
+            "Nexo.Core.Application/Nexo.Core.Application.csproj",
+            "Nexo.Abstractions/Nexo.Abstractions.csproj",
+            "Nexo.Core.Domain/Nexo.Core.Domain.csproj",
+            "Nexo.Infrastructure/Nexo.Infrastructure.csproj"
+          ],
+          "src": "../../src"
+        }
+      ],
+      "output": "api",
+      "properties": {
+        "TargetFramework": "net8.0",
+        "Configuration": "Release"
+      }
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": ["api/*.yml", "index.md"]
+      },
+      {
+        "files": ["GettingStarted.md", "Architecture.md", "Configuration.md", "Persistence.md"],
+        "src": ".."
+      }
+    ],
+    "output": "_site",
+    "globalMetadata": {
+      "_appTitle": "Nexo API Reference",
+      "_appName": "Nexo"
+    }
+  }
+}

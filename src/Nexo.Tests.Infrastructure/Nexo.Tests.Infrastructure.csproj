@@ -42,6 +42,7 @@
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Application\Nexo.Tests.Application.csproj" />
     <ProjectReference Include="..\Nexo.Demo.Bricks\Nexo.Demo.Bricks.csproj" />
+    <ProjectReference Include="..\Nexo.Hosting\Nexo.Hosting.csproj" />
   </ItemGroup>
 
 </Project>

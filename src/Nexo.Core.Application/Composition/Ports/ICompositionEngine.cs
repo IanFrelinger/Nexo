@@ -3,7 +3,7 @@ using Nexo.Core.Application.Composition.Models;
 namespace Nexo.Core.Application.Composition.Ports;
 
 /// <summary>
-/// Composes agents from capability components. Stub: returns pipeline spec for known problems.
+/// Composes agents from capability components. Rule-based composition; matches problem descriptions to component pipelines.
 /// </summary>
 public interface ICompositionEngine
 {

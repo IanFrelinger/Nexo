@@ -87,16 +87,33 @@ public class AgentRegistryAdapter : IAgentRegistry
 
     private static IReadOnlyList<string> GetAgentCapabilities(IAgent agent)
     {
-        // Extract capabilities from agent type or attributes
-        // Placeholder implementation
-        return new[] { "Execution", "ToolInvocation" };
+        var type = agent.GetType();
+        var caps = new List<string> { "Execution" };
+        var attr = type.GetCustomAttribute<CapabilityAttribute>();
+        if (attr != null)
+        {
+            caps.AddRange(attr.Capabilities);
+        }
+        else
+        {
+            var name = type.Name;
+            if (name.EndsWith("Agent", StringComparison.Ordinal) && name.Length > 5)
+                caps.Add(name[..^5]);
+            else
+                caps.Add("ToolInvocation");
+        }
+        return caps.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     private static IReadOnlyDictionary<string, string> GetAgentParameters(IAgent agent)
     {
-        // Extract parameters from agent type
-        // Placeholder implementation
-        return new Dictionary<string, string>();
+        var type = agent.GetType();
+        var ctor = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
+            .OrderByDescending(c => c.GetParameters().Length)
+            .FirstOrDefault();
+        if (ctor == null) return new Dictionary<string, string>();
+        return ctor.GetParameters()
+            .ToDictionary(p => p.Name ?? "param", p => p.ParameterType.Name, StringComparer.OrdinalIgnoreCase);
     }
 }
 

@@ -91,6 +91,9 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ISensitiveContentFilter, SensitiveContentFilter>();
         services.AddUserKnowledgeLog(Environment.GetEnvironmentVariable("NEXO_KNOWLEDGE_LOG_PATH"));
         services.AddAccessBoundary(Environment.GetEnvironmentVariable("NEXO_ACCESS_BOUNDARY_CONFIG"));
+        services.AddCloudAvailabilityResolver(
+            configPath: Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH"),
+            enableNetworkProbe: string.Equals(Environment.GetEnvironmentVariable("NEXO_AIRGAP_PROBE"), "1", StringComparison.Ordinal));
         var auditDbPath = Environment.GetEnvironmentVariable("NEXO_TRUST_AUDIT_DB");
         object auditLogInstance = !string.IsNullOrWhiteSpace(auditDbPath)
             ? new Nexo.BackgroundAgents.Trust.LiteDbDataDecisionAuditLog(auditDbPath)

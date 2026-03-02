@@ -14,7 +14,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Execution;
 /// </summary>
 public class AdaptiveBrickCacheTests
 {
-    private sealed class StubBrickRegistry : Nexo.Infrastructure.Execution.IBrickRegistry
+    private sealed class StubBrickRegistry : IBrickRegistry
     {
         private readonly Dictionary<string, Brick> _bricks = new(StringComparer.OrdinalIgnoreCase);
 

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.BrickContracts;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Execution;
 

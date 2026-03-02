@@ -16,7 +16,7 @@ public sealed class LiteDbDataDecisionAuditLogTests : IDisposable
     }
 
     public void Dispose() => Dispose(true);
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (disposing && File.Exists(_dbPath))
             File.Delete(_dbPath);

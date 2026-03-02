@@ -11,8 +11,8 @@
 | [LocalImageGenerator.cs](src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs) | GenerateOllamaAsync | Image generation |
 | [LocalImageGenerator.cs](src/Nexo.Adapters.Assets/Images/LocalImageGenerator.cs) | GenerateLocalAIVariationsAsync | Image variations |
 | [CodeGenerator.cs](src/Nexo.Infrastructure/Export/CodeGenerator.cs) | Fallback `_ => $"// Stub for {brick.Name}"` | Code generation |
-| [StubLocalTransport](src/Nexo.Infrastructure/Mesh/StubLocalTransport.cs) | No-op transport | MVP placeholder |
-| [StubCapabilityRequester](src/Nexo.Infrastructure/Mesh/StubCapabilityRequester.cs) | Returns null | MVP placeholder |
+
+**Note:** Mesh uses real implementations: `FileBasedLocalTransport` and `MeshCapabilityRequester` (see `MeshServiceCollectionExtensions`). Stub variants were removed. `CompositionEngine` is implemented (rule-based keyword matching).
 
 ---
 
@@ -107,12 +107,6 @@ Use `System.Linq.Dynamic.Core` if available, or a minimal custom evaluator for `
 
 - For unknown `ExportTarget`, generate a generic stub (e.g. JSON block or C# comment block) instead of `// Stub for {brick.Name}`.
 - Add cases for any additional targets in the enum.
-
----
-
-## Phase 8: Mesh Stubs (Optional)
-
-Keep `StubLocalTransport` and `StubCapabilityRequester` as-is; document as MVP placeholders. Full implementation would require real transport (e.g. file, gRPC) and capability registry.
 
 ---
 

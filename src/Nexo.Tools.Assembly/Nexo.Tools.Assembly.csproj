@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="ICSharpCode.Decompiler" />
+    <PackageReference Include="Mono.Cecil" />
     <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
   </ItemGroup>
 </Project>

@@ -47,6 +47,16 @@ public sealed class SensitiveContentFilter : ISensitiveContentFilter
         @"\b\d{3}-\d{2}-\d{4}\b",
         RegexOptions.Compiled);
 
+    /// <summary>OpenAI-style API keys (sk-...).</summary>
+    private static readonly Regex ApiKeyRegex = new(
+        @"\bsk-[a-zA-Z0-9]{20,}\b",
+        RegexOptions.Compiled);
+
+    /// <summary>Credit card-like sequences (4 groups of 4 digits).</summary>
+    private static readonly Regex CreditCardLikeRegex = new(
+        @"\b\d{4}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{4}\b",
+        RegexOptions.Compiled);
+
     private readonly bool _blockQueriesWithPii;
     private readonly string _redactionPlaceholder;
 
@@ -89,7 +99,8 @@ public sealed class SensitiveContentFilter : ISensitiveContentFilter
 
     private static bool ContainsPii(string text)
     {
-        return EmailRegex.IsMatch(text) || PhoneRegex.IsMatch(text) || SsnLikeRegex.IsMatch(text);
+        return EmailRegex.IsMatch(text) || PhoneRegex.IsMatch(text) || SsnLikeRegex.IsMatch(text)
+            || ApiKeyRegex.IsMatch(text) || CreditCardLikeRegex.IsMatch(text);
     }
 
     private string RedactPii(string text)
@@ -97,6 +108,8 @@ public sealed class SensitiveContentFilter : ISensitiveContentFilter
         var result = EmailRegex.Replace(text, _redactionPlaceholder);
         result = PhoneRegex.Replace(result, _redactionPlaceholder);
         result = SsnLikeRegex.Replace(result, _redactionPlaceholder);
+        result = ApiKeyRegex.Replace(result, _redactionPlaceholder);
+        result = CreditCardLikeRegex.Replace(result, _redactionPlaceholder);
         return result;
     }
 }

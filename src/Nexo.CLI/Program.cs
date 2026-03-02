@@ -19,6 +19,7 @@ using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
+using Nexo.Hosting;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Persistence;
 
@@ -778,106 +779,19 @@ static class Program
 
     /// <summary>
     /// Configures dependency injection services for the application.
-    /// 
-    /// Registers:
-    /// - MediatR for command/query handling
-    /// - FluentValidation for request validation
-    /// - Application services (analysis, validation, agent execution)
-    /// - Infrastructure adapters with caching decorators
-    /// - Orchestration layer components
-    /// - CLI command handlers
+    /// Registers the Nexo kernel via AddNexo(), then CLI-specific commands and adapters.
     /// </summary>
     /// <param name="services">Service collection to configure</param>
     private static void ConfigureServices(IServiceCollection services)
     {
-        services.AddHttpClient();
+        services.AddNexo();
 
-        // Register MediatR
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(AnalyzeCodeCommand).Assembly);
-            cfg.RegisterServicesFromAssembly(typeof(RunTestsCommand).Assembly);
-        });
-
-        // Register FluentValidation
-        services.AddValidatorsFromAssembly(typeof(AnalyzeCodeValidator).Assembly);
-
-        // Register validation pipeline behavior
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.ValidationBehavior<,>));
-
-        // Register configuration service
-        services.AddSingleton<Nexo.Core.Application.Configuration.Ports.IConfigurationService, Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>();
-
-        // Register loop kernel for hot paths (toggleable via env vars).
-        services.AddSingleton<ILoopKernel>(sp =>
-        {
-            ILoopKernel k = new SequentialLoopKernel();
-
-            var enableParallel = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_PARALLEL"), "1", StringComparison.OrdinalIgnoreCase);
-            if (enableParallel)
-            {
-                k = new ParallelLoopKernel(k);
-            }
-
-            var instrument = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_INSTRUMENT"), "1", StringComparison.OrdinalIgnoreCase);
-            if (instrument)
-            {
-                k = new InstrumentedLoopKernel(k, sp.GetRequiredService<ILogger<InstrumentedLoopKernel>>());
-            }
-
-            return k;
-        });
-
-        // Register orchestration layer
-        services.AddNexoOrchestration();
-
-        // Persistence (in-memory by default; replace with adapter for SQLite/Postgres/etc. to avoid DB lock-in)
-        services.AddNexoPersistence();
-
-        // Adaptation engine (Block 3: decomposer, fix generator, recompiler, rewirer)
-        services.AddAdaptationInfrastructure();
-
-        // Background agents (CLI-only: no hosted service)
-        services.AddBackgroundAgents(registerHostedService: false);
-        services.AddBackgroundAgentsRAG();
-        services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
         // Dog-food: optimizer agents run the app's own analysis pipeline
         services.TryAddSingleton<Nexo.BackgroundAgents.Optimization.ICodeAnalysisRunner, Nexo.CLI.Commands.BackgroundAgent.CodeAnalysisRunnerAdapter>();
         // Dog-food: tester agents run the app's own test pipeline
         services.TryAddSingleton<Nexo.BackgroundAgents.Testing.ITestRunRunner, Nexo.CLI.Commands.BackgroundAgent.TestRunRunnerAdapter>();
         // Dog-food: extender agents run self-extend cycle (LLM + tools with path policy)
         services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner, Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>();
-
-        // Register base IModel as hot-swappable (provider-backed with deterministic fallback),
-        // then wrap it with OrchestrationRuntimeModelDecorator so `nexo orchestrate --runtime-spec`
-        // can affect Architect/Negotiation without changing callsites.
-        services.AddSingleton<Nexo.Infrastructure.Execution.Models.HotSwappableModel>(sp =>
-        {
-            var providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
-            var providerBacked = new Nexo.Infrastructure.Execution.Models.ProviderBackedModel(
-                providerFactory,
-                sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.Models.ProviderBackedModel>>());
-
-            return new Nexo.Infrastructure.Execution.Models.HotSwappableModel(
-                providerBacked,
-                sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.Models.HotSwappableModel>>());
-        });
-
-        services.AddSingleton<Nexo.Abstractions.IModel>(sp =>
-        {
-            var accessor = sp.GetRequiredService<IOrchestrationRuntimeSpecAccessor>();
-            var inner = sp.GetRequiredService<Nexo.Infrastructure.Execution.Models.HotSwappableModel>();
-            return new OrchestrationRuntimeModelDecorator(
-                inner,
-                accessor,
-                sp.GetRequiredService<ILogger<OrchestrationRuntimeModelDecorator>>());
-        });
-        
-        // Trust & Information Architecture: when NEXO_TRUST_ENABLED=1, use SanitizingProviderFactory
-        var trustEnabled = string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
-        services.AddTrustServices(useSanitizingProviderFactory: trustEnabled);
-        if (!trustEnabled)
-            services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>();
 
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();
@@ -899,122 +813,8 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
 
-        // Register test runner
-        services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
-        
-        // Register execution platform for portable multi-platform testing
-        // Default to Docker, but users can override with Rancher, Kubernetes, etc.
-        services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform>>();
-            return new Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform(logger);
-        });
-        
-        // Also register Docker service for backward compatibility (if needed)
-        services.AddSingleton<Nexo.Infrastructure.Testing.Docker.IDockerService>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<Nexo.Infrastructure.Testing.Docker.DockerService>>();
-            return new Nexo.Infrastructure.Testing.Docker.DockerService(logger);
-        });
-
-        // Register code analysis service for portable compilation/decompilation
-        services.AddSingleton<Nexo.Infrastructure.Testing.CodeAnalysis.ICodeAnalysisService>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService>>();
-            return new Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService(logger);
-        });
-
-        // Register renderer
+        // CLI-specific: console renderer for output formatting
         services.AddSingleton<IConsoleRenderer, ConsoleRenderer>();
-
-        // Register test result parsers
-        services.AddScoped<Nexo.Infrastructure.Validation.Parsers.ITestResultParser, Nexo.Infrastructure.Validation.Parsers.TrxTestResultParser>();
-
-        // Register analysis rules
-        services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.SecurityAnalysisRule>();
-        services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.CodeQualityRule>();
-
-        // Register analysis rule engine
-        services.AddScoped<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>(sp =>
-        {
-            var rules = sp.GetServices<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule>();
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
-            return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
-        });
-
-        // Register caching
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.ICacheStrategy, Nexo.Infrastructure.Caching.MemoryCacheStrategy>();
-
-        // Register metrics
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IMetricsCollector, Nexo.Infrastructure.Metrics.MemoryMetricsCollector>();
-
-        // Register filesystem abstraction (keeps System.IO out of Core.Application)
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
-
-        // Register workflow webhook, database, and PDF exporter (for WorkflowExecutor)
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowPdfExporter, Nexo.Infrastructure.Workflows.QuestPdfWorkflowExporter>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowWebhookClient, Nexo.Infrastructure.Workflows.HttpWorkflowWebhookClient>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseReader, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseReader>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseWriter, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseWriter>();
-        services.AddSingleton<Nexo.Infrastructure.Execution.IClusterRegistry, Nexo.Infrastructure.Execution.ClusterRegistry>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IClusterStore, Nexo.Infrastructure.Workflows.ClusterStoreAdapter>();
-
-        // WorkflowExecutor (for workflow run; requires brick/behavior registries from AddAdaptationInfrastructure)
-        services.TryAddSingleton<Nexo.Infrastructure.Execution.ISemanticCache>(sp =>
-            new Nexo.Infrastructure.Execution.SemanticCache(sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.SemanticCache>>()));
-        services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorRegistry>(_ =>
-            new Nexo.Infrastructure.Execution.BehaviorRegistry(Array.Empty<Nexo.Core.Domain.Behaviors.Behavior>()));
-        services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorExecutor>(sp =>
-            new Nexo.Infrastructure.Execution.BehaviorExecutor(
-                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBrickRegistry>(),
-                sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>(),
-                sp.GetRequiredService<Nexo.Infrastructure.Execution.ISemanticCache>(),
-                sp.GetRequiredService<ILoopKernel>(),
-                sp.GetRequiredService<ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>()));
-        services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(_ =>
-            new Nexo.Infrastructure.Execution.AgentRegistry(Array.Empty<Nexo.Core.Domain.Agents.AgentCard>()));
-        services.AddScoped<Nexo.Core.Application.Workflows.WorkflowExecutor>(sp =>
-            new Nexo.Core.Application.Workflows.WorkflowExecutor(
-                sp.GetRequiredService<Nexo.Core.Domain.Execution.IAgentRegistry>(),
-                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBrickRegistry>(),
-                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBehaviorRegistry>(),
-                sp.GetRequiredService<Nexo.Core.Domain.Execution.IBehaviorExecutor>(),
-                sp.GetRequiredService<ILoopKernel>(),
-                sp.GetRequiredService<Nexo.Core.Application.Common.Ports.ITextFileSystem>(),
-                sp.GetRequiredService<ILogger<Nexo.Core.Application.Workflows.WorkflowExecutor>>(),
-                pdfExporter: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowPdfExporter>(),
-                webhookClient: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowWebhookClient>(),
-                databaseReader: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseReader>(),
-                databaseWriter: sp.GetService<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseWriter>(),
-                clusterStore: sp.GetService<Nexo.Core.Application.Common.Ports.IClusterStore>()));
-
-        // Register agent registry
-        services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentRegistry, Nexo.Infrastructure.Agent.Adapters.AgentRegistryAdapter>();
-
-        // Register infrastructure adapters (with caching decorators)
-        services.AddScoped<Nexo.Core.Application.Analysis.Ports.IAnalysisService>(sp =>
-        {
-            var inner = new Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter(
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter>>(),
-                sp.GetRequiredService<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>());
-            var cache = sp.GetRequiredService<Nexo.Core.Application.Common.Ports.ICacheStrategy>();
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter>>();
-            return new Nexo.Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter(inner, cache, logger);
-        });
-
-        services.AddScoped<Nexo.Core.Application.Validation.Ports.IValidationService>(sp =>
-        {
-            var inner = new Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter(
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter>>(),
-                sp.GetRequiredService<Nexo.Infrastructure.Validation.Parsers.ITestResultParser>());
-            var cache = sp.GetRequiredService<Nexo.Core.Application.Common.Ports.ICacheStrategy>();
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Validation.Adapters.CachedValidationServiceAdapter>>();
-            return new Nexo.Infrastructure.Validation.Adapters.CachedValidationServiceAdapter(inner, cache, logger);
-        });
-
-        services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentExecutor, Nexo.Infrastructure.Agent.Adapters.AgentExecutorAdapter>();
-
-        // Register available agents
     }
 
     private static TimeSpan? ParseSince(string? since)

@@ -316,3 +316,18 @@ public sealed record ModelInput(IReadOnlyList<(string role, string content)> Mes
 /// </summary>
 /// <param name="Text">The generated text output from the model.</param>
 public sealed record ModelOutput(string Text);
+
+/// <summary>
+/// Attribute to declare agent capabilities for registry discovery.
+/// When present, AgentRegistryAdapter uses these instead of deriving from type name.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
+public sealed class CapabilityAttribute : Attribute
+{
+    public IReadOnlyList<string> Capabilities { get; }
+
+    public CapabilityAttribute(params string[] capabilities)
+    {
+        Capabilities = capabilities;
+    }
+}

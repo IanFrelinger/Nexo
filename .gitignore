@@ -1,3 +1,7 @@
+# DocFX API docs output
+docs/api/_site/
+docs/api/api/
+
 # Build artifacts
 **/bin/
 **/obj/

@@ -4,7 +4,7 @@ using Nexo.Core.Application.ParallelTesting.Ports;
 namespace Nexo.Infrastructure.ParallelTesting;
 
 /// <summary>
-/// Stub: converged when all pass or no improvement.
+/// Detects convergence: stops when all tests pass, or when no improvement for 3 consecutive rounds.
 /// </summary>
 public sealed class ConvergenceDetector : IConvergenceDetector
 {

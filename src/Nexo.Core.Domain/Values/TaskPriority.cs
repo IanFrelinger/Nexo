@@ -15,7 +15,7 @@ namespace Nexo.Core.Domain.Values
     /// - Urgent: Urgent priority task
     /// 
     /// Implements IEquatable for value-based equality comparison.
-    /// Supports comparison operators (>, <, >=, <=) for priority ordering.
+    /// Supports comparison operators (&gt;, &lt;, &gt;=, &lt;=) for priority ordering.
     /// Provides factory methods FromName and FromValue for parsing.
     /// </summary>
     public sealed class TaskPriority : IEquatable<TaskPriority>

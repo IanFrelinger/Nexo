@@ -81,3 +81,17 @@ package-cli:
 	dotnet publish src/Nexo.CLI -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o dist/linux
 	dotnet publish src/Nexo.CLI -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o dist/windows
 	dotnet publish src/Nexo.CLI -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o dist/macos
+
+# Pack NuGet library packages (Nexo.Hosting, Nexo.CLI tool)
+pack:
+	dotnet pack src/Nexo.Hosting/Nexo.Hosting.csproj -c Release -o dist/nuget
+	dotnet pack src/Nexo.CLI/Nexo.CLI.csproj -c Release -o dist/nuget
+
+# Build CLI Docker image (linux/amd64 for portability)
+docker-cli:
+	docker build --platform linux/amd64 -f .docker/Dockerfile.cli -t nexo-cli:latest .
+
+# Generate API docs (requires: dotnet tool install -g docfx)
+docs-api:
+	dotnet build -c Release
+	cd docs/api && docfx

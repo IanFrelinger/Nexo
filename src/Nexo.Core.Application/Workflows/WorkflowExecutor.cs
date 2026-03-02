@@ -951,7 +951,7 @@ public class WorkflowExecutor
             OutputFormat.Csv => SerializeToCsv(data),
             OutputFormat.Markdown => SerializeToMarkdown(data),
             OutputFormat.Html => SerializeToHtml(data),
-            OutputFormat.Pdf => throw new NotSupportedException("PDF export not implemented; use Json, Xml, Markdown, or Html"),
+            OutputFormat.Pdf => throw new NotSupportedException("PDF is binary; use file output with IWorkflowPdfExporter or Json/Xml/Markdown/Html for string output"),
             _ => data.ToString() ?? ""
         };
     }

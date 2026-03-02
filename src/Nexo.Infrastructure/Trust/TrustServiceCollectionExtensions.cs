@@ -47,4 +47,25 @@ public static class TrustServiceCollectionExtensions
         });
         return services;
     }
+
+    /// <summary>
+    /// Registers ICloudAvailabilityResolver for runtime air-gap resolution.
+    /// Sources (priority): NEXO_AIRGAP env var, config file, optional network probe.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configPath">Optional config path. Default: ~/.nexo/config.json.</param>
+    /// <param name="enableNetworkProbe">If true, probe api.openai.com when env/config not set.</param>
+    public static IServiceCollection AddCloudAvailabilityResolver(
+        this IServiceCollection services,
+        string? configPath = null,
+        bool enableNetworkProbe = false)
+    {
+        services.TryAddSingleton<ICloudAvailabilityResolver>(sp =>
+        {
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CloudAvailabilityResolver>>();
+            var path = configPath ?? Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH");
+            return new CloudAvailabilityResolver(logger, path, enableNetworkProbe);
+        });
+        return services;
+    }
 }

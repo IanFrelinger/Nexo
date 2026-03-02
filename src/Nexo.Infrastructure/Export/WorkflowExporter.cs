@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Clusters;
+using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Export;
 using Nexo.Core.Domain.Workflows;
 using Nexo.Infrastructure.Execution;

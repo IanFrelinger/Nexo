@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Logging;
+using Polly;
+using Polly.Retry;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -12,6 +15,20 @@ public class ProviderFactory : IProviderFactory
 {
     private readonly ILogger<ProviderFactory> _logger;
     private static readonly HttpClient Http = new();
+    private static readonly AsyncRetryPolicy<HttpResponseMessage> HttpRetryPolicy = CreateHttpRetryPolicy();
+
+    private static AsyncRetryPolicy<HttpResponseMessage> CreateHttpRetryPolicy()
+    {
+        var maxRetries = int.TryParse(Environment.GetEnvironmentVariable("NEXO_LLM_RETRY_COUNT"), out var c) && c >= 0 ? c : 3;
+
+        return Policy
+            .HandleResult<HttpResponseMessage>(r => (int)r.StatusCode >= 500 || r.StatusCode == HttpStatusCode.TooManyRequests)
+            .Or<HttpRequestException>()
+            .Or<TaskCanceledException>()
+            .WaitAndRetryAsync(
+                maxRetries,
+                attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+    }
     private static HttpClient? _ollamaHttp;
     private static readonly object OllamaHttpLock = new();
 
@@ -123,9 +140,6 @@ public class ProviderFactory : IProviderFactory
         var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
         var url = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com/v1/chat/completions";
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, url);
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
         var payload = new
         {
             model,
@@ -136,11 +150,16 @@ public class ProviderFactory : IProviderFactory
             },
             temperature = 0.2
         };
+        var json = JsonSerializer.Serialize(payload);
 
-        req.Content = new StringContent(JsonSerializer.Serialize(payload));
-        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-        using var resp = await Http.SendAsync(req, ct);
+        using var resp = await HttpRetryPolicy.ExecuteAsync(() =>
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, url);
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            req.Content = new StringContent(json);
+            req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            return Http.SendAsync(req, ct);
+        });
         var body = await resp.Content.ReadAsStringAsync(ct);
         resp.EnsureSuccessStatusCode();
 
@@ -160,9 +179,6 @@ public class ProviderFactory : IProviderFactory
         var apiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ?? "2024-06-01";
         var url = $"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={apiVersion}";
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, url);
-        req.Headers.Add("api-key", apiKey);
-
         var payload = new
         {
             messages = new[]
@@ -172,11 +188,16 @@ public class ProviderFactory : IProviderFactory
             },
             temperature = 0.2
         };
+        var json = JsonSerializer.Serialize(payload);
 
-        req.Content = new StringContent(JsonSerializer.Serialize(payload));
-        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-        using var resp = await Http.SendAsync(req, ct);
+        using var resp = await HttpRetryPolicy.ExecuteAsync(() =>
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, url);
+            req.Headers.Add("api-key", apiKey);
+            req.Content = new StringContent(json);
+            req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            return Http.SendAsync(req, ct);
+        });
         var body = await resp.Content.ReadAsStringAsync(ct);
         resp.EnsureSuccessStatusCode();
 

@@ -11,7 +11,7 @@ public static class BrickHostServiceCollectionExtensions
     /// <summary>
     /// Binds <see cref="BrickHostOptions"/> from configuration (section "BrickHost").
     /// Caller should register <see cref="CompositeBrickRegistry"/> when using remote catalogs:
-    /// local <see cref="IBrickRegistry"/> + <see cref="IRemoteBrickCatalog"/> list + <see cref="HttpClient"/>.
+    /// local <see cref="Nexo.Core.Domain.Execution.IBrickRegistry"/> + <see cref="IRemoteBrickCatalog"/> list + <see cref="HttpClient"/>.
     /// </summary>
     public static IServiceCollection AddNexoBrickHostOptions(
         this IServiceCollection services,

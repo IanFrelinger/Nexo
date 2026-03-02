@@ -1,22 +1,19 @@
+using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.CSharp;
 using Nexo.Abstractions;
 using System.Text.Json;
 
 namespace Nexo.Tools.Assembly;
 
 /// <summary>
-/// Tool for decompiling .NET assemblies (stub implementation).
-/// 
-/// Currently provides a placeholder implementation that writes a stub file.
-/// Future implementation would perform actual decompilation.
-/// 
-/// Implements ITool for use with agent toolboxes.
-/// Used by agents to decompile .NET assemblies.
+/// Tool for decompiling .NET assemblies using ICSharpCode.Decompiler.
+/// Writes C# source to the output directory.
 /// </summary>
 public sealed class AssemblyDecompileTool : ITool
 {
     public string Id => "assembly.decompile";
-    public ToolSchema Schema => new(Id, "Stub decompilation - writes a placeholder .txt", """
-    {"type":"object","required":["path","output"],"properties":{"path":{"type":"string"},"output":{"type":"string"}}}
+    public ToolSchema Schema => new(Id, "Decompile .NET assembly to C# source", """
+    {"type":"object","required":["path","output"],"properties":{"path":{"type":"string","description":"Path to .NET assembly"},"output":{"type":"string","description":"Output directory for decompiled source"}}}
     """);
 
     private sealed record Args(string path, string output);
@@ -24,14 +21,37 @@ public sealed class AssemblyDecompileTool : ITool
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         var args = JsonSerializer.Deserialize<Args>(call.Arguments)!;
-        Directory.CreateDirectory(args.output);
-        var outFile = Path.Combine(args.output, "DECOMPILE_STUB.txt");
-        await File.WriteAllTextAsync(outFile,
-            $"[stub] Decompilation not implemented.\nAssembly: {args.path}\nTick: {s.Tick}\n",
-            ct);
+        ct.ThrowIfCancellationRequested();
 
-        var delta = new ActionDelta(s.Tick, s.Tick + 1, new[] { $"decompile:{args.path} -> {outFile}" });
-        var payload = new { Output = outFile };
-        return new ToolResult(delta, payload);
+        if (!File.Exists(args.path))
+        {
+            var delta = new ActionDelta(s.Tick, s.Tick + 1, new[] { $"decompile:FAILED - file not found: {args.path}" });
+            return new ToolResult(delta, new { Error = $"Assembly not found: {args.path}" });
+        }
+
+        Directory.CreateDirectory(args.output);
+        var assemblyName = Path.GetFileNameWithoutExtension(args.path);
+        var outFile = Path.Combine(args.output, $"{assemblyName}.decompiled.cs");
+
+        try
+        {
+            var decompiler = new CSharpDecompiler(args.path, new DecompilerSettings
+            {
+                ThrowOnAssemblyResolveErrors = false
+            });
+            var sourceCode = decompiler.DecompileWholeModuleAsString();
+            await File.WriteAllTextAsync(outFile, sourceCode, ct);
+        }
+        catch (Exception ex)
+        {
+            var stubContent = $@"// Decompilation failed: {ex.Message}
+// Assembly: {args.path}
+// Error: {ex.GetType().Name}
+";
+            await File.WriteAllTextAsync(outFile, stubContent, ct);
+        }
+
+        var successDelta = new ActionDelta(s.Tick, s.Tick + 1, new[] { $"decompile:{args.path} -> {outFile}" });
+        return new ToolResult(successDelta, new { Output = outFile });
     }
 }

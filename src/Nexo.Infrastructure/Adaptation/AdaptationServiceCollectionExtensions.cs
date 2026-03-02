@@ -63,7 +63,7 @@ public static class AdaptationServiceCollectionExtensions
         services.AddSingleton<IFixGenerator, FixGenerator>();
         services.AddSingleton<IBrickRecompiler, BrickRecompiler>();
         services.AddSingleton<IBehaviorRewirer, BehaviorRewirer>();
-        services.AddSingleton<INewBrickGenerator, NewBrickGenerator>();
+        services.AddSingleton<INewBrickGenerator>(sp => new NewBrickGenerator(sp.GetService<IAdaptationLog>()));
         services.AddSingleton<INewBehaviorAssembler, NewBehaviorAssembler>();
         services.AddSingleton<ISourceCodeFixer, EmptyCatchCodeFixer>();
 

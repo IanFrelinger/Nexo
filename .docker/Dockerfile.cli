@@ -1,0 +1,25 @@
+# Dockerfile for Nexo CLI - multi-stage build
+# Build for linux/amd64 for consistent x64 output (works on arm64 hosts via emulation)
+ARG DOTNET_VERSION=9.0
+FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
+WORKDIR /src
+
+COPY . .
+
+# Skip CopyAssemblies (test infra script; not needed for CLI publish)
+ENV SkipCopyAssemblies=true
+
+# Restore and publish CLI - force net8.0 for multi-TFM refs, framework-dependent
+RUN dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -r linux-x64 -p:TargetFramework=net8.0 && \
+    dotnet publish src/Nexo.CLI/Nexo.CLI.csproj -c Release -o /app/publish \
+        -r linux-x64 --self-contained false -p:TargetFramework=net8.0 -p:SkipCopyAssemblies=true
+
+# Runtime stage (use runtime 8.0 - app targets net8.0)
+FROM --platform=linux/amd64 mcr.microsoft.com/dotnet/runtime:8.0
+WORKDIR /app
+
+COPY --from=build /app/publish/ /app/
+
+WORKDIR /app
+ENTRYPOINT ["dotnet", "/app/Nexo.CLI.dll"]
+CMD ["--help"]
