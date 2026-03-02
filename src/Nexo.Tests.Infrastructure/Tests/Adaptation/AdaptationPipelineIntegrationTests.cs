@@ -4,7 +4,11 @@ using Nexo.Core.Application.Adaptation.Models;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
+using Nexo.Demo.Bricks.Security;
 using Nexo.Infrastructure;
+using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Observation;
 using Nexo.Tests.Application.Helpers;
 using Xunit;
@@ -85,5 +89,32 @@ public sealed class AdaptationPipelineIntegrationTests : IDisposable
         var records = await adaptationLog.QueryAsync(DateTimeOffset.UtcNow.AddHours(-1), DateTimeOffset.UtcNow.AddHours(1));
         Assert.Single(records);
         Assert.False(records[0].Promoted);
+    }
+
+    [Fact]
+    public async Task AdaptCommand_WithOWASPScannerBrick_DecomposeRecompile_Succeeds()
+    {
+        var storePath = Path.Combine(_tempDir, "patterns.db");
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole())
+            .AddSingleton<IProviderFactory, ProviderFactory>()
+            .AddAdaptationInfrastructure(storePath)
+            .AddAdaptationBricks(typeof(OWASPScannerBrick))
+            .BuildServiceProvider();
+
+        var registry = services.GetRequiredService<Nexo.Core.Domain.Execution.IBrickRegistry>();
+        var decomposer = services.GetRequiredService<IBrickDecomposer>();
+        var recompiler = services.GetRequiredService<IBrickRecompiler>();
+
+        var brick = registry.GetBrick("owasp-scanner");
+        Assert.NotNull(brick);
+
+        var manifest = await decomposer.DecomposeAsync(brick);
+        Assert.NotNull(manifest);
+        Assert.Equal("owasp-scanner", manifest.Id);
+
+        var recompiled = await recompiler.RecompileAsync(manifest);
+        Assert.NotNull(recompiled);
+        Assert.Equal("owasp-scanner", recompiled.Id);
     }
 }

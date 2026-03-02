@@ -111,4 +111,45 @@ public class DataDecisionAuditLogTests
 
         entries.Should().BeEmpty();
     }
+
+    [Fact]
+    public void GetRecent_WithUntil_FiltersByTime()
+    {
+        var log = new DataDecisionAuditLog();
+        log.LogClassification("a", "Public", null);
+
+        var until = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var entries = log.GetRecent(10, until: until);
+
+        entries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetRecent_WithEventType_FiltersByType()
+    {
+        var log = new DataDecisionAuditLog();
+        log.LogSanitization(new SanitizationAuditEntryDto(
+            DateTimeOffset.UtcNow, "v1", "prompt", "redacted", "PII"));
+        log.LogClassification("file-paths", "TopSecret", "taxonomy");
+
+        var entries = log.GetRecent(10, eventType: "Sanitization");
+
+        entries.Should().HaveCount(1);
+        entries[0].EventType.Should().Be("Sanitization");
+    }
+
+    [Fact]
+    public void ExportToCsv_ReturnsValidCsv()
+    {
+        var log = new DataDecisionAuditLog();
+        log.LogSanitization(new SanitizationAuditEntryDto(
+            DateTimeOffset.UtcNow, "v1", "field", "stripped", "reason"));
+        log.LogClassification("test", "Public", null);
+
+        var csv = log.ExportToCsv(10);
+
+        csv.Should().Contain("Timestamp,EventType,RuleVersion,FieldOrType,Disposition");
+        csv.Should().Contain("Sanitization");
+        csv.Should().Contain("Classification");
+    }
 }

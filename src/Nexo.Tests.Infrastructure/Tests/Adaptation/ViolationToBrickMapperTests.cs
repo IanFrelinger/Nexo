@@ -16,6 +16,13 @@ public sealed class ViolationToBrickMapperTests
     }
 
     [Fact]
+    public void GetBrickIdForFile_OWASPScannerBrick_ReturnsOwaspScanner()
+    {
+        var brickId = ViolationToBrickMapper.GetBrickIdForFile("/path/to/OWASPScannerBrick.cs");
+        brickId.Should().Be("owasp-scanner");
+    }
+
+    [Fact]
     public void GetBrickIdForFile_UnknownFile_ReturnsNull()
     {
         var brickId = ViolationToBrickMapper.GetBrickIdForFile("/path/to/SomeOtherClass.cs");
