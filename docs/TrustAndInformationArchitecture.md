@@ -215,30 +215,30 @@ IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? si
 
 ## Delivery Phases (Revised)
 
-### Phase 1 — Classification + Sanitization (Extend Existing)
+### Phase 1 — Classification + Sanitization (Extend Existing) — Implemented
 - Add `IDataTaxonomy` and `DataTaxonomy` with config file
 - Add `SanitizingProviderFactory` wrapping `IProviderFactory`
 - Use `ISensitiveContentFilter` for PII in prompts
 - Add `ICloudSanitizationProxy` and `ISanitizationAuditLog`
 - Register wrapper in DI when Trust is enabled
 
-### Phase 2 — Knowledge Log with Provenance
-- Add `IUserKnowledgeLogStore` (SQLite impl)
-- Schema: entries, provenance, versioning
-- Export to JSON/Markdown
+### Phase 2 — Knowledge Log with Provenance — Implemented
+- Add `IUserKnowledgeLogStore` (LiteDB impl: `LiteDbUserKnowledgeLogStore`)
+- Schema: entries, provenance (`SourceObservationIds`), versioning
+- Export to JSON/Markdown (`ExportToJsonAsync`, `ExportToMarkdownAsync`)
 - No changes to `IKnowledgeChunkStore` or `IKnowledgeSyncService`
 
-### Phase 3 — Access Boundary + Observation Gate
-- Add `IAccessBoundary` and `IObservationGate`
+### Phase 3 — Access Boundary + Observation Gate — Implemented
+- Add `IAccessBoundary` and `IObservationGate` (`AccessBoundary`, `ObservationGate`)
 - Persist boundary config (JSON or SQLite)
-- Integrate into observation pipelines
-- Add pause control and per-project overrides
+- Integrate into observation pipelines (`KnowledgeBaseIndexer`, `ObservationPipelineService`)
+- Add pause control and per-project overrides (`TrustCommand` pause, resume, allow, deny, boundary)
 
-### Phase 4 — Audit Dashboard + Compliance
+### Phase 4 — Audit Dashboard + Compliance — Implemented
 - Add `IDataDecisionAuditLog` (or extend `ISanitizationAuditLog`)
 - Unify sanitization, boundary, classification events
-- Export for compliance (structured JSON)
-- UI: persistent boundary indicator, audit view
+- Export for compliance (structured JSON, Markdown, CSV via `TrustCommand.AuditAsync`)
+- UI: persistent boundary indicator, audit view (`TrustCommand.DashboardAsync`, `BoundaryAsync`)
 
 ---
 
