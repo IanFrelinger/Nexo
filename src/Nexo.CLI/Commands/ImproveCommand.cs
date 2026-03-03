@@ -10,7 +10,7 @@ using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
-using Nexo.Demo.Bricks.Security;
+using Nexo.Bricks.Owasp.Security;
 using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Infrastructure;
 using Nexo.Core.Application.SelfContext.Ports;
@@ -36,6 +36,7 @@ public sealed class ImproveCommand : Command
         var skipRegressionOpt = new Option<bool>("--skip-regression", () => false, "Skip regression test after source fix (for CI/tests when fix is outside solution)");
         var storePathOpt = new Option<string?>("--store-path", "Directory for nexo dbs (default: repo root)");
         var selfOpt = new Option<bool>("--self", () => false, "Run one cycle of the self-improvement loop (test failures → fix → validate → promote)");
+        var holdoutFilterOpt = new Option<string?>("--holdout-filter", "xUnit filter for holdout tests (e.g. Category=Holdout). Excluded from per-fix regression; run at end (P3.4)");
 
         AddOption(pathOpt);
         AddOption(dryRunOpt);
@@ -44,6 +45,7 @@ public sealed class ImproveCommand : Command
         AddOption(skipRegressionOpt);
         AddOption(storePathOpt);
         AddOption(selfOpt);
+        AddOption(holdoutFilterOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -54,11 +56,12 @@ public sealed class ImproveCommand : Command
             var skipRegression = ctx.ParseResult.GetValueForOption(skipRegressionOpt);
             var storePathOverride = ctx.ParseResult.GetValueForOption(storePathOpt);
             var self = ctx.ParseResult.GetValueForOption(selfOpt);
-            await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self);
+            var holdoutFilter = ctx.ParseResult.GetValueForOption(holdoutFilterOpt);
+            await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter);
         });
     }
 
-    private static async Task ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false)
+    private static async Task ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false, string? holdoutFilter = null)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
@@ -76,7 +79,12 @@ public sealed class ImproveCommand : Command
             .AddSharedAdaptationCache();
 
         if (self)
-            serviceCollection.AddSelfImprovementLoop(5);
+        {
+            var holdoutOptions = !string.IsNullOrWhiteSpace(holdoutFilter)
+                ? new Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions { HoldoutFilter = holdoutFilter }
+                : null;
+            serviceCollection.AddSelfImprovementLoop(5, holdoutOptions);
+        }
 
         if (yes)
             serviceCollection.AddSingleton<IUserFeedbackCapture>(new AutoApproveUserFeedbackCapture());

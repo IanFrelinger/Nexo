@@ -5,7 +5,7 @@ using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
-using Nexo.Demo.Bricks.Security;
+using Nexo.Bricks.Owasp.Security;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Execution;

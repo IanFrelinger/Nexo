@@ -52,8 +52,9 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
     {
         var registry = new Mock<IBackgroundAgentRegistry>();
         registry.Setup(r => r.GetAgent("missing")).Returns((BackgroundAgentInstance?)null);
+        var modeStore = new InMemoryAggressivenessModeStore();
         var logger = new Mock<ILogger<MetricsBackgroundAgentCommand>>();
-        var command = new MetricsBackgroundAgentCommand(registry.Object, logger.Object);
+        var command = new MetricsBackgroundAgentCommand(registry.Object, modeStore, logger.Object);
         var exitCode = await command.ExecuteAsync("missing", false);
         AssertEqual(1, exitCode);
     }
@@ -71,8 +72,9 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
         };
         var registry = new Mock<IBackgroundAgentRegistry>();
         registry.Setup(r => r.GetAgent("agent1")).Returns(instance);
+        var modeStore = new InMemoryAggressivenessModeStore();
         var logger = new Mock<ILogger<MetricsBackgroundAgentCommand>>();
-        var command = new MetricsBackgroundAgentCommand(registry.Object, logger.Object);
+        var command = new MetricsBackgroundAgentCommand(registry.Object, modeStore, logger.Object);
         var exitCode = await command.ExecuteAsync("agent1", false);
         AssertEqual(0, exitCode);
     }

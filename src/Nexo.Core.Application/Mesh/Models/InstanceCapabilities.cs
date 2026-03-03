@@ -20,7 +20,7 @@ public sealed class InstanceCapabilities
         IEnumerable<ArtifactFormat> supportedFormats,
         ArtifactFormat? preferredFormat = null)
     {
-        SupportedFormats = supportedFormats.ToHashSet().ToList().AsReadOnly();
+        SupportedFormats = new List<ArtifactFormat>(new HashSet<ArtifactFormat>(supportedFormats)).AsReadOnly();
         PreferredFormat = preferredFormat;
     }
 

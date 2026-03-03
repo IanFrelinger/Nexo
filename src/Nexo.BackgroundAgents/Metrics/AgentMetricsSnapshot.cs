@@ -1,3 +1,5 @@
+using Nexo.BackgroundAgents.Configuration;
+
 namespace Nexo.BackgroundAgents.Metrics;
 
 /// <summary>
@@ -11,6 +13,7 @@ namespace Nexo.BackgroundAgents.Metrics;
 /// <param name="LastStartedAt">When the agent was last started.</param>
 /// <param name="LastCompletedAt">When the agent last completed.</param>
 /// <param name="LastError">Last error message, if any.</param>
+/// <param name="Mode">Current aggressiveness mode (passive, semi-active, active, ambient).</param>
 public sealed record AgentMetricsSnapshot(
     string AgentId,
     int ExecutionCount,
@@ -19,4 +22,5 @@ public sealed record AgentMetricsSnapshot(
     double? SuccessRate,
     DateTimeOffset? LastStartedAt,
     DateTimeOffset? LastCompletedAt,
-    string? LastError);
+    string? LastError,
+    BackgroundAgentAggressivenessMode Mode);

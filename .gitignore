@@ -58,18 +58,7 @@ __pycache__/
 *.pyc
 *.pyo
 
-# --- Unity generated (keep diffs clean)
-DirectorStudioUnity/Library/
-DirectorStudioUnity/Temp/
-DirectorStudioUnity/Logs/
-DirectorStudioUnity/Obj/
-DirectorStudioUnity/MemoryCaptures/
-DirectorStudioUnity/Recordings/
-DirectorStudioUnity/Builds/
-DirectorStudioUnity/Artifacts/
-DirectorStudioUnity/UserSettings/
-DirectorStudioUnity/Assets/GeneratedScenes/
-DirectorStudioUnity/Assets/Generated/
+# Unity removed from repo
 # Rider/VS cache
 .idea/
 .vs/
@@ -94,12 +83,5 @@ backup/
 /test-reports/
 appsettings.local.json
 
-# Nexo CLI demo generated outputs
-/Artifacts/demo-dev-session.json
 /NEXO_AGENT_NOTES.md
-
-# Demo: self-extension generated code (kept out of git)
-/src/Nexo.CLI/Commands/DemoGenerated/
-/src/Nexo.Tests.CLI/Tests/Commands/DemoGenerated/
-/src/Nexo.Tests.Infrastructure/Tests/DemoGenerated/
 

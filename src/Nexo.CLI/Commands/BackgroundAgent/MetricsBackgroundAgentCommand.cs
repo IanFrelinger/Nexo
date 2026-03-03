@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Metrics;
 using Nexo.BackgroundAgents.Registry;
 
@@ -11,13 +12,16 @@ namespace Nexo.CLI.Commands.BackgroundAgent;
 public class MetricsBackgroundAgentCommand
 {
     private readonly IBackgroundAgentRegistry _registry;
+    private readonly IAggressivenessModeStore _modeStore;
     private readonly ILogger<MetricsBackgroundAgentCommand> _logger;
 
     public MetricsBackgroundAgentCommand(
         IBackgroundAgentRegistry registry,
+        IAggressivenessModeStore modeStore,
         ILogger<MetricsBackgroundAgentCommand> logger)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+        _modeStore = modeStore ?? throw new ArgumentNullException(nameof(modeStore));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -37,7 +41,7 @@ public class MetricsBackgroundAgentCommand
                     Console.Error.WriteLine($"Agent '{id}' not found");
                 return Task.FromResult(1);
             }
-            var snapshot = ToSnapshot(instance);
+            var snapshot = ToSnapshot(instance, _modeStore);
             if (formatJson)
             {
                 var options = new JsonSerializerOptions { WriteIndented = true };
@@ -46,6 +50,7 @@ public class MetricsBackgroundAgentCommand
             else
             {
                 Console.Out.WriteLine($"Agent Metrics: {id}");
+                Console.Out.WriteLine($"  Mode: {ToModeString(snapshot.Mode)}");
                 Console.Out.WriteLine($"  Execution Count: {snapshot.ExecutionCount}");
                 Console.Out.WriteLine($"  Success Count: {snapshot.SuccessCount}");
                 Console.Out.WriteLine($"  Failure Count: {snapshot.FailureCount}");
@@ -69,7 +74,7 @@ public class MetricsBackgroundAgentCommand
         }
     }
 
-    private static AgentMetricsSnapshot ToSnapshot(BackgroundAgentInstance instance)
+    private static AgentMetricsSnapshot ToSnapshot(BackgroundAgentInstance instance, IAggressivenessModeStore modeStore)
     {
         var exec = instance.ExecutionCount;
         var successRate = exec > 0 ? (double)instance.SuccessCount / exec : (double?)null;
@@ -81,6 +86,19 @@ public class MetricsBackgroundAgentCommand
             successRate,
             instance.LastStartedAt,
             instance.LastCompletedAt,
-            instance.LastError);
+            instance.LastError,
+            modeStore.GetMode());
+    }
+
+    private static string ToModeString(Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode mode)
+    {
+        return mode switch
+        {
+            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.Passive => "passive",
+            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.SemiActive => "semi-active",
+            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.Active => "active",
+            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.Ambient => "ambient",
+            _ => mode.ToString().ToLowerInvariant()
+        };
     }
 }

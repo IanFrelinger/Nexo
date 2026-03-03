@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Adaptation.Models;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Domain.Bricks;
-using Nexo.Demo.Bricks.Security;
+using Nexo.Bricks.Owasp.Security;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Execution;

@@ -62,7 +62,7 @@ public sealed class DogfoodBlock10SharedAdaptationTests : IDisposable
             BrickId = "test.brick",
             FailureType = "EmptyCatch",
             FixApplied = AdaptationFixType.Source,
-            FilePath = "src/Nexo.Demo.Bricks/SomeFile.cs",
+            FilePath = "src/Nexo.Bricks.Owasp/SomeFile.cs",
             RegressionPassed = true,
             Promoted = true,
             Message = "Dogfood broadcast test",
@@ -71,7 +71,7 @@ public sealed class DogfoodBlock10SharedAdaptationTests : IDisposable
         {
             Id = record.Id,
             Record = record,
-            Files = new Dictionary<string, byte[]> { ["src/Nexo.Demo.Bricks/SomeFile.cs"] = System.Text.Encoding.UTF8.GetBytes("// test") },
+            Files = new Dictionary<string, byte[]> { ["src/Nexo.Bricks.Owasp/SomeFile.cs"] = System.Text.Encoding.UTF8.GetBytes("// test") },
             BroadcastAt = record.Timestamp,
         };
 

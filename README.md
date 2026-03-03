@@ -49,7 +49,6 @@ dotnet run --project src/Nexo.CLI -- test local
 | `nexo trust` | Trust & Information Architecture: audit log and access boundary |
 | `nexo test` | Run tests (local, portable, multi-env) |
 | `nexo docker` | Docker operations (build, run, clean, ps, images) |
-| `nexo demo` | Demo operations (smoke-test, self-extend) |
 
 ## Providers
 

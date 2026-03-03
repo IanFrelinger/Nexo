@@ -1,0 +1,10 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/TestResults/
+**/test-results/
+*.dmp
+*.trx
+*.coverage
+*.db
+packages/

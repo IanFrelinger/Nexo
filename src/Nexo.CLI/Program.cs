@@ -345,6 +345,29 @@ static class Program
             metricsBgIdOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(metricsBgCmd);
 
+        // nexo background-agent mode
+        var modeCmd = new Command("mode", "Get or set aggressiveness mode (passive, semi-active, active, ambient)");
+        var modeGetCmd = new Command("get", "Get current mode");
+        modeGetCmd.SetHandler(
+            async (bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
+                Environment.Exit(await cmd.GetAsync(formatJson));
+            },
+            jsonOpt);
+        modeCmd.AddCommand(modeGetCmd);
+        var modeSetValueOpt = new Option<string>("--value", "Mode: passive, semi-active, active, ambient") { IsRequired = true };
+        var modeSetCmd = new Command("set", "Set mode (switchable at runtime without restart)") { modeSetValueOpt };
+        modeSetCmd.SetHandler(
+            async (string value, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
+                Environment.Exit(await cmd.SetAsync(value, formatJson));
+            },
+            modeSetValueOpt, jsonOpt);
+        modeCmd.AddCommand(modeSetCmd);
+        backgroundAgentCmd.AddCommand(modeCmd);
+
         // nexo background-agent sensitivity
         var sensitivityCmd = new Command("sensitivity", "Manage data sensitivity levels");
         var sensListCmd = new Command("list", "List sensitivity levels");
@@ -856,10 +879,6 @@ static class Program
             verboseOpt);
         metricsCmd.AddCommand(metricsClearCmd);
 
-        // nexo demo
-        var demoCmd = DemoCommand.CreateCommand(null, jsonOpt, verboseOpt);
-        root.AddCommand(demoCmd);
-
         // nexo docker (generic build/run/clean for multi-platform testing)
         var dockerCmd = new DockerCommand();
         root.AddCommand(dockerCmd);
@@ -932,12 +951,12 @@ static class Program
         services.AddScoped<OrchestrateCommand>();
         services.AddScoped<EscalateCommand>();
         services.AddScoped<MetricsCommand>();
-        services.AddScoped<DemoCommand>();
         services.AddScoped<MaintenanceCommand>();
         services.AddScoped<BackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();

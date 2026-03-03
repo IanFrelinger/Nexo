@@ -8,10 +8,7 @@ using Nexo.Core.Application.Testing.UseCases.RunTests;
 namespace Nexo.CLI.Commands;
 
 /// <summary>
-/// CLI command implementation for running the internal test suite (non-demo).
-/// 
-/// Note: This is intentionally separate from the Universal Testing Agent demo command
-/// (`UniversalTestCommand` under `nexo demo test`).
+/// CLI command implementation for running the internal test suite.
 /// </summary>
 public sealed class TestCommand
 {

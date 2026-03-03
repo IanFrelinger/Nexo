@@ -1,4 +1,4 @@
-.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify review-summary demo-test demo-dev package-cli clean-test-artifacts
+.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify review-summary package-cli clean-test-artifacts
 
 # Build the solution
 build:
@@ -156,23 +156,6 @@ dogfood-all:
 # Review summary Markdown from JSON (C#-driven; replaces scripts/review-summary-md.sh)
 review-summary:
 	dotnet run --project src/Nexo.CLI -- review summary
-
-# CLI demos
-demo-test:
-	nexo demo test \
-		--target "https://httpbin.org/html" \
-		--goal "Verify page structure and content" \
-		--depth quick
-
-demo-dev:
-	nexo demo dev \
-		--project ./examples/sample-project \
-		--task "Add input validation" \
-		--max-iterations 3 \
-		--autonomy supervised
-
-# Build and run demo
-demo-fresh: build demo-test
 
 # Remove test artifacts: hang dumps (~6GB each), .trx, coverage, per-run TestResults dirs.
 # Run after tests to reclaim disk space. Safe to run anytime.

@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Execution;
-using Nexo.Demo.Bricks.Security;
+using Nexo.Bricks.Owasp.Security;
 using Nexo.Hosting;
 using Nexo.Hosting.Sdk;
 using Nexo.Infrastructure.Execution;

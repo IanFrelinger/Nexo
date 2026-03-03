@@ -30,6 +30,7 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
     private readonly AdaptationRollbackHelper _rollbackHelper;
     private readonly ILogger<SelfImprovementLoop>? _logger;
     private readonly int _maxIterationsPerRun;
+    private readonly Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions? _holdoutOptions;
     private SelfImprovementReport? _lastReport;
 
     public SelfImprovementLoop(
@@ -44,7 +45,8 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
         ISourceCodeFixer sourceFixer,
         AdaptationRollbackHelper rollbackHelper,
         ILogger<SelfImprovementLoop>? logger = null,
-        int maxIterationsPerRun = 5)
+        int maxIterationsPerRun = 5,
+        Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions? holdoutOptions = null)
     {
         _testFailureStore = testFailureStore ?? throw new ArgumentNullException(nameof(testFailureStore));
         _analyzer = analyzer ?? throw new ArgumentNullException(nameof(analyzer));
@@ -58,6 +60,7 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
         _rollbackHelper = rollbackHelper ?? throw new ArgumentNullException(nameof(rollbackHelper));
         _logger = logger;
         _maxIterationsPerRun = maxIterationsPerRun;
+        _holdoutOptions = holdoutOptions;
     }
 
     public async Task RunOnceAsync(CancellationToken ct = default)
@@ -129,7 +132,8 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
                 continue;
             }
 
-            var regResult = await _regressionRunner.RunAsync(solutionPath, filter: null, ct).ConfigureAwait(false);
+            var regressionFilter = _holdoutOptions?.GetRegressionExclusionFilter();
+            var regResult = await _regressionRunner.RunAsync(solutionPath, filter: regressionFilter, ct).ConfigureAwait(false);
             if (!regResult.AllPassed)
             {
                 _rollbackHelper.Rollback(failure.FilePath);
@@ -183,6 +187,25 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
                 await _rollbackManager.RollbackAsync(record.Id, ct).ConfigureAwait(false);
                 rejected.Add(ex.Message);
                 fixesRejected++;
+            }
+        }
+
+        if (_holdoutOptions is { ValidateHoldoutAtEnd: true, HoldoutFilter: { Length: > 0 } holdoutFilter } && fixesPromoted > 0)
+        {
+            var holdoutResult = await _regressionRunner.RunAsync(solutionPath, filter: holdoutFilter, ct).ConfigureAwait(false);
+            if (!holdoutResult.AllPassed)
+            {
+                _logger?.LogWarning("Holdout tests failed after self-improvement: {Failed} failed", holdoutResult.FailedCount);
+                _lastReport = new SelfImprovementReport(
+                    DateTimeOffset.UtcNow,
+                    failuresProcessed,
+                    fixesGenerated,
+                    fixesValidated,
+                    fixesPromoted,
+                    fixesRejected,
+                    promoted,
+                    rejected.Concat(new[] { "Holdout validation failed" }).ToArray());
+                return;
             }
         }
 

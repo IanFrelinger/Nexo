@@ -35,6 +35,12 @@ public static class SharedAdaptationServiceCollectionExtensions
             var store = (FileBasedSharedAdaptationStore)sp.GetRequiredService<ISharedAdaptationBroadcaster>();
             return store;
         });
+        services.AddSingleton<Nexo.Core.Application.Adaptation.Ports.ISneakernetTransport>(sp =>
+        {
+            var sync = sp.GetRequiredService<ISharedAdaptationSync>();
+            var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Adaptation.SneakernetTransport>>();
+            return new SneakernetTransport(sync, logger);
+        });
         return services;
     }
 }

@@ -19,7 +19,13 @@ public static class SelfImprovementServiceCollectionExtensions
     /// Registers the self-improvement loop. Requires adaptation, self-context, and trust services.
     /// Adds IAccessBoundary if not already registered.
     /// </summary>
-    public static IServiceCollection AddSelfImprovementLoop(this IServiceCollection services, int maxIterationsPerRun = 5)
+    /// <param name="services">Service collection.</param>
+    /// <param name="maxIterationsPerRun">Max adaptations per run.</param>
+    /// <param name="holdoutOptions">Optional holdout test options (P3.4). When set, regression excludes holdout; holdout runs at end.</param>
+    public static IServiceCollection AddSelfImprovementLoop(
+        this IServiceCollection services,
+        int maxIterationsPerRun = 5,
+        Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions? holdoutOptions = null)
     {
         services.AddAccessBoundary(null);
         services.AddSingleton<ISelfImprovementLoop>(sp => new SelfImprovementLoop(
@@ -34,7 +40,8 @@ public static class SelfImprovementServiceCollectionExtensions
             sp.GetRequiredService<ISourceCodeFixer>(),
             sp.GetRequiredService<AdaptationRollbackHelper>(),
             sp.GetService<Microsoft.Extensions.Logging.ILogger<SelfImprovementLoop>>(),
-            maxIterationsPerRun));
+            maxIterationsPerRun,
+            holdoutOptions));
         return services;
     }
 }

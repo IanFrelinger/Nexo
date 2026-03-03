@@ -91,7 +91,7 @@ public sealed class ImmutableCoreTests : IDisposable
     public void NonCorePath_IsAllowed()
     {
         var registry = new ImmutableCoreRegistry();
-        var allowedPath = "src/Nexo.Demo.Bricks/Security/OWASPScannerBrick.cs";
+        var allowedPath = "src/Nexo.Bricks.Owasp/Security/OWASPScannerBrick.cs";
 
         registry.IsInImmutableCore(allowedPath).Should().BeFalse();
     }

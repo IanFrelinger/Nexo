@@ -26,10 +26,30 @@ public sealed class MeshCommand : Command
         var syncCmd = new Command("sync", "Pull shared adaptations from trusted peers and adopt after validation (P2.3)");
         syncCmd.SetHandler(async (InvocationContext ctx) => await ExecuteSyncAsync());
 
+        var exportPathOpt = new Option<string>("--path", "Output path for export file") { IsRequired = true };
+        var exportCmd = new Command("export", "Export shared adaptations to file for sneakernet transfer (P3.3)");
+        exportCmd.AddOption(exportPathOpt);
+        exportCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var path = ctx.ParseResult.GetValueForOption(exportPathOpt)!;
+            await ExecuteExportAsync(path);
+        });
+
+        var importPathOpt = new Option<string>("--path", "Input path to export file") { IsRequired = true };
+        var importCmd = new Command("import", "Import shared adaptations from sneakernet export file (P3.3)");
+        importCmd.AddOption(importPathOpt);
+        importCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var path = ctx.ParseResult.GetValueForOption(importPathOpt)!;
+            await ExecuteImportAsync(path);
+        });
+
         AddOption(discoverOpt);
         AddOption(advertiseOpt);
         AddOption(capabilityOpt);
         AddCommand(syncCmd);
+        AddCommand(exportCmd);
+        AddCommand(importCmd);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -60,6 +80,36 @@ public sealed class MeshCommand : Command
             if (ok) adopted++;
         }
         Console.WriteLine($"Adopted {adopted}/{entries.Count}.");
+        Environment.ExitCode = 0;
+    }
+
+    private static async Task ExecuteExportAsync(string outputPath)
+    {
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole())
+            .AddCodeAnalyzers()
+            .AddAdaptationInfrastructure()
+            .AddSharedAdaptationCache()
+            .BuildServiceProvider();
+
+        var transport = services.GetRequiredService<ISneakernetTransport>();
+        await transport.ExportAsync(outputPath).ConfigureAwait(false);
+        Console.WriteLine($"Exported to {outputPath}");
+        Environment.ExitCode = 0;
+    }
+
+    private static async Task ExecuteImportAsync(string inputPath)
+    {
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole())
+            .AddCodeAnalyzers()
+            .AddAdaptationInfrastructure()
+            .AddSharedAdaptationCache()
+            .BuildServiceProvider();
+
+        var transport = services.GetRequiredService<ISneakernetTransport>();
+        var adopted = await transport.ImportAsync(inputPath).ConfigureAwait(false);
+        Console.WriteLine($"Imported {adopted} adaptation(s) from {inputPath}");
         Environment.ExitCode = 0;
     }
 

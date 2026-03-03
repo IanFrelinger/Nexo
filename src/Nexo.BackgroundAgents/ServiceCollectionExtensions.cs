@@ -34,6 +34,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBackgroundAgents(this IServiceCollection services, bool registerHostedService = true)
     {
         services.TryAddSingleton<IDataSensitivityRegistry, DataSensitivityRegistry>();
+        services.TryAddSingleton<IAggressivenessModeStore, InMemoryAggressivenessModeStore>();
         services.TryAddSingleton<IBackgroundAgentLogStore, InMemoryAgentLogStore>();
         services.TryAddSingleton<IScheduleExecutor, ScheduleExecutor>();
         services.AddSingleton<IAgentScheduler, AgentScheduler>();
