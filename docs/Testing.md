@@ -18,7 +18,7 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 ### Where Timeouts Are Applied
 
-- **Makefile `make test`**: `--blame-hang-timeout 30s`
+- **Makefile `make test`**: `--blame-hang-timeout 30s --blame-hang-dump-type none` (avoids 6GB+ hang dumps)
 - **Makefile `test-all-platforms`**: Local 30s; Docker runs 60s
 - **CI (cross-platform-tests.yml)**: Per-scope as above
 - **TestCommandRunner**: 10 min global timeout for `nexo test local`
@@ -38,16 +38,16 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 # Local (all tests, 30s blame-hang)
 make test
 
-# Or directly
-dotnet test --blame-hang-timeout 30s
+# Or directly (add --blame-hang-dump-type none to avoid 6GB dumps on hangs)
+dotnet test --blame-hang-timeout 30s --blame-hang-dump-type none
 
 # Integration tests only
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-  --filter "Category=Integration" --blame-hang-timeout 60s
+  --filter "Category=Integration" --blame-hang-timeout 60s --blame-hang-dump-type none
 
 # Adaptation tests only (local)
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-  --filter "Category=Adaptation" --blame-hang-timeout 90s
+  --filter "Category=Adaptation" --blame-hang-timeout 90s --blame-hang-dump-type none
 
 # Adaptation tests across all Docker environments (linear)
 make test-adaptation-all-envs
@@ -62,3 +62,28 @@ gh workflow run "Cross-Platform Tests" -f scope=adaptation
 # Dogfood (North Star gates)
 make dogfood-all
 ```
+
+## Test Artifacts & Cleanup
+
+Tests can leave artifacts that consume disk space:
+
+| Artifact | Size | Location |
+|----------|------|----------|
+| Hang dumps (`.dmp`) | ~6 GB each | `src/*/TestResults/*/` |
+| Sequence XML | ~88 KB | `src/*/TestResults/*/` |
+| TRX results (`.trx`) | ~20 KB each | `TestResults/`, `test-results/` |
+| Coverage (`.coverage`) | varies | `TestResults/` |
+
+**To prevent accumulation:** Local `make test` and CLI use `--blame-hang-dump-type none` so hang dumps are not written.
+
+**To clean existing artifacts:**
+```bash
+# Via CLI (programmatic)
+nexo maintenance clean --strategy test-artifacts
+
+# Or via Makefile
+make clean-test-artifacts
+```
+Removes all `TestResults/` dirs under `src/` and the root `test-results/` folder.
+
+**Procedural cleanup (before/after test runs):** Set `NEXO_CLEAN_BEFORE_TEST=1` or `NEXO_CLEAN_AFTER_TEST=1` to run test-artifacts cleanup automatically when using `nexo test local`.

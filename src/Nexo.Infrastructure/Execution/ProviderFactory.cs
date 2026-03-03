@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Ephemeral.Ports;
 using Polly;
 using Polly.Retry;
 using System.Net;
@@ -14,6 +15,7 @@ namespace Nexo.Infrastructure.Execution;
 public class ProviderFactory : IProviderFactory
 {
     private readonly ILogger<ProviderFactory> _logger;
+    private readonly IEphemeralModelLifecycle? _ephemeralLifecycle;
     private static readonly HttpClient Http = new();
     private static readonly AsyncRetryPolicy<HttpResponseMessage> HttpRetryPolicy = CreateHttpRetryPolicy();
 
@@ -62,9 +64,11 @@ public class ProviderFactory : IProviderFactory
     /// Creates a new provider factory.
     /// </summary>
     /// <param name="logger">Logger for diagnostics.</param>
-    public ProviderFactory(ILogger<ProviderFactory> logger)
+    /// <param name="ephemeralLifecycle">Optional ephemeral model lifecycle. When NEXO_EPHEMERAL_MODELS=1, use to resolve Ollama URL from container.</param>
+    public ProviderFactory(ILogger<ProviderFactory> logger, IEphemeralModelLifecycle? ephemeralLifecycle = null)
     {
         _logger = logger;
+        _ephemeralLifecycle = ephemeralLifecycle;
     }
     
     /// <inheritdoc />
@@ -314,8 +318,7 @@ public class ProviderFactory : IProviderFactory
 
     private async Task<string> ExecuteOllamaAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]>? imageBytesList, object? config, CancellationToken ct)
     {
-        var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
-        baseUrl = baseUrl.TrimEnd('/');
+        var baseUrl = await GetOllamaBaseUrlAsync(ct);
         var hasImages = imageBytesList is { Count: > 0 };
         // Per-brick model override from config; else env vars; else defaults.
         var configModel = GetModelFromConfig(config);
@@ -635,11 +638,18 @@ public class ProviderFactory : IProviderFactory
         return name;
     }
 
+    private async Task<string> GetOllamaBaseUrlAsync(CancellationToken ct)
+    {
+        if (_ephemeralLifecycle != null)
+            return await _ephemeralLifecycle.GetBaseUrlAsync(ct);
+        var url = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
+        return url.TrimEnd('/');
+    }
+
     /// <inheritdoc />
     public async Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
     {
-        var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
-        baseUrl = baseUrl.TrimEnd('/');
+        var baseUrl = await GetOllamaBaseUrlAsync(cancellationToken);
         List<string> models;
         try
         {

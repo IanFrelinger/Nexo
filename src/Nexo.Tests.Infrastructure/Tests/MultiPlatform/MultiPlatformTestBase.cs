@@ -151,8 +151,9 @@ public abstract class MultiPlatformTestBase : TestBase
         try
         {
             var imageTag = $"nexo-framework-test:{_platformName}";
+            var ephemeral = string.Equals(Environment.GetEnvironmentVariable("NEXO_TEST_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase);
             var resultsDir = Path.Combine(_projectRoot, "test-results", "framework");
-            Directory.CreateDirectory(resultsDir);
+            if (!ephemeral) Directory.CreateDirectory(resultsDir);
 
             // Build container image using execution platform
             _logger?.LogInformation("Building {Platform} image: {ImageTag}", _executionPlatform.PlatformName, imageTag);
@@ -185,7 +186,9 @@ public abstract class MultiPlatformTestBase : TestBase
             // Run tests in container using execution platform
             _logger?.LogInformation("Running tests in {Platform} container: {ImageTag}", _executionPlatform.PlatformName, imageTag);
             var envVars = new Dictionary<string, string> { ["DOTNET_VERSION"] = _dotnetVersion };
-            var volumeMounts = new Dictionary<string, string> { [resultsDir] = "/workspace/test-results" };
+            Dictionary<string, string>? volumeMounts = ephemeral
+                ? null
+                : new Dictionary<string, string> { [resultsDir] = "/workspace/test-results" };
 
             var runResult = await _executionPlatform.RunContainerAsync(
                 imageTag,

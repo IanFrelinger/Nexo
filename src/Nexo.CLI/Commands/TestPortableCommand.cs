@@ -70,14 +70,14 @@ public class TestPortableCommand
 
         if (scope.Equals("trust", StringComparison.OrdinalIgnoreCase))
         {
-            return await TestMultiEnvCommand.ExecuteAsync("trust", null, true, json, verbose);
+            return await TestMultiEnvCommand.ExecuteAsync("trust", null, true, ephemeral: false, json, verbose);
         }
 
         if (scope.Equals("all", StringComparison.OrdinalIgnoreCase))
         {
             var persistenceExit = await RunPersistenceMultiEnvAsync(console, json, verbose);
             if (persistenceExit != 0) return persistenceExit;
-            var trustExit = await TestMultiEnvCommand.ExecuteAsync("trust", null, true, json, verbose);
+            var trustExit = await TestMultiEnvCommand.ExecuteAsync("trust", null, true, ephemeral: false, json, verbose);
             if (trustExit != 0) return trustExit;
             return await RunSmokeAsync(console, json, verbose);
         }

@@ -1,19 +1,20 @@
-.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms ci-verify review-summary demo-test demo-dev package-cli
+.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify review-summary demo-test demo-dev package-cli clean-test-artifacts
 
 # Build the solution
 build:
 	dotnet build
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
+# --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/
 test:
-	dotnet test --blame-hang-timeout 30s
+	dotnet test --blame-hang-timeout 30s --blame-hang-dump-type none
 
 # Run tests on all target platforms: local + Docker (ubuntu, alpine, debian).
 # For native macOS/Windows/Linux use: make test-cross-platform (triggers CI).
 test-all-platforms:
 	@echo "=== Local (current OS) ==="
 	dotnet build -v minimal
-	dotnet test --no-build --verbosity minimal --blame-hang-timeout 30s
+	dotnet test --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none
 	@echo "=== Docker: Ubuntu 8.0 ==="
 	docker build -f .docker/Dockerfile.test-caching --build-arg DOTNET_VERSION=8.0 -t nexo-test-ubuntu:8.0 .
 	mkdir -p test-results
@@ -28,6 +29,12 @@ test-all-platforms:
 	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" nexo-test-debian:8.0 \
 		bash -c "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=debian-8.0-base.trx' --results-directory /workspace/test-results"
 	@echo "=== All target platforms (local + ubuntu + alpine + debian) completed ==="
+
+# Ephemeral: run tests in containers with no volume mounts; results discarded when container is removed
+test-all-platforms-ephemeral:
+	@echo "=== Ephemeral multi-platform tests (no host artifacts) ==="
+	dotnet build -v minimal
+	dotnet run --project src/Nexo.CLI -- test --platforms ubuntu alpine debian --ephemeral
 
 # Run tests on all platforms (C#-driven; works on Windows, macOS, Linux, mobile)
 test-all:
@@ -166,6 +173,14 @@ demo-dev:
 
 # Build and run demo
 demo-fresh: build demo-test
+
+# Remove test artifacts: hang dumps (~6GB each), .trx, coverage, per-run TestResults dirs.
+# Run after tests to reclaim disk space. Safe to run anytime.
+clean-test-artifacts:
+	@echo "Cleaning test artifacts..."
+	@find src -type d -name "TestResults" -exec rm -rf {} + 2>/dev/null; true
+	@rm -rf test-results
+	@echo "Done."
 
 # Package CLI as single-file executable
 package-cli:

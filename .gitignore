@@ -44,6 +44,7 @@ test-results/
 test-reports/
 *.trx
 *.coverage
+*.dmp
 
 # Package files
 packages/

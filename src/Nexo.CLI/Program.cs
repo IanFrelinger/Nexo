@@ -620,9 +620,11 @@ static class Program
         var coverageOpt = new Option<bool>("--coverage", () => false, "Enable code coverage collection");
         var stressOpt = new Option<bool>("--stress", () => false, "Run stress tests (multiple iterations)");
         var visualOpt = new Option<bool>("--visual", () => false, "Run visual validation tests (requires Ollama)");
+        var ephemeralOpt = new Option<bool>("--ephemeral", () => false, "Run tests in ephemeral containers; no volume mounts, results discarded when container is removed");
         testCmd.AddOption(coverageOpt);
         testCmd.AddOption(stressOpt);
         testCmd.AddOption(visualOpt);
+        testCmd.AddOption(ephemeralOpt);
 
         testCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -635,11 +637,12 @@ static class Program
             var coverage = ctx.ParseResult.GetValueForOption(coverageOpt);
             var stress = ctx.ParseResult.GetValueForOption(stressOpt);
             var visual = ctx.ParseResult.GetValueForOption(visualOpt);
+            var ephemeral = ctx.ParseResult.GetValueForOption(ephemeralOpt) || string.Equals(Environment.GetEnvironmentVariable("NEXO_TEST_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
             
             var exitCode = await MultiPlatformTestCommand.ExecuteAsync(
-                platforms, project, filter, dotnetVersion, executionPlatform, outputDir, coverage, stress, visual, json, verbose, ServiceProvider);
+                platforms, project, filter, dotnetVersion, executionPlatform, outputDir, coverage, stress, visual, ephemeral, json, verbose, ServiceProvider);
             Environment.Exit(exitCode);
         });
         // nexo test local - Run tests locally (replaces test-local.sh)
@@ -679,14 +682,18 @@ static class Program
             name: "--provider",
             description: "Override model provider (openai/azure/ollama/offline/mock-json/...)");
 
+        var orchestrateEphemeralOpt = new Option<bool>("--ephemeral", () => false, "Use ephemeral Ollama container; discarded when command exits");
         orchestrateCmd.AddOption(runtimeSpecOpt);
         orchestrateCmd.AddOption(runtimeSpecJsonOpt);
         orchestrateCmd.AddOption(preferModelOpt);
         orchestrateCmd.AddOption(providerOpt);
+        orchestrateCmd.AddOption(orchestrateEphemeralOpt);
 
         orchestrateCmd.SetHandler(
-            async (string request, FileInfo? runtimeSpec, string? runtimeSpecJson, string? preferModel, string? provider, bool json, bool verbose) =>
+            async (string request, FileInfo? runtimeSpec, string? runtimeSpecJson, string? preferModel, string? provider, bool ephemeral, bool json, bool verbose) =>
             {
+                if (ephemeral || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase))
+                    Environment.SetEnvironmentVariable("NEXO_EPHEMERAL_MODELS", "1");
                 var orchestrateCommand = ServiceProvider.GetRequiredService<OrchestrateCommand>();
                 var exitCode = await orchestrateCommand.ExecuteAsync(
                     request,
@@ -703,6 +710,7 @@ static class Program
             runtimeSpecJsonOpt,
             preferModelOpt,
             providerOpt,
+            orchestrateEphemeralOpt,
             jsonOpt,
             verboseOpt);
         root.AddCommand(orchestrateCmd);
@@ -856,6 +864,26 @@ static class Program
         var dockerCmd = new DockerCommand();
         root.AddCommand(dockerCmd);
 
+        // nexo maintenance clean
+        var maintenanceCmd = new Command("maintenance", "Artifact cleanup and maintenance");
+        var maintenanceCleanCmd = new Command("clean", "Clean disk artifacts (test-artifacts, incomplete-blobs)");
+        var strategyOpt = new Option<string?>("--strategy", "Strategy ID (test-artifacts, incomplete-blobs); omit for all");
+        var repoOpt = new Option<string?>("--repo", "Repository root for context");
+        maintenanceCleanCmd.AddOption(strategyOpt);
+        maintenanceCleanCmd.AddOption(repoOpt);
+        maintenanceCleanCmd.SetHandler(
+            async (string? strategy, string? repo, bool json) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<MaintenanceCommand>();
+                var exitCode = await cmd.ExecuteAsync(strategy, repo, json);
+                Environment.Exit(exitCode);
+            },
+            strategyOpt,
+            repoOpt,
+            jsonOpt);
+        maintenanceCmd.AddCommand(maintenanceCleanCmd);
+        root.AddCommand(maintenanceCmd);
+
         root.AddCommand(new CiCommand());
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
@@ -905,6 +933,7 @@ static class Program
         services.AddScoped<EscalateCommand>();
         services.AddScoped<MetricsCommand>();
         services.AddScoped<DemoCommand>();
+        services.AddScoped<MaintenanceCommand>();
         services.AddScoped<BackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();

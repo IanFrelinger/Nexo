@@ -85,7 +85,8 @@ public static class ServiceCollectionExtensions
     /// will be a SanitizingProviderFactory that wraps the inner ProviderFactory.
     /// </summary>
     /// <param name="useSanitizingProviderFactory">If true, IProviderFactory is registered as SanitizingProviderFactory wrapping ProviderFactory.</param>
-    public static IServiceCollection AddTrustServices(this IServiceCollection services, bool useSanitizingProviderFactory = false)
+    /// <param name="ephemeralLifecycle">If true, ProviderFactory will receive IEphemeralModelLifecycle for ephemeral Ollama (caller must register it).</param>
+    public static IServiceCollection AddTrustServices(this IServiceCollection services, bool useSanitizingProviderFactory = false, bool ephemeralLifecycle = false)
     {
         services.TryAddSingleton<IDataTaxonomy, DataTaxonomy>();
         services.TryAddSingleton<ISensitiveContentFilter, SensitiveContentFilter>();
@@ -110,7 +111,12 @@ public static class ServiceCollectionExtensions
 
         if (useSanitizingProviderFactory)
         {
-            services.AddSingleton<Nexo.Infrastructure.Execution.ProviderFactory>();
+            services.AddSingleton<Nexo.Infrastructure.Execution.ProviderFactory>(sp =>
+            {
+                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.ProviderFactory>>();
+                var lifecycle = ephemeralLifecycle ? sp.GetService<Nexo.Core.Application.Ephemeral.Ports.IEphemeralModelLifecycle>() : null;
+                return new Nexo.Infrastructure.Execution.ProviderFactory(logger, lifecycle);
+            });
             services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory>(sp =>
             {
                 var inner = sp.GetRequiredService<Nexo.Infrastructure.Execution.ProviderFactory>();

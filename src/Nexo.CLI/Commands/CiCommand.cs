@@ -50,7 +50,7 @@ public sealed class CiCommand : Command
         var testProject = Path.Combine(repoRoot, "src", "Nexo.Tests.Infrastructure", "Nexo.Tests.Infrastructure.csproj");
         var testExit = await RunProcessAsync(
             "dotnet",
-            $"test \"{testProject}\" --no-build --blame-hang-timeout 30s --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --verbosity minimal",
+            $"test \"{testProject}\" --no-build --blame-hang-timeout 30s --blame-hang-dump-type none --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --verbosity minimal",
             repoRoot);
         if (testExit != 0)
         {

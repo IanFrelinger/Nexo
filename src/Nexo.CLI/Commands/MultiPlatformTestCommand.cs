@@ -94,6 +94,7 @@ public class MultiPlatformTestCommand : Command
         bool coverage,
         bool stress,
         bool visual,
+        bool ephemeral,
         bool json,
         bool verbose,
         IServiceProvider? serviceProvider = null)
@@ -116,6 +117,7 @@ public class MultiPlatformTestCommand : Command
                 if (coverage) console.WritePair("Coverage", "enabled");
                 if (stress) console.WritePair("Stress", "enabled");
                 if (visual) console.WritePair("Visual Validation", "enabled");
+                if (ephemeral) console.WritePair("Ephemeral", "enabled");
                 console.WriteLine();
             }
 
@@ -182,6 +184,7 @@ public class MultiPlatformTestCommand : Command
                     dotnetVersion,
                     platform,
                     outputDir.FullName,
+                    ephemeral,
                     loggerFactory,
                     logger);
 
@@ -276,6 +279,7 @@ public class MultiPlatformTestCommand : Command
         string dotnetVersion,
         IExecutionPlatform executionPlatform,
         string outputDir,
+        bool ephemeral,
         ILoggerFactory loggerFactory,
         ILogger logger)
     {
@@ -327,10 +331,12 @@ public class MultiPlatformTestCommand : Command
 
             // Run tests
             var testCommand = BuildTestCommand(testProject, filter);
-            var volumeMounts = new Dictionary<string, string>
-            {
-                [Path.Combine(projectRoot, outputDir)] = "/workspace/test-results"
-            };
+            Dictionary<string, string>? volumeMounts = ephemeral
+                ? null
+                : new Dictionary<string, string>
+                {
+                    [Path.Combine(projectRoot, outputDir)] = "/workspace/test-results"
+                };
 
             var runResult = await executionPlatform.RunContainerAsync(
                 imageTag,

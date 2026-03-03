@@ -36,12 +36,14 @@ public class TestMultiEnvCommand
         var suiteOpt = new Option<string>("--suite", () => "framework", "Suite: framework, caching, persistence, trust, or adaptation");
         var envOpt = new Option<string?>("--env", "Run only this environment (e.g. ubuntu-8.0)");
         var allOpt = new Option<bool>("--all", "Run all environments for the suite");
+        var ephemeralOpt = new Option<bool>("--ephemeral", () => false, "Run in ephemeral containers; no volume mounts, results discarded when container is removed");
 
         var cmd = new Command("multi-env", "Run tests across Docker environments (replaces test-*-multi-env.sh)")
         {
             suiteOpt,
             envOpt,
-            allOpt
+            allOpt,
+            ephemeralOpt
         };
 
         cmd.SetHandler(async (InvocationContext ctx) =>
@@ -49,20 +51,21 @@ public class TestMultiEnvCommand
             var suite = ctx.ParseResult.GetValueForOption(suiteOpt) ?? "framework";
             var env = ctx.ParseResult.GetValueForOption(envOpt);
             var all = ctx.ParseResult.GetValueForOption(allOpt);
+            var ephemeral = ctx.ParseResult.GetValueForOption(ephemeralOpt) || string.Equals(Environment.GetEnvironmentVariable("NEXO_TEST_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase);
             var rootCommand = ctx.ParseResult.RootCommandResult.Command;
             var jsonOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--format-json");
             var verboseOpt = rootCommand.Options.OfType<Option<bool>>().FirstOrDefault(o => o.Name == "--verbose");
             var json = jsonOpt != null && ctx.ParseResult.GetValueForOption(jsonOpt);
             var verbose = verboseOpt != null && ctx.ParseResult.GetValueForOption(verboseOpt);
 
-            var exitCode = await ExecuteAsync(suite, env, all, json, verbose);
+            var exitCode = await ExecuteAsync(suite, env, all, ephemeral, json, verbose);
             ctx.ExitCode = exitCode;
         });
 
         return cmd;
     }
 
-    public static async Task<int> ExecuteAsync(string suite, string? envName, bool all, bool json, bool verbose)
+    public static async Task<int> ExecuteAsync(string suite, string? envName, bool all, bool ephemeral, bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);
         var root = DiscoverProjectRoot();
@@ -75,18 +78,17 @@ public class TestMultiEnvCommand
 
         if (suite.Equals("caching", StringComparison.OrdinalIgnoreCase) || suite.Equals("persistence", StringComparison.OrdinalIgnoreCase))
         {
-            // Caching/persistence use test-caching Dockerfiles and different filters; run same pattern with different dockerfiles/filters
-            return await RunCachingOrPersistenceAsync(root, suite, envName, all, console, json, verbose);
+            return await RunCachingOrPersistenceAsync(root, suite, envName, all, ephemeral, console, json, verbose);
         }
 
         if (suite.Equals("trust", StringComparison.OrdinalIgnoreCase))
         {
-            return await RunTrustSuiteAsync(root, envName, all, console, json, verbose);
+            return await RunTrustSuiteAsync(root, envName, all, ephemeral, console, json, verbose);
         }
 
         if (suite.Equals("adaptation", StringComparison.OrdinalIgnoreCase))
         {
-            return await RunAdaptationSuiteAsync(root, envName, all, console, json, verbose);
+            return await RunAdaptationSuiteAsync(root, envName, all, ephemeral, console, json, verbose);
         }
 
         var envs = all || string.IsNullOrEmpty(envName)
@@ -101,7 +103,7 @@ public class TestMultiEnvCommand
         }
 
         var resultsDir = Path.Combine(root, "test-results", "framework");
-        Directory.CreateDirectory(resultsDir);
+        if (!ephemeral) Directory.CreateDirectory(resultsDir);
 
         var failed = 0;
         foreach (var (env, dockerfile, dotnetVersion, description) in envs)
@@ -115,7 +117,7 @@ public class TestMultiEnvCommand
 
             if (!json && console != null) { console.WriteLine($"Testing {env} ({description})..."); }
 
-            var (phaseFailed, baseOk, execOk) = await RunFrameworkEnvAsync(root, env, dockerfilePath, dotnetVersion, resultsDir, console, json, verbose);
+            var (phaseFailed, baseOk, execOk) = await RunFrameworkEnvAsync(root, env, dockerfilePath, dotnetVersion, resultsDir, ephemeral, console, json, verbose);
             if (phaseFailed) failed++;
         }
 
@@ -132,12 +134,14 @@ public class TestMultiEnvCommand
         string dockerfilePath,
         string dotnetVersion,
         string resultsDir,
+        bool ephemeral,
         CliConsole? console,
         bool json,
         bool verbose)
     {
         var imageTag = $"nexo-framework-test:{envName}";
         var isWindows = dockerfilePath.Contains("windows", StringComparison.OrdinalIgnoreCase);
+        var logBaseDir = ephemeral ? Path.GetTempPath() : resultsDir;
 
         // Build
         if (!json && console != null) console.WriteLine($"  Building {envName}...");
@@ -153,14 +157,15 @@ public class TestMultiEnvCommand
 
         foreach (var (filter, logSuffix) in FrameworkPhases)
         {
-            var logFile = Path.Combine(resultsDir, $"{envName}-{logSuffix}.log");
+            var logFile = Path.Combine(logBaseDir, $"{envName}-{logSuffix}.log");
             var projectPath = "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj";
             var testArgs = $"test \"{projectPath}\" --filter \"{filter}\" --logger \"console;verbosity=minimal\" --logger \"trx;LogFileName={envName}-{logSuffix}.trx\" --results-directory /workspace/test-results";
             string runCmd;
+            var volMount = ephemeral ? "" : (isWindows ? $" -v \"{resultsDir}\":C:\\workspace\\test-results" : $" -v \"{resultsDir}\":/workspace/test-results");
             if (isWindows)
-                runCmd = $"run --rm -v \"{resultsDir}\":C:\\workspace\\test-results -e DOTNET_VERSION={dotnetVersion} {imageTag} cmd /c \"cd C:\\workspace && dotnet {testArgs.Replace("/workspace/test-results", "C:\\\\workspace\\\\test-results")}\"";
+                runCmd = $"run --rm{volMount} -e DOTNET_VERSION={dotnetVersion} {imageTag} cmd /c \"cd C:\\workspace && dotnet {testArgs.Replace("/workspace/test-results", "C:\\\\workspace\\\\test-results")}\"";
             else
-                runCmd = $"run --rm -v \"{resultsDir}\":/workspace/test-results -e DOTNET_VERSION={dotnetVersion} {imageTag} bash -c \"cd /workspace && dotnet {testArgs}\"";
+                runCmd = $"run --rm{volMount} -e DOTNET_VERSION={dotnetVersion} {imageTag} bash -c \"cd /workspace && dotnet {testArgs}\"";
 
             var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
             var (passed, failed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
@@ -172,7 +177,7 @@ public class TestMultiEnvCommand
         return (!baseOk || !execOk, baseOk, execOk);
     }
 
-    private static async Task<int> RunAdaptationSuiteAsync(string root, string? envName, bool all, CliConsole? console, bool json, bool verbose)
+    private static async Task<int> RunAdaptationSuiteAsync(string root, string? envName, bool all, bool ephemeral, CliConsole? console, bool json, bool verbose)
     {
         var envs = all || string.IsNullOrEmpty(envName)
             ? FrameworkEnvs
@@ -186,7 +191,8 @@ public class TestMultiEnvCommand
         }
 
         var resultsDir = Path.Combine(root, "test-results", "adaptation");
-        Directory.CreateDirectory(resultsDir);
+        var logBaseDir = ephemeral ? Path.GetTempPath() : resultsDir;
+        if (!ephemeral) Directory.CreateDirectory(resultsDir);
         var failed = 0;
         const string filter = "Category=Adaptation";
 
@@ -212,14 +218,15 @@ public class TestMultiEnvCommand
                 continue;
             }
 
-            var logFile = Path.Combine(resultsDir, $"{env}-adaptation.log");
+            var logFile = Path.Combine(logBaseDir, $"{env}-adaptation.log");
             var projectPath = "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj";
-            var testArgs = $"test \"{projectPath}\" --filter \"{filter}\" --blame-hang-timeout 90s --logger \"console;verbosity=minimal\" --logger \"trx;LogFileName={env}-adaptation.trx\" --results-directory /workspace/test-results";
+            var testArgs = $"test \"{projectPath}\" --filter \"{filter}\" --blame-hang-timeout 90s --blame-hang-dump-type none --logger \"console;verbosity=minimal\" --logger \"trx;LogFileName={env}-adaptation.trx\" --results-directory /workspace/test-results";
+            var volMount = ephemeral ? "" : (isWindows ? $" -v \"{resultsDir}\":C:\\workspace\\test-results" : $" -v \"{resultsDir}\":/workspace/test-results");
             string runCmd;
             if (isWindows)
-                runCmd = $"run --rm -v \"{resultsDir}\":C:\\workspace\\test-results -e DOTNET_VERSION={dotnetVersion} {imageTag} cmd /c \"cd C:\\workspace && dotnet {testArgs.Replace("/workspace/test-results", "C:\\\\workspace\\\\test-results")}\"";
+                runCmd = $"run --rm{volMount} -e DOTNET_VERSION={dotnetVersion} {imageTag} cmd /c \"cd C:\\workspace && dotnet {testArgs.Replace("/workspace/test-results", "C:\\\\workspace\\\\test-results")}\"";
             else
-                runCmd = $"run --rm -v \"{resultsDir}\":/workspace/test-results -e DOTNET_VERSION={dotnetVersion} {imageTag} bash -c \"cd /workspace && dotnet {testArgs}\"";
+                runCmd = $"run --rm{volMount} -e DOTNET_VERSION={dotnetVersion} {imageTag} bash -c \"cd /workspace && dotnet {testArgs}\"";
 
             var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
             var (passed, testFailed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
@@ -244,7 +251,7 @@ public class TestMultiEnvCommand
         return failed > 0 ? 1 : 0;
     }
 
-    private static async Task<int> RunTrustSuiteAsync(string root, string? envName, bool all, CliConsole? console, bool json, bool verbose)
+    private static async Task<int> RunTrustSuiteAsync(string root, string? envName, bool all, bool ephemeral, CliConsole? console, bool json, bool verbose)
     {
         var dockerfiles = new[]
         {
@@ -253,7 +260,8 @@ public class TestMultiEnvCommand
             ("debian-8.0", ".docker/Dockerfile.test-caching-debian")
         };
         var resultsDir = Path.Combine(root, "test-results", "trust");
-        Directory.CreateDirectory(resultsDir);
+        var logBaseDir = ephemeral ? Path.GetTempPath() : resultsDir;
+        if (!ephemeral) Directory.CreateDirectory(resultsDir);
         var failed = 0;
         var trustFilter = "FullyQualifiedName~Trust";
 
@@ -275,11 +283,12 @@ public class TestMultiEnvCommand
                 continue;
             }
 
-            var logFile = Path.Combine(resultsDir, $"{env}-trust.log");
+            var logFile = Path.Combine(logBaseDir, $"{env}-trust.log");
             // Use -f net9.0: SDK 9 images lack net8.0 runtime; single-quote logger to avoid nested shell quoting
             var testArgsInfra = $"test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter {trustFilter} --logger 'console;verbosity=minimal' --logger 'trx;LogFileName={env}-trust-infra.trx' --results-directory /workspace/test-results";
             var testArgsBg = $"test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter {trustFilter} --logger 'console;verbosity=minimal' --logger 'trx;LogFileName={env}-trust-bg.trx' --results-directory /workspace/test-results";
-            var runCmd = $"run --rm -v \"{resultsDir}\":/workspace/test-results {tag} bash -c \"cd /workspace && dotnet {testArgsInfra} && dotnet {testArgsBg}\"";
+            var volMount = ephemeral ? "" : $" -v \"{resultsDir}\":/workspace/test-results";
+            var runCmd = $"run --rm{volMount} {tag} bash -c \"cd /workspace && dotnet {testArgsInfra} && dotnet {testArgsBg}\"";
 
             var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
             var (passed, testFailed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
@@ -304,14 +313,15 @@ public class TestMultiEnvCommand
         return failed > 0 ? 1 : 0;
     }
 
-    private static async Task<int> RunCachingOrPersistenceAsync(string root, string suite, string? envName, bool all, CliConsole? console, bool json, bool verbose)
+    private static async Task<int> RunCachingOrPersistenceAsync(string root, string suite, string? envName, bool all, bool ephemeral, CliConsole? console, bool json, bool verbose)
     {
         var dockerfiles = new[] { ("ubuntu-8.0", ".docker/Dockerfile.test-caching"), ("alpine-8.0", ".docker/Dockerfile.test-caching-alpine"), ("debian-8.0", ".docker/Dockerfile.test-caching-debian") };
         var filter = "FullyQualifiedName~BaseFrameworkSmokeTests";
         if (suite.Equals("persistence", StringComparison.OrdinalIgnoreCase)) filter = "FullyQualifiedName~InMemoryPersistenceTests";
         var resultsDir = Path.Combine(root, "test-results", "caching");
-        Directory.CreateDirectory(resultsDir);
+        if (!ephemeral) Directory.CreateDirectory(resultsDir);
         var failed = 0;
+        var volMount = ephemeral ? "" : $" -v \"{resultsDir}\":/workspace/test-results";
         foreach (var (env, df) in dockerfiles)
         {
             if (!all && !string.IsNullOrEmpty(envName) && !env.Equals(envName, StringComparison.OrdinalIgnoreCase)) continue;
@@ -322,7 +332,7 @@ public class TestMultiEnvCommand
             var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_VERSION={dotnetVer} \"{root}\"", root, verbose ? console : null);
             if (buildExit != 0) { failed++; continue; }
             var testArgs = $"test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter {filter} --logger 'console;verbosity=minimal'";
-            var runExit = await RunProcessAsync("docker", $"run --rm -v \"{resultsDir}\":/workspace/test-results {tag} bash -c \"cd /workspace && dotnet {testArgs}\"", root);
+            var runExit = await RunProcessAsync("docker", $"run --rm{volMount} {tag} bash -c \"cd /workspace && dotnet {testArgs}\"", root);
             if (runExit != 0) failed++;
         }
         if (json) Console.WriteLine(JsonSerializer.Serialize(new { failed, ok = failed == 0 }));

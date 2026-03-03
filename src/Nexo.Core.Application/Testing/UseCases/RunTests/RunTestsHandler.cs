@@ -1,5 +1,9 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Nexo.Core.Application.Maintenance.Models;
+using Nexo.Core.Application.Maintenance.Ports;
+using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Testing.Models;
 using Nexo.Core.Application.Testing.Ports;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
@@ -8,26 +12,33 @@ namespace Nexo.Core.Application.Testing.UseCases.RunTests;
 
 /// <summary>
 /// MediatR handler for running tests.
-/// 
+///
 /// Responsibilities:
 /// - Executes test suites via ITestRunner
 /// - Supports optional test filtering
 /// - Tracks test execution progress
 /// - Logs test results and metrics
-/// 
+/// - Optionally runs test-artifacts cleanup before/after (when NEXO_CLEAN_BEFORE_TEST / NEXO_CLEAN_AFTER_TEST=1)
+///
 /// Part of the Application layer's use case pattern, following CQRS principles.
 /// </summary>
 public class RunTestsHandler : IRequestHandler<RunTestsCommand, TestExecutionResult>
 {
     private readonly ITestRunner _testRunner;
+    private readonly IArtifactCleanupService? _cleanupService;
+    private readonly ArtifactCleanupOptions _cleanupOptions;
     private readonly ILogger<RunTestsHandler> _logger;
 
     public RunTestsHandler(
         ITestRunner testRunner,
-        ILogger<RunTestsHandler> logger)
+        ILogger<RunTestsHandler> logger,
+        IArtifactCleanupService? cleanupService = null,
+        IOptions<ArtifactCleanupOptions>? cleanupOptions = null)
     {
         _testRunner = testRunner ?? throw new ArgumentNullException(nameof(testRunner));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _cleanupService = cleanupService;
+        _cleanupOptions = cleanupOptions?.Value ?? new ArtifactCleanupOptions();
     }
 
     public async Task<TestExecutionResult> Handle(
@@ -36,10 +47,38 @@ public class RunTestsHandler : IRequestHandler<RunTestsCommand, TestExecutionRes
     {
         _logger.LogInformation("Running tests with filter: {Filter}", request.Filter ?? "none");
 
+        var repoRoot = _cleanupOptions.RepoRoot ?? RepoPathResolver.FindRepoRoot();
+
+        if (_cleanupService != null && _cleanupOptions.CleanBeforeTest)
+        {
+            try
+            {
+                var beforeResult = await _cleanupService.CleanAsync("test-artifacts", new ArtifactCleanupContext(RepoRoot: repoRoot), cancellationToken).ConfigureAwait(false);
+                _logger.LogInformation("Pre-test cleanup: {Bytes} bytes reclaimed", beforeResult.BytesReclaimed);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Pre-test cleanup failed; continuing with test run");
+            }
+        }
+
         var result = await _testRunner.RunTestsAsync(
             request.Filter,
             request.Progress,
             cancellationToken);
+
+        if (_cleanupService != null && _cleanupOptions.CleanAfterTest)
+        {
+            try
+            {
+                var afterResult = await _cleanupService.CleanAsync("test-artifacts", new ArtifactCleanupContext(RepoRoot: repoRoot), cancellationToken).ConfigureAwait(false);
+                _logger.LogInformation("Post-test cleanup: {Bytes} bytes reclaimed", afterResult.BytesReclaimed);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Post-test cleanup failed");
+            }
+        }
 
         _logger.LogInformation(
             "Tests completed: {Passed}/{Total} passed in {Duration}ms",

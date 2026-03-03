@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.CLI.Runtime;
+using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Models;
 
@@ -24,17 +25,20 @@ public class OrchestrateCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<OrchestrateCommand> _logger;
     private readonly IOrchestrationRuntimeSpecAccessor _runtime;
+    private readonly IEphemeralModelLifecycle? _ephemeralLifecycle;
 
     public OrchestrateCommand(
         Orchestrator orchestrator,
         IConsoleRenderer renderer,
         ILogger<OrchestrateCommand> logger,
-        IOrchestrationRuntimeSpecAccessor runtime)
+        IOrchestrationRuntimeSpecAccessor runtime,
+        IEphemeralModelLifecycle? ephemeralLifecycle = null)
     {
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+        _ephemeralLifecycle = ephemeralLifecycle;
     }
 
     /// <summary>
@@ -79,8 +83,19 @@ public class OrchestrateCommand
                 spec = spec with { Model = spec.Model with { Provider = provider!.Trim() } };
             }
 
-            using var _ = _runtime.Begin(spec);
-            var result = await _orchestrator.OrchestrateAsync(request);
+            var modelPrefer = spec.Model?.Prefer;
+            OrchestrationResult result;
+            if (_ephemeralLifecycle != null)
+            {
+                await using var session = await _ephemeralLifecycle.StartSessionAsync(modelPrefer);
+                using var _ = _runtime.Begin(spec);
+                result = await _orchestrator.OrchestrateAsync(request);
+            }
+            else
+            {
+                using var _ = _runtime.Begin(spec);
+                result = await _orchestrator.OrchestrateAsync(request);
+            }
 
             if (json)
             {

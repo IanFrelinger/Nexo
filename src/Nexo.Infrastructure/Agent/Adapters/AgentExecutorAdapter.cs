@@ -5,6 +5,7 @@ using Nexo.Core.Application.Agent.Ports;
 using Nexo.Core.Domain.Exceptions;
 using Nexo.Abstractions;
 using Nexo.Runtime;
+using Nexo.Core.Application.Maintenance.Ports;
 using Nexo.Tools.Assembly;
 using Nexo.Tools.Dev;
 using Nexo.Policies;
@@ -76,6 +77,19 @@ public class AgentExecutorAdapter : IAgentExecutor
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to register DotnetTestTool");
+            }
+
+            var cleanupService = _serviceProvider.GetService<IArtifactCleanupService>();
+            if (cleanupService != null)
+            {
+                try
+                {
+                    registry.Register(new CleanArtifactsTool(cleanupService));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to register CleanArtifactsTool");
+                }
             }
 
             // Set up policies

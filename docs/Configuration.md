@@ -62,6 +62,25 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 |----------|-------------|---------|
 | `NEXO_MESH_PEER_ID` | Mesh peer identifier | random GUID |
 
+## Ephemeral Execution
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXO_EPHEMERAL` | `1` = enable ephemeral models (Ollama in container) when supported | unset |
+| `NEXO_EPHEMERAL_MODELS` | `1` = use ephemeral Ollama container for LLM; container removed when session ends | unset |
+| `NEXO_EPHEMERAL_DB` | `postgres` = use ephemeral Postgres container for workflows/tests | unset |
+| `NEXO_TEST_EPHEMERAL` | `1` = run tests in ephemeral containers (no volume mounts) | unset |
+
+## Artifact Cleanup
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXO_CLEAN_BEFORE_TEST` | `1` = run test-artifacts cleanup before `nexo test local` | unset |
+| `NEXO_CLEAN_AFTER_TEST` | `1` = run test-artifacts cleanup after `nexo test local` | unset |
+| `NEXO_ARTIFACT_CLEANUP_REPO_ROOT` | Repo root for cleanup; unset = auto-detect | unset |
+| `NEXO_INCOMPLETE_BLOB_PATH` | Path to content-addressed blob storage for `incomplete-blobs` strategy | unset |
+| `NEXO_BLOB_LIFECYCLE` | `docker` = pause Docker Desktop before incomplete-blob cleanup | unset |
+
 ## Config File
 
 `~/.nexo/config.json` (or path from `NEXO_CONFIG_PATH`):

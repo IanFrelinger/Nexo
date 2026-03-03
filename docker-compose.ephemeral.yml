@@ -1,0 +1,42 @@
+# Ephemeral stack for nexo orchestrate/agent with Ollama.
+# Usage: NEXO_EPHEMERAL_DB=postgres docker compose -f docker-compose.ephemeral.yml run --rm nexo [args]
+# When NEXO_EPHEMERAL_DB is set, postgres service is included.
+# Requires Docker and .NET SDK image for nexo build.
+#
+# For in-process ephemeral (no container for nexo), use: nexo orchestrate "request" --ephemeral
+# That spins up ephemeral Ollama only; nexo runs on host.
+
+services:
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    # No volumes - model blobs stay in container, discarded on remove
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: nexo_ephemeral
+      POSTGRES_DB: nexo
+    ports:
+      - "5432:5432"
+    profiles:
+      - db
+    # No volumes - data discarded on remove
+
+  # nexo service: build from repo, connect to ollama via OLLAMA_BASE_URL=http://ollama:11434
+  # Uncomment and use: docker compose -f docker-compose.ephemeral.yml run --rm nexo orchestrate "request"
+  # nexo:
+  #   build:
+  #     context: .
+  #     dockerfile: .docker/Dockerfile.ephemeral
+  #   environment:
+  #     OLLAMA_BASE_URL: http://ollama:11434
+  #     OLLAMA_MODEL: llama3.2
+  #   depends_on:
+  #     - ollama
+  #   working_dir: /workspace
+  #   volumes:
+  #     - .:/workspace
+  #   profiles:
+  #     - full
