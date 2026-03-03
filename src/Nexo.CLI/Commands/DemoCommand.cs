@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Infrastructure.Execution;
 
@@ -13,7 +14,7 @@ public class DemoCommand
     /// <summary>
     /// Creates the demo command group with all subcommands.
     /// </summary>
-    public static Command CreateCommand(IServiceProvider serviceProvider, Option<bool> jsonOpt, Option<bool> verboseOpt)
+    public static Command CreateCommand(IServiceProvider? serviceProvider, Option<bool> jsonOpt, Option<bool> verboseOpt)
     {
         var demoCmd = new Command("demo", "Demo operations for self-extension and smoke validation");
         
@@ -35,7 +36,18 @@ public class DemoCommand
 
         // Auto-register demo-generated commands if any are present.
         // These are created by `nexo demo self-extend` and are intentionally ignored by git.
-        foreach (var type in typeof(DemoCommand).Assembly.GetTypes())
+        // GetTypes() can trigger loading of referenced assemblies (e.g. Nexo.Orchestration);
+        // wrap in try-catch so light commands (improve, dogfood, etc.) can run without the full host.
+        Type[] types;
+        try
+        {
+            types = typeof(DemoCommand).Assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException)
+        {
+            types = Array.Empty<Type>();
+        }
+        foreach (var type in types)
         {
             if (type.IsAbstract) continue;
             if (type.Namespace != "Nexo.CLI.Commands.DemoGenerated") continue;

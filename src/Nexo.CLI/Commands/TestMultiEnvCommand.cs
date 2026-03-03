@@ -33,7 +33,7 @@ public class TestMultiEnvCommand
 
     public static Command CreateCommand()
     {
-        var suiteOpt = new Option<string>("--suite", () => "framework", "Suite: framework, caching, persistence, or trust");
+        var suiteOpt = new Option<string>("--suite", () => "framework", "Suite: framework, caching, persistence, trust, or adaptation");
         var envOpt = new Option<string?>("--env", "Run only this environment (e.g. ubuntu-8.0)");
         var allOpt = new Option<bool>("--all", "Run all environments for the suite");
 
@@ -82,6 +82,11 @@ public class TestMultiEnvCommand
         if (suite.Equals("trust", StringComparison.OrdinalIgnoreCase))
         {
             return await RunTrustSuiteAsync(root, envName, all, console, json, verbose);
+        }
+
+        if (suite.Equals("adaptation", StringComparison.OrdinalIgnoreCase))
+        {
+            return await RunAdaptationSuiteAsync(root, envName, all, console, json, verbose);
         }
 
         var envs = all || string.IsNullOrEmpty(envName)
@@ -167,14 +172,85 @@ public class TestMultiEnvCommand
         return (!baseOk || !execOk, baseOk, execOk);
     }
 
+    private static async Task<int> RunAdaptationSuiteAsync(string root, string? envName, bool all, CliConsole? console, bool json, bool verbose)
+    {
+        var envs = all || string.IsNullOrEmpty(envName)
+            ? FrameworkEnvs
+            : FrameworkEnvs.Where(e => e.EnvName.Equals(envName, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+        if (envs.Length == 0)
+        {
+            if (json) Console.WriteLine(JsonSerializer.Serialize(new { error = $"Unknown environment: {envName}" }));
+            else console?.WriteError($"Unknown environment: {envName}");
+            return 1;
+        }
+
+        var resultsDir = Path.Combine(root, "test-results", "adaptation");
+        Directory.CreateDirectory(resultsDir);
+        var failed = 0;
+        const string filter = "Category=Adaptation";
+
+        foreach (var (env, dockerfile, dotnetVersion, description) in envs)
+        {
+            var dockerfilePath = Path.GetFullPath(Path.Combine(root, dockerfile.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar)));
+            if (!File.Exists(dockerfilePath))
+            {
+                if (!json) console?.WriteWarning($"Dockerfile not found: {dockerfile}");
+                continue;
+            }
+
+            if (!json && console != null) console.WriteLine($"Testing adaptation on {env} ({description})...");
+
+            var imageTag = $"nexo-adaptation-test:{env}";
+            var isWindows = dockerfilePath.Contains("windows", StringComparison.OrdinalIgnoreCase);
+
+            var buildExit = await RunProcessAsync("docker", $"build -f \"{dockerfilePath}\" -t {imageTag} --build-arg DOTNET_VERSION={dotnetVersion} \"{root}\"", root, verbose ? console : null);
+            if (buildExit != 0)
+            {
+                if (!json) console?.WriteError($"  Failed to build {env}");
+                failed++;
+                continue;
+            }
+
+            var logFile = Path.Combine(resultsDir, $"{env}-adaptation.log");
+            var projectPath = "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj";
+            var testArgs = $"test \"{projectPath}\" --filter \"{filter}\" --blame-hang-timeout 90s --logger \"console;verbosity=minimal\" --logger \"trx;LogFileName={env}-adaptation.trx\" --results-directory /workspace/test-results";
+            string runCmd;
+            if (isWindows)
+                runCmd = $"run --rm -v \"{resultsDir}\":C:\\workspace\\test-results -e DOTNET_VERSION={dotnetVersion} {imageTag} cmd /c \"cd C:\\workspace && dotnet {testArgs.Replace("/workspace/test-results", "C:\\\\workspace\\\\test-results")}\"";
+            else
+                runCmd = $"run --rm -v \"{resultsDir}\":/workspace/test-results -e DOTNET_VERSION={dotnetVersion} {imageTag} bash -c \"cd /workspace && dotnet {testArgs}\"";
+
+            var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
+            var (passed, testFailed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
+
+            if (runExit != 0 || testFailed > 0)
+            {
+                failed++;
+                if (!json) console?.WriteError($"  {env}: {testFailed} failed");
+            }
+            else if (!json && console != null)
+            {
+                console.WriteLine($"  {env}: {passed} passed");
+            }
+
+            try { await RunProcessAsync("docker", $"rmi {imageTag}", root, null); } catch { /* best effort */ }
+        }
+
+        if (!json && console != null)
+            console.WriteSuccess(failed == 0 ? "All adaptation multi-env runs completed." : $"{failed} environment(s) failed.");
+        if (json)
+            Console.WriteLine(JsonSerializer.Serialize(new { failed, total = envs.Length, ok = failed == 0 }));
+        return failed > 0 ? 1 : 0;
+    }
+
     private static async Task<int> RunTrustSuiteAsync(string root, string? envName, bool all, CliConsole? console, bool json, bool verbose)
     {
         var dockerfiles = new[]
         {
             ("ubuntu-8.0", ".docker/Dockerfile.test-caching"),
             ("alpine-8.0", ".docker/Dockerfile.test-caching-alpine"),
-            ("debian-8.0", ".docker/Dockerfile.test-caching-debian"),
-            ("unity-8.0", ".docker/Dockerfile.test-caching-unity")
+            ("debian-8.0", ".docker/Dockerfile.test-caching-debian")
         };
         var resultsDir = Path.Combine(root, "test-results", "trust");
         Directory.CreateDirectory(resultsDir);
@@ -230,7 +306,7 @@ public class TestMultiEnvCommand
 
     private static async Task<int> RunCachingOrPersistenceAsync(string root, string suite, string? envName, bool all, CliConsole? console, bool json, bool verbose)
     {
-        var dockerfiles = new[] { ("ubuntu-8.0", ".docker/Dockerfile.test-caching"), ("alpine-8.0", ".docker/Dockerfile.test-caching-alpine"), ("debian-8.0", ".docker/Dockerfile.test-caching-debian"), ("unity-8.0", ".docker/Dockerfile.test-caching-unity") };
+        var dockerfiles = new[] { ("ubuntu-8.0", ".docker/Dockerfile.test-caching"), ("alpine-8.0", ".docker/Dockerfile.test-caching-alpine"), ("debian-8.0", ".docker/Dockerfile.test-caching-debian") };
         var filter = "FullyQualifiedName~BaseFrameworkSmokeTests";
         if (suite.Equals("persistence", StringComparison.OrdinalIgnoreCase)) filter = "FullyQualifiedName~InMemoryPersistenceTests";
         var resultsDir = Path.Combine(root, "test-results", "caching");

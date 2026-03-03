@@ -25,17 +25,17 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
     {
         try
         {
-            await TestSimpleWorkflowExecution();
-            await TestWorkflowWithInputNode();
-            await TestWorkflowWithAgentNode();
-            await TestWorkflowWithBrickNode();
-            await TestWorkflowValidation();
-            await TestWorkflowExecutionPlan();
-            await TestWorkflowEvents();
-            await TestWorkflowPdfOutput();
-            await TestWorkflowWithTransformNode();
-            await TestWorkflowWithConditionalNode();
-            await TestWorkflowOutputFormats();
+            await TestSimpleWorkflowExecution(cancellationToken);
+            await TestWorkflowWithInputNode(cancellationToken);
+            await TestWorkflowWithAgentNode(cancellationToken);
+            await TestWorkflowWithBrickNode(cancellationToken);
+            await TestWorkflowValidation(cancellationToken);
+            await TestWorkflowExecutionPlan(cancellationToken);
+            await TestWorkflowEvents(cancellationToken);
+            await TestWorkflowPdfOutput(cancellationToken);
+            await TestWorkflowWithTransformNode(cancellationToken);
+            await TestWorkflowWithConditionalNode(cancellationToken);
+            await TestWorkflowOutputFormats(cancellationToken);
 
             return new TestResult
             {
@@ -58,7 +58,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         }
     }
 
-    private async Task TestSimpleWorkflowExecution()
+    private async Task TestSimpleWorkflowExecution(CancellationToken cancellationToken = default)
     {
         // Arrange
         var mockAgents = new Mock<IAgentRegistry>();
@@ -123,7 +123,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var input = new WorkflowInput();
 
         // Act
-        var result = await executor.ExecuteAsync(workflow, input, CancellationToken.None);
+        var result = await executor.ExecuteAsync(workflow, input, cancellationToken);
 
         // Assert
         AssertNotNull(result);
@@ -132,7 +132,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertEqual(2, result.NodeResults.Count);
     }
 
-    private async Task TestWorkflowWithInputNode()
+    private async Task TestWorkflowWithInputNode(CancellationToken cancellationToken = default)
     {
         // Arrange
         var mockAgents = new Mock<IAgentRegistry>();
@@ -200,7 +200,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         }
     }
 
-    private async Task TestWorkflowWithAgentNode()
+    private async Task TestWorkflowWithAgentNode(CancellationToken cancellationToken = default)
     {
         // Arrange
         var agent = new AgentCard
@@ -279,7 +279,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var input = new WorkflowInput();
 
         // Act
-        var result = await executor.ExecuteAsync(workflow, input, CancellationToken.None);
+        var result = await executor.ExecuteAsync(workflow, input, cancellationToken);
 
         // Assert
         AssertNotNull(result);
@@ -295,7 +295,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             Times.Once);
     }
 
-    private async Task TestWorkflowWithBrickNode()
+    private async Task TestWorkflowWithBrickNode(CancellationToken cancellationToken = default)
     {
         // Arrange
         var brick = new TestBrickForWorkflow();
@@ -344,7 +344,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         var input = new WorkflowInput();
 
         // Act
-        var result = await executor.ExecuteAsync(workflow, input, CancellationToken.None);
+        var result = await executor.ExecuteAsync(workflow, input, cancellationToken);
 
         // Assert
         AssertNotNull(result);
@@ -355,7 +355,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertEqual("brick-output", nodeResult.Outputs["result"]);
     }
 
-    private async Task TestWorkflowValidation()
+    private async Task TestWorkflowValidation(CancellationToken cancellationToken = default)
     {
         // Arrange
         var mockAgents = new Mock<IAgentRegistry>();
@@ -426,11 +426,11 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
 
         // Act & Assert
         await AssertThrowsAsync<WorkflowValidationException>(
-            async () => await executor.ExecuteAsync(workflow, input, CancellationToken.None),
+            async () => await executor.ExecuteAsync(workflow, input, cancellationToken),
             "Expected WorkflowValidationException for cycle");
     }
 
-    private async Task TestWorkflowExecutionPlan()
+    private async Task TestWorkflowExecutionPlan(CancellationToken cancellationToken = default)
     {
         // Arrange
         var mockAgents = new Mock<IAgentRegistry>();
@@ -501,7 +501,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertTrue(result.NodeResults.ContainsKey("output"));
     }
 
-    private async Task TestWorkflowEvents()
+    private async Task TestWorkflowEvents(CancellationToken cancellationToken = default)
     {
         // Arrange
         var mockAgents = new Mock<IAgentRegistry>();
@@ -548,7 +548,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         executor.Events.Subscribe(evt => events.Add(evt));
 
         // Act
-        await executor.ExecuteAsync(workflow, input, CancellationToken.None);
+        await executor.ExecuteAsync(workflow, input, cancellationToken);
 
         // Assert
         AssertTrue(events.Count > 0);
@@ -556,7 +556,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertTrue(events.Any(e => e is WorkflowCompletedEvent));
     }
 
-    private async Task TestWorkflowPdfOutput()
+    private async Task TestWorkflowPdfOutput(CancellationToken cancellationToken = default)
     {
         var mockAgents = new Mock<IAgentRegistry>();
         var mockBricks = new Mock<IBrickRegistry>();
@@ -626,7 +626,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             }
         };
 
-        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), cancellationToken);
 
         AssertTrue(result.Success);
         AssertNotNull(writtenBytes);
@@ -637,7 +637,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         try { File.Delete(tempPath); } catch { }
     }
 
-    private async Task TestWorkflowWithTransformNode()
+    private async Task TestWorkflowWithTransformNode(CancellationToken cancellationToken = default)
     {
         var listBrick = new TestBrickWithListOutput();
         var mockAgents = new Mock<IAgentRegistry>();
@@ -725,7 +725,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             }
         };
 
-        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), cancellationToken);
 
         AssertNotNull(result);
         AssertTrue(result.Success);
@@ -736,7 +736,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertTrue(data is System.Collections.IEnumerable list && list.Cast<object>().Count() == 2);
     }
 
-    private async Task TestWorkflowWithConditionalNode()
+    private async Task TestWorkflowWithConditionalNode(CancellationToken cancellationToken = default)
     {
         var structBrick = new TestBrickWithStructuredOutput();
         var mockAgents = new Mock<IAgentRegistry>();
@@ -804,7 +804,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             }
         };
 
-        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+        var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), cancellationToken);
 
         AssertNotNull(result);
         AssertTrue(result.Success);
@@ -815,7 +815,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
         AssertTrue(condResult.Outputs.ContainsKey("result"));
     }
 
-    private async Task TestWorkflowOutputFormats()
+    private async Task TestWorkflowOutputFormats(CancellationToken cancellationToken = default)
     {
         var formats = new[] { OutputFormat.Xml, OutputFormat.Csv, OutputFormat.Markdown, OutputFormat.Html };
         var dataBrick = new TestBrickWithDataOutput();
@@ -890,7 +890,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                 }
             };
 
-            var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), CancellationToken.None);
+            var result = await executor.ExecuteAsync(workflow, new WorkflowInput(), cancellationToken);
 
             AssertNotNull(result);
             AssertTrue(result.Success);

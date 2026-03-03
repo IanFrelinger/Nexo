@@ -15,6 +15,7 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
     public CapabilityComponentRegistry()
     {
         SeedFromCodeAnalysis();
+        SeedTestRunnerComponents();
     }
 
     /// <inheritdoc />
@@ -50,6 +51,35 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             Id = "code-analysis",
             Capability = "code-analysis",
             ImplementationType = "Nexo.Infrastructure.Analysis.BrickAnalyzer.RoslynBrickStaticAnalyzer, Nexo.Infrastructure",
+            Version = "1.0.0",
+        });
+    }
+
+    /// <summary>
+    /// Phase D: Test-runner capability components for composition-driven testing.
+    /// Maps to IParameterMatrixGenerator, IInstanceSpawner, IResultCollector.
+    /// </summary>
+    private void SeedTestRunnerComponents()
+    {
+        Register(new ComponentDescriptor
+        {
+            Id = "test-discovery",
+            Capability = "test-discovery",
+            ImplementationType = "Nexo.Core.Application.ParallelTesting.Ports.IParameterMatrixGenerator",
+            Version = "1.0.0",
+        });
+        Register(new ComponentDescriptor
+        {
+            Id = "test-execution",
+            Capability = "test-execution",
+            ImplementationType = "Nexo.Core.Application.ParallelTesting.Ports.IInstanceSpawner",
+            Version = "1.0.0",
+        });
+        Register(new ComponentDescriptor
+        {
+            Id = "result-aggregation",
+            Capability = "result-aggregation",
+            ImplementationType = "Nexo.Core.Application.ParallelTesting.Ports.IResultCollector",
             Version = "1.0.0",
         });
     }

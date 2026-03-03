@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.SelfContext.Ports;
@@ -28,8 +29,30 @@ public static class SelfContextServiceCollectionExtensions
             ? Path.GetDirectoryName(patternStorePath) ?? "."
             : RepoPathResolver.FindRepoRoot();
         var tracerDbPath = Path.Combine(basePath, "nexo-execution.db");
+        var testFailuresDbPath = Path.Combine(basePath, "nexo-test-failures.db");
         services.AddSingleton<IExecutionTracer>(sp => new LiteDbExecutionTracer(tracerDbPath));
+        services.AddSingleton<ITestFailureStore>(sp => new LiteDbTestFailureStore(testFailuresDbPath));
         services.AddSingleton<ISelfContextAssembler, SelfContextAssembler>();
+        services.AddChangelogGenerator();
+        services.AddDocumentationUpdater();
+        return services;
+    }
+
+    /// <summary>
+    /// Adds IChangelogGenerator. Requires IAdaptationLog (from AddAdaptationInfrastructure). Phase F.
+    /// </summary>
+    public static IServiceCollection AddChangelogGenerator(this IServiceCollection services)
+    {
+        services.AddSingleton<IChangelogGenerator, ChangelogGenerator>();
+        return services;
+    }
+
+    /// <summary>
+    /// Adds IDocumentationUpdater. Requires IAdaptationLog and IChangelogGenerator. Phase F.
+    /// </summary>
+    public static IServiceCollection AddDocumentationUpdater(this IServiceCollection services)
+    {
+        services.AddSingleton<IDocumentationUpdater, DocumentationUpdater>();
         return services;
     }
 }

@@ -422,9 +422,30 @@ public class MultiPlatformTestCommand : Command
             };
 
             process.Start();
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync();
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+            var outputTask = process.StandardOutput.ReadToEndAsync();
+            var errorTask = process.StandardError.ReadToEndAsync();
+            var exitTask = process.WaitForExitAsync(timeoutCts.Token);
+            try
+            {
+                await exitTask;
+            }
+            catch (OperationCanceledException)
+            {
+                try { process.Kill(entireProcessTree: true); } catch { /* ignore */ }
+                return new PlatformTestResult
+                {
+                    PlatformName = platformName,
+                    Passed = false,
+                    TotalTests = 0,
+                    PassedTests = 0,
+                    FailedTests = 0,
+                    Duration = DateTime.UtcNow - startTime,
+                    ErrorMessage = "Test run timed out after 5 minutes"
+                };
+            }
+            var output = await outputTask;
+            var error = await errorTask;
 
             var (passed, failed, total) = ParseTestResults(output);
 

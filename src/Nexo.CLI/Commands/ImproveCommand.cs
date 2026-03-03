@@ -11,6 +11,7 @@ using Nexo.Core.Application.Paths;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Demo.Bricks.Security;
+using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Infrastructure;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Infrastructure.Adaptation;
@@ -34,6 +35,7 @@ public sealed class ImproveCommand : Command
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve all prompts (non-interactive, for CI/tests)");
         var skipRegressionOpt = new Option<bool>("--skip-regression", () => false, "Skip regression test after source fix (for CI/tests when fix is outside solution)");
         var storePathOpt = new Option<string?>("--store-path", "Directory for nexo dbs (default: repo root)");
+        var selfOpt = new Option<bool>("--self", () => false, "Run one cycle of the self-improvement loop (test failures → fix → validate → promote)");
 
         AddOption(pathOpt);
         AddOption(dryRunOpt);
@@ -41,6 +43,7 @@ public sealed class ImproveCommand : Command
         AddOption(yesOpt);
         AddOption(skipRegressionOpt);
         AddOption(storePathOpt);
+        AddOption(selfOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -50,11 +53,12 @@ public sealed class ImproveCommand : Command
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);
             var skipRegression = ctx.ParseResult.GetValueForOption(skipRegressionOpt);
             var storePathOverride = ctx.ParseResult.GetValueForOption(storePathOpt);
-            await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride);
+            var self = ctx.ParseResult.GetValueForOption(selfOpt);
+            await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self);
         });
     }
 
-    private static async Task ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null)
+    private static async Task ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
@@ -70,10 +74,26 @@ public sealed class ImproveCommand : Command
             .AddAdaptationBricks(typeof(OWASPScannerBrick))
             .AddSelfContextInfrastructure(storePath);
 
+        if (self)
+            serviceCollection.AddSelfImprovementLoop(5);
+
         if (yes)
             serviceCollection.AddSingleton<IUserFeedbackCapture>(new AutoApproveUserFeedbackCapture());
 
         var services = serviceCollection.BuildServiceProvider();
+
+        if (self)
+        {
+            var loop = services.GetRequiredService<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementLoop>();
+            await loop.RunOnceAsync().ConfigureAwait(false);
+            var report = await loop.GetLastRunReportAsync().ConfigureAwait(false);
+            if (report != null)
+            {
+                Console.WriteLine($"Self-improvement: {report.FailuresProcessed} processed, {report.FixesPromoted} promoted, {report.FixesRejected} rejected");
+            }
+            Environment.ExitCode = 0;
+            return;
+        }
 
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger<ImproveCommand>();
         var analyzer = services.GetRequiredService<IBrickStaticAnalyzer>();
@@ -85,6 +105,9 @@ public sealed class ImproveCommand : Command
         var adaptationLog = services.GetRequiredService<IAdaptationLog>();
         var adaptationPromoter = services.GetRequiredService<IAdaptationPromoter>();
         var rollbackHelper = services.GetRequiredService<AdaptationRollbackHelper>();
+        var rollbackManager = services.GetRequiredService<IRollbackManager>();
+        var immutableCoreRegistry = services.GetRequiredService<IImmutableCoreRegistry>();
+        var documentationUpdater = services.GetService<Nexo.Core.Application.SelfContext.Ports.IDocumentationUpdater>();
         var userFeedback = services.GetRequiredService<IUserFeedbackCapture>();
         var executionTracer = services.GetRequiredService<IExecutionTracer>();
         var auditLog = services.GetRequiredService<IAdaptationAuditLog>();
@@ -138,6 +161,25 @@ public sealed class ImproveCommand : Command
             var solutionPath = Path.Combine(repoRoot, "Nexo.sln");
             foreach (var v in analysisResult.Violations)
             {
+                if (immutableCoreRegistry.IsInImmutableCore(v.FilePath))
+                {
+                    logger.LogWarning("Skipping adaptation of immutable core: {FilePath}", v.FilePath);
+                    await auditLog.LogAsync(new AdaptationAuditEntry
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        Timestamp = DateTimeOffset.UtcNow,
+                        AutonomyLevel = autonomy,
+                        Outcome = "Rejected",
+                        BrickId = ViolationToBrickMapper.GetBrickIdForFile(v.FilePath),
+                        FailureType = v.Rule,
+                        FilePath = v.FilePath,
+                        RegressionPassed = false,
+                        Promoted = false,
+                        Message = $"Immutable core violation: cannot adapt {v.FilePath}",
+                    }).ConfigureAwait(false);
+                    continue;
+                }
+
                 var suggestion = $"Fix {v.Rule} in {Path.GetFileName(v.FilePath)}";
                 if (!envelope.CanApplySourceFix && !await userFeedback.ApproveAsync(suggestion).ConfigureAwait(false))
                     continue;
@@ -169,7 +211,24 @@ public sealed class ImproveCommand : Command
                             Promoted = true,
                             Message = $"Fixed {v.Rule} in {Path.GetFileName(v.FilePath)}",
                         };
-                        await adaptationPromoter.PromoteAsync(record).ConfigureAwait(false);
+                        try
+                        {
+                            rollbackManager.PrepareForInherit(record.Id, new[] { v.FilePath });
+                            await rollbackManager.BeforeInheritAsync(record.Id).ConfigureAwait(false);
+                            await adaptationPromoter.PromoteAsync(record).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex, "Promotion failed, rolling back adaptation {Id}", record.Id);
+                            await rollbackManager.RollbackAsync(record.Id).ConfigureAwait(false);
+                            rollbackHelper.Rollback(v.FilePath);
+                            throw;
+                        }
+                        if (documentationUpdater != null)
+                        {
+                            try { await documentationUpdater.UpdateForAdaptationAsync(record.Id).ConfigureAwait(false); }
+                            catch (Exception ex) { logger.LogWarning(ex, "Documentation update failed for {Id}", record.Id); }
+                        }
                         await auditLog.LogAsync(new AdaptationAuditEntry
                         {
                             Id = record.Id,
@@ -263,6 +322,12 @@ public sealed class ImproveCommand : Command
         int brickAdapted = 0;
         foreach (var (brickId, violations) in violationsByBrick)
         {
+            if (violations.Any(v => immutableCoreRegistry.IsInImmutableCore(v.FilePath)))
+            {
+                logger.LogWarning("Skipping brick adaptation for immutable core: {BrickId}", brickId);
+                continue;
+            }
+
             var brick = brickRegistry.GetBrick(brickId);
             if (brick == null) continue;
 

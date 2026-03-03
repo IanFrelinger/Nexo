@@ -89,6 +89,7 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
 ## Documentation
 
 - `docs/TrustAndInformationArchitecture.md` – Trust & Information Architecture
+- `docs/Testing.md` – Test guard rails, timeout policy, and running tests
 - `docs/` – Additional architecture and usage guides
 
 ## License

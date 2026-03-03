@@ -19,6 +19,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 /// Integration tests for adaptation pipeline: ImproveCommand, AdaptCommand, decompose/recompile.
 /// </summary>
 [Trait("Category", "Integration")]
+[Trait("Category", "Adaptation")]
 public sealed class AdaptationPipelineIntegrationTests : IDisposable
 {
     private readonly string _tempDir;

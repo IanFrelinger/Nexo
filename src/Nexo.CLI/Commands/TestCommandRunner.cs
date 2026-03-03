@@ -52,7 +52,9 @@ public sealed class TestCommand
                 });
             }
 
-            var result = await _mediator.Send(new RunTestsCommand(filter, progress), ct);
+            using var globalTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            globalTimeoutCts.CancelAfter(TimeSpan.FromMinutes(10));
+            var result = await _mediator.Send(new RunTestsCommand(filter, progress), globalTimeoutCts.Token);
 
             if (json)
             {

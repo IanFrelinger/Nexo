@@ -16,7 +16,9 @@ on:
           - integration
           - persistence
           - trust
+          - adaptation
           - e2e
+          - dogfood
           - full
   push:
     branches: [ master, main ]
@@ -53,14 +55,27 @@ jobs:
         run: dotnet build --no-restore -v minimal
 
       - name: Run tests (smoke)
-        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full' && github.event.inputs.scope != 'integration' && github.event.inputs.scope != 'e2e'
+        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full' && github.event.inputs.scope != 'integration' && github.event.inputs.scope != 'e2e' && github.event.inputs.scope != 'dogfood' && github.event.inputs.scope != 'adaptation'
         shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
+            --blame-hang-timeout 30s \
             --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=smoke-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (dogfood)
+        if: github.event.inputs.scope == 'dogfood'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --blame-hang-timeout 120s \
+            --filter "FullyQualifiedName~Dogfood" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=dogfood-${{ matrix.os }}.trx" \
             --results-directory test-results
 
       - name: Run tests (integration)
@@ -69,6 +84,7 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
+            --blame-hang-timeout 60s \
             --filter "Category=Integration" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=integration-${{ matrix.os }}.trx" \
@@ -80,6 +96,7 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
+            --blame-hang-timeout 60s \
             --filter "FullyQualifiedName~InMemoryPersistenceTests" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=persistence-${{ matrix.os }}.trx" \
@@ -91,9 +108,22 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
+            --blame-hang-timeout 90s \
             --filter "Category=E2E" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=e2e-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (adaptation)
+        if: github.event.inputs.scope == 'adaptation'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --blame-hang-timeout 90s \
+            --filter "Category=Adaptation" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=adaptation-${{ matrix.os }}.trx" \
             --results-directory test-results
 
       - name: Run tests (trust)
@@ -102,12 +132,14 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
+            --blame-hang-timeout 60s \
             --filter "FullyQualifiedName~Trust" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=trust-infra-${{ matrix.os }}.trx" \
             --results-directory test-results
           dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
             --no-build \
+            --blame-hang-timeout 60s \
             --filter "FullyQualifiedName~Trust" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=trust-bg-${{ matrix.os }}.trx" \
@@ -119,6 +151,7 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
+            --blame-hang-timeout 120s \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=full-${{ matrix.os }}.trx" \
             --results-directory test-results

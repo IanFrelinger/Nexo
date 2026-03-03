@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Execution.Models;
+using Nexo.Core.Application.Execution.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Behaviors;
@@ -23,6 +25,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     private readonly ISemanticCache _semanticCache;
     private readonly ILoopKernel _loops;
     private readonly ILogger<BehaviorExecutor> _logger;
+    private readonly IStepExecutionMode? _stepExecutionMode;
     
     /// <summary>
     /// Creates a new behavior executor.
@@ -32,18 +35,21 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     /// <param name="semanticCache">Semantic cache for brick outputs.</param>
     /// <param name="loops">Loop kernel for step iteration.</param>
     /// <param name="logger">Logger for diagnostics.</param>
+    /// <param name="stepExecutionMode">Optional runtime mode override for steps.</param>
     public BehaviorExecutor(
         Nexo.Core.Domain.Execution.IBrickRegistry brickRegistry,
         IProviderFactory providerFactory,
         ISemanticCache semanticCache,
         ILoopKernel loops,
-        ILogger<BehaviorExecutor> logger)
+        ILogger<BehaviorExecutor> logger,
+        IStepExecutionMode? stepExecutionMode = null)
     {
         _brickRegistry = brickRegistry;
         _providerFactory = providerFactory;
         _semanticCache = semanticCache;
         _loops = loops;
         _logger = logger;
+        _stepExecutionMode = stepExecutionMode;
     }
     
     /// <inheritdoc />
@@ -243,6 +249,21 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         ExecutionOptions options,
         ExecutionContext context)
     {
+        // Runtime hot-swap override (takes effect on next execution)
+        if (_stepExecutionMode != null)
+        {
+            var mode = _stepExecutionMode.GetMode(step.Id);
+            var impl = mode == ExecutionMode.Agentic ? ImplementationType.Agentic : ImplementationType.Deterministic;
+            var chain = BuildChain(impl, options, brick, context);
+            if (chain.Count > 0)
+                return chain;
+            if (mode == ExecutionMode.Agentic && !brick.Implementations.HasAgentic)
+            {
+                _logger?.LogWarning("Step {StepId} set to Agentic but no agent registered; reverting to Deterministic", step.Id);
+                return BuildChain(ImplementationType.Deterministic, options, brick, context);
+            }
+        }
+
         // Always force deterministic in air-gapped.
         if (options.IsAirGapped || context.IsAirGapped)
         {
@@ -252,7 +273,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         }
 
         // Behavior mode override
-        var mode = options.BehaviorOverrides.TryGetValue(behavior.Id, out var m) ? m : options.ImplementationMode;
+        var behaviorMode = options.BehaviorOverrides.TryGetValue(behavior.Id, out var m) ? m : options.ImplementationMode;
 
         // Highest priority: explicit step implementation.
         if (step.Implementation != ImplementationType.Auto)
@@ -269,12 +290,12 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         // Next: runtime per-brick prefer/fallback.
         if (options.BrickRuntime.TryGetValue(brick.Id, out var runtimeSpec))
         {
-            var preferred = PreferToImplementation(runtimeSpec.Prefer, brick, context, mode);
+            var preferred = PreferToImplementation(runtimeSpec.Prefer, brick, context, behaviorMode);
             return BuildChain(preferred, options, brick, context, runtimeSpec);
         }
 
         // Global mode-based selection.
-        var selected = mode switch
+        var selected = behaviorMode switch
         {
             ImplementationMode.DeterministicOnly => ImplementationType.Deterministic,
             ImplementationMode.AgenticPreferred => ImplementationType.Agentic,

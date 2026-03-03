@@ -17,8 +17,6 @@ using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Abstractions;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
-using Nexo.Orchestration;
-using Nexo.Orchestration.Models;
 using Nexo.Hosting;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Persistence;
@@ -27,7 +25,7 @@ namespace Nexo.CLI;
 
 /// <summary>
 /// Main entry point for the Nexo CLI application.
-/// 
+///
 /// Provides command-line interface for:
 /// - Code analysis and validation
 /// - Agent execution and orchestration
@@ -35,12 +33,23 @@ namespace Nexo.CLI;
 /// - Configuration management
 /// - Escalation and conflict resolution
 /// - Metrics and performance monitoring
-/// 
+///
 /// Uses System.CommandLine for command parsing and Microsoft.Extensions.Hosting
 /// for dependency injection and service configuration.
+///
+/// Light commands (improve, adapt, dogfood, observe, compose, mesh, self-context, docker, test portable/parallel/multi-env)
+/// build their own ServiceProvider and do not load Nexo.Orchestration. The host is built lazily only when
+/// a heavy command (analyze, validate, agent, etc.) is invoked, avoiding FileNotFoundException for orchestration.
 /// </summary>
 static class Program
 {
+    private static readonly Lazy<IHost> Host = new(() =>
+        Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+            .ConfigureServices(ConfigureServices)
+            .Build());
+
+    private static IServiceProvider ServiceProvider => Host.Value.Services;
+
     /// <summary>
     /// Main entry point for the CLI application.
     /// </summary>
@@ -48,11 +57,6 @@ static class Program
     /// <returns>Exit code (0 for success, non-zero for errors)</returns>
     static async Task<int> Main(string[] args)
     {
-        // Build host with dependency injection
-        var host = Host.CreateDefaultBuilder(args)
-            .ConfigureServices(ConfigureServices)
-            .Build();
-
         var root = new RootCommand("Nexo command-line interface")
         {
             TreatUnmatchedTokensAsErrors = true
@@ -72,13 +76,7 @@ static class Program
         );
         root.AddGlobalOption(verboseOpt);
 
-        // Get services from DI container
-        var serviceProvider = host.Services;
-        var analyzeCommand = serviceProvider.GetRequiredService<AnalyzeCommand>();
-        var validateCommand = serviceProvider.GetRequiredService<ValidateCommand>();
-        var agentCommand = serviceProvider.GetRequiredService<AgentCommand>();
-
-        // nexo analyze
+        // nexo analyze (resolves from host lazily - host built only when heavy command runs)
         var analyzeCmd = new Command("analyze", "Run code/assembly analyzers and policies")
         {
             new Option<DirectoryInfo>(
@@ -90,7 +88,8 @@ static class Program
         analyzeCmd.SetHandler(
             async (DirectoryInfo path, bool json, bool verbose) =>
             {
-                var exitCode = await analyzeCommand.ExecuteAsync(path, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<AnalyzeCommand>();
+                var exitCode = await cmd.ExecuteAsync(path, json, verbose);
                 Environment.Exit(exitCode);
             },
             analyzeCmd.Options[0] as Option<DirectoryInfo> ?? throw new InvalidOperationException(),
@@ -106,7 +105,8 @@ static class Program
         validateCmd.SetHandler(
             async (string? filter, bool json, bool verbose) =>
             {
-                var exitCode = await validateCommand.ExecuteAsync(filter, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<ValidateCommand>();
+                var exitCode = await cmd.ExecuteAsync(filter, json, verbose);
                 Environment.Exit(exitCode);
             },
             validateCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
@@ -122,7 +122,8 @@ static class Program
         agentCmd.SetHandler(
             async (string name, FileInfo? input, bool json, bool verbose) =>
             {
-                var exitCode = await agentCommand.ExecuteAsync(name, input, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<AgentCommand>();
+                var exitCode = await cmd.ExecuteAsync(name, input, json, verbose);
                 Environment.Exit(exitCode);
             },
             agentCmd.Options[0] as Option<string> ?? throw new InvalidOperationException(),
@@ -131,12 +132,12 @@ static class Program
             verboseOpt);
 
         // nexo agent list
-        var listAgentsCommand = serviceProvider.GetRequiredService<ListAgentsCommand>();
         var listAgentsCmd = new Command("list", "List available agents");
         listAgentsCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
-                var exitCode = await listAgentsCommand.ExecuteAsync(json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<ListAgentsCommand>();
+                var exitCode = await cmd.ExecuteAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
@@ -144,13 +145,13 @@ static class Program
         agentCmd.AddCommand(listAgentsCmd);
 
         // nexo config
-        var configCommand = serviceProvider.GetRequiredService<ConfigCommand>();
         var configCmd = new Command("config", "View or manage configuration");
         var configShowCmd = new Command("show", "Show current configuration");
         configShowCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
-                var exitCode = await configCommand.ExecuteAsync(json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
+                var exitCode = await cmd.ExecuteAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
@@ -160,7 +161,8 @@ static class Program
         configValidateCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
-                var exitCode = await configCommand.ValidateAsync(json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
+                var exitCode = await cmd.ValidateAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
@@ -171,7 +173,8 @@ static class Program
         configExportCmd.SetHandler(
             async (FileInfo path, bool json, bool verbose) =>
             {
-                var exitCode = await configCommand.ExportAsync(path.FullName, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
+                var exitCode = await cmd.ExportAsync(path.FullName, json, verbose);
                 Environment.Exit(exitCode);
             },
             configExportPathOpt,
@@ -183,24 +186,45 @@ static class Program
         configImportCmd.SetHandler(
             async (FileInfo path, bool json, bool verbose) =>
             {
-                var exitCode = await configCommand.ImportAsync(path.FullName, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
+                var exitCode = await cmd.ImportAsync(path.FullName, json, verbose);
                 Environment.Exit(exitCode);
             },
             configImportPathOpt,
             jsonOpt,
             verboseOpt);
         configCmd.AddCommand(configImportCmd);
+        var configSetModeStepArg = new Argument<string>("step-id", "Step ID");
+        var configSetModeModeArg = new Argument<string>("mode", "Execution mode: deterministic | agentic");
+        var configSetModeCmd = new Command("set-mode", "Set execution mode for a step (hot-swap)") { configSetModeStepArg, configSetModeModeArg };
+        configSetModeCmd.SetHandler(
+            async (string stepId, string modeStr) =>
+            {
+                var mode = modeStr.Trim().ToLowerInvariant() switch
+                {
+                    "deterministic" => Nexo.Core.Application.Execution.Models.ExecutionMode.Deterministic,
+                    "agentic" => Nexo.Core.Application.Execution.Models.ExecutionMode.Agentic,
+                    _ => throw new ArgumentException($"Mode must be 'deterministic' or 'agentic', got: {modeStr}")
+                };
+                var store = new Nexo.Infrastructure.Execution.StepExecutionModeStore();
+                var result = await store.SwapAsync(stepId, mode);
+                Console.WriteLine($"Swapped {stepId}: {result.PreviousMode} -> {result.NewMode}");
+                Environment.Exit(0);
+            },
+            configSetModeStepArg,
+            configSetModeModeArg);
+        configCmd.AddCommand(configSetModeCmd);
         configCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
-                var exitCode = await configCommand.ExecuteAsync(json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
+                var exitCode = await cmd.ExecuteAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
             verboseOpt);
 
         // nexo background-agent
-        var backgroundAgentCommand = serviceProvider.GetRequiredService<BackgroundAgentCommand>();
         var backgroundAgentCmd = new Command("background-agent", "Configure and manage background agents");
         var listBgCmd = new Command("list", "List configured background agents")
         {
@@ -211,7 +235,8 @@ static class Program
         listBgCmd.SetHandler(
             async (bool formatJson, string? status, string? role, string? sensitivity) =>
             {
-                var exitCode = await backgroundAgentCommand.ListAsync(formatJson, status, role, sensitivity);
+                var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
+                var exitCode = await cmd.ListAsync(formatJson, status, role, sensitivity);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
@@ -225,7 +250,8 @@ static class Program
         showBgCmd.SetHandler(
             async (string id, bool formatJson) =>
             {
-                var exitCode = await backgroundAgentCommand.ShowAsync(id, formatJson);
+                var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
+                var exitCode = await cmd.ShowAsync(id, formatJson);
                 Environment.Exit(exitCode);
             },
             showBgIdOpt,
@@ -237,7 +263,8 @@ static class Program
         startBgCmd.SetHandler(
             async (string id, bool formatJson) =>
             {
-                var exitCode = await backgroundAgentCommand.StartAsync(id, formatJson);
+                var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
+                var exitCode = await cmd.StartAsync(id, formatJson);
                 Environment.Exit(exitCode);
             },
             startBgIdOpt,
@@ -249,7 +276,8 @@ static class Program
         stopBgCmd.SetHandler(
             async (string id, bool formatJson) =>
             {
-                var exitCode = await backgroundAgentCommand.StopAsync(id, formatJson);
+                var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
+                var exitCode = await cmd.StopAsync(id, formatJson);
                 Environment.Exit(exitCode);
             },
             stopBgIdOpt,
@@ -261,7 +289,8 @@ static class Program
         restartBgCmd.SetHandler(
             async (string id, bool formatJson) =>
             {
-                var exitCode = await backgroundAgentCommand.RestartAsync(id, formatJson);
+                var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
+                var exitCode = await cmd.RestartAsync(id, formatJson);
                 Environment.Exit(exitCode);
             },
             restartBgIdOpt,
@@ -269,18 +298,19 @@ static class Program
         backgroundAgentCmd.AddCommand(restartBgCmd);
 
         // nexo background-agent execute
-        var executeBgCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
         var executeBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var executeBgAsyncOpt = new Option<bool>("--async", "Run execution asynchronously (don't wait)");
         var executeBgCmd = new Command("execute", "Manually run one execution of a background agent") { executeBgIdOpt, executeBgAsyncOpt };
         executeBgCmd.SetHandler(
             async (string id, bool runAsync, bool formatJson) =>
-                Environment.Exit(await executeBgCommand.ExecuteAsync(id, runAsync, formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
+                Environment.Exit(await cmd.ExecuteAsync(id, runAsync, formatJson));
+            },
             executeBgIdOpt, executeBgAsyncOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(executeBgCmd);
 
         // nexo background-agent logs
-        var logsBgCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         var logsBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var logsBgCmd = new Command("logs", "Show agent execution logs")
         {
@@ -292,8 +322,9 @@ static class Program
         logsBgCmd.SetHandler(
             async (string id, int tail, string? level, string? since, bool formatJson) =>
             {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
                 TimeSpan? sinceTs = ParseSince(since);
-                Environment.Exit(await logsBgCommand.ExecuteAsync(id, tail, level, sinceTs, formatJson));
+                Environment.Exit(await cmd.ExecuteAsync(id, tail, level, sinceTs, formatJson));
             },
             logsBgIdOpt,
             logsBgCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
@@ -303,24 +334,33 @@ static class Program
         backgroundAgentCmd.AddCommand(logsBgCmd);
 
         // nexo background-agent metrics
-        var metricsBgCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
         var metricsBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var metricsBgCmd = new Command("metrics", "Show agent performance metrics") { metricsBgIdOpt };
         metricsBgCmd.SetHandler(
             async (string id, bool formatJson) =>
-                Environment.Exit(await metricsBgCommand.ExecuteAsync(id, formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
+                Environment.Exit(await cmd.ExecuteAsync(id, formatJson));
+            },
             metricsBgIdOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(metricsBgCmd);
 
         // nexo background-agent sensitivity
-        var sensitivityCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         var sensitivityCmd = new Command("sensitivity", "Manage data sensitivity levels");
         var sensListCmd = new Command("list", "List sensitivity levels");
-        sensListCmd.SetHandler(async (bool formatJson) => Environment.Exit(await sensitivityCommand.ListAsync(formatJson)), jsonOpt);
+        sensListCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+            Environment.Exit(await cmd.ListAsync(formatJson));
+        }, jsonOpt);
         sensitivityCmd.AddCommand(sensListCmd);
         var sensShowNameOpt = new Option<string>("--name", "Sensitivity level name") { IsRequired = true };
         var sensShowCmd = new Command("show", "Show a sensitivity level") { sensShowNameOpt };
-        sensShowCmd.SetHandler(async (string name, bool formatJson) => Environment.Exit(await sensitivityCommand.ShowAsync(name, formatJson)), sensShowNameOpt, jsonOpt);
+        sensShowCmd.SetHandler(async (string name, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+            Environment.Exit(await cmd.ShowAsync(name, formatJson));
+        }, sensShowNameOpt, jsonOpt);
         sensitivityCmd.AddCommand(sensShowCmd);
         var sensAddNameOpt = new Option<string>("--name", "Level name") { IsRequired = true };
         var sensAddValueOpt = new Option<int>("--value", () => 0, "Sensitivity value (ordering)");
@@ -336,7 +376,10 @@ static class Program
         };
         sensAddCmd.SetHandler(
             async (string name, int value, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string? description, bool formatJson) =>
-                Environment.Exit(await sensitivityCommand.AddAsync(name, value, allowsExternalLLM, allowsWebSearch, requiresLocalOnly, allowsNetworkExports, description ?? "", formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+                Environment.Exit(await cmd.AddAsync(name, value, allowsExternalLLM, allowsWebSearch, requiresLocalOnly, allowsNetworkExports, description ?? "", formatJson));
+            },
             sensAddNameOpt, sensAddValueOpt,
             sensAddCmd.Options[2] as Option<bool> ?? throw new InvalidOperationException(),
             sensAddCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException(),
@@ -356,7 +399,10 @@ static class Program
         };
         sensUpdateCmd.SetHandler(
             async (string name, int value, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string? description, bool formatJson) =>
-                Environment.Exit(await sensitivityCommand.UpdateAsync(name, value, allowsExternalLLM, allowsWebSearch, requiresLocalOnly, allowsNetworkExports, description ?? "", formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+                Environment.Exit(await cmd.UpdateAsync(name, value, allowsExternalLLM, allowsWebSearch, requiresLocalOnly, allowsNetworkExports, description ?? "", formatJson));
+            },
             sensUpdateNameOpt, sensUpdateCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
             sensUpdateCmd.Options[2] as Option<bool> ?? throw new InvalidOperationException(),
             sensUpdateCmd.Options[3] as Option<bool> ?? throw new InvalidOperationException(),
@@ -367,19 +413,25 @@ static class Program
         sensitivityCmd.AddCommand(sensUpdateCmd);
         var sensRemoveNameOpt = new Option<string>("--name", "Level name") { IsRequired = true };
         var sensRemoveCmd = new Command("remove", "Remove a custom sensitivity level") { sensRemoveNameOpt };
-        sensRemoveCmd.SetHandler(async (string name, bool formatJson) => Environment.Exit(await sensitivityCommand.RemoveAsync(name, formatJson)), sensRemoveNameOpt, jsonOpt);
+        sensRemoveCmd.SetHandler(async (string name, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
+            Environment.Exit(await cmd.RemoveAsync(name, formatJson));
+        }, sensRemoveNameOpt, jsonOpt);
         sensitivityCmd.AddCommand(sensRemoveCmd);
         backgroundAgentCmd.AddCommand(sensitivityCmd);
 
         // nexo background-agent rag
-        var ragCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
         var ragCmd = new Command("rag", "RAG (Retrieval Augmented Generation) operations");
         var ragIndexPathsOpt = new Option<string[]>("--paths", "Paths to index (files or directories)") { IsRequired = true, AllowMultipleArgumentsPerToken = true };
         var ragIndexSensOpt = new Option<string?>("--sensitivity", "Default sensitivity level for indexed documents");
         var ragIndexCmd = new Command("index", "Index paths into RAG store") { ragIndexPathsOpt, ragIndexSensOpt };
         ragIndexCmd.SetHandler(
             async (string[] paths, string? sensitivity, bool formatJson) =>
-                Environment.Exit(await ragCommand.IndexAsync(paths ?? Array.Empty<string>(), sensitivity, formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
+                Environment.Exit(await cmd.IndexAsync(paths ?? Array.Empty<string>(), sensitivity, formatJson));
+            },
             ragIndexPathsOpt, ragIndexSensOpt, jsonOpt);
         ragCmd.AddCommand(ragIndexCmd);
         var ragSearchQueryOpt = new Option<string>("--query", "Search query") { IsRequired = true };
@@ -392,7 +444,10 @@ static class Program
         };
         ragSearchCmd.SetHandler(
             async (string query, int maxResults, double minScore, string? maxSensitivity, bool formatJson) =>
-                Environment.Exit(await ragCommand.SearchAsync(query, maxResults, minScore, maxSensitivity, formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
+                Environment.Exit(await cmd.SearchAsync(query, maxResults, minScore, maxSensitivity, formatJson));
+            },
             ragSearchQueryOpt,
             ragSearchCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
             ragSearchCmd.Options[2] as Option<double> ?? throw new InvalidOperationException(),
@@ -400,18 +455,29 @@ static class Program
             jsonOpt);
         ragCmd.AddCommand(ragSearchCmd);
         var ragStatsCmd = new Command("stats", "Show RAG store statistics");
-        ragStatsCmd.SetHandler(async (bool formatJson) => Environment.Exit(await ragCommand.StatsAsync(formatJson)), jsonOpt);
+        ragStatsCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
+            Environment.Exit(await cmd.StatsAsync(formatJson));
+        }, jsonOpt);
         ragCmd.AddCommand(ragStatsCmd);
         var ragClearCmd = new Command("clear", "Clear RAG store");
-        ragClearCmd.SetHandler(async (bool formatJson) => Environment.Exit(await ragCommand.ClearAsync(formatJson)), jsonOpt);
+        ragClearCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
+            Environment.Exit(await cmd.ClearAsync(formatJson));
+        }, jsonOpt);
         ragCmd.AddCommand(ragClearCmd);
         backgroundAgentCmd.AddCommand(ragCmd);
 
         // nexo background-agent websearch
-        var webSearchCommand = serviceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
         var webSearchCmd = new Command("websearch", "Web search configuration and test");
         var webSearchConfigureCmd = new Command("configure", "Show web search configuration");
-        webSearchConfigureCmd.SetHandler(async (bool formatJson) => Environment.Exit(await webSearchCommand.ConfigureAsync(formatJson)), jsonOpt);
+        webSearchConfigureCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
+            Environment.Exit(await cmd.ConfigureAsync(formatJson));
+        }, jsonOpt);
         webSearchCmd.AddCommand(webSearchConfigureCmd);
         var webSearchTestCmd = new Command("test", "Run a test search")
         {
@@ -420,7 +486,10 @@ static class Program
         };
         webSearchTestCmd.SetHandler(
             async (string query, int maxResults, bool formatJson) =>
-                Environment.Exit(await webSearchCommand.TestAsync(query, maxResults, formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
+                Environment.Exit(await cmd.TestAsync(query, maxResults, formatJson));
+            },
             webSearchTestCmd.Options[0] as Option<string> ?? throw new InvalidOperationException(),
             webSearchTestCmd.Options[1] as Option<int> ?? throw new InvalidOperationException(),
             jsonOpt);
@@ -428,7 +497,6 @@ static class Program
         backgroundAgentCmd.AddCommand(webSearchCmd);
 
         // nexo trust - Audit and access boundary (Phase 4)
-        var trustCommand = serviceProvider.GetRequiredService<TrustCommand>();
         var trustCmd = new Command("trust", "Trust & Information Architecture: audit log and access boundary");
         var trustAuditCmd = new Command("audit", "Show or export data decision audit log")
         {
@@ -442,7 +510,10 @@ static class Program
         };
         trustAuditCmd.SetHandler(
             async (int count, string? since, string? until, string? type, bool json, bool md, bool csv) =>
-                Environment.Exit(await trustCommand.AuditAsync(count, since, until, type, json, md, csv)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.AuditAsync(count, since, until, type, json, md, csv));
+            },
             trustAuditCmd.Options[0] as Option<int> ?? throw new InvalidOperationException(),
             trustAuditCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
             trustAuditCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
@@ -454,13 +525,21 @@ static class Program
         var trustPauseCmd = new Command("pause", "Pause observation (halt all data collection)");
         trustPauseCmd.AddOption(jsonOpt);
         trustPauseCmd.SetHandler(
-            async (bool formatJson) => Environment.Exit(await trustCommand.PauseAsync(formatJson)),
+            async (bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.PauseAsync(formatJson));
+            },
             jsonOpt);
         trustCmd.AddCommand(trustPauseCmd);
         var trustResumeCmd = new Command("resume", "Resume observation");
         trustResumeCmd.AddOption(jsonOpt);
         trustResumeCmd.SetHandler(
-            async (bool formatJson) => Environment.Exit(await trustCommand.ResumeAsync(formatJson)),
+            async (bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.ResumeAsync(formatJson));
+            },
             jsonOpt);
         trustCmd.AddCommand(trustResumeCmd);
         var trustAllowCmd = new Command("allow", "Allow a category or source");
@@ -470,7 +549,10 @@ static class Program
         trustAllowCmd.AddOption(jsonOpt);
         trustAllowCmd.SetHandler(
             async (string? category, string? source, string? project, bool formatJson) =>
-                Environment.Exit(await trustCommand.AllowAsync(category, source, project, formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.AllowAsync(category, source, project, formatJson));
+            },
             trustAllowCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
             trustAllowCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
             trustAllowCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
@@ -483,7 +565,10 @@ static class Program
         trustDenyCmd.AddOption(jsonOpt);
         trustDenyCmd.SetHandler(
             async (string? category, string? source, string? project, bool formatJson) =>
-                Environment.Exit(await trustCommand.DenyAsync(category, source, project, formatJson)),
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.DenyAsync(category, source, project, formatJson));
+            },
             trustDenyCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
             trustDenyCmd.Options[1] as Option<string?> ?? throw new InvalidOperationException(),
             trustDenyCmd.Options[2] as Option<string?> ?? throw new InvalidOperationException(),
@@ -491,14 +576,22 @@ static class Program
         trustCmd.AddCommand(trustDenyCmd);
         var trustBoundaryCmd = new Command("boundary", "Show access boundary status");
         trustBoundaryCmd.SetHandler(
-            async (bool formatJson) => Environment.Exit(await trustCommand.BoundaryAsync(formatJson)),
+            async (bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.BoundaryAsync(formatJson));
+            },
             jsonOpt);
         trustCmd.AddCommand(trustBoundaryCmd);
         var trustDashboardCmd = new Command("dashboard", "Compliance dashboard: boundary status + audit summary");
         trustDashboardCmd.AddOption(new Option<int>("--count", () => 50, "Max audit entries to include"));
         trustDashboardCmd.AddOption(jsonOpt);
         trustDashboardCmd.SetHandler(
-            async (int count, bool formatJson) => Environment.Exit(await trustCommand.DashboardAsync(count, formatJson)),
+            async (int count, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.DashboardAsync(count, formatJson));
+            },
             trustDashboardCmd.Options[0] as Option<int> ?? throw new InvalidOperationException(),
             trustDashboardCmd.Options[1] as Option<bool> ?? throw new InvalidOperationException());
         trustCmd.AddCommand(trustDashboardCmd);
@@ -546,7 +639,7 @@ static class Program
             var verbose = ctx.ParseResult.GetValueForOption(verboseOpt);
             
             var exitCode = await MultiPlatformTestCommand.ExecuteAsync(
-                platforms, project, filter, dotnetVersion, executionPlatform, outputDir, coverage, stress, visual, json, verbose, serviceProvider);
+                platforms, project, filter, dotnetVersion, executionPlatform, outputDir, coverage, stress, visual, json, verbose, ServiceProvider);
             Environment.Exit(exitCode);
         });
         // nexo test local - Run tests locally (replaces test-local.sh)
@@ -557,7 +650,7 @@ static class Program
         testLocalCmd.SetHandler(
             async (string? filter, bool json, bool verbose) =>
             {
-                var testCommand = serviceProvider.GetRequiredService<TestCommand>();
+                var testCommand = ServiceProvider.GetRequiredService<TestCommand>();
                 var exitCode = await testCommand.ExecuteAsync(filter, json, verbose);
                 Environment.Exit(exitCode);
             },
@@ -569,56 +662,52 @@ static class Program
         testCmd.AddCommand(TestMultiEnvCommand.CreateCommand());
         testCmd.AddCommand(TestParallelCommand.CreateCommand());
 
-        // nexo orchestrate
-        var orchestrateCommand = serviceProvider.GetService<OrchestrateCommand>();
-        if (orchestrateCommand != null)
-        {
-            var orchestrateCmd = new Command("orchestrate", "Orchestrate agent execution for a request");
-            orchestrateCmd.AddArgument(new Argument<string>("request", "The request to orchestrate"));
+        // nexo orchestrate (resolves lazily - host built only when invoked)
+        var orchestrateCmd = new Command("orchestrate", "Orchestrate agent execution for a request");
+        orchestrateCmd.AddArgument(new Argument<string>("request", "The request to orchestrate"));
 
-            var runtimeSpecOpt = new Option<FileInfo?>(
-                name: "--runtime-spec",
-                description: "Runtime spec JSON file (model routing per domain/agent)");
-            var runtimeSpecJsonOpt = new Option<string?>(
-                name: "--runtime-spec-json",
-                description: "Runtime spec JSON string (model routing per domain/agent)");
-            var preferModelOpt = new Option<string?>(
-                name: "--prefer-model",
-                description: "Override model preference: agentic|deterministic|auto");
-            var providerOpt = new Option<string?>(
-                name: "--provider",
-                description: "Override model provider (openai/azure/ollama/offline/mock-json/...)");
+        var runtimeSpecOpt = new Option<FileInfo?>(
+            name: "--runtime-spec",
+            description: "Runtime spec JSON file (model routing per domain/agent)");
+        var runtimeSpecJsonOpt = new Option<string?>(
+            name: "--runtime-spec-json",
+            description: "Runtime spec JSON string (model routing per domain/agent)");
+        var preferModelOpt = new Option<string?>(
+            name: "--prefer-model",
+            description: "Override model preference: agentic|deterministic|auto");
+        var providerOpt = new Option<string?>(
+            name: "--provider",
+            description: "Override model provider (openai/azure/ollama/offline/mock-json/...)");
 
-            orchestrateCmd.AddOption(runtimeSpecOpt);
-            orchestrateCmd.AddOption(runtimeSpecJsonOpt);
-            orchestrateCmd.AddOption(preferModelOpt);
-            orchestrateCmd.AddOption(providerOpt);
+        orchestrateCmd.AddOption(runtimeSpecOpt);
+        orchestrateCmd.AddOption(runtimeSpecJsonOpt);
+        orchestrateCmd.AddOption(preferModelOpt);
+        orchestrateCmd.AddOption(providerOpt);
 
-            orchestrateCmd.SetHandler(
-                async (string request, FileInfo? runtimeSpec, string? runtimeSpecJson, string? preferModel, string? provider, bool json, bool verbose) =>
-                {
-                    var exitCode = await orchestrateCommand.ExecuteAsync(
-                        request,
-                        runtimeSpec?.FullName,
-                        runtimeSpecJson,
-                        preferModel,
-                        provider,
-                        json,
-                        verbose);
-                    Environment.Exit(exitCode);
-                },
-                orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
-                runtimeSpecOpt,
-                runtimeSpecJsonOpt,
-                preferModelOpt,
-                providerOpt,
-                jsonOpt,
-                verboseOpt);
-            root.AddCommand(orchestrateCmd);
-        }
+        orchestrateCmd.SetHandler(
+            async (string request, FileInfo? runtimeSpec, string? runtimeSpecJson, string? preferModel, string? provider, bool json, bool verbose) =>
+            {
+                var orchestrateCommand = ServiceProvider.GetRequiredService<OrchestrateCommand>();
+                var exitCode = await orchestrateCommand.ExecuteAsync(
+                    request,
+                    runtimeSpec?.FullName,
+                    runtimeSpecJson,
+                    preferModel,
+                    provider,
+                    json,
+                    verbose);
+                Environment.Exit(exitCode);
+            },
+            orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
+            runtimeSpecOpt,
+            runtimeSpecJsonOpt,
+            preferModelOpt,
+            providerOpt,
+            jsonOpt,
+            verboseOpt);
+        root.AddCommand(orchestrateCmd);
 
-        // nexo escalate
-        var escalateCommand = serviceProvider.GetRequiredService<EscalateCommand>();
+        // nexo escalate (resolves lazily)
         var escalateCmd = new Command("escalate", "Manage escalations and conflicts");
         
         // nexo escalate list
@@ -626,7 +715,8 @@ static class Program
         escalateListCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
-                var exitCode = await escalateCommand.ListAsync(json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
+                var exitCode = await cmd.ListAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
@@ -639,7 +729,8 @@ static class Program
         escalateShowCmd.SetHandler(
             async (string id, bool json, bool verbose) =>
             {
-                var exitCode = await escalateCommand.ShowAsync(id, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
+                var exitCode = await cmd.ShowAsync(id, json, verbose);
                 Environment.Exit(exitCode);
             },
             escalateShowCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
@@ -654,7 +745,8 @@ static class Program
         escalateResolveCmd.SetHandler(
             async (string id, string? resolution, bool json, bool verbose) =>
             {
-                var exitCode = await escalateCommand.ResolveAsync(id, resolution, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
+                var exitCode = await cmd.ResolveAsync(id, resolution, json, verbose);
                 Environment.Exit(exitCode);
             },
             escalateResolveCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
@@ -670,7 +762,8 @@ static class Program
         escalateDismissCmd.SetHandler(
             async (string id, string? reason, bool json, bool verbose) =>
             {
-                var exitCode = await escalateCommand.DismissAsync(id, reason, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
+                var exitCode = await cmd.DismissAsync(id, reason, json, verbose);
                 Environment.Exit(exitCode);
             },
             escalateDismissCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
@@ -685,7 +778,8 @@ static class Program
         escalateListBySeverityCmd.SetHandler(
             async (string severity, bool json, bool verbose) =>
             {
-                var exitCode = await escalateCommand.ListBySeverityAsync(severity, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
+                var exitCode = await cmd.ListBySeverityAsync(severity, json, verbose);
                 Environment.Exit(exitCode);
             },
             escalateListBySeverityCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
@@ -693,8 +787,7 @@ static class Program
             verboseOpt);
         escalateCmd.AddCommand(escalateListBySeverityCmd);
 
-        // nexo metrics
-        var metricsCommand = serviceProvider.GetRequiredService<MetricsCommand>();
+        // nexo metrics (resolves lazily)
         var metricsCmd = new Command("metrics", "View orchestration metrics and performance data");
         
         // nexo metrics report
@@ -702,7 +795,8 @@ static class Program
         metricsReportCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
-                var exitCode = await metricsCommand.ShowReportAsync(json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
+                var exitCode = await cmd.ShowReportAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
@@ -715,7 +809,8 @@ static class Program
         metricsAgentCmd.SetHandler(
             async (string id, bool json, bool verbose) =>
             {
-                var exitCode = await metricsCommand.ShowAgentAsync(id, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
+                var exitCode = await cmd.ShowAgentAsync(id, json, verbose);
                 Environment.Exit(exitCode);
             },
             metricsAgentCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
@@ -730,7 +825,8 @@ static class Program
         metricsTracesCmd.SetHandler(
             async (string? correlationId, string? operation, bool json, bool verbose) =>
             {
-                var exitCode = await metricsCommand.ShowTracesAsync(correlationId, operation, json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
+                var exitCode = await cmd.ShowTracesAsync(correlationId, operation, json, verbose);
                 Environment.Exit(exitCode);
             },
             metricsTracesCmd.Options[0] as Option<string?> ?? throw new InvalidOperationException(),
@@ -744,7 +840,8 @@ static class Program
         metricsClearCmd.SetHandler(
             async (bool json, bool verbose) =>
             {
-                var exitCode = await metricsCommand.ClearAsync(json, verbose);
+                var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
+                var exitCode = await cmd.ClearAsync(json, verbose);
                 Environment.Exit(exitCode);
             },
             jsonOpt,
@@ -752,21 +849,25 @@ static class Program
         metricsCmd.AddCommand(metricsClearCmd);
 
         // nexo demo
-        var demoCmd = DemoCommand.CreateCommand(host.Services, jsonOpt, verboseOpt);
+        var demoCmd = DemoCommand.CreateCommand(null, jsonOpt, verboseOpt);
         root.AddCommand(demoCmd);
 
         // nexo docker (generic build/run/clean for multi-platform testing)
         var dockerCmd = new DockerCommand();
         root.AddCommand(dockerCmd);
 
+        root.AddCommand(new CiCommand());
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);
         root.AddCommand(configCmd);
+        root.AddCommand(new DogfoodCommand());
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
         root.AddCommand(new SelfContextCommand());
+        root.AddCommand(new ChangelogCommand());
+        root.AddCommand(new RollbackCommand());
         root.AddCommand(new ComposeCommand());
         root.AddCommand(new MeshCommand());
         root.AddCommand(backgroundAgentCmd);

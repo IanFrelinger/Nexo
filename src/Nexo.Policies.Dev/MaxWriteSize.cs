@@ -22,11 +22,18 @@ public sealed class MaxWriteSize : IPolicy
         reason = "OK";
         if (call.Id is "repo.fs.write" && call.Arguments.ValueKind == JsonValueKind.Object)
         {
-            if (call.Arguments.TryGetProperty("content", out var c))
+            if (!call.Arguments.TryGetProperty("content", out var c))
             {
-                var bytes = (c.GetString() ?? string.Empty).Length;
-                if (bytes > _maxBytes) { reason = $"Write too large: {bytes} > max {_maxBytes}"; return false; }
+                reason = "Write rejected: content is required";
+                return false;
             }
+            if (c.ValueKind == JsonValueKind.Null)
+            {
+                reason = "Write rejected: content cannot be null";
+                return false;
+            }
+            var bytes = (c.GetString() ?? string.Empty).Length;
+            if (bytes > _maxBytes) { reason = $"Write too large: {bytes} > max {_maxBytes}"; return false; }
         }
         return true;
     }

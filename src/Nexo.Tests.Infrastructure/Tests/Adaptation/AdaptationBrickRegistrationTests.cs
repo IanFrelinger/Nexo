@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+[Trait("Category", "Adaptation")]
 public sealed class AdaptationBrickRegistrationTests
 {
     [Fact]

@@ -110,13 +110,18 @@ public static class NexoServiceCollectionExtensions
             new Nexo.Infrastructure.Execution.SemanticCache(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.SemanticCache>>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorRegistry>(_ =>
             new Nexo.Infrastructure.Execution.BehaviorRegistry(Array.Empty<Nexo.Core.Domain.Behaviors.Behavior>()));
+        services.TryAddSingleton<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>(sp =>
+            new Nexo.Infrastructure.Execution.StepExecutionModeStore(
+                null,
+                sp.GetService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.StepExecutionModeStore>>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorExecutor>(sp =>
             new Nexo.Infrastructure.Execution.BehaviorExecutor(
                 sp.GetRequiredService<Nexo.Core.Domain.Execution.IBrickRegistry>(),
                 sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>(),
                 sp.GetRequiredService<Nexo.Infrastructure.Execution.ISemanticCache>(),
                 sp.GetRequiredService<ILoopKernel>(),
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>()));
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>(),
+                sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(_ =>
             new Nexo.Infrastructure.Execution.AgentRegistry(Array.Empty<Nexo.Core.Domain.Agents.AgentCard>()));
         services.AddScoped<Nexo.Core.Application.Workflows.WorkflowExecutor>(sp =>

@@ -8,7 +8,6 @@ WORKDIR C:\workspace
 # Copy solution and project files
 COPY *.sln *.props *.json ./
 COPY src\ .\src\
-COPY scripts\ .\scripts\
 COPY coverage.runsettings .\
 
 # Restore dependencies for framework test projects

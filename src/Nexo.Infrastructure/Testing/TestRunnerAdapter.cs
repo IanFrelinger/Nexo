@@ -21,6 +21,8 @@ namespace Nexo.Infrastructure.Testing;
 /// </summary>
 public class TestRunnerAdapter : ITestRunner
 {
+    private static readonly TimeSpan DefaultPerTestTimeout = TimeSpan.FromSeconds(60);
+
     private readonly ILogger<TestRunnerAdapter> _logger;
     private readonly IServiceProvider _serviceProvider;
 
@@ -287,6 +289,43 @@ public class TestRunnerAdapter : ITestRunner
         var testName = test.TestName;
         var category = test.Category;
 
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(DefaultPerTestTimeout);
+        var ct = timeoutCts.Token;
+
+        var runTask = RunTestCoreAsync(test, ct, startTime, testName, category);
+        var timeoutTask = Task.Delay(DefaultPerTestTimeout, ct);
+        var completed = await Task.WhenAny(runTask, timeoutTask);
+
+        if (completed == timeoutTask)
+        {
+            try
+            {
+                await test.CleanupAsync(CancellationToken.None);
+            }
+            catch
+            {
+                // Ignore cleanup errors on timeout
+            }
+            return new TestResult
+            {
+                Name = testName,
+                Category = category,
+                Passed = false,
+                Duration = DateTime.UtcNow - startTime,
+                ErrorMessage = $"Test timed out after {DefaultPerTestTimeout.TotalSeconds}s"
+            };
+        }
+        return await runTask;
+    }
+
+    private async Task<TestResult> RunTestCoreAsync(
+        TestBase test,
+        CancellationToken cancellationToken,
+        DateTimeOffset startTime,
+        string testName,
+        string category)
+    {
         try
         {
             await test.SetupAsync(cancellationToken);

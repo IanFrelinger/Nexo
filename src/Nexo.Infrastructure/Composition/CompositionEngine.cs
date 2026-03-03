@@ -14,12 +14,17 @@ public sealed class CompositionEngine : ICompositionEngine
 
     /// <summary>
     /// Rules: (keywords that must match, component pipeline). First matching rule wins.
+    /// Phase D: test-runner pipeline preferred when test-discovery/test-execution/result-aggregation available.
     /// </summary>
     private static readonly (string[] Keywords, string[] Pipeline)[] Rules =
     [
         (["test", "failure", "debug"], ["perception", "code-analysis", "validation", "reporting"]),
+        (["test", "nexo"], ["test-discovery", "test-execution", "result-aggregation"]),
         (["test", "nexo"], ["perception", "validation", "reporting"]),
+        (["test", "cli"], ["test-discovery", "test-execution", "result-aggregation"]),
         (["test", "cli"], ["perception", "validation", "reporting"]),
+        (["test", "suite"], ["test-discovery", "test-execution", "result-aggregation"]),
+        (["test"], ["test-discovery", "test-execution", "result-aggregation"]),
         (["test"], ["perception", "validation", "reporting"]),
         (["analyze", "code"], ["code-analysis", "validation", "reporting"]),
         (["analyze", "architecture"], ["code-analysis", "validation", "reporting"]),

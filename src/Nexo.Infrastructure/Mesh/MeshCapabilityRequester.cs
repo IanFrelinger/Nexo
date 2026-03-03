@@ -14,6 +14,7 @@ public sealed class MeshCapabilityRequester : ICapabilityRequester
 {
     private readonly ICapabilityAdvertisement _advertisement;
     private readonly ILocalTransport _transport;
+    private readonly string _requesterPeerId;
     private readonly ILogger<MeshCapabilityRequester>? _logger;
     private readonly TimeSpan _receiveTimeout;
     private readonly int _pollIntervalMs;
@@ -21,12 +22,14 @@ public sealed class MeshCapabilityRequester : ICapabilityRequester
     public MeshCapabilityRequester(
         ICapabilityAdvertisement advertisement,
         ILocalTransport transport,
+        string requesterPeerId,
         ILogger<MeshCapabilityRequester>? logger = null,
         TimeSpan? receiveTimeout = null,
         int pollIntervalMs = 100)
     {
         _advertisement = advertisement ?? throw new ArgumentNullException(nameof(advertisement));
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _requesterPeerId = requesterPeerId ?? throw new ArgumentNullException(nameof(requesterPeerId));
         _logger = logger;
         _receiveTimeout = receiveTimeout ?? TimeSpan.FromSeconds(3);
         _pollIntervalMs = Math.Max(50, pollIntervalMs);
@@ -45,7 +48,7 @@ public sealed class MeshCapabilityRequester : ICapabilityRequester
         }
 
         var requestId = Guid.NewGuid().ToString("N");
-        var request = new { capability, format = preferredFormat.ToString(), requestId };
+        var request = new { capability, format = preferredFormat.ToString(), requestId, requesterId = _requesterPeerId };
         var requestBytes = JsonSerializer.SerializeToUtf8Bytes(request);
 
         foreach (var peer in peers)

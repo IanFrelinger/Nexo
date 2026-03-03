@@ -3,11 +3,13 @@ using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
+using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.Rollback;
 
 namespace Nexo.Infrastructure;
 
@@ -66,6 +68,7 @@ public static class AdaptationServiceCollectionExtensions
         services.AddSingleton<INewBrickGenerator>(sp => new NewBrickGenerator(sp.GetService<IAdaptationLog>()));
         services.AddSingleton<INewBehaviorAssembler, NewBehaviorAssembler>();
         services.AddSingleton<ISourceCodeFixer, EmptyCatchCodeFixer>();
+        services.AddSingleton<IImmutableCoreRegistry, ImmutableCoreRegistry>();
 
         // Block 4: inheritance system
         var adaptationDbPath = !string.IsNullOrEmpty(patternStorePath)
@@ -84,6 +87,12 @@ public static class AdaptationServiceCollectionExtensions
             : Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-adaptation-audit.db");
         services.AddSingleton<IAdaptationAuditLog>(sp => new LiteDbAdaptationAuditLog(auditDbPath));
         services.AddSingleton<IUserFeedbackCapture, CliUserFeedbackCapture>();
+
+        // Rollback infrastructure (P0.3)
+        var snapshotPath = !string.IsNullOrEmpty(patternStorePath)
+            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "nexo-snapshots")
+            : Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-snapshots");
+        services.AddRollbackInfrastructure(snapshotPath);
 
         return services;
     }
