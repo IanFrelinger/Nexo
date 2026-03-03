@@ -62,4 +62,11 @@ public sealed class Phases59CliE2ETests : IDisposable
         var (code, _, _) = await CliRunner.RunAsync(_repoRoot, "mesh --advertise");
         Assert.Equal(0, code);
     }
+
+    [Fact]
+    public async Task MeshCommand_Sync_Exits()
+    {
+        var (code, _, _) = await CliRunner.RunAsync(_repoRoot, "mesh sync");
+        Assert.Equal(0, code);
+    }
 }

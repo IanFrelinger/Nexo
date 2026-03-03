@@ -44,6 +44,7 @@ public static class MeshServiceCollectionExtensions
             var logger = sp.GetService<ILogger<MeshCapabilityFulfiller>>();
             return new MeshCapabilityFulfiller(transport, logger);
         });
+        services.AddSingleton<IArtifactNegotiator, ArtifactNegotiator>();
         return services;
     }
 }

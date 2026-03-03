@@ -2,14 +2,18 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Infrastructure;
+using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Analysis;
 using Nexo.Infrastructure.Mesh;
 
 namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// Block 9: Instance discovery and capability mesh.
+/// P2.3: nexo mesh sync pulls and validates shared adaptations before adoption.
 /// </summary>
 public sealed class MeshCommand : Command
 {
@@ -19,9 +23,13 @@ public sealed class MeshCommand : Command
         var advertiseOpt = new Option<bool>("--advertise", () => false, "Advertise this instance's capabilities");
         var capabilityOpt = new Option<string?>("--capability", "Find peers with capability");
 
+        var syncCmd = new Command("sync", "Pull shared adaptations from trusted peers and adopt after validation (P2.3)");
+        syncCmd.SetHandler(async (InvocationContext ctx) => await ExecuteSyncAsync());
+
         AddOption(discoverOpt);
         AddOption(advertiseOpt);
         AddOption(capabilityOpt);
+        AddCommand(syncCmd);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -30,6 +38,29 @@ public sealed class MeshCommand : Command
             var capability = ctx.ParseResult.GetValueForOption(capabilityOpt);
             await ExecuteAsync(discover, advertise, capability);
         });
+    }
+
+    private static async Task ExecuteSyncAsync()
+    {
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole())
+            .AddCodeAnalyzers()
+            .AddAdaptationInfrastructure() // Uses repo root for adaptation db
+            .AddSharedAdaptationCache()
+            .BuildServiceProvider();
+
+        var sync = services.GetRequiredService<ISharedAdaptationSync>();
+        var entries = await sync.PullAsync().ConfigureAwait(false);
+        Console.WriteLine($"Pulled {entries.Count} shared adaptation(s).");
+
+        var adopted = 0;
+        foreach (var entry in entries)
+        {
+            var ok = await sync.ValidateAndAdoptAsync(entry).ConfigureAwait(false);
+            if (ok) adopted++;
+        }
+        Console.WriteLine($"Adopted {adopted}/{entries.Count}.");
+        Environment.ExitCode = 0;
     }
 
     private static async Task ExecuteAsync(bool discover, bool advertise, string? capability)

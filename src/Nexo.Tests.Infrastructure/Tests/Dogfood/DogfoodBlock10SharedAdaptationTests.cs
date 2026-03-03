@@ -1,0 +1,94 @@
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Adaptation.Models;
+using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Application.Analysis.Models;
+using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Paths;
+using Nexo.Infrastructure;
+using Nexo.Infrastructure.Adaptation;
+using Nexo.Tests.Application.Helpers;
+using Xunit;
+
+namespace Nexo.Tests.Infrastructure.Tests.Dogfood;
+
+/// <summary>
+/// Block 10: Shared adaptation cache dogfood.
+/// Verifies broadcast and pull work in Nexo repo context.
+/// </summary>
+[Collection("Integration")]
+[Trait("Category", "Integration")]
+[Trait("Category", "Dogfood")]
+public sealed class DogfoodBlock10SharedAdaptationTests : IDisposable
+{
+    private readonly string _tempDir;
+    private readonly string _sharedPath;
+    private readonly string _storePath;
+    private readonly IDisposable _tempDirCleanup;
+
+    public DogfoodBlock10SharedAdaptationTests()
+    {
+        (_tempDir, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-dogfood-block10");
+        _sharedPath = Path.Combine(_tempDir, "shared");
+        _storePath = Path.Combine(_tempDir, "adapt.db");
+    }
+
+    public void Dispose() => _tempDirCleanup.Dispose();
+
+    [Fact(Timeout = 30000)]
+    public async Task ImproveFlow_OnPromotion_BroadcastsToSharedStore()
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var slnPath = Path.Combine(repoRoot, "Nexo.sln");
+        if (!File.Exists(slnPath))
+            return;
+
+        var mockRegression = new StubRegressionTestRunner(allPassed: true);
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .AddAdaptationInfrastructure(_storePath)
+            .AddSelfContextInfrastructure(_storePath)
+            .AddSharedAdaptationCache(_sharedPath, mockRegression)
+            .BuildServiceProvider();
+
+        var broadcaster = services.GetRequiredService<ISharedAdaptationBroadcaster>();
+        var sync = services.GetRequiredService<ISharedAdaptationSync>();
+
+        var record = new AdaptationRecord
+        {
+            Id = "dogfood-broadcast-test",
+            Timestamp = DateTimeOffset.UtcNow,
+            BrickId = "test.brick",
+            FailureType = "EmptyCatch",
+            FixApplied = AdaptationFixType.Source,
+            FilePath = "src/Nexo.Demo.Bricks/SomeFile.cs",
+            RegressionPassed = true,
+            Promoted = true,
+            Message = "Dogfood broadcast test",
+        };
+        var entry = new SharedAdaptationEntry
+        {
+            Id = record.Id,
+            Record = record,
+            Files = new Dictionary<string, byte[]> { ["src/Nexo.Demo.Bricks/SomeFile.cs"] = System.Text.Encoding.UTF8.GetBytes("// test") },
+            BroadcastAt = record.Timestamp,
+        };
+
+        await broadcaster.BroadcastAsync(entry);
+
+        var pulled = await sync.PullAsync();
+        pulled.Should().HaveCount(1);
+        pulled[0].Id.Should().Be(entry.Id);
+    }
+
+    private sealed class StubRegressionTestRunner : IRegressionTestRunner
+    {
+        private readonly bool _allPassed;
+
+        public StubRegressionTestRunner(bool allPassed) => _allPassed = allPassed;
+
+        public Task<RegressionTestResult> RunAsync(string projectOrSolutionPath, string? filter = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new RegressionTestResult { AllPassed = _allPassed, PassedCount = 1, FailedCount = 0, Summary = "Stub" });
+    }
+}

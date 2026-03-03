@@ -142,8 +142,12 @@ public static class NexoServiceCollectionExtensions
                 sp.GetRequiredService<ILoopKernel>(),
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>(),
                 sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>()));
-        services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(_ =>
-            new Nexo.Infrastructure.Execution.AgentRegistry(Array.Empty<Nexo.Core.Domain.Agents.AgentCard>()));
+        services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(sp =>
+        {
+            var sdkOptions = sp.GetService<Nexo.Hosting.Sdk.NexoSdkOptions>();
+            var cards = sdkOptions?.AgentCards?.ToList() ?? new List<Nexo.Core.Domain.Agents.AgentCard>();
+            return new Nexo.Infrastructure.Execution.AgentRegistry(cards);
+        });
         services.AddScoped<Nexo.Core.Application.Workflows.WorkflowExecutor>(sp =>
             new Nexo.Core.Application.Workflows.WorkflowExecutor(
                 sp.GetRequiredService<Nexo.Core.Domain.Execution.IAgentRegistry>(),

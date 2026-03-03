@@ -72,7 +72,8 @@ public sealed class ImproveCommand : Command
             .AddCodeAnalyzers()
             .AddAdaptationInfrastructure(storePath)
             .AddAdaptationBricks(typeof(OWASPScannerBrick))
-            .AddSelfContextInfrastructure(storePath);
+            .AddSelfContextInfrastructure(storePath)
+            .AddSharedAdaptationCache();
 
         if (self)
             serviceCollection.AddSelfImprovementLoop(5);
@@ -108,6 +109,7 @@ public sealed class ImproveCommand : Command
         var rollbackManager = services.GetRequiredService<IRollbackManager>();
         var immutableCoreRegistry = services.GetRequiredService<IImmutableCoreRegistry>();
         var documentationUpdater = services.GetService<Nexo.Core.Application.SelfContext.Ports.IDocumentationUpdater>();
+        var sharedBroadcaster = services.GetService<ISharedAdaptationBroadcaster>();
         var userFeedback = services.GetRequiredService<IUserFeedbackCapture>();
         var executionTracer = services.GetRequiredService<IExecutionTracer>();
         var auditLog = services.GetRequiredService<IAdaptationAuditLog>();
@@ -228,6 +230,27 @@ public sealed class ImproveCommand : Command
                         {
                             try { await documentationUpdater.UpdateForAdaptationAsync(record.Id).ConfigureAwait(false); }
                             catch (Exception ex) { logger.LogWarning(ex, "Documentation update failed for {Id}", record.Id); }
+                        }
+                        if (sharedBroadcaster != null && !string.IsNullOrEmpty(record.FilePath))
+                        {
+                            try
+                            {
+                                var fullPath = Path.IsPathRooted(record.FilePath) ? record.FilePath : Path.Combine(repoRoot, record.FilePath);
+                                if (File.Exists(fullPath))
+                                {
+                                    var relPath = Path.GetRelativePath(repoRoot, fullPath).Replace('\\', '/');
+                                    var content = await File.ReadAllBytesAsync(fullPath).ConfigureAwait(false);
+                                    var entry = new Nexo.Core.Application.Adaptation.Models.SharedAdaptationEntry
+                                    {
+                                        Id = record.Id,
+                                        Record = record,
+                                        Files = new Dictionary<string, byte[]> { [relPath] = content },
+                                        BroadcastAt = record.Timestamp,
+                                    };
+                                    await sharedBroadcaster.BroadcastAsync(entry).ConfigureAwait(false);
+                                }
+                            }
+                            catch (Exception ex) { logger.LogWarning(ex, "Shared adaptation broadcast failed for {Id}", record.Id); }
                         }
                         await auditLog.LogAsync(new AdaptationAuditEntry
                         {
