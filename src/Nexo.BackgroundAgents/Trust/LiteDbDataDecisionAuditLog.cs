@@ -80,6 +80,33 @@ public sealed class LiteDbDataDecisionAuditLog : IDataDecisionAuditLog, ISanitiz
     }
 
     /// <inheritdoc />
+    public void LogScopeChainRejection(IReadOnlyList<string> chainIds, int rejectedStep, string? resolvedPath, string reason)
+    {
+        Append(new DataDecisionAuditEntry
+        {
+            EventType = "ScopeChainRejected",
+            Timestamp = DateTimeOffset.UtcNow,
+            ChangeType = rejectedStep.ToString(),
+            SourceId = string.Join(";", chainIds),
+            ProjectPath = resolvedPath,
+            Reason = reason,
+        });
+    }
+
+    /// <inheritdoc />
+    public void LogAmbientAction(string agentId, string summary, int toolCallsExecuted)
+    {
+        Append(new DataDecisionAuditEntry
+        {
+            EventType = "AmbientAction",
+            Timestamp = DateTimeOffset.UtcNow,
+            SourceId = agentId,
+            Reason = summary,
+            ChangeType = toolCallsExecuted.ToString(),
+        });
+    }
+
+    /// <inheritdoc />
     IReadOnlyList<SanitizationAuditEntry> ISanitizationAuditLog.GetRecent(int maxCount, DateTimeOffset? since)
     {
         var all = GetRecent(maxCount * 3, since, null, "Sanitization");
@@ -187,6 +214,20 @@ public sealed class LiteDbDataDecisionAuditLog : IDataDecisionAuditLog, ISanitiz
                 sb.AppendLine($"- **DataType:** {e.DataType} | **Level:** {e.LevelName}");
                 if (!string.IsNullOrEmpty(e.Reason))
                     sb.AppendLine($"- **Reason:** {e.Reason}");
+            }
+            else if (e.EventType == "ScopeChainRejected")
+            {
+                sb.AppendLine($"- **RejectedStep:** {e.ChangeType} | **Path:** {e.ProjectPath}");
+                if (!string.IsNullOrEmpty(e.SourceId))
+                    sb.AppendLine($"- **Chain:** {e.SourceId}");
+                if (!string.IsNullOrEmpty(e.Reason))
+                    sb.AppendLine($"- **Reason:** {e.Reason}");
+            }
+            else if (e.EventType == "AmbientAction")
+            {
+                sb.AppendLine($"- **Agent:** {e.SourceId} | **ToolCalls:** {e.ChangeType}");
+                if (!string.IsNullOrEmpty(e.Reason))
+                    sb.AppendLine($"- **Summary:** {e.Reason}");
             }
 
             sb.AppendLine();

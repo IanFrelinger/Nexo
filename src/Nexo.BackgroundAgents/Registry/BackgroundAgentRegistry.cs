@@ -7,6 +7,7 @@ using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Testing;
+using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.BackgroundAgents.Registry;
 
@@ -91,6 +92,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly ITestRunRunner? _testRunRunner;
     private readonly ISelfExtendRunner? _selfExtendRunner;
     private readonly IAggressivenessModeStore? _modeStore;
+    private readonly IApprovalGate? _approvalGate;
+    private readonly IDataDecisionAuditLog? _auditLog;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BackgroundAgentRegistry"/> class.
@@ -103,6 +106,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     /// <param name="testRunRunner">Optional runner for tester agents (dog-food: run framework tests).</param>
     /// <param name="selfExtendRunner">Optional runner for extender agents (dog-food: LLM-driven code/doc changes within policy).</param>
     /// <param name="modeStore">Optional aggressiveness mode store. When provided, Passive mode skips extender execution.</param>
+    /// <param name="approvalGate">Optional approval gate for SemiActive mode. When provided and mode is SemiActive, execution requires approval.</param>
+    /// <param name="auditLog">Optional audit log. When provided and mode is Ambient, actions are logged here (no user notification).</param>
     public BackgroundAgentRegistry(
         IAgentScheduler scheduler,
         ILogger<BackgroundAgentRegistry>? logger = null,
@@ -110,7 +115,9 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         ICodeAnalysisRunner? codeAnalysisRunner = null,
         ITestRunRunner? testRunRunner = null,
         ISelfExtendRunner? selfExtendRunner = null,
-        IAggressivenessModeStore? modeStore = null)
+        IAggressivenessModeStore? modeStore = null,
+        IApprovalGate? approvalGate = null,
+        IDataDecisionAuditLog? auditLog = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _logger = logger;
@@ -119,6 +126,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _testRunRunner = testRunRunner;
         _selfExtendRunner = selfExtendRunner;
         _modeStore = modeStore;
+        _approvalGate = approvalGate;
+        _auditLog = auditLog;
     }
 
     /// <summary>
@@ -293,10 +302,40 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                     return;
                 }
 
+                if (mode == BackgroundAgentAggressivenessMode.SemiActive)
+                {
+                    var approvalResult = _approvalGate != null
+                        ? await _approvalGate.RequestApprovalAsync(
+                            $"Extender agent {agentId} requests approval to run self-extend cycle.",
+                            TimeSpan.FromSeconds(30),
+                            cancellationToken).ConfigureAwait(false)
+                        : ApprovalResult.Denied;
+                    if (approvalResult != ApprovalResult.Approved)
+                    {
+                        var reason = approvalResult == ApprovalResult.TimedOut ? "timeout" : "denied";
+                        _logStore?.Append(agentId, "Info", $"SemiActive mode: execution skipped ({reason}).");
+                        _logger?.LogDebug("Background agent {AgentId} in SemiActive mode: extender skipped ({Reason})", agentId, reason);
+                        instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                        instance.SuccessCount++;
+                        return;
+                    }
+                }
+
                 var result = await _selfExtendRunner.RunAsync(repoRoot, cancellationToken).ConfigureAwait(false);
-                _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
-                    $"Self-extend: {result.Summary} (executed: {result.ToolCallsExecuted}, denied: {result.ToolCallsDenied})");
-                _logger?.LogDebug("Background agent {AgentId} self-extend: {Summary}", agentId, result.Summary);
+
+                if (mode == BackgroundAgentAggressivenessMode.Ambient)
+                {
+                    _auditLog?.LogAmbientAction(agentId, result.Summary, result.ToolCallsExecuted);
+                    _logStore?.Append(agentId, "Info", $"Ambient: executed silently ({result.ToolCallsExecuted} tool calls).");
+                    _logger?.LogDebug("Background agent {AgentId} in Ambient mode: executed silently", agentId);
+                }
+                else
+                {
+                    _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
+                        $"Self-extend: {result.Summary} (executed: {result.ToolCallsExecuted}, denied: {result.ToolCallsDenied})");
+                    _logger?.LogDebug("Background agent {AgentId} self-extend: {Summary}", agentId, result.Summary);
+                }
+
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");

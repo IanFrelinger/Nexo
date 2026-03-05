@@ -58,6 +58,10 @@ test-portable:
 test-multi-env:
 	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --all
 
+# Air-gapped multi-env: run containers with --network none (no egress). Validates air-gapped deployment.
+test-multi-env-no-network:
+	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --all --no-network
+
 # Linear adaptation tests across all Docker environments
 test-adaptation-all-envs:
 	dotnet run --project src/Nexo.CLI -- test multi-env --suite adaptation --all

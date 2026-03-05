@@ -16,6 +16,7 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
     {
         SeedFromCodeAnalysis();
         SeedTestRunnerComponents();
+        SeedPlaceholderComponents();
     }
 
     /// <inheritdoc />
@@ -82,5 +83,28 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Core.Application.ParallelTesting.Ports.IResultCollector",
             Version = "1.0.0",
         });
+    }
+
+    /// <summary>
+    /// Placeholder descriptors for North Star component families (Perception, Action, Reasoning, Memory, Reporting).
+    /// Enables composition engine to discover required capabilities. ImplementationType TBD until components exist.
+    /// See docs/SeedComponentLibraryAudit.md.
+    /// </summary>
+    private void SeedPlaceholderComponents()
+    {
+        // Perception
+        Register(new ComponentDescriptor { Id = "vision-input", Capability = "vision-input", ImplementationType = "TBD", Version = "0.0.0" });
+        Register(new ComponentDescriptor { Id = "audio-input", Capability = "audio-input", ImplementationType = "TBD", Version = "0.0.0" });
+        Register(new ComponentDescriptor { Id = "data-parsing", Capability = "data-parsing", ImplementationType = "TBD", Version = "0.0.0" });
+
+        // Action
+        Register(new ComponentDescriptor { Id = "ui-interaction", Capability = "ui-interaction", ImplementationType = "TBD", Version = "0.0.0" });
+        Register(new ComponentDescriptor { Id = "process-control", Capability = "process-control", ImplementationType = "TBD", Version = "0.0.0" });
+
+        // Memory
+        Register(new ComponentDescriptor { Id = "episodic-memory", Capability = "episodic-memory", ImplementationType = "TBD", Version = "0.0.0" });
+
+        // Reporting
+        Register(new ComponentDescriptor { Id = "suggestion-surface", Capability = "suggestion-surface", ImplementationType = "TBD", Version = "0.0.0" });
     }
 }

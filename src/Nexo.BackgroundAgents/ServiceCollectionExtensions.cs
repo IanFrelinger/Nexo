@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IBackgroundAgentLogStore, InMemoryAgentLogStore>();
         services.TryAddSingleton<IScheduleExecutor, ScheduleExecutor>();
         services.AddSingleton<IAgentScheduler, AgentScheduler>();
+        services.TryAddSingleton<IApprovalGate, NoApprovalGate>();
         services.AddSingleton<IBackgroundAgentRegistry>(sp =>
         {
             var scheduler = sp.GetRequiredService<IAgentScheduler>();
@@ -47,7 +48,9 @@ public static class ServiceCollectionExtensions
             var testRunRunner = sp.GetService<ITestRunRunner>();
             var selfExtendRunner = sp.GetService<ISelfExtendRunner>();
             var modeStore = sp.GetService<IAggressivenessModeStore>();
-            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, modeStore);
+            var approvalGate = sp.GetService<IApprovalGate>();
+            var auditLog = sp.GetService<IDataDecisionAuditLog>();
+            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, modeStore, approvalGate, auditLog);
         });
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();

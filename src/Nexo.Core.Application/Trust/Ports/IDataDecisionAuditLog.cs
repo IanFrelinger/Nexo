@@ -17,6 +17,19 @@ public interface IDataDecisionAuditLog
     /// <summary>Log a classification event.</summary>
     void LogClassification(string dataType, string levelName, string? reason);
 
+    /// <summary>Log a scope chain rejection (adversarial escape blocked).</summary>
+    /// <param name="chainIds">Adaptation/call IDs in the chain.</param>
+    /// <param name="rejectedStep">Index at which boundary was crossed.</param>
+    /// <param name="resolvedPath">Path that triggered rejection.</param>
+    /// <param name="reason">Rejection reason.</param>
+    void LogScopeChainRejection(IReadOnlyList<string> chainIds, int rejectedStep, string? resolvedPath, string reason);
+
+    /// <summary>Log an Ambient mode action (silent execution, no user notification).</summary>
+    /// <param name="agentId">Background agent ID.</param>
+    /// <param name="summary">Action summary.</param>
+    /// <param name="toolCallsExecuted">Number of tool calls executed.</param>
+    void LogAmbientAction(string agentId, string summary, int toolCallsExecuted);
+
     /// <summary>Get recent audit entries (all types).</summary>
     IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);
 

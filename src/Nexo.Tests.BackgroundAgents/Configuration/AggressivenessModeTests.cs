@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,8 @@ using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Scheduling;
+using Nexo.Core.Application.Trust.Models;
+using Nexo.Core.Application.Trust.Ports;
 using Nexo.Orchestration.Agents;
 using Xunit;
 
@@ -141,6 +144,304 @@ public sealed class AggressivenessModeTests
         modeStore.GetMode().Should().Be(BackgroundAgentAggressivenessMode.Active);
     }
 
+    [Fact]
+    public async Task BackgroundAgent_SemiActiveMode_WithoutApproval_SkipsExecution()
+    {
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.SemiActive);
+
+        var runCount = 0;
+        var mockExtend = new MockSelfExtendRunner(() => runCount++);
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BackgroundAgents:Agents:0:Id"] = "extender-semiactive",
+                ["BackgroundAgents:Agents:0:Name"] = "Extender",
+                ["BackgroundAgents:Agents:0:Role"] = "extender",
+                ["BackgroundAgents:Agents:0:Enabled"] = "true",
+                ["BackgroundAgents:Agents:0:MaxDataSensitivity"] = "Public",
+                ["BackgroundAgents:Agents:0:Commands:0"] = "extend",
+                ["BackgroundAgents:Agents:0:Parameters:RepoRoot"] = Environment.CurrentDirectory,
+                ["BackgroundAgents:Agents:0:Schedule:Type"] = "Interval",
+                ["BackgroundAgents:Agents:0:Schedule:Interval"] = "00:01:00",
+            })
+            .Build();
+
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .BuildServiceProvider();
+
+        var sensitivityRegistry = new DataSensitivityRegistry();
+        var configLoader = new BackgroundAgentConfigLoader(config, sensitivityRegistry, null);
+        var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
+        var logStore = new InMemoryAgentLogStore();
+        var scheduleExecutor = new ScheduleExecutor();
+        var scheduler = new AgentScheduler(scheduleExecutor, null);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate: null);
+
+        var configs = await configLoader.LoadAsync(default);
+        var agentConfig = configs[0];
+        var spec = specBuilder.BuildSpec(agentConfig);
+        var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
+        await registry.RegisterAsync(agent, agentConfig, default);
+
+        await registry.ExecuteOnceAsync("extender-semiactive", default);
+
+        runCount.Should().Be(0, "SemiActive without approval must skip extender execution");
+        var logs = logStore.GetRecent("extender-semiactive", 20, null, null);
+        logs.Should().Contain(l => l.Message.Contains("SemiActive") || l.Message.Contains("denied") || l.Message.Contains("no approval"));
+    }
+
+    [Fact]
+    public async Task BackgroundAgent_SemiActiveMode_SkipsAction_OnDenial()
+    {
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.SemiActive);
+
+        var runCount = 0;
+        var mockExtend = new MockSelfExtendRunner(() => runCount++);
+        var approvalGate = new DenyApprovalGate();
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BackgroundAgents:Agents:0:Id"] = "extender-semiactive-denied",
+                ["BackgroundAgents:Agents:0:Name"] = "Extender",
+                ["BackgroundAgents:Agents:0:Role"] = "extender",
+                ["BackgroundAgents:Agents:0:Enabled"] = "true",
+                ["BackgroundAgents:Agents:0:MaxDataSensitivity"] = "Public",
+                ["BackgroundAgents:Agents:0:Commands:0"] = "extend",
+                ["BackgroundAgents:Agents:0:Parameters:RepoRoot"] = Environment.CurrentDirectory,
+                ["BackgroundAgents:Agents:0:Schedule:Type"] = "Interval",
+                ["BackgroundAgents:Agents:0:Schedule:Interval"] = "00:01:00",
+            })
+            .Build();
+
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .BuildServiceProvider();
+
+        var sensitivityRegistry = new DataSensitivityRegistry();
+        var configLoader = new BackgroundAgentConfigLoader(config, sensitivityRegistry, null);
+        var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
+        var logStore = new InMemoryAgentLogStore();
+        var scheduleExecutor = new ScheduleExecutor();
+        var scheduler = new AgentScheduler(scheduleExecutor, null);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate);
+
+        var configs = await configLoader.LoadAsync(default);
+        var agentConfig = configs[0];
+        var spec = specBuilder.BuildSpec(agentConfig);
+        var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
+        await registry.RegisterAsync(agent, agentConfig, default);
+
+        await registry.ExecuteOnceAsync("extender-semiactive-denied", default);
+
+        runCount.Should().Be(0, "SemiActive with denial must skip extender execution");
+        var logs = logStore.GetRecent("extender-semiactive-denied", 20, null, null);
+        logs.Should().Contain(l => l.Message.Contains("denied"));
+    }
+
+    [Fact]
+    public async Task BackgroundAgent_SemiActiveMode_SkipsAction_OnTimeout_AndLogs()
+    {
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.SemiActive);
+
+        var runCount = 0;
+        var mockExtend = new MockSelfExtendRunner(() => runCount++);
+        var approvalGate = new TimeoutApprovalGate();
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BackgroundAgents:Agents:0:Id"] = "extender-semiactive-timeout",
+                ["BackgroundAgents:Agents:0:Name"] = "Extender",
+                ["BackgroundAgents:Agents:0:Role"] = "extender",
+                ["BackgroundAgents:Agents:0:Enabled"] = "true",
+                ["BackgroundAgents:Agents:0:MaxDataSensitivity"] = "Public",
+                ["BackgroundAgents:Agents:0:Commands:0"] = "extend",
+                ["BackgroundAgents:Agents:0:Parameters:RepoRoot"] = Environment.CurrentDirectory,
+                ["BackgroundAgents:Agents:0:Schedule:Type"] = "Interval",
+                ["BackgroundAgents:Agents:0:Schedule:Interval"] = "00:01:00",
+            })
+            .Build();
+
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .BuildServiceProvider();
+
+        var sensitivityRegistry = new DataSensitivityRegistry();
+        var configLoader = new BackgroundAgentConfigLoader(config, sensitivityRegistry, null);
+        var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
+        var logStore = new InMemoryAgentLogStore();
+        var scheduleExecutor = new ScheduleExecutor();
+        var scheduler = new AgentScheduler(scheduleExecutor, null);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate);
+
+        var configs = await configLoader.LoadAsync(default);
+        var agentConfig = configs[0];
+        var spec = specBuilder.BuildSpec(agentConfig);
+        var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
+        await registry.RegisterAsync(agent, agentConfig, default);
+
+        await registry.ExecuteOnceAsync("extender-semiactive-timeout", default);
+
+        runCount.Should().Be(0, "SemiActive with timeout must skip extender execution");
+        var logs = logStore.GetRecent("extender-semiactive-timeout", 20, null, null);
+        logs.Should().Contain(l => l.Message.Contains("timeout"));
+    }
+
+    [Fact]
+    public async Task BackgroundAgent_SemiActiveMode_WithApproval_Runs()
+    {
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.SemiActive);
+
+        var runCount = 0;
+        var mockExtend = new MockSelfExtendRunner(() => runCount++);
+        var approvalGate = new AlwaysApprovalGate();
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BackgroundAgents:Agents:0:Id"] = "extender-semiactive-approved",
+                ["BackgroundAgents:Agents:0:Name"] = "Extender",
+                ["BackgroundAgents:Agents:0:Role"] = "extender",
+                ["BackgroundAgents:Agents:0:Enabled"] = "true",
+                ["BackgroundAgents:Agents:0:MaxDataSensitivity"] = "Public",
+                ["BackgroundAgents:Agents:0:Commands:0"] = "extend",
+                ["BackgroundAgents:Agents:0:Parameters:RepoRoot"] = Environment.CurrentDirectory,
+                ["BackgroundAgents:Agents:0:Schedule:Type"] = "Interval",
+                ["BackgroundAgents:Agents:0:Schedule:Interval"] = "00:01:00",
+            })
+            .Build();
+
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .BuildServiceProvider();
+
+        var sensitivityRegistry = new DataSensitivityRegistry();
+        var configLoader = new BackgroundAgentConfigLoader(config, sensitivityRegistry, null);
+        var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
+        var logStore = new InMemoryAgentLogStore();
+        var scheduleExecutor = new ScheduleExecutor();
+        var scheduler = new AgentScheduler(scheduleExecutor, null);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate);
+
+        var configs = await configLoader.LoadAsync(default);
+        var agentConfig = configs[0];
+        var spec = specBuilder.BuildSpec(agentConfig);
+        var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
+        await registry.RegisterAsync(agent, agentConfig, default);
+
+        await registry.ExecuteOnceAsync("extender-semiactive-approved", default);
+
+        runCount.Should().Be(1, "SemiActive with approval must run extender");
+    }
+
+    [Fact]
+    public async Task BackgroundAgent_AmbientMode_ExtenderRuns_Silently()
+    {
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.Ambient);
+
+        var runCount = 0;
+        var mockExtend = new MockSelfExtendRunner(() => runCount++);
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BackgroundAgents:Agents:0:Id"] = "extender-ambient",
+                ["BackgroundAgents:Agents:0:Name"] = "Extender",
+                ["BackgroundAgents:Agents:0:Role"] = "extender",
+                ["BackgroundAgents:Agents:0:Enabled"] = "true",
+                ["BackgroundAgents:Agents:0:MaxDataSensitivity"] = "Public",
+                ["BackgroundAgents:Agents:0:Commands:0"] = "extend",
+                ["BackgroundAgents:Agents:0:Parameters:RepoRoot"] = Environment.CurrentDirectory,
+                ["BackgroundAgents:Agents:0:Schedule:Type"] = "Interval",
+                ["BackgroundAgents:Agents:0:Schedule:Interval"] = "00:01:00",
+            })
+            .Build();
+
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .BuildServiceProvider();
+
+        var sensitivityRegistry = new DataSensitivityRegistry();
+        var configLoader = new BackgroundAgentConfigLoader(config, sensitivityRegistry, null);
+        var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
+        var logStore = new InMemoryAgentLogStore();
+        var scheduleExecutor = new ScheduleExecutor();
+        var scheduler = new AgentScheduler(scheduleExecutor, null);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore);
+
+        var configs = await configLoader.LoadAsync(default);
+        var agentConfig = configs[0];
+        var spec = specBuilder.BuildSpec(agentConfig);
+        var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
+        await registry.RegisterAsync(agent, agentConfig, default);
+
+        await registry.ExecuteOnceAsync("extender-ambient", default);
+
+        runCount.Should().Be(1, "Ambient mode must run extender");
+        var logs = logStore.GetRecent("extender-ambient", 20, null, null);
+        logs.Should().Contain(l => l.Message.Contains("Ambient") && l.Message.Contains("executed silently"));
+    }
+
+    [Fact]
+    public async Task BackgroundAgent_AmbientMode_LogsAllActions_ToAuditLog()
+    {
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.Ambient);
+
+        var ambientActions = new ConcurrentBag<(string AgentId, string Summary, int ToolCallsExecuted)>();
+        var mockAuditLog = new CaptureAmbientAuditLog(ambientActions);
+        var mockExtend = new MockSelfExtendRunnerWithResult(3, "Applied 3 edits");
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["BackgroundAgents:Agents:0:Id"] = "extender-ambient-audit",
+                ["BackgroundAgents:Agents:0:Name"] = "Extender",
+                ["BackgroundAgents:Agents:0:Role"] = "extender",
+                ["BackgroundAgents:Agents:0:Enabled"] = "true",
+                ["BackgroundAgents:Agents:0:MaxDataSensitivity"] = "Public",
+                ["BackgroundAgents:Agents:0:Commands:0"] = "extend",
+                ["BackgroundAgents:Agents:0:Parameters:RepoRoot"] = Environment.CurrentDirectory,
+                ["BackgroundAgents:Agents:0:Schedule:Type"] = "Interval",
+                ["BackgroundAgents:Agents:0:Schedule:Interval"] = "00:01:00",
+            })
+            .Build();
+
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .BuildServiceProvider();
+
+        var sensitivityRegistry = new DataSensitivityRegistry();
+        var configLoader = new BackgroundAgentConfigLoader(config, sensitivityRegistry, null);
+        var specBuilder = new BackgroundAgentSpecBuilder(sensitivityRegistry, null);
+        var logStore = new InMemoryAgentLogStore();
+        var scheduleExecutor = new ScheduleExecutor();
+        var scheduler = new AgentScheduler(scheduleExecutor, null);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate: null, auditLog: mockAuditLog);
+
+        var configs = await configLoader.LoadAsync(default);
+        var agentConfig = configs[0];
+        var spec = specBuilder.BuildSpec(agentConfig);
+        var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
+        await registry.RegisterAsync(agent, agentConfig, default);
+
+        await registry.ExecuteOnceAsync("extender-ambient-audit", default);
+
+        ambientActions.Should().HaveCount(1);
+        var entry = ambientActions.Single();
+        entry.AgentId.Should().Be("extender-ambient-audit");
+        entry.Summary.Should().Be("Applied 3 edits");
+        entry.ToolCallsExecuted.Should().Be(3);
+    }
+
     private sealed class MockSelfExtendRunner : ISelfExtendRunner
     {
         private readonly Action _onRun;
@@ -152,5 +453,40 @@ public sealed class AggressivenessModeTests
             _onRun();
             return Task.FromResult(new SelfExtendRunResult(true, 0, 0, "Mock"));
         }
+    }
+
+    private sealed class MockSelfExtendRunnerWithResult : ISelfExtendRunner
+    {
+        private readonly int _toolCallsExecuted;
+        private readonly string _summary;
+
+        public MockSelfExtendRunnerWithResult(int toolCallsExecuted, string summary)
+        {
+            _toolCallsExecuted = toolCallsExecuted;
+            _summary = summary;
+        }
+
+        public Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new SelfExtendRunResult(true, _toolCallsExecuted, 0, _summary));
+    }
+
+    private sealed class CaptureAmbientAuditLog : IDataDecisionAuditLog
+    {
+        private readonly ConcurrentBag<(string AgentId, string Summary, int ToolCallsExecuted)> _captured;
+
+        public CaptureAmbientAuditLog(ConcurrentBag<(string, string, int)> captured) => _captured = captured;
+
+        public void LogAmbientAction(string agentId, string summary, int toolCallsExecuted) =>
+            _captured.Add((agentId, summary, toolCallsExecuted));
+
+        public void LogSanitization(SanitizationAuditEntryDto entry) { }
+        public void LogBoundaryChange(BoundaryChangeEvent evt) { }
+        public void LogClassification(string dataType, string levelName, string? reason) { }
+        public void LogScopeChainRejection(IReadOnlyList<string> chainIds, int rejectedStep, string? resolvedPath, string reason) { }
+        public IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null) =>
+            Array.Empty<DataDecisionAuditEntry>();
+        public string ExportToJson(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null) => "{}";
+        public string ExportToMarkdown(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null) => "";
+        public string ExportToCsv(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null) => "";
     }
 }

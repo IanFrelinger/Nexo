@@ -3,15 +3,23 @@ using Nexo.Abstractions;
 namespace Nexo.Runtime;
 
 /// <summary>
+/// Callback invoked when a tool call chain is rejected before any execution.
+/// (chain, rejectedIndex, reason) — enables audit logging with full chain trace.
+/// </summary>
+public delegate void ChainRejectionCallback(IReadOnlyList<ToolCall> chain, int rejectedIndex, string reason);
+
+/// <summary>
 /// Host for executing agents in a simulation step.
-/// 
+///
 /// Responsibilities:
 /// - Executes all registered agents in a single simulation step
+/// - Validates all tool calls before executing any (no partial application)
 /// - Applies policies to approve/reject tool calls
 /// - Invokes approved tool calls via IToolbox
 /// - Merges action deltas from all agents
 /// - Records policy denials in agent memory
-/// 
+/// - Invokes chain rejection callback when a chain is rejected
+///
 /// Used for agent execution in simulation environments.
 /// </summary>
 public sealed class AgentHost
@@ -19,12 +27,14 @@ public sealed class AgentHost
     private readonly IReadOnlyList<IAgent> _agents;
     private readonly IToolbox _tools;
     private readonly PolicyEngine _policies;
+    private readonly ChainRejectionCallback? _onChainRejected;
 
-    public AgentHost(IEnumerable<IAgent> agents, IToolbox tools, PolicyEngine policies)
+    public AgentHost(IEnumerable<IAgent> agents, IToolbox tools, PolicyEngine policies, ChainRejectionCallback? onChainRejected = null)
     {
         _agents = agents.ToList();
         _tools = tools;
         _policies = policies;
+        _onChainRejected = onChainRejected;
     }
 
     public async Task<IActionDelta?> StepAsync(WorldSnapshot s, CancellationToken ct)
@@ -34,17 +44,33 @@ public sealed class AgentHost
         {
             var obs = new AgentObservation(s);
             var actions = await agent.ThinkAsync(obs, _tools, _tools.MemoryFor(agent), ct);
-            foreach (var call in actions.ToolCalls)
+            var calls = actions.ToolCalls.ToList();
+            if (calls.Count == 0) continue;
+
+            // Validate all before executing any — no partial application
+            var rejectedAt = -1;
+            var rejectedReason = "";
+            for (var i = 0; i < calls.Count; i++)
             {
-                if (_policies.Approve(call, s, out var reason))
+                if (!_policies.Approve(calls[i], s, out var reason))
                 {
-                    var result = await _tools.InvokeAsync(call, s, ct);
-                    deltas.Add(_policies.Sign(result.Delta));
+                    rejectedAt = i;
+                    rejectedReason = reason;
+                    break;
                 }
-                else
-                {
-                    _tools.MemoryFor(agent).Write(new EventRecord(DateTimeOffset.UtcNow, agent.Name, "policy.denied", $"{call.Id}: {reason}"));
-                }
+            }
+
+            if (rejectedAt >= 0)
+            {
+                _tools.MemoryFor(agent).Write(new EventRecord(DateTimeOffset.UtcNow, agent.Name, "policy.denied", $"{calls[rejectedAt].Id}: {rejectedReason}"));
+                _onChainRejected?.Invoke(calls, rejectedAt, rejectedReason);
+                continue;
+            }
+
+            foreach (var call in calls)
+            {
+                var result = await _tools.InvokeAsync(call, s, ct);
+                deltas.Add(_policies.Sign(result.Delta));
             }
         }
         return deltas.Count == 0 ? null : ActionDelta.Merge(deltas);
