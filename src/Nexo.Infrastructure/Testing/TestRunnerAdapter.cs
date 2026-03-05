@@ -130,9 +130,6 @@ public class TestRunnerAdapter : ITestRunner
             "Nexo.Tests.Application",
             "Nexo.Tests.Infrastructure",
             "Nexo.Tests.CLI",
-            "Nexo.Tests.GeoTerrain",
-            "Nexo.Tests.GeoVector",
-            "Nexo.Tests.GeoWorld",
             "Nexo.Tests.Orchestration"
         };
         

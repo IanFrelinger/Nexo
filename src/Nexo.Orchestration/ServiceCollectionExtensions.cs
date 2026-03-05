@@ -134,8 +134,7 @@ public static class ServiceCollectionExtensions
 
     /// <summary>
     /// Adds asset generation services to the service collection.
-    /// Note: Real API implementations are registered via extension methods in Nexo.Adapters.Assets.
-    /// Use AddAssetGenerators() from that project to register real implementations.
+    /// Asset adapters (3D models, images, audio) can be added later via extension packages.
     /// </summary>
     public static IServiceCollection AddAssetGenerators(this IServiceCollection services)
     {

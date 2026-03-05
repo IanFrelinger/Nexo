@@ -124,7 +124,7 @@ public class MultiPlatformTestCommand : Command
             // Handle visual validation tests
             if (visual)
             {
-                testProject = testProject ?? "Nexo.Tests.GeospatialVisual";
+                testProject = testProject ?? "Nexo.Tests.Infrastructure";
                 if (platforms.Length == 0)
                 {
                     platforms = new[] { "ubuntu", "alpine", "debian", "android", "ios", "unity" };

@@ -1,4 +1,4 @@
-# Dockerfile for running geospatial caching tests on Debian
+# Dockerfile for running multi-platform tests on Debian
 ARG DOTNET_VERSION=9.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
 
@@ -21,7 +21,7 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 # Copy project files
 COPY . .
 
-# Restore dependencies for test projects (GeospatialE2E omitted: requires GeoTerrainCommand)
+# Restore dependencies for test projects (geospatial tests removed; kernel-only)
 RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj && \
     dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj && \
     dotnet restore src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj

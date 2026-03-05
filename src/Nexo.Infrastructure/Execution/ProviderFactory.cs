@@ -782,25 +782,6 @@ public class ProviderFactory : IProviderFactory
             return JsonSerializer.Serialize(obj);
         }
 
-        // Visual validation for 3D model rendering
-        if (systemPrompt.Contains("3D graphics", StringComparison.OrdinalIgnoreCase) 
-            || systemPrompt.Contains("visual validation", StringComparison.OrdinalIgnoreCase)
-            || userPrompt.Contains("terrain mesh", StringComparison.OrdinalIgnoreCase)
-            || userPrompt.Contains("building mesh", StringComparison.OrdinalIgnoreCase)
-            || userPrompt.Contains("world bundle", StringComparison.OrdinalIgnoreCase))
-        {
-            // For synthetic data (echo provider), assume rendering is correct
-            // Real vision models would analyze the actual screenshot
-            var obj = new
-            {
-                passed = true,
-                reasoning = "Synthetic data (echo provider) generates valid 3D meshes. Visual validation passed for mock data. For production, use vision-capable models (GPT-4o, Claude 3 Opus) to analyze actual screenshots.",
-                issues = Array.Empty<object>(),
-                confidence = 0.85
-            };
-            return JsonSerializer.Serialize(obj);
-        }
-
         if (systemPrompt.Contains("generating a test report summary", StringComparison.OrdinalIgnoreCase))
         {
             var obj = new
