@@ -16,6 +16,7 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
         {
             await TestMetricsNotFound();
             await TestMetricsSucceeds();
+            await TestMetricsOutputIncludesMode();
             return new TestResult
             {
                 Name = nameof(MetricsBackgroundAgentCommandTests),
@@ -77,5 +78,37 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
         var command = new MetricsBackgroundAgentCommand(registry.Object, modeStore, logger.Object);
         var exitCode = await command.ExecuteAsync("agent1", false);
         AssertEqual(0, exitCode);
+    }
+
+    private async Task TestMetricsOutputIncludesMode()
+    {
+        var instance = new BackgroundAgentInstance
+        {
+            Config = new BackgroundAgentConfig { Id = "agent1", Name = "Agent 1", Role = "extender" },
+            ExecutionCount = 1,
+            SuccessCount = 1,
+            FailureCount = 0
+        };
+        var registry = new Mock<IBackgroundAgentRegistry>();
+        registry.Setup(r => r.GetAgent("agent1")).Returns(instance);
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.Ambient);
+        var logger = new Mock<ILogger<MetricsBackgroundAgentCommand>>();
+        var command = new MetricsBackgroundAgentCommand(registry.Object, modeStore, logger.Object);
+
+        using var sw = new StringWriter();
+        var prevOut = Console.Out;
+        try
+        {
+            Console.SetOut(sw);
+            await command.ExecuteAsync("agent1", false);
+        }
+        finally
+        {
+            Console.SetOut(prevOut);
+        }
+
+        var output = sw.ToString();
+        AssertTrue(output.Contains("ambient", StringComparison.OrdinalIgnoreCase), "Metrics output must include current aggressiveness mode");
     }
 }

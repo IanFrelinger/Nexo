@@ -145,6 +145,36 @@ public sealed class AggressivenessModeTests
     }
 
     [Fact]
+    public void BackgroundAgent_ModeSwitch_TakesEffect_WithoutProcessRestart()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "nexo-mode-test-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "agent-mode.json");
+
+            // Simulate CLI process: sets mode
+            var cliStore = new FileBasedAggressivenessModeStore(path);
+            cliStore.SetMode(BackgroundAgentAggressivenessMode.Passive);
+
+            // Simulate background agent process: reads mode (separate store instance = separate process)
+            var agentStore = new FileBasedAggressivenessModeStore(path);
+            agentStore.GetMode().Should().Be(BackgroundAgentAggressivenessMode.Passive);
+
+            // CLI changes mode (user runs "nexo background-agent mode set active")
+            cliStore.SetMode(BackgroundAgentAggressivenessMode.Active);
+
+            // Agent's next cycle reads updated mode without restart
+            agentStore.GetMode().Should().Be(BackgroundAgentAggressivenessMode.Active);
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task BackgroundAgent_SemiActiveMode_WithoutApproval_SkipsExecution()
     {
         var modeStore = new InMemoryAggressivenessModeStore();

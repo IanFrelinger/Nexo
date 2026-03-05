@@ -116,7 +116,7 @@
 - (Resolved: Adversarial scope escape tests added.)
 
 ### P1 — Core Loop
-- **Runtime mode switch:** Whether `nexo background-agent mode set` is respected without restart (mode store is in-memory; restart may be required for persistence).
+- **Runtime mode switch:** RESOLVED. `FileBasedAggressivenessModeStore` persists to ~/.nexo/agent-mode.json. CLI and background agent (separate processes) share the file; mode changes take effect on next execution cycle without restart.
 
 ### P2 — Product Completeness
 - (Resolved: Seed library audited; air-gapped CI workflow added.)

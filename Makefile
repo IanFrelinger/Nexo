@@ -62,6 +62,11 @@ test-multi-env:
 test-multi-env-no-network:
 	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --all --no-network
 
+# Air-gapped CI validation: framework + adaptation suites with zero network egress (ubuntu-8.0).
+test-airgapped:
+	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --env ubuntu-8.0 --no-network
+	dotnet run --project src/Nexo.CLI -- test multi-env --suite adaptation --env ubuntu-8.0 --no-network
+
 # Linear adaptation tests across all Docker environments
 test-adaptation-all-envs:
 	dotnet run --project src/Nexo.CLI -- test multi-env --suite adaptation --all

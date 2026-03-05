@@ -2,7 +2,7 @@
 
 ## Behavior
 
-Adapted from promotion 121525a581034ef78239dbb5b50a90e6.
+Adapted from promotion d4817367cdbb4f408318cdd18fb8c992.
 
 **Last updated:** 2026-03-05
 

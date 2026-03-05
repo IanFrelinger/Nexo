@@ -87,12 +87,19 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
 
     /// <summary>
     /// Placeholder descriptors for North Star component families (Perception, Action, Reasoning, Memory, Reporting).
-    /// Enables composition engine to discover required capabilities. ImplementationType TBD until components exist.
-    /// See docs/SeedComponentLibraryAudit.md.
+    /// Enables composition engine to discover required capabilities. Pipeline IDs (perception, validation, reporting,
+    /// understanding) map to existing or placeholder components so nexo compose does not fail.
+    /// See docs/ComponentLibrary.md and docs/SeedComponentLibraryAudit.md.
     /// </summary>
     private void SeedPlaceholderComponents()
     {
-        // Perception
+        // Pipeline IDs used by CompositionEngine rules (perception, validation, reporting, understanding)
+        Register(new ComponentDescriptor { Id = "perception", Capability = "perception", ImplementationType = "Nexo.Infrastructure.Observation.ObservationContextBrick, Nexo.Infrastructure", Version = "1.0.0" });
+        Register(new ComponentDescriptor { Id = "validation", Capability = "validation", ImplementationType = "Nexo.Infrastructure.Analysis.BrickAnalyzer.RoslynBrickStaticAnalyzer, Nexo.Infrastructure", Version = "1.0.0" });
+        Register(new ComponentDescriptor { Id = "reporting", Capability = "reporting", ImplementationType = "Nexo.Infrastructure.SelfContext.ChangelogGenerator, Nexo.Infrastructure", Version = "1.0.0" });
+        Register(new ComponentDescriptor { Id = "understanding", Capability = "understanding", ImplementationType = "Nexo.Infrastructure.Observation.ObservationContextBrick, Nexo.Infrastructure", Version = "1.0.0" });
+
+        // Perception (specialized)
         Register(new ComponentDescriptor { Id = "vision-input", Capability = "vision-input", ImplementationType = "TBD", Version = "0.0.0" });
         Register(new ComponentDescriptor { Id = "audio-input", Capability = "audio-input", ImplementationType = "TBD", Version = "0.0.0" });
         Register(new ComponentDescriptor { Id = "data-parsing", Capability = "data-parsing", ImplementationType = "TBD", Version = "0.0.0" });

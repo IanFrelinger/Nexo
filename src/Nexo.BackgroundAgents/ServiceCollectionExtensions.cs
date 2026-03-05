@@ -34,7 +34,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddBackgroundAgents(this IServiceCollection services, bool registerHostedService = true)
     {
         services.TryAddSingleton<IDataSensitivityRegistry, DataSensitivityRegistry>();
-        services.TryAddSingleton<IAggressivenessModeStore, InMemoryAggressivenessModeStore>();
+        services.TryAddSingleton<IAggressivenessModeStore>(sp =>
+        {
+            var path = Environment.GetEnvironmentVariable("NEXO_AGENT_MODE_PATH");
+            return string.IsNullOrWhiteSpace(path)
+                ? new FileBasedAggressivenessModeStore()
+                : new FileBasedAggressivenessModeStore(path.Trim());
+        });
         services.TryAddSingleton<IBackgroundAgentLogStore, InMemoryAgentLogStore>();
         services.TryAddSingleton<IScheduleExecutor, ScheduleExecutor>();
         services.AddSingleton<IAgentScheduler, AgentScheduler>();
