@@ -8,7 +8,7 @@ using Nexo.Core.Application.Analysis.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
-using Nexo.Tests.Application.Helpers;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Dogfood;
@@ -20,21 +20,16 @@ namespace Nexo.Tests.Infrastructure.Tests.Dogfood;
 [Collection("Integration")]
 [Trait("Category", "Integration")]
 [Trait("Category", "Dogfood")]
-public sealed class DogfoodBlock10SharedAdaptationTests : IDisposable
+public sealed class DogfoodBlock10SharedAdaptationTests : TempDirTestBase
 {
-    private readonly string _tempDir;
     private readonly string _sharedPath;
     private readonly string _storePath;
-    private readonly IDisposable _tempDirCleanup;
 
-    public DogfoodBlock10SharedAdaptationTests()
+    public DogfoodBlock10SharedAdaptationTests() : base("nexo-dogfood-block10")
     {
-        (_tempDir, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-dogfood-block10");
-        _sharedPath = Path.Combine(_tempDir, "shared");
-        _storePath = Path.Combine(_tempDir, "adapt.db");
+        _sharedPath = Path.Combine(TempDir, "shared");
+        _storePath = Path.Combine(TempDir, "adapt.db");
     }
-
-    public void Dispose() => _tempDirCleanup.Dispose();
 
     [Fact(Timeout = 30000)]
     public async Task ImproveFlow_OnPromotion_BroadcastsToSharedStore()

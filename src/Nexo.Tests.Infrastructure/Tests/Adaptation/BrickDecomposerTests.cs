@@ -15,7 +15,7 @@ public sealed class BrickDecomposerTests
     [Fact]
     public async Task DecomposeAsync_ObservationContextBrick_ReturnsManifest()
     {
-        var storePath = Path.Combine(Path.GetTempPath(), "nexo-adapt-test.db");
+        var storePath = Path.Combine(Path.GetTempPath(), $"nexo-adapt-test-{Guid.NewGuid():N}.db");
         var services = new ServiceCollection()
             .AddAdaptationInfrastructure(storePath)
             .BuildServiceProvider();

@@ -16,13 +16,23 @@ public static class CliRunner
     /// </summary>
     /// <param name="workingDir">Working directory for the process.</param>
     /// <param name="args">CLI arguments (e.g. "adapt --dry-run").</param>
+    /// <param name="envOverrides">Optional environment variable overrides (e.g. for test isolation).</param>
+    /// <param name="timeout">Optional timeout. When provided, cancels and kills the process if it exceeds the limit.</param>
     /// <param name="ct">Optional cancellation token.</param>
     /// <returns>Exit code, stdout, and stderr.</returns>
     public static async Task<(int ExitCode, string StdOut, string StdErr)> RunAsync(
         string workingDir,
         string args,
+        IReadOnlyDictionary<string, string?>? envOverrides = null,
+        TimeSpan? timeout = null,
         CancellationToken ct = default)
     {
+        using var timeoutCts = timeout.HasValue ? CancellationTokenSource.CreateLinkedTokenSource(ct) : null;
+        if (timeout.HasValue && timeoutCts != null)
+            timeoutCts.CancelAfter(timeout.Value);
+
+        var effectiveCt = timeoutCts?.Token ?? ct;
+
         var cliPath = await EnsureCliBuiltAsync(workingDir);
         var fullArgs = $"\"{cliPath}\" {args}";
 
@@ -37,11 +47,32 @@ public static class CliRunner
             CreateNoWindow = true
         };
 
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet process");
-        var stdoutTask = p.StandardOutput.ReadToEndAsync(ct);
-        var stderrTask = p.StandardError.ReadToEndAsync(ct);
+        if (envOverrides != null)
+        {
+            foreach (var (k, v) in envOverrides)
+            {
+                if (v == null)
+                    psi.Environment.Remove(k);
+                else
+                    psi.Environment[k] = v;
+            }
+        }
 
-        await p.WaitForExitAsync(ct);
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet process");
+        var stdoutTask = p.StandardOutput.ReadToEndAsync(effectiveCt);
+        var stderrTask = p.StandardError.ReadToEndAsync(effectiveCt);
+
+        try
+        {
+            await p.WaitForExitAsync(effectiveCt);
+        }
+        catch (OperationCanceledException)
+        {
+            try { p.Kill(entireProcessTree: true); } catch { /* ignore */ }
+            await Task.WhenAny(stdoutTask, stderrTask, Task.Delay(2000));
+            throw;
+        }
+
         var stdout = await stdoutTask;
         var stderr = await stderrTask;
 

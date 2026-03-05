@@ -6,20 +6,21 @@ using Nexo.Bricks.Owasp.Security;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Execution;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
 [Trait("Category", "Adaptation")]
-public sealed class AdaptationBrickRegistrationTests
+public sealed class AdaptationBrickRegistrationTests : TempDirTestBase
 {
+    public AdaptationBrickRegistrationTests() : base("nexo-adapt-reg") { }
+
     [Fact]
     public void AddAdaptationBricks_RegistersBrickInRegistry()
     {
-        var storePath = Path.Combine(Path.GetTempPath(), $"nexo-adapt-reg-{Guid.NewGuid():N}.db");
-        try
-        {
-            var services = new ServiceCollection()
+        var storePath = Path.Combine(TempDir, "adapt.db");
+        var services = new ServiceCollection()
                 .AddLogging(b => b.AddConsole())
                 .AddSingleton<IProviderFactory, ProviderFactory>()
                 .AddAdaptationInfrastructure(storePath)
@@ -31,12 +32,6 @@ public sealed class AdaptationBrickRegistrationTests
 
             brick.Should().NotBeNull();
             brick!.Id.Should().Be("owasp-scanner");
-        }
-        finally
-        {
-            if (File.Exists(storePath))
-                File.Delete(storePath);
-        }
     }
 
     [Fact]

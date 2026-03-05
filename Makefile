@@ -1,4 +1,4 @@
-.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify review-summary package-cli clean-test-artifacts
+.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary package-cli clean-test-artifacts
 
 # Build the solution
 build:
@@ -65,6 +65,11 @@ test-adaptation-all-envs:
 # CI verification: build + checks (C#-driven; replaces scripts/ci-verify.sh)
 ci-verify:
 	dotnet run --project src/Nexo.CLI -- ci verify
+
+# Safe validation: sequential, minimal memory. Run from external terminal to avoid Cursor memory explosion.
+# Equivalent to ci-verify but via shell script; use when ci-verify causes high memory usage.
+validate-safe:
+	@bash scripts/validate-safe.sh
 
 # Dogfood Block 1: verify observation pipeline watches Nexo's own dev workflow
 dogfood-block1:

@@ -15,6 +15,7 @@ public static class ObservationServiceCollectionExtensions
     public static IServiceCollection AddObservationCore(this IServiceCollection services, string patternStorePath)
     {
         services.AddSingleton<IPatternStore>(_ => new LiteDbPatternStore(patternStorePath));
+        services.AddSingleton<IPatternProcessedStore>(_ => new LiteDbPatternProcessedStore(patternStorePath));
         services.AddSingleton<IContextAssembler, ContextAssembler>();
         return services;
     }

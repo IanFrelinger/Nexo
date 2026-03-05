@@ -5,6 +5,7 @@ using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.Trust;
 using Nexo.Tests.Application.Helpers;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
@@ -31,7 +32,7 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
         _tempDirCleanup.Dispose();
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task FullPipeline_FileSystemToPatternStore_StoresPatterns()
     {
         var watchPath = Path.Combine(_tempDir, "src");
@@ -78,7 +79,7 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
         Assert.True(patterns.First(p => p.EventType == "repeated-edits").Frequency >= 3);
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task FullPipeline_WithObservationGate_FiltersEvents()
     {
         var watchPath = Path.Combine(_tempDir, "src");

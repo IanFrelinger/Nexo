@@ -41,6 +41,13 @@ make test
 # Or directly (add --blame-hang-dump-type none to avoid 6GB dumps on hangs)
 dotnet test --blame-hang-timeout 30s --blame-hang-dump-type none
 
+# nexo validate: streams test output by default (non-JSON) so you can see progress
+nexo validate
+
+# nexo dogfood: add --verbose to stream build/test output
+nexo dogfood block2 --verbose
+nexo dogfood all --verbose
+
 # Integration tests only
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
   --filter "Category=Integration" --blame-hang-timeout 60s --blame-hang-dump-type none
@@ -62,6 +69,30 @@ gh workflow run "Cross-Platform Tests" -f scope=adaptation
 # Dogfood (North Star gates)
 make dogfood-all
 ```
+
+## Safe Validation (Avoid Memory Explosion)
+
+Running multiple validation commands in parallel (e.g. from Cursor's integrated terminal) can cause severe memory pressure and freeze the machine. Each `dotnet test` run buffers output and spawns test hosts; running 5+ in parallel can exceed 100GB RAM.
+
+**Never run** `make ci-verify`, `nexo dogfood all`, and multiple `dotnet test` commands **in parallel** from Cursor's integrated terminal.
+
+**Prefer:**
+- Run validation in an external terminal (iTerm, Terminal.app) or CI
+- If using Cursor, run **one command at a time** and wait for completion before starting the next
+
+**Quick sanity check:** `make ci-verify` alone (sequential: build → smoke → validate) is the minimal gate. Run it first; if it passes, consider running `nexo dogfood all` in a separate terminal.
+
+**Lightweight alternative:** `make validate-safe` or `bash scripts/validate-safe.sh` — equivalent to ci-verify but via shell script; use when ci-verify causes high memory usage. Run dogfood separately: `make dogfood-all`.
+
+### Memory Mitigations (Built-in)
+
+Test projects use `xunit.runner.json` to limit parallelism and reduce memory usage:
+
+- **maxParallelThreads: 2** — limits concurrent test execution (default: CPU count)
+- **parallelAlgorithm: conservative** — starts fewer tests at once, lower memory pressure
+- **parallelizeAssembly: false** — prevents cross-assembly parallelism
+
+To further reduce memory (e.g. on very constrained machines), set `parallelizeTestCollections: false` in `xunit.runner.json` to run all tests sequentially within each assembly.
 
 ## Test Artifacts & Cleanup
 

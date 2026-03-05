@@ -27,4 +27,10 @@ public sealed class NexoHostingOptions
     /// Default: false (CLI mode; agents run on-demand).
     /// </summary>
     public bool RegisterBackgroundAgentHostedService { get; set; }
+
+    /// <summary>
+    /// When true, disables the observation pipeline (pattern store, event sources, ObservationPipelineService).
+    /// Default: false — observation pipeline is registered by default. Set true for lightweight/CLI-only hosts.
+    /// </summary>
+    public bool DisableObservationPipeline { get; set; }
 }

@@ -90,6 +90,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly ICodeAnalysisRunner? _codeAnalysisRunner;
     private readonly ITestRunRunner? _testRunRunner;
     private readonly ISelfExtendRunner? _selfExtendRunner;
+    private readonly IAggressivenessModeStore? _modeStore;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BackgroundAgentRegistry"/> class.
@@ -101,13 +102,15 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     /// <param name="codeAnalysisRunner">Optional runner for optimizer agents (dog-food: run analysis on codebase).</param>
     /// <param name="testRunRunner">Optional runner for tester agents (dog-food: run framework tests).</param>
     /// <param name="selfExtendRunner">Optional runner for extender agents (dog-food: LLM-driven code/doc changes within policy).</param>
+    /// <param name="modeStore">Optional aggressiveness mode store. When provided, Passive mode skips extender execution.</param>
     public BackgroundAgentRegistry(
         IAgentScheduler scheduler,
         ILogger<BackgroundAgentRegistry>? logger = null,
         IBackgroundAgentLogStore? logStore = null,
         ICodeAnalysisRunner? codeAnalysisRunner = null,
         ITestRunRunner? testRunRunner = null,
-        ISelfExtendRunner? selfExtendRunner = null)
+        ISelfExtendRunner? selfExtendRunner = null,
+        IAggressivenessModeStore? modeStore = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _logger = logger;
@@ -115,6 +118,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _codeAnalysisRunner = codeAnalysisRunner;
         _testRunRunner = testRunRunner;
         _selfExtendRunner = selfExtendRunner;
+        _modeStore = modeStore;
     }
 
     /// <summary>
@@ -279,6 +283,16 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 _selfExtendRunner != null &&
                 TryGetParameter(instance.Config, new[] { "RepoRoot", "Path" }, out var repoRoot))
             {
+                var mode = _modeStore?.GetMode() ?? BackgroundAgentAggressivenessMode.Active;
+                if (mode == BackgroundAgentAggressivenessMode.Passive)
+                {
+                    _logStore?.Append(agentId, "Info", "Passive mode: skipping extender execution (observe only).");
+                    _logger?.LogDebug("Background agent {AgentId} in Passive mode: extender skipped", agentId);
+                    instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                    instance.SuccessCount++;
+                    return;
+                }
+
                 var result = await _selfExtendRunner.RunAsync(repoRoot, cancellationToken).ConfigureAwait(false);
                 _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
                     $"Self-extend: {result.Summary} (executed: {result.ToolCallsExecuted}, denied: {result.ToolCallsDenied})");

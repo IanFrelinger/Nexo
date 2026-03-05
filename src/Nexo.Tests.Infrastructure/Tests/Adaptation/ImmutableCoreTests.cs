@@ -6,7 +6,7 @@ using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Analysis;
-using Nexo.Tests.Application.Helpers;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
@@ -14,16 +14,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 /// <summary>
 /// P0.4: Proves the immutable core cannot be modified by self-adaptation.
 /// </summary>
-public sealed class ImmutableCoreTests : IDisposable
+public sealed class ImmutableCoreTests : TempDirTestBase
 {
-    private readonly IDisposable _tempDirCleanup;
-
-    public ImmutableCoreTests()
-    {
-        (_, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-immutable-core");
-    }
-
-    public void Dispose() => _tempDirCleanup.Dispose();
+    public ImmutableCoreTests() : base("nexo-immutable-core") { }
 
     [Fact]
     public void AdaptationEngine_CannotModify_ObservationPipeline()
@@ -104,7 +97,7 @@ public sealed class ImmutableCoreTests : IDisposable
         if (!File.Exists(slnPath))
             return;
 
-        var storePath = Path.Combine(Path.GetTempPath(), $"nexo-immutable-{Guid.NewGuid():N}.db");
+        var storePath = Path.Combine(TempDir, "adapt.db");
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
             .AddCodeAnalyzers()

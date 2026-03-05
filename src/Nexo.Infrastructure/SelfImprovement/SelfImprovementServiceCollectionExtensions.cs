@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Core.Application.SelfImprovement.Ports;
 using Nexo.Core.Application.Trust.Ports;
@@ -18,6 +20,8 @@ public static class SelfImprovementServiceCollectionExtensions
     /// <summary>
     /// Registers the self-improvement loop. Requires adaptation, self-context, and trust services.
     /// Adds IAccessBoundary if not already registered.
+    /// When IPatternStore and IPatternProcessedStore are registered (e.g. via AddObservationPipeline),
+    /// the loop also processes observed patterns (repeated-edits, edit-then-build) as improvement triggers.
     /// </summary>
     /// <param name="services">Service collection.</param>
     /// <param name="maxIterationsPerRun">Max adaptations per run.</param>
@@ -28,6 +32,7 @@ public static class SelfImprovementServiceCollectionExtensions
         Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions? holdoutOptions = null)
     {
         services.AddAccessBoundary(null);
+        services.TryAddSingleton<ISelfImprovementMetricsStore>(_ => new FileBasedSelfImprovementMetricsStore());
         services.AddSingleton<ISelfImprovementLoop>(sp => new SelfImprovementLoop(
             sp.GetRequiredService<ITestFailureStore>(),
             sp.GetRequiredService<Nexo.Core.Application.Analysis.Ports.IBrickStaticAnalyzer>(),
@@ -41,7 +46,10 @@ public static class SelfImprovementServiceCollectionExtensions
             sp.GetRequiredService<AdaptationRollbackHelper>(),
             sp.GetService<Microsoft.Extensions.Logging.ILogger<SelfImprovementLoop>>(),
             maxIterationsPerRun,
-            holdoutOptions));
+            holdoutOptions,
+            sp.GetService<IPatternStore>(),
+            sp.GetService<IPatternProcessedStore>(),
+            sp.GetService<ISelfImprovementMetricsStore>()));
         return services;
     }
 }

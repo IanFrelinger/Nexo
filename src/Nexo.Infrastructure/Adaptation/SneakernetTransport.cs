@@ -21,12 +21,19 @@ public sealed class SneakernetTransport : ISneakernetTransport
     }
 
     /// <inheritdoc />
-    public async Task ExportAsync(string outputPath, CancellationToken cancellationToken = default)
+    public async Task ExportAsync(string outputPath, string? componentId = null, CancellationToken cancellationToken = default)
     {
         var entries = await _sync.PullAsync(cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(componentId))
+            entries = entries.Where(e => e.Id.Equals(componentId, StringComparison.OrdinalIgnoreCase)).ToList();
+        var path = outputPath;
+        if (!path.EndsWith(".nxpkg", StringComparison.OrdinalIgnoreCase))
+            path = Path.ChangeExtension(path, ".nxpkg") ?? path + ".nxpkg";
+
         var dto = new SneakernetExportDto
         {
             Version = 1,
+            Format = "nexo-mesh-adaptation",
             ExportedAt = DateTimeOffset.UtcNow,
             EntryCount = entries.Count,
             Entries = entries.Select(e => new SneakernetEntryDto
@@ -39,8 +46,8 @@ public sealed class SneakernetTransport : ISneakernetTransport
             }).ToList()
         };
         var json = JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync(outputPath, json, cancellationToken).ConfigureAwait(false);
-        _logger?.LogInformation("Exported {Count} adaptation(s) to {Path}", entries.Count, outputPath);
+        await File.WriteAllTextAsync(path, json, cancellationToken).ConfigureAwait(false);
+        _logger?.LogInformation("Exported {Count} adaptation(s) to {Path}", entries.Count, path);
     }
 
     /// <inheritdoc />
@@ -79,6 +86,7 @@ public sealed class SneakernetTransport : ISneakernetTransport
     private sealed class SneakernetExportDto
     {
         public int Version { get; set; }
+        public string Format { get; set; } = "nexo-mesh-adaptation";
         public DateTimeOffset ExportedAt { get; set; }
         public int EntryCount { get; set; }
         public List<SneakernetEntryDto> Entries { get; set; } = new();

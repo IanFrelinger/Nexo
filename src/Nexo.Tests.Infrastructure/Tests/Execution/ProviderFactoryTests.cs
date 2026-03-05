@@ -136,15 +136,18 @@ public class ProviderFactoryTests : UnitTestBase
                 new { },
                 CancellationToken.None));
 
-        // openai/azure vision not implemented — throws NotSupportedException.
-        await AssertThrowsAsync<NotSupportedException>(async () =>
-            await factory.ExecuteVisionAsync(
-                "openai",
-                "System",
-                "Describe",
-                Array.Empty<byte>(),
-                new { },
-                CancellationToken.None));
+        // openai vision: when OPENAI_API_KEY not set, fail fast with InvalidOperationException (same as LLM).
+        WithEnv("OPENAI_API_KEY", null, async () =>
+        {
+            await AssertThrowsAsync<InvalidOperationException>(async () =>
+                await factory.ExecuteVisionAsync(
+                    "openai",
+                    "System",
+                    "Describe",
+                    Array.Empty<byte>(),
+                    new { },
+                    CancellationToken.None));
+        }).GetAwaiter().GetResult();
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception

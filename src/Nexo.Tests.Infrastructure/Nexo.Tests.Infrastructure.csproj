@@ -9,6 +9,10 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   
+  <!-- xUnit: limit parallelism to reduce memory usage (Cursor, CI) -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
   <!-- Workaround for Castle.Core net6.0 assembly loading issue on .NET 8.0 -->
   <ItemGroup>
     <Content Include="Nexo.Tests.Infrastructure.runtimeconfig.template.json">

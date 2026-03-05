@@ -3,7 +3,11 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.CLI.Formatting;
+using Nexo.Core.Application.Adaptation.Models;
+using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Configuration.UseCases.GetConfiguration;
+using Nexo.Core.Application.Execution.Models;
+using Nexo.Core.Application.Execution.Ports;
 using System.Text.Json;
 
 namespace Nexo.CLI.Commands;
@@ -15,6 +19,7 @@ namespace Nexo.CLI.Commands;
 /// - Displays current configuration settings (show)
 /// - Validates configuration (validate)
 /// - Exports/imports configuration (export, import)
+/// - Sets step execution mode (set-mode, hot-swap)
 /// - Outputs in human-readable or JSON format
 /// </summary>
 public class ConfigCommand
@@ -23,17 +28,61 @@ public class ConfigCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<ConfigCommand> _logger;
     private readonly BackgroundAgentConfigLoader? _backgroundAgentConfigLoader;
+    private readonly IStepExecutionMode? _stepExecutionMode;
+    private readonly IAdaptationAuditLog? _auditLog;
 
     public ConfigCommand(
         IMediator mediator,
         IConsoleRenderer renderer,
         ILogger<ConfigCommand> logger,
-        BackgroundAgentConfigLoader? backgroundAgentConfigLoader = null)
+        BackgroundAgentConfigLoader? backgroundAgentConfigLoader = null,
+        IStepExecutionMode? stepExecutionMode = null,
+        IAdaptationAuditLog? auditLog = null)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _backgroundAgentConfigLoader = backgroundAgentConfigLoader;
+        _stepExecutionMode = stepExecutionMode;
+        _auditLog = auditLog;
+    }
+
+    /// <summary>
+    /// Sets execution mode for a step (hot-swap). Takes effect on next execution.
+    /// Logs the mode change to the adaptation audit log when available.
+    /// </summary>
+    public async Task<int> SetModeAsync(string stepId, ExecutionMode mode)
+    {
+        if (_stepExecutionMode == null)
+        {
+            _logger.LogWarning("StepExecutionMode not registered; using local store");
+            var store = new Nexo.Infrastructure.Execution.StepExecutionModeStore();
+            var result = await store.SwapAsync(stepId, mode);
+            Console.WriteLine($"Swapped {stepId}: {result.PreviousMode} -> {result.NewMode}");
+            return 0;
+        }
+
+        var result2 = await _stepExecutionMode.SwapAsync(stepId, mode);
+        Console.WriteLine($"Swapped {stepId}: {result2.PreviousMode} -> {result2.NewMode}");
+
+        if (_auditLog != null)
+        {
+            await _auditLog.LogAsync(new AdaptationAuditEntry
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Timestamp = DateTimeOffset.UtcNow,
+                AutonomyLevel = "config",
+                Outcome = "HotSwap",
+                BrickId = stepId,
+                FailureType = "ModeChange",
+                FilePath = null,
+                RegressionPassed = false,
+                Promoted = false,
+                Message = $"Hot-swap: {stepId} {result2.PreviousMode} -> {result2.NewMode}",
+            });
+        }
+
+        return 0;
     }
 
     public async Task<int> ExecuteAsync(bool json, bool verbose)

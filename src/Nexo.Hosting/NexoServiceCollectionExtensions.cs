@@ -8,6 +8,7 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Maintenance;
@@ -74,6 +75,15 @@ public static class NexoServiceCollectionExtensions
         services.AddAdaptationInfrastructure(options.PatternStorePath);
         services.AddBackgroundAgents(registerHostedService: options.RegisterBackgroundAgentHostedService);
         services.AddBackgroundAgentsRAG();
+        if (!options.DisableObservationPipeline)
+        {
+            var repoRoot = RepoPathResolver.FindRepoRoot();
+            services.AddObservationPipeline(opts =>
+            {
+                opts.RepoRoot = repoRoot;
+                opts.StorePath = options.PatternStorePath ?? "nexo-patterns.db";
+            }, registerHostedService: options.RegisterBackgroundAgentHostedService);
+        }
         services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
 
         services.AddSingleton<Nexo.Infrastructure.Execution.Models.HotSwappableModel>(sp =>

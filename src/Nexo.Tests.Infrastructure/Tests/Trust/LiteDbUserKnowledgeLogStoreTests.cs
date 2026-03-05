@@ -1,24 +1,18 @@
 using FluentAssertions;
 using Nexo.Core.Application.Trust.Models;
 using Nexo.Infrastructure.Trust;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
-public class LiteDbUserKnowledgeLogStoreTests : IDisposable
+public class LiteDbUserKnowledgeLogStoreTests : TempDirTestBase
 {
     private readonly string _dbPath;
 
-    public LiteDbUserKnowledgeLogStoreTests()
+    public LiteDbUserKnowledgeLogStoreTests() : base("nexo-knowledge-test")
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"nexo_knowledge_test_{Guid.NewGuid():N}.db");
-    }
-
-    public void Dispose() => Dispose(true);
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing && File.Exists(_dbPath))
-            File.Delete(_dbPath);
+        _dbPath = Path.Combine(TempDir, "store.db");
     }
 
     [Fact]

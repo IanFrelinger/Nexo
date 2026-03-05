@@ -19,13 +19,17 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
     private readonly IRegressionTestRunner _regressionRunner;
     private readonly IImmutableCoreRegistry _immutableCore;
     private readonly ILogger<FileBasedSharedAdaptationStore>? _logger;
+    private readonly string? _sourcePeerId;
+    private readonly IReadOnlyCollection<string>? _trustedPeerIds;
 
     public FileBasedSharedAdaptationStore(
         string? basePath,
         IAdaptationLog log,
         IRegressionTestRunner regressionRunner,
         IImmutableCoreRegistry immutableCore,
-        ILogger<FileBasedSharedAdaptationStore>? logger = null)
+        ILogger<FileBasedSharedAdaptationStore>? logger = null,
+        string? sourcePeerId = null,
+        IReadOnlyCollection<string>? trustedPeerIds = null)
     {
         _basePath = basePath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -34,11 +38,15 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
         _regressionRunner = regressionRunner ?? throw new ArgumentNullException(nameof(regressionRunner));
         _immutableCore = immutableCore ?? throw new ArgumentNullException(nameof(immutableCore));
         _logger = logger;
+        _sourcePeerId = sourcePeerId;
+        _trustedPeerIds = trustedPeerIds;
     }
 
     /// <inheritdoc />
     public async Task BroadcastAsync(SharedAdaptationEntry entry, CancellationToken cancellationToken = default)
     {
+        var sourcePeerId = entry.SourcePeerId ?? _sourcePeerId;
+
         var dir = Path.Combine(_basePath, entry.Id);
         Directory.CreateDirectory(dir);
 
@@ -47,7 +55,7 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
         {
             entry.Id,
             entry.Record,
-            entry.SourcePeerId,
+            SourcePeerId = sourcePeerId,
             BroadcastAt = entry.BroadcastAt,
             FileCount = entry.Files.Count,
         };
@@ -128,6 +136,16 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
     /// <inheritdoc />
     public async Task<bool> ValidateAndAdoptAsync(SharedAdaptationEntry entry, CancellationToken cancellationToken = default)
     {
+        if (_trustedPeerIds != null && _trustedPeerIds.Count > 0)
+        {
+            var sourceId = entry.SourcePeerId ?? "local";
+            if (!_trustedPeerIds.Contains(sourceId, StringComparer.OrdinalIgnoreCase))
+            {
+                _logger?.LogWarning("Rejecting shared adaptation {Id}: source {Source} not in trusted peers", entry.Id, sourceId);
+                return false;
+            }
+        }
+
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var slnPath = Path.Combine(repoRoot, "Nexo.sln");
         if (!File.Exists(slnPath))
@@ -164,7 +182,15 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
             return false;
         }
 
-        await _log.LogAsync(entry.Record with { Promoted = true }, cancellationToken).ConfigureAwait(false);
+        var attribution = !string.IsNullOrEmpty(entry.SourcePeerId)
+            ? $" (adapted from instance {entry.SourcePeerId})"
+            : "";
+        var recordToLog = entry.Record with
+        {
+            Promoted = true,
+            Message = (entry.Record.Message ?? "") + attribution,
+        };
+        await _log.LogAsync(recordToLog, cancellationToken).ConfigureAwait(false);
         _logger?.LogInformation("Adopted shared adaptation {Id} from {Source}", entry.Id, entry.SourcePeerId ?? "local");
         return true;
     }

@@ -1,7 +1,11 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Adaptation;
 using Nexo.Core.Application.Adaptation.Models;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Analysis.Ports;
+using Nexo.Core.Application.Observation.Models;
+using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Core.Application.SelfImprovement.Models;
@@ -31,6 +35,9 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
     private readonly ILogger<SelfImprovementLoop>? _logger;
     private readonly int _maxIterationsPerRun;
     private readonly Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions? _holdoutOptions;
+    private readonly IPatternStore? _patternStore;
+    private readonly IPatternProcessedStore? _patternProcessedStore;
+    private readonly ISelfImprovementMetricsStore? _metricsStore;
     private SelfImprovementReport? _lastReport;
 
     public SelfImprovementLoop(
@@ -46,7 +53,10 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
         AdaptationRollbackHelper rollbackHelper,
         ILogger<SelfImprovementLoop>? logger = null,
         int maxIterationsPerRun = 5,
-        Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions? holdoutOptions = null)
+        Nexo.Core.Application.SelfImprovement.Models.HoldoutTestOptions? holdoutOptions = null,
+        IPatternStore? patternStore = null,
+        IPatternProcessedStore? patternProcessedStore = null,
+        ISelfImprovementMetricsStore? metricsStore = null)
     {
         _testFailureStore = testFailureStore ?? throw new ArgumentNullException(nameof(testFailureStore));
         _analyzer = analyzer ?? throw new ArgumentNullException(nameof(analyzer));
@@ -61,6 +71,9 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
         _logger = logger;
         _maxIterationsPerRun = maxIterationsPerRun;
         _holdoutOptions = holdoutOptions;
+        _patternStore = patternStore;
+        _patternProcessedStore = patternProcessedStore;
+        _metricsStore = metricsStore;
     }
 
     public async Task RunOnceAsync(CancellationToken ct = default)
@@ -73,19 +86,17 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
 
         var since = DateTimeOffset.UtcNow.AddHours(-24);
         var failures = await _testFailureStore.QueryAsync(since: since, until: null, cancellationToken: ct).ConfigureAwait(false);
-        if (failures.Count == 0)
-        {
-            _lastReport = new SelfImprovementReport(DateTimeOffset.UtcNow, 0, 0, 0, 0, 0, Array.Empty<string>(), Array.Empty<string>());
-            return;
-        }
 
         var promoted = new List<string>();
         var rejected = new List<string>();
+        var patternPromoted = new List<string>();
         var failuresProcessed = 0;
         var fixesGenerated = 0;
         var fixesValidated = 0;
         var fixesPromoted = 0;
         var fixesRejected = 0;
+        var patternsProcessed = 0;
+        var patternSourcedPromoted = 0;
 
         var block1Path = RepoPathResolver.FindBlock1ObservationPath();
         var solutionPath = Path.Combine(RepoPathResolver.FindRepoRoot(), "Nexo.sln");
@@ -100,9 +111,20 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
 
             if (_immutableCoreRegistry.IsInImmutableCore(failure.FilePath))
             {
-                rejected.Add($"Immutable core: {failure.FilePath}");
-                fixesRejected++;
-                continue;
+                await _auditLog.LogAsync(new AdaptationAuditEntry
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Timestamp = DateTimeOffset.UtcNow,
+                    AutonomyLevel = "self",
+                    Outcome = "Rejected",
+                    BrickId = ViolationToBrickMapper.GetBrickIdForFile(failure.FilePath),
+                    FailureType = failure.ErrorMessage ?? "TestFailure",
+                    FilePath = failure.FilePath,
+                    RegressionPassed = false,
+                    Promoted = false,
+                    Message = $"Immutable core violation: cannot adapt {failure.FilePath}",
+                }, ct).ConfigureAwait(false);
+                throw new ImmutableCoreViolationException(failure.FilePath);
             }
 
             var brickId = ViolationToBrickMapper.GetBrickIdForFile(failure.FilePath);
@@ -190,9 +212,167 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
             }
         }
 
+        if (_patternStore != null && _patternProcessedStore != null)
+        {
+            var patternTypes = new[] { "repeated-edits", "edit-then-build" };
+            foreach (var eventType in patternTypes)
+            {
+                var patterns = await _patternStore.QueryAsync(
+                    new PatternStoreQueryParams { Since = since, EventType = eventType, MaxCount = _maxIterationsPerRun },
+                    ct).ConfigureAwait(false);
+
+                foreach (var pattern in patterns)
+                {
+                    if (_accessBoundary.IsObservationPaused) break;
+                    ct.ThrowIfCancellationRequested();
+
+                    if (await _patternProcessedStore.IsProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false))
+                        continue;
+
+                    patternsProcessed++;
+                    var filePath = GetFilePathFromPattern(pattern);
+                    if (string.IsNullOrWhiteSpace(filePath))
+                    {
+                        await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    if (_immutableCoreRegistry.IsInImmutableCore(filePath))
+                    {
+                        await _auditLog.LogAsync(new AdaptationAuditEntry
+                        {
+                            Id = Guid.NewGuid().ToString("N"),
+                            Timestamp = DateTimeOffset.UtcNow,
+                            AutonomyLevel = "self",
+                            Outcome = "Rejected",
+                            BrickId = ViolationToBrickMapper.GetBrickIdForFile(filePath),
+                            FailureType = pattern.EventType,
+                            FilePath = filePath,
+                            RegressionPassed = false,
+                            Promoted = false,
+                            Message = $"Immutable core violation: cannot adapt {filePath} (pattern {pattern.EventType})",
+                        }, ct).ConfigureAwait(false);
+                        await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    var brickId = ViolationToBrickMapper.GetBrickIdForFile(filePath);
+                    if (brickId == null)
+                    {
+                        await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    var analysisDir = Path.GetDirectoryName(filePath) ?? block1Path;
+                    var analysisResult = await _analyzer.AnalyzeSourceAsync(analysisDir, includeAnalyzers: false, ct).ConfigureAwait(false);
+                    if (analysisResult.Passed)
+                    {
+                        await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    var violation = analysisResult.Violations.FirstOrDefault(v =>
+                        string.Equals(v.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
+                    if (violation == null)
+                    {
+                        await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    fixesGenerated++;
+                    _rollbackHelper.Snapshot(filePath);
+                    if (!await _sourceFixer.TryFixAsync(violation, ct).ConfigureAwait(false))
+                    {
+                        _rollbackHelper.Clear();
+                        rejected.Add($"Fix failed: {pattern.EventType} {filePath}");
+                        fixesRejected++;
+                        await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    var regressionFilter = _holdoutOptions?.GetRegressionExclusionFilter();
+                    var regResult = await _regressionRunner.RunAsync(solutionPath, filter: regressionFilter, ct).ConfigureAwait(false);
+                    if (!regResult.AllPassed)
+                    {
+                        _rollbackHelper.Rollback(filePath);
+                        _rollbackHelper.Clear();
+                        rejected.Add($"Regression failed: {pattern.EventType} {filePath}");
+                        fixesRejected++;
+                        await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    fixesValidated++;
+                    _rollbackHelper.Clear();
+
+                    var record = new AdaptationRecord
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        Timestamp = DateTimeOffset.UtcNow,
+                        BrickId = brickId,
+                        FailureType = pattern.EventType,
+                        FixApplied = AdaptationFixType.Source,
+                        FilePath = filePath,
+                        RegressionPassed = true,
+                        Promoted = true,
+                        Message = $"Self-improvement (pattern {pattern.EventType}): fixed {Path.GetFileName(filePath)}",
+                    };
+
+                    try
+                    {
+                        _rollbackManager.PrepareForInherit(record.Id, new[] { filePath });
+                        await _rollbackManager.BeforeInheritAsync(record.Id, ct).ConfigureAwait(false);
+                        await _promoter.PromoteAsync(record, ct).ConfigureAwait(false);
+                        promoted.Add(record.Id);
+                        patternPromoted.Add(record.Id);
+                        fixesPromoted++;
+                        patternSourcedPromoted++;
+
+                        await _auditLog.LogAsync(new AdaptationAuditEntry
+                        {
+                            Id = Guid.NewGuid().ToString("N"),
+                            Timestamp = record.Timestamp,
+                            AutonomyLevel = "self",
+                            Outcome = "Promoted",
+                            BrickId = record.BrickId,
+                            FailureType = record.FailureType,
+                            FilePath = record.FilePath,
+                            RegressionPassed = true,
+                            Promoted = true,
+                            Message = record.Message,
+                        }, ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning(ex, "Promotion failed for {Id}, rolling back", record.Id);
+                        await _rollbackManager.RollbackAsync(record.Id, ct).ConfigureAwait(false);
+                        rejected.Add(ex.Message);
+                        fixesRejected++;
+                    }
+
+                    await _patternProcessedStore.MarkProcessedAsync(pattern.PatternId, ct).ConfigureAwait(false);
+                }
+            }
+        }
+
+        int? holdoutPassed = null;
+        int? holdoutTotal = null;
+        double? holdoutPassRate = null;
+
+        if (failures.Count == 0 && patternsProcessed == 0)
+        {
+            _lastReport = new SelfImprovementReport(DateTimeOffset.UtcNow, 0, 0, 0, 0, 0, Array.Empty<string>(), Array.Empty<string>(), 0, 0, Array.Empty<string>(), holdoutPassed, holdoutTotal, holdoutPassRate);
+            await SaveMetricsAsync(_lastReport, ct).ConfigureAwait(false);
+            return;
+        }
+
         if (_holdoutOptions is { ValidateHoldoutAtEnd: true, HoldoutFilter: { Length: > 0 } holdoutFilter } && fixesPromoted > 0)
         {
             var holdoutResult = await _regressionRunner.RunAsync(solutionPath, filter: holdoutFilter, ct).ConfigureAwait(false);
+            holdoutPassed = holdoutResult.PassedCount;
+            holdoutTotal = holdoutResult.PassedCount + holdoutResult.FailedCount;
+            holdoutPassRate = holdoutTotal > 0 ? (double)holdoutPassed.Value / holdoutTotal.Value : null;
+
             if (!holdoutResult.AllPassed)
             {
                 _logger?.LogWarning("Holdout tests failed after self-improvement: {Failed} failed", holdoutResult.FailedCount);
@@ -204,7 +384,14 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
                     fixesPromoted,
                     fixesRejected,
                     promoted,
-                    rejected.Concat(new[] { "Holdout validation failed" }).ToArray());
+                    rejected.Concat(new[] { "Holdout validation failed" }).ToArray(),
+                    patternsProcessed,
+                    patternSourcedPromoted,
+                    patternPromoted,
+                    holdoutPassed,
+                    holdoutTotal,
+                    holdoutPassRate);
+                await SaveMetricsAsync(_lastReport, ct).ConfigureAwait(false);
                 return;
             }
         }
@@ -217,7 +404,34 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
             fixesPromoted,
             fixesRejected,
             promoted,
-            rejected);
+            rejected,
+            patternsProcessed,
+            patternSourcedPromoted,
+            patternPromoted,
+            holdoutPassed,
+            holdoutTotal,
+            holdoutPassRate);
+        await SaveMetricsAsync(_lastReport, ct).ConfigureAwait(false);
+    }
+
+    private async Task SaveMetricsAsync(SelfImprovementReport report, CancellationToken ct)
+    {
+        if (_metricsStore != null)
+        {
+            try { await _metricsStore.SaveAsync(report, ct).ConfigureAwait(false); }
+            catch (Exception ex) { _logger?.LogWarning(ex, "Failed to save self-improvement metrics"); }
+        }
+    }
+
+    private static string? GetFilePathFromPattern(ObservedPattern pattern)
+    {
+        if (pattern.Metadata.HasValue && pattern.Metadata.Value.TryGetProperty("path", out var pathProp))
+        {
+            var path = pathProp.GetString();
+            if (!string.IsNullOrWhiteSpace(path))
+                return path;
+        }
+        return pattern.ProjectPath;
     }
 
     public Task StartContinuousAsync(CancellationToken ct = default)

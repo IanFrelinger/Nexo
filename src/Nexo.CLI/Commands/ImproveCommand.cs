@@ -14,6 +14,7 @@ using Nexo.Bricks.Owasp.Security;
 using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Infrastructure;
 using Nexo.Core.Application.SelfContext.Ports;
+using Nexo.Core.Application.Adaptation;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Analysis;
 using Nexo.Infrastructure.Observation;
@@ -118,6 +119,7 @@ public sealed class ImproveCommand : Command
         var immutableCoreRegistry = services.GetRequiredService<IImmutableCoreRegistry>();
         var documentationUpdater = services.GetService<Nexo.Core.Application.SelfContext.Ports.IDocumentationUpdater>();
         var sharedBroadcaster = services.GetService<ISharedAdaptationBroadcaster>();
+        var peerIdProvider = services.GetService<IPeerIdProvider>();
         var userFeedback = services.GetRequiredService<IUserFeedbackCapture>();
         var executionTracer = services.GetRequiredService<IExecutionTracer>();
         var auditLog = services.GetRequiredService<IAdaptationAuditLog>();
@@ -173,7 +175,7 @@ public sealed class ImproveCommand : Command
             {
                 if (immutableCoreRegistry.IsInImmutableCore(v.FilePath))
                 {
-                    logger.LogWarning("Skipping adaptation of immutable core: {FilePath}", v.FilePath);
+                    logger.LogWarning("Rejecting adaptation of immutable core: {FilePath}", v.FilePath);
                     await auditLog.LogAsync(new AdaptationAuditEntry
                     {
                         Id = Guid.NewGuid().ToString("N"),
@@ -187,7 +189,7 @@ public sealed class ImproveCommand : Command
                         Promoted = false,
                         Message = $"Immutable core violation: cannot adapt {v.FilePath}",
                     }).ConfigureAwait(false);
-                    continue;
+                    throw new ImmutableCoreViolationException(v.FilePath);
                 }
 
                 var suggestion = $"Fix {v.Rule} in {Path.GetFileName(v.FilePath)}";
@@ -254,6 +256,7 @@ public sealed class ImproveCommand : Command
                                         Record = record,
                                         Files = new Dictionary<string, byte[]> { [relPath] = content },
                                         BroadcastAt = record.Timestamp,
+                                        SourcePeerId = peerIdProvider?.GetPeerId(),
                                     };
                                     await sharedBroadcaster.BroadcastAsync(entry).ConfigureAwait(false);
                                 }
@@ -353,10 +356,24 @@ public sealed class ImproveCommand : Command
         int brickAdapted = 0;
         foreach (var (brickId, violations) in violationsByBrick)
         {
-            if (violations.Any(v => immutableCoreRegistry.IsInImmutableCore(v.FilePath)))
+            var immutableViolation = violations.FirstOrDefault(v => immutableCoreRegistry.IsInImmutableCore(v.FilePath));
+            if (!string.IsNullOrEmpty(immutableViolation.FilePath))
             {
-                logger.LogWarning("Skipping brick adaptation for immutable core: {BrickId}", brickId);
-                continue;
+                logger.LogWarning("Rejecting brick adaptation for immutable core: {BrickId} ({FilePath})", brickId, immutableViolation.FilePath);
+                await auditLog.LogAsync(new AdaptationAuditEntry
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Timestamp = DateTimeOffset.UtcNow,
+                    AutonomyLevel = autonomy,
+                    Outcome = "Rejected",
+                    BrickId = brickId,
+                    FailureType = immutableViolation.Rule,
+                    FilePath = immutableViolation.FilePath,
+                    RegressionPassed = false,
+                    Promoted = false,
+                    Message = $"Immutable core violation: cannot adapt {immutableViolation.FilePath}",
+                }).ConfigureAwait(false);
+                throw new ImmutableCoreViolationException(immutableViolation.FilePath);
             }
 
             var brick = brickRegistry.GetBrick(brickId);

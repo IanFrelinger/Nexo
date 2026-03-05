@@ -7,6 +7,7 @@ using Nexo.Bricks.Owasp.Security;
 using Nexo.Hosting;
 using Nexo.Hosting.Sdk;
 using Nexo.Infrastructure.Execution;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Sdk;
@@ -15,22 +16,13 @@ namespace Nexo.Tests.Infrastructure.Tests.Sdk;
 /// P2.1: SDK registration tests.
 /// </summary>
 [Trait("Category", "Integration")]
-public sealed class NexoSdkTests : IDisposable
+public sealed class NexoSdkTests : TempDirTestBase
 {
     private readonly string _storePath;
-    private bool _disposed;
 
-    public NexoSdkTests()
+    public NexoSdkTests() : base("nexo-sdk")
     {
-        _storePath = Path.Combine(Path.GetTempPath(), $"nexo-sdk-{Guid.NewGuid():N}.db");
-    }
-
-    public void Dispose()
-    {
-        if (_disposed) return;
-        try { if (File.Exists(_storePath)) File.Delete(_storePath); } catch { /* ignore */ }
-        _disposed = true;
-        GC.SuppressFinalize(this);
+        _storePath = Path.Combine(TempDir, "store.db");
     }
 
     [Fact]

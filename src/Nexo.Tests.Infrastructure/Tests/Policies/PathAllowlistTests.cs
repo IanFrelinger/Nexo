@@ -11,6 +11,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Policies;
 /// Unit tests for PathAllowlist policy — ensures file writes and search/replace
 /// are restricted to src/ and tests/ directories.
 /// </summary>
+[Trait("Category", "Unit")]
 public sealed class PathAllowlistTests
 {
     private readonly PathAllowlist _policy = new();
@@ -180,6 +181,26 @@ public sealed class PathAllowlistTests
     public void Approve_RepoFsWrite_WithBinPath_ReturnsFalse()
     {
         var call = CreateToolCall("repo.fs.write", "bin/Release/net8.0/foo.dll");
+        var result = _policy.Approve(call, EmptySnapshot, out var reason);
+
+        result.Should().BeFalse();
+        reason.Should().Contain("Path not allowed");
+    }
+
+    [Fact]
+    public void PathAllowlist_RejectsWrite_ToObjDirectory()
+    {
+        var call = CreateToolCall("repo.fs.write", "obj/Debug/net8.0/foo.dll");
+        var result = _policy.Approve(call, EmptySnapshot, out var reason);
+
+        result.Should().BeFalse();
+        reason.Should().Contain("Path not allowed");
+    }
+
+    [Fact]
+    public void PathAllowlist_RejectsWrite_ToGitDirectory()
+    {
+        var call = CreateToolCall("repo.fs.write", ".git/HEAD");
         var result = _policy.Approve(call, EmptySnapshot, out var reason);
 
         result.Should().BeFalse();

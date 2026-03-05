@@ -26,21 +26,27 @@ public sealed class MeshCommand : Command
         var syncCmd = new Command("sync", "Pull shared adaptations from trusted peers and adopt after validation (P2.3)");
         syncCmd.SetHandler(async (InvocationContext ctx) => await ExecuteSyncAsync());
 
-        var exportPathOpt = new Option<string>("--path", "Output path for export file") { IsRequired = true };
-        var exportCmd = new Command("export", "Export shared adaptations to file for sneakernet transfer (P3.3)");
-        exportCmd.AddOption(exportPathOpt);
+        var capabilitiesCmd = new Command("capabilities", "Show local instance capabilities for mesh negotiation");
+        capabilitiesCmd.SetHandler(ExecuteCapabilities);
+
+        var exportComponentArg = new Argument<string?>("componentId", () => null, "Component/adaptation ID to export; omit to export all");
+        var exportToOpt = new Option<string>("--to", "Output path for .nxpkg export file") { IsRequired = true };
+        var exportCmd = new Command("export", "Export shared adaptations to .nxpkg file for sneakernet transfer (P3.3)");
+        exportCmd.AddArgument(exportComponentArg);
+        exportCmd.AddOption(exportToOpt);
         exportCmd.SetHandler(async (InvocationContext ctx) =>
         {
-            var path = ctx.ParseResult.GetValueForOption(exportPathOpt)!;
-            await ExecuteExportAsync(path);
+            var componentId = ctx.ParseResult.GetValueForArgument(exportComponentArg);
+            var to = ctx.ParseResult.GetValueForOption(exportToOpt)!;
+            await ExecuteExportAsync(to, componentId);
         });
 
-        var importPathOpt = new Option<string>("--path", "Input path to export file") { IsRequired = true };
-        var importCmd = new Command("import", "Import shared adaptations from sneakernet export file (P3.3)");
-        importCmd.AddOption(importPathOpt);
+        var importPathArg = new Argument<string>("path", "Path to .nxpkg import file");
+        var importCmd = new Command("import", "Import shared adaptations from .nxpkg sneakernet file (P3.3)");
+        importCmd.AddArgument(importPathArg);
         importCmd.SetHandler(async (InvocationContext ctx) =>
         {
-            var path = ctx.ParseResult.GetValueForOption(importPathOpt)!;
+            var path = ctx.ParseResult.GetValueForArgument(importPathArg)!;
             await ExecuteImportAsync(path);
         });
 
@@ -48,6 +54,7 @@ public sealed class MeshCommand : Command
         AddOption(advertiseOpt);
         AddOption(capabilityOpt);
         AddCommand(syncCmd);
+        AddCommand(capabilitiesCmd);
         AddCommand(exportCmd);
         AddCommand(importCmd);
 
@@ -60,13 +67,35 @@ public sealed class MeshCommand : Command
         });
     }
 
+    private static void ExecuteCapabilities()
+    {
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole())
+            .AddMeshInfrastructure()
+            .BuildServiceProvider();
+
+        var provider = services.GetRequiredService<IInstanceCapabilitiesProvider>();
+        var caps = provider.GetCapabilities();
+
+        Console.WriteLine("Local instance capabilities:");
+        Console.WriteLine($"  Supported formats: {string.Join(", ", caps.SupportedFormats)}");
+        Console.WriteLine($"  Preferred format: {caps.PreferredFormat}");
+        Console.WriteLine($"  CanCompile: {caps.CanCompile}");
+        Console.WriteLine($"  HasDockerRuntime: {caps.HasDockerRuntime}");
+        Console.WriteLine($"  HasWasmRuntime: {caps.HasWasmRuntime}");
+        Console.WriteLine($"  IsAirGapped: {caps.IsAirGapped}");
+        Console.WriteLine($"  Available components: {string.Join(", ", caps.AvailableComponents)}");
+        Environment.ExitCode = 0;
+    }
+
     private static async Task ExecuteSyncAsync()
     {
+        var sharedPath = Environment.GetEnvironmentVariable("NEXO_SHARED_ADAPTATIONS_PATH");
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
             .AddCodeAnalyzers()
             .AddAdaptationInfrastructure() // Uses repo root for adaptation db
-            .AddSharedAdaptationCache()
+            .AddSharedAdaptationCache(sharedPath)
             .BuildServiceProvider();
 
         var sync = services.GetRequiredService<ISharedAdaptationSync>();
@@ -83,7 +112,7 @@ public sealed class MeshCommand : Command
         Environment.ExitCode = 0;
     }
 
-    private static async Task ExecuteExportAsync(string outputPath)
+    private static async Task ExecuteExportAsync(string outputPath, string? componentId = null)
     {
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
@@ -93,7 +122,7 @@ public sealed class MeshCommand : Command
             .BuildServiceProvider();
 
         var transport = services.GetRequiredService<ISneakernetTransport>();
-        await transport.ExportAsync(outputPath).ConfigureAwait(false);
+        await transport.ExportAsync(outputPath, componentId).ConfigureAwait(false);
         Console.WriteLine($"Exported to {outputPath}");
         Environment.ExitCode = 0;
     }

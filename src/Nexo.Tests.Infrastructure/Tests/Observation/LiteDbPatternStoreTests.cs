@@ -3,24 +3,18 @@ using FluentAssertions;
 using Nexo.Core.Application.Observation.Models;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Infrastructure.Observation;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
-public class LiteDbPatternStoreTests : IDisposable
+public class LiteDbPatternStoreTests : TempDirTestBase
 {
     private readonly string _dbPath;
 
-    public LiteDbPatternStoreTests()
+    public LiteDbPatternStoreTests() : base("nexo-patterns-test")
     {
-        _dbPath = Path.Combine(Path.GetTempPath(), $"nexo_patterns_test_{Guid.NewGuid():N}.db");
-    }
-
-    public void Dispose() => Dispose(true);
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing && File.Exists(_dbPath))
-            File.Delete(_dbPath);
+        _dbPath = Path.Combine(TempDir, "store.db");
     }
 
     [Fact]

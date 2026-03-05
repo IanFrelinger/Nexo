@@ -11,6 +11,7 @@ using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Observation;
 using Nexo.Tests.Application.Helpers;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
@@ -35,7 +36,7 @@ public sealed class AdaptationPipelineIntegrationTests : IDisposable
         _tempDirCleanup.Dispose();
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task AdaptCommand_DecomposeRecompile_ReturnsBrick()
     {
         var storePath = Path.Combine(_tempDir, "patterns.db");
@@ -61,7 +62,7 @@ public sealed class AdaptationPipelineIntegrationTests : IDisposable
         Assert.Equal("observation.context", recompiled.Id);
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task ImproveCommand_WithViolations_ValidateBeforePromote_RollbackOnRegression()
     {
         var storePath = Path.Combine(_tempDir, "patterns.db");
@@ -92,7 +93,7 @@ public sealed class AdaptationPipelineIntegrationTests : IDisposable
         Assert.False(records[0].Promoted);
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task AdaptCommand_WithOWASPScannerBrick_DecomposeRecompile_Succeeds()
     {
         var storePath = Path.Combine(_tempDir, "patterns.db");

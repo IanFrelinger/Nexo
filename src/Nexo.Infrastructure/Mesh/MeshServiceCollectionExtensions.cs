@@ -45,6 +45,7 @@ public static class MeshServiceCollectionExtensions
             return new MeshCapabilityFulfiller(transport, logger);
         });
         services.AddSingleton<IArtifactNegotiator, ArtifactNegotiator>();
+        services.AddSingleton<IInstanceCapabilitiesProvider, LocalNexoInstanceCapabilitiesProvider>();
         return services;
     }
 }

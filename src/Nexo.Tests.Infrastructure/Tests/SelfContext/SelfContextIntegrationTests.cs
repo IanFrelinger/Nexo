@@ -8,6 +8,7 @@ using Nexo.Core.Application.SelfContext.Models;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Infrastructure.SelfContext;
 using Nexo.Tests.Application.Helpers;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.SelfContext;
@@ -30,7 +31,7 @@ public sealed class SelfContextIntegrationTests : IDisposable
         _tempDirCleanup.Dispose();
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task SelfContextAssembler_QueriesLogsAndTracer_ReturnsSummary()
     {
         var adaptationLog = new InMemoryAdaptationLog();

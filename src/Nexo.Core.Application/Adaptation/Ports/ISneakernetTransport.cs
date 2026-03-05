@@ -7,11 +7,12 @@ namespace Nexo.Core.Application.Adaptation.Ports;
 public interface ISneakernetTransport
 {
     /// <summary>
-    /// Exports all shared adaptations to a file for physical transfer.
+    /// Exports shared adaptations to a file for physical transfer (.nxpkg format).
     /// </summary>
-    /// <param name="outputPath">Path to the export file (e.g. nexo-sneakernet.nexo).</param>
+    /// <param name="outputPath">Path to the export file (e.g. nexo-mesh.nxpkg).</param>
+    /// <param name="componentId">Optional component/adaptation ID to export; null = export all.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task ExportAsync(string outputPath, CancellationToken cancellationToken = default);
+    Task ExportAsync(string outputPath, string? componentId = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Imports shared adaptations from an export file and validates/adopts each.

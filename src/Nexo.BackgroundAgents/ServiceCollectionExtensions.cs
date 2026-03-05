@@ -46,7 +46,8 @@ public static class ServiceCollectionExtensions
             var codeAnalysisRunner = sp.GetService<ICodeAnalysisRunner>();
             var testRunRunner = sp.GetService<ITestRunRunner>();
             var selfExtendRunner = sp.GetService<ISelfExtendRunner>();
-            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner);
+            var modeStore = sp.GetService<IAggressivenessModeStore>();
+            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, modeStore);
         });
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();
@@ -148,6 +149,13 @@ public static class ServiceCollectionExtensions
             var repoRoot = opts.RepoRoot ?? Directory.GetCurrentDirectory();
             var storePath = Path.Combine(repoRoot, opts.StorePath);
             return new LiteDbPatternStore(storePath);
+        });
+        services.AddSingleton<Nexo.Core.Application.Observation.Ports.IPatternProcessedStore>(sp =>
+        {
+            var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ObservationPipelineOptions>>().Value;
+            var repoRoot = opts.RepoRoot ?? Directory.GetCurrentDirectory();
+            var storePath = Path.Combine(repoRoot, opts.StorePath);
+            return new Nexo.Infrastructure.Observation.LiteDbPatternProcessedStore(storePath);
         });
         services.AddSingleton<Nexo.Core.Application.Observation.Ports.IContextAssembler, ContextAssembler>();
         if (registerHostedService)

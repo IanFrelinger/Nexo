@@ -70,4 +70,62 @@ public sealed class ArtifactNegotiatorTests
         caps.SupportedFormats.Should().Contain(ArtifactFormat.Config);
         caps.PreferredFormat.Should().Be(ArtifactFormat.Source);
     }
+
+    [Fact]
+    public void ArtifactNegotiator_SelectsSourceCode_WhenTargetCanCompile()
+    {
+        var requester = new InstanceCapabilities(
+            new[] { ArtifactFormat.Source, ArtifactFormat.Binary },
+            preferredFormat: null,
+            canCompile: true);
+        var fulfiller = new InstanceCapabilities(
+            new[] { ArtifactFormat.Source, ArtifactFormat.Binary },
+            ArtifactFormat.Binary);
+
+        var result = _negotiator.Negotiate(requester, fulfiller);
+
+        result.Should().Be(ArtifactFormat.Source, "requester CanCompile prefers Source");
+    }
+
+    [Fact]
+    public void ArtifactNegotiator_SelectsDockerImage_WhenTargetHasDockerRuntime()
+    {
+        var requester = new InstanceCapabilities(
+            new[] { ArtifactFormat.DockerImage, ArtifactFormat.Binary },
+            preferredFormat: null,
+            hasDockerRuntime: true);
+        var fulfiller = new InstanceCapabilities(
+            new[] { ArtifactFormat.DockerImage, ArtifactFormat.Binary },
+            ArtifactFormat.Binary);
+
+        var result = _negotiator.Negotiate(requester, fulfiller);
+
+        result.Should().Be(ArtifactFormat.DockerImage, "requester HasDockerRuntime prefers DockerImage");
+    }
+
+    [Fact]
+    public void ArtifactNegotiator_SelectsWasmModule_WhenTargetHasWasmRuntime()
+    {
+        var requester = new InstanceCapabilities(
+            new[] { ArtifactFormat.WasmModule, ArtifactFormat.Binary },
+            preferredFormat: null,
+            hasWasmRuntime: true);
+        var fulfiller = new InstanceCapabilities(
+            new[] { ArtifactFormat.WasmModule, ArtifactFormat.Binary },
+            ArtifactFormat.Binary);
+
+        var result = _negotiator.Negotiate(requester, fulfiller);
+
+        result.Should().Be(ArtifactFormat.WasmModule, "requester HasWasmRuntime prefers WasmModule");
+    }
+
+    [Fact]
+    public void InstanceCapabilities_LocalNexo_HasCanCompileAndComponents()
+    {
+        var caps = InstanceCapabilities.LocalNexo;
+
+        caps.CanCompile.Should().BeTrue();
+        caps.SupportedFormats.Should().Contain(ArtifactFormat.Source);
+        caps.AvailableComponents.Should().Contain("nexo-cli");
+    }
 }

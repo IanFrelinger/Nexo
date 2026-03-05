@@ -206,10 +206,9 @@ static class Program
                     "agentic" => Nexo.Core.Application.Execution.Models.ExecutionMode.Agentic,
                     _ => throw new ArgumentException($"Mode must be 'deterministic' or 'agentic', got: {modeStr}")
                 };
-                var store = new Nexo.Infrastructure.Execution.StepExecutionModeStore();
-                var result = await store.SwapAsync(stepId, mode);
-                Console.WriteLine($"Swapped {stepId}: {result.PreviousMode} -> {result.NewMode}");
-                Environment.Exit(0);
+                var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
+                var exitCode = await cmd.SetModeAsync(stepId, mode);
+                Environment.Exit(exitCode);
             },
             configSetModeStepArg,
             configSetModeModeArg);
@@ -879,6 +878,47 @@ static class Program
             verboseOpt);
         metricsCmd.AddCommand(metricsClearCmd);
 
+        // nexo metrics self-improvement (P3.4: holdout pass rate)
+        var metricsSelfImprovementCmd = new Command("self-improvement", "Show self-improvement metrics (holdout pass rate, etc.)");
+        metricsSelfImprovementCmd.SetHandler(
+            async (bool json) =>
+            {
+                var store = ServiceProvider.GetRequiredService<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementMetricsStore>();
+                var report = await store.GetLastAsync();
+                if (report == null)
+                {
+                    if (json) Console.WriteLine("{\"ok\":true,\"message\":\"No self-improvement run recorded\"}");
+                    else Console.WriteLine("No self-improvement run recorded. Run 'nexo improve --self' first.");
+                    return;
+                }
+                if (json)
+                {
+                    var j = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                    Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        ok = true,
+                        runAt = report.RunAt,
+                        fixesPromoted = report.FixesPromoted,
+                        holdoutPassed = report.HoldoutPassed,
+                        holdoutTotal = report.HoldoutTotal,
+                        holdoutPassRate = report.HoldoutPassRate
+                    }, j));
+                }
+                else
+                {
+                    Console.WriteLine($"Last run: {report.RunAt:O}");
+                    Console.WriteLine($"  Fixes promoted: {report.FixesPromoted}");
+                    if (report.HoldoutTotal.HasValue)
+                    {
+                        Console.WriteLine($"  Holdout: {report.HoldoutPassed}/{report.HoldoutTotal} passed");
+                        if (report.HoldoutPassRate.HasValue)
+                            Console.WriteLine($"  Holdout pass rate: {report.HoldoutPassRate:P1}");
+                    }
+                }
+            },
+            jsonOpt);
+        metricsCmd.AddCommand(metricsSelfImprovementCmd);
+
         // nexo docker (generic build/run/clean for multi-platform testing)
         var dockerCmd = new DockerCommand();
         root.AddCommand(dockerCmd);
@@ -933,6 +973,8 @@ static class Program
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddNexo();
+        services.TryAddSingleton<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementMetricsStore>(
+            _ => new Nexo.Infrastructure.SelfImprovement.FileBasedSelfImprovementMetricsStore());
 
         // Dog-food: optimizer agents run the app's own analysis pipeline
         services.TryAddSingleton<Nexo.BackgroundAgents.Optimization.ICodeAnalysisRunner, Nexo.CLI.Commands.BackgroundAgent.CodeAnalysisRunnerAdapter>();

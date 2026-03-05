@@ -7,7 +7,7 @@ using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Analysis;
 using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.SelfContext;
-using Nexo.Tests.Application.Helpers;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Dogfood;
@@ -21,16 +21,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Dogfood;
 [Trait("Category", "Integration")]
 [Trait("Category", "Dogfood")]
 [Trait("Category", "Adaptation")]
-public sealed class DogfoodClosedLoopTests : IDisposable
+public sealed class DogfoodClosedLoopTests : TempDirTestBase
 {
-    private readonly IDisposable _tempDirCleanup;
-
-    public DogfoodClosedLoopTests()
-    {
-        (_, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-dogfood-closedloop");
-    }
-
-    public void Dispose() => _tempDirCleanup.Dispose();
+    public DogfoodClosedLoopTests() : base("nexo-dogfood-closedloop") { }
 
     [Fact(Timeout = 30000)]
     public async Task ImproveFlow_AnalyzeBlock1Path_Completes()
@@ -48,7 +41,7 @@ public sealed class DogfoodClosedLoopTests : IDisposable
             return;
         }
 
-        var storePath = Path.Combine(Path.GetTempPath(), $"nexo-dogfood-closedloop-{Guid.NewGuid():N}.db");
+        var storePath = Path.Combine(TempDir, "adapt.db");
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
             .AddCodeAnalyzers()

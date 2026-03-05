@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Composition.Ports;
 using Nexo.Infrastructure;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Composition;
@@ -12,7 +13,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Composition;
 [Trait("Category", "Integration")]
 public sealed class CompositionIntegrationTests
 {
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task CompositionEngine_WithRegistry_ReturnsComposedAgent()
     {
         var services = new ServiceCollection()

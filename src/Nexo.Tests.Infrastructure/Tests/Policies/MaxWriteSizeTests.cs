@@ -10,6 +10,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Policies;
 /// Unit tests for MaxWriteSize policy — ensures repository file writes
 /// do not exceed the configured size limit (default 200KB).
 /// </summary>
+[Trait("Category", "Unit")]
 public sealed class MaxWriteSizeTests
 {
     private static readonly WorldSnapshot EmptySnapshot = new(0, new Dictionary<string, object?>());
@@ -134,6 +135,18 @@ public sealed class MaxWriteSizeTests
     {
         var policy = new MaxWriteSize(200_000);
         var call = CreateWriteCall("x");
+
+        var result = policy.Approve(call, EmptySnapshot, out var reason);
+
+        result.Should().BeTrue();
+        reason.Should().Be("OK");
+    }
+
+    [Fact]
+    public void MaxWriteSize_AllowsWrite_ZeroBytes()
+    {
+        var policy = new MaxWriteSize(200_000);
+        var call = CreateWriteCall("");
 
         var result = policy.Approve(call, EmptySnapshot, out var reason);
 

@@ -120,11 +120,20 @@ public class ValidationServiceAdapter : IValidationService
                 {
                     var projectDir = testProject.Directory?.FullName ?? currentDir.FullName;
 
-                    var testCall = new ToolCall(
-                        "dotnet.test",
-                        JsonDocument.Parse($$"""{"root":"{{projectDir}}"}""").RootElement);
-
-                    var result = await testTool.InvokeAsync(testCall, snapshot, cancellationToken);
+                    int exitCode;
+                    if (progress != null)
+                    {
+                        // Stream dotnet test output so user can see progress
+                        exitCode = await RunDotnetTestWithStreamingAsync(projectDir, cancellationToken);
+                    }
+                    else
+                    {
+                        var testCall = new ToolCall(
+                            "dotnet.test",
+                            JsonDocument.Parse($$"""{"root":"{{projectDir}}"}""").RootElement);
+                        var result = await testTool.InvokeAsync(testCall, snapshot, cancellationToken);
+                        exitCode = result.Payload is System.Text.Json.JsonElement je && je.TryGetProperty("ok", out var okEl) && okEl.GetBoolean() ? 0 : 1;
+                    }
 
                     // Try to find and parse TRX files
                     var trxFiles = Directory.GetFiles(
@@ -148,22 +157,16 @@ public class ValidationServiceAdapter : IValidationService
                     }
                     else
                     {
-                        // Fallback to simple result parsing
-                        if (result.Payload is System.Text.Json.JsonElement jsonElement)
+                        // Fallback when no TRX: use exit code
+                        allTestResults.Add(new TestResult
                         {
-                            var ok = jsonElement.TryGetProperty("ok", out var okElement) && okElement.GetBoolean();
-                            
-                            allTestResults.Add(new TestResult
-                            {
-                                Name = testProject.Name,
-                                Passed = ok,
-                                Message = ok ? "Tests passed" : "Test execution failed"
-                            });
-                            
-                            if (ok) totalTestsPassed++;
-                            else totalTestsFailed++;
-                            totalTestsRun++;
-                        }
+                            Name = testProject.Name,
+                            Passed = exitCode == 0,
+                            Message = exitCode == 0 ? "Tests passed" : "Test execution failed"
+                        });
+                        if (exitCode == 0) totalTestsPassed++;
+                        else totalTestsFailed++;
+                        totalTestsRun++;
                     }
                 }
                 catch (Exception ex)
@@ -217,6 +220,40 @@ public class ValidationServiceAdapter : IValidationService
                 TestsPassed = 0,
                 TestsFailed = 0
             };
+        }
+    }
+
+    /// <summary>
+    /// Runs dotnet test with stdout/stderr streamed to the console so the user can see progress.
+    /// </summary>
+    private static async Task<int> RunDotnetTestWithStreamingAsync(string workingDirectory, CancellationToken ct)
+    {
+        var args = "test . --no-build --blame-hang-timeout 120s --blame-hang-dump-type none --verbosity normal";
+        var psi = new ProcessStartInfo("dotnet", args)
+        {
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        using var p = Process.Start(psi);
+        if (p == null) return -1;
+
+        p.OutputDataReceived += (_, e) => { if (e.Data != null) Console.Out.WriteLine(e.Data); };
+        p.ErrorDataReceived += (_, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
+        p.BeginOutputReadLine();
+        p.BeginErrorReadLine();
+
+        try
+        {
+            await p.WaitForExitAsync(ct);
+            return p.ExitCode;
+        }
+        catch (OperationCanceledException)
+        {
+            try { p.Kill(entireProcessTree: true); } catch { /* ignore */ }
+            return -1;
         }
     }
 }
