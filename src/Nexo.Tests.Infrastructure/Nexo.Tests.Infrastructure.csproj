@@ -36,12 +36,14 @@
     <PackageReference Include="Mono.Cecil" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="CsCheck" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Docker.DotNet" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+    <ProjectReference Include="..\Nexo.Tests.Contracts\Nexo.Tests.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexo.Policies.Dev\Nexo.Policies.Dev.csproj" />
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
