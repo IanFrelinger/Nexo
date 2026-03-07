@@ -1,0 +1,18 @@
+namespace Nexo.Infrastructure.Execution;
+
+/// <summary>
+/// Thrown when no real LLM model is available (local or server).
+/// Used when mock/offline fallback is disabled and both edge and server providers fail.
+/// </summary>
+public sealed class ModelUnavailableException : InvalidOperationException
+{
+    public ModelUnavailableException(string message)
+        : base(message)
+    {
+    }
+
+    public ModelUnavailableException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}

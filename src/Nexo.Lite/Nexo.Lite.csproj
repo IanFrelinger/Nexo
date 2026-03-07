@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net8.0-android;net8.0-ios</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Nexo.Lite</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>Nexo Lite</Title>
+    <Description>Slim Nexo host for mobile/edge. Orchestration + local provider (ONNX/LLamaSharp). No Roslyn, Docker, or code analysis. For air-gapped playtest and lightweight orchestration.</Description>
+    <PackageTags>nexo;ai;mobile;lite;edge;air-gapped</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+    <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    <ProjectReference Include="..\Nexo.Client\Nexo.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

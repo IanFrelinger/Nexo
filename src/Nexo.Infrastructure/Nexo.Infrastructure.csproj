@@ -36,6 +36,8 @@
     <PackageReference Include="Dapper" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Polly" />
+    <PackageReference Include="LlamaSharp" />
+    <PackageReference Include="LLamaSharp.Backend.Cpu" />
   </ItemGroup>
 
 </Project>

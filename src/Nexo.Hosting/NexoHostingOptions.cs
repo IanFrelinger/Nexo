@@ -33,4 +33,26 @@ public sealed class NexoHostingOptions
     /// Default: false — observation pipeline is registered by default. Set true for lightweight/CLI-only hosts.
     /// </summary>
     public bool DisableObservationPipeline { get; set; }
+
+    /// <summary>
+    /// Base URL for the Nexo API when used as a remote client (e.g. for mobile thin client).
+    /// </summary>
+    public string? ApiBaseUrl { get; set; }
+
+    /// <summary>
+    /// Optional API key for authentication when connecting to Nexo API.
+    /// </summary>
+    public string? ApiKey { get; set; }
+
+    /// <summary>
+    /// When true, enables adaptive load balancing (edge/server routing via NEXO_LOAD_PREFERENCE).
+    /// Default: true when NEXO_LOAD_PREFERENCE is set (edge|server|auto).
+    /// </summary>
+    public bool? UseAdaptiveLoadBalancing { get; set; }
+
+    /// <summary>
+    /// When set, IExecutionPlatform uses RemoteExecutionPlatform delegating to this Nexo API URL.
+    /// Default: from NEXO_EXECUTION_REMOTE_URL. Use when Docker is not available (e.g. mobile, CI).
+    /// </summary>
+    public string? ExecutionRemoteUrl { get; set; }
 }

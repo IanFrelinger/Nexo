@@ -74,7 +74,8 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
 
         await processTask;
 
-        var patterns = await store.QueryAsync(new PatternStoreQueryParams { MaxCount = 10 }, cts.Token);
+        using var queryCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var patterns = await store.QueryAsync(new PatternStoreQueryParams { MaxCount = 10 }, queryCts.Token);
         Assert.Contains(patterns, p => p.EventType == "repeated-edits");
         Assert.True(patterns.First(p => p.EventType == "repeated-edits").Frequency >= 3);
     }

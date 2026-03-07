@@ -97,7 +97,8 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <param name="useSanitizingProviderFactory">If true, IProviderFactory is registered as SanitizingProviderFactory wrapping ProviderFactory.</param>
     /// <param name="ephemeralLifecycle">If true, ProviderFactory will receive IEphemeralModelLifecycle for ephemeral Ollama (caller must register it).</param>
-    public static IServiceCollection AddTrustServices(this IServiceCollection services, bool useSanitizingProviderFactory = false, bool ephemeralLifecycle = false)
+    /// <param name="skipProviderRegistration">If true, trust services are added but provider factory is not registered (caller builds chain).</param>
+    public static IServiceCollection AddTrustServices(this IServiceCollection services, bool useSanitizingProviderFactory = false, bool ephemeralLifecycle = false, bool skipProviderRegistration = false)
     {
         services.TryAddSingleton<IDataTaxonomy, DataTaxonomy>();
         services.TryAddSingleton<ISensitiveContentFilter, SensitiveContentFilter>();
@@ -120,7 +121,7 @@ public static class ServiceCollectionExtensions
             return new CloudSanitizationProxy(filter, taxonomy, audit);
         });
 
-        if (useSanitizingProviderFactory)
+        if (useSanitizingProviderFactory && !skipProviderRegistration)
         {
             services.AddSingleton<Nexo.Infrastructure.Execution.ProviderFactory>(sp =>
             {

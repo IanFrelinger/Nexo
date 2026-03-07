@@ -1,7 +1,9 @@
 using FluentValidation;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.BackgroundAgents;
+using Nexo.BackgroundAgents.Trust;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
@@ -10,7 +12,9 @@ using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure;
+using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
+using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Maintenance;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
@@ -117,14 +121,39 @@ public static class NexoServiceCollectionExtensions
             services.AddSingleton<Nexo.Core.Application.Persistence.Ports.IEphemeralDatabaseLifecycle, PostgresEphemeralLifecycle>();
 
         var trustEnabled = options.TrustEnabled ?? string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
-        services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels);
-        if (!trustEnabled)
+        var loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
+        var useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
+
+        services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: useAdaptive);
+
+        if (useAdaptive)
         {
-            services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory>(sp =>
+            services.AddSingleton<ProviderFactory>(sp =>
             {
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.ProviderFactory>>();
+                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
                 var lifecycle = sp.GetService<IEphemeralModelLifecycle>();
-                return new Nexo.Infrastructure.Execution.ProviderFactory(logger, lifecycle);
+                return new ProviderFactory(logger, lifecycle);
+            });
+            services.TryAddSingleton<ILoadPolicy, PreferenceLoadPolicy>();
+            services.AddSingleton<IProviderFactory>(sp =>
+            {
+                var pf = sp.GetRequiredService<ProviderFactory>();
+                Nexo.Infrastructure.Execution.IProviderFactory inner = trustEnabled
+                    ? new SanitizingProviderFactory(pf, sp.GetRequiredService<ICloudSanitizationProxy>(),
+                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>())
+                    : pf;
+                var policy = sp.GetRequiredService<ILoadPolicy>();
+                var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<AdaptiveProviderFactory>>();
+                return new AdaptiveProviderFactory(inner, policy, logger);
+            });
+        }
+        else if (!trustEnabled)
+        {
+            services.AddSingleton<IProviderFactory>(sp =>
+            {
+                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
+                var lifecycle = sp.GetService<IEphemeralModelLifecycle>();
+                return new ProviderFactory(logger, lifecycle);
             });
         }
 
@@ -199,8 +228,25 @@ public static class NexoServiceCollectionExtensions
         services.AddSingleton<ICacheStrategy, Nexo.Infrastructure.Caching.MemoryCacheStrategy>();
         services.AddSingleton<IMetricsCollector, Nexo.Infrastructure.Metrics.MemoryMetricsCollector>();
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
-        services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
-            new Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform>>()));
+
+        var executionRemoteUrl = options.ExecutionRemoteUrl ?? Environment.GetEnvironmentVariable("NEXO_EXECUTION_REMOTE_URL")?.Trim();
+        if (!string.IsNullOrEmpty(executionRemoteUrl))
+        {
+            var baseUrl = executionRemoteUrl.TrimEnd('/') + "/";
+            services.AddHttpClient("NexoExecution", c => c.BaseAddress = new Uri(baseUrl));
+            services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
+            {
+                var factory = sp.GetRequiredService<IHttpClientFactory>();
+                var client = factory.CreateClient("NexoExecution");
+                var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform>>();
+                return new Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform(client, logger);
+            });
+        }
+        else
+        {
+            services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
+                new Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform>>()));
+        }
         services.AddSingleton<Nexo.Infrastructure.Testing.Docker.IDockerService>(sp =>
             new Nexo.Infrastructure.Testing.Docker.DockerService(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.Docker.DockerService>>()));
         services.AddSingleton<Nexo.Infrastructure.Testing.CodeAnalysis.ICodeAnalysisService>(sp =>

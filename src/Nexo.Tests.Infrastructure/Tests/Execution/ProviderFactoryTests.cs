@@ -64,12 +64,21 @@ public class ProviderFactoryTests : UnitTestBase
     {
         var mockLogger = new Mock<ILogger<ProviderFactory>>();
         var factory = new ProviderFactory(mockLogger.Object);
-        
+
+        // Mock providers require NEXO_ALLOW_MOCK=1 (disabled by default for production)
+        WithEnv("NEXO_ALLOW_MOCK", "1", () =>
+        {
+            AssertTrue(factory.IsProviderAvailable("mock"));
+            AssertTrue(factory.IsProviderAvailable("offline"));
+            AssertTrue(factory.IsProviderAvailable("mock-json"));
+            AssertTrue(factory.IsProviderAvailable("echo"));
+        });
+        WithEnv("NEXO_ALLOW_MOCK", null, () =>
+        {
+            AssertFalse(factory.IsProviderAvailable("mock"));
+        });
+
         AssertTrue(factory.IsProviderAvailable("ollama"));
-        AssertTrue(factory.IsProviderAvailable("mock"));
-        AssertTrue(factory.IsProviderAvailable("offline"));
-        AssertTrue(factory.IsProviderAvailable("mock-json"));
-        AssertTrue(factory.IsProviderAvailable("echo"));
         AssertFalse(factory.IsProviderAvailable("unknown"));
 
         // Real providers depend on environment configuration; validate behavior is env-sensitive.
@@ -96,16 +105,20 @@ public class ProviderFactoryTests : UnitTestBase
     {
         var mockLogger = new Mock<ILogger<ProviderFactory>>();
         var factory = new ProviderFactory(mockLogger.Object);
-        
-        var result = await factory.ExecuteLLMAsync(
-            "mock",
-            "You are a test",
-            "Test prompt",
-            new { },
-            CancellationToken.None);
-        
-        AssertNotNull(result);
-        AssertTrue(IsJsonObject(result), "mock provider should return JSON");
+
+        // Mock provider requires NEXO_ALLOW_MOCK=1
+        await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+        {
+            var result = await factory.ExecuteLLMAsync(
+                "mock",
+                "You are a test",
+                "Test prompt",
+                new { },
+                CancellationToken.None);
+
+            AssertNotNull(result);
+            AssertTrue(IsJsonObject(result), "mock provider should return JSON");
+        });
         
         // openai when not configured should throw (fail fast, no mock fallback).
         WithEnv("OPENAI_API_KEY", null, async () =>

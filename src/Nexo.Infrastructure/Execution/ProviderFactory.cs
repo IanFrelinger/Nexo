@@ -53,12 +53,15 @@ public class ProviderFactory : IProviderFactory
         "openai",
         "azure",
         "ollama",
+        "local", // In-process ONNX/LLamaSharp; requires NEXO_LOCAL_MODEL_PATH
         "video", // SmolVLM2-Video in Docker; requires VIDEO_SERVICE_URL
         "mock",
         "offline",
         "mock-json",
         "echo"
     };
+
+    private static bool AllowMock => string.Equals(Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK"), "1", StringComparison.OrdinalIgnoreCase);
     
     /// <summary>
     /// Creates a new provider factory.
@@ -79,8 +82,9 @@ public class ProviderFactory : IProviderFactory
 
         if (!_availableProviders.Contains(provider)) return false;
 
-        // Offline/demo providers are always available
-        if (provider is "mock" or "offline" or "mock-json" or "echo") return true;
+        // Mock/offline providers: only available when NEXO_ALLOW_MOCK=1 (default: disabled)
+        if (provider is "mock" or "offline" or "mock-json" or "echo")
+            return AllowMock;
 
         return provider switch
         {
@@ -89,6 +93,7 @@ public class ProviderFactory : IProviderFactory
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY"))
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")),
             "ollama" => true,
+            "local" => LocalModelProvider.IsAvailable(),
             "video" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("VIDEO_SERVICE_URL")),
             _ => false
         };
@@ -102,17 +107,20 @@ public class ProviderFactory : IProviderFactory
         object config,
         CancellationToken cancellationToken = default)
     {
-        provider = (provider ?? "mock").Trim().ToLowerInvariant();
+        var defaultProvider = AllowMock ? "mock" : "ollama";
+        provider = (provider ?? defaultProvider).Trim().ToLowerInvariant();
         _logger.LogInformation("Executing LLM request with provider {Provider}", provider);
-        
-        // Simulate latency to keep progress reporting realistic
-        await Task.Delay(30, cancellationToken);
-        
-        // Offline/demo-safe providers: always return parseable JSON tailored to the prompt.
+
+        // Mock/offline providers: only when NEXO_ALLOW_MOCK=1
         if (provider is "mock" or "offline" or "mock-json" or "echo")
         {
+            if (!AllowMock)
+                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 for tests/demos, or use a real provider (ollama, openai, azure, local).");
+            await Task.Delay(30, cancellationToken);
             return GenerateMockJsonResponse(systemPrompt, userPrompt);
         }
+
+        await Task.Delay(30, cancellationToken);
         
         // Real providers: fail fast on misconfiguration or request failure (no mock fallback).
         if (provider is "openai")
@@ -136,7 +144,10 @@ public class ProviderFactory : IProviderFactory
         if (provider is "ollama")
             return await ExecuteOllamaAsync(systemPrompt, userPrompt, null, config, cancellationToken);
 
-        throw new InvalidOperationException($"Unknown or unsupported provider: {provider}. Use mock, offline, openai, azure, or ollama.");
+        if (provider is "local")
+            return await LocalModelProvider.ExecuteAsync(systemPrompt, userPrompt, config, cancellationToken);
+
+        throw new InvalidOperationException($"Unknown or unsupported provider: {provider}. Use ollama, openai, azure, local, or mock (NEXO_ALLOW_MOCK=1).");
     }
 
     private async Task<string> ExecuteOpenAiAsync(string apiKey, string systemPrompt, string userPrompt, CancellationToken ct)
@@ -468,8 +479,16 @@ public class ProviderFactory : IProviderFactory
         object config,
         CancellationToken cancellationToken = default)
     {
-        provider = (provider ?? "mock").Trim().ToLowerInvariant();
+        var defaultProvider = AllowMock ? "mock" : "ollama";
+        provider = (provider ?? defaultProvider).Trim().ToLowerInvariant();
         _logger.LogInformation("Executing vision request with provider {Provider}", provider);
+
+        if (provider is "mock" or "offline" or "mock-json" or "echo")
+        {
+            if (!AllowMock)
+                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 or use ollama, openai, azure.");
+            return GenerateMockJsonResponse(systemPrompt, userPrompt);
+        }
 
         if (provider is "ollama" or "auto" or "local")
             return await ExecuteOllamaAsync(systemPrompt, userPrompt, imageBytes != null ? [imageBytes] : null, config, cancellationToken);
@@ -504,7 +523,8 @@ public class ProviderFactory : IProviderFactory
         object config,
         CancellationToken cancellationToken = default)
     {
-        provider = (provider ?? "mock").Trim().ToLowerInvariant();
+        var defaultProvider = AllowMock ? "mock" : "ollama";
+        provider = (provider ?? defaultProvider).Trim().ToLowerInvariant();
         var frames = (frameBytes ?? Array.Empty<byte[]>()).Where(b => b != null && b.Length > 0).ToList();
 
         if (frames.Count == 0)
@@ -516,9 +536,12 @@ public class ProviderFactory : IProviderFactory
 
         _logger.LogInformation("Executing multi-frame vision request with provider {Provider}, {Count} frames", provider, frames.Count);
 
-        // Mock/echo: use last frame only (poor man's fallback)
         if (provider is "mock" or "offline" or "mock-json" or "echo")
+        {
+            if (!AllowMock)
+                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 or use ollama, openai, azure.");
             return await ExecuteVisionAsync(provider, systemPrompt, userPrompt + $"\n[Note: {frames.Count} frames provided, analyzing most recent.]", frames[^1], config, cancellationToken);
+        }
 
         if (provider is "ollama" or "auto" or "local")
             return await ExecuteOllamaAsync(systemPrompt, userPrompt, frames, config, cancellationToken);
