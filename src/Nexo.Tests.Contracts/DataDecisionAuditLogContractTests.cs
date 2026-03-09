@@ -44,4 +44,17 @@ public abstract class DataDecisionAuditLogContractTests
         var recent = log.GetRecent(count * 2, eventType: "ScopeChainRejected");
         recent.Should().HaveCount(count);
     }
+
+    [Fact]
+    public void ExportToJson_ContainsAllEvents()
+    {
+        var log = CreateInstance();
+        log.LogScopeChainRejection(new[] { "0:repo.fs.write:src/a.cs" }, 0, "src/a.cs", "Path not allowed");
+        log.LogAmbientAction("agent-1", "summary", 3);
+
+        var json = log.ExportToJson();
+
+        json.Should().Contain("ScopeChainRejected");
+        json.Should().Contain("AmbientAction");
+    }
 }

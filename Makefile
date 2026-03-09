@@ -171,6 +171,11 @@ dogfood-all:
 review-summary:
 	dotnet run --project src/Nexo.CLI -- review summary
 
+# Mutation testing: validates tests catch deliberate bugs. Install: dotnet tool install -g dotnet-stryker
+mutation-test:
+	@bash scripts/run-mutation-tests.sh
+	@echo "Open ./StrykerOutput/*/reports/mutation-report.html to review"
+
 # Remove test artifacts: hang dumps (~6GB each), .trx, coverage, per-run TestResults dirs.
 # Run after tests to reclaim disk space. Safe to run anytime.
 clean-test-artifacts:

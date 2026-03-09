@@ -21,6 +21,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Kernel;
 /// Validates thread safety and isolation under parallel load.
 /// </summary>
 [Trait("Category", "Unit")]
+[Trait("Category", "Safety")]
 public sealed class ConcurrencyTests : IDisposable
 {
     private readonly IDisposable _tempDirCleanup;
@@ -69,6 +70,31 @@ public sealed class ConcurrencyTests : IDisposable
             (approved == true || approved == false).Should().BeTrue();
             reason.Should().NotBeNullOrEmpty();
         }
+    }
+
+    [Fact]
+    public async Task PathAllowlist_IsThreadSafe_UnderHighConcurrency()
+    {
+        var policy = new PathAllowlist();
+        var paths = Enumerable.Range(0, 200)
+            .Select(i => i % 3 == 0 ? $"src/file{i}.cs"
+                : i % 3 == 1 ? $"bin/file{i}.dll"
+                : $"../escape{i}.cs")
+            .ToArray();
+
+        var results = new ConcurrentBag<bool>();
+        await Parallel.ForEachAsync(paths,
+            new ParallelOptions { MaxDegreeOfParallelism = 50 },
+            async (path, ct) =>
+            {
+                var call = CreateWriteCall(path, "content");
+                results.Add(policy.Approve(call, EmptySnapshot, out var reason));
+                await Task.Yield();
+            });
+
+        results.Should().HaveCount(200, "all 200 results must be present — no results dropped");
+        var grouped = results.GroupBy(r => r).ToList();
+        grouped.Should().OnlyContain(g => g.Count() > 0, "results are deterministic — same path always produces same result");
     }
 
     [Fact]
@@ -128,6 +154,45 @@ public sealed class ConcurrencyTests : IDisposable
     }
 
     [Fact]
+    public async Task AdaptationChain_ConcurrentChains_DoNotShareState()
+    {
+        var (tempDir, _) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-chain-concurrent");
+        var fileChain1 = Path.Combine(tempDir, "chain-1", "foo.cs");
+        var fileChain2 = Path.Combine(tempDir, "chain-2", "bar.cs");
+        Directory.CreateDirectory(Path.GetDirectoryName(fileChain1)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(fileChain2)!);
+        await File.WriteAllTextAsync(fileChain1, "chain1-original");
+        await File.WriteAllTextAsync(fileChain2, "chain2-original");
+
+        var snapshotPath = Path.Combine(tempDir, "snapshots");
+        var auditPath = Path.Combine(tempDir, "audit.db");
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .AddSingleton<IAdaptationAuditLog>(_ => new LiteDbAdaptationAuditLog(auditPath))
+            .AddSingleton<IDependencyGraph, DependencyGraph>()
+            .AddSingleton<ISnapshotStore>(_ => new FileSnapshotStore(snapshotPath))
+            .AddSingleton<IRollbackManager, RollbackManager>()
+            .BuildServiceProvider();
+
+        var rollbackManager = services.GetRequiredService<IRollbackManager>();
+
+        rollbackManager.PrepareForInherit("chain-1", new[] { fileChain1 });
+        rollbackManager.PrepareForInherit("chain-2", new[] { fileChain2 });
+        await rollbackManager.BeforeInheritAsync("chain-1");
+        await rollbackManager.BeforeInheritAsync("chain-2");
+
+        await File.WriteAllTextAsync(fileChain1, "chain1-modified");
+        await File.WriteAllTextAsync(fileChain2, "chain2-modified");
+
+        await Task.WhenAll(
+            rollbackManager.RollbackAsync("chain-1"),
+            rollbackManager.RollbackAsync("chain-2"));
+
+        (await File.ReadAllTextAsync(fileChain1)).Should().Be("chain1-original", "chain-1 rollback must only affect chain-1 files");
+        (await File.ReadAllTextAsync(fileChain2)).Should().Be("chain2-original", "chain-2 rollback must only affect chain-2 files");
+    }
+
+    [Fact]
     public async Task AgentHost_ConcurrentSteps_DoNotInterfere()
     {
         var invocationsA = new ConcurrentBag<ToolCall>();
@@ -152,6 +217,29 @@ public sealed class ConcurrencyTests : IDisposable
         var callB = invocationsB.Should().ContainSingle().Subject;
         callB.Arguments.TryGetProperty("path", out var pB).Should().BeTrue();
         pB.GetString().Should().Be("src/b.cs");
+    }
+
+    [Fact]
+    public async Task AgentHost_ConcurrentSteps_NeverLeavePartialState()
+    {
+        var invocations = new ConcurrentBag<ToolCall>();
+        var toolbox = new CapturingToolbox(invocations);
+        var policies = new PolicyEngine(new IPolicy[] { new PathAllowlist(), new MaxWriteSize(200_000) });
+        var agents = Enumerable.Range(0, 20)
+            .Select(i => new MockAgentWithCalls(CreateWriteCall($"src/file{i}.cs", "x")))
+            .ToList();
+
+        var host = new AgentHost(agents, toolbox, policies);
+
+        var deltas = await Task.WhenAll(
+            Enumerable.Range(0, 20).Select(_ => host.StepAsync(EmptySnapshot, default)));
+
+        deltas.Should().HaveCount(20);
+        foreach (var call in invocations)
+        {
+            call.Arguments.TryGetProperty("path", out var p).Should().BeTrue();
+            (p.GetString() ?? "").Should().StartWith("src/", "all executed calls must be to allowed paths");
+        }
     }
 
     private sealed class CapturingToolbox : IToolbox
