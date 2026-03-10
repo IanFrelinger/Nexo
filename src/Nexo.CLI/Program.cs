@@ -951,6 +951,7 @@ static class Program
         root.AddCommand(new DogfoodCommand());
         root.AddCommand(new BootstrapCommand());
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
+        root.AddCommand(new SelfExtendCommand(() => ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>()));
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
@@ -983,7 +984,9 @@ static class Program
         // Dog-food: tester agents run the app's own test pipeline
         services.TryAddSingleton<Nexo.BackgroundAgents.Testing.ITestRunRunner, Nexo.CLI.Commands.BackgroundAgent.TestRunRunnerAdapter>();
         // Dog-food: extender agents run self-extend cycle (LLM + tools with path policy)
-        services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner, Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>();
+        services.TryAddSingleton<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>();
+        services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner>(
+            sp => sp.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>());
 
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();

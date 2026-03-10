@@ -815,8 +815,132 @@ public class ProviderFactory : IProviderFactory
             return JsonSerializer.Serialize(obj);
         }
 
+        // Self-extend tool-calling agent (used by background-agent extender + self-extend CLI command).
+        if (systemPrompt.Contains("You are a self-extending code agent", StringComparison.OrdinalIgnoreCase))
+        {
+            var objective = ExtractObjective(userPrompt);
+            if (LooksLikeUnityBootstrapObjective(objective))
+            {
+                return BuildUnityBootstrapToolCallsJson(systemPrompt);
+            }
+
+            // Explicitly return an empty tool call envelope for schema consistency.
+            return JsonSerializer.Serialize(new { tool_calls = Array.Empty<object>() });
+        }
+
         // Fallback: return a benign JSON object
         return "{}";
+    }
+
+    private static string ExtractObjective(string userPrompt)
+    {
+        if (string.IsNullOrWhiteSpace(userPrompt))
+            return string.Empty;
+        var match = Regex.Match(userPrompt, @"Objective:\s*(?<goal>[\s\S]+)$", RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups["goal"].Value.Trim() : userPrompt.Trim();
+    }
+
+    private static bool LooksLikeUnityBootstrapObjective(string objective)
+    {
+        if (string.IsNullOrWhiteSpace(objective))
+            return false;
+        return objective.Contains("unity", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("mono", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("dash ability", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("gameplay system", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildUnityBootstrapToolCallsJson(string systemPrompt)
+    {
+        var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
+
+        const string interfaceContent = """
+namespace Nexo.Unity.Generated;
+
+public interface IGeneratedGameplaySystem
+{
+    string Id { get; }
+    string DisplayName { get; }
+    void Tick(SystemContext context);
+}
+""";
+
+        const string contextContent = """
+namespace Nexo.Unity.Generated;
+
+public sealed class SystemContext
+{
+    public float DeltaTime { get; init; }
+    public bool DashPressed { get; init; }
+    public float DashSpeed { get; init; } = 12f;
+    public float DashDurationSeconds { get; init; } = 0.2f;
+}
+""";
+
+        const string dashContent = """
+namespace Nexo.Unity.Generated;
+
+public sealed class DashAbilitySystem : IGeneratedGameplaySystem
+{
+    private float _remainingDashSeconds;
+
+    public string Id => "dash-ability";
+    public string DisplayName => "Dash Ability";
+
+    public void Tick(SystemContext context)
+    {
+        if (context.DashPressed)
+            _remainingDashSeconds = context.DashDurationSeconds;
+
+        if (_remainingDashSeconds > 0f)
+            _remainingDashSeconds -= context.DeltaTime;
+    }
+}
+""";
+
+        var calls = new object[]
+        {
+            new
+            {
+                id = "repo.fs.write",
+                arguments = new
+                {
+                    root,
+                    path = "docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs",
+                    content = interfaceContent
+                }
+            },
+            new
+            {
+                id = "repo.fs.write",
+                arguments = new
+                {
+                    root,
+                    path = "docs/UnityBootstrapGenerated/SystemContext.cs",
+                    content = contextContent
+                }
+            },
+            new
+            {
+                id = "repo.fs.write",
+                arguments = new
+                {
+                    root,
+                    path = "docs/UnityBootstrapGenerated/DashAbilitySystem.cs",
+                    content = dashContent
+                }
+            }
+        };
+
+        return JsonSerializer.Serialize(new { tool_calls = calls });
+    }
+
+    private static string ResolveRepoRootFromSystemPrompt(string systemPrompt)
+    {
+        var match = Regex.Match(systemPrompt, "\"RepoRoot\"\\s*:\\s*\"(?<root>[^\"]+)\"", RegexOptions.IgnoreCase);
+        return match.Success && !string.IsNullOrWhiteSpace(match.Groups["root"].Value)
+            ? match.Groups["root"].Value
+            : ".";
     }
 
     private static string InferScreenType(string prompt)

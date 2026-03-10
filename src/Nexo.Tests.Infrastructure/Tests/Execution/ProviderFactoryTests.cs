@@ -26,6 +26,7 @@ public class ProviderFactoryTests : UnitTestBase
         {
             await TestIsProviderAvailable();
             await TestExecuteLLMAsync();
+            await TestExecuteLLMAsync_SelfExtendUnityBootstrap();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -163,6 +164,38 @@ public class ProviderFactoryTests : UnitTestBase
         }).GetAwaiter().GetResult();
     }
 
+    private async Task TestExecuteLLMAsync_SelfExtendUnityBootstrap()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Generate Unity bootstrap files (IGeneratedGameplaySystem, SystemContext, DashAbilitySystem).
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        AssertTrue(doc.RootElement.TryGetProperty("tool_calls", out var calls), "tool_calls should exist");
+        AssertEqual(JsonValueKind.Array, calls.ValueKind);
+        AssertTrue(calls.GetArrayLength() >= 3, "Expected at least 3 repo.fs.write calls");
+
+        var first = calls[0];
+        AssertEqual("repo.fs.write", first.GetProperty("id").GetString());
+        var firstArgs = first.GetProperty("arguments");
+        AssertEqual("/workspace", firstArgs.GetProperty("root").GetString());
+        AssertEqual("docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs", firstArgs.GetProperty("path").GetString());
+    }
+
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception
     {
         try
@@ -213,6 +246,20 @@ public class ProviderFactoryTests : UnitTestBase
         {
             Environment.SetEnvironmentVariable(key, value);
             await action();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, old);
+        }
+    }
+
+    private static async Task<T> WithEnv<T>(string key, string? value, Func<Task<T>> action)
+    {
+        var old = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, value);
+            return await action();
         }
         finally
         {
