@@ -12,7 +12,7 @@ public sealed class ChatCommand : Command
     private readonly Func<OrchestrateCommand> _orchestrateFactory;
 
     public ChatCommand(Func<OrchestrateCommand> orchestrateFactory)
-        : base("chat", "Interactive chat mode for coding workflows (Mac-first bootstrap aware)")
+        : base("chat", "Interactive chat mode for coding workflows (bootstrap aware)")
     {
         _orchestrateFactory = orchestrateFactory ?? throw new ArgumentNullException(nameof(orchestrateFactory));
 

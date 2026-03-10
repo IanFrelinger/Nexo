@@ -7,7 +7,7 @@ namespace Nexo.CLI.Commands;
 
 public sealed class BootstrapCommand : Command
 {
-    public BootstrapCommand() : base("bootstrap", "Mac-first environment bootstrap (check/install dependencies)")
+    public BootstrapCommand() : base("bootstrap", "Linux-first environment bootstrap (check/install dependencies)")
     {
         AddAlias("doctor");
 
@@ -19,7 +19,7 @@ public sealed class BootstrapCommand : Command
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve install plan.");
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "Show install plan without executing commands.");
 
-        var checkCmd = new Command("check", "Check local machine readiness for the Mac demo.");
+        var checkCmd = new Command("check", "Check local machine readiness for the demo profile.");
         checkCmd.AddOption(includeOptionalOpt);
         checkCmd.AddOption(jsonOpt);
         checkCmd.SetHandler(async (InvocationContext ctx) =>
@@ -30,7 +30,7 @@ public sealed class BootstrapCommand : Command
         });
         AddCommand(checkCmd);
 
-        var applyCmd = new Command("apply", "Install missing dependencies for the Mac demo.");
+        var applyCmd = new Command("apply", "Install missing dependencies for the demo profile.");
         applyCmd.AddOption(includeOptionalOpt);
         applyCmd.AddOption(jsonOpt);
         applyCmd.AddOption(yesOpt);
@@ -58,14 +58,14 @@ public sealed class BootstrapCommand : Command
 
     internal static async Task<int> RunCheckAsync(bool includeOptional, bool json, CancellationToken ct)
     {
-        var assessment = await BootstrapRuntime.AssessMacDemoAsync(includeOptional, ct).ConfigureAwait(false);
+        var assessment = await BootstrapRuntime.AssessDemoAsync(includeOptional, ct).ConfigureAwait(false);
         BootstrapRuntime.RenderAssessment(assessment, includeOptional, json);
         return 0;
     }
 
     internal static async Task<int> RunApplyAsync(bool includeOptional, bool yes, bool dryRun, bool json, CancellationToken ct)
     {
-        var assessment = await BootstrapRuntime.AssessMacDemoAsync(includeOptional, ct).ConfigureAwait(false);
+        var assessment = await BootstrapRuntime.AssessDemoAsync(includeOptional, ct).ConfigureAwait(false);
         if (!assessment.Supported)
         {
             BootstrapRuntime.RenderAssessment(assessment, includeOptional, json);
@@ -126,7 +126,7 @@ public sealed class BootstrapCommand : Command
                 failures.Add($"{dep.DisplayName} (exit {exitCode})");
         }
 
-        var post = await BootstrapRuntime.AssessMacDemoAsync(includeOptional, ct).ConfigureAwait(false);
+        var post = await BootstrapRuntime.AssessDemoAsync(includeOptional, ct).ConfigureAwait(false);
         var success = !post.MissingRequired.Any() && failures.Count == 0;
 
         if (json)
@@ -155,6 +155,38 @@ public sealed class BootstrapCommand : Command
 
 internal static class BootstrapRuntime
 {
+    private static readonly IReadOnlyList<BootstrapDependencySpec> LinuxDemoDependencies =
+    [
+        new(
+            "git",
+            "Git",
+            "command -v git",
+            "sudo apt-get update && sudo apt-get install -y git",
+            true,
+            false),
+        new(
+            "curl",
+            "curl",
+            "command -v curl",
+            "sudo apt-get update && sudo apt-get install -y curl",
+            true,
+            false),
+        new(
+            "ollama",
+            "Ollama",
+            "command -v ollama",
+            "curl -fsSL https://ollama.com/install.sh | sh",
+            false,
+            true),
+        new(
+            "docker",
+            "Docker",
+            "command -v docker",
+            "sudo apt-get update && sudo apt-get install -y docker.io",
+            false,
+            true),
+    ];
+
     private static readonly IReadOnlyList<BootstrapDependencySpec> MacDemoDependencies =
     [
         new(
@@ -187,21 +219,23 @@ internal static class BootstrapRuntime
             true),
     ];
 
-    public static async Task<BootstrapAssessment> AssessMacDemoAsync(bool includeOptional, CancellationToken ct)
+    public static async Task<BootstrapAssessment> AssessDemoAsync(bool includeOptional, CancellationToken ct)
     {
+        _ = includeOptional;
         var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
-        if (!OperatingSystem.IsMacOS())
+        var (profile, supported, reason, deps) = ResolveProfile();
+        if (!supported)
         {
             return new BootstrapAssessment(
-                "mac-demo",
+                profile,
                 os,
                 false,
-                "Mac bootstrap is currently supported only on macOS.",
+                reason,
                 Array.Empty<BootstrapDependencyStatus>());
         }
 
         var statuses = new List<BootstrapDependencyStatus>();
-        foreach (var spec in MacDemoDependencies)
+        foreach (var spec in deps)
         {
             var (exitCode, _, stderr) = await RunShellCaptureAsync(spec.ProbeCommand, ct).ConfigureAwait(false);
             statuses.Add(new BootstrapDependencyStatus(
@@ -215,11 +249,20 @@ internal static class BootstrapRuntime
         }
 
         return new BootstrapAssessment(
-            "mac-demo",
+            profile,
             os,
             true,
             null,
             statuses);
+    }
+
+    private static (string Profile, bool Supported, string? Reason, IReadOnlyList<BootstrapDependencySpec> Deps) ResolveProfile()
+    {
+        if (OperatingSystem.IsLinux())
+            return ("linux-demo", true, null, LinuxDemoDependencies);
+        if (OperatingSystem.IsMacOS())
+            return ("mac-demo", true, null, MacDemoDependencies);
+        return ("unsupported", false, "Bootstrap currently supports Linux and macOS.", Array.Empty<BootstrapDependencySpec>());
     }
 
     public static IReadOnlyList<BootstrapDependencyStatus> BuildInstallPlan(BootstrapAssessment assessment, bool includeOptional)
