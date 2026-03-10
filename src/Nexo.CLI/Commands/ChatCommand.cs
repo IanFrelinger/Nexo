@@ -24,6 +24,10 @@ public sealed class ChatCommand : Command
         var bootstrapApplyOpt = new Option<bool>("--bootstrap-apply", () => false, "Attempt dependency installation during startup.");
         var includeOptionalOpt = new Option<bool>("--include-optional-deps", () => false, "Include optional dependencies in bootstrap checks/install.");
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve bootstrap apply.");
+        var demoLocalOpt = new Option<bool>(
+            "--demo-local",
+            () => true,
+            "When provider is not set, run chat in local demo mode (enables NEXO_ALLOW_MOCK=1 and provider=mock-json).");
 
         AddOption(providerOpt);
         AddOption(preferModelOpt);
@@ -33,6 +37,7 @@ public sealed class ChatCommand : Command
         AddOption(bootstrapApplyOpt);
         AddOption(includeOptionalOpt);
         AddOption(yesOpt);
+        AddOption(demoLocalOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -44,6 +49,7 @@ public sealed class ChatCommand : Command
             var bootstrapApply = ctx.ParseResult.GetValueForOption(bootstrapApplyOpt);
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);
+            var demoLocal = ctx.ParseResult.GetValueForOption(demoLocalOpt);
             var exitCode = await ExecuteAsync(
                 provider,
                 preferModel,
@@ -53,6 +59,7 @@ public sealed class ChatCommand : Command
                 bootstrapApply,
                 includeOptional,
                 yes,
+                demoLocal,
                 ctx.GetCancellationToken()).ConfigureAwait(false);
             Environment.ExitCode = exitCode;
         });
@@ -67,11 +74,14 @@ public sealed class ChatCommand : Command
         bool bootstrapApply,
         bool includeOptionalDeps,
         bool yes,
+        bool demoLocal,
         CancellationToken ct)
     {
         var state = new ChatState(provider, preferModel, ephemeral);
         if (state.Ephemeral)
             Environment.SetEnvironmentVariable("NEXO_EPHEMERAL_MODELS", "1");
+
+        ApplyDemoLocalDefaults(state, demoLocal);
 
         if (!skipBootstrapCheck)
         {
@@ -231,5 +241,21 @@ public sealed class ChatCommand : Command
         public string? PreferModel { get; set; }
 
         public bool Ephemeral { get; }
+    }
+
+    private static void ApplyDemoLocalDefaults(ChatState state, bool demoLocal)
+    {
+        if (!demoLocal)
+            return;
+
+        if (!string.IsNullOrWhiteSpace(state.Provider))
+            return;
+
+        Environment.SetEnvironmentVariable("NEXO_ALLOW_MOCK", "1");
+        state.Provider = "mock-json";
+        if (string.IsNullOrWhiteSpace(state.PreferModel))
+            state.PreferModel = "deterministic";
+
+        Console.WriteLine("Chat demo-local mode enabled (provider=mock-json, NEXO_ALLOW_MOCK=1).");
     }
 }
