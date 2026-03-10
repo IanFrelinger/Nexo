@@ -45,6 +45,8 @@ dotnet run --project src/Nexo.CLI -- test local
 | `nexo agent` | Execute a named agent action |
 | `nexo orchestrate` | Run orchestration workflows |
 | `nexo config` | Show or update configuration |
+| `nexo bootstrap` | Linux-first machine readiness check/install for demo dependencies (macOS supported) |
+| `nexo chat` | Interactive CLI chat loop for orchestration-driven requests |
 | `nexo background-agent` | Manage background agents (start, stop, logs, metrics) |
 | `nexo trust` | Trust & Information Architecture: audit log and access boundary |
 | `nexo test` | Run tests (local, portable, multi-env) |

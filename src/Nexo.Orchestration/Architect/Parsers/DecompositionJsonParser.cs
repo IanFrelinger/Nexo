@@ -40,9 +40,9 @@ public sealed class DecompositionJsonParser
     /// Process:
     /// 1. Extracts JSON from markdown code blocks (if present)
     /// 2. Parses JSON into DecompositionResult structure
-    /// 3. Handles parsing errors gracefully (returns null on failure)
+    /// 3. Handles parsing errors gracefully (returns minimal fallback decomposition on failure)
     /// 
-    /// Returns null if parsing fails or model output is empty.
+    /// Returns a minimal fallback decomposition when parsing fails or model output is empty.
     /// </summary>
     /// <param name="modelOutput">The raw text output from the LLM model.</param>
     /// <param name="originalRequest">The original user request (for context).</param>
@@ -52,7 +52,7 @@ public sealed class DecompositionJsonParser
         if (string.IsNullOrWhiteSpace(modelOutput))
         {
             _logger.LogWarning("Model output is empty");
-            return null;
+            return BuildFallbackDecomposition(originalRequest, "Model output was empty");
         }
 
         try
@@ -86,14 +86,38 @@ public sealed class DecompositionJsonParser
         }
         catch (JsonException ex)
         {
-            _logger.LogError(ex, "Failed to parse JSON from model output");
-            return null;
+            _logger.LogWarning("Provider output was not valid decomposition JSON; using fallback decomposition. {Reason}", ex.Message);
+            return BuildFallbackDecomposition(originalRequest, "Invalid JSON from provider output");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error parsing decomposition");
-            return null;
+            _logger.LogWarning("Unexpected parser error; using fallback decomposition. {Reason}", ex.Message);
+            return BuildFallbackDecomposition(originalRequest, "Unexpected parser error");
         }
+    }
+
+    private static DecompositionResult BuildFallbackDecomposition(string originalRequest, string reason)
+    {
+        var safeRequest = string.IsNullOrWhiteSpace(originalRequest) ? "request" : originalRequest.Trim();
+        return new DecompositionResult
+        {
+            Agents = new[]
+            {
+                new AgentSpawnSpec
+                {
+                    AgentId = "fallback-1",
+                    Domain = "Gameplay",
+                    Goal = $"Handle request: {safeRequest}",
+                    Description = "Fallback decomposition used when provider output is not valid JSON.",
+                    Dependencies = Array.Empty<string>(),
+                    Constraints = Array.Empty<AgentConstraint>(),
+                    Priority = 1
+                }
+            },
+            OriginalRequest = originalRequest,
+            Reasoning = $"Parser fallback: {reason}",
+            Confidence = 0.2
+        };
     }
 
     private IReadOnlyList<AgentSpawnSpec> ParseAgents(JsonElement agentsArray)
