@@ -821,7 +821,7 @@ public class ProviderFactory : IProviderFactory
             var objective = ExtractObjective(userPrompt);
             if (LooksLikeUnityBootstrapObjective(objective))
             {
-                return BuildUnityBootstrapToolCallsJson(systemPrompt);
+                return BuildUnityBootstrapToolCallsJson(systemPrompt, objective);
             }
 
             // Explicitly return an empty tool call envelope for schema consistency.
@@ -850,9 +850,21 @@ public class ProviderFactory : IProviderFactory
             || objective.Contains("gameplay system", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string BuildUnityBootstrapToolCallsJson(string systemPrompt)
+    private static bool LooksLikeNuancedUnityObjective(string objective)
+    {
+        if (string.IsNullOrWhiteSpace(objective))
+            return false;
+        return objective.Contains("cooldown", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("error state", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("compile error", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("inspector", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("raw code", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildUnityBootstrapToolCallsJson(string systemPrompt, string objective)
     {
         var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
+        var nuanced = LooksLikeNuancedUnityObjective(objective);
 
         const string interfaceContent = """
 namespace Nexo.Unity.Generated;
@@ -871,26 +883,32 @@ namespace Nexo.Unity.Generated;
 public sealed class SystemContext
 {
     public float DeltaTime { get; init; }
+    public float CurrentTimeSeconds { get; init; }
     public bool DashPressed { get; init; }
     public float DashSpeed { get; init; } = 12f;
     public float DashDurationSeconds { get; init; } = 0.2f;
+    public float DashCooldownSeconds { get; init; } = 1.0f;
 }
 """;
 
-        const string dashContent = """
+        const string dashContentBaseline = """
 namespace Nexo.Unity.Generated;
 
 public sealed class DashAbilitySystem : IGeneratedGameplaySystem
 {
     private float _remainingDashSeconds;
+    private float _cooldownEndsAtSeconds;
 
     public string Id => "dash-ability";
     public string DisplayName => "Dash Ability";
 
     public void Tick(SystemContext context)
     {
-        if (context.DashPressed)
+        if (context.DashPressed && context.CurrentTimeSeconds >= _cooldownEndsAtSeconds)
+        {
             _remainingDashSeconds = context.DashDurationSeconds;
+            _cooldownEndsAtSeconds = context.CurrentTimeSeconds + context.DashCooldownSeconds;
+        }
 
         if (_remainingDashSeconds > 0f)
             _remainingDashSeconds -= context.DeltaTime;
@@ -898,7 +916,62 @@ public sealed class DashAbilitySystem : IGeneratedGameplaySystem
 }
 """;
 
-        var calls = new object[]
+        const string dashContentNuanced = """
+namespace Nexo.Unity.Generated;
+
+public sealed class DashAbilitySystem : IGeneratedGameplaySystem
+{
+    private float _remainingDashSeconds;
+    private float _cooldownEndsAtSeconds;
+    private GeneratedSystemErrorState _errorState = GeneratedSystemErrorState.None;
+
+    public string Id => "dash-ability";
+    public string DisplayName => "Dash Ability";
+
+    public void Tick(SystemContext context)
+    {
+        if (context.DashPressed && context.CurrentTimeSeconds >= _cooldownEndsAtSeconds)
+        {
+            _remainingDashSeconds = context.DashDurationSeconds;
+            _cooldownEndsAtSeconds = context.CurrentTimeSeconds + context.DashCooldownSeconds;
+        }
+
+        if (_remainingDashSeconds > 0f)
+            _remainingDashSeconds -= context.DeltaTime;
+    }
+
+    public GeneratedSystemInspectorSnapshot Inspect(string generatedCode) =>
+        new(
+            SystemId: Id,
+            RawGeneratedCode: generatedCode,
+            ErrorState: _errorState,
+            GeneratedAtUtc: System.DateTimeOffset.UtcNow);
+}
+""";
+
+        const string errorStateContent = """
+namespace Nexo.Unity.Generated;
+
+public sealed record GeneratedSystemErrorState(
+    bool HasCompileError,
+    string Message,
+    string? LastKnownGoodSystemId)
+{
+    public static GeneratedSystemErrorState None { get; } = new(false, string.Empty, null);
+}
+""";
+
+        const string inspectorSnapshotContent = """
+namespace Nexo.Unity.Generated;
+
+public sealed record GeneratedSystemInspectorSnapshot(
+    string SystemId,
+    string RawGeneratedCode,
+    GeneratedSystemErrorState ErrorState,
+    System.DateTimeOffset GeneratedAtUtc);
+""";
+
+        var calls = new List<object>
         {
             new
             {
@@ -927,10 +1000,34 @@ public sealed class DashAbilitySystem : IGeneratedGameplaySystem
                 {
                     root,
                     path = "docs/UnityBootstrapGenerated/DashAbilitySystem.cs",
-                    content = dashContent
+                    content = nuanced ? dashContentNuanced : dashContentBaseline
                 }
             }
         };
+
+        if (nuanced)
+        {
+            calls.Add(new
+            {
+                id = "repo.fs.write",
+                arguments = new
+                {
+                    root,
+                    path = "docs/UnityBootstrapGenerated/GeneratedSystemErrorState.cs",
+                    content = errorStateContent
+                }
+            });
+            calls.Add(new
+            {
+                id = "repo.fs.write",
+                arguments = new
+                {
+                    root,
+                    path = "docs/UnityBootstrapGenerated/GeneratedSystemInspectorSnapshot.cs",
+                    content = inspectorSnapshotContent
+                }
+            });
+        }
 
         return JsonSerializer.Serialize(new { tool_calls = calls });
     }

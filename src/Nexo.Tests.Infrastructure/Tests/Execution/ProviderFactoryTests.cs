@@ -27,6 +27,7 @@ public class ProviderFactoryTests : UnitTestBase
             await TestIsProviderAvailable();
             await TestExecuteLLMAsync();
             await TestExecuteLLMAsync_SelfExtendUnityBootstrap();
+            await TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -194,6 +195,55 @@ Generate Unity bootstrap files (IGeneratedGameplaySystem, SystemContext, DashAbi
         var firstArgs = first.GetProperty("arguments");
         AssertEqual("/workspace", firstArgs.GetProperty("root").GetString());
         AssertEqual("docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs", firstArgs.GetProperty("path").GetString());
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Generate a richer Unity gameplay extension layer for Mono compatibility. Required files: IGeneratedGameplaySystem, SystemContext, DashAbilitySystem with cooldown fields, GeneratedSystemErrorState for in-game compile errors, and GeneratedSystemInspectorSnapshot for raw code inspection.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        AssertTrue(doc.RootElement.TryGetProperty("tool_calls", out var calls), "tool_calls should exist");
+        AssertEqual(JsonValueKind.Array, calls.ValueKind);
+        AssertTrue(calls.GetArrayLength() >= 5, "Expected at least 5 repo.fs.write calls for nuanced objective");
+
+        var sawErrorState = false;
+        var sawInspectorSnapshot = false;
+        var sawCooldownInDash = false;
+
+        foreach (var call in calls.EnumerateArray())
+        {
+            var args = call.GetProperty("arguments");
+            var path = args.GetProperty("path").GetString() ?? string.Empty;
+            if (path == "docs/UnityBootstrapGenerated/GeneratedSystemErrorState.cs")
+                sawErrorState = true;
+            if (path == "docs/UnityBootstrapGenerated/GeneratedSystemInspectorSnapshot.cs")
+                sawInspectorSnapshot = true;
+            if (path == "docs/UnityBootstrapGenerated/DashAbilitySystem.cs")
+            {
+                var content = args.GetProperty("content").GetString() ?? string.Empty;
+                sawCooldownInDash = content.Contains("DashCooldownSeconds", StringComparison.Ordinal);
+            }
+        }
+
+        AssertTrue(sawErrorState, "Expected GeneratedSystemErrorState.cs tool call");
+        AssertTrue(sawInspectorSnapshot, "Expected GeneratedSystemInspectorSnapshot.cs tool call");
+        AssertTrue(sawCooldownInDash, "Expected cooldown field usage in DashAbilitySystem.cs content");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception
