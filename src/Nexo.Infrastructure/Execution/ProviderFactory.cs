@@ -865,8 +865,13 @@ public class ProviderFactory : IProviderFactory
     {
         var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
         var nuanced = LooksLikeNuancedUnityObjective(objective);
+        var includeJump = objective.Contains("jump", StringComparison.OrdinalIgnoreCase);
+        var includeSprint = objective.Contains("sprint", StringComparison.OrdinalIgnoreCase);
+        var includeRegistry = objective.Contains("registry", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("compose", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("composed", StringComparison.OrdinalIgnoreCase);
 
-        const string interfaceContent = """
+        var interfaceContent = """
 namespace Nexo.Unity.Generated;
 
 public interface IGeneratedGameplaySystem
@@ -877,7 +882,101 @@ public interface IGeneratedGameplaySystem
 }
 """;
 
-        const string contextContent = """
+        var contextContent = BuildSystemContextSource(includeJump, includeSprint);
+        var dashContent = nuanced ? BuildDashSystemNuancedSource() : BuildDashSystemBaselineSource();
+        var jumpContent = BuildJumpSystemSource();
+        var sprintContent = BuildSprintSystemSource();
+        var registryContent = BuildAbilityRegistrySource();
+        var errorStateContent = BuildErrorStateSource();
+        var inspectorSnapshotContent = BuildInspectorSnapshotSource();
+
+        var extensionCommands = new List<(string ClassName, string CommandName, string ExtensionId, string[] Dependencies)>
+        {
+            ("DashExtensionCommand", "ext-dash", "dash", Array.Empty<string>()),
+            ("JumpExtensionCommand", "ext-jump", "jump", new[] { "dash" }),
+            ("SprintExtensionCommand", "ext-sprint", "sprint", new[] { "dash" }),
+            ("AbilityRegistryExtensionCommand", "ext-registry", "registry", new[] { "dash", "jump", "sprint" }),
+        };
+
+        var calls = new List<object>
+        {
+            CreateWriteCall(root, "docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs", interfaceContent),
+            CreateWriteCall(root, "docs/UnityBootstrapGenerated/SystemContext.cs", contextContent),
+            CreateWriteCall(root, "docs/UnityBootstrapGenerated/DashAbilitySystem.cs", dashContent),
+        };
+
+        if (includeJump)
+            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/JumpAbilitySystem.cs", jumpContent));
+        if (includeSprint)
+            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/SprintAbilitySystem.cs", sprintContent));
+        if (includeRegistry)
+            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/AbilityRegistry.cs", registryContent));
+
+        if (nuanced)
+        {
+            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/GeneratedSystemErrorState.cs", errorStateContent));
+            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/GeneratedSystemInspectorSnapshot.cs", inspectorSnapshotContent));
+        }
+
+        // Command-structure scaffolding for composition.
+        calls.Add(CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()));
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
+                BuildExtensionCommandSource(ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+        calls.Add(CreateWriteCall(
+            root,
+            "src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBundleCommand.cs",
+            BuildBundleCommandSource(extensionCommands.Select(e => (e.ClassName, e.CommandName)).ToArray())));
+
+        // Generated tests that validate extension command structure.
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
+                BuildExtensionCommandStructureTestSource($"{ext.ClassName}StructureTests", ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+        calls.Add(CreateWriteCall(
+            root,
+            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendBundleCommandStructureTests.cs",
+            BuildBundleCommandStructureTestSource(
+                "SelfExtendBundleCommandStructureTests",
+                extensionCommands.Select(e => e.CommandName).ToArray())));
+
+        return JsonSerializer.Serialize(new { tool_calls = calls });
+    }
+
+    private static object CreateWriteCall(string root, string path, string content) => new
+    {
+        id = "repo.fs.write",
+        arguments = new
+        {
+            root,
+            path,
+            content
+        }
+    };
+
+    private static string BuildSystemContextSource(bool includeJump, bool includeSprint)
+    {
+        var jumpFields = includeJump
+            ? """
+    public bool JumpPressed { get; init; }
+    public float JumpForce { get; init; } = 8f;
+"""
+            : string.Empty;
+        var sprintFields = includeSprint
+            ? """
+    public bool SprintPressed { get; init; }
+    public float SprintSpeedMultiplier { get; init; } = 1.5f;
+"""
+            : string.Empty;
+
+        return $$"""
 namespace Nexo.Unity.Generated;
 
 public sealed class SystemContext
@@ -888,10 +987,12 @@ public sealed class SystemContext
     public float DashSpeed { get; init; } = 12f;
     public float DashDurationSeconds { get; init; } = 0.2f;
     public float DashCooldownSeconds { get; init; } = 1.0f;
+{{jumpFields}}{{sprintFields}}
 }
 """;
+    }
 
-        const string dashContentBaseline = """
+    private static string BuildDashSystemBaselineSource() => """
 namespace Nexo.Unity.Generated;
 
 public sealed class DashAbilitySystem : IGeneratedGameplaySystem
@@ -916,7 +1017,7 @@ public sealed class DashAbilitySystem : IGeneratedGameplaySystem
 }
 """;
 
-        const string dashContentNuanced = """
+    private static string BuildDashSystemNuancedSource() => """
 namespace Nexo.Unity.Generated;
 
 public sealed class DashAbilitySystem : IGeneratedGameplaySystem
@@ -949,7 +1050,72 @@ public sealed class DashAbilitySystem : IGeneratedGameplaySystem
 }
 """;
 
-        const string errorStateContent = """
+    private static string BuildJumpSystemSource() => """
+namespace Nexo.Unity.Generated;
+
+public sealed class JumpAbilitySystem : IGeneratedGameplaySystem
+{
+    private bool _airborne;
+    private float _verticalVelocity;
+
+    public string Id => "jump-ability";
+    public string DisplayName => "Jump Ability";
+
+    public void Tick(SystemContext context)
+    {
+        if (context.JumpPressed && !_airborne)
+        {
+            _airborne = true;
+            _verticalVelocity = context.JumpForce;
+        }
+
+        if (_airborne)
+        {
+            _verticalVelocity -= 9.8f * context.DeltaTime;
+            if (_verticalVelocity <= 0f)
+                _airborne = false;
+        }
+    }
+}
+""";
+
+    private static string BuildSprintSystemSource() => """
+namespace Nexo.Unity.Generated;
+
+public sealed class SprintAbilitySystem : IGeneratedGameplaySystem
+{
+    public string Id => "sprint-ability";
+    public string DisplayName => "Sprint Ability";
+    public float CurrentSpeedMultiplier { get; private set; } = 1f;
+
+    public void Tick(SystemContext context)
+    {
+        CurrentSpeedMultiplier = context.SprintPressed ? context.SprintSpeedMultiplier : 1f;
+    }
+}
+""";
+
+    private static string BuildAbilityRegistrySource() => """
+namespace Nexo.Unity.Generated;
+
+public sealed class AbilityRegistry
+{
+    private readonly Dictionary<string, IGeneratedGameplaySystem> _systems = new(StringComparer.Ordinal);
+
+    public AbilityRegistry(IEnumerable<IGeneratedGameplaySystem> systems)
+    {
+        foreach (var system in systems)
+            _systems[system.Id] = system;
+    }
+
+    public IReadOnlyCollection<IGeneratedGameplaySystem> All => _systems.Values;
+
+    public bool TryGet(string id, out IGeneratedGameplaySystem? system)
+        => _systems.TryGetValue(id, out system);
+}
+""";
+
+    private static string BuildErrorStateSource() => """
 namespace Nexo.Unity.Generated;
 
 public sealed record GeneratedSystemErrorState(
@@ -961,7 +1127,7 @@ public sealed record GeneratedSystemErrorState(
 }
 """;
 
-        const string inspectorSnapshotContent = """
+    private static string BuildInspectorSnapshotSource() => """
 namespace Nexo.Unity.Generated;
 
 public sealed record GeneratedSystemInspectorSnapshot(
@@ -971,65 +1137,192 @@ public sealed record GeneratedSystemInspectorSnapshot(
     System.DateTimeOffset GeneratedAtUtc);
 """;
 
-        var calls = new List<object>
-        {
-            new
-            {
-                id = "repo.fs.write",
-                arguments = new
-                {
-                    root,
-                    path = "docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs",
-                    content = interfaceContent
-                }
-            },
-            new
-            {
-                id = "repo.fs.write",
-                arguments = new
-                {
-                    root,
-                    path = "docs/UnityBootstrapGenerated/SystemContext.cs",
-                    content = contextContent
-                }
-            },
-            new
-            {
-                id = "repo.fs.write",
-                arguments = new
-                {
-                    root,
-                    path = "docs/UnityBootstrapGenerated/DashAbilitySystem.cs",
-                    content = nuanced ? dashContentNuanced : dashContentBaseline
-                }
-            }
-        };
+    private static string BuildComposableCommandContractSource() => """
+namespace Nexo.CLI.Commands.SelfExtendGenerated;
 
-        if (nuanced)
+public interface IComposableExtensionCommand
+{
+    string ExtensionId { get; }
+    IReadOnlyList<string> Dependencies { get; }
+}
+""";
+
+    private static string BuildExtensionCommandSource(string className, string commandName, string extensionId, string[] dependencies)
+    {
+        var dependencyArrayExpr = dependencies.Length == 0
+            ? "Array.Empty<string>()"
+            : $"new[] {{ {string.Join(", ", dependencies.Select(d => $"\"{d}\""))} }}";
+        return $$"""
+using System.CommandLine;
+using System.Text.Json;
+
+namespace Nexo.CLI.Commands.SelfExtendGenerated;
+
+public sealed class {{className}} : Command, IComposableExtensionCommand
+{
+    public {{className}}() : base("{{commandName}}", "Self-extend generated extension command")
+    {
+        this.SetHandler(() =>
         {
-            calls.Add(new
+            Console.Out.WriteLine(JsonSerializer.Serialize(new
             {
-                id = "repo.fs.write",
-                arguments = new
-                {
-                    root,
-                    path = "docs/UnityBootstrapGenerated/GeneratedSystemErrorState.cs",
-                    content = errorStateContent
-                }
-            });
-            calls.Add(new
+                ok = true,
+                command = Name,
+                extensionId = ExtensionId,
+                dependencies = Dependencies
+            }));
+            Environment.ExitCode = 0;
+        });
+    }
+
+    public string ExtensionId => "{{extensionId}}";
+    public IReadOnlyList<string> Dependencies { get; } = {{dependencyArrayExpr}};
+}
+""";
+    }
+
+    private static string BuildBundleCommandSource((string ClassName, string CommandName)[] extensionCommands)
+    {
+        var addLines = string.Join("\n", extensionCommands.Select(c => $"        AddCommand(new {c.ClassName}());"));
+        return $$"""
+using System.CommandLine;
+
+namespace Nexo.CLI.Commands.SelfExtendGenerated;
+
+public sealed class SelfExtendBundleCommand : Command
+{
+    public SelfExtendBundleCommand() : base("self-extend-bundle", "Composed bundle of generated extension commands")
+    {
+{{addLines}}
+    }
+}
+""";
+    }
+
+    private static string BuildExtensionCommandStructureTestSource(
+        string testClassName,
+        string commandClassName,
+        string expectedCommandName,
+        string expectedExtensionId,
+        string[] expectedDependencies)
+    {
+        var dependencyCount = expectedDependencies.Length;
+        var dependencyAssertions = expectedDependencies.Length == 0
+            ? "            AssertEqual(0, composable.Dependencies.Count, \"Dependencies should be empty for this extension\");"
+            : string.Join("\n", expectedDependencies.Select(d =>
+                $"            AssertTrue(composable.Dependencies.Contains(\"{d}\", StringComparer.Ordinal), \"Expected dependency '{d}'\");"));
+
+        return $$"""
+using Nexo.CLI.Commands.SelfExtendGenerated;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+
+namespace Nexo.Tests.CLI.Tests.Commands.SelfExtendGenerated;
+
+public sealed class {{testClassName}} : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var command = new {{commandClassName}}();
+            AssertEqual("{{expectedCommandName}}", command.Name, "Command name should match scaffold");
+
+            AssertTrue(command is IComposableExtensionCommand, "Command must implement IComposableExtensionCommand");
+            var composable = (IComposableExtensionCommand)command;
+            AssertEqual("{{expectedExtensionId}}", composable.ExtensionId, "ExtensionId should match scaffold");
+            AssertEqual({{dependencyCount}}, composable.Dependencies.Count, "Dependency count should match scaffold");
+{{dependencyAssertions}}
+
+            return Task.FromResult(new TestResult
             {
-                id = "repo.fs.write",
-                arguments = new
-                {
-                    root,
-                    path = "docs/UnityBootstrapGenerated/GeneratedSystemInspectorSnapshot.cs",
-                    content = inspectorSnapshotContent
-                }
+                Name = nameof({{testClassName}}),
+                Category = "SelfExtendGenerated",
+                Passed = true,
+                Message = "Generated command structure is valid."
             });
         }
+        catch (AssertionException ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof({{testClassName}}),
+                Category = "SelfExtendGenerated",
+                Passed = false,
+                ErrorMessage = $"Assertion failed: {ex.Message}",
+                StackTrace = ex.StackTrace
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof({{testClassName}}),
+                Category = "SelfExtendGenerated",
+                Passed = false,
+                ErrorMessage = $"Unexpected exception: {ex.Message}",
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
+""";
+    }
 
-        return JsonSerializer.Serialize(new { tool_calls = calls });
+    private static string BuildBundleCommandStructureTestSource(string testClassName, string[] expectedCommands)
+    {
+        var assertions = string.Join("\n", expectedCommands.Select(c =>
+            $"            AssertTrue(command.Subcommands.Any(s => string.Equals(s.Name, \"{c}\", StringComparison.Ordinal)), \"Expected subcommand '{c}'\");"));
+        return $$"""
+using Nexo.CLI.Commands.SelfExtendGenerated;
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+
+namespace Nexo.Tests.CLI.Tests.Commands.SelfExtendGenerated;
+
+public sealed class {{testClassName}} : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var command = new SelfExtendBundleCommand();
+            AssertEqual("self-extend-bundle", command.Name, "Bundle command name should match scaffold");
+{{assertions}}
+
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof({{testClassName}}),
+                Category = "SelfExtendGenerated",
+                Passed = true,
+                Message = "Bundle command composition is valid."
+            });
+        }
+        catch (AssertionException ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof({{testClassName}}),
+                Category = "SelfExtendGenerated",
+                Passed = false,
+                ErrorMessage = $"Assertion failed: {ex.Message}",
+                StackTrace = ex.StackTrace
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof({{testClassName}}),
+                Category = "SelfExtendGenerated",
+                Passed = false,
+                ErrorMessage = $"Unexpected exception: {ex.Message}",
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
+""";
     }
 
     private static string ResolveRepoRootFromSystemPrompt(string systemPrompt)

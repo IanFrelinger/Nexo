@@ -28,6 +28,7 @@ public class ProviderFactoryTests : UnitTestBase
             await TestExecuteLLMAsync();
             await TestExecuteLLMAsync_SelfExtendUnityBootstrap();
             await TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced();
+            await TestExecuteLLMAsync_SelfExtendUnityBootstrap_GeneratesComposableCommandScaffolds();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -244,6 +245,42 @@ Generate a richer Unity gameplay extension layer for Mono compatibility. Require
         AssertTrue(sawErrorState, "Expected GeneratedSystemErrorState.cs tool call");
         AssertTrue(sawInspectorSnapshot, "Expected GeneratedSystemInspectorSnapshot.cs tool call");
         AssertTrue(sawCooldownInDash, "Expected cooldown field usage in DashAbilitySystem.cs content");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUnityBootstrap_GeneratesComposableCommandScaffolds()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Generate a broad Unity adaptation package for a movement-combat vertical slice. Required: IGeneratedGameplaySystem, SystemContext, DashAbilitySystem, JumpAbilitySystem, SprintAbilitySystem, AbilityRegistry, GeneratedSystemErrorState, GeneratedSystemInspectorSnapshot, and a short adaptation README. Include cooldowns, compile-failure fallback metadata, and inspector raw-code visibility. Keep code in docs/UnityBootstrapGenerated.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        var paths = new List<string>();
+        foreach (var call in calls.EnumerateArray())
+        {
+            paths.Add(call.GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty);
+        }
+
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs"),
+            "Expected composable command contract scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBundleCommand.cs"),
+            "Expected composed bundle command scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/DashExtensionCommandStructureTests.cs"),
+            "Expected generated test scaffold for extension command structure.");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception

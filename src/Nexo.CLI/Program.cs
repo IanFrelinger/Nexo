@@ -951,7 +951,8 @@ static class Program
         root.AddCommand(new DogfoodCommand());
         root.AddCommand(new BootstrapCommand());
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
-        root.AddCommand(new SelfExtendCommand(() => ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>()));
+        root.AddCommand(new SelfExtendCommand(
+            () => ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>()));
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
