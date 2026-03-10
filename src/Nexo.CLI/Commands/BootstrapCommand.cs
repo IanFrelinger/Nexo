@@ -172,6 +172,13 @@ internal static class BootstrapRuntime
             true,
             false),
         new(
+            "zstd",
+            "zstd",
+            "command -v zstd",
+            "sudo apt-get update && sudo apt-get install -y zstd",
+            false,
+            true),
+        new(
             "ollama",
             "Ollama",
             "command -v ollama",
