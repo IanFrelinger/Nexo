@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Registry;
 
 namespace Nexo.CLI.Commands.BackgroundAgent;
@@ -243,6 +244,158 @@ public class BackgroundAgentCommand
         }
     }
 
+    /// <summary>
+    /// Apply one autoscale decision for a role: start additional auto agents when demand is high,
+    /// and stop idle auto agents when demand is low.
+    /// </summary>
+    public async Task<int> AutoScaleAsync(
+        string role,
+        int demand,
+        int minAgents,
+        int maxAgents,
+        int unitsPerAgent,
+        int idleSeconds,
+        bool formatJson,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(role))
+                throw new ArgumentException("Role is required.", nameof(role));
+            if (minAgents < 0)
+                throw new ArgumentException("minAgents must be >= 0.", nameof(minAgents));
+            if (maxAgents < minAgents)
+                throw new ArgumentException("maxAgents must be >= minAgents.", nameof(maxAgents));
+            if (unitsPerAgent <= 0)
+                throw new ArgumentException("unitsPerAgent must be > 0.", nameof(unitsPerAgent));
+            if (idleSeconds < 0)
+                throw new ArgumentException("idleSeconds must be >= 0.", nameof(idleSeconds));
+
+            var normalizedRole = role.Trim();
+            var configs = await _configLoader.LoadAsync(ct);
+            var roleConfigs = configs
+                .Where(c => c.Enabled && string.Equals(c.Role, normalizedRole, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (roleConfigs.Count == 0)
+                throw new InvalidOperationException($"No enabled background-agent configs found for role '{normalizedRole}'.");
+
+            var desiredTotal = CalculateDesiredAgentCount(demand, minAgents, maxAgents, unitsPerAgent);
+            var now = DateTimeOffset.UtcNow;
+            var instances = _registry.GetAll()
+                .Where(i => string.Equals(i.Config.Role, normalizedRole, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            var baselineRunning = instances.Count(i => !IsAutoscaledInstance(i, normalizedRole) && i.State == BackgroundAgentState.Running);
+            var desiredAutoRunning = Math.Max(0, desiredTotal - baselineRunning);
+            var autoInstances = instances.Where(i => IsAutoscaledInstance(i, normalizedRole)).ToList();
+            var runningAuto = autoInstances.Where(i => i.State == BackgroundAgentState.Running).ToList();
+            var stoppedAuto = autoInstances.Where(i => i.State != BackgroundAgentState.Running).ToList();
+
+            var started = new List<string>();
+            var created = new List<string>();
+            var stopped = new List<string>();
+
+            // Scale up: restart existing stopped auto agents first.
+            var autoDeficit = desiredAutoRunning - runningAuto.Count;
+            if (autoDeficit > 0)
+            {
+                foreach (var candidate in stoppedAuto.OrderBy(i => i.Config.Id).Take(autoDeficit))
+                {
+                    await _registry.StartAsync(candidate.Config.Id, ct);
+                    started.Add(candidate.Config.Id);
+                    autoDeficit--;
+                    if (autoDeficit == 0)
+                        break;
+                }
+            }
+
+            // If still short, create new auto agents from role template.
+            if (autoDeficit > 0)
+            {
+                var template = roleConfigs[0];
+                var knownIds = _registry.GetAll().Select(i => i.Config.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                while (autoDeficit > 0)
+                {
+                    var autoId = GetNextAutoscaledId(normalizedRole, knownIds);
+                    knownIds.Add(autoId);
+                    var autoConfig = CloneForAutoscale(template, autoId);
+                    var spec = _specBuilder.BuildSpec(autoConfig);
+                    var agent = _agentFactory.CreateAgent(spec);
+                    await _registry.RegisterAsync(agent, autoConfig, ct);
+                    await _registry.StartAsync(autoId, ct);
+                    created.Add(autoId);
+                    started.Add(autoId);
+                    autoDeficit--;
+                }
+            }
+
+            // Scale down: only stop auto agents, never baseline templates.
+            runningAuto = _registry.GetAll()
+                .Where(i => string.Equals(i.Config.Role, normalizedRole, StringComparison.OrdinalIgnoreCase))
+                .Where(i => IsAutoscaledInstance(i, normalizedRole) && i.State == BackgroundAgentState.Running)
+                .OrderBy(i => i.LastCompletedAt ?? i.LastStartedAt ?? DateTimeOffset.MinValue)
+                .ToList();
+            var autoSurplus = runningAuto.Count - desiredAutoRunning;
+            if (autoSurplus > 0)
+            {
+                foreach (var candidate in runningAuto)
+                {
+                    if (autoSurplus == 0)
+                        break;
+                    var lastActivity = candidate.LastCompletedAt ?? candidate.LastStartedAt ?? now;
+                    var idleAge = now - lastActivity;
+                    if (idleAge.TotalSeconds < idleSeconds)
+                        continue;
+
+                    await _registry.StopAsync(candidate.Config.Id, ct);
+                    stopped.Add(candidate.Config.Id);
+                    autoSurplus--;
+                }
+            }
+
+            var payload = new
+            {
+                ok = true,
+                role = normalizedRole,
+                demand,
+                desiredTotalAgents = desiredTotal,
+                baselineRunningAgents = baselineRunning,
+                desiredAutoRunningAgents = desiredAutoRunning,
+                started,
+                created,
+                stopped,
+                idleSeconds,
+            };
+
+            if (formatJson)
+            {
+                Console.Out.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.Out.WriteLine(
+                    $"Autoscale role={normalizedRole} demand={demand} desiredTotal={desiredTotal} baseline={baselineRunning} desiredAuto={desiredAutoRunning}");
+                if (created.Count > 0)
+                    Console.Out.WriteLine($"  created: {string.Join(", ", created)}");
+                if (started.Count > 0)
+                    Console.Out.WriteLine($"  started: {string.Join(", ", started)}");
+                if (stopped.Count > 0)
+                    Console.Out.WriteLine($"  stopped: {string.Join(", ", stopped)}");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Autoscale background agents failed");
+            if (formatJson)
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            else
+                Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
+    }
+
     private async Task EnsureAgentRegisteredAsync(string id, CancellationToken ct)
     {
         if (_registry.GetAgent(id) != null)
@@ -253,6 +406,97 @@ public class BackgroundAgentCommand
         var spec = _specBuilder.BuildSpec(config);
         var agent = _agentFactory.CreateAgent(spec);
         await _registry.RegisterAsync(agent, config, ct);
+    }
+
+    internal static int CalculateDesiredAgentCount(int demand, int minAgents, int maxAgents, int unitsPerAgent)
+    {
+        var normalizedDemand = Math.Max(0, demand);
+        var desired = normalizedDemand == 0
+            ? minAgents
+            : (int)Math.Ceiling(normalizedDemand / (double)unitsPerAgent);
+        if (desired < minAgents) desired = minAgents;
+        if (desired > maxAgents) desired = maxAgents;
+        return desired;
+    }
+
+    private static bool IsAutoscaledInstance(BackgroundAgentInstance instance, string role)
+    {
+        return instance.Config.Id.StartsWith($"autoscale-{role}-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetNextAutoscaledId(string role, HashSet<string> knownIds)
+    {
+        var i = 1;
+        while (true)
+        {
+            var id = $"autoscale-{role}-{i}";
+            if (!knownIds.Contains(id))
+                return id;
+            i++;
+        }
+    }
+
+    private static BackgroundAgentConfig CloneForAutoscale(BackgroundAgentConfig template, string newId)
+    {
+        return new BackgroundAgentConfig
+        {
+            Id = newId,
+            Name = $"{template.Name} (autoscaled)",
+            Role = template.Role,
+            ParentId = template.Id,
+            ModelProvider = template.ModelProvider,
+            ModelName = template.ModelName,
+            Commands = template.Commands.ToList(),
+            Parameters = template.Parameters != null
+                ? new Dictionary<string, object>(template.Parameters)
+                : null,
+            Schedule = new BackgroundAgentSchedule
+            {
+                Type = template.Schedule.Type,
+                Interval = template.Schedule.Interval,
+                CronExpression = template.Schedule.CronExpression,
+                InitialDelay = template.Schedule.InitialDelay
+            },
+            Enabled = true,
+            MaxDataSensitivity = template.MaxDataSensitivity,
+            AllowedDataSensitivityLevels = template.AllowedDataSensitivityLevels?.ToList(),
+            CustomSensitivityLevels = template.CustomSensitivityLevels != null
+                ? new Dictionary<string, CustomSensitivityLevel>(template.CustomSensitivityLevels)
+                : null,
+            RAG = template.RAG == null
+                ? null
+                : new RAGConfig
+                {
+                    Enabled = template.RAG.Enabled,
+                    VectorStoreProvider = template.RAG.VectorStoreProvider,
+                    VectorStorePath = template.RAG.VectorStorePath,
+                    MaxRetrievalResults = template.RAG.MaxRetrievalResults,
+                    SimilarityThreshold = template.RAG.SimilarityThreshold,
+                    KnowledgeSources = template.RAG.KnowledgeSources?.ToList(),
+                    MaxSourceSensitivity = template.RAG.MaxSourceSensitivity
+                },
+            WebSearch = template.WebSearch == null
+                ? null
+                : new WebSearchConfig
+                {
+                    Enabled = template.WebSearch.Enabled,
+                    SearchProvider = template.WebSearch.SearchProvider,
+                    ApiKey = template.WebSearch.ApiKey,
+                    MaxResults = template.WebSearch.MaxResults,
+                    FilterSensitiveContent = template.WebSearch.FilterSensitiveContent,
+                    AllowedDomains = template.WebSearch.AllowedDomains?.ToList(),
+                    BlockedDomains = template.WebSearch.BlockedDomains?.ToList()
+                },
+            ExfiltrationPolicy = new ExfiltrationPolicy
+            {
+                BlockExternalLLMs = template.ExfiltrationPolicy.BlockExternalLLMs,
+                BlockWebSearch = template.ExfiltrationPolicy.BlockWebSearch,
+                BlockNetworkExports = template.ExfiltrationPolicy.BlockNetworkExports,
+                RequireLocalOnly = template.ExfiltrationPolicy.RequireLocalOnly,
+                AllowedDestinations = template.ExfiltrationPolicy.AllowedDestinations?.ToList(),
+                MaxAllowedLevel = template.ExfiltrationPolicy.MaxAllowedLevel
+            }
+        };
     }
 
     private static bool FilterByStatus(BackgroundAgentConfig c, Dictionary<string, BackgroundAgentInstance> byId, string? status)

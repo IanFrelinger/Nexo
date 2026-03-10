@@ -47,6 +47,7 @@ dotnet run --project src/Nexo.CLI -- test local
 | `nexo config` | Show or update configuration |
 | `nexo bootstrap` | Linux-first machine readiness check/install for demo dependencies (macOS supported) |
 | `nexo chat` | Interactive CLI chat loop for orchestration-driven requests |
+| `nexo self-extend run --goal ... [--run-tests --test-filter SelfExtendGenerated]` | Objective-driven self-extension run; scaffolds composable extension commands and can execute generated extension tests |
 | `nexo background-agent` | Manage background agents (start, stop, logs, metrics) |
 | `nexo trust` | Trust & Information Architecture: audit log and access boundary |
 | `nexo test` | Run tests (local, portable, multi-env) |
