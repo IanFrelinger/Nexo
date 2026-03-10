@@ -85,3 +85,9 @@ appsettings.local.json
 
 /NEXO_AGENT_NOTES.md
 
+# Experimental self-extension / Unity scaffolding artifacts
+docs/UnityBootstrapGenerated/
+src/Nexo.CLI/Commands/SelfExtendGenerated/
+src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/
+tools/unity-demo-output/
+

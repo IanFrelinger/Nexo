@@ -296,6 +296,39 @@ static class Program
             jsonOpt);
         backgroundAgentCmd.AddCommand(restartBgCmd);
 
+        // nexo background-agent autoscale
+        var autoscaleCmd = new Command("autoscale", "Demand-based autoscaling for role agents");
+        var autoscaleApplyRoleOpt = new Option<string>("--role", "Role to scale (e.g., extender, tester)") { IsRequired = true };
+        var autoscaleApplyDemandOpt = new Option<int>("--demand", "Current demand score for this role") { IsRequired = true };
+        var autoscaleApplyMinOpt = new Option<int>("--min-agents", () => 0, "Minimum desired agents for the role");
+        var autoscaleApplyMaxOpt = new Option<int>("--max-agents", () => 5, "Maximum desired agents for the role");
+        var autoscaleApplyUnitsOpt = new Option<int>("--units-per-agent", () => 1, "Demand units handled per agent (higher value = fewer agents)");
+        var autoscaleApplyIdleOpt = new Option<int>("--idle-seconds", () => 0, "Idle threshold before stopping surplus autoscaled agents");
+        var autoscaleApplyCmd = new Command("apply", "Apply one autoscale decision")
+        {
+            autoscaleApplyRoleOpt,
+            autoscaleApplyDemandOpt,
+            autoscaleApplyMinOpt,
+            autoscaleApplyMaxOpt,
+            autoscaleApplyUnitsOpt,
+            autoscaleApplyIdleOpt
+        };
+        autoscaleApplyCmd.SetHandler(
+            async (string role, int demand, int minAgents, int maxAgents, int unitsPerAgent, int idleSeconds, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
+                Environment.Exit(await cmd.AutoScaleAsync(role, demand, minAgents, maxAgents, unitsPerAgent, idleSeconds, formatJson));
+            },
+            autoscaleApplyRoleOpt,
+            autoscaleApplyDemandOpt,
+            autoscaleApplyMinOpt,
+            autoscaleApplyMaxOpt,
+            autoscaleApplyUnitsOpt,
+            autoscaleApplyIdleOpt,
+            jsonOpt);
+        autoscaleCmd.AddCommand(autoscaleApplyCmd);
+        backgroundAgentCmd.AddCommand(autoscaleCmd);
+
         // nexo background-agent execute
         var executeBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var executeBgAsyncOpt = new Option<bool>("--async", "Run execution asynchronously (don't wait)");
