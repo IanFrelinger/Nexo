@@ -35,6 +35,12 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     /// Runs a self-extend cycle with an explicit objective for the tool-calling agent.
     /// </summary>
     public async Task<SelfExtendRunResult> RunAsync(string repoRoot, string? objective, CancellationToken cancellationToken = default)
+        => await RunAsync(repoRoot, objective, agentName: "self-extend", cancellationToken).ConfigureAwait(false);
+
+    /// <summary>
+    /// Runs a self-extend cycle with an explicit objective and agent role name for multi-agent workflows.
+    /// </summary>
+    public async Task<SelfExtendRunResult> RunAsync(string repoRoot, string? objective, string agentName, CancellationToken cancellationToken = default)
     {
         if (!BackgroundAgentAdapterValidation.TryResolveDirectory(repoRoot, "RepoRoot", out var errorMessage))
         {
@@ -45,7 +51,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         {
             var (tools, policies) = RepoFsToolboxFactory.CreateMinimal();
 
-            var agent = new ToolCallingAgent("self-extend", _model, _loggerFactory.CreateLogger<ToolCallingAgent>(), objective);
+            var resolvedAgentName = string.IsNullOrWhiteSpace(agentName) ? "self-extend" : agentName.Trim();
+            var agent = new ToolCallingAgent(resolvedAgentName, _model, _loggerFactory.CreateLogger<ToolCallingAgent>(), objective);
             var snapshot = WorldSnapshot.ForRepo(repoRoot!);
 
             var host = new AgentHost(new[] { agent }, tools, policies);
