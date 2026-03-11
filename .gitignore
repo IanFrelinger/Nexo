@@ -88,7 +88,9 @@ appsettings.local.json
 # Experimental self-extension / Unity scaffolding artifacts
 docs/UnityBootstrapGenerated/
 docs/PersonalAppGenerated/
+docs/UiDomainDemoGenerated/
 src/Nexo.CLI/Commands/SelfExtendGenerated/
 src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/
 tools/unity-demo-output/
+tools/ui-demo-output/
 

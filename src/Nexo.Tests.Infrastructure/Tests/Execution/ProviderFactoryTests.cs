@@ -30,6 +30,7 @@ public class ProviderFactoryTests : UnitTestBase
             await TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced();
             await TestExecuteLLMAsync_SelfExtendUnityBootstrap_GeneratesComposableCommandScaffolds();
             await TestExecuteLLMAsync_SelfExtendPersonalApp_GeneratesComposableCommandScaffolds();
+            await TestExecuteLLMAsync_SelfExtendUiDemo_GeneratesDomainAndUiScaffolds();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -324,6 +325,46 @@ Scaffold a personalized productivity application for an individual user with pro
             "Expected generated test scaffold for profile extension command structure.");
         AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs"),
             "Expected generated test scaffold for personal bundle composition.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUiDemo_GeneratesDomainAndUiScaffolds()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Use self scaffolding capabilities to create a simple demo app with a UI, retain domain knowledge in that layer, and include internal iterative workflow testing for the UI.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        var paths = new List<string>();
+        foreach (var call in calls.EnumerateArray())
+        {
+            paths.Add(call.GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty);
+        }
+
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/index.html"),
+            "Expected generated UI index scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/domain-knowledge.json"),
+            "Expected generated retained domain knowledge catalog.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/ui_smoke_test.py"),
+            "Expected generated UI smoke test script.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs"),
+            "Expected generated UI demo bundle command.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs"),
+            "Expected generated test for UI/domain knowledge retention.");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception

@@ -823,6 +823,10 @@ public class ProviderFactory : IProviderFactory
             {
                 return BuildUnityBootstrapToolCallsJson(systemPrompt, objective);
             }
+            if (LooksLikeUiDemoObjective(objective))
+            {
+                return BuildUiDemoToolCallsJson(systemPrompt);
+            }
             if (LooksLikePersonalSoftwareObjective(objective))
             {
                 return BuildPersonalAppToolCallsJson(systemPrompt);
@@ -876,6 +880,85 @@ public class ProviderFactory : IProviderFactory
             || objective.Contains("tasks", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("reminders", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("dashboard", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeUiDemoObjective(string objective)
+    {
+        if (string.IsNullOrWhiteSpace(objective))
+            return false;
+        var hasUiIntent = objective.Contains("ui demo", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("simple demo app", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("web ui", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("demo app with a ui", StringComparison.OrdinalIgnoreCase);
+        var hasDomainKnowledgeIntent = objective.Contains("domain knowledge", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("knowledge layer", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("retained in that layer", StringComparison.OrdinalIgnoreCase);
+        return hasUiIntent || hasDomainKnowledgeIntent;
+    }
+
+    private static string BuildUiDemoToolCallsJson(string systemPrompt)
+    {
+        var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
+        var extensionCommands = new List<(string ClassName, string CommandName, string ExtensionId, string[] Dependencies)>
+        {
+            ("DomainKnowledgeExtensionCommand", "ext-domain-knowledge", "domain-knowledge", Array.Empty<string>()),
+            ("UiShellExtensionCommand", "ext-ui-shell", "ui-shell", new[] { "domain-knowledge" }),
+            ("UiWorkflowExtensionCommand", "ext-ui-workflow", "ui-workflow", new[] { "domain-knowledge", "ui-shell" }),
+        };
+
+        var calls = new List<object>
+        {
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/README.md", BuildUiDemoReadmeSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/index.html", BuildUiDemoHtmlSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/styles.css", BuildUiDemoCssSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/app.js", BuildUiDemoJsSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/domain-knowledge.json", BuildUiDomainKnowledgeJsonSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/ui_smoke_test.py", BuildUiSmokeTestSource()),
+
+            // Command-structure scaffolding for composable extension commands.
+            CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
+        };
+
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
+                BuildExtensionCommandSource(ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+
+        calls.Add(CreateWriteCall(
+            root,
+            "src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs",
+            BuildBundleCommandSource(
+                bundleClassName: "SelfExtendUiDemoBundleCommand",
+                bundleCommandName: "self-extend-ui-demo-bundle",
+                extensionCommands: extensionCommands.Select(e => (e.ClassName, e.CommandName)).ToArray())));
+
+        // Generated tests that validate extension command structure.
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
+                BuildExtensionCommandStructureTestSource($"{ext.ClassName}StructureTests", ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+
+        calls.Add(CreateWriteCall(
+            root,
+            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommandStructureTests.cs",
+            BuildBundleCommandStructureTestSource(
+                testClassName: "SelfExtendUiDemoBundleCommandStructureTests",
+                bundleClassName: "SelfExtendUiDemoBundleCommand",
+                expectedBundleCommandName: "self-extend-ui-demo-bundle",
+                expectedCommands: extensionCommands.Select(e => e.CommandName).ToArray())));
+
+        calls.Add(CreateWriteCall(
+            root,
+            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs",
+            BuildUiDomainKnowledgeRetentionTestSource()));
+
+        return JsonSerializer.Serialize(new { tool_calls = calls });
     }
 
     private static string BuildPersonalAppToolCallsJson(string systemPrompt)
@@ -1283,6 +1366,293 @@ Artifacts:
 - Progress dashboard scoring logic
 - Composable CLI extension commands for profile/preferences/tasks/reminders/dashboard
 - Generated structure tests for each extension command and the composed bundle
+""";
+
+    private static string BuildUiDemoReadmeSource() => """
+# UI Demo Scaffold (Generated)
+
+This generated demo provides a tiny browser UI and a retained domain-knowledge layer.
+
+Outputs:
+- `docs/UiDomainDemoGenerated/app/index.html` UI shell
+- `docs/UiDomainDemoGenerated/app/app.js` UI workflow + renderer
+- `docs/UiDomainDemoGenerated/app/domain-knowledge.json` retained domain knowledge catalog
+- `docs/UiDomainDemoGenerated/app/ui_smoke_test.py` terminal-driven UI smoke check
+- composable extension commands + generated structure tests
+""";
+
+    private static string BuildUiDemoHtmlSource() => """
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nexo UI Demo</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header>
+      <h1>Nexo Domain UI Demo</h1>
+      <p id="status-line">Loading domain knowledge...</p>
+    </header>
+
+    <section class="panel">
+      <label for="request-input">System request</label>
+      <input id="request-input" type="text" value="Create an onboarding quest tracker for novice players" />
+      <button id="generate-btn" type="button">Generate Draft</button>
+    </section>
+
+    <section class="panel">
+      <h2>Retained domain knowledge</h2>
+      <ul id="knowledge-list"></ul>
+    </section>
+
+    <section class="panel">
+      <h2>Generated workflow draft</h2>
+      <pre id="output-pane"></pre>
+    </section>
+  </main>
+  <script src="./app.js" defer></script>
+</body>
+</html>
+""";
+
+    private static string BuildUiDemoCssSource() => """
+:root {
+  color-scheme: dark;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.app-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.panel {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+#request-input {
+  width: 100%;
+  margin-top: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #4b5563;
+  background: #111827;
+  color: #e5e7eb;
+}
+
+#generate-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #4b5563;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+#knowledge-list li {
+  margin-bottom: 6px;
+}
+
+#output-pane {
+  background: #111827;
+  border-radius: 6px;
+  padding: 10px;
+  min-height: 120px;
+  white-space: pre-wrap;
+}
+""";
+
+    private static string BuildUiDemoJsSource() => """
+const statusLine = document.getElementById("status-line");
+const knowledgeList = document.getElementById("knowledge-list");
+const outputPane = document.getElementById("output-pane");
+const requestInput = document.getElementById("request-input");
+const generateButton = document.getElementById("generate-btn");
+
+let domainCatalog = [];
+
+async function loadDomainKnowledge() {
+  const response = await fetch("./domain-knowledge.json");
+  if (!response.ok) {
+    throw new Error("Failed to load domain knowledge");
+  }
+  const data = await response.json();
+  domainCatalog = data.capabilities ?? [];
+  renderKnowledge();
+  statusLine.textContent = `Domain knowledge ready: ${domainCatalog.length} capabilities loaded`;
+}
+
+function renderKnowledge() {
+  knowledgeList.innerHTML = "";
+  for (const item of domainCatalog) {
+    const li = document.createElement("li");
+    li.textContent = `${item.id}: ${item.summary}`;
+    knowledgeList.appendChild(li);
+  }
+}
+
+function buildWorkflowDraft(requestText) {
+  const selected = domainCatalog
+    .filter(item => requestText.toLowerCase().includes(item.matchToken))
+    .map(item => item.id);
+
+  const fallback = selected.length > 0 ? selected : domainCatalog.map(item => item.id).slice(0, 2);
+  return {
+    request: requestText,
+    retainedDomainKnowledge: fallback,
+    suggestedSteps: [
+      "Analyze request against retained capability catalog",
+      "Compose extension commands in dependency order",
+      "Run SelfExtendGenerated tests and UI smoke test"
+    ]
+  };
+}
+
+generateButton.addEventListener("click", () => {
+  const draft = buildWorkflowDraft(requestInput.value.trim());
+  outputPane.textContent = JSON.stringify(draft, null, 2);
+});
+
+loadDomainKnowledge().catch(error => {
+  statusLine.textContent = `Domain knowledge load failed: ${error.message}`;
+  outputPane.textContent = "UI entered degraded mode; no domain capability catalog available.";
+});
+""";
+
+    private static string BuildUiDomainKnowledgeJsonSource() => """
+{
+  "capabilities": [
+    {
+      "id": "quest-tracking",
+      "matchToken": "quest",
+      "summary": "Tracks player quest state and completion milestones."
+    },
+    {
+      "id": "inventory-events",
+      "matchToken": "inventory",
+      "summary": "Handles item grants, removals, and inventory notifications."
+    },
+    {
+      "id": "ability-cooldowns",
+      "matchToken": "ability",
+      "summary": "Applies shared cooldown semantics for gameplay actions."
+    }
+  ]
+}
+""";
+
+    private static string BuildUiSmokeTestSource() => """
+#!/usr/bin/env python3
+from pathlib import Path
+import json
+import sys
+
+root = Path(__file__).resolve().parent
+html = (root / "index.html").read_text(encoding="utf-8")
+js = (root / "app.js").read_text(encoding="utf-8")
+catalog = json.loads((root / "domain-knowledge.json").read_text(encoding="utf-8"))
+
+assert "generate-btn" in html, "Expected generate button in HTML"
+assert "loadDomainKnowledge" in js, "Expected domain loader function in JS"
+assert len(catalog.get("capabilities", [])) >= 3, "Expected at least 3 retained capabilities"
+
+print("ui_smoke_test: ok")
+sys.exit(0)
+""";
+
+    private static string BuildUiDomainKnowledgeRetentionTestSource() => """
+using Nexo.Core.Application.Testing.Abstractions;
+using Nexo.Core.Application.Testing.Models;
+using System.Text.Json;
+
+namespace Nexo.Tests.CLI.Tests.Commands.SelfExtendGenerated;
+
+public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
+{
+    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            string? repoRoot = null;
+            while (dir != null)
+            {
+                if (Directory.Exists(Path.Combine(dir.FullName, "src")) &&
+                    Directory.Exists(Path.Combine(dir.FullName, "docs")))
+                {
+                    repoRoot = dir.FullName;
+                    break;
+                }
+                dir = dir.Parent;
+            }
+            AssertTrue(!string.IsNullOrWhiteSpace(repoRoot), "Unable to resolve repository root from test context.");
+
+            var uiRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "app");
+            var htmlPath = Path.Combine(uiRoot, "index.html");
+            var jsPath = Path.Combine(uiRoot, "app.js");
+            var domainPath = Path.Combine(uiRoot, "domain-knowledge.json");
+
+            AssertTrue(File.Exists(htmlPath), "Expected index.html to exist.");
+            AssertTrue(File.Exists(jsPath), "Expected app.js to exist.");
+            AssertTrue(File.Exists(domainPath), "Expected domain-knowledge.json to exist.");
+
+            var html = File.ReadAllText(htmlPath);
+            var js = File.ReadAllText(jsPath);
+            var domainJson = File.ReadAllText(domainPath);
+
+            AssertTrue(html.Contains("Retained domain knowledge", StringComparison.Ordinal), "UI should render retained domain knowledge section.");
+            AssertTrue(js.Contains("loadDomainKnowledge", StringComparison.Ordinal), "JS should load domain knowledge.");
+            using var doc = JsonDocument.Parse(domainJson);
+            var capabilities = doc.RootElement.GetProperty("capabilities");
+            AssertTrue(capabilities.GetArrayLength() >= 3, "Expected at least 3 domain capabilities.");
+
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof(UiDomainKnowledgeRetentionTests),
+                Category = "SelfExtendGenerated",
+                Passed = true,
+                Message = "UI demo retains domain knowledge and required artifacts."
+            });
+        }
+        catch (AssertionException ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof(UiDomainKnowledgeRetentionTests),
+                Category = "SelfExtendGenerated",
+                Passed = false,
+                ErrorMessage = $"Assertion failed: {ex.Message}",
+                StackTrace = ex.StackTrace
+            });
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new TestResult
+            {
+                Name = nameof(UiDomainKnowledgeRetentionTests),
+                Category = "SelfExtendGenerated",
+                Passed = false,
+                ErrorMessage = $"Unexpected exception: {ex.Message}",
+                StackTrace = ex.StackTrace
+            });
+        }
+    }
+}
 """;
 
     private static string BuildErrorStateSource() => """
