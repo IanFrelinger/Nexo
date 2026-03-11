@@ -31,6 +31,7 @@ public class ProviderFactoryTests : UnitTestBase
             await TestExecuteLLMAsync_SelfExtendUnityBootstrap_GeneratesComposableCommandScaffolds();
             await TestExecuteLLMAsync_SelfExtendPersonalApp_GeneratesComposableCommandScaffolds();
             await TestExecuteLLMAsync_SelfExtendUiDemo_GeneratesDomainAndUiScaffolds();
+            await TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -367,6 +368,8 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
             "Expected generated UI index scaffold.");
         AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/domain-knowledge.json"),
             "Expected generated retained domain knowledge catalog.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/dev_server.py"),
+            "Expected generated dev server scaffold.");
         AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/ui_smoke_test.py"),
             "Expected generated UI smoke test script.");
         AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs"),
@@ -375,10 +378,46 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
             "Expected generated test for UI/domain knowledge retention.");
         AssertTrue(htmlContent.Contains("Nexo Chatbot", StringComparison.Ordinal),
             "Expected chatbot interface in generated UI HTML.");
-        AssertTrue(appJsContent.Contains("simulateFeatureScaffold", StringComparison.Ordinal),
-            "Expected dynamic feature scaffold logic in generated UI JS.");
+        AssertTrue(appJsContent.Contains("/api/scaffold-feature", StringComparison.Ordinal),
+            "Expected real scaffold API call in generated UI JS.");
+        AssertTrue(appJsContent.Contains("import(moduleUrl)", StringComparison.Ordinal),
+            "Expected dynamic module import in generated UI JS.");
         AssertTrue(appJsContent.Contains("explainNexo", StringComparison.Ordinal),
             "Expected Nexo explainer behavior in generated UI JS.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Scaffold a hot-loadable UI feature module for the Nexo interactive demo.
+UI_FEATURE_HOTLOAD
+Feature request: Add inventory notification panel
+Write output module under docs/UiDomainDemoGenerated/app/generated.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        AssertEqual(1, calls.GetArrayLength(), "Expected one module write call for hotload objective.");
+        var path = calls[0].GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty;
+        var content = calls[0].GetProperty("arguments").GetProperty("content").GetString() ?? string.Empty;
+        AssertTrue(path.StartsWith("docs/UiDomainDemoGenerated/app/generated/", StringComparison.Ordinal),
+            "Expected generated feature module path under app/generated.");
+        AssertTrue(content.Contains("export function mountFeature", StringComparison.Ordinal),
+            "Expected generated feature module to export mountFeature.");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception

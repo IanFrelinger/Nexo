@@ -819,6 +819,10 @@ public class ProviderFactory : IProviderFactory
         if (systemPrompt.Contains("You are a self-extending code agent", StringComparison.OrdinalIgnoreCase))
         {
             var objective = ExtractObjective(userPrompt);
+            if (LooksLikeUiFeatureHotloadObjective(objective))
+            {
+                return BuildUiFeatureHotloadToolCallsJson(systemPrompt, objective);
+            }
             if (LooksLikeUnityBootstrapObjective(objective))
             {
                 return BuildUnityBootstrapToolCallsJson(systemPrompt, objective);
@@ -903,6 +907,84 @@ public class ProviderFactory : IProviderFactory
         return hasUiIntent || hasDomainKnowledgeIntent || hasHotloadIntent;
     }
 
+    private static bool LooksLikeUiFeatureHotloadObjective(string objective)
+    {
+        if (string.IsNullOrWhiteSpace(objective))
+            return false;
+        return objective.Contains("UI_FEATURE_HOTLOAD", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("hot-loadable ui feature module", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildUiFeatureHotloadToolCallsJson(string systemPrompt, string objective)
+    {
+        var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
+        var request = ExtractUiFeatureRequest(objective);
+        var slug = SlugifyIdentifier(request);
+        var modulePath = $"docs/UiDomainDemoGenerated/app/generated/{slug}.js";
+        var retainedCapabilities = MatchUiDomainCapabilities(request);
+        var moduleSource = BuildUiFeatureModuleSource(request, slug, retainedCapabilities);
+
+        var calls = new List<object>
+        {
+            CreateWriteCall(root, modulePath, moduleSource)
+        };
+
+        return JsonSerializer.Serialize(new { tool_calls = calls });
+    }
+
+    private static string ExtractUiFeatureRequest(string objective)
+    {
+        var match = Regex.Match(objective, @"Feature request:\s*(?<req>.+)$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        if (match.Success && !string.IsNullOrWhiteSpace(match.Groups["req"].Value))
+        {
+            var raw = match.Groups["req"].Value.Trim();
+            raw = raw.Replace("\\n", " ", StringComparison.Ordinal);
+            var markerIndex = raw.IndexOf("Write output module under", StringComparison.OrdinalIgnoreCase);
+            if (markerIndex >= 0)
+                raw = raw[..markerIndex].Trim();
+            raw = raw.Trim().TrimEnd('.', ';');
+            if (!string.IsNullOrWhiteSpace(raw))
+                return raw;
+        }
+        return "Generated feature module";
+    }
+
+    private static string SlugifyIdentifier(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "feature_generated";
+        var normalized = value.ToLowerInvariant();
+        normalized = Regex.Replace(normalized, @"[^a-z0-9]+", "_");
+        normalized = normalized.Trim('_');
+        if (string.IsNullOrWhiteSpace(normalized))
+            normalized = "feature_generated";
+        if (char.IsDigit(normalized[0]))
+            normalized = $"f_{normalized}";
+        return normalized;
+    }
+
+    private static string[] MatchUiDomainCapabilities(string requestText)
+    {
+        var request = requestText.ToLowerInvariant();
+        var matches = new List<string>();
+        var catalog = new (string Id, string Token)[]
+        {
+            ("quest-tracking", "quest"),
+            ("inventory-events", "inventory"),
+            ("ability-cooldowns", "ability"),
+            ("onboarding-flows", "onboarding"),
+            ("ui-notifications", "notification")
+        };
+        foreach (var item in catalog)
+        {
+            if (request.Contains(item.Token, StringComparison.Ordinal))
+                matches.Add(item.Id);
+        }
+        if (matches.Count == 0)
+            matches.AddRange(new[] { "quest-tracking", "onboarding-flows" });
+        return matches.Distinct(StringComparer.Ordinal).ToArray();
+    }
+
     private static string BuildUiDemoToolCallsJson(string systemPrompt)
     {
         var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
@@ -921,6 +1003,7 @@ public class ProviderFactory : IProviderFactory
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/styles.css", BuildUiDemoCssSource()),
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/app.js", BuildUiDemoJsSource()),
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/domain-knowledge.json", BuildUiDomainKnowledgeJsonSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/dev_server.py", BuildUiDemoDevServerSource()),
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/ui_smoke_test.py", BuildUiSmokeTestSource()),
 
             // Command-structure scaffolding for composable extension commands.
@@ -1383,8 +1466,9 @@ This generated demo provides an interactive browser chatbot with a retained doma
 
 Outputs:
 - `docs/UiDomainDemoGenerated/app/index.html` chat + feature studio UI shell
-- `docs/UiDomainDemoGenerated/app/app.js` chatbot workflow + dynamic feature hot-load runtime
+- `docs/UiDomainDemoGenerated/app/app.js` chatbot workflow + real scaffold/hot-load runtime through server API
 - `docs/UiDomainDemoGenerated/app/domain-knowledge.json` retained domain knowledge catalog
+- `docs/UiDomainDemoGenerated/app/dev_server.py` local API server that invokes `nexo self-extend` for feature scaffolding
 - `docs/UiDomainDemoGenerated/app/ui_smoke_test.py` terminal-driven UI smoke check
 - composable extension commands + generated structure tests
 """;
@@ -1581,7 +1665,7 @@ const dynamicFeatureHost = document.getElementById("dynamic-feature-host");
 const outputPane = document.getElementById("output-pane");
 
 let domainCatalog = [];
-let dynamicFeatures = [];
+const dynamicFeatures = [];
 
 function appendChatMessage(role, text) {
   const item = document.createElement("div");
@@ -1612,13 +1696,6 @@ function renderKnowledge() {
   }
 }
 
-function matchCapabilities(requestText) {
-  const selected = domainCatalog
-    .filter(item => requestText.toLowerCase().includes(item.matchToken))
-    .map(item => item.id);
-  return selected.length > 0 ? selected : domainCatalog.map(item => item.id).slice(0, 2);
-}
-
 function buildWorkflowDraft(requestText, selectedCapabilities) {
   return {
     request: requestText,
@@ -1643,51 +1720,49 @@ function explainNexo(questionText) {
   return "I can explain Nexo or scaffold a feature. Try: 'What is Nexo?' or 'Add feature: daily quest hints'.";
 }
 
-function renderDynamicFeatures() {
-  dynamicFeatureHost.innerHTML = "";
-  for (const feature of dynamicFeatures) {
-    const card = document.createElement("article");
-    card.className = "feature-card";
-
-    const title = document.createElement("h3");
-    title.textContent = feature.name;
-    card.appendChild(title);
-
-    const body = document.createElement("p");
-    body.textContent = feature.description;
-    card.appendChild(body);
-
-    const chips = document.createElement("div");
-    chips.className = "feature-chip-row";
-    for (const cap of feature.retainedDomainKnowledge) {
-      const chip = document.createElement("span");
-      chip.className = "feature-chip";
-      chip.textContent = cap;
-      chips.appendChild(chip);
-    }
-    card.appendChild(chips);
-
-    dynamicFeatureHost.appendChild(card);
+async function scaffoldFeatureHotload(featureRequest, source) {
+  featureStatus.textContent = "Scaffolding feature through nexo self-extend...";
+  const response = await fetch("/api/scaffold-feature", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ featureRequest })
+  });
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Scaffold request failed: ${message}`);
   }
-}
 
-function simulateFeatureScaffold(featureRequest) {
-  const selected = matchCapabilities(featureRequest);
-  const feature = {
-    id: `feature-${dynamicFeatures.length + 1}`,
-    name: featureRequest,
-    description: "Generated by Nexo self-scaffold pipeline and hot-loaded into the active UI shell.",
-    retainedDomainKnowledge: selected
+  const payload = await response.json();
+  const moduleUrl = `${payload.moduleUrl}?ts=${Date.now()}`;
+  const loaded = await import(moduleUrl);
+  if (typeof loaded.mountFeature !== "function") {
+    throw new Error("Generated module is missing mountFeature export.");
+  }
+
+  const model = {
+    featureId: payload.featureId,
+    featureRequest: payload.featureRequest,
+    summary: payload.summary,
+    retainedDomainKnowledge: payload.retainedDomainKnowledge ?? [],
+    source
   };
-  dynamicFeatures.push(feature);
-  renderDynamicFeatures();
+  dynamicFeatures.unshift(model);
 
-  const draft = buildWorkflowDraft(featureRequest, selected);
-  outputPane.textContent = JSON.stringify(draft, null, 2);
-  featureStatus.textContent = `Feature ${feature.id} scaffolded and hot-loaded with ${selected.length} domain capabilities.`;
+  loaded.mountFeature(dynamicFeatureHost, model);
 
-  appendChatMessage("user", featureRequest);
-  appendChatMessage("assistant", `Feature ready: ${feature.id}. UI updated live with retained knowledge: ${selected.join(", ")}`);
+  const draft = buildWorkflowDraft(featureRequest, model.retainedDomainKnowledge);
+  outputPane.textContent = JSON.stringify(
+    {
+      ...draft,
+      featureId: model.featureId,
+      moduleUrl: payload.moduleUrl
+    },
+    null,
+    2
+  );
+
+  featureStatus.textContent = `Feature ${model.featureId} scaffolded and hot-loaded with ${model.retainedDomainKnowledge.length} domain capabilities.`;
+  appendChatMessage("assistant", `Feature ready: ${model.featureId}. UI updated live with retained knowledge: ${model.retainedDomainKnowledge.join(", ")}`);
 }
 
 chatSendButton.addEventListener("click", () => {
@@ -1699,7 +1774,10 @@ chatSendButton.addEventListener("click", () => {
   if (normalized.startsWith("add feature:") || normalized.startsWith("request feature:")) {
     const requestText = text.split(":").slice(1).join(":").trim();
     if (requestText.length > 0) {
-      simulateFeatureScaffold(requestText);
+      scaffoldFeatureHotload(requestText, "chatbot").catch(error => {
+        featureStatus.textContent = `Scaffold failed: ${error.message}`;
+        appendChatMessage("assistant", `Feature scaffold failed: ${error.message}`);
+      });
     } else {
       appendChatMessage("assistant", "Please include a feature description after ':'");
     }
@@ -1711,7 +1789,10 @@ chatSendButton.addEventListener("click", () => {
 scaffoldFeatureButton.addEventListener("click", () => {
   const requestText = featureInput.value.trim();
   if (!requestText) return;
-  simulateFeatureScaffold(requestText);
+  scaffoldFeatureHotload(requestText, "feature-studio").catch(error => {
+    featureStatus.textContent = `Scaffold failed: ${error.message}`;
+    appendChatMessage("assistant", `Feature scaffold failed: ${error.message}`);
+  });
 });
 
 loadDomainKnowledge().catch(error => {
@@ -1753,6 +1834,166 @@ loadDomainKnowledge().catch(error => {
 }
 """;
 
+    private static string BuildUiDemoDevServerSource() => """
+#!/usr/bin/env python3
+import argparse
+import json
+import re
+import subprocess
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+THIS_DIR = Path(__file__).resolve().parent
+
+def slugify(text: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
+    if not slug:
+        slug = "feature_generated"
+    if slug[0].isdigit():
+        slug = f"f_{slug}"
+    return slug
+
+def load_capabilities():
+    catalog_path = THIS_DIR / "domain-knowledge.json"
+    data = json.loads(catalog_path.read_text(encoding="utf-8"))
+    return data.get("capabilities", [])
+
+def map_capabilities(feature_request: str):
+    request = feature_request.lower()
+    matched = []
+    for cap in load_capabilities():
+        token = str(cap.get("matchToken", "")).lower()
+        cap_id = str(cap.get("id", "")).strip()
+        if token and token in request and cap_id:
+            matched.append(cap_id)
+    if not matched:
+        matched = ["quest-tracking", "onboarding-flows"]
+    return list(dict.fromkeys(matched))
+
+def run_self_extend(repo_root: Path, feature_request: str):
+    goal = (
+        "UI_FEATURE_HOTLOAD "
+        f"Feature request: {feature_request}. "
+        "Write output module under docs/UiDomainDemoGenerated/app/generated."
+    )
+    cmd = [
+        "dotnet", "run", "--project", "src/Nexo.CLI", "--",
+        "self-extend", "run",
+        "--goal", goal,
+        "--repo-root", str(repo_root),
+        "--provider", "mock-json",
+        "--allow-mock",
+        "--json"
+    ]
+    result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True, check=False)
+    return result
+
+class DemoHandler(SimpleHTTPRequestHandler):
+    repo_root: Path = Path.cwd()
+
+    def _write_json(self, status: int, payload: dict):
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        if self.path != "/api/scaffold-feature":
+            self._write_json(404, {"ok": False, "error": "unknown endpoint"})
+            return
+
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
+            payload = json.loads(raw)
+            feature_request = str(payload.get("featureRequest", "")).strip()
+            if not feature_request:
+                self._write_json(400, {"ok": False, "error": "featureRequest is required"})
+                return
+
+            result = run_self_extend(self.repo_root, feature_request)
+            if result.returncode != 0:
+                self._write_json(500, {
+                    "ok": False,
+                    "error": "self-extend failed",
+                    "stdout": result.stdout[-2000:],
+                    "stderr": result.stderr[-2000:]
+                })
+                return
+
+            feature_id = slugify(feature_request)
+            module_rel = f"/generated/{feature_id}.js"
+            module_file = THIS_DIR / "generated" / f"{feature_id}.js"
+            if not module_file.exists():
+                self._write_json(500, {"ok": False, "error": f"generated module not found: {module_file}"})
+                return
+
+            retained = map_capabilities(feature_request)
+            self._write_json(200, {
+                "ok": True,
+                "featureId": feature_id,
+                "featureRequest": feature_request,
+                "moduleUrl": module_rel,
+                "retainedDomainKnowledge": retained,
+                "summary": "Generated by Nexo self-scaffold pipeline and hot-loaded into the active UI shell."
+            })
+        except Exception as ex:
+            self._write_json(500, {"ok": False, "error": str(ex)})
+
+def main():
+    parser = argparse.ArgumentParser(description="Nexo UI demo server with real scaffold/hot-load endpoint.")
+    parser.add_argument("--port", type=int, default=4173)
+    parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[3])
+    args = parser.parse_args()
+
+    handler = partial(DemoHandler, directory=str(THIS_DIR))
+    DemoHandler.repo_root = args.repo_root.resolve()
+    server = ThreadingHTTPServer(("127.0.0.1", args.port), handler)
+    print(f"Serving UI demo on http://127.0.0.1:{args.port} with repo root {DemoHandler.repo_root}")
+    server.serve_forever()
+
+if __name__ == "__main__":
+    main()
+""";
+
+    private static string BuildUiFeatureModuleSource(string featureRequest, string featureId, string[] retainedCapabilities)
+    {
+        var escapedRequest = JsonSerializer.Serialize(featureRequest);
+        var escapedId = JsonSerializer.Serialize(featureId);
+        var capabilityArrayLiteral = $"[{string.Join(", ", retainedCapabilities.Select(c => JsonSerializer.Serialize(c)))}]";
+        return $$"""
+export function mountFeature(host, context) {
+  const card = document.createElement("article");
+  card.className = "feature-card";
+
+  const title = document.createElement("h3");
+  title.textContent = context?.featureRequest ?? {{escapedRequest}};
+  card.appendChild(title);
+
+  const body = document.createElement("p");
+  body.textContent = "Generated by Nexo self-scaffold pipeline and hot-loaded into the active UI shell.";
+  card.appendChild(body);
+
+  const chips = document.createElement("div");
+  chips.className = "feature-chip-row";
+  const retained = (context?.retainedDomainKnowledge ?? {{capabilityArrayLiteral}});
+  for (const cap of retained) {
+    const chip = document.createElement("span");
+    chip.className = "feature-chip";
+    chip.textContent = cap;
+    chips.appendChild(chip);
+  }
+  card.appendChild(chips);
+
+  card.dataset.featureId = context?.featureId ?? {{escapedId}};
+  host.prepend(card);
+}
+""";
+    }
+
     private static string BuildUiSmokeTestSource() => """
 #!/usr/bin/env python3
 from pathlib import Path
@@ -1763,13 +2004,16 @@ root = Path(__file__).resolve().parent
 html = (root / "index.html").read_text(encoding="utf-8")
 js = (root / "app.js").read_text(encoding="utf-8")
 catalog = json.loads((root / "domain-knowledge.json").read_text(encoding="utf-8"))
+server = (root / "dev_server.py").read_text(encoding="utf-8")
 
 assert "chat-send-btn" in html, "Expected chat send button in HTML"
 assert "chat-log" in html, "Expected chatbot log container in HTML"
 assert "scaffold-feature-btn" in html, "Expected feature scaffold button in HTML"
-assert "simulateFeatureScaffold" in js, "Expected dynamic feature scaffold function in JS"
+assert "fetch(\"/api/scaffold-feature\"" in js, "Expected real scaffold API call in JS"
+assert "import(moduleUrl)" in js, "Expected dynamic module import for hot-load in JS"
 assert "explainNexo" in js, "Expected chatbot explainer function in JS"
-assert len(catalog.get("capabilities", [])) >= 3, "Expected at least 3 retained capabilities"
+assert "do_POST" in server and "/api/scaffold-feature" in server, "Expected scaffold endpoint in dev server"
+assert len(catalog.get("capabilities", [])) >= 4, "Expected at least 4 retained capabilities"
 
 print("ui_smoke_test: ok")
 sys.exit(0)
@@ -1806,19 +2050,24 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
             var htmlPath = Path.Combine(uiRoot, "index.html");
             var jsPath = Path.Combine(uiRoot, "app.js");
             var domainPath = Path.Combine(uiRoot, "domain-knowledge.json");
+            var serverPath = Path.Combine(uiRoot, "dev_server.py");
 
             AssertTrue(File.Exists(htmlPath), "Expected index.html to exist.");
             AssertTrue(File.Exists(jsPath), "Expected app.js to exist.");
             AssertTrue(File.Exists(domainPath), "Expected domain-knowledge.json to exist.");
+            AssertTrue(File.Exists(serverPath), "Expected dev_server.py to exist.");
 
             var html = File.ReadAllText(htmlPath);
             var js = File.ReadAllText(jsPath);
             var domainJson = File.ReadAllText(domainPath);
+            var server = File.ReadAllText(serverPath);
 
             AssertTrue(html.Contains("Nexo Chatbot", StringComparison.Ordinal), "UI should render chatbot section.");
             AssertTrue(html.Contains("Dynamically loaded features", StringComparison.Ordinal), "UI should render dynamic feature host section.");
             AssertTrue(js.Contains("explainNexo", StringComparison.Ordinal), "JS should implement chatbot explainer behavior.");
-            AssertTrue(js.Contains("simulateFeatureScaffold", StringComparison.Ordinal), "JS should simulate scaffold + hot-load behavior.");
+            AssertTrue(js.Contains("/api/scaffold-feature", StringComparison.Ordinal), "JS should call scaffold API endpoint.");
+            AssertTrue(js.Contains("import(moduleUrl)", StringComparison.Ordinal), "JS should dynamically import generated feature modules.");
+            AssertTrue(server.Contains("/api/scaffold-feature", StringComparison.Ordinal), "Dev server should expose scaffold endpoint.");
             using var doc = JsonDocument.Parse(domainJson);
             var capabilities = doc.RootElement.GetProperty("capabilities");
             AssertTrue(capabilities.GetArrayLength() >= 4, "Expected at least 4 domain capabilities.");
