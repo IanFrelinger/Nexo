@@ -341,7 +341,7 @@ Available tools:
 
         const string userPrompt = """
 Objective:
-Use self scaffolding capabilities to create a simple demo app with a UI, retain domain knowledge in that layer, and include internal iterative workflow testing for the UI.
+Create an interactive demo app with a chatbot interface that explains Nexo, retains domain knowledge in a dedicated layer, and can scaffold + dynamically load new features with UI updates.
 """;
 
         var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
@@ -350,9 +350,17 @@ Use self scaffolding capabilities to create a simple demo app with a UI, retain 
         using var doc = JsonDocument.Parse(result);
         var calls = doc.RootElement.GetProperty("tool_calls");
         var paths = new List<string>();
+        var appJsContent = string.Empty;
+        var htmlContent = string.Empty;
         foreach (var call in calls.EnumerateArray())
         {
-            paths.Add(call.GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty);
+            var args = call.GetProperty("arguments");
+            var path = args.GetProperty("path").GetString() ?? string.Empty;
+            paths.Add(path);
+            if (path == "docs/UiDomainDemoGenerated/app/app.js")
+                appJsContent = args.GetProperty("content").GetString() ?? string.Empty;
+            if (path == "docs/UiDomainDemoGenerated/app/index.html")
+                htmlContent = args.GetProperty("content").GetString() ?? string.Empty;
         }
 
         AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/index.html"),
@@ -365,6 +373,12 @@ Use self scaffolding capabilities to create a simple demo app with a UI, retain 
             "Expected generated UI demo bundle command.");
         AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs"),
             "Expected generated test for UI/domain knowledge retention.");
+        AssertTrue(htmlContent.Contains("Nexo Chatbot", StringComparison.Ordinal),
+            "Expected chatbot interface in generated UI HTML.");
+        AssertTrue(appJsContent.Contains("simulateFeatureScaffold", StringComparison.Ordinal),
+            "Expected dynamic feature scaffold logic in generated UI JS.");
+        AssertTrue(appJsContent.Contains("explainNexo", StringComparison.Ordinal),
+            "Expected Nexo explainer behavior in generated UI JS.");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception

@@ -889,11 +889,18 @@ public class ProviderFactory : IProviderFactory
         var hasUiIntent = objective.Contains("ui demo", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("simple demo app", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("web ui", StringComparison.OrdinalIgnoreCase)
-            || objective.Contains("demo app with a ui", StringComparison.OrdinalIgnoreCase);
+            || objective.Contains("demo app with a ui", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("interactive demo", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("chat bot interface", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("chatbot interface", StringComparison.OrdinalIgnoreCase);
         var hasDomainKnowledgeIntent = objective.Contains("domain knowledge", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("knowledge layer", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("retained in that layer", StringComparison.OrdinalIgnoreCase);
-        return hasUiIntent || hasDomainKnowledgeIntent;
+        var hasHotloadIntent = objective.Contains("request a new feature", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("spin it up", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("dynamically load", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("ui changes", StringComparison.OrdinalIgnoreCase);
+        return hasUiIntent || hasDomainKnowledgeIntent || hasHotloadIntent;
     }
 
     private static string BuildUiDemoToolCallsJson(string systemPrompt)
@@ -904,6 +911,7 @@ public class ProviderFactory : IProviderFactory
             ("DomainKnowledgeExtensionCommand", "ext-domain-knowledge", "domain-knowledge", Array.Empty<string>()),
             ("UiShellExtensionCommand", "ext-ui-shell", "ui-shell", new[] { "domain-knowledge" }),
             ("UiWorkflowExtensionCommand", "ext-ui-workflow", "ui-workflow", new[] { "domain-knowledge", "ui-shell" }),
+            ("FeatureHotloadExtensionCommand", "ext-feature-hotload", "feature-hotload", new[] { "domain-knowledge", "ui-shell", "ui-workflow" }),
         };
 
         var calls = new List<object>
@@ -1371,11 +1379,11 @@ Artifacts:
     private static string BuildUiDemoReadmeSource() => """
 # UI Demo Scaffold (Generated)
 
-This generated demo provides a tiny browser UI and a retained domain-knowledge layer.
+This generated demo provides an interactive browser chatbot with a retained domain-knowledge layer.
 
 Outputs:
-- `docs/UiDomainDemoGenerated/app/index.html` UI shell
-- `docs/UiDomainDemoGenerated/app/app.js` UI workflow + renderer
+- `docs/UiDomainDemoGenerated/app/index.html` chat + feature studio UI shell
+- `docs/UiDomainDemoGenerated/app/app.js` chatbot workflow + dynamic feature hot-load runtime
 - `docs/UiDomainDemoGenerated/app/domain-knowledge.json` retained domain knowledge catalog
 - `docs/UiDomainDemoGenerated/app/ui_smoke_test.py` terminal-driven UI smoke check
 - composable extension commands + generated structure tests
@@ -1393,14 +1401,17 @@ Outputs:
 <body>
   <main class="app-shell">
     <header>
-      <h1>Nexo Domain UI Demo</h1>
+      <h1>Nexo Interactive Domain Demo</h1>
       <p id="status-line">Loading domain knowledge...</p>
     </header>
 
     <section class="panel">
-      <label for="request-input">System request</label>
-      <input id="request-input" type="text" value="Create an onboarding quest tracker for novice players" />
-      <button id="generate-btn" type="button">Generate Draft</button>
+      <h2>Nexo Chatbot</h2>
+      <div id="chat-log" class="chat-log"></div>
+      <div class="row">
+        <input id="chat-input" type="text" value="What is Nexo?" />
+        <button id="chat-send-btn" type="button">Send</button>
+      </div>
     </section>
 
     <section class="panel">
@@ -1409,7 +1420,22 @@ Outputs:
     </section>
 
     <section class="panel">
-      <h2>Generated workflow draft</h2>
+      <h2>Feature request studio</h2>
+      <label for="feature-input">Request new feature</label>
+      <div class="row">
+        <input id="feature-input" type="text" value="Add a quest streak tracker widget for returning players" />
+        <button id="scaffold-feature-btn" type="button">Scaffold + Hot-load</button>
+      </div>
+      <p id="feature-status" class="muted">Awaiting feature request.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Dynamically loaded features</h2>
+      <div id="dynamic-feature-host" class="dynamic-feature-host"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Generated scaffold plan</h2>
       <pre id="output-pane"></pre>
     </section>
   </main>
@@ -1444,10 +1470,17 @@ body {
   margin-top: 14px;
 }
 
-#request-input {
-  width: 100%;
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#chat-input,
+#feature-input {
+  flex: 1;
   margin-top: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   padding: 10px;
   border-radius: 6px;
   border: 1px solid #4b5563;
@@ -1455,17 +1488,75 @@ body {
   color: #e5e7eb;
 }
 
-#generate-btn {
+#chat-send-btn,
+#scaffold-feature-btn {
   padding: 8px 12px;
   border-radius: 6px;
   border: 1px solid #4b5563;
   background: #2563eb;
   color: #ffffff;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 #knowledge-list li {
   margin-bottom: 6px;
+}
+
+.chat-log {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #111827;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.chat-msg {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  white-space: pre-wrap;
+}
+
+.chat-user {
+  background: #1e3a8a;
+}
+
+.chat-assistant {
+  background: #0f766e;
+}
+
+.dynamic-feature-host {
+  display: grid;
+  gap: 10px;
+}
+
+.feature-card {
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  padding: 10px;
+  background: #111827;
+}
+
+.feature-chip-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.feature-chip {
+  font-size: 12px;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.muted {
+  color: #9ca3af;
 }
 
 #output-pane {
@@ -1480,11 +1571,25 @@ body {
     private static string BuildUiDemoJsSource() => """
 const statusLine = document.getElementById("status-line");
 const knowledgeList = document.getElementById("knowledge-list");
+const chatLog = document.getElementById("chat-log");
+const chatInput = document.getElementById("chat-input");
+const chatSendButton = document.getElementById("chat-send-btn");
+const featureInput = document.getElementById("feature-input");
+const scaffoldFeatureButton = document.getElementById("scaffold-feature-btn");
+const featureStatus = document.getElementById("feature-status");
+const dynamicFeatureHost = document.getElementById("dynamic-feature-host");
 const outputPane = document.getElementById("output-pane");
-const requestInput = document.getElementById("request-input");
-const generateButton = document.getElementById("generate-btn");
 
 let domainCatalog = [];
+let dynamicFeatures = [];
+
+function appendChatMessage(role, text) {
+  const item = document.createElement("div");
+  item.className = `chat-msg ${role === "user" ? "chat-user" : "chat-assistant"}`;
+  item.textContent = text;
+  chatLog.appendChild(item);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
 
 async function loadDomainKnowledge() {
   const response = await fetch("./domain-knowledge.json");
@@ -1495,6 +1600,7 @@ async function loadDomainKnowledge() {
   domainCatalog = data.capabilities ?? [];
   renderKnowledge();
   statusLine.textContent = `Domain knowledge ready: ${domainCatalog.length} capabilities loaded`;
+  appendChatMessage("assistant", "Hi! I am the Nexo demo assistant. Ask what Nexo is, or request a feature to scaffold and hot-load.");
 }
 
 function renderKnowledge() {
@@ -1506,31 +1612,112 @@ function renderKnowledge() {
   }
 }
 
-function buildWorkflowDraft(requestText) {
+function matchCapabilities(requestText) {
   const selected = domainCatalog
     .filter(item => requestText.toLowerCase().includes(item.matchToken))
     .map(item => item.id);
+  return selected.length > 0 ? selected : domainCatalog.map(item => item.id).slice(0, 2);
+}
 
-  const fallback = selected.length > 0 ? selected : domainCatalog.map(item => item.id).slice(0, 2);
+function buildWorkflowDraft(requestText, selectedCapabilities) {
   return {
     request: requestText,
-    retainedDomainKnowledge: fallback,
+    retainedDomainKnowledge: selectedCapabilities,
     suggestedSteps: [
       "Analyze request against retained capability catalog",
-      "Compose extension commands in dependency order",
+      "Synthesize scaffolding plan and compose extension commands",
+      "Hot-load generated feature into UI shell",
       "Run SelfExtendGenerated tests and UI smoke test"
     ]
   };
 }
 
-generateButton.addEventListener("click", () => {
-  const draft = buildWorkflowDraft(requestInput.value.trim());
+function explainNexo(questionText) {
+  const q = questionText.toLowerCase();
+  if (q.includes("what is nexo")) {
+    return "Nexo is an orchestration platform that composes domain capabilities, scaffolds features, and validates changes with built-in tests.";
+  }
+  if (q.includes("how") && q.includes("feature")) {
+    return "In this demo, Nexo maps your request to retained domain knowledge, composes scaffold commands, then hot-loads a new feature card into the UI.";
+  }
+  return "I can explain Nexo or scaffold a feature. Try: 'What is Nexo?' or 'Add feature: daily quest hints'.";
+}
+
+function renderDynamicFeatures() {
+  dynamicFeatureHost.innerHTML = "";
+  for (const feature of dynamicFeatures) {
+    const card = document.createElement("article");
+    card.className = "feature-card";
+
+    const title = document.createElement("h3");
+    title.textContent = feature.name;
+    card.appendChild(title);
+
+    const body = document.createElement("p");
+    body.textContent = feature.description;
+    card.appendChild(body);
+
+    const chips = document.createElement("div");
+    chips.className = "feature-chip-row";
+    for (const cap of feature.retainedDomainKnowledge) {
+      const chip = document.createElement("span");
+      chip.className = "feature-chip";
+      chip.textContent = cap;
+      chips.appendChild(chip);
+    }
+    card.appendChild(chips);
+
+    dynamicFeatureHost.appendChild(card);
+  }
+}
+
+function simulateFeatureScaffold(featureRequest) {
+  const selected = matchCapabilities(featureRequest);
+  const feature = {
+    id: `feature-${dynamicFeatures.length + 1}`,
+    name: featureRequest,
+    description: "Generated by Nexo self-scaffold pipeline and hot-loaded into the active UI shell.",
+    retainedDomainKnowledge: selected
+  };
+  dynamicFeatures.push(feature);
+  renderDynamicFeatures();
+
+  const draft = buildWorkflowDraft(featureRequest, selected);
   outputPane.textContent = JSON.stringify(draft, null, 2);
+  featureStatus.textContent = `Feature ${feature.id} scaffolded and hot-loaded with ${selected.length} domain capabilities.`;
+
+  appendChatMessage("user", featureRequest);
+  appendChatMessage("assistant", `Feature ready: ${feature.id}. UI updated live with retained knowledge: ${selected.join(", ")}`);
+}
+
+chatSendButton.addEventListener("click", () => {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  appendChatMessage("user", text);
+
+  const normalized = text.toLowerCase();
+  if (normalized.startsWith("add feature:") || normalized.startsWith("request feature:")) {
+    const requestText = text.split(":").slice(1).join(":").trim();
+    if (requestText.length > 0) {
+      simulateFeatureScaffold(requestText);
+    } else {
+      appendChatMessage("assistant", "Please include a feature description after ':'");
+    }
+  } else {
+    appendChatMessage("assistant", explainNexo(text));
+  }
+});
+
+scaffoldFeatureButton.addEventListener("click", () => {
+  const requestText = featureInput.value.trim();
+  if (!requestText) return;
+  simulateFeatureScaffold(requestText);
 });
 
 loadDomainKnowledge().catch(error => {
   statusLine.textContent = `Domain knowledge load failed: ${error.message}`;
   outputPane.textContent = "UI entered degraded mode; no domain capability catalog available.";
+  appendChatMessage("assistant", "Domain knowledge failed to load. Feature scaffolding is unavailable.");
 });
 """;
 
@@ -1551,6 +1738,16 @@ loadDomainKnowledge().catch(error => {
       "id": "ability-cooldowns",
       "matchToken": "ability",
       "summary": "Applies shared cooldown semantics for gameplay actions."
+    },
+    {
+      "id": "onboarding-flows",
+      "matchToken": "onboarding",
+      "summary": "Designs first-time user flows and progressive feature unlocks."
+    },
+    {
+      "id": "ui-notifications",
+      "matchToken": "notification",
+      "summary": "Renders actionable notifications and in-session prompts."
     }
   ]
 }
@@ -1567,8 +1764,11 @@ html = (root / "index.html").read_text(encoding="utf-8")
 js = (root / "app.js").read_text(encoding="utf-8")
 catalog = json.loads((root / "domain-knowledge.json").read_text(encoding="utf-8"))
 
-assert "generate-btn" in html, "Expected generate button in HTML"
-assert "loadDomainKnowledge" in js, "Expected domain loader function in JS"
+assert "chat-send-btn" in html, "Expected chat send button in HTML"
+assert "chat-log" in html, "Expected chatbot log container in HTML"
+assert "scaffold-feature-btn" in html, "Expected feature scaffold button in HTML"
+assert "simulateFeatureScaffold" in js, "Expected dynamic feature scaffold function in JS"
+assert "explainNexo" in js, "Expected chatbot explainer function in JS"
 assert len(catalog.get("capabilities", [])) >= 3, "Expected at least 3 retained capabilities"
 
 print("ui_smoke_test: ok")
@@ -1615,11 +1815,13 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
             var js = File.ReadAllText(jsPath);
             var domainJson = File.ReadAllText(domainPath);
 
-            AssertTrue(html.Contains("Retained domain knowledge", StringComparison.Ordinal), "UI should render retained domain knowledge section.");
-            AssertTrue(js.Contains("loadDomainKnowledge", StringComparison.Ordinal), "JS should load domain knowledge.");
+            AssertTrue(html.Contains("Nexo Chatbot", StringComparison.Ordinal), "UI should render chatbot section.");
+            AssertTrue(html.Contains("Dynamically loaded features", StringComparison.Ordinal), "UI should render dynamic feature host section.");
+            AssertTrue(js.Contains("explainNexo", StringComparison.Ordinal), "JS should implement chatbot explainer behavior.");
+            AssertTrue(js.Contains("simulateFeatureScaffold", StringComparison.Ordinal), "JS should simulate scaffold + hot-load behavior.");
             using var doc = JsonDocument.Parse(domainJson);
             var capabilities = doc.RootElement.GetProperty("capabilities");
-            AssertTrue(capabilities.GetArrayLength() >= 3, "Expected at least 3 domain capabilities.");
+            AssertTrue(capabilities.GetArrayLength() >= 4, "Expected at least 4 domain capabilities.");
 
             return Task.FromResult(new TestResult
             {
