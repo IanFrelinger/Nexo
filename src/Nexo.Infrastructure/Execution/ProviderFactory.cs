@@ -2175,6 +2175,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Themes.Fluent;
 using Avalonia.X11;
 using Nexo.Ui.Abstractions;
 
@@ -2242,6 +2243,12 @@ internal static class Program
 
 public sealed class App : Application
 {
+    public App()
+    {
+        if (!Styles.Any(s => s is FluentTheme))
+            Styles.Add(new FluentTheme());
+    }
+
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
