@@ -408,7 +408,7 @@ public class BackgroundAgentCommand
         await _registry.RegisterAsync(agent, config, ct);
     }
 
-    internal static int CalculateDesiredAgentCount(int demand, int minAgents, int maxAgents, int unitsPerAgent)
+    public static int CalculateDesiredAgentCount(int demand, int minAgents, int maxAgents, int unitsPerAgent)
     {
         var normalizedDemand = Math.Max(0, demand);
         var desired = normalizedDemand == 0

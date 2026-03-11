@@ -823,6 +823,10 @@ public class ProviderFactory : IProviderFactory
             {
                 return BuildUnityBootstrapToolCallsJson(systemPrompt, objective);
             }
+            if (LooksLikePersonalSoftwareObjective(objective))
+            {
+                return BuildPersonalAppToolCallsJson(systemPrompt);
+            }
 
             // Explicitly return an empty tool call envelope for schema consistency.
             return JsonSerializer.Serialize(new { tool_calls = Array.Empty<object>() });
@@ -859,6 +863,81 @@ public class ProviderFactory : IProviderFactory
             || objective.Contains("compile error", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("inspector", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("raw code", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikePersonalSoftwareObjective(string objective)
+    {
+        if (string.IsNullOrWhiteSpace(objective))
+            return false;
+        return objective.Contains("personal", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("productivity", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("profile", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("preferences", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("tasks", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("reminders", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("dashboard", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildPersonalAppToolCallsJson(string systemPrompt)
+    {
+        var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
+        var extensionCommands = new List<(string ClassName, string CommandName, string ExtensionId, string[] Dependencies)>
+        {
+            ("ProfileExtensionCommand", "ext-profile", "profile", Array.Empty<string>()),
+            ("PreferencesExtensionCommand", "ext-preferences", "preferences", new[] { "profile" }),
+            ("TasksExtensionCommand", "ext-tasks", "tasks", new[] { "profile", "preferences" }),
+            ("RemindersExtensionCommand", "ext-reminders", "reminders", new[] { "tasks" }),
+            ("DashboardExtensionCommand", "ext-dashboard", "dashboard", new[] { "tasks", "reminders" }),
+        };
+
+        var calls = new List<object>
+        {
+            CreateWriteCall(root, "docs/PersonalAppGenerated/UserProfile.cs", BuildPersonalUserProfileSource()),
+            CreateWriteCall(root, "docs/PersonalAppGenerated/UserPreferences.cs", BuildPersonalUserPreferencesSource()),
+            CreateWriteCall(root, "docs/PersonalAppGenerated/PersonalTaskItem.cs", BuildPersonalTaskItemSource()),
+            CreateWriteCall(root, "docs/PersonalAppGenerated/PersonalReminder.cs", BuildPersonalReminderSource()),
+            CreateWriteCall(root, "docs/PersonalAppGenerated/ProgressDashboard.cs", BuildPersonalProgressDashboardSource()),
+            CreateWriteCall(root, "docs/PersonalAppGenerated/README.md", BuildPersonalAppReadmeSource()),
+
+            // Command-structure scaffolding for composable extension commands.
+            CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
+        };
+
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
+                BuildExtensionCommandSource(ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+
+        calls.Add(CreateWriteCall(
+            root,
+            "src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommand.cs",
+            BuildBundleCommandSource(
+                bundleClassName: "SelfExtendPersonalBundleCommand",
+                bundleCommandName: "self-extend-personal-bundle",
+                extensionCommands: extensionCommands.Select(e => (e.ClassName, e.CommandName)).ToArray())));
+
+        // Generated tests that validate extension command structure.
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
+                BuildExtensionCommandStructureTestSource($"{ext.ClassName}StructureTests", ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+
+        calls.Add(CreateWriteCall(
+            root,
+            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs",
+            BuildBundleCommandStructureTestSource(
+                testClassName: "SelfExtendPersonalBundleCommandStructureTests",
+                bundleClassName: "SelfExtendPersonalBundleCommand",
+                expectedBundleCommandName: "self-extend-personal-bundle",
+                extensionCommands.Select(e => e.CommandName).ToArray())));
+
+        return JsonSerializer.Serialize(new { tool_calls = calls });
     }
 
     private static string BuildUnityBootstrapToolCallsJson(string systemPrompt, string objective)
@@ -1115,6 +1194,97 @@ public sealed class AbilityRegistry
 }
 """;
 
+    private static string BuildPersonalUserProfileSource() => """
+namespace Nexo.Personal.Generated;
+
+public sealed record UserProfile(
+    string UserId,
+    string DisplayName,
+    string TimeZoneId,
+    string Locale);
+""";
+
+    private static string BuildPersonalUserPreferencesSource() => """
+namespace Nexo.Personal.Generated;
+
+public sealed record UserPreferences(
+    bool StartWithTodayView,
+    bool EnableReminderNotifications,
+    int DefaultFocusMinutes,
+    int DailyGoalPoints);
+""";
+
+    private static string BuildPersonalTaskItemSource() => """
+namespace Nexo.Personal.Generated;
+
+public sealed class PersonalTaskItem
+{
+    public required string Id { get; init; }
+    public required string Title { get; init; }
+    public string? Description { get; init; }
+    public bool Completed { get; private set; }
+    public int Priority { get; init; } = 3;
+    public System.DateTimeOffset? DueAtUtc { get; init; }
+
+    public void MarkCompleted() => Completed = true;
+}
+""";
+
+    private static string BuildPersonalReminderSource() => """
+namespace Nexo.Personal.Generated;
+
+public sealed class PersonalReminder
+{
+    public required string Id { get; init; }
+    public required string TaskId { get; init; }
+    public required System.DateTimeOffset FireAtUtc { get; init; }
+    public bool Sent { get; private set; }
+
+    public bool ShouldFire(System.DateTimeOffset nowUtc) => !Sent && nowUtc >= FireAtUtc;
+    public void MarkSent() => Sent = true;
+}
+""";
+
+    private static string BuildPersonalProgressDashboardSource() => """
+namespace Nexo.Personal.Generated;
+
+public sealed class ProgressDashboard
+{
+    public static int CalculateDailyPoints(System.Collections.Generic.IEnumerable<PersonalTaskItem> tasks)
+    {
+        if (tasks is null)
+            return 0;
+
+        var points = 0;
+        foreach (var task in tasks)
+        {
+            if (!task.Completed)
+                continue;
+            points += task.Priority switch
+            {
+                <= 1 => 5,
+                2 => 3,
+                _ => 1
+            };
+        }
+        return points;
+    }
+}
+""";
+
+    private static string BuildPersonalAppReadmeSource() => """
+# Personal App Scaffold (Generated)
+
+This generated package models a personal productivity app that keeps the Nexo backend infrastructure unchanged.
+
+Artifacts:
+- User profile and preference models
+- Task and reminder models
+- Progress dashboard scoring logic
+- Composable CLI extension commands for profile/preferences/tasks/reminders/dashboard
+- Generated structure tests for each extension command and the composed bundle
+""";
+
     private static string BuildErrorStateSource() => """
 namespace Nexo.Unity.Generated;
 
@@ -1182,6 +1352,12 @@ public sealed class {{className}} : Command, IComposableExtensionCommand
     }
 
     private static string BuildBundleCommandSource((string ClassName, string CommandName)[] extensionCommands)
+        => BuildBundleCommandSource("SelfExtendBundleCommand", "self-extend-bundle", extensionCommands);
+
+    private static string BuildBundleCommandSource(
+        string bundleClassName,
+        string bundleCommandName,
+        (string ClassName, string CommandName)[] extensionCommands)
     {
         var addLines = string.Join("\n", extensionCommands.Select(c => $"        AddCommand(new {c.ClassName}());"));
         return $$"""
@@ -1189,9 +1365,9 @@ using System.CommandLine;
 
 namespace Nexo.CLI.Commands.SelfExtendGenerated;
 
-public sealed class SelfExtendBundleCommand : Command
+public sealed class {{bundleClassName}} : Command
 {
-    public SelfExtendBundleCommand() : base("self-extend-bundle", "Composed bundle of generated extension commands")
+    public {{bundleClassName}}() : base("{{bundleCommandName}}", "Composed bundle of generated extension commands")
     {
 {{addLines}}
     }
@@ -1270,6 +1446,17 @@ public sealed class {{testClassName}} : UnitTestBase
     }
 
     private static string BuildBundleCommandStructureTestSource(string testClassName, string[] expectedCommands)
+        => BuildBundleCommandStructureTestSource(
+            testClassName,
+            bundleClassName: "SelfExtendBundleCommand",
+            expectedBundleCommandName: "self-extend-bundle",
+            expectedCommands: expectedCommands);
+
+    private static string BuildBundleCommandStructureTestSource(
+        string testClassName,
+        string bundleClassName,
+        string expectedBundleCommandName,
+        string[] expectedCommands)
     {
         var assertions = string.Join("\n", expectedCommands.Select(c =>
             $"            AssertTrue(command.Subcommands.Any(s => string.Equals(s.Name, \"{c}\", StringComparison.Ordinal)), \"Expected subcommand '{c}'\");"));
@@ -1286,8 +1473,8 @@ public sealed class {{testClassName}} : UnitTestBase
     {
         try
         {
-            var command = new SelfExtendBundleCommand();
-            AssertEqual("self-extend-bundle", command.Name, "Bundle command name should match scaffold");
+            var command = new {{bundleClassName}}();
+            AssertEqual("{{expectedBundleCommandName}}", command.Name, "Bundle command name should match scaffold");
 {{assertions}}
 
             return Task.FromResult(new TestResult

@@ -29,6 +29,7 @@ public class ProviderFactoryTests : UnitTestBase
             await TestExecuteLLMAsync_SelfExtendUnityBootstrap();
             await TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced();
             await TestExecuteLLMAsync_SelfExtendUnityBootstrap_GeneratesComposableCommandScaffolds();
+            await TestExecuteLLMAsync_SelfExtendPersonalApp_GeneratesComposableCommandScaffolds();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -281,6 +282,48 @@ Generate a broad Unity adaptation package for a movement-combat vertical slice. 
             "Expected composed bundle command scaffold.");
         AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/DashExtensionCommandStructureTests.cs"),
             "Expected generated test scaffold for extension command structure.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendPersonalApp_GeneratesComposableCommandScaffolds()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Scaffold a personalized productivity application for an individual user with profile, preferences, tasks, reminders, and progress dashboard. Write artifacts under docs/PersonalAppGenerated and scaffold composable extension commands plus tests so the app can compose with existing backend infrastructure.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        var paths = new List<string>();
+        foreach (var call in calls.EnumerateArray())
+        {
+            paths.Add(call.GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty);
+        }
+
+        AssertTrue(paths.Contains("docs/PersonalAppGenerated/UserProfile.cs"),
+            "Expected personal app user profile scaffold.");
+        AssertTrue(paths.Contains("docs/PersonalAppGenerated/ProgressDashboard.cs"),
+            "Expected personal app dashboard scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/ProfileExtensionCommand.cs"),
+            "Expected generated profile extension command scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommand.cs"),
+            "Expected composed personal bundle command scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/ProfileExtensionCommandStructureTests.cs"),
+            "Expected generated test scaffold for profile extension command structure.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs"),
+            "Expected generated test scaffold for personal bundle composition.");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception

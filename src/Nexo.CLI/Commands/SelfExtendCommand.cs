@@ -177,7 +177,7 @@ public sealed class SelfExtendCommand : Command
         var build = await RunProcessAsync(
             "dotnet",
             repoRoot,
-            new[] { "build", "src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj" },
+            new[] { "build", "src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj", "-t:Rebuild", "-m:1" },
             ct).ConfigureAwait(false);
         if (build.ExitCode != 0)
             return build;
