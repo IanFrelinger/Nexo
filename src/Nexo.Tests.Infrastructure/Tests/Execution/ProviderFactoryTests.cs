@@ -404,6 +404,8 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
             "Expected Avalonia contracts to include descriptor experience mode.");
         AssertTrue(avaloniaHostProgramContent.Contains("AVALONIA_APP_TRANSFORM", StringComparison.Ordinal),
             "Expected Avalonia host scaffold to support full app transformation objective.");
+        AssertTrue(avaloniaHostProgramContent.Contains("Galactic Operations Console", StringComparison.Ordinal),
+            "Expected Avalonia host scaffold to include a distinct transformed application shell.");
     }
 
     private async Task TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule()

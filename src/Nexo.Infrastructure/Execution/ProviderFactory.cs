@@ -2301,6 +2301,7 @@ public sealed class MainWindow : Window
     private readonly TextBlock _status = new() { Text = "Ready." };
     private readonly TextBox _plan = new() { AcceptsReturn = true, IsReadOnly = true, Height = 180 };
     private readonly TextBox _transformLog = new() { IsReadOnly = true, AcceptsReturn = true, Height = 120, Text = "Awaiting transformed app actions..." };
+    private readonly TextBlock _transformPhase = new() { Text = "Phase: Mission shell idle.", Foreground = Brushes.LightGreen };
     private readonly Control _baselineShell;
 
     public MainWindow(IUiFrameworkAdapter<Control> adapter, IFeatureScaffolder scaffolder)
@@ -2432,15 +2433,18 @@ public sealed class MainWindow : Window
 
     private void ApplyAppTransformation(FeatureDescriptor descriptor)
     {
-        Title = $"Nexo -> {descriptor.Title}";
+        Title = $"Galactic Operations Console :: {descriptor.Title}";
+        _transformPhase.Text = "Phase: Mission shell booted from scaffold.";
         _transformLog.Text = $"Transformed with descriptor: {descriptor.FeatureId}{Environment.NewLine}{descriptor.WowMessage}";
+
         var generatedExperience = _adapter.Create(descriptor.Root, HandleCommand);
         var wow = new Button
         {
             Content = "Trigger wow sequence",
-            Background = Brushes.DeepSkyBlue,
+            Background = Brushes.Cyan,
             Foreground = Brushes.Black,
-            FontWeight = FontWeight.Bold
+            FontWeight = FontWeight.Bold,
+            Padding = new Thickness(12, 8)
         };
         wow.Click += (_, _) => HandleCommand($"feature:{descriptor.FeatureId}:wow");
         var restore = new Button
@@ -2448,40 +2452,264 @@ public sealed class MainWindow : Window
             Content = "Restore Nexo Shell",
             Background = Brushes.Orange,
             Foreground = Brushes.Black,
-            FontWeight = FontWeight.Bold
+            FontWeight = FontWeight.Bold,
+            Padding = new Thickness(12, 8)
         };
         restore.Click += (_, _) => RestoreNexoShell();
-        var controlRail = new StackPanel
+        var deploy = new Button
+        {
+            Content = "Deploy autonomous patch",
+            Background = Brushes.LawnGreen,
+            Foreground = Brushes.Black,
+            FontWeight = FontWeight.Bold,
+            Padding = new Thickness(12, 8)
+        };
+        deploy.Click += (_, _) => HandleCommand($"feature:{descriptor.FeatureId}:deploy");
+
+        var appGrid = new Grid();
+        appGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        appGrid.RowDefinitions.Add(new RowDefinition(new GridLength(1, GridUnitType.Star)));
+        appGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(240)));
+        appGrid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+
+        var headerActions = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            Children = { wow, restore }
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Children = { wow, deploy, restore }
         };
-        var shell = new StackPanel
+        DockPanel.SetDock(headerActions, Dock.Right);
+
+        var header = new Border
         {
-            Spacing = 10,
-            Margin = new Thickness(12),
-            Children =
+            BorderBrush = Brushes.SlateBlue,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(14, 12),
+            Child = new DockPanel
             {
-                new TextBlock
+                LastChildFill = false,
+                Children =
                 {
-                    Text = descriptor.Title,
-                    FontSize = 24,
-                    FontWeight = FontWeight.Bold,
-                    Foreground = Brushes.White
-                },
-                new TextBlock { Text = descriptor.WowMessage, Foreground = Brushes.DeepSkyBlue },
-                controlRail,
-                generatedExperience,
-                new TextBlock { Text = "Transform action log", Foreground = Brushes.LightGray },
-                _transformLog
+                    new StackPanel
+                    {
+                        Spacing = 4,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = "Galactic Operations Console",
+                                FontSize = 24,
+                                FontWeight = FontWeight.Bold,
+                                Foreground = Brushes.White
+                            },
+                            new TextBlock
+                            {
+                                Text = descriptor.Title,
+                                Foreground = Brushes.LightGray
+                            },
+                            new TextBlock
+                            {
+                                Text = descriptor.WowMessage,
+                                Foreground = Brushes.DeepSkyBlue
+                            },
+                            _transformPhase
+                        }
+                    },
+                    headerActions
+                }
             }
         };
+        Grid.SetRow(header, 0);
+        Grid.SetColumn(header, 0);
+        Grid.SetColumnSpan(header, 2);
+        appGrid.Children.Add(header);
+
+        var navRail = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#141d32")),
+            BorderBrush = Brushes.SlateBlue,
+            BorderThickness = new Thickness(0, 0, 1, 0),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "Mission Nav", FontSize = 18, FontWeight = FontWeight.Bold, Foreground = Brushes.White },
+                    CreateTransformNavButton("Overview", "nav:overview"),
+                    CreateTransformNavButton("Fleet Grid", "nav:fleet"),
+                    CreateTransformNavButton("Signal Radar", "nav:signals"),
+                    CreateTransformNavButton("Workflow Graph", "nav:workflow"),
+                    CreateTransformNavButton("Threat Intel", "nav:intel")
+                }
+            }
+        };
+        Grid.SetRow(navRail, 1);
+        Grid.SetColumn(navRail, 0);
+        appGrid.Children.Add(navRail);
+
+        var workspace = new Grid { Margin = new Thickness(12) };
+        workspace.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        workspace.RowDefinitions.Add(new RowDefinition(new GridLength(1, GridUnitType.Star)));
+        workspace.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        var metrics = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            Children =
+            {
+                CreateMetricCard("Active fleets", "12", Brushes.DeepSkyBlue),
+                CreateMetricCard("Mission sync", "99.2%", Brushes.LawnGreen),
+                CreateMetricCard("Latency window", "24ms", Brushes.Gold),
+                CreateMetricCard("Risk score", "LOW", Brushes.HotPink)
+            }
+        };
+        Grid.SetRow(metrics, 0);
+        workspace.Children.Add(metrics);
+
+        var missionBoard = new Grid { Margin = new Thickness(0, 10, 0, 10) };
+        missionBoard.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(3, GridUnitType.Star)));
+        missionBoard.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(2, GridUnitType.Star)));
+
+        var generatedPanel = new Border
+        {
+            BorderBrush = Brushes.SlateBlue,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Scaffolded Application Module",
+                        FontSize = 18,
+                        FontWeight = FontWeight.Bold,
+                        Foreground = Brushes.White
+                    },
+                    generatedExperience
+                }
+            }
+        };
+        Grid.SetColumn(generatedPanel, 0);
+        missionBoard.Children.Add(generatedPanel);
+
+        var incidentFeed = new Border
+        {
+            BorderBrush = Brushes.SlateBlue,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Margin = new Thickness(10, 0, 0, 0),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Live Incident Queue",
+                        FontSize = 18,
+                        FontWeight = FontWeight.Bold,
+                        Foreground = Brushes.White
+                    },
+                    new ListBox
+                    {
+                        Height = 210,
+                        ItemsSource = new[]
+                        {
+                            "Signal anomaly detected in sector Delta-9",
+                            "Autonomous drone mesh rerouted after weather spike",
+                            "Cold-start recovery completed by generated fallback lane",
+                            "New domain capability badge applied to mission planner"
+                        }
+                    }
+                }
+            }
+        };
+        Grid.SetColumn(incidentFeed, 1);
+        missionBoard.Children.Add(incidentFeed);
+
+        Grid.SetRow(missionBoard, 1);
+        workspace.Children.Add(missionBoard);
+
+        var actionLogPanel = new Border
+        {
+            BorderBrush = Brushes.SlateBlue,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock { Text = "Mission command log", FontSize = 16, FontWeight = FontWeight.Bold, Foreground = Brushes.White },
+                    _transformLog
+                }
+            }
+        };
+        Grid.SetRow(actionLogPanel, 2);
+        workspace.Children.Add(actionLogPanel);
+
+        Grid.SetRow(workspace, 1);
+        Grid.SetColumn(workspace, 1);
+        appGrid.Children.Add(workspace);
+
         Content = new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#101420")),
-            Child = new ScrollViewer { Content = shell }
+            Background = new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
+                GradientStops = new GradientStops
+                {
+                    new GradientStop(Color.Parse("#0c1124"), 0),
+                    new GradientStop(Color.Parse("#111b38"), 0.5),
+                    new GradientStop(Color.Parse("#1b0d2a"), 1)
+                }
+            },
+            Child = appGrid
+        };
+    }
+
+    private Button CreateTransformNavButton(string label, string command)
+    {
+        var button = new Button
+        {
+            Content = label,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(10, 8),
+            Background = new SolidColorBrush(Color.Parse("#1d2c52")),
+            Foreground = Brushes.White
+        };
+        button.Click += (_, _) => HandleCommand(command);
+        return button;
+    }
+
+    private static Border CreateMetricCard(string title, string value, IBrush accent)
+    {
+        return new Border
+        {
+            Width = 190,
+            BorderBrush = accent,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 4,
+                Children =
+                {
+                    new TextBlock { Text = title, Foreground = Brushes.LightGray },
+                    new TextBlock { Text = value, FontSize = 22, FontWeight = FontWeight.Bold, Foreground = accent }
+                }
+            }
         };
     }
 
@@ -2490,6 +2718,7 @@ public sealed class MainWindow : Window
         Title = "Nexo Avalonia Dynamic Extension Demo";
         Content = _baselineShell;
         _status.Text = "Restored baseline shell.";
+        _transformPhase.Text = "Phase: Mission shell idle.";
         AppendChat("assistant", "Baseline Nexo shell restored.");
     }
 
@@ -2500,6 +2729,17 @@ public sealed class MainWindow : Window
             RestoreNexoShell();
             return;
         }
+
+        if (command.StartsWith("nav:", StringComparison.OrdinalIgnoreCase))
+            _transformPhase.Text = $"Phase: Viewing {command["nav:".Length..]} station.";
+        else if (command.Contains(":wow", StringComparison.OrdinalIgnoreCase))
+            _transformPhase.Text = "Phase: WOW sequence executed across every station.";
+        else if (command.Contains(":deploy", StringComparison.OrdinalIgnoreCase))
+            _transformPhase.Text = "Phase: Autonomous patch deployment initiated.";
+        else if (command.Contains(":launch", StringComparison.OrdinalIgnoreCase))
+            _transformPhase.Text = "Phase: Simulation launch accepted.";
+        else if (command.Contains(":boost", StringComparison.OrdinalIgnoreCase))
+            _transformPhase.Text = "Phase: Autonomy boost pipeline stabilized.";
 
         var line = $"{DateTimeOffset.Now:HH:mm:ss} :: {command}";
         _transformLog.Text = string.IsNullOrWhiteSpace(_transformLog.Text)
@@ -2906,6 +3146,7 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
             AssertTrue(avaloniaContracts.Contains("CrossFrameworkCompatibility", StringComparison.Ordinal), "Avalonia stack should include compatibility contract notes.");
             AssertTrue(avaloniaHostProgram.Contains("AVALONIA_FEATURE_HOTLOAD", StringComparison.Ordinal), "Avalonia host should scaffold via Avalonia hotload objective.");
             AssertTrue(avaloniaHostProgram.Contains("AVALONIA_APP_TRANSFORM", StringComparison.Ordinal), "Avalonia host should support full app transformation objective.");
+            AssertTrue(avaloniaHostProgram.Contains("Galactic Operations Console", StringComparison.Ordinal), "Avalonia host should render a distinct transformed application shell.");
             AssertTrue(avaloniaHostProgram.Contains("AvaloniaUiFrameworkAdapter", StringComparison.Ordinal), "Avalonia host should render nodes through framework adapter.");
             using var doc = JsonDocument.Parse(domainJson);
             var capabilities = doc.RootElement.GetProperty("capabilities");
