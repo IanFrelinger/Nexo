@@ -33,6 +33,7 @@ public class ProviderFactoryTests : UnitTestBase
             await TestExecuteLLMAsync_SelfExtendUiDemo_GeneratesDomainAndUiScaffolds();
             await TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule();
             await TestExecuteLLMAsync_SelfExtendAvaloniaHotload_GeneratesFeatureDescriptor();
+            await TestExecuteLLMAsync_SelfExtendAvaloniaTransform_GeneratesReplacementDescriptor();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -354,6 +355,8 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
         var paths = new List<string>();
         var appJsContent = string.Empty;
         var htmlContent = string.Empty;
+        var avaloniaContractsContent = string.Empty;
+        var avaloniaHostProgramContent = string.Empty;
         foreach (var call in calls.EnumerateArray())
         {
             var args = call.GetProperty("arguments");
@@ -363,6 +366,10 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
                 appJsContent = args.GetProperty("content").GetString() ?? string.Empty;
             if (path == "docs/UiDomainDemoGenerated/app/index.html")
                 htmlContent = args.GetProperty("content").GetString() ?? string.Empty;
+            if (path == "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions/UiContracts.cs")
+                avaloniaContractsContent = args.GetProperty("content").GetString() ?? string.Empty;
+            if (path == "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Program.cs")
+                avaloniaHostProgramContent = args.GetProperty("content").GetString() ?? string.Empty;
         }
 
         AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/index.html"),
@@ -393,6 +400,10 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
             "Expected dynamic module import in generated UI JS.");
         AssertTrue(appJsContent.Contains("explainNexo", StringComparison.Ordinal),
             "Expected Nexo explainer behavior in generated UI JS.");
+        AssertTrue(avaloniaContractsContent.Contains("ExperienceMode", StringComparison.Ordinal),
+            "Expected Avalonia contracts to include descriptor experience mode.");
+        AssertTrue(avaloniaHostProgramContent.Contains("AVALONIA_APP_TRANSFORM", StringComparison.Ordinal),
+            "Expected Avalonia host scaffold to support full app transformation objective.");
     }
 
     private async Task TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule()
@@ -460,6 +471,43 @@ AVALONIA_FEATURE_HOTLOAD Feature request: Add slick onboarding rail. Write outpu
             "Expected generated Avalonia descriptor to include root node.");
         AssertTrue(content.Contains("\"Kind\": \"panel\"", StringComparison.Ordinal),
             "Expected descriptor root node kind panel.");
+        AssertTrue(content.Contains("\"ExperienceMode\": \"augment\"", StringComparison.Ordinal),
+            "Expected hotload descriptor to default to augment mode.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendAvaloniaTransform_GeneratesReplacementDescriptor()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+AVALONIA_APP_TRANSFORM Feature request: Completely transform into a mission operations application. Write output descriptor under docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        AssertEqual(1, calls.GetArrayLength(), "Expected one descriptor write call for Avalonia app transform objective.");
+        var path = calls[0].GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty;
+        var content = calls[0].GetProperty("arguments").GetProperty("content").GetString() ?? string.Empty;
+        AssertTrue(path.StartsWith("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/", StringComparison.Ordinal),
+            "Expected generated Avalonia transform descriptor path under GeneratedExtensions.");
+        AssertTrue(content.Contains("\"ExperienceMode\": \"transform\"", StringComparison.Ordinal),
+            "Expected descriptor to request full shell transformation.");
+        AssertTrue(content.Contains("\"Command\": \"shell:restore\"", StringComparison.Ordinal),
+            "Expected transformed descriptor to include explicit restore command.");
+        AssertTrue(content.Contains("\"Layout\": \"horizontal\"", StringComparison.Ordinal),
+            "Expected transformed descriptor to include adaptive horizontal layout containers.");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception

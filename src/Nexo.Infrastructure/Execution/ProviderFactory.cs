@@ -915,6 +915,7 @@ public class ProviderFactory : IProviderFactory
             return false;
         return objective.Contains("UI_FEATURE_HOTLOAD", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("AVALONIA_FEATURE_HOTLOAD", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("AVALONIA_APP_TRANSFORM", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("hot-loadable ui feature module", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -929,6 +930,15 @@ public class ProviderFactory : IProviderFactory
         {
             var descriptorPath = $"docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/{slug}.json";
             var descriptorContent = BuildAvaloniaFeatureDescriptorJson(request, slug, retainedCapabilities);
+            return JsonSerializer.Serialize(new
+            {
+                tool_calls = new[] { CreateWriteCall(root, descriptorPath, descriptorContent) }
+            });
+        }
+        if (objective.Contains("AVALONIA_APP_TRANSFORM", StringComparison.OrdinalIgnoreCase))
+        {
+            var descriptorPath = $"docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/{slug}.json";
+            var descriptorContent = BuildAvaloniaAppTransformDescriptorJson(request, slug, retainedCapabilities);
             return JsonSerializer.Serialize(new
             {
                 tool_calls = new[] { CreateWriteCall(root, descriptorPath, descriptorContent) }
@@ -2121,6 +2131,7 @@ public sealed record UiNode(
     string? Command = null,
     string? AccentHex = null,
     double? Value = null,
+    string? Layout = null,
     IReadOnlyList<UiNode>? Children = null);
 
 public sealed record FeatureDescriptor(
@@ -2129,6 +2140,7 @@ public sealed record FeatureDescriptor(
     string[] RetainedDomainKnowledge,
     string WowMessage,
     string SourcePath,
+    string ExperienceMode,
     UiNode Root);
 
 public interface IUiFrameworkAdapter<TControl>
@@ -2288,6 +2300,8 @@ public sealed class MainWindow : Window
     private readonly TextBox _featureInput = new() { Text = "Add onboarding notification sidebar" };
     private readonly TextBlock _status = new() { Text = "Ready." };
     private readonly TextBox _plan = new() { AcceptsReturn = true, IsReadOnly = true, Height = 180 };
+    private readonly TextBox _transformLog = new() { IsReadOnly = true, AcceptsReturn = true, Height = 120, Text = "Awaiting transformed app actions..." };
+    private readonly Control _baselineShell;
 
     public MainWindow(IUiFrameworkAdapter<Control> adapter, IFeatureScaffolder scaffolder)
     {
@@ -2296,7 +2310,8 @@ public sealed class MainWindow : Window
         Title = "Nexo Avalonia Dynamic Extension Demo";
         Width = 1080;
         Height = 760;
-        Content = BuildContent();
+        _baselineShell = BuildContent();
+        Content = _baselineShell;
         AppendChat("assistant", "Hi! Ask what Nexo is or scaffold a feature.");
     }
 
@@ -2378,17 +2393,27 @@ public sealed class MainWindow : Window
         {
             _status.Text = "Scaffolding feature through nexo self-extend...";
             var descriptor = await _scaffolder.ScaffoldAsync(request).ConfigureAwait(true);
-            var control = _adapter.Create(descriptor.Root, command => AppendChat("assistant", $"Action command: {command}"));
-            _dynamicHost.Children.Insert(0, control);
-            _status.Text = $"Feature {descriptor.FeatureId} loaded with {descriptor.RetainedDomainKnowledge.Length} domain tags.";
-            AppendChat("assistant", $"Feature ready: {descriptor.FeatureId}. Knowledge: {string.Join(", ", descriptor.RetainedDomainKnowledge)}");
+            if (string.Equals(descriptor.ExperienceMode, "transform", StringComparison.OrdinalIgnoreCase))
+            {
+                ApplyAppTransformation(descriptor);
+                _status.Text = $"Application transformed via {descriptor.FeatureId}.";
+                AppendChat("assistant", $"Full app transformed into {descriptor.Title}. Use Return to Nexo shell to restore.");
+            }
+            else
+            {
+                var control = _adapter.Create(descriptor.Root, HandleCommand);
+                _dynamicHost.Children.Insert(0, control);
+                _status.Text = $"Feature {descriptor.FeatureId} loaded with {descriptor.RetainedDomainKnowledge.Length} domain tags.";
+                AppendChat("assistant", $"Feature ready: {descriptor.FeatureId}. Knowledge: {string.Join(", ", descriptor.RetainedDomainKnowledge)}");
+            }
             _plan.Text = JsonSerializer.Serialize(new
             {
                 request,
                 featureId = descriptor.FeatureId,
                 retainedDomainKnowledge = descriptor.RetainedDomainKnowledge,
                 descriptor.SourcePath,
-                wow = descriptor.WowMessage
+                wow = descriptor.WowMessage,
+                mode = descriptor.ExperienceMode
             }, new JsonSerializerOptions { WriteIndented = true });
         }
         catch (Exception ex)
@@ -2403,6 +2428,84 @@ public sealed class MainWindow : Window
         if (includeUserInput)
             _chatLog.Children.Add(new TextBlock { Text = $"user: {_chatInput.Text}" });
         _chatLog.Children.Add(new TextBlock { Text = $"{role}: {message}" });
+    }
+
+    private void ApplyAppTransformation(FeatureDescriptor descriptor)
+    {
+        Title = $"Nexo -> {descriptor.Title}";
+        _transformLog.Text = $"Transformed with descriptor: {descriptor.FeatureId}{Environment.NewLine}{descriptor.WowMessage}";
+        var generatedExperience = _adapter.Create(descriptor.Root, HandleCommand);
+        var wow = new Button
+        {
+            Content = "Trigger wow sequence",
+            Background = Brushes.DeepSkyBlue,
+            Foreground = Brushes.Black,
+            FontWeight = FontWeight.Bold
+        };
+        wow.Click += (_, _) => HandleCommand($"feature:{descriptor.FeatureId}:wow");
+        var restore = new Button
+        {
+            Content = "Restore Nexo Shell",
+            Background = Brushes.Orange,
+            Foreground = Brushes.Black,
+            FontWeight = FontWeight.Bold
+        };
+        restore.Click += (_, _) => RestoreNexoShell();
+        var controlRail = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Children = { wow, restore }
+        };
+        var shell = new StackPanel
+        {
+            Spacing = 10,
+            Margin = new Thickness(12),
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = descriptor.Title,
+                    FontSize = 24,
+                    FontWeight = FontWeight.Bold,
+                    Foreground = Brushes.White
+                },
+                new TextBlock { Text = descriptor.WowMessage, Foreground = Brushes.DeepSkyBlue },
+                controlRail,
+                generatedExperience,
+                new TextBlock { Text = "Transform action log", Foreground = Brushes.LightGray },
+                _transformLog
+            }
+        };
+        Content = new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#101420")),
+            Child = new ScrollViewer { Content = shell }
+        };
+    }
+
+    private void RestoreNexoShell()
+    {
+        Title = "Nexo Avalonia Dynamic Extension Demo";
+        Content = _baselineShell;
+        _status.Text = "Restored baseline shell.";
+        AppendChat("assistant", "Baseline Nexo shell restored.");
+    }
+
+    private void HandleCommand(string command)
+    {
+        if (string.Equals(command, "shell:restore", StringComparison.OrdinalIgnoreCase))
+        {
+            RestoreNexoShell();
+            return;
+        }
+
+        var line = $"{DateTimeOffset.Now:HH:mm:ss} :: {command}";
+        _transformLog.Text = string.IsNullOrWhiteSpace(_transformLog.Text)
+            ? line
+            : $"{_transformLog.Text}{Environment.NewLine}{line}";
+        AppendChat("assistant", $"Action command: {command}");
     }
 
     private static string ExplainNexo(string question)
@@ -2426,7 +2529,7 @@ public sealed class AvaloniaUiFrameworkAdapter : IUiFrameworkAdapter<Control>
             "text" => new TextBlock { Text = node.Text },
             "button" => CreateButton(node, commandHandler),
             "badge" => CreateBadge(node),
-            "progress" => new ProgressBar { Minimum = 0, Maximum = 100, Value = node.Value ?? 0, Height = 12 },
+            "progress" => CreateProgress(node),
             _ => new TextBlock { Text = $"Unsupported node kind: {node.Kind}" }
         };
     }
@@ -2441,8 +2544,16 @@ public sealed class AvaloniaUiFrameworkAdapter : IUiFrameworkAdapter<Control>
         });
         if (node.Children != null)
         {
+            var childContainer = new StackPanel
+            {
+                Spacing = 6,
+                Orientation = string.Equals(node.Layout, "horizontal", StringComparison.OrdinalIgnoreCase)
+                    ? Orientation.Horizontal
+                    : Orientation.Vertical
+            };
             foreach (var child in node.Children)
-                panel.Children.Add(Create(child, commandHandler));
+                childContainer.Children.Add(Create(child, commandHandler));
+            panel.Children.Add(childContainer);
         }
         return new Border
         {
@@ -2473,6 +2584,14 @@ public sealed class AvaloniaUiFrameworkAdapter : IUiFrameworkAdapter<Control>
             Child = new TextBlock { Text = node.Text, FontSize = 12 }
         };
     }
+
+    private Control CreateProgress(UiNode node)
+    {
+        var wrap = new StackPanel { Spacing = 2, Width = 200 };
+        wrap.Children.Add(new TextBlock { Text = $"{node.Text}: {node.Value ?? 0:0}%" });
+        wrap.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = node.Value ?? 0, Height = 12 });
+        return wrap;
+    }
 }
 
 public sealed class AvaloniaFeatureScaffolder : IFeatureScaffolder
@@ -2488,8 +2607,11 @@ public sealed class AvaloniaFeatureScaffolder : IFeatureScaffolder
 
     public async Task<FeatureDescriptor> ScaffoldAsync(string featureRequest, CancellationToken cancellationToken = default)
     {
+        var objectiveToken = LooksLikeTransformRequest(featureRequest)
+            ? "AVALONIA_APP_TRANSFORM"
+            : "AVALONIA_FEATURE_HOTLOAD";
         var goal =
-            $"AVALONIA_FEATURE_HOTLOAD Feature request: {featureRequest}. Write output descriptor under docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions.";
+            $"{objectiveToken} Feature request: {featureRequest}. Write output descriptor under docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions.";
         var psi = new ProcessStartInfo
         {
             FileName = "dotnet",
@@ -2537,6 +2659,19 @@ public sealed class AvaloniaFeatureScaffolder : IFeatureScaffolder
         return descriptor with { SourcePath = descriptorPath };
     }
 
+    private static bool LooksLikeTransformRequest(string request)
+    {
+        if (string.IsNullOrWhiteSpace(request))
+            return false;
+
+        var lower = request.ToLowerInvariant();
+        return lower.Contains("transform", StringComparison.Ordinal) ||
+               lower.Contains("completely", StringComparison.Ordinal) ||
+               lower.Contains("another application", StringComparison.Ordinal) ||
+               lower.Contains("morph", StringComparison.Ordinal) ||
+               lower.Contains("replace app", StringComparison.Ordinal);
+    }
+
     private static string Slugify(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -2566,6 +2701,8 @@ Linux-compatible desktop demo using Avalonia.
 
 Feature requests are scaffolded through:
 `nexo self-extend run --goal "AVALONIA_FEATURE_HOTLOAD ..."`
+or full application transformation:
+`nexo self-extend run --goal "AVALONIA_APP_TRANSFORM ..."`
 """;
 
     private static string BuildAvaloniaFeatureDescriptorJson(string featureRequest, string featureId, string[] retainedCapabilities)
@@ -2577,6 +2714,7 @@ Feature requests are scaffolded through:
             RetainedDomainKnowledge = retainedCapabilities,
             WowMessage = "Live neon pulse command rail loaded from scaffolded descriptor.",
             SourcePath = $"GeneratedExtensions/{featureId}.json",
+            ExperienceMode = "augment",
             Root = new
             {
                 Kind = "panel",
@@ -2588,6 +2726,78 @@ Feature requests are scaffolded through:
                     new { Kind = "progress", Id = $"progress-{featureId}", Text = "Readiness", Value = 88.0 },
                     new { Kind = "button", Id = $"button-{featureId}", Text = "Trigger wow action", Command = $"feature:{featureId}:wow" },
                     new { Kind = "badge", Id = $"badge-{featureId}", Text = string.Join(" | ", retainedCapabilities) }
+                }
+            }
+        };
+
+        return JsonSerializer.Serialize(descriptor, new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private static string BuildAvaloniaAppTransformDescriptorJson(string featureRequest, string featureId, string[] retainedCapabilities)
+    {
+        var descriptor = new
+        {
+            FeatureId = featureId,
+            Title = $"{featureRequest} Command Suite",
+            RetainedDomainKnowledge = retainedCapabilities,
+            WowMessage = "Entire shell morphed into a scaffolded mission operations app.",
+            SourcePath = $"GeneratedExtensions/{featureId}.json",
+            ExperienceMode = "transform",
+            Root = new
+            {
+                Kind = "panel",
+                Id = $"transform-root-{featureId}",
+                Text = "Mission operations shell",
+                Children = new object[]
+                {
+                    new { Kind = "text", Id = $"hero-{featureId}", Text = "Adaptive mission control generated live by Nexo scaffolding." },
+                    new
+                    {
+                        Kind = "panel",
+                        Id = $"readiness-grid-{featureId}",
+                        Text = "Operational readiness",
+                        Layout = "horizontal",
+                        Children = new object[]
+                        {
+                            new { Kind = "progress", Id = $"radar-{featureId}", Text = "Radar", Value = 94.0 },
+                            new { Kind = "progress", Id = $"drone-{featureId}", Text = "Drone mesh", Value = 87.0 },
+                            new { Kind = "progress", Id = $"safety-{featureId}", Text = "Safety rails", Value = 98.0 }
+                        }
+                    },
+                    new
+                    {
+                        Kind = "panel",
+                        Id = $"command-rail-{featureId}",
+                        Text = "Command rail",
+                        Layout = "horizontal",
+                        Children = new object[]
+                        {
+                            new { Kind = "button", Id = $"cmd-launch-{featureId}", Text = "Launch simulation", Command = $"feature:{featureId}:launch" },
+                            new { Kind = "button", Id = $"cmd-boost-{featureId}", Text = "Boost autonomy", Command = $"feature:{featureId}:boost" },
+                            new { Kind = "button", Id = $"cmd-wow-{featureId}", Text = "Trigger wow sequence", Command = $"feature:{featureId}:wow" },
+                            new { Kind = "button", Id = $"cmd-restore-{featureId}", Text = "Return to Nexo shell", Command = "shell:restore" }
+                        }
+                    },
+                    new
+                    {
+                        Kind = "panel",
+                        Id = $"knowledge-{featureId}",
+                        Text = "Retained domain intelligence",
+                        Layout = "horizontal",
+                        Children = retainedCapabilities.Select(cap => new { Kind = "badge", Id = $"cap-{featureId}-{SlugifyIdentifier(cap)}", Text = cap }).ToArray()
+                    },
+                    new
+                    {
+                        Kind = "panel",
+                        Id = $"live-feed-{featureId}",
+                        Text = "Live event feed",
+                        Children = new object[]
+                        {
+                            new { Kind = "text", Id = $"event1-{featureId}", Text = "Signal lock achieved in generated subsystem lane." },
+                            new { Kind = "text", Id = $"event2-{featureId}", Text = "Autonomous planner rebound from synthetic failure injection." },
+                            new { Kind = "text", Id = $"event3-{featureId}", Text = "New UI capability surfaced from descriptor contract." }
+                        }
+                    }
                 }
             }
         };
@@ -2695,6 +2905,7 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
             AssertTrue(avaloniaContracts.Contains("IUiFrameworkAdapter", StringComparison.Ordinal), "Avalonia stack should include cross-framework adapter contract.");
             AssertTrue(avaloniaContracts.Contains("CrossFrameworkCompatibility", StringComparison.Ordinal), "Avalonia stack should include compatibility contract notes.");
             AssertTrue(avaloniaHostProgram.Contains("AVALONIA_FEATURE_HOTLOAD", StringComparison.Ordinal), "Avalonia host should scaffold via Avalonia hotload objective.");
+            AssertTrue(avaloniaHostProgram.Contains("AVALONIA_APP_TRANSFORM", StringComparison.Ordinal), "Avalonia host should support full app transformation objective.");
             AssertTrue(avaloniaHostProgram.Contains("AvaloniaUiFrameworkAdapter", StringComparison.Ordinal), "Avalonia host should render nodes through framework adapter.");
             using var doc = JsonDocument.Parse(domainJson);
             var capabilities = doc.RootElement.GetProperty("capabilities");
