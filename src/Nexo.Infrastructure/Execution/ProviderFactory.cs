@@ -896,7 +896,9 @@ public class ProviderFactory : IProviderFactory
             || objective.Contains("demo app with a ui", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("interactive demo", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("chat bot interface", StringComparison.OrdinalIgnoreCase)
-            || objective.Contains("chatbot interface", StringComparison.OrdinalIgnoreCase);
+            || objective.Contains("chatbot interface", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("avalonia", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("maui", StringComparison.OrdinalIgnoreCase);
         var hasDomainKnowledgeIntent = objective.Contains("domain knowledge", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("knowledge layer", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("retained in that layer", StringComparison.OrdinalIgnoreCase);
@@ -912,6 +914,7 @@ public class ProviderFactory : IProviderFactory
         if (string.IsNullOrWhiteSpace(objective))
             return false;
         return objective.Contains("UI_FEATURE_HOTLOAD", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("AVALONIA_FEATURE_HOTLOAD", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("hot-loadable ui feature module", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -920,8 +923,19 @@ public class ProviderFactory : IProviderFactory
         var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
         var request = ExtractUiFeatureRequest(objective);
         var slug = SlugifyIdentifier(request);
-        var modulePath = $"docs/UiDomainDemoGenerated/app/generated/{slug}.js";
         var retainedCapabilities = MatchUiDomainCapabilities(request);
+
+        if (objective.Contains("AVALONIA_FEATURE_HOTLOAD", StringComparison.OrdinalIgnoreCase))
+        {
+            var descriptorPath = $"docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/{slug}.json";
+            var descriptorContent = BuildAvaloniaFeatureDescriptorJson(request, slug, retainedCapabilities);
+            return JsonSerializer.Serialize(new
+            {
+                tool_calls = new[] { CreateWriteCall(root, descriptorPath, descriptorContent) }
+            });
+        }
+
+        var modulePath = $"docs/UiDomainDemoGenerated/app/generated/{slug}.js";
         var moduleSource = BuildUiFeatureModuleSource(request, slug, retainedCapabilities);
 
         var calls = new List<object>
@@ -940,6 +954,8 @@ public class ProviderFactory : IProviderFactory
             var raw = match.Groups["req"].Value.Trim();
             raw = raw.Replace("\\n", " ", StringComparison.Ordinal);
             var markerIndex = raw.IndexOf("Write output module under", StringComparison.OrdinalIgnoreCase);
+            if (markerIndex < 0)
+                markerIndex = raw.IndexOf("Write output descriptor under", StringComparison.OrdinalIgnoreCase);
             if (markerIndex >= 0)
                 raw = raw[..markerIndex].Trim();
             raw = raw.Trim().TrimEnd('.', ';');
@@ -1007,6 +1023,12 @@ public class ProviderFactory : IProviderFactory
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/host/Program.cs", BuildUiDemoHostProgramSource()),
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/host/UiDemoSmoke.csproj", BuildUiDemoSmokeProjectSource()),
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/host/SmokeProgram.cs", BuildUiDemoSmokeProgramSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions/Nexo.Ui.Abstractions.csproj", BuildAvaloniaAbstractionsProjectSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions/UiContracts.cs", BuildAvaloniaUiContractsSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Nexo.Ui.AvaloniaHost.csproj", BuildAvaloniaHostProjectSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Program.cs", BuildAvaloniaHostProgramSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/.gitkeep", string.Empty),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/README.md", BuildAvaloniaHostReadmeSource()),
 
             // Command-structure scaffolding for composable extension commands.
             CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
@@ -1472,6 +1494,8 @@ Outputs:
 - `docs/UiDomainDemoGenerated/app/domain-knowledge.json` retained domain knowledge catalog
 - `docs/UiDomainDemoGenerated/host/Program.cs` .NET API/static host that invokes `nexo self-extend` for feature scaffolding
 - `docs/UiDomainDemoGenerated/host/SmokeProgram.cs` .NET smoke checker for host + UI wiring
+- `docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions` framework-neutral UI contracts (cross-framework abstraction layer)
+- `docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost` Linux-compatible Avalonia desktop host with dynamic extension loading
 - composable extension commands + generated structure tests
 """;
 
@@ -2077,6 +2101,493 @@ static void Assert(bool condition, string message)
 }
 """;
 
+    private static string BuildAvaloniaAbstractionsProjectSource() => """
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>
+""";
+
+    private static string BuildAvaloniaUiContractsSource() => """
+namespace Nexo.Ui.Abstractions;
+
+public sealed record UiNode(
+    string Kind,
+    string Id,
+    string Text,
+    string? Command = null,
+    string? AccentHex = null,
+    double? Value = null,
+    IReadOnlyList<UiNode>? Children = null);
+
+public sealed record FeatureDescriptor(
+    string FeatureId,
+    string Title,
+    string[] RetainedDomainKnowledge,
+    string WowMessage,
+    string SourcePath,
+    UiNode Root);
+
+public interface IUiFrameworkAdapter<TControl>
+{
+    TControl Create(UiNode node, Action<string>? commandHandler = null);
+}
+
+public interface IFeatureScaffolder
+{
+    Task<FeatureDescriptor> ScaffoldAsync(string featureRequest, CancellationToken cancellationToken = default);
+}
+
+public static class CrossFrameworkCompatibility
+{
+    public const string ContractNotes =
+        "Adapters implement IUiFrameworkAdapter<TControl> per framework (Avalonia, MAUI, etc.) while sharing UiNode contracts.";
+}
+""";
+
+    private static string BuildAvaloniaHostProjectSource() => """
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Ui.Abstractions\Nexo.Ui.Abstractions.csproj" />
+  </ItemGroup>
+</Project>
+""";
+
+    private static string BuildAvaloniaHostProgramSource() => """
+using System.Diagnostics;
+using System.Text.Json;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.X11;
+using Nexo.Ui.Abstractions;
+
+internal static class Program
+{
+    [STAThread]
+    public static int Main(string[] args)
+    {
+        if (args.Any(a => string.Equals(a, "--smoke", StringComparison.OrdinalIgnoreCase)))
+            return RunSmoke();
+
+        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        return 0;
+    }
+
+    private static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<App>()
+            .UsePlatformDetect()
+            .With(new X11PlatformOptions
+            {
+                RenderingMode = new[] { X11RenderingMode.Software }
+            })
+            .LogToTrace();
+
+    private static int RunSmoke()
+    {
+        try
+        {
+            var repoRoot = ResolveRepoRoot();
+            var generatedRoot = ResolveGeneratedRoot(repoRoot);
+            Directory.CreateDirectory(generatedRoot);
+            var scaffolder = new AvaloniaFeatureScaffolder(repoRoot, generatedRoot);
+            var descriptor = scaffolder.ScaffoldAsync("Add onboarding notification sidebar", CancellationToken.None)
+                .GetAwaiter().GetResult();
+            if (string.IsNullOrWhiteSpace(descriptor.FeatureId))
+                throw new InvalidOperationException("Descriptor feature id missing.");
+            if (descriptor.RetainedDomainKnowledge.Length == 0)
+                throw new InvalidOperationException("Descriptor retained knowledge missing.");
+            Console.WriteLine("avalonia_smoke: ok");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"avalonia_smoke: failed: {ex.Message}");
+            return 1;
+        }
+    }
+
+    private static string ResolveRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, "src")) &&
+                Directory.Exists(Path.Combine(dir.FullName, "docs")))
+                return dir.FullName;
+            dir = dir.Parent;
+        }
+        throw new InvalidOperationException("Unable to resolve repository root.");
+    }
+
+    private static string ResolveGeneratedRoot(string repoRoot)
+        => Path.Combine(repoRoot, "docs", "UiDomainDemoGenerated", "avalonia", "Nexo.Ui.AvaloniaHost", "GeneratedExtensions");
+}
+
+public sealed class App : Application
+{
+    public override void OnFrameworkInitializationCompleted()
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var repoRoot = ResolveRepoRoot();
+            var generatedRoot = Path.Combine(repoRoot, "docs", "UiDomainDemoGenerated", "avalonia", "Nexo.Ui.AvaloniaHost", "GeneratedExtensions");
+            Directory.CreateDirectory(generatedRoot);
+            var adapter = new AvaloniaUiFrameworkAdapter();
+            var scaffolder = new AvaloniaFeatureScaffolder(repoRoot, generatedRoot);
+            desktop.MainWindow = new MainWindow(adapter, scaffolder);
+        }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private static string ResolveRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, "src")) &&
+                Directory.Exists(Path.Combine(dir.FullName, "docs")))
+                return dir.FullName;
+            dir = dir.Parent;
+        }
+        throw new InvalidOperationException("Unable to resolve repository root.");
+    }
+}
+
+public sealed class MainWindow : Window
+{
+    private readonly IUiFrameworkAdapter<Control> _adapter;
+    private readonly IFeatureScaffolder _scaffolder;
+    private readonly StackPanel _dynamicHost = new() { Spacing = 8 };
+    private readonly StackPanel _chatLog = new() { Spacing = 4 };
+    private readonly TextBox _chatInput = new() { Text = "What is Nexo?" };
+    private readonly TextBox _featureInput = new() { Text = "Add onboarding notification sidebar" };
+    private readonly TextBlock _status = new() { Text = "Ready." };
+    private readonly TextBox _plan = new() { AcceptsReturn = true, IsReadOnly = true, Height = 180 };
+
+    public MainWindow(IUiFrameworkAdapter<Control> adapter, IFeatureScaffolder scaffolder)
+    {
+        _adapter = adapter;
+        _scaffolder = scaffolder;
+        Title = "Nexo Avalonia Dynamic Extension Demo";
+        Width = 1080;
+        Height = 760;
+        Content = BuildContent();
+        AppendChat("assistant", "Hi! Ask what Nexo is or scaffold a feature.");
+    }
+
+    private Control BuildContent()
+    {
+        var sendChat = new Button { Content = "Send" };
+        sendChat.Click += (_, _) => AppendChat("assistant", ExplainNexo(_chatInput.Text ?? string.Empty), includeUserInput: true);
+
+        var scaffold = new Button { Content = "Scaffold + Hot-load" };
+        scaffold.Click += async (_, _) => await ScaffoldAsync().ConfigureAwait(false);
+
+        var root = new StackPanel { Spacing = 10, Margin = new Thickness(14) };
+        root.Children.Add(new TextBlock
+        {
+            Text = "Nexo Avalonia Cross-Framework UI Demo",
+            FontSize = 22,
+            FontWeight = FontWeight.Bold
+        });
+        root.Children.Add(_status);
+
+        root.Children.Add(new Border
+        {
+            BorderBrush = Brushes.DimGray,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "Chatbot" },
+                    _chatLog,
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        Children = { _chatInput, sendChat }
+                    }
+                }
+            }
+        });
+
+        root.Children.Add(new Border
+        {
+            BorderBrush = Brushes.DimGray,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "Feature Scaffolder" },
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        Children = { _featureInput, scaffold }
+                    }
+                }
+            }
+        });
+
+        root.Children.Add(new TextBlock { Text = "Dynamically Extended UI (Avalonia Adapter)" });
+        root.Children.Add(_dynamicHost);
+        root.Children.Add(new TextBlock { Text = "Scaffold Plan" });
+        root.Children.Add(_plan);
+
+        return new ScrollViewer { Content = root };
+    }
+
+    private async Task ScaffoldAsync()
+    {
+        var request = (_featureInput.Text ?? string.Empty).Trim();
+        if (request.Length == 0)
+            return;
+
+        try
+        {
+            _status.Text = "Scaffolding feature through nexo self-extend...";
+            var descriptor = await _scaffolder.ScaffoldAsync(request).ConfigureAwait(true);
+            var control = _adapter.Create(descriptor.Root, command => AppendChat("assistant", $"Action command: {command}"));
+            _dynamicHost.Children.Insert(0, control);
+            _status.Text = $"Feature {descriptor.FeatureId} loaded with {descriptor.RetainedDomainKnowledge.Length} domain tags.";
+            AppendChat("assistant", $"Feature ready: {descriptor.FeatureId}. Knowledge: {string.Join(", ", descriptor.RetainedDomainKnowledge)}");
+            _plan.Text = JsonSerializer.Serialize(new
+            {
+                request,
+                featureId = descriptor.FeatureId,
+                retainedDomainKnowledge = descriptor.RetainedDomainKnowledge,
+                descriptor.SourcePath,
+                wow = descriptor.WowMessage
+            }, new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch (Exception ex)
+        {
+            _status.Text = $"Scaffold failed: {ex.Message}";
+            AppendChat("assistant", $"Feature scaffold failed: {ex.Message}");
+        }
+    }
+
+    private void AppendChat(string role, string message, bool includeUserInput = false)
+    {
+        if (includeUserInput)
+            _chatLog.Children.Add(new TextBlock { Text = $"user: {_chatInput.Text}" });
+        _chatLog.Children.Add(new TextBlock { Text = $"{role}: {message}" });
+    }
+
+    private static string ExplainNexo(string question)
+    {
+        var q = (question ?? string.Empty).ToLowerInvariant();
+        if (q.Contains("what is nexo", StringComparison.Ordinal))
+            return "Nexo is an orchestration system that scaffolds features and validates them with tests.";
+        if (q.Contains("framework", StringComparison.Ordinal))
+            return "UI abstractions keep feature descriptors framework-neutral so adapters can target Avalonia or MAUI.";
+        return "Ask about Nexo, or scaffold a feature to see live extension loading.";
+    }
+}
+
+public sealed class AvaloniaUiFrameworkAdapter : IUiFrameworkAdapter<Control>
+{
+    public Control Create(UiNode node, Action<string>? commandHandler = null)
+    {
+        return node.Kind.ToLowerInvariant() switch
+        {
+            "panel" => CreatePanel(node, commandHandler),
+            "text" => new TextBlock { Text = node.Text },
+            "button" => CreateButton(node, commandHandler),
+            "badge" => CreateBadge(node),
+            "progress" => new ProgressBar { Minimum = 0, Maximum = 100, Value = node.Value ?? 0, Height = 12 },
+            _ => new TextBlock { Text = $"Unsupported node kind: {node.Kind}" }
+        };
+    }
+
+    private Control CreatePanel(UiNode node, Action<string>? commandHandler)
+    {
+        var panel = new StackPanel { Spacing = 6 };
+        panel.Children.Add(new TextBlock
+        {
+            Text = node.Text,
+            FontWeight = FontWeight.SemiBold
+        });
+        if (node.Children != null)
+        {
+            foreach (var child in node.Children)
+                panel.Children.Add(Create(child, commandHandler));
+        }
+        return new Border
+        {
+            BorderBrush = Brushes.SlateGray,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(8),
+            Child = panel
+        };
+    }
+
+    private Control CreateButton(UiNode node, Action<string>? commandHandler)
+    {
+        var button = new Button { Content = node.Text };
+        if (!string.IsNullOrWhiteSpace(node.Command))
+            button.Click += (_, _) => commandHandler?.Invoke(node.Command);
+        return button;
+    }
+
+    private Control CreateBadge(UiNode node)
+    {
+        return new Border
+        {
+            CornerRadius = new CornerRadius(12),
+            BorderBrush = Brushes.SlateBlue,
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(8, 2),
+            Child = new TextBlock { Text = node.Text, FontSize = 12 }
+        };
+    }
+}
+
+public sealed class AvaloniaFeatureScaffolder : IFeatureScaffolder
+{
+    private readonly string _repoRoot;
+    private readonly string _generatedRoot;
+
+    public AvaloniaFeatureScaffolder(string repoRoot, string generatedRoot)
+    {
+        _repoRoot = repoRoot;
+        _generatedRoot = generatedRoot;
+    }
+
+    public async Task<FeatureDescriptor> ScaffoldAsync(string featureRequest, CancellationToken cancellationToken = default)
+    {
+        var goal =
+            $"AVALONIA_FEATURE_HOTLOAD Feature request: {featureRequest}. Write output descriptor under docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions.";
+        var psi = new ProcessStartInfo
+        {
+            FileName = "dotnet",
+            WorkingDirectory = _repoRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        psi.ArgumentList.Add("run");
+        psi.ArgumentList.Add("--project");
+        psi.ArgumentList.Add("src/Nexo.CLI");
+        psi.ArgumentList.Add("--");
+        psi.ArgumentList.Add("self-extend");
+        psi.ArgumentList.Add("run");
+        psi.ArgumentList.Add("--goal");
+        psi.ArgumentList.Add(goal);
+        psi.ArgumentList.Add("--repo-root");
+        psi.ArgumentList.Add(_repoRoot);
+        psi.ArgumentList.Add("--provider");
+        psi.ArgumentList.Add("mock-json");
+        psi.ArgumentList.Add("--allow-mock");
+        psi.ArgumentList.Add("--json");
+
+        using var process = Process.Start(psi);
+        if (process == null)
+            throw new InvalidOperationException("Failed to start dotnet process.");
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        var stdout = await stdoutTask.ConfigureAwait(false);
+        var stderr = await stderrTask.ConfigureAwait(false);
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException($"self-extend failed: {stderr}\n{stdout}");
+
+        var featureId = Slugify(featureRequest);
+        var descriptorPath = Path.Combine(_generatedRoot, $"{featureId}.json");
+        if (!File.Exists(descriptorPath))
+            throw new InvalidOperationException($"Generated descriptor not found: {descriptorPath}");
+
+        var descriptorText = await File.ReadAllTextAsync(descriptorPath, cancellationToken).ConfigureAwait(false);
+        var descriptor = JsonSerializer.Deserialize<FeatureDescriptor>(descriptorText, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        }) ?? throw new InvalidOperationException("Descriptor deserialize failed.");
+        return descriptor with { SourcePath = descriptorPath };
+    }
+
+    private static string Slugify(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "feature_generated";
+        var lower = value.ToLowerInvariant();
+        lower = System.Text.RegularExpressions.Regex.Replace(lower, @"[^a-z0-9]+", "_");
+        lower = lower.Trim('_');
+        if (string.IsNullOrWhiteSpace(lower))
+            lower = "feature_generated";
+        if (char.IsDigit(lower[0]))
+            lower = $"f_{lower}";
+        return lower;
+    }
+}
+""";
+
+    private static string BuildAvaloniaHostReadmeSource() => """
+# Nexo Avalonia Dynamic Extension Demo
+
+Linux-compatible desktop demo using Avalonia.
+
+## Run UI
+`dotnet run --project docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Nexo.Ui.AvaloniaHost.csproj`
+
+## Run smoke check (no GUI)
+`dotnet run --project docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Nexo.Ui.AvaloniaHost.csproj -- --smoke`
+
+Feature requests are scaffolded through:
+`nexo self-extend run --goal "AVALONIA_FEATURE_HOTLOAD ..."`
+""";
+
+    private static string BuildAvaloniaFeatureDescriptorJson(string featureRequest, string featureId, string[] retainedCapabilities)
+    {
+        var descriptor = new
+        {
+            FeatureId = featureId,
+            Title = featureRequest,
+            RetainedDomainKnowledge = retainedCapabilities,
+            WowMessage = "Live neon pulse command rail loaded from scaffolded descriptor.",
+            SourcePath = $"GeneratedExtensions/{featureId}.json",
+            Root = new
+            {
+                Kind = "panel",
+                Id = $"panel-{featureId}",
+                Text = featureRequest,
+                Children = new object[]
+                {
+                    new { Kind = "text", Id = $"text-{featureId}", Text = "Dynamic extension loaded inside Avalonia framework." },
+                    new { Kind = "progress", Id = $"progress-{featureId}", Text = "Readiness", Value = 88.0 },
+                    new { Kind = "button", Id = $"button-{featureId}", Text = "Trigger wow action", Command = $"feature:{featureId}:wow" },
+                    new { Kind = "badge", Id = $"badge-{featureId}", Text = string.Join(" | ", retainedCapabilities) }
+                }
+            }
+        };
+
+        return JsonSerializer.Serialize(descriptor, new JsonSerializerOptions { WriteIndented = true });
+    }
+
     private static string BuildUiFeatureModuleSource(string featureRequest, string featureId, string[] retainedCapabilities)
     {
         var escapedRequest = JsonSerializer.Serialize(featureRequest);
@@ -2141,12 +2652,15 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
 
             var uiRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "app");
             var hostRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "host");
+            var avaloniaRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "avalonia");
             var htmlPath = Path.Combine(uiRoot, "index.html");
             var jsPath = Path.Combine(uiRoot, "app.js");
             var domainPath = Path.Combine(uiRoot, "domain-knowledge.json");
             var hostProgramPath = Path.Combine(hostRoot, "Program.cs");
             var hostProjectPath = Path.Combine(hostRoot, "UiDemoHost.csproj");
             var smokeProgramPath = Path.Combine(hostRoot, "SmokeProgram.cs");
+            var avaloniaContractsPath = Path.Combine(avaloniaRoot, "Nexo.Ui.Abstractions", "UiContracts.cs");
+            var avaloniaHostProgramPath = Path.Combine(avaloniaRoot, "Nexo.Ui.AvaloniaHost", "Program.cs");
 
             AssertTrue(File.Exists(htmlPath), "Expected index.html to exist.");
             AssertTrue(File.Exists(jsPath), "Expected app.js to exist.");
@@ -2154,11 +2668,15 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
             AssertTrue(File.Exists(hostProgramPath), "Expected .NET host Program.cs to exist.");
             AssertTrue(File.Exists(hostProjectPath), "Expected .NET host project file to exist.");
             AssertTrue(File.Exists(smokeProgramPath), "Expected .NET smoke program to exist.");
+            AssertTrue(File.Exists(avaloniaContractsPath), "Expected Avalonia abstraction contracts to exist.");
+            AssertTrue(File.Exists(avaloniaHostProgramPath), "Expected Avalonia host Program.cs to exist.");
 
             var html = File.ReadAllText(htmlPath);
             var js = File.ReadAllText(jsPath);
             var domainJson = File.ReadAllText(domainPath);
             var hostProgram = File.ReadAllText(hostProgramPath);
+            var avaloniaContracts = File.ReadAllText(avaloniaContractsPath);
+            var avaloniaHostProgram = File.ReadAllText(avaloniaHostProgramPath);
 
             AssertTrue(html.Contains("Nexo Chatbot", StringComparison.Ordinal), "UI should render chatbot section.");
             AssertTrue(html.Contains("Dynamically loaded features", StringComparison.Ordinal), "UI should render dynamic feature host section.");
@@ -2167,6 +2685,10 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
             AssertTrue(js.Contains("import(moduleUrl)", StringComparison.Ordinal), "JS should dynamically import generated feature modules.");
             AssertTrue(hostProgram.Contains("MapPost(\"/api/scaffold-feature\"", StringComparison.Ordinal), ".NET host should expose scaffold endpoint.");
             AssertTrue(hostProgram.Contains("UseStaticFiles", StringComparison.Ordinal), ".NET host should serve static UI.");
+            AssertTrue(avaloniaContracts.Contains("IUiFrameworkAdapter", StringComparison.Ordinal), "Avalonia stack should include cross-framework adapter contract.");
+            AssertTrue(avaloniaContracts.Contains("CrossFrameworkCompatibility", StringComparison.Ordinal), "Avalonia stack should include compatibility contract notes.");
+            AssertTrue(avaloniaHostProgram.Contains("AVALONIA_FEATURE_HOTLOAD", StringComparison.Ordinal), "Avalonia host should scaffold via Avalonia hotload objective.");
+            AssertTrue(avaloniaHostProgram.Contains("AvaloniaUiFrameworkAdapter", StringComparison.Ordinal), "Avalonia host should render nodes through framework adapter.");
             using var doc = JsonDocument.Parse(domainJson);
             var capabilities = doc.RootElement.GetProperty("capabilities");
             AssertTrue(capabilities.GetArrayLength() >= 4, "Expected at least 4 domain capabilities.");

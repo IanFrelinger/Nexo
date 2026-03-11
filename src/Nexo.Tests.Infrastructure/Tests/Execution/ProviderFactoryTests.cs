@@ -32,6 +32,7 @@ public class ProviderFactoryTests : UnitTestBase
             await TestExecuteLLMAsync_SelfExtendPersonalApp_GeneratesComposableCommandScaffolds();
             await TestExecuteLLMAsync_SelfExtendUiDemo_GeneratesDomainAndUiScaffolds();
             await TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule();
+            await TestExecuteLLMAsync_SelfExtendAvaloniaHotload_GeneratesFeatureDescriptor();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -376,6 +377,10 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
             "Expected generated .NET smoke project scaffold.");
         AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/SmokeProgram.cs"),
             "Expected generated .NET smoke program scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions/UiContracts.cs"),
+            "Expected generated Avalonia UI abstraction contracts.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Program.cs"),
+            "Expected generated Avalonia host program scaffold.");
         AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs"),
             "Expected generated UI demo bundle command.");
         AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs"),
@@ -422,6 +427,39 @@ Write output module under docs/UiDomainDemoGenerated/app/generated.
             "Expected generated feature module path under app/generated.");
         AssertTrue(content.Contains("export function mountFeature", StringComparison.Ordinal),
             "Expected generated feature module to export mountFeature.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendAvaloniaHotload_GeneratesFeatureDescriptor()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+AVALONIA_FEATURE_HOTLOAD Feature request: Add slick onboarding rail. Write output descriptor under docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        AssertEqual(1, calls.GetArrayLength(), "Expected one descriptor write call for Avalonia hotload objective.");
+        var path = calls[0].GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty;
+        var content = calls[0].GetProperty("arguments").GetProperty("content").GetString() ?? string.Empty;
+        AssertTrue(path.StartsWith("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/", StringComparison.Ordinal),
+            "Expected generated Avalonia descriptor path under GeneratedExtensions.");
+        AssertTrue(content.Contains("\"Root\"", StringComparison.Ordinal),
+            "Expected generated Avalonia descriptor to include root node.");
+        AssertTrue(content.Contains("\"Kind\": \"panel\"", StringComparison.Ordinal),
+            "Expected descriptor root node kind panel.");
     }
 
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception
