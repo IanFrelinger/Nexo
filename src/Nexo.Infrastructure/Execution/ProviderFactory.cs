@@ -1003,8 +1003,10 @@ public class ProviderFactory : IProviderFactory
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/styles.css", BuildUiDemoCssSource()),
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/app.js", BuildUiDemoJsSource()),
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/domain-knowledge.json", BuildUiDomainKnowledgeJsonSource()),
-            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/dev_server.py", BuildUiDemoDevServerSource()),
-            CreateWriteCall(root, "docs/UiDomainDemoGenerated/app/ui_smoke_test.py", BuildUiSmokeTestSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/host/UiDemoHost.csproj", BuildUiDemoHostProjectSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/host/Program.cs", BuildUiDemoHostProgramSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/host/UiDemoSmoke.csproj", BuildUiDemoSmokeProjectSource()),
+            CreateWriteCall(root, "docs/UiDomainDemoGenerated/host/SmokeProgram.cs", BuildUiDemoSmokeProgramSource()),
 
             // Command-structure scaffolding for composable extension commands.
             CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
@@ -1468,8 +1470,8 @@ Outputs:
 - `docs/UiDomainDemoGenerated/app/index.html` chat + feature studio UI shell
 - `docs/UiDomainDemoGenerated/app/app.js` chatbot workflow + real scaffold/hot-load runtime through server API
 - `docs/UiDomainDemoGenerated/app/domain-knowledge.json` retained domain knowledge catalog
-- `docs/UiDomainDemoGenerated/app/dev_server.py` local API server that invokes `nexo self-extend` for feature scaffolding
-- `docs/UiDomainDemoGenerated/app/ui_smoke_test.py` terminal-driven UI smoke check
+- `docs/UiDomainDemoGenerated/host/Program.cs` .NET API/static host that invokes `nexo self-extend` for feature scaffolding
+- `docs/UiDomainDemoGenerated/host/SmokeProgram.cs` .NET smoke checker for host + UI wiring
 - composable extension commands + generated structure tests
 """;
 
@@ -1834,129 +1836,245 @@ loadDomainKnowledge().catch(error => {
 }
 """;
 
-    private static string BuildUiDemoDevServerSource() => """
-#!/usr/bin/env python3
-import argparse
-import json
-import re
-import subprocess
-from functools import partial
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
+    private static string BuildUiDemoHostProjectSource() => """
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+</Project>
+""";
 
-THIS_DIR = Path(__file__).resolve().parent
+    private static string BuildUiDemoHostProgramSource() => """
+using System.Diagnostics;
+using System.Text.Json;
+using Microsoft.Extensions.FileProviders;
 
-def slugify(text: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
-    if not slug:
-        slug = "feature_generated"
-    if slug[0].isdigit():
-        slug = f"f_{slug}"
-    return slug
+var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls(Environment.GetEnvironmentVariable("UI_DEMO_URLS") ?? "http://127.0.0.1:4173");
+var app = builder.Build();
 
-def load_capabilities():
-    catalog_path = THIS_DIR / "domain-knowledge.json"
-    data = json.loads(catalog_path.read_text(encoding="utf-8"))
-    return data.get("capabilities", [])
+var appRoot = ResolveAppRoot();
+var repoRoot = ResolveRepoRoot(appRoot);
+var fileProvider = new PhysicalFileProvider(appRoot);
 
-def map_capabilities(feature_request: str):
-    request = feature_request.lower()
-    matched = []
-    for cap in load_capabilities():
-        token = str(cap.get("matchToken", "")).lower()
-        cap_id = str(cap.get("id", "")).strip()
-        if token and token in request and cap_id:
-            matched.append(cap_id)
-    if not matched:
-        matched = ["quest-tracking", "onboarding-flows"]
-    return list(dict.fromkeys(matched))
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    FileProvider = fileProvider
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = fileProvider
+});
 
-def run_self_extend(repo_root: Path, feature_request: str):
-    goal = (
-        "UI_FEATURE_HOTLOAD "
-        f"Feature request: {feature_request}. "
-        "Write output module under docs/UiDomainDemoGenerated/app/generated."
-    )
-    cmd = [
-        "dotnet", "run", "--project", "src/Nexo.CLI", "--",
-        "self-extend", "run",
-        "--goal", goal,
-        "--repo-root", str(repo_root),
-        "--provider", "mock-json",
-        "--allow-mock",
-        "--json"
-    ]
-    result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True, check=False)
-    return result
+app.MapPost("/api/scaffold-feature", async (ScaffoldFeatureRequest request, CancellationToken ct) =>
+{
+    var featureRequest = request.FeatureRequest?.Trim();
+    if (string.IsNullOrWhiteSpace(featureRequest))
+        return Results.BadRequest(new { ok = false, error = "featureRequest is required" });
 
-class DemoHandler(SimpleHTTPRequestHandler):
-    repo_root: Path = Path.cwd()
+    var run = await RunSelfExtendAsync(repoRoot, featureRequest, ct).ConfigureAwait(false);
+    if (run.ExitCode != 0)
+    {
+        return Results.Json(new
+        {
+            ok = false,
+            error = "self-extend failed",
+            stdout = TrimTail(run.StdOut, 2000),
+            stderr = TrimTail(run.StdErr, 2000)
+        }, statusCode: 500);
+    }
 
-    def _write_json(self, status: int, payload: dict):
-        body = json.dumps(payload).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+    var featureId = Slugify(featureRequest);
+    var moduleFile = Path.Combine(appRoot, "generated", $"{featureId}.js");
+    if (!File.Exists(moduleFile))
+        return Results.Json(new { ok = false, error = $"generated module not found: {moduleFile}" }, statusCode: 500);
 
-    def do_POST(self):
-        if self.path != "/api/scaffold-feature":
-            self._write_json(404, {"ok": False, "error": "unknown endpoint"})
-            return
+    var retained = MapCapabilities(appRoot, featureRequest);
+    return Results.Ok(new
+    {
+        ok = true,
+        featureId,
+        featureRequest,
+        moduleUrl = $"/generated/{featureId}.js",
+        retainedDomainKnowledge = retained,
+        summary = "Generated by Nexo self-scaffold pipeline and hot-loaded into the active UI shell."
+    });
+});
 
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-            raw = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
-            payload = json.loads(raw)
-            feature_request = str(payload.get("featureRequest", "")).strip()
-            if not feature_request:
-                self._write_json(400, {"ok": False, "error": "featureRequest is required"})
-                return
+app.Run();
 
-            result = run_self_extend(self.repo_root, feature_request)
-            if result.returncode != 0:
-                self._write_json(500, {
-                    "ok": False,
-                    "error": "self-extend failed",
-                    "stdout": result.stdout[-2000:],
-                    "stderr": result.stderr[-2000:]
-                })
-                return
+static string ResolveAppRoot()
+{
+    var dir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (dir != null)
+    {
+        var candidate = Path.Combine(dir.FullName, "app", "index.html");
+        if (File.Exists(candidate))
+            return Path.Combine(dir.FullName, "app");
+        dir = dir.Parent;
+    }
+    throw new InvalidOperationException("Unable to resolve app root.");
+}
 
-            feature_id = slugify(feature_request)
-            module_rel = f"/generated/{feature_id}.js"
-            module_file = THIS_DIR / "generated" / f"{feature_id}.js"
-            if not module_file.exists():
-                self._write_json(500, {"ok": False, "error": f"generated module not found: {module_file}"})
-                return
+static string ResolveRepoRoot(string appRoot)
+{
+    var dir = new DirectoryInfo(appRoot);
+    while (dir != null)
+    {
+        var hasSrc = Directory.Exists(Path.Combine(dir.FullName, "src"));
+        var hasDocs = Directory.Exists(Path.Combine(dir.FullName, "docs"));
+        if (hasSrc && hasDocs)
+            return dir.FullName;
+        dir = dir.Parent;
+    }
+    throw new InvalidOperationException("Unable to resolve repository root.");
+}
 
-            retained = map_capabilities(feature_request)
-            self._write_json(200, {
-                "ok": True,
-                "featureId": feature_id,
-                "featureRequest": feature_request,
-                "moduleUrl": module_rel,
-                "retainedDomainKnowledge": retained,
-                "summary": "Generated by Nexo self-scaffold pipeline and hot-loaded into the active UI shell."
-            })
-        except Exception as ex:
-            self._write_json(500, {"ok": False, "error": str(ex)})
+static async Task<(int ExitCode, string StdOut, string StdErr)> RunSelfExtendAsync(string repoRoot, string featureRequest, CancellationToken ct)
+{
+    var goal = $"UI_FEATURE_HOTLOAD Feature request: {featureRequest}. Write output module under docs/UiDomainDemoGenerated/app/generated.";
+    var psi = new ProcessStartInfo
+    {
+        FileName = "dotnet",
+        WorkingDirectory = repoRoot,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        UseShellExecute = false
+    };
+    psi.ArgumentList.Add("run");
+    psi.ArgumentList.Add("--project");
+    psi.ArgumentList.Add("src/Nexo.CLI");
+    psi.ArgumentList.Add("--");
+    psi.ArgumentList.Add("self-extend");
+    psi.ArgumentList.Add("run");
+    psi.ArgumentList.Add("--goal");
+    psi.ArgumentList.Add(goal);
+    psi.ArgumentList.Add("--repo-root");
+    psi.ArgumentList.Add(repoRoot);
+    psi.ArgumentList.Add("--provider");
+    psi.ArgumentList.Add("mock-json");
+    psi.ArgumentList.Add("--allow-mock");
+    psi.ArgumentList.Add("--json");
 
-def main():
-    parser = argparse.ArgumentParser(description="Nexo UI demo server with real scaffold/hot-load endpoint.")
-    parser.add_argument("--port", type=int, default=4173)
-    parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[3])
-    args = parser.parse_args()
+    using var process = Process.Start(psi);
+    if (process == null)
+        return (1, string.Empty, "Failed to start dotnet process.");
+    var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
+    var stderrTask = process.StandardError.ReadToEndAsync(ct);
+    await process.WaitForExitAsync(ct).ConfigureAwait(false);
+    return (process.ExitCode, await stdoutTask.ConfigureAwait(false), await stderrTask.ConfigureAwait(false));
+}
 
-    handler = partial(DemoHandler, directory=str(THIS_DIR))
-    DemoHandler.repo_root = args.repo_root.resolve()
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), handler)
-    print(f"Serving UI demo on http://127.0.0.1:{args.port} with repo root {DemoHandler.repo_root}")
-    server.serve_forever()
+static string[] MapCapabilities(string appRoot, string featureRequest)
+{
+    var catalogPath = Path.Combine(appRoot, "domain-knowledge.json");
+    var text = File.ReadAllText(catalogPath);
+    using var doc = JsonDocument.Parse(text);
+    var caps = doc.RootElement.GetProperty("capabilities");
+    var request = featureRequest.ToLowerInvariant();
+    var matched = new List<string>();
+    foreach (var cap in caps.EnumerateArray())
+    {
+        var token = cap.TryGetProperty("matchToken", out var t) ? (t.GetString() ?? "") : "";
+        var id = cap.TryGetProperty("id", out var i) ? (i.GetString() ?? "") : "";
+        if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(id) && request.Contains(token, StringComparison.Ordinal))
+            matched.Add(id);
+    }
+    if (matched.Count == 0)
+        matched.AddRange(new[] { "quest-tracking", "onboarding-flows" });
+    return matched.Distinct(StringComparer.Ordinal).ToArray();
+}
 
-if __name__ == "__main__":
-    main()
+static string Slugify(string value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+        return "feature_generated";
+    var lower = value.ToLowerInvariant();
+    lower = System.Text.RegularExpressions.Regex.Replace(lower, @"[^a-z0-9]+", "_");
+    lower = lower.Trim('_');
+    if (string.IsNullOrWhiteSpace(lower))
+        lower = "feature_generated";
+    if (char.IsDigit(lower[0]))
+        lower = $"f_{lower}";
+    return lower;
+}
+
+static string TrimTail(string text, int maxChars)
+{
+    if (string.IsNullOrEmpty(text) || text.Length <= maxChars)
+        return text;
+    return text[^maxChars..];
+}
+
+public sealed record ScaffoldFeatureRequest(string FeatureRequest);
+""";
+
+    private static string BuildUiDemoSmokeProjectSource() => """
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="SmokeProgram.cs" />
+  </ItemGroup>
+</Project>
+""";
+
+    private static string BuildUiDemoSmokeProgramSource() => """
+using System.Diagnostics;
+
+var uiRoot = ResolveUiDemoRoot();
+var appRoot = Path.Combine(uiRoot, "app");
+var hostRoot = Path.Combine(uiRoot, "host");
+
+var html = File.ReadAllText(Path.Combine(appRoot, "index.html"));
+var js = File.ReadAllText(Path.Combine(appRoot, "app.js"));
+var domainJson = File.ReadAllText(Path.Combine(appRoot, "domain-knowledge.json"));
+var hostProgram = File.ReadAllText(Path.Combine(hostRoot, "Program.cs"));
+
+Assert(html.Contains("chat-send-btn", StringComparison.Ordinal), "Expected chat send button in HTML");
+Assert(html.Contains("scaffold-feature-btn", StringComparison.Ordinal), "Expected feature scaffold button in HTML");
+Assert(js.Contains("/api/scaffold-feature", StringComparison.Ordinal), "Expected scaffold API call in JS");
+Assert(js.Contains("import(moduleUrl)", StringComparison.Ordinal), "Expected dynamic module import in JS");
+Assert(hostProgram.Contains("MapPost(\"/api/scaffold-feature\"", StringComparison.Ordinal), "Expected scaffold endpoint in .NET host");
+Assert(hostProgram.Contains("UseStaticFiles", StringComparison.Ordinal), "Expected static file hosting in .NET host");
+Assert(domainJson.Contains("\"capabilities\"", StringComparison.Ordinal), "Expected domain capability catalog");
+
+Console.WriteLine("ui_smoke_test: ok");
+
+static string ResolveUiDemoRoot()
+{
+    var dir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (dir != null)
+    {
+        var appDir = Path.Combine(dir.FullName, "app");
+        var hostDir = Path.Combine(dir.FullName, "host");
+        if (Directory.Exists(appDir) && Directory.Exists(hostDir))
+            return dir.FullName;
+        dir = dir.Parent;
+    }
+    throw new InvalidOperationException("Unable to resolve UiDomainDemoGenerated root.");
+}
+
+static void Assert(bool condition, string message)
+{
+    if (!condition)
+    {
+        Console.Error.WriteLine(message);
+        Environment.ExitCode = 1;
+        throw new InvalidOperationException(message);
+    }
+}
 """;
 
     private static string BuildUiFeatureModuleSource(string featureRequest, string featureId, string[] retainedCapabilities)
@@ -1994,31 +2112,6 @@ export function mountFeature(host, context) {
 """;
     }
 
-    private static string BuildUiSmokeTestSource() => """
-#!/usr/bin/env python3
-from pathlib import Path
-import json
-import sys
-
-root = Path(__file__).resolve().parent
-html = (root / "index.html").read_text(encoding="utf-8")
-js = (root / "app.js").read_text(encoding="utf-8")
-catalog = json.loads((root / "domain-knowledge.json").read_text(encoding="utf-8"))
-server = (root / "dev_server.py").read_text(encoding="utf-8")
-
-assert "chat-send-btn" in html, "Expected chat send button in HTML"
-assert "chat-log" in html, "Expected chatbot log container in HTML"
-assert "scaffold-feature-btn" in html, "Expected feature scaffold button in HTML"
-assert "fetch(\"/api/scaffold-feature\"" in js, "Expected real scaffold API call in JS"
-assert "import(moduleUrl)" in js, "Expected dynamic module import for hot-load in JS"
-assert "explainNexo" in js, "Expected chatbot explainer function in JS"
-assert "do_POST" in server and "/api/scaffold-feature" in server, "Expected scaffold endpoint in dev server"
-assert len(catalog.get("capabilities", [])) >= 4, "Expected at least 4 retained capabilities"
-
-print("ui_smoke_test: ok")
-sys.exit(0)
-""";
-
     private static string BuildUiDomainKnowledgeRetentionTestSource() => """
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
@@ -2047,27 +2140,33 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
             AssertTrue(!string.IsNullOrWhiteSpace(repoRoot), "Unable to resolve repository root from test context.");
 
             var uiRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "app");
+            var hostRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "host");
             var htmlPath = Path.Combine(uiRoot, "index.html");
             var jsPath = Path.Combine(uiRoot, "app.js");
             var domainPath = Path.Combine(uiRoot, "domain-knowledge.json");
-            var serverPath = Path.Combine(uiRoot, "dev_server.py");
+            var hostProgramPath = Path.Combine(hostRoot, "Program.cs");
+            var hostProjectPath = Path.Combine(hostRoot, "UiDemoHost.csproj");
+            var smokeProgramPath = Path.Combine(hostRoot, "SmokeProgram.cs");
 
             AssertTrue(File.Exists(htmlPath), "Expected index.html to exist.");
             AssertTrue(File.Exists(jsPath), "Expected app.js to exist.");
             AssertTrue(File.Exists(domainPath), "Expected domain-knowledge.json to exist.");
-            AssertTrue(File.Exists(serverPath), "Expected dev_server.py to exist.");
+            AssertTrue(File.Exists(hostProgramPath), "Expected .NET host Program.cs to exist.");
+            AssertTrue(File.Exists(hostProjectPath), "Expected .NET host project file to exist.");
+            AssertTrue(File.Exists(smokeProgramPath), "Expected .NET smoke program to exist.");
 
             var html = File.ReadAllText(htmlPath);
             var js = File.ReadAllText(jsPath);
             var domainJson = File.ReadAllText(domainPath);
-            var server = File.ReadAllText(serverPath);
+            var hostProgram = File.ReadAllText(hostProgramPath);
 
             AssertTrue(html.Contains("Nexo Chatbot", StringComparison.Ordinal), "UI should render chatbot section.");
             AssertTrue(html.Contains("Dynamically loaded features", StringComparison.Ordinal), "UI should render dynamic feature host section.");
             AssertTrue(js.Contains("explainNexo", StringComparison.Ordinal), "JS should implement chatbot explainer behavior.");
             AssertTrue(js.Contains("/api/scaffold-feature", StringComparison.Ordinal), "JS should call scaffold API endpoint.");
             AssertTrue(js.Contains("import(moduleUrl)", StringComparison.Ordinal), "JS should dynamically import generated feature modules.");
-            AssertTrue(server.Contains("/api/scaffold-feature", StringComparison.Ordinal), "Dev server should expose scaffold endpoint.");
+            AssertTrue(hostProgram.Contains("MapPost(\"/api/scaffold-feature\"", StringComparison.Ordinal), ".NET host should expose scaffold endpoint.");
+            AssertTrue(hostProgram.Contains("UseStaticFiles", StringComparison.Ordinal), ".NET host should serve static UI.");
             using var doc = JsonDocument.Parse(domainJson);
             var capabilities = doc.RootElement.GetProperty("capabilities");
             AssertTrue(capabilities.GetArrayLength() >= 4, "Expected at least 4 domain capabilities.");

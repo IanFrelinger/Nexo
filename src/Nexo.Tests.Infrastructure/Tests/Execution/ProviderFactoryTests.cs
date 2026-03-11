@@ -368,10 +368,14 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
             "Expected generated UI index scaffold.");
         AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/domain-knowledge.json"),
             "Expected generated retained domain knowledge catalog.");
-        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/dev_server.py"),
-            "Expected generated dev server scaffold.");
-        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/ui_smoke_test.py"),
-            "Expected generated UI smoke test script.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/UiDemoHost.csproj"),
+            "Expected generated .NET host project scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/Program.cs"),
+            "Expected generated .NET host program scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/UiDemoSmoke.csproj"),
+            "Expected generated .NET smoke project scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/SmokeProgram.cs"),
+            "Expected generated .NET smoke program scaffold.");
         AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs"),
             "Expected generated UI demo bundle command.");
         AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs"),
