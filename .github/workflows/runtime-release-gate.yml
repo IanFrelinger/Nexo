@@ -1,0 +1,33 @@
+name: Runtime Release Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master, main ]
+    paths:
+      - '.github/workflows/runtime-release-gate.yml'
+      - 'src/Nexo.CLI/Commands/RuntimeCommand.cs'
+      - 'src/Nexo.CLI/Runtime/**'
+      - 'docs/runtime/benchmarks/**'
+      - 'scripts/runtime-release-gate.sh'
+
+jobs:
+  runtime-release-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -v minimal
+
+      - name: Runtime release gate
+        run: ./scripts/runtime-release-gate.sh .

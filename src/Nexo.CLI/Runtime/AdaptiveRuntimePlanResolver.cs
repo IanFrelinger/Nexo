@@ -14,7 +14,8 @@ public static class AdaptiveRuntimePlanResolver
         var reasons = new List<string>();
 
         var uiIntent = ContainsAny(normalizedGoal, "ui", "ux", "avalonia", "maui", "chatbot", "render", "hotload", "feature");
-        var visualIntent = ContainsAny(normalizedGoal, "visual", "screenshot", "aesthetic", "transform", "design");
+        var explicitNonVisual = ContainsAny(normalizedGoal, "non-visual", "without visual", "no visual", "text-only");
+        var visualIntent = !explicitNonVisual && ContainsAny(normalizedGoal, "visual", "screenshot", "aesthetic", "transform", "design");
         var personalIntent =
             ContainsAny(normalizedGoal, "personal", "productivity", "preferences", "profile", "dashboard") ||
             manifest.DomainPacks.Contains("personal", StringComparer.OrdinalIgnoreCase);
@@ -79,6 +80,11 @@ public static class AdaptiveRuntimePlanResolver
 
         switch (qaPolicy)
         {
+            case "release":
+                maxIterations = 2;
+                stopOnFirstPass = true;
+                visualFallbackPolicy = "strict";
+                break;
             case "prod":
                 maxIterations = 3;
                 stopOnFirstPass = true;
@@ -195,6 +201,7 @@ public static class AdaptiveRuntimePlanResolver
         return normalized switch
         {
             "demo" => "demo",
+            "release" => "release",
             "prod" => "prod",
             "research" => "research",
             _ => "auto"

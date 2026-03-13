@@ -1,0 +1,3 @@
+Generate composable backend extension commands with tests.
+Scaffold a personal productivity extension layer while retaining domain knowledge.
+Create a non-visual adaptive command workflow with composable QA gates.

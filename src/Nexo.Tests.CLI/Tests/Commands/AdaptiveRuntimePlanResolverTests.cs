@@ -14,6 +14,7 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
             TestResolveFunctionalGoalDefaults();
             TestManifestPolicyAndGoalEnrichment();
             TestManifestLoaderInlineJson();
+            TestReleasePolicyUsesStrictVisualFallback();
 
             return Task.FromResult(new TestResult
             {
@@ -126,5 +127,19 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
         AssertEqual(2, manifest.UiCapabilities.Length);
         AssertEqual("demo", manifest.QaPolicyProfile);
         AssertEqual("dark", manifest.Preferences.Values.First());
+    }
+
+    private void TestReleasePolicyUsesStrictVisualFallback()
+    {
+        var manifest = AdaptiveRuntimeManifest.Default();
+        var plan = AdaptiveRuntimePlanResolver.Resolve(
+            "Create a visual transform dashboard with UI adaptation",
+            manifest,
+            bootstrapProfileOverride: "auto",
+            qaPolicyOverride: "release");
+
+        AssertEqual("release", plan.QaPolicyProfile);
+        AssertEqual("strict", plan.VisualQaFallbackPolicy);
+        AssertTrue(plan.RunVisualQa, "Release policy on visual goals should still require visual QA.");
     }
 }

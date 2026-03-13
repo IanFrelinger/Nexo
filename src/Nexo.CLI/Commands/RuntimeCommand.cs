@@ -33,7 +33,7 @@ public sealed class RuntimeCommand : Command
         var runTestsOpt = new Option<bool>("--run-tests", () => true, "Run generated extension QA/test gates.");
         var testFilterOpt = new Option<string>("--test-filter", () => "SelfExtendGenerated", "Functional test filter.");
         var bootstrapProfileOpt = new Option<string>("--bootstrap-profile", () => "auto", "Bootstrap profile: auto | self-extend-functional | self-extend-aesthetic | self-extend-visual.");
-        var qaPolicyOpt = new Option<string>("--qa-policy", () => "auto", "QA policy: auto | demo | prod | research.");
+        var qaPolicyOpt = new Option<string>("--qa-policy", () => "auto", "QA policy: auto | demo | release | prod | research.");
         var manifestPathOpt = new Option<string?>("--runtime-manifest", () => null, "Path to adaptive runtime manifest JSON.");
         var manifestJsonOpt = new Option<string?>("--runtime-manifest-json", () => null, "Inline adaptive runtime manifest JSON.");
         var maxIterationsOpt = new Option<int?>("--max-iterations", () => null, "Override max iterations from policy.");
@@ -105,7 +105,7 @@ public sealed class RuntimeCommand : Command
         var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
         var testFilterOpt = new Option<string>("--test-filter", () => "SelfExtendGenerated", "Functional test filter.");
         var bootstrapProfileOpt = new Option<string>("--bootstrap-profile", () => "auto", "Bootstrap profile: auto | self-extend-functional | self-extend-aesthetic | self-extend-visual.");
-        var qaPolicyOpt = new Option<string>("--qa-policy", () => "auto", "QA policy: auto | demo | prod | research.");
+        var qaPolicyOpt = new Option<string>("--qa-policy", () => "auto", "QA policy: auto | demo | release | prod | research.");
         var manifestPathOpt = new Option<string?>("--runtime-manifest", () => null, "Path to adaptive runtime manifest JSON.");
         var manifestJsonOpt = new Option<string?>("--runtime-manifest-json", () => null, "Inline adaptive runtime manifest JSON.");
         var maxIterationsOpt = new Option<int?>("--max-iterations", () => null, "Override max iterations from policy.");
@@ -336,7 +336,16 @@ public sealed class RuntimeCommand : Command
 
         var remediationAttempts = new List<RuntimeRemediationAttempt>();
         var attemptsBudget = Math.Max(0, maxRemediationAttempts);
-        while (autoRemediate && !result.Ok && attemptsBudget > 0)
+        var remediationAllowed = autoRemediate &&
+            !string.Equals(result.ResolvedQaPolicy, "release", StringComparison.OrdinalIgnoreCase);
+        if (autoRemediate && !remediationAllowed && !result.Ok)
+        {
+            result = result with
+            {
+                Summary = $"{result.Summary} (auto-remediation disabled for release policy)"
+            };
+        }
+        while (remediationAllowed && !result.Ok && attemptsBudget > 0)
         {
             var remediation = ChooseRemediationPolicy(result);
             if (remediation == null)
@@ -1357,7 +1366,7 @@ public sealed class RuntimeCommand : Command
         return (csv ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(NormalizeQaPolicy)
-            .Where(p => p is "demo" or "prod" or "research" or "auto")
+            .Where(p => p is "demo" or "release" or "prod" or "research" or "auto")
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -1368,6 +1377,7 @@ public sealed class RuntimeCommand : Command
         return normalized switch
         {
             "demo" => "demo",
+            "release" => "release",
             "prod" => "prod",
             "research" => "research",
             _ => "auto"

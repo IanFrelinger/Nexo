@@ -20,6 +20,14 @@ public sealed class CiCommand : Command
             Environment.Exit(exitCode);
         });
         AddCommand(verifyCmd);
+
+        var runtimeGateCmd = new Command("runtime-gate", "Run runtime release gate benchmark and SLO checks.");
+        runtimeGateCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var exitCode = await ExecuteRuntimeGateAsync();
+            Environment.Exit(exitCode);
+        });
+        AddCommand(runtimeGateCmd);
     }
 
     /// <summary>
@@ -73,6 +81,23 @@ public sealed class CiCommand : Command
 
         Console.WriteLine("=== CI Verify: All checks passed ===");
         return 0;
+    }
+
+    public static async Task<int> ExecuteRuntimeGateAsync()
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var gateScript = Path.Combine(repoRoot, "scripts", "runtime-release-gate.sh");
+        if (!File.Exists(gateScript))
+        {
+            Console.Error.WriteLine($"ci runtime-gate: Missing script: {gateScript}");
+            return 1;
+        }
+
+        Console.WriteLine("=== CI Runtime Gate ===");
+        var exit = await RunProcessAsync("bash", $"\"{gateScript}\" \"{repoRoot}\"", repoRoot);
+        if (exit != 0)
+            Console.Error.WriteLine($"ci runtime-gate: Failed (exit {exit})");
+        return exit;
     }
 
     private static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory)
