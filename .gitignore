@@ -93,4 +93,5 @@ src/Nexo.CLI/Commands/SelfExtendGenerated/
 src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/
 tools/unity-demo-output/
 tools/ui-demo-output/
+.nexo/runtime/
 
