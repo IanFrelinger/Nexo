@@ -32,6 +32,7 @@ public sealed class SelfExtendCommand : Command
         var runtimeSpecJsonOpt = new Option<string?>("--runtime-spec-json", () => null, "Inline self-extend workflow runtime spec JSON.");
         var focusOpt = new Option<string?>("--focus", () => null, "Workflow focus override: balanced | functional | aesthetic.");
         var maxIterationsOpt = new Option<int?>("--max-iterations", () => null, "Workflow iteration cap override.");
+        var preflightOpt = new Option<bool>("--preflight", () => true, "Run infra preflight before iterative self-extend execution.");
 
         runCmd.AddOption(goalOpt);
         runCmd.AddOption(repoRootOpt);
@@ -44,6 +45,7 @@ public sealed class SelfExtendCommand : Command
         runCmd.AddOption(runtimeSpecJsonOpt);
         runCmd.AddOption(focusOpt);
         runCmd.AddOption(maxIterationsOpt);
+        runCmd.AddOption(preflightOpt);
         runCmd.SetHandler(async (InvocationContext ctx) =>
         {
             var goal = ctx.ParseResult.GetValueForOption(goalOpt) ?? string.Empty;
@@ -57,6 +59,7 @@ public sealed class SelfExtendCommand : Command
             var runtimeSpecJson = ctx.ParseResult.GetValueForOption(runtimeSpecJsonOpt);
             var focus = ctx.ParseResult.GetValueForOption(focusOpt);
             var maxIterations = ctx.ParseResult.GetValueForOption(maxIterationsOpt);
+            var runPreflight = ctx.ParseResult.GetValueForOption(preflightOpt);
             Environment.ExitCode = await ExecuteAsync(
                 goal,
                 repoRoot,
@@ -69,9 +72,48 @@ public sealed class SelfExtendCommand : Command
                 runtimeSpecJson,
                 focus,
                 maxIterations,
+                runPreflight,
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
         AddCommand(runCmd);
+
+        var preflightCmd = new Command("preflight", "Validate self-extend runtime readiness for functional/aesthetic/visual QA gates.");
+        preflightCmd.AddOption(repoRootOpt);
+        preflightCmd.AddOption(providerOpt);
+        preflightCmd.AddOption(allowMockOpt);
+        preflightCmd.AddOption(runTestsOpt);
+        preflightCmd.AddOption(testFilterOpt);
+        preflightCmd.AddOption(runtimeSpecOpt);
+        preflightCmd.AddOption(runtimeSpecJsonOpt);
+        preflightCmd.AddOption(focusOpt);
+        preflightCmd.AddOption(maxIterationsOpt);
+        preflightCmd.AddOption(jsonOpt);
+        preflightCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var repoRoot = ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory;
+            var provider = ctx.ParseResult.GetValueForOption(providerOpt);
+            var allowMock = ctx.ParseResult.GetValueForOption(allowMockOpt);
+            var runTests = ctx.ParseResult.GetValueForOption(runTestsOpt);
+            var testFilter = ctx.ParseResult.GetValueForOption(testFilterOpt) ?? "SelfExtendGenerated";
+            var runtimeSpecPath = ctx.ParseResult.GetValueForOption(runtimeSpecOpt);
+            var runtimeSpecJson = ctx.ParseResult.GetValueForOption(runtimeSpecJsonOpt);
+            var focus = ctx.ParseResult.GetValueForOption(focusOpt);
+            var maxIterations = ctx.ParseResult.GetValueForOption(maxIterationsOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            Environment.ExitCode = await ExecutePreflightAsync(
+                repoRoot,
+                provider,
+                allowMock,
+                runTests,
+                testFilter,
+                runtimeSpecPath,
+                runtimeSpecJson,
+                focus,
+                maxIterations,
+                json,
+                ctx.GetCancellationToken()).ConfigureAwait(false);
+        });
+        AddCommand(preflightCmd);
     }
 
     internal async Task<int> ExecuteAsync(
@@ -86,6 +128,7 @@ public sealed class SelfExtendCommand : Command
         string? runtimeSpecJson,
         string? focusOverride,
         int? maxIterationsOverride,
+        bool runPreflight,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(goal))
@@ -117,6 +160,46 @@ public sealed class SelfExtendCommand : Command
             var maxIterations = Math.Max(1, workflow.MaxIterations);
             if (!runTests && !maxIterationsOverride.HasValue)
                 maxIterations = 1;
+
+            if (runPreflight && workflow.RequirePreflight)
+            {
+                var preflight = await RunPreflightChecksAsync(
+                    fullRepoRoot,
+                    provider,
+                    allowMock,
+                    runTests,
+                    workflow,
+                    testFilter,
+                    focus,
+                    ct).ConfigureAwait(false);
+                if (!preflight.Passed)
+                {
+                    WriteResult(
+                        false,
+                        $"Preflight failed: {preflight.Summary}",
+                        fullRepoRoot,
+                        provider,
+                        executed: 0,
+                        denied: 0,
+                        json,
+                        testsRun: false,
+                        testsPassed: null,
+                        testFilter: runTests ? testFilter : null,
+                        testSummary: preflight.Summary,
+                        focus,
+                        maxIterations,
+                        iterations: new object[]
+                        {
+                            new
+                            {
+                                phase = "preflight",
+                                ok = false,
+                                checks = preflight.Checks
+                            }
+                        });
+                    return 1;
+                }
+            }
 
             var runner = _runnerFactory();
             var testsRun = false;
@@ -238,6 +321,62 @@ public sealed class SelfExtendCommand : Command
         }
     }
 
+    internal async Task<int> ExecutePreflightAsync(
+        string repoRoot,
+        string? provider,
+        bool allowMock,
+        bool runTests,
+        string testFilter,
+        string? runtimeSpecPath,
+        string? runtimeSpecJson,
+        string? focusOverride,
+        int? maxIterationsOverride,
+        bool json,
+        CancellationToken ct)
+    {
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
+        {
+            WritePreflightResult(new PreflightResult(false, $"Repo root not found: {fullRepoRoot}", new[]
+            {
+                new PreflightCheck("repo-root", false, true, $"Directory does not exist: {fullRepoRoot}")
+            }), json);
+            return 1;
+        }
+
+        var previousAllowMock = Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK");
+        var previousProvider = Environment.GetEnvironmentVariable("NEXO_MODEL_PROVIDER");
+        try
+        {
+            if (allowMock)
+                Environment.SetEnvironmentVariable("NEXO_ALLOW_MOCK", "1");
+            if (!string.IsNullOrWhiteSpace(provider))
+                Environment.SetEnvironmentVariable("NEXO_MODEL_PROVIDER", provider.Trim());
+
+            var runtimeSpec = SelfExtendWorkflowRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
+            var workflow = ResolveWorkflow(runtimeSpec.Workflow, focusOverride, maxIterationsOverride);
+            var focus = NormalizeFocus(workflow.Focus);
+
+            var preflight = await RunPreflightChecksAsync(
+                fullRepoRoot,
+                provider,
+                allowMock,
+                runTests,
+                workflow,
+                testFilter,
+                focus,
+                ct).ConfigureAwait(false);
+
+            WritePreflightResult(preflight, json);
+            return preflight.Passed ? 0 : 1;
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_ALLOW_MOCK", previousAllowMock);
+            Environment.SetEnvironmentVariable("NEXO_MODEL_PROVIDER", previousProvider);
+        }
+    }
+
     private static SelfExtendWorkflowSpec ResolveWorkflow(
         SelfExtendWorkflowSpec source,
         string? focusOverride,
@@ -254,7 +393,8 @@ public sealed class SelfExtendCommand : Command
         return source with
         {
             MaxIterations = iterations,
-            Focus = NormalizeFocus(focus)
+            Focus = NormalizeFocus(focus),
+            VisualQaFallbackPolicy = NormalizeVisualQaFallbackPolicy(source.VisualQaFallbackPolicy)
         };
     }
 
@@ -266,6 +406,16 @@ public sealed class SelfExtendCommand : Command
             "functional" => "functional",
             "aesthetic" => "aesthetic",
             _ => "balanced"
+        };
+    }
+
+    private static string NormalizeVisualQaFallbackPolicy(string? policy)
+    {
+        var normalized = (policy ?? "strict").Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "degrade" => "degrade",
+            _ => "strict"
         };
     }
 
@@ -312,6 +462,162 @@ public sealed class SelfExtendCommand : Command
             $"Primary objective:\n{goal.Trim()}\n" +
             feedback +
             "\nApply minimal, high-signal changes and keep outputs composable.";
+    }
+
+    private static async Task<PreflightResult> RunPreflightChecksAsync(
+        string repoRoot,
+        string? provider,
+        bool allowMock,
+        bool runTests,
+        SelfExtendWorkflowSpec workflow,
+        string functionalFilterOverride,
+        string focus,
+        CancellationToken ct)
+    {
+        var checks = new List<PreflightCheck>();
+
+        checks.Add(new PreflightCheck("repo-root", true, true, $"Using repo root: {repoRoot}"));
+
+        var providerCheck = ValidateProviderMode(provider, allowMock);
+        checks.Add(providerCheck);
+
+        if (!runTests)
+        {
+            return BuildPreflightResult(checks);
+        }
+
+        var runFunctional = workflow.RunFunctionalQa && !string.Equals(focus, "aesthetic", StringComparison.OrdinalIgnoreCase);
+        var runAesthetic = workflow.RunAestheticQa && !string.Equals(focus, "functional", StringComparison.OrdinalIgnoreCase);
+
+        if (runFunctional)
+        {
+            var functionalFilter = string.IsNullOrWhiteSpace(functionalFilterOverride)
+                ? workflow.FunctionalTestFilter
+                : functionalFilterOverride;
+            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, functionalFilter, "functional-filter", required: true, ct).ConfigureAwait(false));
+        }
+
+        if (runAesthetic)
+        {
+            var aestheticFilter = string.IsNullOrWhiteSpace(workflow.AestheticTestFilter)
+                ? "UiDomainKnowledgeRetentionTests"
+                : workflow.AestheticTestFilter;
+            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, aestheticFilter, "aesthetic-filter", required: true, ct).ConfigureAwait(false));
+
+            var smokeCheck = CheckUiSmokeProject(workflow.UiSmokeProjectPath, repoRoot);
+            checks.Add(smokeCheck);
+        }
+
+        if (workflow.RunVisualQa)
+        {
+            var visualInfra = await AssessVisualQaReadinessAsync(repoRoot, ct).ConfigureAwait(false);
+            var strictVisual = !string.Equals(workflow.VisualQaFallbackPolicy, "degrade", StringComparison.OrdinalIgnoreCase);
+            checks.Add(new PreflightCheck(
+                "visual-infra",
+                visualInfra.Ready || !strictVisual,
+                strictVisual,
+                strictVisual
+                    ? visualInfra.Summary
+                    : $"{visualInfra.Summary} (fallback policy=degrade)"));
+        }
+
+        return BuildPreflightResult(checks);
+    }
+
+    private static PreflightResult BuildPreflightResult(IReadOnlyList<PreflightCheck> checks)
+    {
+        var blocking = checks.Where(c => c.Required && !c.Ok).ToList();
+        var summary = blocking.Count == 0
+            ? "Preflight passed."
+            : $"Preflight failed: {string.Join(" | ", blocking.Select(b => $"{b.Id}: {b.Message}"))}";
+        return new PreflightResult(blocking.Count == 0, summary, checks.ToArray());
+    }
+
+    private static PreflightCheck ValidateProviderMode(string? provider, bool allowMock)
+    {
+        if (string.IsNullOrWhiteSpace(provider))
+            return new PreflightCheck("provider", true, true, "Provider uses default resolution.");
+
+        var p = provider.Trim().ToLowerInvariant();
+        if (p is "mock" or "offline" or "mock-json" or "echo")
+        {
+            if (!allowMock)
+                return new PreflightCheck("provider", false, true, $"Provider '{p}' requires --allow-mock.");
+            return new PreflightCheck("provider", true, true, $"Provider '{p}' allowed via --allow-mock.");
+        }
+
+        return new PreflightCheck("provider", true, true, $"Provider '{p}' selected.");
+    }
+
+    private static async Task<PreflightCheck> CheckTestFilterDiscoverabilityAsync(
+        string repoRoot,
+        string filter,
+        string id,
+        bool required,
+        CancellationToken ct)
+    {
+        var run = await RunProcessAsync(
+            "dotnet",
+            repoRoot,
+            new[]
+            {
+                "run",
+                "--project",
+                "src/Nexo.CLI",
+                "--",
+                "test",
+                "local",
+                "--filter",
+                filter,
+                "--format-json"
+            },
+            ct).ConfigureAwait(false);
+
+        var totalTests = TryReadTotalTests(run.StdOut);
+        if (run.ExitCode != 0)
+            return new PreflightCheck(id, false, required, $"Test discovery command failed for filter '{filter}' (exit={run.ExitCode}).");
+        if (totalTests <= 0)
+            return new PreflightCheck(id, false, required, $"No tests discovered for filter '{filter}'.");
+        return new PreflightCheck(id, true, required, $"Discovered {totalTests} test(s) for filter '{filter}'.");
+    }
+
+    private static PreflightCheck CheckUiSmokeProject(string? projectPath, string repoRoot)
+    {
+        if (string.IsNullOrWhiteSpace(projectPath))
+            return new PreflightCheck("ui-smoke-project", false, true, "UI smoke project path is not configured.");
+
+        var normalized = projectPath.Trim().Replace('\\', '/');
+        var fullPath = Path.GetFullPath(Path.Combine(repoRoot, normalized));
+        if (!File.Exists(fullPath))
+            return new PreflightCheck("ui-smoke-project", false, true, $"UI smoke project not found: {normalized}");
+        return new PreflightCheck("ui-smoke-project", true, true, $"UI smoke project found: {normalized}");
+    }
+
+    private static async Task<VisualInfraReadiness> AssessVisualQaReadinessAsync(string repoRoot, CancellationToken ct)
+    {
+        var dockerCli = await RunProcessAsync("bash", repoRoot, new[] { "-lc", "command -v docker" }, ct).ConfigureAwait(false);
+        if (dockerCli.ExitCode != 0)
+            return new VisualInfraReadiness(false, "Visual QA infra missing docker CLI.");
+
+        var dockerInfo = await RunProcessAsync("bash", repoRoot, new[] { "-lc", "docker info > /dev/null 2>&1" }, ct).ConfigureAwait(false);
+        if (dockerInfo.ExitCode != 0)
+            return new VisualInfraReadiness(false, "Visual QA infra missing usable Docker daemon.");
+
+        var ollamaCli = await RunProcessAsync("bash", repoRoot, new[] { "-lc", "command -v ollama" }, ct).ConfigureAwait(false);
+        if (ollamaCli.ExitCode != 0)
+            return new VisualInfraReadiness(false, "Visual QA infra missing Ollama CLI.");
+
+        return new VisualInfraReadiness(true, "Visual QA infra ready (docker + daemon + ollama).");
+    }
+
+    private static int TryReadTotalTests(string stdout)
+    {
+        if (string.IsNullOrWhiteSpace(stdout))
+            return 0;
+        var match = System.Text.RegularExpressions.Regex.Match(stdout, "\"TotalTests\"\\s*:\\s*(\\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!match.Success)
+            return 0;
+        return int.TryParse(match.Groups[1].Value, out var total) ? total : 0;
     }
 
     private static async Task<QaGateResult> RunQaGatesAsync(
@@ -375,9 +681,26 @@ public sealed class SelfExtendCommand : Command
 
                 if (workflow.RunVisualQa)
                 {
-                    var visual = await RunVisualQaAsync(repoRoot, aestheticFilter, ct).ConfigureAwait(false);
-                    passed &= visual.Passed;
-                    notes.Add(visual.Summary);
+                    var visualReady = await AssessVisualQaReadinessAsync(repoRoot, ct).ConfigureAwait(false);
+                    var degrade = string.Equals(workflow.VisualQaFallbackPolicy, "degrade", StringComparison.OrdinalIgnoreCase);
+                    if (!visualReady.Ready)
+                    {
+                        if (degrade)
+                        {
+                            notes.Add($"Visual QA skipped: {visualReady.Summary} (fallback=degrade).");
+                        }
+                        else
+                        {
+                            passed = false;
+                            notes.Add($"Visual QA required but infra not ready: {visualReady.Summary}");
+                        }
+                    }
+                    else
+                    {
+                        var visual = await RunVisualQaAsync(repoRoot, aestheticFilter, ct).ConfigureAwait(false);
+                        passed &= visual.Passed;
+                        notes.Add(visual.Summary);
+                    }
                 }
             }
         }
@@ -491,6 +814,35 @@ public sealed class SelfExtendCommand : Command
         }
     }
 
+    private static void WritePreflightResult(PreflightResult result, bool json)
+    {
+        if (json)
+        {
+            var payload = new
+            {
+                ok = result.Passed,
+                summary = result.Summary,
+                checks = result.Checks.Select(c => new
+                {
+                    id = c.Id,
+                    ok = c.Ok,
+                    required = c.Required,
+                    message = c.Message
+                }).ToArray()
+            };
+            Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.WriteLine($"self-extend preflight: {(result.Passed ? "ok" : "failed")}");
+        Console.WriteLine(result.Summary);
+        foreach (var check in result.Checks)
+        {
+            var status = check.Ok ? "OK" : (check.Required ? "FAIL" : "WARN");
+            Console.WriteLine($"  - [{status}] {check.Id}: {check.Message}");
+        }
+    }
+
     private static async Task<(int ExitCode, string StdOut, string StdErr)> RunGeneratedTestSuiteAsync(
         string repoRoot,
         string testFilter,
@@ -564,4 +916,10 @@ public sealed class SelfExtendCommand : Command
     private sealed record QaGateResult(bool Ran, bool Passed, string Summary);
 
     private sealed record QaCheckResult(bool Ran, bool Passed, string Summary);
+
+    private sealed record PreflightResult(bool Passed, string Summary, IReadOnlyList<PreflightCheck> Checks);
+
+    private sealed record PreflightCheck(string Id, bool Ok, bool Required, string Message);
+
+    private sealed record VisualInfraReadiness(bool Ready, string Summary);
 }

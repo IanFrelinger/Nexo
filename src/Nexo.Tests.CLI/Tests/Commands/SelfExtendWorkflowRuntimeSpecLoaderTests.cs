@@ -52,6 +52,8 @@ public sealed class SelfExtendWorkflowRuntimeSpecLoaderTests : UnitTestBase
         AssertEqual(3, spec.Workflow.MaxIterations);
         AssertTrue(spec.Workflow.RunFunctionalQa, "Expected functional QA enabled by default.");
         AssertTrue(spec.Workflow.RunAestheticQa, "Expected aesthetic QA enabled by default.");
+        AssertEqual("strict", spec.Workflow.VisualQaFallbackPolicy);
+        AssertTrue(spec.Workflow.RequirePreflight, "Expected preflight required by default.");
     }
 
     private void TestLoadFromInlineJson()
@@ -63,6 +65,8 @@ public sealed class SelfExtendWorkflowRuntimeSpecLoaderTests : UnitTestBase
     "maxIterations": 5,
     "stopOnFirstPass": false,
     "runVisualQa": true,
+    "visualQaFallbackPolicy": "degrade",
+    "requirePreflight": false,
     "agentPhases": ["planner", "builder", "qa-aesthetic"]
   }
 }
@@ -73,6 +77,8 @@ public sealed class SelfExtendWorkflowRuntimeSpecLoaderTests : UnitTestBase
         AssertEqual(5, spec.Workflow.MaxIterations);
         AssertFalse(spec.Workflow.StopOnFirstPass);
         AssertTrue(spec.Workflow.RunVisualQa, "Expected visual QA flag to round-trip from JSON.");
+        AssertEqual("degrade", spec.Workflow.VisualQaFallbackPolicy);
+        AssertFalse(spec.Workflow.RequirePreflight);
         AssertEqual(3, spec.Workflow.AgentPhases.Length);
     }
 }

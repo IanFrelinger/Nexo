@@ -85,10 +85,10 @@ public sealed class ChatCommand : Command
 
         if (!skipBootstrapCheck)
         {
-            await BootstrapCommand.RunCheckAsync(includeOptionalDeps, json: false, ct).ConfigureAwait(false);
+            await BootstrapCommand.RunCheckAsync("demo", includeOptionalDeps, false, ct).ConfigureAwait(false);
             if (bootstrapApply)
             {
-                var applyExit = await BootstrapCommand.RunApplyAsync(includeOptionalDeps, yes, dryRun: false, json: false, ct).ConfigureAwait(false);
+                var applyExit = await BootstrapCommand.RunApplyAsync("demo", includeOptionalDeps, yes, false, false, ct).ConfigureAwait(false);
                 if (applyExit != 0)
                     Console.WriteLine("Bootstrap apply returned a non-zero code; chat session will continue.");
             }
@@ -158,10 +158,10 @@ public sealed class ChatCommand : Command
                 var apply = parts.Any(p => string.Equals(p, "--apply", StringComparison.OrdinalIgnoreCase));
                 var includeOptional = parts.Any(p => string.Equals(p, "--include-optional", StringComparison.OrdinalIgnoreCase));
                 var yes = parts.Any(p => string.Equals(p, "--yes", StringComparison.OrdinalIgnoreCase));
-                await BootstrapCommand.RunCheckAsync(includeOptional, json: false, ct).ConfigureAwait(false);
+                await BootstrapCommand.RunCheckAsync("demo", includeOptional, false, ct).ConfigureAwait(false);
                 if (apply)
                 {
-                    var applyExit = await BootstrapCommand.RunApplyAsync(includeOptional, yes, dryRun: false, json: false, ct).ConfigureAwait(false);
+                    var applyExit = await BootstrapCommand.RunApplyAsync("demo", includeOptional, yes, false, false, ct).ConfigureAwait(false);
                     if (applyExit != 0)
                         Console.WriteLine("Setup apply failed; see logs above.");
                 }

@@ -40,6 +40,13 @@ public sealed record SelfExtendWorkflowSpec
     /// <summary>Run visual validation tests via `nexo test --visual` (requires visual model setup).</summary>
     public bool RunVisualQa { get; init; } = false;
 
+    /// <summary>
+    /// Visual QA fallback policy when infrastructure is not ready:
+    /// - strict: fail QA gate
+    /// - degrade: skip visual QA with explicit warning in summary
+    /// </summary>
+    public string VisualQaFallbackPolicy { get; init; } = "strict";
+
     /// <summary>Filter for generated functional test validation.</summary>
     public string FunctionalTestFilter { get; init; } = "SelfExtendGenerated";
 
@@ -52,4 +59,9 @@ public sealed record SelfExtendWorkflowSpec
     /// </summary>
     public string UiSmokeProjectPath { get; init; } =
         "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Nexo.Ui.AvaloniaHost.csproj";
+
+    /// <summary>
+    /// If true, run preflight checks before iterative execution.
+    /// </summary>
+    public bool RequirePreflight { get; init; } = true;
 }
