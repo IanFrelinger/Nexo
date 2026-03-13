@@ -18,6 +18,9 @@ public sealed class RuntimeCommand : Command
         ConfigureExecuteCommand();
         ConfigurePlanCommand();
         ConfigureEvaluateCommand();
+        ConfigureHistoryCommand();
+        ConfigureRecommendCommand();
+        ConfigureGateCommand();
     }
 
     private void ConfigureExecuteCommand()
@@ -41,6 +44,8 @@ public sealed class RuntimeCommand : Command
         var useHistoryOpt = new Option<bool>("--use-history", () => true, "Use recent runtime history to adapt auto policy selection.");
         var historyWindowOpt = new Option<int>("--history-window", () => 200, "How many recent runtime reports are considered for adaptation.");
         var persistHistoryOpt = new Option<bool>("--persist-history", () => true, "Persist this execution result into runtime history.");
+        var autoRemediateOpt = new Option<bool>("--auto-remediate", () => true, "If execution fails, attempt one adaptive policy remediation pass.");
+        var maxRemediationAttemptsOpt = new Option<int>("--max-remediation-attempts", () => 1, "Maximum remediation attempts after initial failure.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
 
         executeCmd.AddOption(goalOpt);
@@ -61,6 +66,8 @@ public sealed class RuntimeCommand : Command
         executeCmd.AddOption(useHistoryOpt);
         executeCmd.AddOption(historyWindowOpt);
         executeCmd.AddOption(persistHistoryOpt);
+        executeCmd.AddOption(autoRemediateOpt);
+        executeCmd.AddOption(maxRemediationAttemptsOpt);
         executeCmd.AddOption(jsonOpt);
         executeCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -83,6 +90,8 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(useHistoryOpt),
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
                 ctx.ParseResult.GetValueForOption(persistHistoryOpt),
+                ctx.ParseResult.GetValueForOption(autoRemediateOpt),
+                ctx.ParseResult.GetValueForOption(maxRemediationAttemptsOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
@@ -199,6 +208,87 @@ public sealed class RuntimeCommand : Command
         AddCommand(evaluateCmd);
     }
 
+    private void ConfigureHistoryCommand()
+    {
+        var historyCmd = new Command("history", "Show persisted runtime execution history.");
+        var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
+        var limitOpt = new Option<int>("--limit", () => 20, "Maximum number of history records to return.");
+        var goalOpt = new Option<string?>("--goal", () => null, "Optional goal text to filter by goal fingerprint.");
+        var policyOpt = new Option<string?>("--policy", () => null, "Optional resolved QA policy filter.");
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
+        historyCmd.AddOption(repoRootOpt);
+        historyCmd.AddOption(limitOpt);
+        historyCmd.AddOption(goalOpt);
+        historyCmd.AddOption(policyOpt);
+        historyCmd.AddOption(jsonOpt);
+        historyCmd.SetHandler((InvocationContext ctx) =>
+        {
+            ctx.ExitCode = ExecuteHistoryAsync(
+                ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
+                ctx.ParseResult.GetValueForOption(limitOpt),
+                ctx.ParseResult.GetValueForOption(goalOpt),
+                ctx.ParseResult.GetValueForOption(policyOpt),
+                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+        });
+        AddCommand(historyCmd);
+    }
+
+    private void ConfigureRecommendCommand()
+    {
+        var recommendCmd = new Command("recommend", "Recommend QA policy for a goal based on runtime history.");
+        var goalOpt = new Option<string>("--goal", "Goal to recommend QA policy for.") { IsRequired = true };
+        var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
+        var historyWindowOpt = new Option<int>("--history-window", () => 200, "How many recent runtime reports are considered.");
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
+        recommendCmd.AddOption(goalOpt);
+        recommendCmd.AddOption(repoRootOpt);
+        recommendCmd.AddOption(historyWindowOpt);
+        recommendCmd.AddOption(jsonOpt);
+        recommendCmd.SetHandler((InvocationContext ctx) =>
+        {
+            ctx.ExitCode = ExecuteRecommendAsync(
+                ctx.ParseResult.GetValueForOption(goalOpt) ?? string.Empty,
+                ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
+                ctx.ParseResult.GetValueForOption(historyWindowOpt),
+                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+        });
+        AddCommand(recommendCmd);
+    }
+
+    private void ConfigureGateCommand()
+    {
+        var gateCmd = new Command("gate", "Evaluate runtime SLO gate from persisted history.");
+        var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
+        var historyWindowOpt = new Option<int>("--history-window", () => 100, "How many recent runtime reports are considered.");
+        var minPassRateOpt = new Option<double>("--min-pass-rate", () => 0.8, "Minimum required pass rate in [0,1].");
+        var minTotalOpt = new Option<int>("--min-total", () => 5, "Minimum runs required to evaluate gate.");
+        var goalOpt = new Option<string?>("--goal", () => null, "Optional goal text to filter by goal fingerprint.");
+        var policyOpt = new Option<string?>("--policy", () => null, "Optional resolved QA policy filter.");
+        var stageOpt = new Option<string?>("--stage", () => null, "Optional failure stage filter (none|bootstrap|preflight|self-extend).");
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
+        gateCmd.AddOption(repoRootOpt);
+        gateCmd.AddOption(historyWindowOpt);
+        gateCmd.AddOption(minPassRateOpt);
+        gateCmd.AddOption(minTotalOpt);
+        gateCmd.AddOption(goalOpt);
+        gateCmd.AddOption(policyOpt);
+        gateCmd.AddOption(stageOpt);
+        gateCmd.AddOption(jsonOpt);
+        gateCmd.SetHandler((InvocationContext ctx) =>
+        {
+            ctx.ExitCode = ExecuteGateAsync(
+                ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
+                ctx.ParseResult.GetValueForOption(historyWindowOpt),
+                ctx.ParseResult.GetValueForOption(minPassRateOpt),
+                ctx.ParseResult.GetValueForOption(minTotalOpt),
+                ctx.ParseResult.GetValueForOption(goalOpt),
+                ctx.ParseResult.GetValueForOption(policyOpt),
+                ctx.ParseResult.GetValueForOption(stageOpt),
+                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+        });
+        AddCommand(gateCmd);
+    }
+
     internal async Task<int> ExecuteAsync(
         string goal,
         string repoRoot,
@@ -218,6 +308,8 @@ public sealed class RuntimeCommand : Command
         bool useHistory,
         int historyWindow,
         bool persistHistory,
+        bool autoRemediate,
+        int maxRemediationAttempts,
         bool json,
         CancellationToken ct)
     {
@@ -241,6 +333,62 @@ public sealed class RuntimeCommand : Command
             historyWindow,
             persistHistory,
             ct).ConfigureAwait(false);
+
+        var remediationAttempts = new List<RuntimeRemediationAttempt>();
+        var attemptsBudget = Math.Max(0, maxRemediationAttempts);
+        while (autoRemediate && !result.Ok && attemptsBudget > 0)
+        {
+            var remediation = ChooseRemediationPolicy(result);
+            if (remediation == null)
+                break;
+            if (remediationAttempts.Any(a => string.Equals(a.Policy, remediation.Policy, StringComparison.OrdinalIgnoreCase)))
+                break;
+
+            var retried = await ExecuteCoreAsync(
+                goal,
+                repoRoot,
+                provider,
+                allowMock,
+                runTests,
+                testFilter,
+                bootstrapProfile,
+                remediation.Policy,
+                runtimeManifestPath,
+                runtimeManifestJson,
+                maxIterationsOverride,
+                bootstrapApply,
+                bootstrapYes,
+                bootstrapDryRun,
+                runPreflight,
+                useHistory: false,
+                historyWindow,
+                persistHistory,
+                ct).ConfigureAwait(false);
+
+            remediationAttempts.Add(new RuntimeRemediationAttempt(
+                remediation.Policy,
+                remediation.Reason,
+                retried.Ok,
+                retried.FailureStage,
+                retried.RunId,
+                retried.Summary));
+            attemptsBudget--;
+            result = retried;
+
+            if (retried.Ok)
+            {
+                result = result with
+                {
+                    Summary = $"{result.Summary} (auto-remediated)",
+                    RemediationAttempts = remediationAttempts.ToArray()
+                };
+                break;
+            }
+        }
+
+        if (remediationAttempts.Count > 0 && result.RemediationAttempts == null)
+            result = result with { RemediationAttempts = remediationAttempts.ToArray() };
+
         WriteResult(result, json);
         return result.Ok ? 0 : 1;
     }
@@ -297,6 +445,122 @@ public sealed class RuntimeCommand : Command
             WritePlanResult(new RuntimePlanResult(false, $"Failed to compute plan: {ex.Message}"), json);
             return Task.FromResult(1);
         }
+    }
+
+    internal Task<int> ExecuteHistoryAsync(
+        string repoRoot,
+        int limit,
+        string? goal,
+        string? policy,
+        bool json)
+    {
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
+        {
+            WriteHistoryResult(new RuntimeHistoryResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            return Task.FromResult(1);
+        }
+
+        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, limit));
+        if (!string.IsNullOrWhiteSpace(goal))
+        {
+            var fp = AdaptiveRuntimeExecutionReport.ComputeGoalFingerprint(goal);
+            items = items.Where(i => string.Equals(i.GoalFingerprint, fp, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(policy))
+        {
+            var p = NormalizeQaPolicy(policy);
+            items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+
+        var total = items.Count;
+        var passed = items.Count(i => i.Success);
+        var failed = total - passed;
+        var avgElapsed = (long)Math.Round(items.Select(i => (double)i.ElapsedMs).DefaultIfEmpty(0d).Average());
+        WriteHistoryResult(new RuntimeHistoryResult(
+            true,
+            $"Loaded {total} history entries.",
+            items,
+            new RuntimeHistorySummary(total, passed, failed, avgElapsed)), json);
+        return Task.FromResult(0);
+    }
+
+    internal Task<int> ExecuteRecommendAsync(
+        string goal,
+        string repoRoot,
+        int historyWindow,
+        bool json)
+    {
+        if (string.IsNullOrWhiteSpace(goal))
+        {
+            WriteRecommendResult(new RuntimeRecommendResult(false, "Goal is required."), json);
+            return Task.FromResult(1);
+        }
+
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
+        {
+            WriteRecommendResult(new RuntimeRecommendResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            return Task.FromResult(1);
+        }
+
+        var history = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, historyWindow));
+        var recommendation = AdaptiveRuntimePolicyAdvisor.RecommendQaPolicy(goal, history);
+        var result = recommendation == null
+            ? new RuntimeRecommendResult(true, "No recommendation from history.", Policy: null, Reason: null)
+            : new RuntimeRecommendResult(true, "Recommendation computed from history.", recommendation.QaPolicy, recommendation.Reason);
+        WriteRecommendResult(result, json);
+        return Task.FromResult(0);
+    }
+
+    internal Task<int> ExecuteGateAsync(
+        string repoRoot,
+        int historyWindow,
+        double minPassRate,
+        int minTotal,
+        string? goal,
+        string? policy,
+        string? stage,
+        bool json)
+    {
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
+        {
+            WriteGateResult(new RuntimeGateResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            return Task.FromResult(1);
+        }
+
+        minPassRate = Math.Clamp(minPassRate, 0d, 1d);
+        minTotal = Math.Max(1, minTotal);
+        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, historyWindow));
+
+        if (!string.IsNullOrWhiteSpace(goal))
+        {
+            var fp = AdaptiveRuntimeExecutionReport.ComputeGoalFingerprint(goal);
+            items = items.Where(i => string.Equals(i.GoalFingerprint, fp, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(policy))
+        {
+            var p = NormalizeQaPolicy(policy);
+            items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(stage))
+        {
+            var s = stage.Trim().ToLowerInvariant();
+            items = items.Where(i => string.Equals(i.FailureStage, s, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+
+        var total = items.Count;
+        var passed = items.Count(i => i.Success);
+        var passRate = total == 0 ? 0d : (double)passed / total;
+        var ok = total >= minTotal && passRate >= minPassRate;
+        var summary = total < minTotal
+            ? $"Gate failed: insufficient runs ({total}/{minTotal})."
+            : ok
+                ? $"Gate passed: pass-rate {passRate:P1} over {total} run(s)."
+                : $"Gate failed: pass-rate {passRate:P1} below threshold {minPassRate:P1}.";
+        WriteGateResult(new RuntimeGateResult(ok, summary, total, passed, passRate, minTotal, minPassRate), json);
+        return Task.FromResult(ok ? 0 : 1);
     }
 
     internal async Task<int> ExecuteEvaluateAsync(
@@ -825,6 +1089,32 @@ public sealed class RuntimeCommand : Command
         return okNode.ValueKind == JsonValueKind.True;
     }
 
+    private static RuntimeRemediationPolicy? ChooseRemediationPolicy(RuntimeExecuteResult failed)
+    {
+        if (failed.Ok || failed.Plan == null)
+            return null;
+
+        var stage = (failed.FailureStage ?? string.Empty).Trim().ToLowerInvariant();
+        if (stage == "preflight" &&
+            failed.Plan.RunVisualQa &&
+            string.Equals(failed.Plan.VisualQaFallbackPolicy, "strict", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RuntimeRemediationPolicy(
+                "demo",
+                "Switch to demo policy to allow visual degrade fallback after strict visual preflight failure.");
+        }
+
+        if (stage == "self-extend" &&
+            !string.Equals(failed.ResolvedQaPolicy, "research", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RuntimeRemediationPolicy(
+                "research",
+                "Escalate to research policy after self-extend failure to increase retry depth.");
+        }
+
+        return null;
+    }
+
     private static void WriteResult(RuntimeExecuteResult result, bool json)
     {
         if (json)
@@ -871,6 +1161,7 @@ public sealed class RuntimeCommand : Command
                     selfExtendRan = result.SelfExtendRan,
                     selfExtendOk = result.SelfExtendOk
                 },
+                remediation = result.RemediationAttempts,
                 preflight = result.PreflightPayload,
                 execution = result.SelfExtendPayload
             };
@@ -889,6 +1180,11 @@ public sealed class RuntimeCommand : Command
         }
         if (result.BootstrapAfter != null)
             Console.WriteLine($"  bootstrap missing-required={result.BootstrapAfter.MissingRequired.Count()}");
+        if (result.RemediationAttempts is { Length: > 0 })
+        {
+            foreach (var step in result.RemediationAttempts)
+                Console.WriteLine($"  remediation: policy={step.Policy}, ok={step.Ok}, reason={step.Reason}");
+        }
     }
 
     private static void WritePlanResult(RuntimePlanResult result, bool json)
@@ -953,6 +1249,74 @@ public sealed class RuntimeCommand : Command
         Console.WriteLine(result.Summary);
         foreach (var policy in result.PolicySummaries ?? Array.Empty<RuntimeEvaluatePolicySummary>())
             Console.WriteLine($"  {policy.Policy}: {policy.Passed}/{policy.Total} passed, avg={policy.AverageElapsedMs}ms");
+    }
+
+    private static void WriteHistoryResult(RuntimeHistoryResult result, bool json)
+    {
+        if (json)
+        {
+            var payload = new
+            {
+                ok = result.Ok,
+                summary = result.Summary,
+                summaryStats = result.SummaryStats,
+                items = result.Items
+            };
+            Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.WriteLine($"runtime history: {(result.Ok ? "ok" : "failed")}");
+        Console.WriteLine(result.Summary);
+        if (result.SummaryStats != null)
+            Console.WriteLine($"  total={result.SummaryStats.Total}, passed={result.SummaryStats.Passed}, failed={result.SummaryStats.Failed}, avg={result.SummaryStats.AverageElapsedMs}ms");
+        foreach (var item in result.Items ?? Array.Empty<AdaptiveRuntimeExecutionReport>())
+            Console.WriteLine($"  [{item.StartedAtUtc:O}] ok={item.Success} policy={item.ResolvedQaPolicy} stage={item.FailureStage} goal=\"{item.GoalPreview}\"");
+    }
+
+    private static void WriteRecommendResult(RuntimeRecommendResult result, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = result.Ok,
+                summary = result.Summary,
+                policy = result.Policy,
+                reason = result.Reason
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.WriteLine($"runtime recommend: {(result.Ok ? "ok" : "failed")}");
+        Console.WriteLine(result.Summary);
+        if (!string.IsNullOrWhiteSpace(result.Policy))
+            Console.WriteLine($"  policy={result.Policy}");
+        if (!string.IsNullOrWhiteSpace(result.Reason))
+            Console.WriteLine($"  reason={result.Reason}");
+    }
+
+    private static void WriteGateResult(RuntimeGateResult result, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = result.Ok,
+                summary = result.Summary,
+                total = result.Total,
+                passed = result.Passed,
+                passRate = result.PassRate,
+                minTotal = result.MinTotal,
+                minPassRate = result.MinPassRate
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.WriteLine($"runtime gate: {(result.Ok ? "ok" : "failed")}");
+        Console.WriteLine(result.Summary);
+        if (result.Total.HasValue)
+            Console.WriteLine($"  total={result.Total}, passed={result.Passed}, pass-rate={result.PassRate:P1}, min={result.MinPassRate:P1} over {result.MinTotal} run(s)");
     }
 
     private static string[] ResolveGoals(string? goalsJson, string? goalsFile)
@@ -1038,7 +1402,8 @@ public sealed class RuntimeCommand : Command
         DateTimeOffset? StartedAtUtc = null,
         long? ElapsedMs = null,
         string? GoalFingerprint = null,
-        string? GoalPreview = null);
+        string? GoalPreview = null,
+        RuntimeRemediationAttempt[]? RemediationAttempts = null);
 
     private sealed record RuntimePlanResult(
         bool Ok,
@@ -1075,4 +1440,41 @@ public sealed class RuntimeCommand : Command
         string Summary,
         IReadOnlyList<RuntimeEvaluateScenarioResult>? Scenarios = null,
         IReadOnlyList<RuntimeEvaluatePolicySummary>? PolicySummaries = null);
+
+    private sealed record RuntimeHistorySummary(
+        int Total,
+        int Passed,
+        int Failed,
+        long AverageElapsedMs);
+
+    private sealed record RuntimeHistoryResult(
+        bool Ok,
+        string Summary,
+        IReadOnlyList<AdaptiveRuntimeExecutionReport>? Items = null,
+        RuntimeHistorySummary? SummaryStats = null);
+
+    private sealed record RuntimeRecommendResult(
+        bool Ok,
+        string Summary,
+        string? Policy = null,
+        string? Reason = null);
+
+    private sealed record RuntimeGateResult(
+        bool Ok,
+        string Summary,
+        int? Total = null,
+        int? Passed = null,
+        double? PassRate = null,
+        int? MinTotal = null,
+        double? MinPassRate = null);
+
+    private sealed record RuntimeRemediationPolicy(string Policy, string Reason);
+
+    private sealed record RuntimeRemediationAttempt(
+        string Policy,
+        string Reason,
+        bool Ok,
+        string? FailureStage,
+        string? RunId,
+        string Summary);
 }
