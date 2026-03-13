@@ -983,6 +983,7 @@ static class Program
         root.AddCommand(configCmd);
         root.AddCommand(new DogfoodCommand());
         root.AddCommand(new BootstrapCommand());
+        root.AddCommand(new RuntimeCommand());
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
         root.AddCommand(new SelfExtendCommand(
             () => ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>()));
