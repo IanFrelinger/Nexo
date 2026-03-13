@@ -60,7 +60,7 @@ public sealed class SelfExtendCommand : Command
             var focus = ctx.ParseResult.GetValueForOption(focusOpt);
             var maxIterations = ctx.ParseResult.GetValueForOption(maxIterationsOpt);
             var runPreflight = ctx.ParseResult.GetValueForOption(preflightOpt);
-            Environment.ExitCode = await ExecuteAsync(
+            ctx.ExitCode = await ExecuteAsync(
                 goal,
                 repoRoot,
                 provider,
@@ -100,7 +100,7 @@ public sealed class SelfExtendCommand : Command
             var focus = ctx.ParseResult.GetValueForOption(focusOpt);
             var maxIterations = ctx.ParseResult.GetValueForOption(maxIterationsOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            Environment.ExitCode = await ExecutePreflightAsync(
+            ctx.ExitCode = await ExecutePreflightAsync(
                 repoRoot,
                 provider,
                 allowMock,
