@@ -44,6 +44,7 @@ public sealed class RuntimeCommand : Command
         var useHistoryOpt = new Option<bool>("--use-history", () => true, "Use recent runtime history to adapt auto policy selection.");
         var historyWindowOpt = new Option<int>("--history-window", () => 200, "How many recent runtime reports are considered for adaptation.");
         var persistHistoryOpt = new Option<bool>("--persist-history", () => true, "Persist this execution result into runtime history.");
+        var benchmarkSetOpt = new Option<string>("--benchmark-set", () => "adhoc", "Benchmark set tag persisted with execution history.");
         var autoRemediateOpt = new Option<bool>("--auto-remediate", () => true, "If execution fails, attempt one adaptive policy remediation pass.");
         var maxRemediationAttemptsOpt = new Option<int>("--max-remediation-attempts", () => 1, "Maximum remediation attempts after initial failure.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
@@ -66,6 +67,7 @@ public sealed class RuntimeCommand : Command
         executeCmd.AddOption(useHistoryOpt);
         executeCmd.AddOption(historyWindowOpt);
         executeCmd.AddOption(persistHistoryOpt);
+        executeCmd.AddOption(benchmarkSetOpt);
         executeCmd.AddOption(autoRemediateOpt);
         executeCmd.AddOption(maxRemediationAttemptsOpt);
         executeCmd.AddOption(jsonOpt);
@@ -90,6 +92,7 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(useHistoryOpt),
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
                 ctx.ParseResult.GetValueForOption(persistHistoryOpt),
+                ctx.ParseResult.GetValueForOption(benchmarkSetOpt) ?? "adhoc",
                 ctx.ParseResult.GetValueForOption(autoRemediateOpt),
                 ctx.ParseResult.GetValueForOption(maxRemediationAttemptsOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
@@ -162,6 +165,7 @@ public sealed class RuntimeCommand : Command
         var useHistoryOpt = new Option<bool>("--use-history", () => true, "Use recent runtime history for adaptive decisions when policy=auto.");
         var historyWindowOpt = new Option<int>("--history-window", () => 200, "How many recent runtime reports are considered for adaptation.");
         var persistHistoryOpt = new Option<bool>("--persist-history", () => false, "Persist each matrix scenario into runtime history.");
+        var benchmarkSetOpt = new Option<string>("--benchmark-set", () => "adhoc", "Benchmark set tag persisted with matrix execution history.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
 
         evaluateCmd.AddOption(goalsJsonOpt);
@@ -181,6 +185,7 @@ public sealed class RuntimeCommand : Command
         evaluateCmd.AddOption(useHistoryOpt);
         evaluateCmd.AddOption(historyWindowOpt);
         evaluateCmd.AddOption(persistHistoryOpt);
+        evaluateCmd.AddOption(benchmarkSetOpt);
         evaluateCmd.AddOption(jsonOpt);
         evaluateCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -202,6 +207,7 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(useHistoryOpt),
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
                 ctx.ParseResult.GetValueForOption(persistHistoryOpt),
+                ctx.ParseResult.GetValueForOption(benchmarkSetOpt) ?? "adhoc",
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
@@ -215,11 +221,13 @@ public sealed class RuntimeCommand : Command
         var limitOpt = new Option<int>("--limit", () => 20, "Maximum number of history records to return.");
         var goalOpt = new Option<string?>("--goal", () => null, "Optional goal text to filter by goal fingerprint.");
         var policyOpt = new Option<string?>("--policy", () => null, "Optional resolved QA policy filter.");
+        var benchmarkSetOpt = new Option<string?>("--benchmark-set", () => null, "Optional benchmark set tag filter.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
         historyCmd.AddOption(repoRootOpt);
         historyCmd.AddOption(limitOpt);
         historyCmd.AddOption(goalOpt);
         historyCmd.AddOption(policyOpt);
+        historyCmd.AddOption(benchmarkSetOpt);
         historyCmd.AddOption(jsonOpt);
         historyCmd.SetHandler((InvocationContext ctx) =>
         {
@@ -228,6 +236,7 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(limitOpt),
                 ctx.ParseResult.GetValueForOption(goalOpt),
                 ctx.ParseResult.GetValueForOption(policyOpt),
+                ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
         });
         AddCommand(historyCmd);
@@ -264,7 +273,9 @@ public sealed class RuntimeCommand : Command
         var minTotalOpt = new Option<int>("--min-total", () => 5, "Minimum runs required to evaluate gate.");
         var goalOpt = new Option<string?>("--goal", () => null, "Optional goal text to filter by goal fingerprint.");
         var policyOpt = new Option<string?>("--policy", () => null, "Optional resolved QA policy filter.");
+        var benchmarkSetOpt = new Option<string?>("--benchmark-set", () => null, "Optional benchmark set tag filter.");
         var stageOpt = new Option<string?>("--stage", () => null, "Optional failure stage filter (none|bootstrap|preflight|self-extend).");
+        var minConsecutivePassesOpt = new Option<int>("--min-consecutive-passes", () => 0, "Minimum required consecutive recent pass streak.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
         gateCmd.AddOption(repoRootOpt);
         gateCmd.AddOption(historyWindowOpt);
@@ -272,7 +283,9 @@ public sealed class RuntimeCommand : Command
         gateCmd.AddOption(minTotalOpt);
         gateCmd.AddOption(goalOpt);
         gateCmd.AddOption(policyOpt);
+        gateCmd.AddOption(benchmarkSetOpt);
         gateCmd.AddOption(stageOpt);
+        gateCmd.AddOption(minConsecutivePassesOpt);
         gateCmd.AddOption(jsonOpt);
         gateCmd.SetHandler((InvocationContext ctx) =>
         {
@@ -283,7 +296,9 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(minTotalOpt),
                 ctx.ParseResult.GetValueForOption(goalOpt),
                 ctx.ParseResult.GetValueForOption(policyOpt),
+                ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
                 ctx.ParseResult.GetValueForOption(stageOpt),
+                ctx.ParseResult.GetValueForOption(minConsecutivePassesOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
         });
         AddCommand(gateCmd);
@@ -308,6 +323,7 @@ public sealed class RuntimeCommand : Command
         bool useHistory,
         int historyWindow,
         bool persistHistory,
+        string benchmarkSet,
         bool autoRemediate,
         int maxRemediationAttempts,
         bool json,
@@ -332,6 +348,7 @@ public sealed class RuntimeCommand : Command
             useHistory,
             historyWindow,
             persistHistory,
+            benchmarkSet,
             ct).ConfigureAwait(false);
 
         var remediationAttempts = new List<RuntimeRemediationAttempt>();
@@ -372,6 +389,7 @@ public sealed class RuntimeCommand : Command
                 useHistory: false,
                 historyWindow,
                 persistHistory,
+                benchmarkSet,
                 ct).ConfigureAwait(false);
 
             remediationAttempts.Add(new RuntimeRemediationAttempt(
@@ -461,6 +479,7 @@ public sealed class RuntimeCommand : Command
         int limit,
         string? goal,
         string? policy,
+        string? benchmarkSet,
         bool json)
     {
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
@@ -480,6 +499,11 @@ public sealed class RuntimeCommand : Command
         {
             var p = NormalizeQaPolicy(policy);
             items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(benchmarkSet))
+        {
+            var b = benchmarkSet.Trim().ToLowerInvariant();
+            items = items.Where(i => string.Equals(i.BenchmarkSet, b, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
 
         var total = items.Count;
@@ -529,7 +553,9 @@ public sealed class RuntimeCommand : Command
         int minTotal,
         string? goal,
         string? policy,
+        string? benchmarkSet,
         string? stage,
+        int minConsecutivePasses,
         bool json)
     {
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
@@ -553,6 +579,11 @@ public sealed class RuntimeCommand : Command
             var p = NormalizeQaPolicy(policy);
             items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
+        if (!string.IsNullOrWhiteSpace(benchmarkSet))
+        {
+            var b = benchmarkSet.Trim().ToLowerInvariant();
+            items = items.Where(i => string.Equals(i.BenchmarkSet, b, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
         if (!string.IsNullOrWhiteSpace(stage))
         {
             var s = stage.Trim().ToLowerInvariant();
@@ -562,13 +593,23 @@ public sealed class RuntimeCommand : Command
         var total = items.Count;
         var passed = items.Count(i => i.Success);
         var passRate = total == 0 ? 0d : (double)passed / total;
-        var ok = total >= minTotal && passRate >= minPassRate;
+        minConsecutivePasses = Math.Max(0, minConsecutivePasses);
+        var streak = 0;
+        foreach (var item in items.OrderByDescending(i => i.StartedAtUtc))
+        {
+            if (!item.Success)
+                break;
+            streak++;
+        }
+        var ok = total >= minTotal && passRate >= minPassRate && streak >= minConsecutivePasses;
         var summary = total < minTotal
             ? $"Gate failed: insufficient runs ({total}/{minTotal})."
-            : ok
-                ? $"Gate passed: pass-rate {passRate:P1} over {total} run(s)."
-                : $"Gate failed: pass-rate {passRate:P1} below threshold {minPassRate:P1}.";
-        WriteGateResult(new RuntimeGateResult(ok, summary, total, passed, passRate, minTotal, minPassRate), json);
+            : streak < minConsecutivePasses
+                ? $"Gate failed: consecutive pass streak {streak} below required {minConsecutivePasses}."
+                : ok
+                    ? $"Gate passed: pass-rate {passRate:P1} over {total} run(s)."
+                    : $"Gate failed: pass-rate {passRate:P1} below threshold {minPassRate:P1}.";
+        WriteGateResult(new RuntimeGateResult(ok, summary, total, passed, passRate, minTotal, minPassRate, streak, minConsecutivePasses), json);
         return Task.FromResult(ok ? 0 : 1);
     }
 
@@ -590,6 +631,7 @@ public sealed class RuntimeCommand : Command
         bool useHistory,
         int historyWindow,
         bool persistHistory,
+        string benchmarkSet,
         bool json,
         CancellationToken ct)
     {
@@ -638,6 +680,7 @@ public sealed class RuntimeCommand : Command
                     useHistory,
                     historyWindow,
                     persistHistory,
+                    benchmarkSet,
                     ct).ConfigureAwait(false);
                 scenarioResults.Add(new RuntimeEvaluateScenarioResult(
                     AdaptiveRuntimeExecutionReport.BuildGoalPreview(goal, 80),
@@ -733,6 +776,7 @@ public sealed class RuntimeCommand : Command
         bool useHistory,
         int historyWindow,
         bool persistHistory,
+        string benchmarkSet,
         CancellationToken ct)
     {
         var runId = Guid.NewGuid().ToString("N");
@@ -765,6 +809,7 @@ public sealed class RuntimeCommand : Command
                             ElapsedMs = output.ElapsedMs ?? elapsed,
                             GoalFingerprint = output.GoalFingerprint ?? goalFingerprint,
                             GoalPreview = output.GoalPreview ?? goalPreview,
+                            BenchmarkSet = NormalizeBenchmarkSet(benchmarkSet),
                             RequestedQaPolicy = output.RequestedQaPolicy ?? "auto",
                             ResolvedQaPolicy = output.ResolvedQaPolicy ?? "demo",
                             BootstrapProfile = output.Plan?.BootstrapProfile ?? "self-extend-functional",
@@ -1280,7 +1325,7 @@ public sealed class RuntimeCommand : Command
         if (result.SummaryStats != null)
             Console.WriteLine($"  total={result.SummaryStats.Total}, passed={result.SummaryStats.Passed}, failed={result.SummaryStats.Failed}, avg={result.SummaryStats.AverageElapsedMs}ms");
         foreach (var item in result.Items ?? Array.Empty<AdaptiveRuntimeExecutionReport>())
-            Console.WriteLine($"  [{item.StartedAtUtc:O}] ok={item.Success} policy={item.ResolvedQaPolicy} stage={item.FailureStage} goal=\"{item.GoalPreview}\"");
+            Console.WriteLine($"  [{item.StartedAtUtc:O}] ok={item.Success} policy={item.ResolvedQaPolicy} benchmark={item.BenchmarkSet} stage={item.FailureStage} goal=\"{item.GoalPreview}\"");
     }
 
     private static void WriteRecommendResult(RuntimeRecommendResult result, bool json)
@@ -1317,7 +1362,9 @@ public sealed class RuntimeCommand : Command
                 passed = result.Passed,
                 passRate = result.PassRate,
                 minTotal = result.MinTotal,
-                minPassRate = result.MinPassRate
+                minPassRate = result.MinPassRate,
+                streak = result.Streak,
+                minConsecutivePasses = result.MinConsecutivePasses
             }, new JsonSerializerOptions { WriteIndented = true }));
             return;
         }
@@ -1325,7 +1372,7 @@ public sealed class RuntimeCommand : Command
         Console.WriteLine($"runtime gate: {(result.Ok ? "ok" : "failed")}");
         Console.WriteLine(result.Summary);
         if (result.Total.HasValue)
-            Console.WriteLine($"  total={result.Total}, passed={result.Passed}, pass-rate={result.PassRate:P1}, min={result.MinPassRate:P1} over {result.MinTotal} run(s)");
+            Console.WriteLine($"  total={result.Total}, passed={result.Passed}, pass-rate={result.PassRate:P1}, min={result.MinPassRate:P1} over {result.MinTotal} run(s), streak={result.Streak}/{result.MinConsecutivePasses}");
     }
 
     private static string[] ResolveGoals(string? goalsJson, string? goalsFile)
@@ -1382,6 +1429,12 @@ public sealed class RuntimeCommand : Command
             "research" => "research",
             _ => "auto"
         };
+    }
+
+    private static string NormalizeBenchmarkSet(string? benchmarkSet)
+    {
+        var normalized = (benchmarkSet ?? "adhoc").Trim().ToLowerInvariant();
+        return string.IsNullOrWhiteSpace(normalized) ? "adhoc" : normalized;
     }
 
     private sealed record RuntimeSubprocessResult(int ExitCode, string StdOut, string StdErr);
@@ -1476,7 +1529,9 @@ public sealed class RuntimeCommand : Command
         int? Passed = null,
         double? PassRate = null,
         int? MinTotal = null,
-        double? MinPassRate = null);
+        double? MinPassRate = null,
+        int? Streak = null,
+        int? MinConsecutivePasses = null);
 
     private sealed record RuntimeRemediationPolicy(string Policy, string Reason);
 

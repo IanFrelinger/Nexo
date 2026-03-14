@@ -11,6 +11,7 @@ public sealed record AdaptiveRuntimeExecutionReport
     public long ElapsedMs { get; init; }
     public string GoalFingerprint { get; init; } = string.Empty;
     public string GoalPreview { get; init; } = string.Empty;
+    public string BenchmarkSet { get; init; } = "adhoc";
     public string RequestedQaPolicy { get; init; } = "auto";
     public string ResolvedQaPolicy { get; init; } = "demo";
     public string BootstrapProfile { get; init; } = "self-extend-functional";

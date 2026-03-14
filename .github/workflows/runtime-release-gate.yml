@@ -12,7 +12,31 @@ on:
       - 'scripts/runtime-release-gate.sh'
 
 jobs:
-  runtime-release-gate:
+  runtime-release-lanes:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [core, visual]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -v minimal
+
+      - name: Runtime release lane gate
+        run: ./scripts/runtime-release-gate.sh . ${{ matrix.lane }}
+
+  runtime-release-chaos:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,5 +53,5 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -v minimal
 
-      - name: Runtime release gate
-        run: ./scripts/runtime-release-gate.sh .
+      - name: Runtime chaos lane (non-gating)
+        run: ./scripts/runtime-release-gate.sh . chaos
