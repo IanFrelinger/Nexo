@@ -7,9 +7,9 @@ on:
     paths:
       - '.github/workflows/runtime-release-gate.yml'
       - 'src/Nexo.CLI/Commands/RuntimeCommand.cs'
+      - 'src/Nexo.CLI/Commands/CiCommand.cs'
       - 'src/Nexo.CLI/Runtime/**'
       - 'docs/runtime/benchmarks/**'
-      - 'scripts/runtime-release-gate.sh'
 
 jobs:
   runtime-release-lanes:
@@ -34,7 +34,7 @@ jobs:
         run: dotnet build --no-restore -v minimal
 
       - name: Runtime release lane gate
-        run: ./scripts/runtime-release-gate.sh . ${{ matrix.lane }}
+        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }}
 
   runtime-release-chaos:
     runs-on: ubuntu-latest
@@ -54,4 +54,4 @@ jobs:
         run: dotnet build --no-restore -v minimal
 
       - name: Runtime chaos lane (non-gating)
-        run: ./scripts/runtime-release-gate.sh . chaos
+        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos

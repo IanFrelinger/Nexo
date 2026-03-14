@@ -15,6 +15,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
         {
             await TestHistoryFiltersByBenchmarkSetAsync().ConfigureAwait(false);
             await TestGateRequiresConsecutivePassStreakAsync().ConfigureAwait(false);
+            await TestReleaseGateRejectsInvalidModeAsync().ConfigureAwait(false);
 
             return new TestResult
             {
@@ -162,6 +163,24 @@ public sealed class RuntimeCommandTests : UnitTestBase
             var lenientRoot = lenientPayload.RootElement;
             AssertTrue(lenientRoot.GetProperty("ok").GetBoolean());
             AssertEqual(2, lenientRoot.GetProperty("streak").GetInt32());
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestReleaseGateRejectsInvalidModeAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            var (exitCode, output) = await InvokeRuntimeAsync(
+                $"release-gate --mode bananas --repo-root \"{repoRoot}\"").ConfigureAwait(false);
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("unsupported mode", StringComparison.OrdinalIgnoreCase),
+                "Expected release-gate to reject unsupported mode values.");
         }
         finally
         {

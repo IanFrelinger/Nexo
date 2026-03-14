@@ -86,15 +86,18 @@ public sealed class CiCommand : Command
     public static async Task<int> ExecuteRuntimeGateAsync()
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
-        var gateScript = Path.Combine(repoRoot, "scripts", "runtime-release-gate.sh");
-        if (!File.Exists(gateScript))
+        var cliProject = Path.Combine(repoRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
+        if (!File.Exists(cliProject))
         {
-            Console.Error.WriteLine($"ci runtime-gate: Missing script: {gateScript}");
+            Console.Error.WriteLine($"ci runtime-gate: Missing CLI project: {cliProject}");
             return 1;
         }
 
         Console.WriteLine("=== CI Runtime Gate ===");
-        var exit = await RunProcessAsync("bash", $"\"{gateScript}\" \"{repoRoot}\"", repoRoot);
+        var exit = await RunProcessAsync(
+            "dotnet",
+            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full",
+            repoRoot);
         if (exit != 0)
             Console.Error.WriteLine($"ci runtime-gate: Failed (exit {exit})");
         return exit;

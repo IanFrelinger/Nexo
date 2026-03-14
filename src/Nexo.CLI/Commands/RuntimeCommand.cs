@@ -21,6 +21,7 @@ public sealed class RuntimeCommand : Command
         ConfigureHistoryCommand();
         ConfigureRecommendCommand();
         ConfigureGateCommand();
+        ConfigureReleaseGateCommand();
     }
 
     private void ConfigureExecuteCommand()
@@ -310,6 +311,86 @@ public sealed class RuntimeCommand : Command
         AddCommand(gateCmd);
     }
 
+    private void ConfigureReleaseGateCommand()
+    {
+        var releaseGateCmd = new Command("release-gate", "Run release promotion lanes (core, visual, chaos) without shell scripts.");
+        var modeOpt = new Option<string>("--mode", () => "full", "Lane mode: core | visual | chaos | full.");
+        var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
+        var providerOpt = new Option<string>("--provider", () => ReadEnvString("NEXO_RELEASE_PROVIDER", "mock-json"), "Model provider override.");
+        var allowMockOpt = new Option<bool>("--allow-mock", () => true, "Enable mock/offline providers.");
+        var runTestsOpt = new Option<bool>("--run-tests", () => true, "Run generated extension QA/test gates.");
+        var testFilterOpt = new Option<string>("--test-filter", () => "SelfExtendGenerated", "Functional test filter.");
+        var preflightOpt = new Option<bool>("--preflight", () => true, "Run self-extend preflight before execution.");
+
+        var coreMinPassRateOpt = new Option<double>("--core-min-pass-rate",
+            () => ReadEnvDouble("NEXO_RELEASE_CORE_MIN_PASS_RATE", ReadEnvDouble("NEXO_RELEASE_MIN_PASS_RATE", 0.85d)),
+            "Minimum pass-rate required for release-core gate.");
+        var coreMinTotalOpt = new Option<int>("--core-min-total",
+            () => ReadEnvInt("NEXO_RELEASE_CORE_MIN_TOTAL", ReadEnvInt("NEXO_RELEASE_MIN_TOTAL", 10)),
+            "Minimum sample size required for release-core gate.");
+        var coreHistoryWindowOpt = new Option<int>("--core-history-window",
+            () => ReadEnvInt("NEXO_RELEASE_CORE_HISTORY_WINDOW", ReadEnvInt("NEXO_RELEASE_HISTORY_WINDOW", 20)),
+            "History window for release-core gate.");
+
+        var visualMinPassRateOpt = new Option<double>("--visual-min-pass-rate",
+            () => ReadEnvDouble("NEXO_RELEASE_VISUAL_MIN_PASS_RATE", 0.80d),
+            "Minimum pass-rate required for release-visual gate.");
+        var visualMinTotalOpt = new Option<int>("--visual-min-total",
+            () => ReadEnvInt("NEXO_RELEASE_VISUAL_MIN_TOTAL", 8),
+            "Minimum sample size required for release-visual gate.");
+        var visualHistoryWindowOpt = new Option<int>("--visual-history-window",
+            () => ReadEnvInt("NEXO_RELEASE_VISUAL_HISTORY_WINDOW", 20),
+            "History window for release-visual gate.");
+        var visualPromotionStreakOpt = new Option<int>("--visual-promotion-streak",
+            () => ReadEnvInt("NEXO_VISUAL_PROMOTION_STREAK", 3),
+            "Consecutive pass streak required before visual lane becomes mandatory in auto mode.");
+        var visualRequiredModeOpt = new Option<string>("--visual-required-mode",
+            () => ReadEnvString("NEXO_VISUAL_REQUIRED_MODE", "auto"),
+            "Visual lane requirement mode: auto | true | false.");
+
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output for underlying lane evaluations.");
+
+        releaseGateCmd.AddOption(modeOpt);
+        releaseGateCmd.AddOption(repoRootOpt);
+        releaseGateCmd.AddOption(providerOpt);
+        releaseGateCmd.AddOption(allowMockOpt);
+        releaseGateCmd.AddOption(runTestsOpt);
+        releaseGateCmd.AddOption(testFilterOpt);
+        releaseGateCmd.AddOption(preflightOpt);
+        releaseGateCmd.AddOption(coreMinPassRateOpt);
+        releaseGateCmd.AddOption(coreMinTotalOpt);
+        releaseGateCmd.AddOption(coreHistoryWindowOpt);
+        releaseGateCmd.AddOption(visualMinPassRateOpt);
+        releaseGateCmd.AddOption(visualMinTotalOpt);
+        releaseGateCmd.AddOption(visualHistoryWindowOpt);
+        releaseGateCmd.AddOption(visualPromotionStreakOpt);
+        releaseGateCmd.AddOption(visualRequiredModeOpt);
+        releaseGateCmd.AddOption(jsonOpt);
+
+        releaseGateCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            ctx.ExitCode = await ExecuteReleaseGateAsync(
+                ctx.ParseResult.GetValueForOption(modeOpt) ?? "full",
+                ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
+                ctx.ParseResult.GetValueForOption(providerOpt) ?? "mock-json",
+                ctx.ParseResult.GetValueForOption(allowMockOpt),
+                ctx.ParseResult.GetValueForOption(runTestsOpt),
+                ctx.ParseResult.GetValueForOption(testFilterOpt) ?? "SelfExtendGenerated",
+                ctx.ParseResult.GetValueForOption(preflightOpt),
+                ctx.ParseResult.GetValueForOption(coreMinPassRateOpt),
+                ctx.ParseResult.GetValueForOption(coreMinTotalOpt),
+                ctx.ParseResult.GetValueForOption(coreHistoryWindowOpt),
+                ctx.ParseResult.GetValueForOption(visualMinPassRateOpt),
+                ctx.ParseResult.GetValueForOption(visualMinTotalOpt),
+                ctx.ParseResult.GetValueForOption(visualHistoryWindowOpt),
+                ctx.ParseResult.GetValueForOption(visualPromotionStreakOpt),
+                ctx.ParseResult.GetValueForOption(visualRequiredModeOpt) ?? "auto",
+                ctx.ParseResult.GetValueForOption(jsonOpt),
+                ctx.GetCancellationToken()).ConfigureAwait(false);
+        });
+        AddCommand(releaseGateCmd);
+    }
+
     internal async Task<int> ExecuteAsync(
         string goal,
         string repoRoot,
@@ -574,52 +655,208 @@ public sealed class RuntimeCommand : Command
             return Task.FromResult(1);
         }
 
-        minPassRate = Math.Clamp(minPassRate, 0d, 1d);
-        minTotal = Math.Max(1, minTotal);
-        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, historyWindow));
+        var gate = EvaluateGateResult(
+            fullRepoRoot,
+            historyWindow,
+            minPassRate,
+            minTotal,
+            goal,
+            policy,
+            benchmarkSet,
+            stage,
+            minConsecutivePasses);
+        WriteGateResult(gate, json);
+        return Task.FromResult(gate.Ok ? 0 : 1);
+    }
 
-        if (!string.IsNullOrWhiteSpace(goal))
+    internal async Task<int> ExecuteReleaseGateAsync(
+        string mode,
+        string repoRoot,
+        string provider,
+        bool allowMock,
+        bool runTests,
+        string testFilter,
+        bool runPreflight,
+        double coreMinPassRate,
+        int coreMinTotal,
+        int coreHistoryWindow,
+        double visualMinPassRate,
+        int visualMinTotal,
+        int visualHistoryWindow,
+        int visualPromotionStreak,
+        string visualRequiredMode,
+        bool json,
+        CancellationToken ct)
+    {
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
         {
-            var fp = AdaptiveRuntimeExecutionReport.ComputeGoalFingerprint(goal);
-            items = items.Where(i => string.Equals(i.GoalFingerprint, fp, StringComparison.OrdinalIgnoreCase)).ToArray();
-        }
-        if (!string.IsNullOrWhiteSpace(policy))
-        {
-            var p = NormalizeQaPolicy(policy);
-            items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
-        }
-        if (!string.IsNullOrWhiteSpace(benchmarkSet))
-        {
-            var b = benchmarkSet.Trim().ToLowerInvariant();
-            items = items.Where(i => string.Equals(i.BenchmarkSet, b, StringComparison.OrdinalIgnoreCase)).ToArray();
-        }
-        if (!string.IsNullOrWhiteSpace(stage))
-        {
-            var s = stage.Trim().ToLowerInvariant();
-            items = items.Where(i => string.Equals(i.FailureStage, s, StringComparison.OrdinalIgnoreCase)).ToArray();
+            Console.Error.WriteLine($"runtime release-gate: repo root not found: {fullRepoRoot}");
+            return 1;
         }
 
-        var total = items.Count;
-        var passed = items.Count(i => i.Success);
-        var passRate = total == 0 ? 0d : (double)passed / total;
-        minConsecutivePasses = Math.Max(0, minConsecutivePasses);
-        var streak = 0;
-        foreach (var item in items.OrderByDescending(i => i.StartedAtUtc))
+        var normalizedMode = NormalizeReleaseGateMode(mode);
+        if (normalizedMode == "invalid")
         {
-            if (!item.Success)
-                break;
-            streak++;
+            Console.Error.WriteLine($"runtime release-gate: unsupported mode '{mode}'. Use core | visual | chaos | full.");
+            return 1;
         }
-        var ok = total >= minTotal && passRate >= minPassRate && streak >= minConsecutivePasses;
-        var summary = total < minTotal
-            ? $"Gate failed: insufficient runs ({total}/{minTotal})."
-            : streak < minConsecutivePasses
-                ? $"Gate failed: consecutive pass streak {streak} below required {minConsecutivePasses}."
-                : ok
-                    ? $"Gate passed: pass-rate {passRate:P1} over {total} run(s)."
-                    : $"Gate failed: pass-rate {passRate:P1} below threshold {minPassRate:P1}.";
-        WriteGateResult(new RuntimeGateResult(ok, summary, total, passed, passRate, minTotal, minPassRate, streak, minConsecutivePasses), json);
-        return Task.FromResult(ok ? 0 : 1);
+        var normalizedVisualRequiredMode = NormalizeVisualRequiredMode(visualRequiredMode);
+        if (normalizedVisualRequiredMode == "invalid")
+        {
+            Console.Error.WriteLine($"runtime release-gate: invalid --visual-required-mode '{visualRequiredMode}', expected auto | true | false.");
+            return 1;
+        }
+
+        if (normalizedMode is "core" or "full")
+        {
+            Console.WriteLine("=== Runtime Release Gate: release-core matrix ===");
+            var coreEvalExit = await ExecuteEvaluateAsync(
+                goalsJson: null,
+                goalsFile: Path.Combine(fullRepoRoot, "docs", "runtime", "benchmarks", "release_core_goals.txt"),
+                policiesCsv: "release",
+                repoRoot: fullRepoRoot,
+                provider: provider,
+                allowMock: allowMock,
+                runTests: runTests,
+                testFilter: testFilter,
+                bootstrapProfile: "auto",
+                runtimeManifestPath: null,
+                runtimeManifestJson: null,
+                maxIterationsOverride: null,
+                bootstrapApply: false,
+                runPreflight: runPreflight,
+                useHistory: true,
+                historyWindow: 200,
+                persistHistory: true,
+                benchmarkSet: "release-core",
+                allowVisualCapabilityDegrade: false,
+                json: json,
+                ct: ct).ConfigureAwait(false);
+            if (coreEvalExit != 0)
+                return coreEvalExit;
+
+            Console.WriteLine("=== Runtime Release Gate: release-core SLO gate ===");
+            var coreGateExit = await ExecuteGateAsync(
+                repoRoot: fullRepoRoot,
+                historyWindow: coreHistoryWindow,
+                minPassRate: coreMinPassRate,
+                minTotal: coreMinTotal,
+                goal: null,
+                policy: "release",
+                benchmarkSet: "release-core",
+                stage: null,
+                minConsecutivePasses: 2,
+                json: json).ConfigureAwait(false);
+            if (coreGateExit != 0)
+                return coreGateExit;
+        }
+
+        if (normalizedMode is "visual" or "full")
+        {
+            var visualRequired = ResolveVisualRequired(
+                normalizedVisualRequiredMode,
+                fullRepoRoot,
+                visualHistoryWindow,
+                visualPromotionStreak);
+            var allowVisualCapabilityDegrade = !visualRequired;
+
+            Console.WriteLine("=== Runtime Release Gate: release-visual matrix ===");
+            var visualEvalExit = await ExecuteEvaluateAsync(
+                goalsJson: null,
+                goalsFile: Path.Combine(fullRepoRoot, "docs", "runtime", "benchmarks", "release_visual_goals.txt"),
+                policiesCsv: "release",
+                repoRoot: fullRepoRoot,
+                provider: provider,
+                allowMock: allowMock,
+                runTests: runTests,
+                testFilter: testFilter,
+                bootstrapProfile: "auto",
+                runtimeManifestPath: null,
+                runtimeManifestJson: null,
+                maxIterationsOverride: null,
+                bootstrapApply: false,
+                runPreflight: runPreflight,
+                useHistory: true,
+                historyWindow: 200,
+                persistHistory: true,
+                benchmarkSet: "release-visual",
+                allowVisualCapabilityDegrade: allowVisualCapabilityDegrade,
+                json: json,
+                ct: ct).ConfigureAwait(false);
+            if (visualEvalExit != 0)
+            {
+                if (visualRequired)
+                {
+                    Console.Error.WriteLine("release gate: release-visual lane is required after green streak; matrix failed.");
+                    return visualEvalExit;
+                }
+
+                Console.Error.WriteLine($"release gate: release-visual matrix failed but lane remains advisory until streak {visualPromotionStreak} is established.");
+                if (normalizedMode == "visual")
+                {
+                    Console.WriteLine("=== Runtime Release Gate: PASSED ===");
+                    return 0;
+                }
+            }
+            else
+            {
+                Console.WriteLine("=== Runtime Release Gate: release-visual SLO gate ===");
+                var visualGateExit = await ExecuteGateAsync(
+                    repoRoot: fullRepoRoot,
+                    historyWindow: visualHistoryWindow,
+                    minPassRate: visualMinPassRate,
+                    minTotal: visualMinTotal,
+                    goal: null,
+                    policy: "release",
+                    benchmarkSet: "release-visual",
+                    stage: null,
+                    minConsecutivePasses: visualPromotionStreak,
+                    json: json).ConfigureAwait(false);
+                if (visualGateExit != 0)
+                {
+                    if (visualRequired)
+                    {
+                        Console.Error.WriteLine("release gate: release-visual lane is required after green streak; gate failed.");
+                        return visualGateExit;
+                    }
+
+                    Console.Error.WriteLine($"release gate: release-visual lane remains advisory until streak {visualPromotionStreak} is established.");
+                }
+            }
+        }
+
+        if (normalizedMode is "chaos" or "full")
+        {
+            Console.WriteLine("=== Runtime Release Gate: chaos matrix (non-gating) ===");
+            var chaosExit = await ExecuteEvaluateAsync(
+                goalsJson: null,
+                goalsFile: Path.Combine(fullRepoRoot, "docs", "runtime", "benchmarks", "chaos_goals.txt"),
+                policiesCsv: "prod",
+                repoRoot: fullRepoRoot,
+                provider: provider,
+                allowMock: allowMock,
+                runTests: runTests,
+                testFilter: testFilter,
+                bootstrapProfile: "auto",
+                runtimeManifestPath: null,
+                runtimeManifestJson: null,
+                maxIterationsOverride: null,
+                bootstrapApply: false,
+                runPreflight: runPreflight,
+                useHistory: true,
+                historyWindow: 200,
+                persistHistory: false,
+                benchmarkSet: "chaos",
+                allowVisualCapabilityDegrade: false,
+                json: json,
+                ct: ct).ConfigureAwait(false);
+            if (chaosExit != 0)
+                Console.Error.WriteLine("release gate: chaos matrix reported failures (expected in stress mode).");
+        }
+
+        Console.WriteLine("=== Runtime Release Gate: PASSED ===");
+        return 0;
     }
 
     internal async Task<int> ExecuteEvaluateAsync(
@@ -1512,6 +1749,128 @@ public sealed class RuntimeCommand : Command
             .Where(p => p is "demo" or "release" or "prod" or "research" or "auto")
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
+    }
+
+    private static RuntimeGateResult EvaluateGateResult(
+        string repoRoot,
+        int historyWindow,
+        double minPassRate,
+        int minTotal,
+        string? goal,
+        string? policy,
+        string? benchmarkSet,
+        string? stage,
+        int minConsecutivePasses)
+    {
+        minPassRate = Math.Clamp(minPassRate, 0d, 1d);
+        minTotal = Math.Max(1, minTotal);
+        var items = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(repoRoot, Math.Max(1, historyWindow));
+
+        if (!string.IsNullOrWhiteSpace(goal))
+        {
+            var fp = AdaptiveRuntimeExecutionReport.ComputeGoalFingerprint(goal);
+            items = items.Where(i => string.Equals(i.GoalFingerprint, fp, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(policy))
+        {
+            var p = NormalizeQaPolicy(policy);
+            items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(benchmarkSet))
+        {
+            var b = benchmarkSet.Trim().ToLowerInvariant();
+            items = items.Where(i => string.Equals(i.BenchmarkSet, b, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(stage))
+        {
+            var s = stage.Trim().ToLowerInvariant();
+            items = items.Where(i => string.Equals(i.FailureStage, s, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+
+        var total = items.Count;
+        var passed = items.Count(i => i.Success);
+        var passRate = total == 0 ? 0d : (double)passed / total;
+        minConsecutivePasses = Math.Max(0, minConsecutivePasses);
+        var streak = 0;
+        foreach (var item in items.OrderByDescending(i => i.StartedAtUtc))
+        {
+            if (!item.Success)
+                break;
+            streak++;
+        }
+
+        var ok = total >= minTotal && passRate >= minPassRate && streak >= minConsecutivePasses;
+        var summary = total < minTotal
+            ? $"Gate failed: insufficient runs ({total}/{minTotal})."
+            : streak < minConsecutivePasses
+                ? $"Gate failed: consecutive pass streak {streak} below required {minConsecutivePasses}."
+                : ok
+                    ? $"Gate passed: pass-rate {passRate:P1} over {total} run(s)."
+                    : $"Gate failed: pass-rate {passRate:P1} below threshold {minPassRate:P1}.";
+        return new RuntimeGateResult(ok, summary, total, passed, passRate, minTotal, minPassRate, streak, minConsecutivePasses);
+    }
+
+    private static bool ResolveVisualRequired(
+        string normalizedVisualRequiredMode,
+        string repoRoot,
+        int visualHistoryWindow,
+        int visualPromotionStreak)
+    {
+        return normalizedVisualRequiredMode switch
+        {
+            "true" => true,
+            "false" => false,
+            _ => EvaluateGateResult(
+                repoRoot,
+                visualHistoryWindow,
+                minPassRate: 0d,
+                minTotal: visualPromotionStreak,
+                goal: null,
+                policy: "release",
+                benchmarkSet: "release-visual",
+                stage: null,
+                minConsecutivePasses: visualPromotionStreak).Ok
+        };
+    }
+
+    private static string NormalizeReleaseGateMode(string? mode)
+    {
+        var normalized = (mode ?? "full").Trim().ToLowerInvariant();
+        return normalized is "core" or "visual" or "chaos" or "full" ? normalized : "invalid";
+    }
+
+    private static string NormalizeVisualRequiredMode(string? mode)
+    {
+        var normalized = (mode ?? "auto").Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "auto" => "auto",
+            "true" or "1" or "yes" or "required" => "true",
+            "false" or "0" or "no" or "optional" => "false",
+            _ => "invalid"
+        };
+    }
+
+    private static string ReadEnvString(string key, string fallback)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static int ReadEnvInt(string key, int fallback)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        if (int.TryParse(value, out var parsed))
+            return parsed;
+        return fallback;
+    }
+
+    private static double ReadEnvDouble(string key, double fallback)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        if (double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+            return parsed;
+        return fallback;
     }
 
     private static string NormalizeQaPolicy(string? qaPolicy)

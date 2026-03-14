@@ -30,3 +30,10 @@ When visual lane is still advisory, pass `--allow-visual-capability-degrade` so 
 Chaos matrix (non-gating by default):
 
 - `dotnet run --project src/Nexo.CLI -- runtime evaluate --goals-file docs/runtime/benchmarks/chaos_goals.txt --policies prod --benchmark-set chaos --run-tests --json`
+
+Unified C# lane runner (replacement for shell gate scripts):
+
+- `dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode full`
+- `dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode core`
+- `dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode visual`
+- `dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos`
