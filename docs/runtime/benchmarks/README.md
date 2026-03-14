@@ -25,6 +25,8 @@ Visual release lane:
 - `dotnet run --project src/Nexo.CLI -- runtime evaluate --goals-file docs/runtime/benchmarks/release_visual_goals.txt --policies release --benchmark-set release-visual --run-tests --json`
 - `dotnet run --project src/Nexo.CLI -- runtime gate --policy release --benchmark-set release-visual --min-pass-rate 0.8 --min-total 8 --min-consecutive-passes 3 --json`
 
+When visual lane is still advisory, pass `--allow-visual-capability-degrade` so strict visual fallback can degrade if docker/ollama capabilities are unavailable.
+
 Chaos matrix (non-gating by default):
 
 - `dotnet run --project src/Nexo.CLI -- runtime evaluate --goals-file docs/runtime/benchmarks/chaos_goals.txt --policies prod --benchmark-set chaos --run-tests --json`

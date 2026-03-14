@@ -45,6 +45,7 @@ public sealed class RuntimeCommand : Command
         var historyWindowOpt = new Option<int>("--history-window", () => 200, "How many recent runtime reports are considered for adaptation.");
         var persistHistoryOpt = new Option<bool>("--persist-history", () => true, "Persist this execution result into runtime history.");
         var benchmarkSetOpt = new Option<string>("--benchmark-set", () => "adhoc", "Benchmark set tag persisted with execution history.");
+        var allowVisualCapabilityDegradeOpt = new Option<bool>("--allow-visual-capability-degrade", () => false, "If visual infra is unavailable, downgrade strict visual fallback to degrade for this run.");
         var autoRemediateOpt = new Option<bool>("--auto-remediate", () => true, "If execution fails, attempt one adaptive policy remediation pass.");
         var maxRemediationAttemptsOpt = new Option<int>("--max-remediation-attempts", () => 1, "Maximum remediation attempts after initial failure.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
@@ -68,6 +69,7 @@ public sealed class RuntimeCommand : Command
         executeCmd.AddOption(historyWindowOpt);
         executeCmd.AddOption(persistHistoryOpt);
         executeCmd.AddOption(benchmarkSetOpt);
+        executeCmd.AddOption(allowVisualCapabilityDegradeOpt);
         executeCmd.AddOption(autoRemediateOpt);
         executeCmd.AddOption(maxRemediationAttemptsOpt);
         executeCmd.AddOption(jsonOpt);
@@ -93,6 +95,7 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
                 ctx.ParseResult.GetValueForOption(persistHistoryOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt) ?? "adhoc",
+                ctx.ParseResult.GetValueForOption(allowVisualCapabilityDegradeOpt),
                 ctx.ParseResult.GetValueForOption(autoRemediateOpt),
                 ctx.ParseResult.GetValueForOption(maxRemediationAttemptsOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
@@ -166,6 +169,7 @@ public sealed class RuntimeCommand : Command
         var historyWindowOpt = new Option<int>("--history-window", () => 200, "How many recent runtime reports are considered for adaptation.");
         var persistHistoryOpt = new Option<bool>("--persist-history", () => false, "Persist each matrix scenario into runtime history.");
         var benchmarkSetOpt = new Option<string>("--benchmark-set", () => "adhoc", "Benchmark set tag persisted with matrix execution history.");
+        var allowVisualCapabilityDegradeOpt = new Option<bool>("--allow-visual-capability-degrade", () => false, "If visual infra is unavailable, downgrade strict visual fallback to degrade for this matrix execution.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
 
         evaluateCmd.AddOption(goalsJsonOpt);
@@ -186,6 +190,7 @@ public sealed class RuntimeCommand : Command
         evaluateCmd.AddOption(historyWindowOpt);
         evaluateCmd.AddOption(persistHistoryOpt);
         evaluateCmd.AddOption(benchmarkSetOpt);
+        evaluateCmd.AddOption(allowVisualCapabilityDegradeOpt);
         evaluateCmd.AddOption(jsonOpt);
         evaluateCmd.SetHandler(async (InvocationContext ctx) =>
         {
@@ -208,6 +213,7 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
                 ctx.ParseResult.GetValueForOption(persistHistoryOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt) ?? "adhoc",
+                ctx.ParseResult.GetValueForOption(allowVisualCapabilityDegradeOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
@@ -324,6 +330,7 @@ public sealed class RuntimeCommand : Command
         int historyWindow,
         bool persistHistory,
         string benchmarkSet,
+        bool allowVisualCapabilityDegrade,
         bool autoRemediate,
         int maxRemediationAttempts,
         bool json,
@@ -349,6 +356,7 @@ public sealed class RuntimeCommand : Command
             historyWindow,
             persistHistory,
             benchmarkSet,
+            allowVisualCapabilityDegrade,
             ct).ConfigureAwait(false);
 
         var remediationAttempts = new List<RuntimeRemediationAttempt>();
@@ -390,6 +398,7 @@ public sealed class RuntimeCommand : Command
                 historyWindow,
                 persistHistory,
                 benchmarkSet,
+                allowVisualCapabilityDegrade,
                 ct).ConfigureAwait(false);
 
             remediationAttempts.Add(new RuntimeRemediationAttempt(
@@ -632,6 +641,7 @@ public sealed class RuntimeCommand : Command
         int historyWindow,
         bool persistHistory,
         string benchmarkSet,
+        bool allowVisualCapabilityDegrade,
         bool json,
         CancellationToken ct)
     {
@@ -681,6 +691,7 @@ public sealed class RuntimeCommand : Command
                     historyWindow,
                     persistHistory,
                     benchmarkSet,
+                    allowVisualCapabilityDegrade,
                     ct).ConfigureAwait(false);
                 scenarioResults.Add(new RuntimeEvaluateScenarioResult(
                     AdaptiveRuntimeExecutionReport.BuildGoalPreview(goal, 80),
@@ -777,6 +788,7 @@ public sealed class RuntimeCommand : Command
         int historyWindow,
         bool persistHistory,
         string benchmarkSet,
+        bool allowVisualCapabilityDegrade,
         CancellationToken ct)
     {
         var runId = Guid.NewGuid().ToString("N");
@@ -865,6 +877,13 @@ public sealed class RuntimeCommand : Command
                 RepoRoot: fullRepoRoot,
                 FailureStage: "plan"));
         }
+
+        context = await ApplyVisualCapabilityFallbackAsync(
+            context,
+            fullRepoRoot,
+            testFilter,
+            allowVisualCapabilityDegrade,
+            ct).ConfigureAwait(false);
 
         var enrichedGoal = AdaptiveRuntimePlanResolver.EnrichGoal(goal, context.Manifest, context.Plan);
 
@@ -995,6 +1014,83 @@ public sealed class RuntimeCommand : Command
             PreflightOk: !runPreflight || preflightOkResult,
             SelfExtendRan: true,
             SelfExtendOk: selfExtendOk));
+    }
+
+    private static async Task<RuntimePlanContext> ApplyVisualCapabilityFallbackAsync(
+        RuntimePlanContext context,
+        string repoRoot,
+        string testFilter,
+        bool allowVisualCapabilityDegrade,
+        CancellationToken ct)
+    {
+        if (!allowVisualCapabilityDegrade ||
+            !context.Plan.RunVisualQa ||
+            !string.Equals(context.Plan.VisualQaFallbackPolicy, "strict", StringComparison.OrdinalIgnoreCase))
+        {
+            return context;
+        }
+
+        var capability = await AssessVisualInfraCapabilityAsync(repoRoot, ct).ConfigureAwait(false);
+        if (capability.Ready)
+            return context;
+
+        var reason = $"runtime capability degrade applied: {capability.Summary}";
+        var adjustedPlan = context.Plan with
+        {
+            VisualQaFallbackPolicy = "degrade",
+            Reasons = context.Plan.Reasons.Concat([reason]).ToArray()
+        };
+        var adjustedWorkflow = AdaptiveRuntimePlanResolver.BuildRuntimeSpec(adjustedPlan, testFilter);
+        return context with
+        {
+            Plan = adjustedPlan,
+            WorkflowSpec = adjustedWorkflow
+        };
+    }
+
+    private static async Task<RuntimeVisualInfraCapability> AssessVisualInfraCapabilityAsync(string repoRoot, CancellationToken ct)
+    {
+        var dockerCli = await RunShellProbeAsync(repoRoot, "command -v docker", ct).ConfigureAwait(false);
+        if (dockerCli.ExitCode != 0)
+            return new RuntimeVisualInfraCapability(false, "Visual QA infra missing docker CLI.");
+
+        var dockerDaemon = await RunShellProbeAsync(repoRoot, "docker info > /dev/null 2>&1", ct).ConfigureAwait(false);
+        if (dockerDaemon.ExitCode != 0)
+            return new RuntimeVisualInfraCapability(false, "Visual QA infra missing usable Docker daemon.");
+
+        var ollamaCli = await RunShellProbeAsync(repoRoot, "command -v ollama", ct).ConfigureAwait(false);
+        if (ollamaCli.ExitCode != 0)
+            return new RuntimeVisualInfraCapability(false, "Visual QA infra missing Ollama CLI.");
+
+        return new RuntimeVisualInfraCapability(true, "Visual QA infra ready (docker + daemon + ollama).");
+    }
+
+    private static async Task<RuntimeSubprocessResult> RunShellProbeAsync(
+        string workingDirectory,
+        string script,
+        CancellationToken ct)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "bash",
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        psi.ArgumentList.Add("-lc");
+        psi.ArgumentList.Add(script);
+
+        using var process = Process.Start(psi);
+        if (process == null)
+            return new RuntimeSubprocessResult(1, string.Empty, $"Failed to start shell probe: {script}");
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
+        var stderrTask = process.StandardError.ReadToEndAsync(ct);
+        await process.WaitForExitAsync(ct).ConfigureAwait(false);
+        var stdout = await stdoutTask.ConfigureAwait(false);
+        var stderr = await stderrTask.ConfigureAwait(false);
+        return new RuntimeSubprocessResult(process.ExitCode, stdout, stderr);
     }
 
     private static string[] BuildSelfExtendPreflightArgs(
@@ -1438,6 +1534,7 @@ public sealed class RuntimeCommand : Command
     }
 
     private sealed record RuntimeSubprocessResult(int ExitCode, string StdOut, string StdErr);
+    private sealed record RuntimeVisualInfraCapability(bool Ready, string Summary);
 
     private sealed record RuntimeExecuteResult(
         bool Ok,

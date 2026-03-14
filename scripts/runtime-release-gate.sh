@@ -61,6 +61,7 @@ run_core_lane() {
 
 run_visual_lane() {
   local visual_required=0
+  local visual_degrade_arg=()
   case "$(echo "${VISUAL_REQUIRED_MODE}" | tr '[:upper:]' '[:lower:]')" in
     true|1|yes|required) visual_required=1 ;;
     false|0|no|optional) visual_required=0 ;;
@@ -86,6 +87,9 @@ run_visual_lane() {
       exit 1
       ;;
   esac
+  if [[ ${visual_required} -eq 0 ]]; then
+    visual_degrade_arg=(--allow-visual-capability-degrade)
+  fi
 
   echo "=== Runtime Release Gate: release-visual matrix ==="
   set +e
@@ -98,6 +102,7 @@ run_visual_lane() {
     --allow-mock \
     --run-tests \
     --persist-history \
+    "${visual_degrade_arg[@]}" \
     --json
   local visual_eval_exit=$?
   set -e
