@@ -96,7 +96,7 @@ public sealed class CiCommand : Command
         Console.WriteLine("=== CI Runtime Gate ===");
         var exit = await RunProcessAsync(
             "dotnet",
-            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full",
+            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full --core-min-total 3 --core-history-window 3 --visual-required-mode false --visual-min-total 3 --visual-history-window 3",
             repoRoot);
         if (exit != 0)
             Console.Error.WriteLine($"ci runtime-gate: Failed (exit {exit})");

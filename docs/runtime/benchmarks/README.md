@@ -37,3 +37,5 @@ Unified C# lane runner (replacement for shell gate scripts):
 - `dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode core`
 - `dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode visual`
 - `dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos`
+
+For ephemeral CI runs, use per-run windows (for example `--core-min-total 3 --core-history-window 3`) so gating evaluates the just-executed lane matrix instead of requiring long-lived local history.
