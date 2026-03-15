@@ -347,6 +347,9 @@ public sealed class RuntimeCommand : Command
         var visualRequiredModeOpt = new Option<string>("--visual-required-mode",
             () => ReadEnvString("NEXO_VISUAL_REQUIRED_MODE", "auto"),
             "Visual lane requirement mode: auto | true | false.");
+        var laneRepetitionsOpt = new Option<int>("--lane-repetitions",
+            () => ReadEnvInt("NEXO_RELEASE_LANE_REPETITIONS", 1),
+            "How many times each release lane matrix should execute before gating.");
 
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output for underlying lane evaluations.");
 
@@ -365,6 +368,7 @@ public sealed class RuntimeCommand : Command
         releaseGateCmd.AddOption(visualHistoryWindowOpt);
         releaseGateCmd.AddOption(visualPromotionStreakOpt);
         releaseGateCmd.AddOption(visualRequiredModeOpt);
+        releaseGateCmd.AddOption(laneRepetitionsOpt);
         releaseGateCmd.AddOption(jsonOpt);
 
         releaseGateCmd.SetHandler(async (InvocationContext ctx) =>
@@ -385,6 +389,7 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(visualHistoryWindowOpt),
                 ctx.ParseResult.GetValueForOption(visualPromotionStreakOpt),
                 ctx.ParseResult.GetValueForOption(visualRequiredModeOpt) ?? "auto",
+                ctx.ParseResult.GetValueForOption(laneRepetitionsOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
@@ -685,6 +690,7 @@ public sealed class RuntimeCommand : Command
         int visualHistoryWindow,
         int visualPromotionStreak,
         string visualRequiredMode,
+        int laneRepetitions,
         bool json,
         CancellationToken ct)
     {
@@ -707,34 +713,38 @@ public sealed class RuntimeCommand : Command
             Console.Error.WriteLine($"runtime release-gate: invalid --visual-required-mode '{visualRequiredMode}', expected auto | true | false.");
             return 1;
         }
+        laneRepetitions = Math.Max(1, laneRepetitions);
 
         if (normalizedMode is "core" or "full")
         {
-            Console.WriteLine("=== Runtime Release Gate: release-core matrix ===");
-            var coreEvalExit = await ExecuteEvaluateAsync(
-                goalsJson: null,
-                goalsFile: Path.Combine(fullRepoRoot, "docs", "runtime", "benchmarks", "release_core_goals.txt"),
-                policiesCsv: "release",
-                repoRoot: fullRepoRoot,
-                provider: provider,
-                allowMock: allowMock,
-                runTests: runTests,
-                testFilter: testFilter,
-                bootstrapProfile: "auto",
-                runtimeManifestPath: null,
-                runtimeManifestJson: null,
-                maxIterationsOverride: null,
-                bootstrapApply: false,
-                runPreflight: runPreflight,
-                useHistory: true,
-                historyWindow: 200,
-                persistHistory: true,
-                benchmarkSet: "release-core",
-                allowVisualCapabilityDegrade: false,
-                json: json,
-                ct: ct).ConfigureAwait(false);
-            if (coreEvalExit != 0)
-                return coreEvalExit;
+            for (var rep = 1; rep <= laneRepetitions; rep++)
+            {
+                Console.WriteLine($"=== Runtime Release Gate: release-core matrix [{rep}/{laneRepetitions}] ===");
+                var coreEvalExit = await ExecuteEvaluateAsync(
+                    goalsJson: null,
+                    goalsFile: Path.Combine(fullRepoRoot, "docs", "runtime", "benchmarks", "release_core_goals.txt"),
+                    policiesCsv: "release",
+                    repoRoot: fullRepoRoot,
+                    provider: provider,
+                    allowMock: allowMock,
+                    runTests: runTests,
+                    testFilter: testFilter,
+                    bootstrapProfile: "auto",
+                    runtimeManifestPath: null,
+                    runtimeManifestJson: null,
+                    maxIterationsOverride: null,
+                    bootstrapApply: false,
+                    runPreflight: runPreflight,
+                    useHistory: true,
+                    historyWindow: 200,
+                    persistHistory: true,
+                    benchmarkSet: "release-core",
+                    allowVisualCapabilityDegrade: false,
+                    json: json,
+                    ct: ct).ConfigureAwait(false);
+                if (coreEvalExit != 0)
+                    return coreEvalExit;
+            }
 
             Console.WriteLine("=== Runtime Release Gate: release-core SLO gate ===");
             var coreGateExit = await ExecuteGateAsync(
@@ -760,69 +770,69 @@ public sealed class RuntimeCommand : Command
                 visualHistoryWindow,
                 visualPromotionStreak);
             var allowVisualCapabilityDegrade = !visualRequired;
+            var visualBenchmarkSet = visualRequired ? "release-visual-strict" : "release-visual-degraded";
+            var visualEvalFailed = false;
+            for (var rep = 1; rep <= laneRepetitions; rep++)
+            {
+                Console.WriteLine($"=== Runtime Release Gate: release-visual matrix [{rep}/{laneRepetitions}] ===");
+                var visualEvalExit = await ExecuteEvaluateAsync(
+                    goalsJson: null,
+                    goalsFile: Path.Combine(fullRepoRoot, "docs", "runtime", "benchmarks", "release_visual_goals.txt"),
+                    policiesCsv: "release",
+                    repoRoot: fullRepoRoot,
+                    provider: provider,
+                    allowMock: allowMock,
+                    runTests: runTests,
+                    testFilter: testFilter,
+                    bootstrapProfile: "auto",
+                    runtimeManifestPath: null,
+                    runtimeManifestJson: null,
+                    maxIterationsOverride: null,
+                    bootstrapApply: false,
+                    runPreflight: runPreflight,
+                    useHistory: true,
+                    historyWindow: 200,
+                    persistHistory: true,
+                    benchmarkSet: visualBenchmarkSet,
+                    allowVisualCapabilityDegrade: allowVisualCapabilityDegrade,
+                    json: json,
+                    ct: ct).ConfigureAwait(false);
+                if (visualEvalExit != 0)
+                {
+                    visualEvalFailed = true;
+                    if (visualRequired)
+                    {
+                        Console.Error.WriteLine("release gate: release-visual lane is required after green streak; matrix failed.");
+                        return visualEvalExit;
+                    }
+                }
+            }
 
-            Console.WriteLine("=== Runtime Release Gate: release-visual matrix ===");
-            var visualEvalExit = await ExecuteEvaluateAsync(
-                goalsJson: null,
-                goalsFile: Path.Combine(fullRepoRoot, "docs", "runtime", "benchmarks", "release_visual_goals.txt"),
-                policiesCsv: "release",
+            Console.WriteLine("=== Runtime Release Gate: release-visual SLO gate ===");
+            var visualGateExit = await ExecuteGateAsync(
                 repoRoot: fullRepoRoot,
-                provider: provider,
-                allowMock: allowMock,
-                runTests: runTests,
-                testFilter: testFilter,
-                bootstrapProfile: "auto",
-                runtimeManifestPath: null,
-                runtimeManifestJson: null,
-                maxIterationsOverride: null,
-                bootstrapApply: false,
-                runPreflight: runPreflight,
-                useHistory: true,
-                historyWindow: 200,
-                persistHistory: true,
-                benchmarkSet: "release-visual",
-                allowVisualCapabilityDegrade: allowVisualCapabilityDegrade,
-                json: json,
-                ct: ct).ConfigureAwait(false);
-            if (visualEvalExit != 0)
+                historyWindow: visualHistoryWindow,
+                minPassRate: visualMinPassRate,
+                minTotal: visualMinTotal,
+                goal: null,
+                policy: "release",
+                benchmarkSet: visualBenchmarkSet,
+                stage: null,
+                minConsecutivePasses: visualPromotionStreak,
+                json: json).ConfigureAwait(false);
+            if (visualGateExit != 0)
             {
                 if (visualRequired)
                 {
-                    Console.Error.WriteLine("release gate: release-visual lane is required after green streak; matrix failed.");
-                    return visualEvalExit;
+                    Console.Error.WriteLine("release gate: release-visual lane is required after green streak; gate failed.");
+                    return visualGateExit;
                 }
 
-                Console.Error.WriteLine($"release gate: release-visual matrix failed but lane remains advisory until streak {visualPromotionStreak} is established.");
-                if (normalizedMode == "visual")
-                {
-                    Console.WriteLine("=== Runtime Release Gate: PASSED ===");
-                    return 0;
-                }
+                Console.Error.WriteLine($"release gate: release-visual lane remains advisory until streak {visualPromotionStreak} is established.");
             }
-            else
+            else if (visualEvalFailed && !visualRequired)
             {
-                Console.WriteLine("=== Runtime Release Gate: release-visual SLO gate ===");
-                var visualGateExit = await ExecuteGateAsync(
-                    repoRoot: fullRepoRoot,
-                    historyWindow: visualHistoryWindow,
-                    minPassRate: visualMinPassRate,
-                    minTotal: visualMinTotal,
-                    goal: null,
-                    policy: "release",
-                    benchmarkSet: "release-visual",
-                    stage: null,
-                    minConsecutivePasses: visualPromotionStreak,
-                    json: json).ConfigureAwait(false);
-                if (visualGateExit != 0)
-                {
-                    if (visualRequired)
-                    {
-                        Console.Error.WriteLine("release gate: release-visual lane is required after green streak; gate failed.");
-                        return visualGateExit;
-                    }
-
-                    Console.Error.WriteLine($"release gate: release-visual lane remains advisory until streak {visualPromotionStreak} is established.");
-                }
+                Console.Error.WriteLine($"release gate: release-visual matrix had failures but advisory lane still passed aggregate gate (streak target {visualPromotionStreak}).");
             }
         }
 
@@ -1827,7 +1837,7 @@ public sealed class RuntimeCommand : Command
                 minTotal: visualPromotionStreak,
                 goal: null,
                 policy: "release",
-                benchmarkSet: "release-visual",
+                benchmarkSet: "release-visual-strict",
                 stage: null,
                 minConsecutivePasses: visualPromotionStreak).Ok
         };

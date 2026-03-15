@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Reflection;
 using System.Text.Json;
 using Nexo.CLI.Commands;
 using Nexo.CLI.Runtime;
@@ -16,6 +17,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestHistoryFiltersByBenchmarkSetAsync().ConfigureAwait(false);
             await TestGateRequiresConsecutivePassStreakAsync().ConfigureAwait(false);
             await TestReleaseGateRejectsInvalidModeAsync().ConfigureAwait(false);
+            TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
             return new TestResult
             {
@@ -181,6 +183,58 @@ public sealed class RuntimeCommandTests : UnitTestBase
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("unsupported mode", StringComparison.OrdinalIgnoreCase),
                 "Expected release-gate to reject unsupported mode values.");
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private void TestVisualRequiredAutoUsesStrictBenchmarkSet()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            AdaptiveRuntimeExecutionHistoryStore.Append(repoRoot, new AdaptiveRuntimeExecutionReport
+            {
+                StartedAtUtc = now,
+                BenchmarkSet = "release-visual-strict",
+                RequestedQaPolicy = "release",
+                ResolvedQaPolicy = "release",
+                Success = true,
+                FailureStage = "none"
+            });
+            AdaptiveRuntimeExecutionHistoryStore.Append(repoRoot, new AdaptiveRuntimeExecutionReport
+            {
+                StartedAtUtc = now.AddSeconds(-1),
+                BenchmarkSet = "release-visual-strict",
+                RequestedQaPolicy = "release",
+                ResolvedQaPolicy = "release",
+                Success = true,
+                FailureStage = "none"
+            });
+            AdaptiveRuntimeExecutionHistoryStore.Append(repoRoot, new AdaptiveRuntimeExecutionReport
+            {
+                StartedAtUtc = now.AddSeconds(-2),
+                BenchmarkSet = "release-visual-degraded",
+                RequestedQaPolicy = "release",
+                ResolvedQaPolicy = "release",
+                Success = false,
+                FailureStage = "preflight"
+            });
+
+            var resolveMethod = typeof(RuntimeCommand).GetMethod(
+                "ResolveVisualRequired",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            AssertNotNull(resolveMethod, "Expected ResolveVisualRequired private helper.");
+
+            var autoRequires = (bool)resolveMethod!.Invoke(null, new object[] { "auto", repoRoot, 20, 2 })!;
+            AssertTrue(autoRequires, "Auto mode should require visual lane from strict benchmark streak.");
+
+            var advisoryOnly = (bool)resolveMethod.Invoke(null, new object[] { "auto", repoRoot, 20, 3 })!;
+            AssertFalse(advisoryOnly, "Auto mode should not require visual lane when strict streak is insufficient.");
         }
         finally
         {

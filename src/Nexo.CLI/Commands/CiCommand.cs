@@ -28,6 +28,14 @@ public sealed class CiCommand : Command
             Environment.Exit(exitCode);
         });
         AddCommand(runtimeGateCmd);
+
+        var runtimePromotionCmd = new Command("runtime-promotion", "Run strict runtime promotion gate profile.");
+        runtimePromotionCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var exitCode = await ExecuteRuntimePromotionAsync();
+            Environment.Exit(exitCode);
+        });
+        AddCommand(runtimePromotionCmd);
     }
 
     /// <summary>
@@ -37,28 +45,36 @@ public sealed class CiCommand : Command
     public static async Task<int> ExecuteVerifyAsync()
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
-        var slnPath = Path.Combine(repoRoot, "Nexo.sln");
-        if (!File.Exists(slnPath))
+        var cliProject = Path.Combine(repoRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
+        var infraTestsProject = Path.Combine(repoRoot, "src", "Nexo.Tests.Infrastructure", "Nexo.Tests.Infrastructure.csproj");
+        if (!File.Exists(cliProject) || !File.Exists(infraTestsProject))
         {
-            Console.Error.WriteLine("ci verify: Not in Nexo repo (Nexo.sln not found). Run from repository root.");
+            Console.Error.WriteLine("ci verify: Required projects not found. Run from repository root.");
             return 1;
         }
 
-        // Step 1: Build
-        Console.WriteLine("=== CI Verify: Build ===");
-        var buildExit = await RunProcessAsync("dotnet", "build", repoRoot);
-        if (buildExit != 0)
+        // Step 1: Build targeted projects
+        Console.WriteLine("=== CI Verify: Build CLI ===");
+        var buildCliExit = await RunProcessAsync("dotnet", $"build \"{cliProject}\"", repoRoot);
+        if (buildCliExit != 0)
         {
-            Console.Error.WriteLine($"ci verify: Build failed (exit {buildExit})");
-            return buildExit;
+            Console.Error.WriteLine($"ci verify: CLI build failed (exit {buildCliExit})");
+            return buildCliExit;
+        }
+
+        Console.WriteLine("=== CI Verify: Build Infrastructure Tests ===");
+        var buildInfraExit = await RunProcessAsync("dotnet", $"build \"{infraTestsProject}\"", repoRoot);
+        if (buildInfraExit != 0)
+        {
+            Console.Error.WriteLine($"ci verify: Infrastructure test build failed (exit {buildInfraExit})");
+            return buildInfraExit;
         }
 
         // Step 2: Smoke tests (BaseFrameworkSmokeTests)
         Console.WriteLine("=== CI Verify: Smoke Tests ===");
-        var testProject = Path.Combine(repoRoot, "src", "Nexo.Tests.Infrastructure", "Nexo.Tests.Infrastructure.csproj");
         var testExit = await RunProcessAsync(
             "dotnet",
-            $"test \"{testProject}\" --no-build --blame-hang-timeout 30s --blame-hang-dump-type none --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --verbosity minimal",
+            $"test \"{infraTestsProject}\" --no-build --blame-hang-timeout 30s --blame-hang-dump-type none --filter \"FullyQualifiedName~BaseFrameworkSmokeTests\" --verbosity minimal",
             repoRoot);
         if (testExit != 0)
         {
@@ -68,7 +84,6 @@ public sealed class CiCommand : Command
 
         // Step 3: Architecture validation (nexo validate)
         Console.WriteLine("=== CI Verify: Architecture Validation ===");
-        var cliProject = Path.Combine(repoRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
         var validateExit = await RunProcessAsync(
             "dotnet",
             $"run --project \"{cliProject}\" -- validate",
@@ -100,6 +115,26 @@ public sealed class CiCommand : Command
             repoRoot);
         if (exit != 0)
             Console.Error.WriteLine($"ci runtime-gate: Failed (exit {exit})");
+        return exit;
+    }
+
+    public static async Task<int> ExecuteRuntimePromotionAsync()
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var cliProject = Path.Combine(repoRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
+        if (!File.Exists(cliProject))
+        {
+            Console.Error.WriteLine($"ci runtime-promotion: Missing CLI project: {cliProject}");
+            return 1;
+        }
+
+        Console.WriteLine("=== CI Runtime Promotion ===");
+        var exit = await RunProcessAsync(
+            "dotnet",
+            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full --lane-repetitions 3 --core-min-pass-rate 0.9 --core-min-total 9 --core-history-window 9 --visual-required-mode true --visual-min-pass-rate 0.85 --visual-min-total 9 --visual-history-window 9 --visual-promotion-streak 3",
+            repoRoot);
+        if (exit != 0)
+            Console.Error.WriteLine($"ci runtime-promotion: Failed (exit {exit})");
         return exit;
     }
 

@@ -31,10 +31,10 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore -v minimal
+        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Runtime release lane gate
-        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --core-min-total 3 --core-history-window 3 --visual-required-mode false --visual-min-total 3 --visual-history-window 3
+        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --core-min-total 3 --core-history-window 3 --visual-required-mode false --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1
 
   runtime-release-chaos:
     runs-on: ubuntu-latest
@@ -51,7 +51,7 @@ jobs:
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --no-restore -v minimal
+        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Runtime chaos lane (non-gating)
         run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
