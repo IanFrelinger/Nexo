@@ -1,0 +1,22 @@
+{
+  "workflow": {
+    "maxIterations": 4,
+    "stopOnFirstPass": false,
+    "focus": "aesthetic",
+    "enableMultiAgentPhases": true,
+    "agentPhases": [
+      "planner",
+      "builder",
+      "qa-functional",
+      "qa-aesthetic"
+    ],
+    "runFunctionalQa": true,
+    "runAestheticQa": true,
+    "runVisualQa": true,
+    "visualQaFallbackPolicy": "degrade",
+    "functionalTestFilter": "SelfExtendGenerated",
+    "aestheticTestFilter": "UiDomainKnowledgeRetentionTests",
+    "uiSmokeProjectPath": "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Nexo.Ui.AvaloniaHost.csproj",
+    "requirePreflight": true
+  }
+}

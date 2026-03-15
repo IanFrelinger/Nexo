@@ -1,0 +1,46 @@
+{
+  "model": {
+    "prefer": "agentic",
+    "provider": "ollama"
+  },
+  "domains": {
+    "planning": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    },
+    "analysis": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    },
+    "testing": {
+      "prefer": "deterministic",
+      "provider": "ollama"
+    },
+    "ui": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    }
+  },
+  "agents": {
+    "architect": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    },
+    "planner": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    },
+    "builder": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    },
+    "qa-functional": {
+      "prefer": "deterministic",
+      "provider": "ollama"
+    },
+    "qa-aesthetic": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    }
+  }
+}
