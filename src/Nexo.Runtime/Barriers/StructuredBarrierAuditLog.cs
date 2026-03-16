@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions.Barriers;
+using Nexo.Runtime.Barriers.Sinks;
 
 namespace Nexo.Runtime.Barriers;
 
@@ -17,6 +18,11 @@ public sealed class StructuredBarrierAuditLog : IBarrierAuditLog
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _sinks = sinks is null ? Array.Empty<IBarrierAuditSink>() : sinks.ToList();
+
+        if (_sinks.Count == 0 || _sinks.All(static sink => sink is NoOpBarrierAuditSink))
+        {
+            _logger.LogWarning("No IBarrierAuditSink registered. Barrier audit events will be discarded.");
+        }
     }
 
     public async ValueTask RecordAsync(
@@ -25,25 +31,20 @@ public sealed class StructuredBarrierAuditLog : IBarrierAuditLog
     {
         ArgumentNullException.ThrowIfNull(auditEvent);
 
-        var level = string.Equals(auditEvent.EventType, BarrierAuditEventType.AgentInvoked, StringComparison.OrdinalIgnoreCase)
-            ? LogLevel.Information
-            : LogLevel.Warning;
-
-        _logger.Log(
-            level,
-            "BarrierAudit EventType={EventType} BarrierLevel={BarrierLevel} AuthoritySource={AuthoritySource} AgentName={AgentName} CorrelationId={CorrelationId} SpanId={SpanId} OccurredAt={OccurredAt} Detail={Detail}",
-            auditEvent.EventType,
-            auditEvent.BarrierLevel,
-            auditEvent.AuthoritySource,
-            auditEvent.AgentName,
-            auditEvent.CorrelationId,
-            auditEvent.SpanId,
-            auditEvent.OccurredAt,
-            auditEvent.Detail);
-
         foreach (var sink in _sinks)
         {
-            await sink.WriteAsync(auditEvent, cancellationToken);
+            try
+            {
+                await sink.WriteAsync(auditEvent, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Barrier audit sink failure. Sink={SinkName} Message={SinkMessage}",
+                    sink.GetType().Name,
+                    ex.Message);
+            }
         }
     }
 }

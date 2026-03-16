@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Nexo.Abstractions.Barriers;
 using Nexo.Abstractions.Routing;
 using Nexo.Abstractions.Transport;
 using Nexo.Runtime.Barriers;
+using Nexo.Runtime.Barriers.Sinks;
 using Nexo.Runtime.Routing;
 using Nexo.Runtime.Transport;
 
@@ -45,6 +47,7 @@ public static class RuntimeServiceCollectionExtensions
             .Configure(options => configuration.GetSection("Nexo:Barriers").Bind(options));
         services.AddOptions<RoutingOptions>()
             .Configure(options => configuration.GetSection("Nexo:Routing").Bind(options));
+        services.AddBarrierAuditSinks(configuration);
 
         services.TryAddSingleton<BarrierHierarchy>(sp =>
         {
@@ -58,6 +61,66 @@ public static class RuntimeServiceCollectionExtensions
 #if NET8_0_OR_GREATER
         services.AddHostedService<EndpointHealthMonitor>();
 #endif
+        return services;
+    }
+
+    public static IServiceCollection AddBarrierAuditSinks(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        var sinkNames = configuration.GetSection("Nexo:Audit:Sinks").Get<string[]>() ?? [];
+        var normalizedSinks = sinkNames
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Select(static value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (normalizedSinks.Length == 0)
+        {
+            services.TryAddSingleton<IBarrierAuditSink, NoOpBarrierAuditSink>();
+            return services;
+        }
+
+        foreach (var sinkName in normalizedSinks)
+        {
+            switch (sinkName)
+            {
+                case "File":
+#if NET8_0_OR_GREATER
+                    services.AddOptions<FileBarrierAuditSinkOptions>()
+                        .Configure(options => configuration.GetSection("Nexo:Audit:File").Bind(options));
+                    services.TryAddSingleton<FileBarrierAuditSink>(sp =>
+                        new FileBarrierAuditSink(
+                            sp.GetRequiredService<IOptions<FileBarrierAuditSinkOptions>>().Value,
+                            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FileBarrierAuditSink>>()));
+                    services.AddSingleton<IBarrierAuditSink>(sp => sp.GetRequiredService<FileBarrierAuditSink>());
+                    services.AddHostedService<FileBarrierAuditSinkLifetime>();
+                    break;
+#else
+                    throw new InvalidOperationException("The File audit sink requires a NET8+ runtime target.");
+#endif
+                case "StructuredLog":
+                    services.AddOptions<StructuredLogBarrierAuditSinkOptions>()
+                        .Configure(options => configuration.GetSection("Nexo:Audit:StructuredLog").Bind(options));
+                    services.TryAddSingleton<StructuredLogBarrierAuditSink>(sp =>
+                        new StructuredLogBarrierAuditSink(
+                            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<StructuredLogBarrierAuditSink>>(),
+                            sp.GetRequiredService<IOptions<StructuredLogBarrierAuditSinkOptions>>().Value));
+                    services.AddSingleton<IBarrierAuditSink>(sp => sp.GetRequiredService<StructuredLogBarrierAuditSink>());
+                    break;
+                case "NoOp":
+                    services.TryAddSingleton<NoOpBarrierAuditSink>();
+                    services.AddSingleton<IBarrierAuditSink>(sp => sp.GetRequiredService<NoOpBarrierAuditSink>());
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unknown audit sink: '{sinkName}'. Valid values: File, StructuredLog, NoOp");
+            }
+        }
+
         return services;
     }
 }
