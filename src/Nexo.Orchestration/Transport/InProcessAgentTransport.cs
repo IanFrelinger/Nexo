@@ -41,6 +41,41 @@ public sealed class InProcessAgentTransport : IAgentTransport
                 Output: output,
                 Duration: DateTimeOffset.UtcNow - startedAt);
         }
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("not registered", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                ex,
+                "In-process transport could not resolve agent {AgentName} (CorrelationId: {CorrelationId})",
+                request.AgentName,
+                request.CorrelationId);
+
+            return new AgentResult(
+                Success: false,
+                ErrorMessage: ex.Message,
+                Duration: DateTimeOffset.UtcNow - startedAt,
+                Metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["errorCode"] = "AGENT_NOT_FOUND"
+                });
+        }
+        catch (TimeoutException ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "In-process transport timed out for agent {AgentName} (CorrelationId: {CorrelationId})",
+                request.AgentName,
+                request.CorrelationId);
+
+            return new AgentResult(
+                Success: false,
+                ErrorMessage: ex.Message,
+                Duration: DateTimeOffset.UtcNow - startedAt,
+                Metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["errorCode"] = "TIMEOUT"
+                });
+        }
         catch (Exception ex)
         {
             _logger.LogError(
@@ -52,7 +87,11 @@ public sealed class InProcessAgentTransport : IAgentTransport
             return new AgentResult(
                 Success: false,
                 ErrorMessage: ex.Message,
-                Duration: DateTimeOffset.UtcNow - startedAt);
+                Duration: DateTimeOffset.UtcNow - startedAt,
+                Metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["errorCode"] = "TRANSPORT_ERROR"
+                });
         }
     }
 

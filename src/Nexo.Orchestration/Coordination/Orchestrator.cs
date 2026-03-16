@@ -8,8 +8,8 @@ using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
 using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
+using Nexo.Orchestration.Resilience;
 using Nexo.Core.Application.Common.Ports;
-using System.Text.Json;
 
 namespace Nexo.Orchestration.Coordination;
 
@@ -48,6 +48,8 @@ public sealed class Orchestrator
     private readonly IAgentTransport _agentTransport;
     private readonly NegotiationProtocol? _negotiationProtocol;
     private readonly OrchestrationMetrics? _metrics;
+    private readonly RetryPolicy _retryPolicy;
+    private readonly CircuitBreaker _circuitBreaker;
     private readonly ILoopKernel _loops;
     private readonly ILogger<Orchestrator> _logger;
 
@@ -96,6 +98,15 @@ public sealed class Orchestrator
         _outputIntegrator = outputIntegrator ?? throw new ArgumentNullException(nameof(outputIntegrator));
         _agentBus = agentBus ?? throw new ArgumentNullException(nameof(agentBus));
         _agentTransport = agentTransport ?? throw new ArgumentNullException(nameof(agentTransport));
+        _retryPolicy = new RetryPolicy(
+            strategy: RetryStrategy.Fixed,
+            maxAttempts: 3,
+            initialDelay: TimeSpan.FromMilliseconds(1),
+            maxDelay: TimeSpan.FromMilliseconds(1));
+        _circuitBreaker = new CircuitBreaker(
+            name: "orchestration-agent-transport",
+            failureThreshold: 3,
+            timeout: TimeSpan.FromSeconds(30));
         _loops = loops ?? throw new ArgumentNullException(nameof(loops));
         _negotiationProtocol = negotiationProtocol;
         _metrics = metrics;
@@ -255,14 +266,6 @@ public sealed class Orchestrator
                     return LoopAction.Continue;
                 }
 
-                // Wait for dependencies
-                if (!_dependencyResolver.AreDependenciesResolved(agentId))
-                {
-                    var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
-                        container.Agent.Spec.Dependencies);
-                    await container.Agent.WaitForDependenciesAsync(dependencyOutputs, token);
-                }
-
                 // Execute agent
                 try
                 {
@@ -275,20 +278,23 @@ public sealed class Orchestrator
                         DependencyOutputs: dependencyOutputs,
                         Metadata: new Dictionary<string, string>
                         {
-                            ["domain"] = container.Agent.Spec.Domain
+                            ["domain"] = container.Agent.Spec.Domain,
+                            ["spanId"] = rootSpanId ?? string.Empty
                         });
 
-                    var result = await _agentTransport.SendAsync(invocation, token);
+                    var result = await SendThroughTransportAsync(invocation, token);
                     if (!result.Success)
                     {
+                        var errorCode = GetErrorCode(result) ?? "UNKNOWN";
                         _logger.LogError(
-                            "Agent {AgentId} execution failed via transport: {Error}",
+                            "Agent {AgentId} execution failed via transport. ErrorCode={ErrorCode}, Error={Error}",
                             agentId,
+                            errorCode,
                             result.ErrorMessage ?? "Unknown transport error");
 
                         _escalationManager.EscalateIssue(
                             "AgentExecution",
-                            $"Agent {agentId} execution failed: {result.ErrorMessage ?? "Unknown transport error"}",
+                            $"Agent {agentId} execution failed ({errorCode}): {result.ErrorMessage ?? "Unknown transport error"}",
                             EscalationSeverity.High);
 
                         return LoopAction.Continue;
@@ -385,6 +391,139 @@ public sealed class Orchestrator
             _logger.LogError(ex, "Orchestration failed");
             throw;
         }
+    }
+
+    private async Task<AgentResult> SendThroughTransportAsync(
+        AgentInvocationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var initialResult = await _agentTransport.SendAsync(request, cancellationToken);
+        if (initialResult.Success)
+        {
+            return initialResult;
+        }
+
+        var errorCode = GetErrorCode(initialResult);
+        if (string.Equals(errorCode, "AGENT_NOT_FOUND", StringComparison.OrdinalIgnoreCase))
+        {
+            return initialResult;
+        }
+
+        if (string.Equals(errorCode, "TIMEOUT", StringComparison.OrdinalIgnoreCase))
+        {
+            return await ExecuteWithTimeoutRetryAsync(request, initialResult, cancellationToken);
+        }
+
+        return await ExecuteWithCircuitBreakerAsync(request, initialResult, cancellationToken);
+    }
+
+    private async Task<AgentResult> ExecuteWithTimeoutRetryAsync(
+        AgentInvocationRequest request,
+        AgentResult initialResult,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _retryPolicy.ExecuteAsync(async () =>
+            {
+                var retryResult = await _agentTransport.SendAsync(request, cancellationToken);
+                if (retryResult.Success)
+                {
+                    return retryResult;
+                }
+
+                if (string.Equals(GetErrorCode(retryResult), "TIMEOUT", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new TimeoutException(retryResult.ErrorMessage ?? "Agent transport timed out.");
+                }
+
+                return retryResult;
+            }, ex => ex is TimeoutException, cancellationToken);
+        }
+        catch (TimeoutException ex)
+        {
+            return initialResult with
+            {
+                ErrorMessage = ex.Message,
+                Metadata = MergeMetadata(initialResult.Metadata, "errorCode", "TIMEOUT")
+            };
+        }
+    }
+
+    private async Task<AgentResult> ExecuteWithCircuitBreakerAsync(
+        AgentInvocationRequest request,
+        AgentResult initialResult,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _circuitBreaker.ExecuteAsync(
+                request.AgentName,
+                () =>
+                {
+                    throw new AgentTransportFailureException(initialResult);
+                },
+                fallback: ex => ex switch
+                {
+                    AgentTransportFailureException transportFailure => transportFailure.Result,
+                    CircuitBreakerOpenException => initialResult with
+                    {
+                        Metadata = MergeMetadata(initialResult.Metadata, "errorCode", "CIRCUIT_OPEN")
+                    },
+                    _ => initialResult
+                },
+                cancellationToken: cancellationToken);
+        }
+        catch (AgentTransportFailureException ex)
+        {
+            return ex.Result;
+        }
+    }
+
+    private static string? GetErrorCode(AgentResult result)
+    {
+        if (result.Metadata == null)
+        {
+            return null;
+        }
+
+        if (result.Metadata.TryGetValue("errorCode", out var value))
+        {
+            return value;
+        }
+
+        foreach (var kvp in result.Metadata)
+        {
+            if (string.Equals(kvp.Key, "errorCode", StringComparison.OrdinalIgnoreCase))
+            {
+                return kvp.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private static IReadOnlyDictionary<string, string> MergeMetadata(
+        IReadOnlyDictionary<string, string>? metadata,
+        string key,
+        string value)
+    {
+        var merged = metadata != null
+            ? new Dictionary<string, string>(metadata, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        merged[key] = value;
+        return merged;
+    }
+
+    private sealed class AgentTransportFailureException : Exception
+    {
+        public AgentTransportFailureException(AgentResult result)
+            : base(result.ErrorMessage ?? "Agent transport failure.")
+        {
+            Result = result;
+        }
+
+        public AgentResult Result { get; }
     }
 
     /// <summary>

@@ -20,6 +20,8 @@ using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
+using Nexo.Abstractions.Transport;
+using Nexo.Orchestration.Transport;
 
 namespace Nexo.Hosting;
 
@@ -75,6 +77,7 @@ public static class NexoServiceCollectionExtensions
         });
 
         services.AddNexoOrchestration();
+        services.TryAddSingleton<IAgentTransport, InProcessAgentTransport>();
         services.AddNexoPersistence();
         services.AddAdaptationInfrastructure(options.PatternStorePath);
         services.AddBackgroundAgents(registerHostedService: options.RegisterBackgroundAgentHostedService);
