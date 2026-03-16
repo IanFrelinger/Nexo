@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Abstractions;
+using Nexo.Abstractions.Transport;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Orchestration.Agents;
@@ -16,6 +17,7 @@ using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
 using Nexo.Orchestration.Validation;
 using Nexo.Orchestration.Models;
+using Nexo.Orchestration.Transport;
 
 namespace Nexo.Orchestration;
 
@@ -61,6 +63,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AgentFactory>();
         services.AddSingleton<LifecycleManager>();
         services.AddSingleton<HealthMonitor>();
+        services.AddSingleton<IAgentTransport, InProcessAgentTransport>();
 
         // Communication
         services.AddSingleton<IAgentBus, AgentBus>();

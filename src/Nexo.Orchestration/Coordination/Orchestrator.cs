@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions.Transport;
 using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Models;
@@ -44,6 +45,7 @@ public sealed class Orchestrator
     private readonly EscalationManager _escalationManager;
     private readonly OutputIntegrator _outputIntegrator;
     private readonly IAgentBus _agentBus;
+    private readonly IAgentTransport _agentTransport;
     private readonly NegotiationProtocol? _negotiationProtocol;
     private readonly OrchestrationMetrics? _metrics;
     private readonly ILoopKernel _loops;
@@ -62,6 +64,7 @@ public sealed class Orchestrator
     /// <param name="escalationManager">The escalation manager for handling unresolved conflicts.</param>
     /// <param name="outputIntegrator">The output integrator for combining agent outputs.</param>
     /// <param name="agentBus">The message bus for agent communication.</param>
+    /// <param name="agentTransport">The transport used to invoke agent execution.</param>
     /// <param name="logger">The logger instance.</param>
     /// <param name="negotiationProtocol">Optional negotiation protocol for conflict resolution.</param>
     /// <param name="metrics">Optional metrics collector for performance tracking.</param>
@@ -76,6 +79,7 @@ public sealed class Orchestrator
         EscalationManager escalationManager,
         OutputIntegrator outputIntegrator,
         IAgentBus agentBus,
+        IAgentTransport agentTransport,
         ILoopKernel loops,
         ILogger<Orchestrator> logger,
         NegotiationProtocol? negotiationProtocol = null,
@@ -91,6 +95,7 @@ public sealed class Orchestrator
         _escalationManager = escalationManager ?? throw new ArgumentNullException(nameof(escalationManager));
         _outputIntegrator = outputIntegrator ?? throw new ArgumentNullException(nameof(outputIntegrator));
         _agentBus = agentBus ?? throw new ArgumentNullException(nameof(agentBus));
+        _agentTransport = agentTransport ?? throw new ArgumentNullException(nameof(agentTransport));
         _loops = loops ?? throw new ArgumentNullException(nameof(loops));
         _negotiationProtocol = negotiationProtocol;
         _metrics = metrics;
@@ -264,8 +269,33 @@ public sealed class Orchestrator
                     var agentStartTime = DateTimeOffset.UtcNow;
                     var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
                         container.Agent.Spec.Dependencies);
-                    var output = await _lifecycleManager.ExecuteAgentAsync(agentId, dependencyOutputs, token);
-                    var agentDuration = DateTimeOffset.UtcNow - agentStartTime;
+                    var invocation = new AgentInvocationRequest(
+                        AgentName: agentId,
+                        CorrelationId: correlationId,
+                        DependencyOutputs: dependencyOutputs,
+                        Metadata: new Dictionary<string, string>
+                        {
+                            ["domain"] = container.Agent.Spec.Domain
+                        });
+
+                    var result = await _agentTransport.SendAsync(invocation, token);
+                    if (!result.Success)
+                    {
+                        _logger.LogError(
+                            "Agent {AgentId} execution failed via transport: {Error}",
+                            agentId,
+                            result.ErrorMessage ?? "Unknown transport error");
+
+                        _escalationManager.EscalateIssue(
+                            "AgentExecution",
+                            $"Agent {agentId} execution failed: {result.ErrorMessage ?? "Unknown transport error"}",
+                            EscalationSeverity.High);
+
+                        return LoopAction.Continue;
+                    }
+
+                    var output = result.Output ?? new { };
+                    var agentDuration = result.Duration ?? (DateTimeOffset.UtcNow - agentStartTime);
                     
                     outputs[agentId] = output;
                     _dependencyResolver.RecordOutput(agentId, output);
