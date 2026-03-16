@@ -93,29 +93,14 @@ public class ArchitectAgentIntegrationTests
     }
 
     [Fact]
-    public async Task DecomposeAsync_InvalidJson_RetriesWithCorrection()
+    public async Task DecomposeAsync_InvalidJson_UsesFallbackDecomposition()
     {
         // Arrange
         var invalidJson = "Invalid JSON";
-        var validJson = """
-            {
-              "agents": [
-                {
-                  "agentId": "combat-1",
-                  "domain": "Combat",
-                  "goal": "Design weapon system",
-                  "dependencies": [],
-                  "priority": 0
-                }
-              ],
-              "confidence": 0.9
-            }
-            """;
 
         _modelMock
-            .SetupSequence(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ModelOutput(invalidJson))
-            .ReturnsAsync(new ModelOutput(validJson));
+            .Setup(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ModelOutput(invalidJson));
 
         _cacheMock
             .Setup(c => c.GetAsync<List<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -128,7 +113,9 @@ public class ArchitectAgentIntegrationTests
 
         // Assert
         result.Should().NotBeNull();
-        _modelMock.Verify(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()), Times.AtLeast(2));
+        result.Agents.Should().NotBeEmpty();
+        result.Agents[0].AgentId.Should().Be("fallback-1");
+        _modelMock.Verify(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
