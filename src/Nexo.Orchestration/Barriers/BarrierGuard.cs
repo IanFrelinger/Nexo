@@ -60,7 +60,8 @@ internal sealed class BarrierGuard
             agentName,
             correlationId,
             spanId,
-            DateTimeOffset.UtcNow),
+            DateTimeOffset.UtcNow,
+            BuildResolutionDetail(context)),
             cancellationToken);
     }
 
@@ -84,5 +85,13 @@ internal sealed class BarrierGuard
             $"Attempted elevation from '{currentLevel}' to '{requestedLevel}'."));
 
         throw new BarrierElevationException(agentName, correlationId, currentLevel, requestedLevel);
+    }
+
+    private static string BuildResolutionDetail(BarrierContext context)
+    {
+        if (!string.IsNullOrWhiteSpace(context.ResolutionDetail))
+            return context.ResolutionDetail;
+
+        return $"Resolved by: {context.AuthoritySource}.";
     }
 }

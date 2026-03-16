@@ -1,8 +1,10 @@
 using System.Text.Json;
+using System.Security.Cryptography.X509Certificates;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Abstractions.Barriers;
+using Nexo.Abstractions.Barriers.Identity;
 using Nexo.Abstractions.Transport;
 
 namespace Nexo.Transport.Grpc.Server;
@@ -13,7 +15,6 @@ namespace Nexo.Transport.Grpc.Server;
 public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTransportServiceBase
 {
     private const string BarrierHeader = "x-nexo-barrier";
-    private const string BarrierSourceHeader = "x-nexo-barrier-source";
     private const string CorrelationHeader = "x-nexo-correlation-id";
 
     private readonly IAgentTransport _transport;
@@ -22,6 +23,7 @@ public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTrans
     private readonly BarrierOptions _barrierOptions;
     private readonly IBarrierContextAccessor _barrierContextAccessor;
     private readonly IBarrierAuditLog _barrierAuditLog;
+    private readonly IBarrierIdentityResolverPipeline _barrierResolverPipeline;
 
     public AgentTransportServiceImpl(
         IAgentTransport transport,
@@ -29,7 +31,8 @@ public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTrans
         BarrierHierarchy barrierHierarchy,
         IOptions<BarrierOptions> barrierOptions,
         IBarrierContextAccessor barrierContextAccessor,
-        IBarrierAuditLog barrierAuditLog)
+        IBarrierAuditLog barrierAuditLog,
+        IBarrierIdentityResolverPipeline barrierResolverPipeline)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -37,6 +40,7 @@ public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTrans
         _barrierOptions = barrierOptions?.Value ?? throw new ArgumentNullException(nameof(barrierOptions));
         _barrierContextAccessor = barrierContextAccessor ?? throw new ArgumentNullException(nameof(barrierContextAccessor));
         _barrierAuditLog = barrierAuditLog ?? throw new ArgumentNullException(nameof(barrierAuditLog));
+        _barrierResolverPipeline = barrierResolverPipeline ?? throw new ArgumentNullException(nameof(barrierResolverPipeline));
     }
 
     public override async Task<InvokeResponse> Invoke(InvokeRequest request, ServerCallContext context)
@@ -45,48 +49,95 @@ public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTrans
         var correlationId = GetHeader(context, CorrelationHeader) ?? request.CorrelationId;
         var spanId = string.IsNullOrWhiteSpace(request.SpanId) ? string.Empty : request.SpanId;
 
-        var barrierLevel = GetHeader(context, BarrierHeader);
-        var barrierSource = GetHeader(context, BarrierSourceHeader) ?? BarrierAuthoritySource.Header;
-        if (string.IsNullOrWhiteSpace(barrierLevel))
+        var headers = ToHeaderDictionary(context);
+        var explicitLevel = headers.TryGetValue(BarrierHeader, out var explicitHeaderLevel)
+            ? explicitHeaderLevel
+            : null;
+        var rawJwt = TryGetBearerToken(headers);
+        var certSubjects = ExtractCertificateSubjects(context);
+        var certSans = ExtractCertificateSans(context);
+        var resolutionContext = new BarrierResolutionContext(
+            CorrelationId: correlationId ?? string.Empty,
+            ExplicitLevel: string.IsNullOrWhiteSpace(explicitLevel) ? null : explicitLevel,
+            Headers: headers,
+            CertSubjects: certSubjects,
+            CertSans: certSans,
+            RawJwt: rawJwt,
+            JwtClaims: JwtClaimParser.ParseClaims(rawJwt),
+            ApiKey: TryGetApiKey(headers));
+
+        var resolutionResult = await _barrierResolverPipeline.ResolveAsync(
+            resolutionContext,
+            context.CancellationToken);
+
+        if (resolutionResult is null)
         {
             if (_barrierOptions.RequireExplicitBarrier)
             {
                 await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
                     BarrierAuditEventType.ValidationFailed,
                     string.Empty,
-                    barrierSource,
+                    BarrierAuthoritySource.Default,
                     request.AgentName,
                     correlationId ?? string.Empty,
                     spanId,
                     DateTimeOffset.UtcNow,
-                    "Missing barrier header."));
-                return InvalidBarrierResponse(request, correlationId, spanId, "Missing barrier header.");
+                    "No explicit barrier or identity resolver match."));
+                return InvalidBarrierResponse(request, correlationId, spanId, "No explicit barrier or identity resolver match.");
             }
 
-            barrierLevel = _barrierHierarchy.Floor.Name;
-            barrierSource = BarrierAuthoritySource.Default;
-        }
-
-        if (!_barrierHierarchy.IsKnown(barrierLevel))
-        {
+            resolutionResult = new BarrierResolutionResult(
+                ResolvedLevel: _barrierHierarchy.Floor.Name,
+                ResolverName: "DefaultFloor",
+                AuthoritySource: BarrierAuthoritySource.Default,
+                Detail: "No explicit barrier or identity match; defaulted to floor level.");
             await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
-                BarrierAuditEventType.ValidationFailed,
-                barrierLevel,
-                barrierSource,
+                BarrierAuditEventType.DefaultApplied,
+                resolutionResult.ResolvedLevel,
+                resolutionResult.AuthoritySource,
                 request.AgentName,
                 correlationId ?? string.Empty,
                 spanId,
                 DateTimeOffset.UtcNow,
-                "Unknown barrier level."));
-            return InvalidBarrierResponse(request, correlationId, spanId, $"Unknown barrier level '{barrierLevel}'.");
+                resolutionResult.Detail),
+                context.CancellationToken);
+        }
+
+        await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
+            BarrierAuditEventType.IdentityResolved,
+            resolutionResult.ResolvedLevel,
+            resolutionResult.AuthoritySource,
+            request.AgentName,
+            correlationId ?? string.Empty,
+            spanId,
+            DateTimeOffset.UtcNow,
+            $"Resolved by: {resolutionResult.ResolverName}. {resolutionResult.Detail}"),
+            context.CancellationToken);
+
+        if (!_barrierHierarchy.IsKnown(resolutionResult.ResolvedLevel))
+        {
+            await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
+                BarrierAuditEventType.ValidationFailed,
+                resolutionResult.ResolvedLevel,
+                resolutionResult.AuthoritySource,
+                request.AgentName,
+                correlationId ?? string.Empty,
+                spanId,
+                DateTimeOffset.UtcNow,
+                "Resolved barrier level is unknown in hierarchy."),
+                context.CancellationToken);
+            return InvalidBarrierResponse(request, correlationId, spanId, $"Unknown barrier level '{resolutionResult.ResolvedLevel}'.");
         }
 
         var barrierContext = BarrierContext.Create(
-            barrierLevel,
-            barrierSource,
+            resolutionResult.ResolvedLevel,
+            resolutionResult.AuthoritySource,
             request.AgentName,
             correlationId ?? string.Empty,
-            _barrierHierarchy);
+            _barrierHierarchy,
+            resolutionDetail: string.IsNullOrWhiteSpace(resolutionResult.Detail)
+                ? $"Resolved by: {resolutionResult.ResolverName}."
+                : $"Resolved by: {resolutionResult.ResolverName}. {resolutionResult.Detail}");
         _barrierContextAccessor.Initialize(barrierContext);
         await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
             BarrierAuditEventType.ContextInitialized,
@@ -182,6 +233,79 @@ public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTrans
         return context.RequestHeaders
             .FirstOrDefault(header => string.Equals(header.Key, key, StringComparison.OrdinalIgnoreCase))
             ?.Value;
+    }
+
+    private static Dictionary<string, string> ToHeaderDictionary(ServerCallContext context)
+    {
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in context.RequestHeaders)
+        {
+            if (entry.IsBinary || string.IsNullOrWhiteSpace(entry.Key))
+                continue;
+
+            headers[entry.Key] = entry.Value ?? string.Empty;
+        }
+
+        return headers;
+    }
+
+    private static string? TryGetBearerToken(IReadOnlyDictionary<string, string> headers)
+    {
+        if (!headers.TryGetValue("authorization", out var authorizationValue))
+            return null;
+
+        const string bearerPrefix = "Bearer ";
+        if (!authorizationValue.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
+            return authorizationValue;
+
+        return authorizationValue[bearerPrefix.Length..].Trim();
+    }
+
+    private static string? TryGetApiKey(IReadOnlyDictionary<string, string> headers)
+    {
+        if (headers.TryGetValue("x-nexo-api-key", out var apiKey))
+            return apiKey;
+
+        return null;
+    }
+
+    private static IReadOnlyList<string> ExtractCertificateSubjects(ServerCallContext context)
+    {
+        var cert = context.GetHttpContext()?.Connection.ClientCertificate;
+        if (cert is null || string.IsNullOrWhiteSpace(cert.Subject))
+            return Array.Empty<string>();
+
+        return [cert.Subject];
+    }
+
+    private static IReadOnlyList<string> ExtractCertificateSans(ServerCallContext context)
+    {
+        var cert = context.GetHttpContext()?.Connection.ClientCertificate;
+        if (cert is null)
+            return Array.Empty<string>();
+
+        var sans = new List<string>();
+        foreach (var extension in cert.Extensions.OfType<X509Extension>())
+        {
+            if (!string.Equals(extension.Oid?.Value, "2.5.29.17", StringComparison.Ordinal))
+                continue;
+
+            var formatted = extension.Format(false);
+            if (string.IsNullOrWhiteSpace(formatted))
+                continue;
+
+            var parts = formatted.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var part in parts)
+            {
+                var value = part.Contains('=')
+                    ? part[(part.IndexOf('=') + 1)..].Trim()
+                    : part.Trim();
+                if (!string.IsNullOrWhiteSpace(value))
+                    sans.Add(value);
+            }
+        }
+
+        return sans;
     }
 
     private static InvokeResponse InvalidBarrierResponse(

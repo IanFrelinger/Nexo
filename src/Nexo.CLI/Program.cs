@@ -741,6 +741,15 @@ static class Program
         var barrierOpt = new Option<string?>(
             name: "--barrier",
             description: "Barrier level set at request boundary.");
+        var jwtOpt = new Option<string?>(
+            name: "--jwt",
+            description: "Raw bearer JWT used for identity-bound barrier resolution.");
+        var headerOpt = new Option<string[]>(
+            name: "--header",
+            description: "Additional request headers in 'name:value' form.")
+        {
+            AllowMultipleArgumentsPerToken = true
+        };
         var preferredRegionOpt = new Option<string?>(
             name: "--preferred-region",
             description: "Preferred routing region (soft affinity).");
@@ -751,6 +760,8 @@ static class Program
         orchestrateCmd.AddOption(preferModelOpt);
         orchestrateCmd.AddOption(providerOpt);
         orchestrateCmd.AddOption(barrierOpt);
+        orchestrateCmd.AddOption(jwtOpt);
+        orchestrateCmd.AddOption(headerOpt);
         orchestrateCmd.AddOption(preferredRegionOpt);
         orchestrateCmd.AddOption(orchestrateEphemeralOpt);
 
@@ -763,6 +774,8 @@ static class Program
             var preferModel = context.ParseResult.GetValueForOption(preferModelOpt);
             var provider = context.ParseResult.GetValueForOption(providerOpt);
             var barrier = context.ParseResult.GetValueForOption(barrierOpt);
+            var jwt = context.ParseResult.GetValueForOption(jwtOpt);
+            var rawHeaders = context.ParseResult.GetValueForOption(headerOpt) ?? Array.Empty<string>();
             var preferredRegion = context.ParseResult.GetValueForOption(preferredRegionOpt);
             var ephemeral = context.ParseResult.GetValueForOption(orchestrateEphemeralOpt);
             var json = context.ParseResult.GetValueForOption(jsonOpt);
@@ -773,6 +786,7 @@ static class Program
 
             using var scope = ServiceProvider.CreateScope();
             var orchestrateCommand = scope.ServiceProvider.GetRequiredService<OrchestrateCommand>();
+            var headers = ParseHeaders(rawHeaders);
             var exitCode = await orchestrateCommand.ExecuteAsync(
                 request,
                 runtimeSpec?.FullName,
@@ -782,7 +796,9 @@ static class Program
                 barrier,
                 preferredRegion,
                 json,
-                verbose);
+                verbose,
+                jwt,
+                headers);
             Environment.Exit(exitCode);
         });
         root.AddCommand(orchestrateCmd);
@@ -1086,5 +1102,28 @@ static class Program
             'd' or 'D' => TimeSpan.FromDays(value),
             _ => null
         };
+    }
+
+    private static IReadOnlyDictionary<string, string> ParseHeaders(IReadOnlyList<string> rawHeaders)
+    {
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in rawHeaders)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                continue;
+
+            var separator = raw.IndexOf(':');
+            if (separator <= 0 || separator == raw.Length - 1)
+                continue;
+
+            var key = raw[..separator].Trim();
+            var value = raw[(separator + 1)..].Trim();
+            if (string.IsNullOrWhiteSpace(key))
+                continue;
+
+            headers[key] = value;
+        }
+
+        return headers;
     }
 }

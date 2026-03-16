@@ -3,9 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Nexo.Abstractions.Barriers;
+using Nexo.Abstractions.Barriers.Identity;
 using Nexo.Abstractions.Routing;
 using Nexo.Abstractions.Transport;
 using Nexo.Runtime.Barriers;
+using Nexo.Runtime.Barriers.Identity;
+using Nexo.Runtime.Barriers.Identity.Resolvers;
 using Nexo.Runtime.Barriers.Sinks;
 using Nexo.Runtime.Routing;
 using Nexo.Runtime.Transport;
@@ -48,6 +51,7 @@ public static class RuntimeServiceCollectionExtensions
         services.AddOptions<RoutingOptions>()
             .Configure(options => configuration.GetSection("Nexo:Routing").Bind(options));
         services.AddBarrierAuditSinks(configuration);
+        services.AddBarrierIdentityResolvers(configuration);
 
         services.TryAddSingleton<BarrierHierarchy>(sp =>
         {
@@ -120,6 +124,68 @@ public static class RuntimeServiceCollectionExtensions
                 default:
                     throw new InvalidOperationException(
                         $"Unknown audit sink: '{sinkName}'. Valid values: File, StructuredLog, NoOp");
+            }
+        }
+
+        return services;
+    }
+
+    public static IServiceCollection AddBarrierIdentityResolvers(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        if (services is null)
+            throw new ArgumentNullException(nameof(services));
+        if (configuration is null)
+            throw new ArgumentNullException(nameof(configuration));
+
+        services.AddOptions<BarrierIdentityResolverOptions>()
+            .Configure(options => configuration.GetSection("Nexo:Identity").Bind(options));
+        services.AddOptions<PkiCertificateResolverOptions>()
+            .Configure(options => configuration.GetSection("Nexo:Identity:PkiCertificate").Bind(options));
+        services.AddOptions<JwtClaimResolverOptions>()
+            .Configure(options => configuration.GetSection("Nexo:Identity:JwtClaim").Bind(options));
+        services.AddOptions<ApiKeyResolverOptions>()
+            .Configure(options => configuration.GetSection("Nexo:Identity:ApiKey").Bind(options));
+
+        services.TryAddSingleton<IBarrierIdentityResolverPipeline, DefaultBarrierIdentityResolverPipeline>();
+        services.TryAddSingleton<PkiCertificateBarrierResolver>(sp =>
+            new PkiCertificateBarrierResolver(
+                sp.GetRequiredService<IOptions<PkiCertificateResolverOptions>>().Value,
+                sp.GetRequiredService<BarrierHierarchy>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<PkiCertificateBarrierResolver>>()));
+        services.TryAddSingleton<JwtClaimBarrierResolver>(sp =>
+            new JwtClaimBarrierResolver(
+                sp.GetRequiredService<IOptions<JwtClaimResolverOptions>>().Value,
+                sp.GetRequiredService<BarrierHierarchy>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JwtClaimBarrierResolver>>()));
+        services.TryAddSingleton<ApiKeyBarrierResolver>(sp =>
+            new ApiKeyBarrierResolver(
+                sp.GetRequiredService<IOptions<ApiKeyResolverOptions>>().Value,
+                sp.GetRequiredService<BarrierHierarchy>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ApiKeyBarrierResolver>>()));
+
+        var resolverPriority = configuration.GetSection("Nexo:Identity:ResolverPriority").Get<string[]>() ?? [];
+        foreach (var configuredName in resolverPriority)
+        {
+            var resolverName = configuredName?.Trim();
+            if (string.IsNullOrWhiteSpace(resolverName))
+                continue;
+
+            switch (resolverName)
+            {
+                case "PkiCertificate":
+                    services.AddSingleton<IBarrierIdentityResolver>(sp => sp.GetRequiredService<PkiCertificateBarrierResolver>());
+                    break;
+                case "JwtClaim":
+                    services.AddSingleton<IBarrierIdentityResolver>(sp => sp.GetRequiredService<JwtClaimBarrierResolver>());
+                    break;
+                case "ApiKey":
+                    services.AddSingleton<IBarrierIdentityResolver>(sp => sp.GetRequiredService<ApiKeyBarrierResolver>());
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unknown barrier identity resolver: '{resolverName}'. Valid values: PkiCertificate, JwtClaim, ApiKey");
             }
         }
 

@@ -94,6 +94,12 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
 - `docs/Testing.md` – Test guard rails, timeout policy, and running tests
 - `docs/` – Additional architecture and usage guides
 
+## Barrier Identity Resolution Notes
+
+- JWT claim barrier resolution reads pre-parsed claims only; JWT signature validation must be handled by host authentication middleware.
+- API key barrier mapping must store SHA-256 key hashes, not plaintext keys.
+- API keys are never written in full to logs or audit details; only a short key prefix is recorded.
+
 ## License
 
 See repository for license information.

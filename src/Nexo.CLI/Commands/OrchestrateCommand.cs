@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Abstractions.Barriers;
+using Nexo.Abstractions.Barriers.Identity;
 using Nexo.CLI.Formatting;
 using Nexo.CLI.Runtime;
 using Nexo.Core.Application.Ephemeral.Ports;
@@ -35,6 +36,7 @@ public class OrchestrateCommand
     private readonly BarrierHierarchy _barrierHierarchy;
     private readonly BarrierOptions _barrierOptions;
     private readonly IBarrierAuditLog _barrierAuditLog;
+    private readonly IBarrierIdentityResolverPipeline _barrierResolverPipeline;
 
     public OrchestrateCommand(
         Orchestrator orchestrator,
@@ -45,6 +47,7 @@ public class OrchestrateCommand
         BarrierHierarchy barrierHierarchy,
         IOptions<BarrierOptions> barrierOptions,
         IBarrierAuditLog barrierAuditLog,
+        IBarrierIdentityResolverPipeline barrierResolverPipeline,
         IEphemeralModelLifecycle? ephemeralLifecycle = null)
     {
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
@@ -55,6 +58,7 @@ public class OrchestrateCommand
         _barrierHierarchy = barrierHierarchy ?? throw new ArgumentNullException(nameof(barrierHierarchy));
         _barrierOptions = barrierOptions?.Value ?? throw new ArgumentNullException(nameof(barrierOptions));
         _barrierAuditLog = barrierAuditLog ?? throw new ArgumentNullException(nameof(barrierAuditLog));
+        _barrierResolverPipeline = barrierResolverPipeline ?? throw new ArgumentNullException(nameof(barrierResolverPipeline));
         _ephemeralLifecycle = ephemeralLifecycle;
     }
 
@@ -88,7 +92,9 @@ public class OrchestrateCommand
         string? barrierLevel,
         string? preferredRegion,
         bool json,
-        bool verbose)
+        bool verbose,
+        string? jwt = null,
+        IReadOnlyDictionary<string, string>? headers = null)
     {
         var correlationId = Guid.NewGuid().ToString();
         using var scope = _logger.BeginScope(new Dictionary<string, object>
@@ -123,6 +129,8 @@ public class OrchestrateCommand
 
             await InitializeBarrierContextAsync(
                 barrierLevel: spec.BarrierLevel,
+                jwt: jwt,
+                headers: headers,
                 correlationId: correlationId,
                 cancellationToken: CancellationToken.None);
 
@@ -183,6 +191,7 @@ public class OrchestrateCommand
                 BarrierContextMissingException b => b.ErrorCode,
                 BarrierElevationException b => b.ErrorCode,
                 BarrierCeilingExceededException b => b.ErrorCode,
+                ArgumentException a when string.Equals(a.ParamName, "level", StringComparison.Ordinal) => "BARRIER_VALIDATION_FAILED",
                 EndpointUnavailableException => "ENDPOINT_UNAVAILABLE",
                 _ => "UNEXPECTED_ERROR"
             };
@@ -206,10 +215,24 @@ public class OrchestrateCommand
 
     private async Task InitializeBarrierContextAsync(
         string? barrierLevel,
+        string? jwt,
+        IReadOnlyDictionary<string, string>? headers,
         string correlationId,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(barrierLevel))
+        var safeHeaders = headers ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var resolutionContext = new BarrierResolutionContext(
+            CorrelationId: correlationId,
+            ExplicitLevel: string.IsNullOrWhiteSpace(barrierLevel) ? null : barrierLevel,
+            Headers: safeHeaders,
+            CertSubjects: Array.Empty<string>(),
+            CertSans: Array.Empty<string>(),
+            RawJwt: jwt,
+            JwtClaims: JwtClaimParser.ParseClaims(jwt),
+            ApiKey: TryGetApiKey(safeHeaders));
+
+        var result = await _barrierResolverPipeline.ResolveAsync(resolutionContext, cancellationToken);
+        if (result is null)
         {
             if (_barrierOptions.RequireExplicitBarrier)
                 throw new BarrierContextMissingException("*", correlationId);
@@ -244,12 +267,26 @@ public class OrchestrateCommand
             return;
         }
 
-        var context = BarrierContext.Create(
-            barrierLevel,
-            BarrierAuthoritySource.Cli,
+        await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
+            BarrierAuditEventType.IdentityResolved,
+            result.ResolvedLevel,
+            result.AuthoritySource,
             "*",
             correlationId,
-            _barrierHierarchy);
+            string.Empty,
+            DateTimeOffset.UtcNow,
+            $"Resolved by: {result.ResolverName}. {result.Detail}"),
+            cancellationToken);
+
+        var context = BarrierContext.Create(
+            result.ResolvedLevel,
+            result.AuthoritySource,
+            "*",
+            correlationId,
+            _barrierHierarchy,
+            resolutionDetail: string.IsNullOrWhiteSpace(result.Detail)
+                ? $"Resolved by: {result.ResolverName}."
+                : $"Resolved by: {result.ResolverName}. {result.Detail}");
 
         _barrierContextAccessor.Initialize(context);
         await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
@@ -261,6 +298,18 @@ public class OrchestrateCommand
             string.Empty,
             DateTimeOffset.UtcNow),
             cancellationToken);
+    }
+
+    private static string? TryGetApiKey(IReadOnlyDictionary<string, string> headers)
+    {
+        if (headers.TryGetValue("x-nexo-api-key", out var value))
+            return value;
+        foreach (var (key, headerValue) in headers)
+        {
+            if (string.Equals(key, "x-nexo-api-key", StringComparison.OrdinalIgnoreCase))
+                return headerValue;
+        }
+        return null;
     }
 }
 

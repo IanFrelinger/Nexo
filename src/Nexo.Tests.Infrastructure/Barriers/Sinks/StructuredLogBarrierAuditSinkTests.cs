@@ -10,6 +10,7 @@ public sealed class StructuredLogBarrierAuditSinkTests
 {
     [Theory]
     [InlineData("BARRIER_INITIALIZED", LogLevel.Information)]
+    [InlineData("BARRIER_IDENTITY_RESOLVED", LogLevel.Information)]
     [InlineData("BARRIER_AGENT_INVOKED", LogLevel.Information)]
     [InlineData("BARRIER_DEFAULT_APPLIED", LogLevel.Warning)]
     [InlineData("BARRIER_WIRE_PROPAGATED", LogLevel.Debug)]

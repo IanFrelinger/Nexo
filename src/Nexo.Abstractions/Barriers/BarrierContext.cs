@@ -17,12 +17,15 @@ public sealed record BarrierContext
 
     public string CorrelationId { get; init; } = string.Empty;
 
+    public string? ResolutionDetail { get; init; }
+
     public static BarrierContext Create(
         string level,
         string authoritySource,
         string issuedTo,
         string correlationId,
-        BarrierHierarchy hierarchy)
+        BarrierHierarchy hierarchy,
+        string? resolutionDetail = null)
     {
         ThrowIfNullCompat(hierarchy, nameof(hierarchy));
         if (!hierarchy.IsKnown(level))
@@ -36,7 +39,8 @@ public sealed record BarrierContext
             AuthoritySource = authoritySource ?? string.Empty,
             IssuedTo = issuedTo ?? string.Empty,
             IssuedAt = DateTimeOffset.UtcNow,
-            CorrelationId = correlationId ?? string.Empty
+            CorrelationId = correlationId ?? string.Empty,
+            ResolutionDetail = resolutionDetail
         };
     }
 

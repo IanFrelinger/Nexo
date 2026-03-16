@@ -10,4 +10,5 @@ public static class BarrierAuditEventType
     public static readonly string ValidationFailed = "BARRIER_VALIDATION_FAILED";
     public static readonly string CeilingExceeded = "BARRIER_CEILING_EXCEEDED";
     public static readonly string DefaultApplied = "BARRIER_DEFAULT_APPLIED";
+    public static readonly string IdentityResolved = "BARRIER_IDENTITY_RESOLVED";
 }

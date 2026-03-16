@@ -62,6 +62,8 @@ public sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
 
         if (string.Equals(eventType, BarrierAuditEventType.ContextInitialized, StringComparison.OrdinalIgnoreCase))
             return LogLevel.Information;
+        if (string.Equals(eventType, BarrierAuditEventType.IdentityResolved, StringComparison.OrdinalIgnoreCase))
+            return LogLevel.Information;
         if (string.Equals(eventType, BarrierAuditEventType.AgentInvoked, StringComparison.OrdinalIgnoreCase))
             return LogLevel.Information;
         if (string.Equals(eventType, BarrierAuditEventType.DefaultApplied, StringComparison.OrdinalIgnoreCase))
