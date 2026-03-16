@@ -12,7 +12,7 @@ public sealed class BarrierHierarchy : IEnumerable<string>
 
     public BarrierHierarchy(IEnumerable<BarrierLevel> levels)
     {
-        ArgumentNullException.ThrowIfNull(levels);
+        ThrowIfNullCompat(levels, nameof(levels));
 
         var ordered = levels
             .OrderBy(x => x.Rank)
@@ -38,7 +38,7 @@ public sealed class BarrierHierarchy : IEnumerable<string>
 
     public BarrierLevel Floor => _levels[0];
 
-    public BarrierLevel Ceiling => _levels[^1];
+    public BarrierLevel Ceiling => _levels[_levels.Count - 1];
 
     public bool IsKnown(string name)
         => !string.IsNullOrWhiteSpace(name) && _byName.ContainsKey(name);
@@ -71,4 +71,14 @@ public sealed class BarrierHierarchy : IEnumerable<string>
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
+
+    private static void ThrowIfNullCompat(object? value, string paramName)
+    {
+#if NET8_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(value, paramName);
+#else
+        if (value is null)
+            throw new ArgumentNullException(paramName);
+#endif
+    }
 }

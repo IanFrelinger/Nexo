@@ -13,7 +13,8 @@ public sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
         StructuredLogBarrierAuditSinkOptions options)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        ArgumentNullException.ThrowIfNull(options);
+        if (options is null)
+            throw new ArgumentNullException(nameof(options));
 
         _eventLevelOverrides = new Dictionary<string, LogLevel>(
             options.EventLevelOverrides,
@@ -26,7 +27,7 @@ public sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
     {
         if (auditEvent is null)
         {
-            return ValueTask.CompletedTask;
+            return default;
         }
 
         try
@@ -49,7 +50,7 @@ public sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
             // Sink contract: never throw into the caller path.
         }
 
-        return ValueTask.CompletedTask;
+        return default;
     }
 
     private LogLevel ResolveLevel(string eventType)

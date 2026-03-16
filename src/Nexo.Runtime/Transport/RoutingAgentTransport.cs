@@ -26,7 +26,8 @@ public sealed class RoutingAgentTransport : IAgentTransport
         AgentInvocationRequest request,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
 
         if (string.IsNullOrWhiteSpace(request.EffectiveOptions.TargetEndpoint))
         {

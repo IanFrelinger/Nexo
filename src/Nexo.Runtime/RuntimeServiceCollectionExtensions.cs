@@ -68,8 +68,10 @@ public static class RuntimeServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
+        if (services is null)
+            throw new ArgumentNullException(nameof(services));
+        if (configuration is null)
+            throw new ArgumentNullException(nameof(configuration));
 
         var sinkNames = configuration.GetSection("Nexo:Audit:Sinks").Get<string[]>() ?? [];
         var normalizedSinks = sinkNames

@@ -33,31 +33,15 @@ public sealed record BarrierLevel : IComparable<BarrierLevel>
     public override int GetHashCode()
         => Rank.GetHashCode();
 
-    public static bool operator <(BarrierLevel left, BarrierLevel right)
-    {
-        ArgumentNullException.ThrowIfNull(left);
-        ArgumentNullException.ThrowIfNull(right);
-        return left.CompareTo(right) < 0;
-    }
+    public static bool operator <(BarrierLevel? left, BarrierLevel? right)
+        => Comparer<BarrierLevel?>.Default.Compare(left, right) < 0;
 
-    public static bool operator <=(BarrierLevel left, BarrierLevel right)
-    {
-        ArgumentNullException.ThrowIfNull(left);
-        ArgumentNullException.ThrowIfNull(right);
-        return left.CompareTo(right) <= 0;
-    }
+    public static bool operator <=(BarrierLevel? left, BarrierLevel? right)
+        => Comparer<BarrierLevel?>.Default.Compare(left, right) <= 0;
 
-    public static bool operator >(BarrierLevel left, BarrierLevel right)
-    {
-        ArgumentNullException.ThrowIfNull(left);
-        ArgumentNullException.ThrowIfNull(right);
-        return left.CompareTo(right) > 0;
-    }
+    public static bool operator >(BarrierLevel? left, BarrierLevel? right)
+        => Comparer<BarrierLevel?>.Default.Compare(left, right) > 0;
 
-    public static bool operator >=(BarrierLevel left, BarrierLevel right)
-    {
-        ArgumentNullException.ThrowIfNull(left);
-        ArgumentNullException.ThrowIfNull(right);
-        return left.CompareTo(right) >= 0;
-    }
+    public static bool operator >=(BarrierLevel? left, BarrierLevel? right)
+        => Comparer<BarrierLevel?>.Default.Compare(left, right) >= 0;
 }

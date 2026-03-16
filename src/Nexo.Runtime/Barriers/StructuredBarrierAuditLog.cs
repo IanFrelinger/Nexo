@@ -29,7 +29,8 @@ public sealed class StructuredBarrierAuditLog : IBarrierAuditLog
         BarrierAuditEvent auditEvent,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(auditEvent);
+        if (auditEvent is null)
+            throw new ArgumentNullException(nameof(auditEvent));
 
         foreach (var sink in _sinks)
         {

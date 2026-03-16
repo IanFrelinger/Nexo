@@ -24,7 +24,7 @@ public sealed record BarrierContext
         string correlationId,
         BarrierHierarchy hierarchy)
     {
-        ArgumentNullException.ThrowIfNull(hierarchy);
+        ThrowIfNullCompat(hierarchy, nameof(hierarchy));
         if (!hierarchy.IsKnown(level))
             throw new ArgumentException(
                 $"Unknown barrier level: '{level}'. Configured levels: {string.Join(", ", hierarchy)}",
@@ -42,4 +42,14 @@ public sealed record BarrierContext
 
     public BarrierContext ForAgent(string agentName)
         => this with { IssuedTo = agentName };
+
+    private static void ThrowIfNullCompat(object? value, string paramName)
+    {
+#if NET8_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(value, paramName);
+#else
+        if (value is null)
+            throw new ArgumentNullException(paramName);
+#endif
+    }
 }

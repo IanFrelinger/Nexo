@@ -26,7 +26,8 @@ public sealed class ScopedBarrierContextAccessor : IBarrierContextAccessor
 
     public void Initialize(BarrierContext context)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        if (context is null)
+            throw new ArgumentNullException(nameof(context));
 
         if (!string.IsNullOrWhiteSpace(_options.HostCeiling) &&
             _hierarchy.IsAbove(context.Level, _options.HostCeiling!))

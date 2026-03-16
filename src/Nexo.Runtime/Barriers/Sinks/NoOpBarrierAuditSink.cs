@@ -7,5 +7,5 @@ public sealed class NoOpBarrierAuditSink : IBarrierAuditSink
     public ValueTask WriteAsync(
         BarrierAuditEvent auditEvent,
         CancellationToken cancellationToken = default)
-        => ValueTask.CompletedTask;
+        => default;
 }

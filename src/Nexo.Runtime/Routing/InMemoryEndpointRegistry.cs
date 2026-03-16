@@ -41,7 +41,8 @@ public sealed class InMemoryEndpointRegistry : IEndpointRegistry
 
     public void Register(EndpointDescriptor descriptor)
     {
-        ArgumentNullException.ThrowIfNull(descriptor);
+        if (descriptor is null)
+            throw new ArgumentNullException(nameof(descriptor));
         _descriptors[descriptor.Endpoint] = descriptor;
     }
 
