@@ -20,6 +20,8 @@ using Nexo.Core.Application.Common.Services;
 using Nexo.Hosting;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Persistence;
+using Nexo.Runtime;
+using Nexo.Transport.Grpc;
 
 namespace Nexo.CLI;
 
@@ -736,38 +738,53 @@ static class Program
         var providerOpt = new Option<string?>(
             name: "--provider",
             description: "Override model provider (openai/azure/ollama/offline/mock-json/...)");
+        var barrierOpt = new Option<string?>(
+            name: "--barrier",
+            description: "Barrier level set at request boundary.");
+        var preferredRegionOpt = new Option<string?>(
+            name: "--preferred-region",
+            description: "Preferred routing region (soft affinity).");
 
         var orchestrateEphemeralOpt = new Option<bool>("--ephemeral", () => false, "Use ephemeral Ollama container; discarded when command exits");
         orchestrateCmd.AddOption(runtimeSpecOpt);
         orchestrateCmd.AddOption(runtimeSpecJsonOpt);
         orchestrateCmd.AddOption(preferModelOpt);
         orchestrateCmd.AddOption(providerOpt);
+        orchestrateCmd.AddOption(barrierOpt);
+        orchestrateCmd.AddOption(preferredRegionOpt);
         orchestrateCmd.AddOption(orchestrateEphemeralOpt);
 
-        orchestrateCmd.SetHandler(
-            async (string request, FileInfo? runtimeSpec, string? runtimeSpecJson, string? preferModel, string? provider, bool ephemeral, bool json, bool verbose) =>
-            {
-                if (ephemeral || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase))
-                    Environment.SetEnvironmentVariable("NEXO_EPHEMERAL_MODELS", "1");
-                var orchestrateCommand = ServiceProvider.GetRequiredService<OrchestrateCommand>();
-                var exitCode = await orchestrateCommand.ExecuteAsync(
-                    request,
-                    runtimeSpec?.FullName,
-                    runtimeSpecJson,
-                    preferModel,
-                    provider,
-                    json,
-                    verbose);
-                Environment.Exit(exitCode);
-            },
-            orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
-            runtimeSpecOpt,
-            runtimeSpecJsonOpt,
-            preferModelOpt,
-            providerOpt,
-            orchestrateEphemeralOpt,
-            jsonOpt,
-            verboseOpt);
+        orchestrateCmd.SetHandler(async context =>
+        {
+            var request = context.ParseResult.GetValueForArgument(
+                orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException());
+            var runtimeSpec = context.ParseResult.GetValueForOption(runtimeSpecOpt);
+            var runtimeSpecJson = context.ParseResult.GetValueForOption(runtimeSpecJsonOpt);
+            var preferModel = context.ParseResult.GetValueForOption(preferModelOpt);
+            var provider = context.ParseResult.GetValueForOption(providerOpt);
+            var barrier = context.ParseResult.GetValueForOption(barrierOpt);
+            var preferredRegion = context.ParseResult.GetValueForOption(preferredRegionOpt);
+            var ephemeral = context.ParseResult.GetValueForOption(orchestrateEphemeralOpt);
+            var json = context.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = context.ParseResult.GetValueForOption(verboseOpt);
+
+            if (ephemeral || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase))
+                Environment.SetEnvironmentVariable("NEXO_EPHEMERAL_MODELS", "1");
+
+            using var scope = ServiceProvider.CreateScope();
+            var orchestrateCommand = scope.ServiceProvider.GetRequiredService<OrchestrateCommand>();
+            var exitCode = await orchestrateCommand.ExecuteAsync(
+                request,
+                runtimeSpec?.FullName,
+                runtimeSpecJson,
+                preferModel,
+                provider,
+                barrier,
+                preferredRegion,
+                json,
+                verbose);
+            Environment.Exit(exitCode);
+        });
         root.AddCommand(orchestrateCmd);
 
         // nexo escalate (resolves lazily)
@@ -1008,8 +1025,11 @@ static class Program
     /// Registers the Nexo kernel via AddNexo(), then CLI-specific commands and adapters.
     /// </summary>
     /// <param name="services">Service collection to configure</param>
-    private static void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
+        services.Configure<GrpcTransportOptions>(
+            context.Configuration.GetSection("Nexo:GrpcTransport"));
+        services.AddNexoRuntimeRouting(context.Configuration);
         services.AddNexo();
         services.TryAddSingleton<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementMetricsStore>(
             _ => new Nexo.Infrastructure.SelfImprovement.FileBasedSelfImprovementMetricsStore());

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -20,6 +20,9 @@
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
+    <ProjectReference Include="..\Nexo.Transport.Grpc\Nexo.Transport.Grpc.csproj" />
+    <ProjectReference Include="..\Nexo.Transport.Grpc.Server\Nexo.Transport.Grpc.Server.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,6 +9,8 @@ public sealed record OrchestrationRuntimeSpec
     public ModelRuntimeSpec Model { get; init; } = new();
     public Dictionary<string, ModelRuntimeSpec> Domains { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, ModelRuntimeSpec> Agents { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+    public string? BarrierLevel { get; init; }
+    public string? PreferredRegion { get; init; }
 
     public ModelRuntimeSpec Resolve(string agentId, string domain)
     {

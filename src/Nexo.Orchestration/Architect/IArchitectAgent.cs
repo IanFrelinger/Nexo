@@ -1,7 +1,6 @@
 namespace Nexo.Orchestration.Architect;
 
 using Models;
-
 /// <summary>
 /// Interface for the Architect Agent that decomposes requests into validated agent specifications.
 /// 
@@ -55,6 +54,21 @@ public sealed record DecompositionContext
     /// Available resource budget (compute, context, etc.).
     /// </summary>
     public ResourceBudget? ResourceBudget { get; init; }
+
+    /// <summary>
+    /// Correlation identifier propagated from orchestration.
+    /// </summary>
+    public string CorrelationId { get; init; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Barrier level used for endpoint routing.
+    /// </summary>
+    public string? BarrierLevel { get; init; }
+
+    /// <summary>
+    /// Optional preferred region for endpoint routing.
+    /// </summary>
+    public string? PreferredRegion { get; init; }
 }
 
 /// <summary>

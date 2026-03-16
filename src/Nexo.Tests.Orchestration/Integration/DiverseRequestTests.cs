@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Abstractions;
+using Nexo.Abstractions.Routing;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Models;
@@ -19,6 +20,7 @@ public class DiverseRequestTests
 {
     private readonly Mock<IModel> _modelMock;
     private readonly Mock<ICacheStrategy> _cacheMock;
+    private readonly Mock<IEndpointRouter> _routerMock;
     private readonly Mock<ILogger<ArchitectAgent>> _agentLoggerMock;
     private readonly Mock<ILogger<DomainRecognizer>> _domainLoggerMock;
     private readonly Mock<ILogger<DecompositionRetriever>> _retrieverLoggerMock;
@@ -28,10 +30,14 @@ public class DiverseRequestTests
     {
         _modelMock = new Mock<IModel>();
         _cacheMock = new Mock<ICacheStrategy>();
+        _routerMock = new Mock<IEndpointRouter>();
         _agentLoggerMock = new Mock<ILogger<ArchitectAgent>>();
         _domainLoggerMock = new Mock<ILogger<DomainRecognizer>>();
         _retrieverLoggerMock = new Mock<ILogger<DecompositionRetriever>>();
         _parserLoggerMock = new Mock<ILogger<DecompositionJsonParser>>();
+        _routerMock
+            .Setup(r => r.ResolveAsync(It.IsAny<EndpointRoutingContext>(), It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.FromResult<string?>(null));
     }
 
     private ArchitectAgent CreateArchitectAgent()
@@ -55,6 +61,7 @@ public class DiverseRequestTests
             validators,
             promptBuilder,
             parser,
+            _routerMock.Object,
             _agentLoggerMock.Object);
     }
 

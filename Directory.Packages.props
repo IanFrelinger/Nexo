@@ -185,6 +185,13 @@
   <ItemGroup>
     <PackageVersion Include="Docker.DotNet" Version="3.125.15" />
   </ItemGroup>
+  <!-- gRPC Packages -->
+  <ItemGroup>
+    <PackageVersion Include="Grpc.Net.Client" Version="2.76.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.34.0" />
+    <PackageVersion Include="Grpc.Tools" Version="2.78.0" />
+    <PackageVersion Include="Grpc.AspNetCore" Version="2.76.0" />
+  </ItemGroup>
   <!-- Background Agents Packages -->
   <ItemGroup>
     <PackageVersion Include="NCrontab" Version="3.3.3" />

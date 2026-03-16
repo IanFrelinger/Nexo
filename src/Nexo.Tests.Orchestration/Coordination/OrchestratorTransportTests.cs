@@ -122,6 +122,9 @@ public sealed class OrchestratorTransportTests
         architectMock
             .Setup(a => a.DecomposeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(decomposition);
+        architectMock
+            .Setup(a => a.DecomposeAsync(It.IsAny<string>(), It.IsAny<DecompositionContext>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(decomposition);
         return architectMock;
     }
 

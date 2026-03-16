@@ -31,15 +31,23 @@ public sealed class InProcessAgentTransport : IAgentTransport
 
         try
         {
+            var dependencyPayload = request.DependencyOutputs
+                ?? request.Payload?.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => (object)kvp.Value!,
+                    StringComparer.OrdinalIgnoreCase);
+
             var output = await _lifecycleManager.ExecuteAgentAsync(
                 request.AgentName,
-                request.DependencyOutputs,
+                dependencyPayload,
                 cancellationToken);
 
             return new AgentResult(
                 Success: true,
                 Output: output,
-                Duration: DateTimeOffset.UtcNow - startedAt);
+                Duration: DateTimeOffset.UtcNow - startedAt,
+                CorrelationId: request.CorrelationId,
+                SpanId: request.SpanId);
         }
         catch (InvalidOperationException ex) when (
             ex.Message.Contains("not registered", StringComparison.OrdinalIgnoreCase))
@@ -57,7 +65,10 @@ public sealed class InProcessAgentTransport : IAgentTransport
                 Metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["errorCode"] = "AGENT_NOT_FOUND"
-                });
+                },
+                ErrorCode: "AGENT_NOT_FOUND",
+                CorrelationId: request.CorrelationId,
+                SpanId: request.SpanId);
         }
         catch (TimeoutException ex)
         {
@@ -74,7 +85,10 @@ public sealed class InProcessAgentTransport : IAgentTransport
                 Metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["errorCode"] = "TIMEOUT"
-                });
+                },
+                ErrorCode: "TIMEOUT",
+                CorrelationId: request.CorrelationId,
+                SpanId: request.SpanId);
         }
         catch (Exception ex)
         {
@@ -91,7 +105,10 @@ public sealed class InProcessAgentTransport : IAgentTransport
                 Metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["errorCode"] = "TRANSPORT_ERROR"
-                });
+                },
+                ErrorCode: "TRANSPORT_ERROR",
+                CorrelationId: request.CorrelationId,
+                SpanId: request.SpanId);
         }
     }
 

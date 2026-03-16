@@ -216,6 +216,8 @@ public sealed class ChatCommand : Command
             runtimeSpecJson: null,
             preferModel: state.PreferModel,
             provider: state.Provider,
+            barrierLevel: null,
+            preferredRegion: null,
             json: false,
             verbose: false).ConfigureAwait(false);
     }

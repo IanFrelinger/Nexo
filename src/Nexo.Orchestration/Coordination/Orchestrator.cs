@@ -1,4 +1,7 @@
+using Nexo.Abstractions.Barriers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Nexo.Abstractions.Routing;
 using Nexo.Abstractions.Transport;
 using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Architect;
@@ -8,7 +11,9 @@ using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
 using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
+using Nexo.Orchestration.Barriers;
 using Nexo.Orchestration.Resilience;
+using Nexo.Orchestration.Models;
 using Nexo.Core.Application.Common.Ports;
 
 namespace Nexo.Orchestration.Coordination;
@@ -52,6 +57,10 @@ public sealed class Orchestrator
     private readonly CircuitBreaker _circuitBreaker;
     private readonly ILoopKernel _loops;
     private readonly ILogger<Orchestrator> _logger;
+    private readonly IOrchestrationRuntimeSpecAccessor? _runtimeSpecAccessor;
+    private readonly IBarrierContextAccessor? _barrierContextAccessor;
+    private readonly BarrierHierarchy? _barrierHierarchy;
+    private readonly BarrierGuard? _barrierGuard;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Orchestrator"/> class.
@@ -70,6 +79,11 @@ public sealed class Orchestrator
     /// <param name="logger">The logger instance.</param>
     /// <param name="negotiationProtocol">Optional negotiation protocol for conflict resolution.</param>
     /// <param name="metrics">Optional metrics collector for performance tracking.</param>
+    /// <param name="runtimeSpecAccessor">Optional runtime spec accessor for endpoint routing.</param>
+    /// <param name="barrierContextAccessor">Optional barrier context accessor for request barrier propagation.</param>
+    /// <param name="barrierHierarchy">Optional barrier hierarchy for fallback/default routing context.</param>
+    /// <param name="barrierAuditLog">Optional barrier audit log for invocation events.</param>
+    /// <param name="barrierOptions">Optional barrier options for guard behavior.</param>
     public Orchestrator(
         IArchitectAgent architect,
         AgentFactory agentFactory,
@@ -85,7 +99,12 @@ public sealed class Orchestrator
         ILoopKernel loops,
         ILogger<Orchestrator> logger,
         NegotiationProtocol? negotiationProtocol = null,
-        OrchestrationMetrics? metrics = null)
+        OrchestrationMetrics? metrics = null,
+        IOrchestrationRuntimeSpecAccessor? runtimeSpecAccessor = null,
+        IBarrierContextAccessor? barrierContextAccessor = null,
+        BarrierHierarchy? barrierHierarchy = null,
+        IBarrierAuditLog? barrierAuditLog = null,
+        IOptions<BarrierOptions>? barrierOptions = null)
     {
         _architect = architect ?? throw new ArgumentNullException(nameof(architect));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
@@ -111,6 +130,19 @@ public sealed class Orchestrator
         _negotiationProtocol = negotiationProtocol;
         _metrics = metrics;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _runtimeSpecAccessor = runtimeSpecAccessor;
+        _barrierContextAccessor = barrierContextAccessor;
+        _barrierHierarchy = barrierHierarchy;
+        _barrierGuard = barrierContextAccessor != null &&
+                        barrierAuditLog != null &&
+                        barrierHierarchy != null &&
+                        barrierOptions != null
+            ? new BarrierGuard(
+                barrierContextAccessor,
+                barrierAuditLog,
+                barrierHierarchy,
+                barrierOptions.Value)
+            : null;
     }
 
     /// <summary>
@@ -153,7 +185,17 @@ public sealed class Orchestrator
             using var decomposeProfiler = _metrics != null
                 ? new PerformanceProfiler("Decompose", _metrics, null)
                 : null;
-            var decomposition = await _architect.DecomposeAsync(request, cancellationToken);
+            var runtimeSpec = _runtimeSpecAccessor?.Current;
+            var barrierLevel = _barrierContextAccessor?.Current?.Level
+                ?? runtimeSpec?.BarrierLevel
+                ?? _barrierHierarchy?.Floor.Name;
+            var decompositionContext = new DecompositionContext
+            {
+                CorrelationId = correlationId,
+                BarrierLevel = barrierLevel,
+                PreferredRegion = runtimeSpec?.PreferredRegion
+            };
+            var decomposition = await _architect.DecomposeAsync(request, decompositionContext, cancellationToken);
             if (!decomposition.IsValid)
             {
                 _logger.LogWarning("Decomposition has validation errors: {ErrorCount}", decomposition.ValidationErrors.Count);
@@ -270,17 +312,42 @@ public sealed class Orchestrator
                 try
                 {
                     var agentStartTime = DateTimeOffset.UtcNow;
+                    if (_barrierGuard != null)
+                    {
+                        await _barrierGuard.AssertValidForInvocationAsync(
+                            agentId,
+                            correlationId,
+                            rootSpanId ?? string.Empty,
+                            token);
+
+                        if (_barrierContextAccessor?.Current is { } currentBarrier &&
+                            TryGetRequestedBarrier(container.Agent.Spec.Metadata, out var requestedBarrier))
+                        {
+                            _barrierGuard.AssertNoElevation(
+                                requestedBarrier,
+                                currentBarrier.Level,
+                                agentId,
+                                correlationId);
+                        }
+                    }
+
                     var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
                         container.Agent.Spec.Dependencies);
                     var invocation = new AgentInvocationRequest(
                         AgentName: agentId,
                         CorrelationId: correlationId,
-                        DependencyOutputs: dependencyOutputs,
+                        SpanId: rootSpanId,
+                        Payload: dependencyOutputs.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value),
+                        Options: new AgentInvocationOptions(
+                            Timeout: TimeSpan.FromMinutes(5),
+                            MaxRetries: 3,
+                            TargetEndpoint: container.Agent.Spec.TargetEndpoint),
                         Metadata: new Dictionary<string, string>
                         {
                             ["domain"] = container.Agent.Spec.Domain,
                             ["spanId"] = rootSpanId ?? string.Empty
-                        });
+                        },
+                        DependencyOutputs: dependencyOutputs);
 
                     var result = await SendThroughTransportAsync(invocation, token);
                     if (!result.Success)
@@ -393,6 +460,21 @@ public sealed class Orchestrator
         }
     }
 
+    private static bool TryGetRequestedBarrier(
+        IReadOnlyDictionary<string, object?> metadata,
+        out string requestedBarrier)
+    {
+        requestedBarrier = string.Empty;
+        if (metadata.Count == 0)
+            return false;
+
+        if (!metadata.TryGetValue("barrierLevel", out var value) || value is null)
+            return false;
+
+        requestedBarrier = value.ToString() ?? string.Empty;
+        return !string.IsNullOrWhiteSpace(requestedBarrier);
+    }
+
     private async Task<AgentResult> SendThroughTransportAsync(
         AgentInvocationRequest request,
         CancellationToken cancellationToken)
@@ -482,6 +564,11 @@ public sealed class Orchestrator
 
     private static string? GetErrorCode(AgentResult result)
     {
+        if (!string.IsNullOrWhiteSpace(result.ErrorCode))
+        {
+            return result.ErrorCode;
+        }
+
         if (result.Metadata == null)
         {
             return null;

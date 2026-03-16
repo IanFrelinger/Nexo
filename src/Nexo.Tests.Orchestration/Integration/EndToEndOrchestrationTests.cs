@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Abstractions;
+using Nexo.Abstractions.Routing;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Agents.Models;
@@ -95,6 +96,10 @@ public class EndToEndOrchestrationTests
             new DependencyAnalyzer(_serviceProvider.GetRequiredService<ILogger<DependencyAnalyzer>>())
         };
         var architectLogger = _serviceProvider.GetRequiredService<ILogger<ArchitectAgent>>();
+        var router = new Mock<IEndpointRouter>();
+        router
+            .Setup(r => r.ResolveAsync(It.IsAny<EndpointRoutingContext>(), It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.FromResult<string?>(null));
         var architect = new ArchitectAgent(
             modelMock.Object,
             retriever,
@@ -102,6 +107,7 @@ public class EndToEndOrchestrationTests
             validators,
             promptBuilder,
             parser,
+            router.Object,
             architectLogger);
 
         // Create Agent Factory and Lifecycle Manager

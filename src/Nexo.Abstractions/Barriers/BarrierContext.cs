@@ -1,0 +1,45 @@
+namespace Nexo.Abstractions.Barriers;
+
+/// <summary>
+/// Immutable barrier context propagated through orchestration and transports.
+/// </summary>
+public sealed record BarrierContext
+{
+    private BarrierContext() { }
+
+    public string Level { get; init; } = string.Empty;
+
+    public string AuthoritySource { get; init; } = string.Empty;
+
+    public string IssuedTo { get; init; } = string.Empty;
+
+    public DateTimeOffset IssuedAt { get; init; }
+
+    public string CorrelationId { get; init; } = string.Empty;
+
+    public static BarrierContext Create(
+        string level,
+        string authoritySource,
+        string issuedTo,
+        string correlationId,
+        BarrierHierarchy hierarchy)
+    {
+        ArgumentNullException.ThrowIfNull(hierarchy);
+        if (!hierarchy.IsKnown(level))
+            throw new ArgumentException(
+                $"Unknown barrier level: '{level}'. Configured levels: {string.Join(", ", hierarchy)}",
+                nameof(level));
+
+        return new BarrierContext
+        {
+            Level = level,
+            AuthoritySource = authoritySource ?? string.Empty,
+            IssuedTo = issuedTo ?? string.Empty,
+            IssuedAt = DateTimeOffset.UtcNow,
+            CorrelationId = correlationId ?? string.Empty
+        };
+    }
+
+    public BarrierContext ForAgent(string agentName)
+        => this with { IssuedTo = agentName };
+}
