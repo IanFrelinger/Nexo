@@ -156,6 +156,7 @@ public sealed record PipelineStageRun
     public int Attempt { get; init; }
     public string? WorkerId { get; init; }
     public PipelineWorkerType? WorkerType { get; init; }
+    public string? Output { get; init; }
     public string? Error { get; init; }
 }
 

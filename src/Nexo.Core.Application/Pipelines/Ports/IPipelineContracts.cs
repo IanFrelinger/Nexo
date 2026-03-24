@@ -44,3 +44,25 @@ public interface IPipelineScalingPolicy
 {
     PipelineScalingDecision Evaluate(PipelineScalingSnapshot snapshot);
 }
+
+/// <summary>
+/// Executes one stage against an underlying worker implementation.
+/// </summary>
+public interface IPipelineStageExecutor
+{
+    PipelineWorkerType WorkerType { get; }
+
+    Task<PipelineStageExecutionResult> ExecuteAsync(
+        PipelineStageExecutionRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Orchestrates full lifecycle execution for pipeline templates.
+/// </summary>
+public interface IPipelineOrchestrator
+{
+    Task<PipelineRun> RunAsync(
+        PipelineExecutionRequest request,
+        CancellationToken cancellationToken = default);
+}
