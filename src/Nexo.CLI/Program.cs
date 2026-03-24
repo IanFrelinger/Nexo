@@ -803,6 +803,64 @@ static class Program
         });
         root.AddCommand(orchestrateCmd);
 
+        // nexo pipeline
+        var pipelineCmd = new Command("pipeline", "Validate and run pipeline templates.");
+
+        var pipelineValidateCmd = new Command("validate", "Validate a pipeline template file.");
+        var pipelineValidateTemplateOpt = new Option<FileInfo>("--template", "Pipeline template JSON file") { IsRequired = true };
+        pipelineValidateCmd.AddOption(pipelineValidateTemplateOpt);
+        pipelineValidateCmd.SetHandler(
+            (FileInfo template, bool json, bool verbose) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<PipelineCommand>();
+                var exitCode = cmd.Validate(template.FullName, json, verbose);
+                Environment.Exit(exitCode);
+            },
+            pipelineValidateTemplateOpt,
+            jsonOpt,
+            verboseOpt);
+        pipelineCmd.AddCommand(pipelineValidateCmd);
+
+        var pipelineRunCmd = new Command("run", "Run a pipeline template file.");
+        var pipelineRunTemplateOpt = new Option<FileInfo>("--template", "Pipeline template JSON file") { IsRequired = true };
+        var pipelineRunIdOpt = new Option<string?>("--run-id", "Optional explicit run id");
+        var pipelineResumeRunIdOpt = new Option<string?>("--resume-run-id", "Optional prior run id to resume from");
+        var pipelineResumeFailedOpt = new Option<bool>("--resume-failed-stages", () => false, "Resume only failed stages from prior run");
+        var pipelineInputOpt = new Option<string[]>("--input", "Key/value input in key=value format")
+        {
+            AllowMultipleArgumentsPerToken = true
+        };
+        pipelineRunCmd.AddOption(pipelineRunTemplateOpt);
+        pipelineRunCmd.AddOption(pipelineRunIdOpt);
+        pipelineRunCmd.AddOption(pipelineResumeRunIdOpt);
+        pipelineRunCmd.AddOption(pipelineResumeFailedOpt);
+        pipelineRunCmd.AddOption(pipelineInputOpt);
+        pipelineRunCmd.SetHandler(
+            async (FileInfo template, string? runId, string? resumeRunId, bool resumeFailedStages, string[] rawInputs, bool json, bool verbose) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<PipelineCommand>();
+                var inputs = ParsePipelineInputs(rawInputs);
+                var exitCode = await cmd.RunAsync(
+                    templatePath: template.FullName,
+                    json: json,
+                    verbose: verbose,
+                    runId: runId,
+                    resumeRunId: resumeRunId,
+                    resumeFailedStages: resumeFailedStages,
+                    inputs: inputs,
+                    cancellationToken: CancellationToken.None);
+                Environment.Exit(exitCode);
+            },
+            pipelineRunTemplateOpt,
+            pipelineRunIdOpt,
+            pipelineResumeRunIdOpt,
+            pipelineResumeFailedOpt,
+            pipelineInputOpt,
+            jsonOpt,
+            verboseOpt);
+        pipelineCmd.AddCommand(pipelineRunCmd);
+        root.AddCommand(pipelineCmd);
+
         // nexo escalate (resolves lazily)
         var escalateCmd = new Command("escalate", "Manage escalations and conflicts");
         
@@ -1069,6 +1127,7 @@ static class Program
         services.AddScoped<OrchestrateCommand>();
         services.AddScoped<EscalateCommand>();
         services.AddScoped<MetricsCommand>();
+        services.AddScoped<PipelineCommand>();
         services.AddScoped<MaintenanceCommand>();
         services.AddScoped<BackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
@@ -1125,5 +1184,31 @@ static class Program
         }
 
         return headers;
+    }
+
+    private static IReadOnlyDictionary<string, string> ParsePipelineInputs(string[]? rawInputs)
+    {
+        var inputs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (rawInputs == null || rawInputs.Length == 0)
+            return inputs;
+
+        foreach (var raw in rawInputs)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                continue;
+
+            var index = raw.IndexOf('=');
+            if (index <= 0 || index == raw.Length - 1)
+                throw new ArgumentException($"Invalid --input '{raw}'. Expected key=value format.");
+
+            var key = raw[..index].Trim();
+            var value = raw[(index + 1)..].Trim();
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException($"Invalid --input '{raw}'. Key cannot be empty.");
+
+            inputs[key] = value;
+        }
+
+        return inputs;
     }
 }

@@ -1,0 +1,167 @@
+name: Production Readiness Gate v1
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/production-readiness-gate-v1.yml"
+      - "docs/ProductionReadinessGate-v1.md"
+      - "src/Nexo.Core.Application/Pipelines/**"
+      - "src/Nexo.Infrastructure/Pipelines/**"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.Tests.Infrastructure/Tests/Pipelines/**"
+      - "src/Nexo.Tests.CLI/**"
+
+jobs:
+  gate-v1:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build checks
+        run: |
+          dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj -f netstandard2.0 --no-restore -v minimal
+          dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --no-restore -v minimal
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+
+      - name: Pipeline tests (net8)
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            -f net8.0 \
+            --filter "FullyQualifiedName~Pipelines" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=gate-pipelines-net8.trx" \
+            --results-directory test-results
+
+      - name: Pipeline tests (net9)
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            -f net9.0 \
+            --filter "FullyQualifiedName~Pipelines" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=gate-pipelines-net9.trx" \
+            --results-directory test-results
+
+      - name: Host DI smoke
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            -f net8.0 \
+            --filter "FullyQualifiedName~HostingE2ESmokeTests.AddNexo_RegistersObservationPipeline_ByDefault|FullyQualifiedName~Pipelines.PipelineServiceCollectionExtensionsTests.AddNexo_RegistersPipelineCompositionLayerByDefault" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=gate-host-di.trx" \
+            --results-directory test-results
+
+      - name: CLI operational checks
+        run: |
+          cat > /tmp/pipeline_gate_demo.json <<'JSON'
+          {
+            "templateId": "gate-demo",
+            "version": "1.0",
+            "stages": [
+              { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+              { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+            ],
+            "edges": [
+              { "fromStageId": "ingest", "toStageId": "hybrid" }
+            ]
+          }
+          JSON
+
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline validate --template /tmp/pipeline_gate_demo.json | tee /tmp/gate-validate.log
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json | tee /tmp/gate-run-success.log
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee /tmp/gate-run-fallback.log
+
+          python - <<'PY'
+          import json
+
+          def parse_final_json(path: str) -> dict:
+              with open(path, "r", encoding="utf-8") as fh:
+                  lines = [line.strip() for line in fh.readlines()]
+              json_lines = [line for line in lines if line.startswith("{") and line.endswith("}")]
+              if not json_lines:
+                  raise SystemExit(f"No JSON payload found in {path}")
+              return json.loads(json_lines[-1])
+
+          success = parse_final_json("/tmp/gate-run-success.log")
+          fallback = parse_final_json("/tmp/gate-run-fallback.log")
+
+          if not success.get("ok"):
+              raise SystemExit("Success run did not return ok=true")
+          if success.get("data", {}).get("state") != "Completed":
+              raise SystemExit("Success run did not complete")
+
+          stages = fallback.get("data", {}).get("stages", [])
+          hybrid = next((s for s in stages if s.get("stageId") == "hybrid"), None)
+          if hybrid is None:
+              raise SystemExit("Fallback run missing hybrid stage result")
+          if hybrid.get("workerType") != "Agentic":
+              raise SystemExit(f"Fallback run did not switch to Agentic worker, got {hybrid.get('workerType')}")
+          PY
+
+      - name: Durable resume checks (LiteDb)
+        run: |
+          set +e
+          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee /tmp/gate-resume-source.log
+          source_exit=$?
+          set -e
+
+          if [ "$source_exit" -eq 0 ]; then
+            echo "Expected source run to fail for resume scenario"
+            exit 1
+          fi
+
+          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee /tmp/gate-resume-target.log
+
+          python - <<'PY'
+          import json
+
+          def parse_final_json(path: str) -> dict:
+              with open(path, "r", encoding="utf-8") as fh:
+                  lines = [line.strip() for line in fh.readlines()]
+              json_lines = [line for line in lines if line.startswith("{") and line.endswith("}")]
+              if not json_lines:
+                  raise SystemExit(f"No JSON payload found in {path}")
+              return json.loads(json_lines[-1])
+
+          source = parse_final_json("/tmp/gate-resume-source.log")
+          target = parse_final_json("/tmp/gate-resume-target.log")
+
+          if source.get("data", {}).get("state") != "Failed":
+              raise SystemExit("Source run is expected to fail for durable resume check")
+          if not target.get("ok"):
+              raise SystemExit("Resumed target run did not return ok=true")
+          if target.get("data", {}).get("state") != "Completed":
+              raise SystemExit("Resumed target run did not complete")
+          PY
+
+      - name: Cleanup temp artifacts
+        if: always()
+        run: rm -f /tmp/pipeline_gate_demo.json /tmp/nexo_pipeline_gate_resume.db
+
+      - name: Upload test and gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-readiness-gate-v1-artifacts
+          path: |
+            test-results/**/*.trx
+            /tmp/gate-validate.log
+            /tmp/gate-run-success.log
+            /tmp/gate-run-fallback.log
+            /tmp/gate-resume-source.log
+            /tmp/gate-resume-target.log
+          retention-days: 14

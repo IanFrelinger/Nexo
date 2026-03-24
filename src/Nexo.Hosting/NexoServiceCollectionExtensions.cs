@@ -16,6 +16,7 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Maintenance;
+using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
 using Nexo.Orchestration;
@@ -88,6 +89,7 @@ public static class NexoServiceCollectionExtensions
         services.AddNexoRuntimeTransport<InProcessAgentTransport, GrpcAgentTransport>();
         services.AddNexoPersistence();
         services.AddAdaptationInfrastructure(options.PatternStorePath);
+        services.AddPipelineCompositionLayer();
         services.AddBackgroundAgents(registerHostedService: options.RegisterBackgroundAgentHostedService);
         services.AddBackgroundAgentsRAG();
         if (!options.DisableObservationPipeline)

@@ -1,0 +1,60 @@
+using FluentAssertions;
+using Nexo.Core.Application.Pipelines.Models;
+using Nexo.Infrastructure.Pipelines;
+using Xunit;
+
+namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
+
+public sealed class InMemoryPipelineRunStoreTests
+{
+    [Fact]
+    public async Task SaveAsync_ThenGetAsync_ReturnsSavedRun()
+    {
+        var sut = new InMemoryPipelineRunStore();
+        var run = new PipelineRun
+        {
+            RunId = "run-1",
+            TemplateId = "tpl-1",
+            State = PipelineRunState.Running,
+            StageRuns = new[]
+            {
+                new PipelineStageRun
+                {
+                    StageId = "stage-1",
+                    State = PipelineStageRunState.Completed,
+                    Attempt = 1,
+                    WorkerType = PipelineWorkerType.Deterministic
+                }
+            }
+        };
+
+        await sut.SaveAsync(run);
+        var stored = await sut.GetAsync("run-1");
+
+        stored.Should().NotBeNull();
+        stored!.TemplateId.Should().Be("tpl-1");
+        stored.StageRuns.Should().ContainSingle(s => s.StageId == "stage-1");
+    }
+
+    [Fact]
+    public async Task GetAsync_WhenMissingRun_ReturnsNull()
+    {
+        var sut = new InMemoryPipelineRunStore();
+
+        var stored = await sut.GetAsync("missing");
+
+        stored.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SaveAsync_WithCancelledToken_Throws()
+    {
+        var sut = new InMemoryPipelineRunStore();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var act = async () => await sut.SaveAsync(new PipelineRun { RunId = "run-x", TemplateId = "tpl-x" }, cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+}
