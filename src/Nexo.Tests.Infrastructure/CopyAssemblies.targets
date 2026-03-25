@@ -5,6 +5,8 @@
     <PropertyGroup>
       <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(UserProfile)\.nuget\packages</NuGetPackageRoot>
       <NuGetPackageRoot Condition="'$(OS)' != 'Windows_NT' AND '$(NuGetPackageRoot)' == ''">$(HOME)/.nuget/packages</NuGetPackageRoot>
+      <NormalizedOutputPath>$([System.IO.Path]::GetFullPath('$(OutputPath)'))</NormalizedOutputPath>
+      <NormalizedOutputPath Condition="$([System.String]::Copy('$(NormalizedOutputPath)').EndsWith('\'))">$([System.String]::Copy('$(NormalizedOutputPath)').TrimEnd('\'))</NormalizedOutputPath>
       <DepsJsonPath>$(OutputPath)$(AssemblyName).deps.json</DepsJsonPath>
       <CopyScriptDir>$(MSBuildThisFileDirectory)scripts</CopyScriptDir>
       <CopyScriptProj>$(CopyScriptDir)\copy-assemblies.csproj</CopyScriptProj>
@@ -21,12 +23,12 @@
              ContinueOnError="false" />
     
     <!-- Use C# program to copy all assemblies from deps.json (including Avalonia, Castle.Core, etc.) -->
-    <Exec Command="dotnet &quot;$(CopyScriptExe)&quot; &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
+    <Exec Command="dotnet &quot;$(CopyScriptExe)&quot; &quot;$(DepsJsonPath)&quot; &quot;$(NormalizedOutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
           Condition="Exists('$(CopyScriptExe)') AND Exists('$(DepsJsonPath)') AND '$(SkipCopyAssemblies)' != 'true'"
           ContinueOnError="true" />
     
     <!-- Alternative: Use dotnet run if the DLL doesn't exist yet (builds on first run) -->
-    <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -- &quot;$(DepsJsonPath)&quot; &quot;$(OutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
+    <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -- &quot;$(DepsJsonPath)&quot; &quot;$(NormalizedOutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
           Condition="!Exists('$(CopyScriptExe)') AND Exists('$(CopyScriptProj)') AND Exists('$(DepsJsonPath)') AND '$(SkipCopyAssemblies)' != 'true'"
           ContinueOnError="true" />
     

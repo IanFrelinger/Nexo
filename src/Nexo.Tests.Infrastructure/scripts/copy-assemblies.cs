@@ -15,6 +15,16 @@ if (args.Length < 2)
 
 var depsJsonPath = args[0];
 var outputDir = args[1];
+// Windows callers can pass an escaped quote suffix when an output path ends in '\' and
+// the argument itself is quoted by MSBuild Exec. Trim any accidental wrapping quotes and
+// normalize trailing separators so directory creation always receives a valid path.
+outputDir = outputDir.Trim().Trim('"');
+outputDir = outputDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+if (string.IsNullOrWhiteSpace(outputDir))
+{
+    Console.Error.WriteLine("Output directory argument is empty after normalization.");
+    Environment.Exit(1);
+}
 var nugetRoot = args.Length > 2 ? args[2] : Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
     ".nuget", "packages");
