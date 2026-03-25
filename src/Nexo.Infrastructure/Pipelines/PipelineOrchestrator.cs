@@ -99,12 +99,13 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
 
             if (IsTerminalWithoutPending(stageStates))
             {
+                var hasAnyFailure = stageRuns.Values.Any(stageRun => stageRun.State == PipelineStageRunState.Failed);
                 var hasCriticalFailure = stageRuns.Values.Any(stageRun =>
                     stageRun.State == PipelineStageRunState.Failed &&
                     stageDefinitionsById.TryGetValue(stageRun.StageId, out var stageDefinition) &&
                     stageDefinition.Constraints.Critical);
 
-                var terminalState = hasCriticalFailure ? PipelineRunState.Failed : PipelineRunState.Completed;
+                var terminalState = ResolveTerminalState(hasAnyFailure, hasCriticalFailure, _options.CompletionPolicy);
                 run = FinalizeRun(run, terminalState, stageRuns);
                 await _runStore.SaveAsync(run, cancellationToken);
                 _logger.LogInformation(
@@ -195,7 +196,11 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         var prior = await _runStore.GetAsync(request.ResumeRunId!, cancellationToken);
         if (prior == null)
         {
-            _logger.LogWarning("Resume requested for run {RunId}, but no prior run was found.", request.ResumeRunId);
+            if (!_options.AllowMissingResumeSource)
+                throw new InvalidOperationException(
+                    $"Resume requested for run '{request.ResumeRunId}', but no prior run was found.");
+
+            _logger.LogWarning("Resume requested for run {RunId}, but no prior run was found. Starting fresh run.", request.ResumeRunId);
             return;
         }
 
@@ -425,6 +430,20 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         }
 
         return true;
+    }
+
+    private static PipelineRunState ResolveTerminalState(
+        bool hasAnyFailure,
+        bool hasCriticalFailure,
+        PipelineCompletionPolicy completionPolicy)
+    {
+        if (!hasAnyFailure)
+            return PipelineRunState.Completed;
+
+        if (completionPolicy == PipelineCompletionPolicy.AllowNonCriticalStageFailures)
+            return hasCriticalFailure ? PipelineRunState.Failed : PipelineRunState.Completed;
+
+        return PipelineRunState.Failed;
     }
 
     private sealed record ExecutionOutcome

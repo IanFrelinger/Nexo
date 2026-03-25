@@ -7,6 +7,7 @@ using Nexo.Core.Application.Pipelines.Models;
 using Nexo.Core.Application.Pipelines.Ports;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Infrastructure.Pipelines;
+using Microsoft.Extensions.Options;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
@@ -37,6 +38,7 @@ public sealed class PipelineCommandTests : UnitTestBase
             await TestRunSuccess();
             await TestRunFailure();
             await TestRunWithResumeAndInputs();
+            await TestDiagnostics();
 
             return new TestResult
             {
@@ -84,9 +86,19 @@ public sealed class PipelineCommandTests : UnitTestBase
         var validator = new PipelineTemplateValidator();
         var orchestrator = new Mock<IPipelineOrchestrator>(MockBehavior.Strict);
         var renderer = new Mock<IConsoleRenderer>();
+        var executionOptions = Options.Create(new PipelineExecutionOptions());
+        var persistenceOptions = Options.Create(new PipelinePersistenceOptions());
+        var adapterOptions = Options.Create(new PipelineExecutionAdapterOptions());
         var logger = new Mock<ILogger<PipelineCommand>>();
 
-        var command = new PipelineCommand(validator, orchestrator.Object, renderer.Object, logger.Object);
+        var command = new PipelineCommand(
+            validator,
+            orchestrator.Object,
+            renderer.Object,
+            executionOptions,
+            persistenceOptions,
+            adapterOptions,
+            logger.Object);
         var exitCode = command.Validate(templatePath, json: false, verbose: false);
 
         AssertEqual((int)ExitCode.Ok, exitCode);
@@ -105,9 +117,19 @@ public sealed class PipelineCommandTests : UnitTestBase
         var validator = new PipelineTemplateValidator();
         var orchestrator = new Mock<IPipelineOrchestrator>(MockBehavior.Strict);
         var renderer = new Mock<IConsoleRenderer>();
+        var executionOptions = Options.Create(new PipelineExecutionOptions());
+        var persistenceOptions = Options.Create(new PipelinePersistenceOptions());
+        var adapterOptions = Options.Create(new PipelineExecutionAdapterOptions());
         var logger = new Mock<ILogger<PipelineCommand>>();
 
-        var command = new PipelineCommand(validator, orchestrator.Object, renderer.Object, logger.Object);
+        var command = new PipelineCommand(
+            validator,
+            orchestrator.Object,
+            renderer.Object,
+            executionOptions,
+            persistenceOptions,
+            adapterOptions,
+            logger.Object);
         var exitCode = command.Validate(templatePath, json: false, verbose: false);
 
         AssertEqual((int)ExitCode.ValidationFailed, exitCode);
@@ -129,6 +151,9 @@ public sealed class PipelineCommandTests : UnitTestBase
         var validator = new PipelineTemplateValidator();
         var orchestrator = new Mock<IPipelineOrchestrator>();
         var renderer = new Mock<IConsoleRenderer>();
+        var executionOptions = Options.Create(new PipelineExecutionOptions());
+        var persistenceOptions = Options.Create(new PipelinePersistenceOptions());
+        var adapterOptions = Options.Create(new PipelineExecutionAdapterOptions());
         var logger = new Mock<ILogger<PipelineCommand>>();
 
         orchestrator
@@ -150,7 +175,14 @@ public sealed class PipelineCommandTests : UnitTestBase
                 }
             });
 
-        var command = new PipelineCommand(validator, orchestrator.Object, renderer.Object, logger.Object);
+        var command = new PipelineCommand(
+            validator,
+            orchestrator.Object,
+            renderer.Object,
+            executionOptions,
+            persistenceOptions,
+            adapterOptions,
+            logger.Object);
         var exitCode = await command.RunAsync(
             templatePath,
             json: false,
@@ -178,6 +210,9 @@ public sealed class PipelineCommandTests : UnitTestBase
         var validator = new PipelineTemplateValidator();
         var orchestrator = new Mock<IPipelineOrchestrator>();
         var renderer = new Mock<IConsoleRenderer>();
+        var executionOptions = Options.Create(new PipelineExecutionOptions());
+        var persistenceOptions = Options.Create(new PipelinePersistenceOptions());
+        var adapterOptions = Options.Create(new PipelineExecutionAdapterOptions());
         var logger = new Mock<ILogger<PipelineCommand>>();
 
         orchestrator
@@ -200,7 +235,14 @@ public sealed class PipelineCommandTests : UnitTestBase
                 }
             });
 
-        var command = new PipelineCommand(validator, orchestrator.Object, renderer.Object, logger.Object);
+        var command = new PipelineCommand(
+            validator,
+            orchestrator.Object,
+            renderer.Object,
+            executionOptions,
+            persistenceOptions,
+            adapterOptions,
+            logger.Object);
         var exitCode = await command.RunAsync(
             templatePath,
             json: false,
@@ -228,6 +270,9 @@ public sealed class PipelineCommandTests : UnitTestBase
         var validator = new PipelineTemplateValidator();
         var orchestrator = new Mock<IPipelineOrchestrator>();
         var renderer = new Mock<IConsoleRenderer>();
+        var executionOptions = Options.Create(new PipelineExecutionOptions());
+        var persistenceOptions = Options.Create(new PipelinePersistenceOptions());
+        var adapterOptions = Options.Create(new PipelineExecutionAdapterOptions());
         var logger = new Mock<ILogger<PipelineCommand>>();
 
         PipelineExecutionRequest? captured = null;
@@ -242,7 +287,14 @@ public sealed class PipelineCommandTests : UnitTestBase
                 StageRuns = Array.Empty<PipelineStageRun>()
             });
 
-        var command = new PipelineCommand(validator, orchestrator.Object, renderer.Object, logger.Object);
+        var command = new PipelineCommand(
+            validator,
+            orchestrator.Object,
+            renderer.Object,
+            executionOptions,
+            persistenceOptions,
+            adapterOptions,
+            logger.Object);
         var exitCode = await command.RunAsync(
             templatePath,
             json: true,
@@ -259,6 +311,45 @@ public sealed class PipelineCommandTests : UnitTestBase
         AssertTrue(captured.ResumeFailedStages);
         AssertEqual("v", captured.Inputs["k"]);
         renderer.Verify(x => x.RenderJson(It.IsAny<object>()), Times.Once);
+    }
+
+    private Task TestDiagnostics()
+    {
+        var validator = new PipelineTemplateValidator();
+        var orchestrator = new Mock<IPipelineOrchestrator>(MockBehavior.Strict);
+        var renderer = new Mock<IConsoleRenderer>();
+        var executionOptions = Options.Create(new PipelineExecutionOptions
+        {
+            MaxRetryAttempts = 3,
+            RetryDelayMs = 25,
+            CompletionPolicy = PipelineCompletionPolicy.FailOnAnyStageFailure
+        });
+        var persistenceOptions = Options.Create(new PipelinePersistenceOptions
+        {
+            Provider = "InMemory",
+            DatabasePath = "/tmp/test.db"
+        });
+        var adapterOptions = Options.Create(new PipelineExecutionAdapterOptions
+        {
+            DeterministicAdapter = "default",
+            AgenticAdapter = "default"
+        });
+        var logger = new Mock<ILogger<PipelineCommand>>();
+
+        var command = new PipelineCommand(
+            validator,
+            orchestrator.Object,
+            renderer.Object,
+            executionOptions,
+            persistenceOptions,
+            adapterOptions,
+            logger.Object);
+
+        var exitCode = command.Diagnostics(json: true);
+
+        AssertEqual((int)ExitCode.Ok, exitCode);
+        renderer.Verify(x => x.RenderJson(It.IsAny<object>()), Times.Once);
+        return Task.CompletedTask;
     }
 
     private string WriteTemplate(PipelineTemplate template, string filename)

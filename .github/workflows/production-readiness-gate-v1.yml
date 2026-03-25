@@ -14,7 +14,11 @@ on:
 
 jobs:
   gate-v1:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout
@@ -28,15 +32,18 @@ jobs:
             9.0.x
 
       - name: Restore
+        shell: bash
         run: dotnet restore
 
       - name: Build checks
+        shell: bash
         run: |
           dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj -f netstandard2.0 --no-restore -v minimal
           dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --no-restore -v minimal
           dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Pipeline tests (net8)
+        shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             -f net8.0 \
@@ -46,6 +53,7 @@ jobs:
             --results-directory test-results
 
       - name: Pipeline tests (net9)
+        shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             -f net9.0 \
@@ -55,6 +63,7 @@ jobs:
             --results-directory test-results
 
       - name: Host DI smoke
+        shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             -f net8.0 \
@@ -64,6 +73,7 @@ jobs:
             --results-directory test-results
 
       - name: CLI operational checks
+        shell: bash
         run: |
           cat > /tmp/pipeline_gate_demo.json <<'JSON'
           {
@@ -81,7 +91,9 @@ jobs:
 
           dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline validate --template /tmp/pipeline_gate_demo.json | tee /tmp/gate-validate.log
           dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json | tee /tmp/gate-run-success.log
+          NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
           dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee /tmp/gate-run-fallback.log
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline diagnostics --format-json | tee /tmp/gate-diagnostics.log
 
           python - <<'PY'
           import json
@@ -111,9 +123,10 @@ jobs:
           PY
 
       - name: Durable resume checks (LiteDb)
+        shell: bash
         run: |
           set +e
-          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
+          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
           dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee /tmp/gate-resume-source.log
           source_exit=$?
           set -e
@@ -150,18 +163,20 @@ jobs:
 
       - name: Cleanup temp artifacts
         if: always()
+        shell: bash
         run: rm -f /tmp/pipeline_gate_demo.json /tmp/nexo_pipeline_gate_resume.db
 
       - name: Upload test and gate artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: production-readiness-gate-v1-artifacts
+          name: production-readiness-gate-v1-artifacts-${{ matrix.os }}
           path: |
             test-results/**/*.trx
             /tmp/gate-validate.log
             /tmp/gate-run-success.log
             /tmp/gate-run-fallback.log
+            /tmp/gate-diagnostics.log
             /tmp/gate-resume-source.log
             /tmp/gate-resume-target.log
           retention-days: 14

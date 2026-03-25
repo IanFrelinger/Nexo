@@ -132,19 +132,28 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f ne
 Create a temporary template file:
 
 ```bash
-cat > /tmp/pipeline_gate_demo.json <<'JSON'
-{
-  "templateId": "gate-demo",
-  "version": "1.0",
-  "stages": [
-    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
-    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
-  ],
-  "edges": [
-    { "fromStageId": "ingest", "toStageId": "hybrid" }
-  ]
-}
-JSON
+python - <<'PY'
+import json
+import os
+path = "/tmp/pipeline_gate_demo.json"
+with open(path, "w", encoding="utf-8", newline="\n") as fh:
+    json.dump(
+        {
+            "templateId": "gate-demo",
+            "version": "1.0",
+            "stages": [
+                { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+                { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+            ],
+            "edges": [
+                { "fromStageId": "ingest", "toStageId": "hybrid" }
+            ]
+        },
+        fh,
+        indent=2,
+    )
+print(path)
+PY
 ```
 
 Validate and run:
@@ -152,13 +161,15 @@ Validate and run:
 ```bash
 dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline validate --template /tmp/pipeline_gate_demo.json
 dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json
-dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json
+NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json
+dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline diagnostics --format-json
 ```
 
 ### 4.4 Durable resume checks (LiteDb)
 
 ```bash
 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
+NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
 dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json
 
 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \

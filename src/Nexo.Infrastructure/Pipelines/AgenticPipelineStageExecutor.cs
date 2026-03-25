@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Pipelines.Models;
 using Nexo.Core.Application.Pipelines.Ports;
 
@@ -10,10 +11,25 @@ namespace Nexo.Infrastructure.Pipelines;
 public sealed class AgenticPipelineStageExecutor : IPipelineStageExecutor
 {
     private readonly ILogger<AgenticPipelineStageExecutor> _logger;
+    private readonly PipelineExecutionOptions _executionOptions;
+    private readonly IPipelineStageExecutionAdapter _adapter;
 
-    public AgenticPipelineStageExecutor(ILogger<AgenticPipelineStageExecutor> logger)
+    public AgenticPipelineStageExecutor(
+        ILogger<AgenticPipelineStageExecutor> logger,
+        IEnumerable<IPipelineStageExecutionAdapter> adapters,
+        IOptions<PipelineExecutionAdapterOptions> adapterOptions,
+        IOptions<PipelineExecutionOptions> executionOptions)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _executionOptions = executionOptions?.Value ?? throw new ArgumentNullException(nameof(executionOptions));
+
+        if (adapters == null) throw new ArgumentNullException(nameof(adapters));
+        var adapterKey = adapterOptions?.Value?.AgenticAdapter ?? "default";
+        _adapter = adapters.FirstOrDefault(x =>
+                x.WorkerType == PipelineWorkerType.Agentic &&
+                string.Equals(x.AdapterKey, adapterKey, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException(
+                $"No agentic pipeline adapter registered for key '{adapterKey}'.");
     }
 
     public PipelineWorkerType WorkerType => PipelineWorkerType.Agentic;
@@ -25,8 +41,8 @@ public sealed class AgenticPipelineStageExecutor : IPipelineStageExecutor
         cancellationToken.ThrowIfCancellationRequested();
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        // Test hook to force agentic stage failures.
-        var fail = ShouldFail(request, "agentic");
+        // Optional test hook (disabled in production by default).
+        var fail = _executionOptions.EnableTestHooks && ShouldFail(request, "agentic");
         if (fail)
         {
             _logger.LogWarning("Agentic stage {StageId} failed by test hook.", request.StageId);
@@ -34,19 +50,12 @@ public sealed class AgenticPipelineStageExecutor : IPipelineStageExecutor
             {
                 Succeeded = false,
                 Retryable = true,
-                WorkerId = "agentic-default",
+                WorkerId = "agentic-test-hook",
                 Error = "Agentic execution failed (test hook)."
             });
         }
 
-        _logger.LogInformation("Agentic stage {StageId} completed.", request.StageId);
-        return Task.FromResult(new PipelineStageExecutionResult
-        {
-            Succeeded = true,
-            Retryable = false,
-            WorkerId = "agentic-default",
-            Output = $"agentic:{request.StageId}:ok"
-        });
+        return _adapter.ExecuteAsync(request, cancellationToken);
     }
 
     private static bool ShouldFail(PipelineStageExecutionRequest request, string worker)

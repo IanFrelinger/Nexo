@@ -30,6 +30,46 @@ dotnet run --project src/Nexo.CLI -- --help
 dotnet run --project src/Nexo.CLI -- test local
 ```
 
+## Pipeline Quickstart
+
+```bash
+# 1) Create a template
+cat > /tmp/nexo_pipeline_demo.json <<'JSON'
+{
+  "templateId": "demo",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+
+# 2) Validate the template
+dotnet run --project src/Nexo.CLI -- pipeline validate --template /tmp/nexo_pipeline_demo.json
+
+# 3) Run the pipeline
+dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-run --format-json
+
+# 4) Run diagnostics to see resolved runtime config
+dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
+
+# 5) Resume example with durable persistence (LiteDb) and permissive completion policy for the source fail case
+NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo-pipelines.db \
+NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
+NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
+dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-resume-source --input "fail:ingest:deterministic=true" --format-json
+
+NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo-pipelines.db \
+dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-resume-target --resume-run-id demo-resume-source --resume-failed-stages --format-json
+```
+
+Pipeline configuration precedence for runtime options is:
+1) defaults, 2) config sections under `Nexo:Pipelines:*`, 3) environment variables (`NEXO_PIPELINE_*`).
+
 ## CLI Commands (Kernel)
 
 | Command | Description |
@@ -44,6 +84,7 @@ dotnet run --project src/Nexo.CLI -- test local
 | `nexo validate` | Run architecture tests and contract checks |
 | `nexo agent` | Execute a named agent action |
 | `nexo orchestrate` | Run orchestration workflows |
+| `nexo pipeline` | Validate/run/resume pipelines and show runtime diagnostics |
 | `nexo config` | Show or update configuration |
 | `nexo bootstrap` | Linux-first machine readiness check/install for demo dependencies (macOS supported) |
 | `nexo chat` | Interactive CLI chat loop for orchestration-driven requests |

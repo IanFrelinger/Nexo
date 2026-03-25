@@ -859,6 +859,17 @@ static class Program
             jsonOpt,
             verboseOpt);
         pipelineCmd.AddCommand(pipelineRunCmd);
+
+        var pipelineDiagnosticsCmd = new Command("diagnostics", "Show resolved pipeline runtime configuration.");
+        pipelineDiagnosticsCmd.SetHandler(
+            (bool json) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<PipelineCommand>();
+                var exitCode = cmd.Diagnostics(json);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt);
+        pipelineCmd.AddCommand(pipelineDiagnosticsCmd);
         root.AddCommand(pipelineCmd);
 
         // nexo escalate (resolves lazily)
