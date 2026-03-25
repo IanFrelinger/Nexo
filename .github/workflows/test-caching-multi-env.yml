@@ -25,23 +25,23 @@ jobs:
         environment:
           - name: ubuntu-8.0
             dockerfile: .docker/Dockerfile.test-caching
-            dotnet: "8.0"
+            dotnet: "9.0"
             type: docker
           - name: ubuntu-7.0
             dockerfile: .docker/Dockerfile.test-caching
-            dotnet: "7.0"
+            dotnet: "9.0"
             type: docker
           - name: alpine-8.0
             dockerfile: .docker/Dockerfile.test-caching-alpine
-            dotnet: "8.0"
+            dotnet: "9.0"
             type: docker
           - name: debian-8.0
             dockerfile: .docker/Dockerfile.test-caching-debian
-            dotnet: "8.0"
+            dotnet: "9.0"
             type: docker
           - name: android-8.0
             dockerfile: .docker/Dockerfile.test-caching-android
-            dotnet: "8.0"
+            dotnet: "9.0"
             type: docker
           - name: windows-8.0
             dockerfile: .docker/Dockerfile.test-caching-windows
