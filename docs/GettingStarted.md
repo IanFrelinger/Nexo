@@ -1,163 +1,133 @@
 # Getting Started with Nexo
 
-This guide walks you through installing Nexo, configuring it, running your first command, and extending it with a custom brick.
+This guide is for first-time users who want to run Nexo quickly and understand the core workflows.
+
+## What you will do
+
+In ~15 minutes, you will:
+
+1. Build and run the CLI.
+2. Run validation and analysis.
+3. Execute a pipeline template.
+4. Inspect runtime diagnostics.
 
 ## Prerequisites
 
-- .NET 8 SDK
-- Docker (optional, for multi-platform test execution)
-- Ollama (optional, for local LLM) or OpenAI/Azure API key (for cloud providers)
+- .NET SDK **9.x** (repo is pinned in `global.json`).
+- Git.
+- Optional:
+  - Docker (multi-environment testing workflows)
+  - Ollama/OpenAI/Azure credentials (model-backed commands)
 
-## Install
-
-### Option 1: .NET Tool (recommended)
-
-```bash
-dotnet tool install -g Nexo.CLI
-nexo --help
-```
-
-### Option 2: Run from source
+## 1) Clone and build
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
 dotnet build Nexo.sln
+```
+
+## 2) Verify CLI is available
+
+```bash
 dotnet run --project src/Nexo.CLI -- --help
 ```
 
-## Configure
+You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, and `orchestrate`.
 
-Nexo reads configuration from `~/.nexo/config.json`. Create it if needed:
+## 3) Run first high-signal commands
 
-```json
-{
-  "provider": "openai",
-  "model": "gpt-4o-mini"
-}
+Run these from the repository root:
+
+```bash
+# architecture and contract checks
+dotnet run --project src/Nexo.CLI -- validate
+
+# code and assembly analysis
+dotnet run --project src/Nexo.CLI -- analyze --path .
 ```
 
-Set your API key:
+## 4) Run your first pipeline
+
+Create a minimal template:
+
+```bash
+cat > /tmp/nexo_pipeline_demo.json <<'JSON'
+{
+  "templateId": "demo",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+```
+
+Validate + run:
+
+```bash
+dotnet run --project src/Nexo.CLI -- pipeline validate --template /tmp/nexo_pipeline_demo.json
+dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-run --format-json
+dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
+```
+
+## 5) Optional provider setup
+
+If you plan to run model-backed workflows:
+
+### OpenAI
 
 ```bash
 export OPENAI_API_KEY="sk-..."
+export OPENAI_MODEL="gpt-4o-mini"
 ```
 
-For local Ollama:
+### Ollama
 
 ```bash
-export provider=ollama
-export OLLAMA_MODEL=llama3.2
+export OLLAMA_BASE_URL="http://localhost:11434"
+export OLLAMA_MODEL="llama3.1"
 ```
 
-## Run Your First Command
+Provider behavior and full configuration are documented in `docs/Configuration.md`.
 
-### Validate architecture tests
+## 6) Testing workflows
 
 ```bash
-nexo validate
+# targeted infrastructure tests
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
+
+# broader local test command
+dotnet run --project src/Nexo.CLI -- test local
 ```
 
-Runs architecture tests and contract checks in the current directory.
+For timeout policy and anti-hang guidance, see `docs/Testing.md`.
 
-### Analyze code
+## 7) Embed in your host application
 
-```bash
-nexo analyze --path .
-```
-
-Runs code and assembly analyzers.
-
-### Run an agent
-
-```bash
-nexo agent --name MyAgent
-```
-
-## Embed Nexo in Your Application
-
-Use `AddNexo()` to register the kernel in your host:
+At minimum:
 
 ```csharp
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Nexo.Hosting;
 
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
-    {
-        services.AddNexo(options =>
-        {
-            options.PatternStorePath = "/path/to/patterns";  // optional
-            options.TrustEnabled = true;                     // optional
-        });
-    })
-    .Build();
-
-// Resolve and use services
-var analysisService = host.Services.GetRequiredService<Nexo.Core.Application.Analysis.Ports.IAnalysisService>();
-var result = await analysisService.AnalyzeAsync(new DirectoryInfo("."), CancellationToken.None);
-```
-
-## Extend with a Custom Brick
-
-1. Create a class that inherits from `Brick`:
-
-```csharp
-using Nexo.Core.Domain.Bricks;
-
-public class MyCustomBrick : Brick
-{
-    public MyCustomBrick()
-    {
-        Id = "my-custom";
-        Name = "My Custom Brick";
-    }
-
-    public override Task<BrickOutput> ExecuteAsync(
-        BrickInput input,
-        ImplementationType implementation,
-        IExecutionContext context,
-        CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(new BrickOutput { ["result"] = "Hello from custom brick" });
-    }
-}
-```
-
-2. Register it via `AddAdaptationBricks` when using the adaptation pipeline, or add it to the brick registry in your host configuration.
-
-## OpenTelemetry Metrics
-
-Enable OpenTelemetry metrics export by calling `AddNexoOpenTelemetry()` after `AddNexo()`:
-
-```csharp
 services.AddNexo();
-services.AddNexoOpenTelemetry(m => m.AddConsoleExporter());  // or AddOtlpExporter()
 ```
 
-## Docker
+Then resolve application ports from DI (analysis, validation, orchestration, etc.).
 
-Run the Nexo CLI in Docker:
+## Common pitfalls
 
-```bash
-make docker-cli
-docker run --rm nexo-cli:latest --help
-# Run validate against your workspace:
-docker run --rm -v $(pwd):/workspace -w /workspace nexo-cli:latest validate
-```
+- If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`9.x`).
+- Prefer running heavy validations sequentially (not in parallel terminals) to avoid resource pressure.
+- For CI parity, use the documented gate workflows under `.github/workflows/`.
 
-Note: If your project has a `global.json` that pins an SDK version, the container (which has only the runtime) may fail. Use the native CLI or temporarily move `global.json` aside when using Docker.
+## Next documents to read
 
-## NuGet Packages
-
-- **Nexo.Hosting** — Library for embedding the Nexo kernel. `dotnet add package Nexo.Hosting`
-- **Nexo.CLI** — Global tool. `dotnet tool install -g Nexo.CLI`
-
-Build NuGet packages locally: `make pack` (output in `dist/nuget/`).
-
-## Next Steps
-
-- [Trust & Information Architecture](TrustAndInformationArchitecture.md) — Data sanitization, audit, access boundary
-- [Configuration Reference](Configuration.md) — All env vars and config options
-- [Architecture](Architecture.md) — System design and layers
+- `README.md` — high-level orientation and command map.
+- `docs/Architecture.md` — subsystem layout and flow.
+- `docs/TrustAndInformationArchitecture.md` — barrier/trust model.
+- `docs/ProductionReadinessGate-v1.md` — release gate and operator checks.
