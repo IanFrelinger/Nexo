@@ -15,67 +15,77 @@ public sealed class BootstrapCommand : Command
             "--include-optional",
             () => false,
             "Include optional dependencies (docker, ollama) in checks/install plan.");
+        var profileOpt = new Option<string>(
+            "--profile",
+            () => "demo",
+            "Bootstrap profile: demo | self-extend-functional | self-extend-aesthetic | self-extend-visual.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve install plan.");
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "Show install plan without executing commands.");
 
         var checkCmd = new Command("check", "Check local machine readiness for the demo profile.");
         checkCmd.AddOption(includeOptionalOpt);
+        checkCmd.AddOption(profileOpt);
         checkCmd.AddOption(jsonOpt);
         checkCmd.SetHandler(async (InvocationContext ctx) =>
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
+            var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            Environment.ExitCode = await RunCheckAsync(includeOptional, json, ctx.GetCancellationToken()).ConfigureAwait(false);
+            ctx.ExitCode = await RunCheckAsync(profile, includeOptional, json, ctx.GetCancellationToken()).ConfigureAwait(false);
         });
         AddCommand(checkCmd);
 
         var applyCmd = new Command("apply", "Install missing dependencies for the demo profile.");
         applyCmd.AddOption(includeOptionalOpt);
+        applyCmd.AddOption(profileOpt);
         applyCmd.AddOption(jsonOpt);
         applyCmd.AddOption(yesOpt);
         applyCmd.AddOption(dryRunOpt);
         applyCmd.SetHandler(async (InvocationContext ctx) =>
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
+            var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
-            Environment.ExitCode = await RunApplyAsync(includeOptional, yes, dryRun, json, ctx.GetCancellationToken()).ConfigureAwait(false);
+            ctx.ExitCode = await RunApplyAsync(profile, includeOptional, yes, dryRun, json, ctx.GetCancellationToken()).ConfigureAwait(false);
         });
         AddCommand(applyCmd);
 
         // Default command behavior: `nexo bootstrap` == `nexo bootstrap check`
         AddOption(includeOptionalOpt);
+        AddOption(profileOpt);
         AddOption(jsonOpt);
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
+            var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            Environment.ExitCode = await RunCheckAsync(includeOptional, json, ctx.GetCancellationToken()).ConfigureAwait(false);
+            ctx.ExitCode = await RunCheckAsync(profile, includeOptional, json, ctx.GetCancellationToken()).ConfigureAwait(false);
         });
     }
 
-    internal static async Task<int> RunCheckAsync(bool includeOptional, bool json, CancellationToken ct)
+    internal static async Task<int> RunCheckAsync(string profile, bool includeOptional, bool json, CancellationToken ct)
     {
-        var assessment = await BootstrapRuntime.AssessDemoAsync(includeOptional, ct).ConfigureAwait(false);
-        BootstrapRuntime.RenderAssessment(assessment, includeOptional, json);
+        var assessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
+        BootstrapRuntime.RenderAssessment(assessment, json);
         return 0;
     }
 
-    internal static async Task<int> RunApplyAsync(bool includeOptional, bool yes, bool dryRun, bool json, CancellationToken ct)
+    internal static async Task<int> RunApplyAsync(string profile, bool includeOptional, bool yes, bool dryRun, bool json, CancellationToken ct)
     {
-        var assessment = await BootstrapRuntime.AssessDemoAsync(includeOptional, ct).ConfigureAwait(false);
+        var assessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
         if (!assessment.Supported)
         {
-            BootstrapRuntime.RenderAssessment(assessment, includeOptional, json);
+            BootstrapRuntime.RenderAssessment(assessment, json);
             return 1;
         }
 
-        var plan = BootstrapRuntime.BuildInstallPlan(assessment, includeOptional);
+        var plan = BootstrapRuntime.BuildInstallPlan(assessment);
         if (plan.Count == 0)
         {
-            BootstrapRuntime.RenderAssessment(assessment, includeOptional, json);
+            BootstrapRuntime.RenderAssessment(assessment, json);
             if (!json)
                 Console.WriteLine("Bootstrap apply: nothing to install.");
             return 0;
@@ -126,7 +136,7 @@ public sealed class BootstrapCommand : Command
                 failures.Add($"{dep.DisplayName} (exit {exitCode})");
         }
 
-        var post = await BootstrapRuntime.AssessDemoAsync(includeOptional, ct).ConfigureAwait(false);
+        var post = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
         var success = !post.MissingRequired.Any() && failures.Count == 0;
 
         if (json)
@@ -172,6 +182,20 @@ internal static class BootstrapRuntime
             true,
             false),
         new(
+            "dotnet",
+            ".NET SDK",
+            "command -v dotnet",
+            "sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0",
+            true,
+            false),
+        new(
+            "zstd",
+            "zstd",
+            "command -v zstd",
+            "sudo apt-get update && sudo apt-get install -y zstd",
+            false,
+            true),
+        new(
             "ollama",
             "Ollama",
             "command -v ollama",
@@ -204,6 +228,13 @@ internal static class BootstrapRuntime
             true,
             false),
         new(
+            "dotnet",
+            ".NET SDK",
+            "command -v dotnet",
+            "brew install --cask dotnet-sdk",
+            true,
+            false),
+        new(
             "ollama",
             "Ollama",
             "command -v ollama",
@@ -219,37 +250,38 @@ internal static class BootstrapRuntime
             true),
     ];
 
-    public static async Task<BootstrapAssessment> AssessDemoAsync(bool includeOptional, CancellationToken ct)
+    public static async Task<BootstrapAssessment> AssessDemoAsync(string profile, bool includeOptional, CancellationToken ct)
     {
-        _ = includeOptional;
         var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
-        var (profile, supported, reason, deps) = ResolveProfile();
+        var (_, supported, reason, deps) = ResolveProfile();
         if (!supported)
         {
             return new BootstrapAssessment(
-                profile,
+                NormalizeBootstrapProfile(profile),
                 os,
                 false,
                 reason,
                 Array.Empty<BootstrapDependencyStatus>());
         }
 
+        var normalizedBootstrapProfile = NormalizeBootstrapProfile(profile);
         var statuses = new List<BootstrapDependencyStatus>();
         foreach (var spec in deps)
         {
             var (exitCode, _, stderr) = await RunShellCaptureAsync(spec.ProbeCommand, ct).ConfigureAwait(false);
+            var required = IsRequiredForBootstrapProfile(normalizedBootstrapProfile, spec, includeOptional);
             statuses.Add(new BootstrapDependencyStatus(
                 spec.Id,
                 spec.DisplayName,
                 exitCode == 0,
-                spec.Required,
-                spec.Optional,
+                required,
+                !required,
                 spec.InstallCommand,
                 exitCode == 0 ? null : stderr.Trim()));
         }
 
         return new BootstrapAssessment(
-            profile,
+            normalizedBootstrapProfile,
             os,
             true,
             null,
@@ -265,14 +297,14 @@ internal static class BootstrapRuntime
         return ("unsupported", false, "Bootstrap currently supports Linux and macOS.", Array.Empty<BootstrapDependencySpec>());
     }
 
-    public static IReadOnlyList<BootstrapDependencyStatus> BuildInstallPlan(BootstrapAssessment assessment, bool includeOptional)
+    public static IReadOnlyList<BootstrapDependencyStatus> BuildInstallPlan(BootstrapAssessment assessment)
     {
         return assessment.Dependencies
-            .Where(d => !d.Installed && (d.Required || (includeOptional && d.Optional)))
+            .Where(d => !d.Installed && d.Required)
             .ToList();
     }
 
-    public static void RenderAssessment(BootstrapAssessment assessment, bool includeOptional, bool json)
+    public static void RenderAssessment(BootstrapAssessment assessment, bool json)
     {
         if (json)
         {
@@ -282,7 +314,6 @@ internal static class BootstrapRuntime
                 os = assessment.OsDescription,
                 supported = assessment.Supported,
                 reason = assessment.Reason,
-                includeOptional,
                 dependencies = assessment.Dependencies.Select(d => new
                 {
                     id = d.Id,
@@ -294,7 +325,7 @@ internal static class BootstrapRuntime
                     probeError = d.ProbeError,
                 }).ToArray(),
                 missingRequired = assessment.MissingRequired.Select(d => d.Id).ToArray(),
-                installPlan = BuildInstallPlan(assessment, includeOptional).Select(d => d.Id).ToArray(),
+                installPlan = BuildInstallPlan(assessment).Select(d => d.Id).ToArray(),
             };
             Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
             return;
@@ -318,11 +349,46 @@ internal static class BootstrapRuntime
                 Console.WriteLine($"      install: {dep.InstallCommand}");
         }
 
-        var plan = BuildInstallPlan(assessment, includeOptional);
+        var plan = BuildInstallPlan(assessment);
         if (plan.Count == 0)
             Console.WriteLine("Install plan: no action needed.");
         else
             Console.WriteLine($"Install plan: {string.Join(", ", plan.Select(p => p.DisplayName))}");
+    }
+
+    private static string NormalizeBootstrapProfile(string? profile)
+    {
+        var normalized = (profile ?? "demo").Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "self-extend-functional" => "self-extend-functional",
+            "self-extend-aesthetic" => "self-extend-aesthetic",
+            "self-extend-visual" => "self-extend-visual",
+            _ => "demo"
+        };
+    }
+
+    private static bool IsRequiredForBootstrapProfile(string profile, BootstrapDependencySpec spec, bool includeOptional)
+    {
+        if (profile == "self-extend-visual")
+        {
+            if (spec.Id is "docker" or "ollama" or "zstd")
+                return true;
+        }
+
+        if (profile == "self-extend-functional")
+        {
+            return spec.Required;
+        }
+
+        if (profile == "self-extend-aesthetic")
+        {
+            if (spec.Id is "docker")
+                return true;
+            return spec.Required;
+        }
+
+        return spec.Required || (includeOptional && spec.Optional);
     }
 
     public static async Task<int> RunShellStreamingAsync(string command, CancellationToken ct)

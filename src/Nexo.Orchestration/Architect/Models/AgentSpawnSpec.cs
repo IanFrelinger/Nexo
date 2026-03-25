@@ -24,6 +24,11 @@ public sealed record AgentSpawnSpec
     public required string AgentId { get; init; }
 
     /// <summary>
+    /// Friendly agent name for policy and diagnostics. Defaults to <see cref="AgentId"/>.
+    /// </summary>
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
     /// Domain or category this agent specializes in (e.g., "Combat", "Economy", "AI", "Infrastructure", "Security").
     /// </summary>
     public required string Domain { get; init; }
@@ -62,6 +67,22 @@ public sealed record AgentSpawnSpec
     /// Priority level (higher = more critical).
     /// </summary>
     public int Priority { get; init; } = 0;
+
+    /// <summary>
+    /// Capabilities this agent requires from the execution endpoint.
+    /// </summary>
+    public IReadOnlyList<string> RequiredCapabilities { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Optional metadata used by orchestration and routing policy.
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> Metadata { get; init; } =
+        new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Resolved target endpoint for remote execution. Null means in-process.
+    /// </summary>
+    public string? TargetEndpoint { get; init; }
 }
 
 /// <summary>

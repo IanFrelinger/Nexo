@@ -1,0 +1,3 @@
+Create a visual Avalonia app transform with strict visual QA requirements.
+Scaffold a UI hotload feature with aggressive aesthetic constraints and visual checks.
+Force strict preflight behavior for visual QA while preserving prior working output.

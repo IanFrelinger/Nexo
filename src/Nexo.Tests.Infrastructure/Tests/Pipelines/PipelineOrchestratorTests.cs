@@ -67,7 +67,8 @@ public sealed class PipelineOrchestratorTests
             executionOptions: new PipelineExecutionOptions
             {
                 MaxRetryAttempts = 1,
-                RetryDelayMs = 1
+                RetryDelayMs = 1,
+                EnableTestHooks = true
             });
 
         var template = new PipelineTemplate
@@ -114,7 +115,8 @@ public sealed class PipelineOrchestratorTests
             executionOptions: new PipelineExecutionOptions
             {
                 MaxRetryAttempts = 1,
-                RetryDelayMs = 1
+                RetryDelayMs = 1,
+                EnableTestHooks = true
             });
 
         var template = new PipelineTemplate
@@ -242,7 +244,9 @@ public sealed class PipelineOrchestratorTests
             executionOptions: new PipelineExecutionOptions
             {
                 MaxRetryAttempts = 1,
-                RetryDelayMs = 1
+                RetryDelayMs = 1,
+                EnableTestHooks = true,
+                CompletionPolicy = PipelineCompletionPolicy.AllowNonCriticalStageFailures
             });
 
         var template = new PipelineTemplate
@@ -282,6 +286,119 @@ public sealed class PipelineOrchestratorTests
         run.StageRuns.Single(x => x.StageId == "join").State.Should().Be(PipelineStageRunState.Completed);
     }
 
+    [Fact]
+    public async Task RunAsync_WhenNonCriticalStageFails_DefaultPolicyFailsRun()
+    {
+        var orchestrator = BuildOrchestrator(
+            out _,
+            executionOptions: new PipelineExecutionOptions
+            {
+                MaxRetryAttempts = 1,
+                RetryDelayMs = 1,
+                EnableTestHooks = true
+            });
+
+        var template = new PipelineTemplate
+        {
+            TemplateId = "fail-closed-default",
+            Stages = new[]
+            {
+                new PipelineStageDefinition { Id = "a", Name = "A", Mode = PipelineExecutionMode.Deterministic },
+                new PipelineStageDefinition { Id = "b", Name = "B", Mode = PipelineExecutionMode.Deterministic },
+                new PipelineStageDefinition
+                {
+                    Id = "join",
+                    Name = "Join",
+                    StageType = PipelineStageType.FanIn,
+                    JoinStrategy = PipelineJoinStrategy.FirstSuccess,
+                    Mode = PipelineExecutionMode.Deterministic
+                }
+            },
+            Edges = new[]
+            {
+                new PipelineEdge("a", "join"),
+                new PipelineEdge("b", "join")
+            }
+        };
+
+        var run = await orchestrator.RunAsync(new PipelineExecutionRequest
+        {
+            RunId = "run-fail-closed-default",
+            Template = template,
+            Inputs = new Dictionary<string, string>
+            {
+                ["fail:b:deterministic"] = "true"
+            }
+        });
+
+        run.State.Should().Be(PipelineRunState.Failed);
+        run.StageRuns.Single(x => x.StageId == "join").State.Should().Be(PipelineStageRunState.Completed);
+        run.StageRuns.Single(x => x.StageId == "b").State.Should().Be(PipelineStageRunState.Failed);
+    }
+
+    [Fact]
+    public async Task RunAsync_WithMissingResumeSource_ThrowsByDefault()
+    {
+        var orchestrator = BuildOrchestrator(
+            out _,
+            executionOptions: new PipelineExecutionOptions
+            {
+                MaxRetryAttempts = 1,
+                RetryDelayMs = 1
+            });
+
+        var template = new PipelineTemplate
+        {
+            TemplateId = "resume-missing-fails",
+            Stages = new[]
+            {
+                new PipelineStageDefinition { Id = "only", Name = "Only", Mode = PipelineExecutionMode.Deterministic }
+            }
+        };
+
+        var act = async () => await orchestrator.RunAsync(new PipelineExecutionRequest
+        {
+            RunId = "resume-missing-fails-run",
+            ResumeRunId = "does-not-exist",
+            Template = template
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*no prior run was found*");
+    }
+
+    [Fact]
+    public async Task RunAsync_WithMissingResumeSource_AllowedByOptionStartsFresh()
+    {
+        var orchestrator = BuildOrchestrator(
+            out _,
+            executionOptions: new PipelineExecutionOptions
+            {
+                MaxRetryAttempts = 1,
+                RetryDelayMs = 1,
+                AllowMissingResumeSource = true
+            });
+
+        var template = new PipelineTemplate
+        {
+            TemplateId = "resume-missing-allowed",
+            Stages = new[]
+            {
+                new PipelineStageDefinition { Id = "only", Name = "Only", Mode = PipelineExecutionMode.Deterministic }
+            }
+        };
+
+        var run = await orchestrator.RunAsync(new PipelineExecutionRequest
+        {
+            RunId = "resume-missing-allowed-run",
+            ResumeRunId = "does-not-exist",
+            Template = template
+        });
+
+        run.State.Should().Be(PipelineRunState.Completed);
+        run.StageRuns.Single(x => x.StageId == "only").State.Should().Be(PipelineStageRunState.Completed);
+    }
+
     private static PipelineOrchestrator BuildOrchestrator(
         out IPipelineRunStore runStore,
         PipelineExecutionOptions? executionOptions = null)
@@ -291,12 +408,32 @@ public sealed class PipelineOrchestratorTests
         var decomposer = new PipelineDecomposer(validator);
         var scheduler = new PipelineScheduler();
         var scaling = new ThresholdScalingPolicy();
+        var options = executionOptions ?? new PipelineExecutionOptions();
+        var adapters = new IPipelineStageExecutionAdapter[]
+        {
+            new TestDeterministicAdapter(),
+            new TestAgenticAdapter()
+        };
+        var adapterOptions = Options.Create(new PipelineExecutionAdapterOptions
+        {
+            DeterministicAdapter = "default",
+            AgenticAdapter = "default"
+        });
+        var executionOptionsValue = Options.Create(options);
         var executors = new IPipelineStageExecutor[]
         {
-            new DeterministicPipelineStageExecutor(NullLogger<DeterministicPipelineStageExecutor>.Instance),
-            new AgenticPipelineStageExecutor(NullLogger<AgenticPipelineStageExecutor>.Instance)
+            new DeterministicPipelineStageExecutor(
+                NullLogger<DeterministicPipelineStageExecutor>.Instance,
+                adapters,
+                adapterOptions,
+                executionOptionsValue),
+            new AgenticPipelineStageExecutor(
+                NullLogger<AgenticPipelineStageExecutor>.Instance,
+                adapters,
+                adapterOptions,
+                executionOptionsValue)
         };
-        var options = Options.Create(executionOptions ?? new PipelineExecutionOptions());
+        var optionsWrapper = Options.Create(options);
         return new PipelineOrchestrator(
             validator,
             decomposer,
@@ -304,7 +441,47 @@ public sealed class PipelineOrchestratorTests
             runStore,
             scaling,
             executors,
-            options,
+            optionsWrapper,
             NullLogger<PipelineOrchestrator>.Instance);
+    }
+
+    private sealed class TestDeterministicAdapter : IPipelineStageExecutionAdapter
+    {
+        public string AdapterKey => "default";
+        public PipelineWorkerType WorkerType => PipelineWorkerType.Deterministic;
+
+        public Task<PipelineStageExecutionResult> ExecuteAsync(
+            PipelineStageExecutionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new PipelineStageExecutionResult
+            {
+                Succeeded = true,
+                Retryable = false,
+                WorkerId = "deterministic-default",
+                Output = $"deterministic:{request.StageId}:ok"
+            });
+        }
+    }
+
+    private sealed class TestAgenticAdapter : IPipelineStageExecutionAdapter
+    {
+        public string AdapterKey => "default";
+        public PipelineWorkerType WorkerType => PipelineWorkerType.Agentic;
+
+        public Task<PipelineStageExecutionResult> ExecuteAsync(
+            PipelineStageExecutionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new PipelineStageExecutionResult
+            {
+                Succeeded = true,
+                Retryable = false,
+                WorkerId = "agentic-default",
+                Output = $"agentic:{request.StageId}:ok"
+            });
+        }
     }
 }

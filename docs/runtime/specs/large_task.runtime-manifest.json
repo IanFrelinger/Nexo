@@ -1,0 +1,17 @@
+{
+  "domainPacks": [
+    "personal",
+    "ui",
+    "studio"
+  ],
+  "preferences": {
+    "latency": "throughput",
+    "costProfile": "quality-first",
+    "iterationStyle": "multi-pass"
+  },
+  "uiCapabilities": [
+    "dynamic-ui",
+    "visual-qa"
+  ],
+  "qaPolicyProfile": "prod"
+}

@@ -1,4 +1,8 @@
+using Nexo.Abstractions.Barriers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Nexo.Abstractions.Routing;
+using Nexo.Abstractions.Transport;
 using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Models;
@@ -7,8 +11,10 @@ using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
 using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
+using Nexo.Orchestration.Barriers;
+using Nexo.Orchestration.Resilience;
+using Nexo.Orchestration.Models;
 using Nexo.Core.Application.Common.Ports;
-using System.Text.Json;
 
 namespace Nexo.Orchestration.Coordination;
 
@@ -44,10 +50,17 @@ public sealed class Orchestrator
     private readonly EscalationManager _escalationManager;
     private readonly OutputIntegrator _outputIntegrator;
     private readonly IAgentBus _agentBus;
+    private readonly IAgentTransport _agentTransport;
     private readonly NegotiationProtocol? _negotiationProtocol;
     private readonly OrchestrationMetrics? _metrics;
+    private readonly RetryPolicy _retryPolicy;
+    private readonly CircuitBreaker _circuitBreaker;
     private readonly ILoopKernel _loops;
     private readonly ILogger<Orchestrator> _logger;
+    private readonly IOrchestrationRuntimeSpecAccessor? _runtimeSpecAccessor;
+    private readonly IBarrierContextAccessor? _barrierContextAccessor;
+    private readonly BarrierHierarchy? _barrierHierarchy;
+    private readonly BarrierGuard? _barrierGuard;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Orchestrator"/> class.
@@ -62,9 +75,15 @@ public sealed class Orchestrator
     /// <param name="escalationManager">The escalation manager for handling unresolved conflicts.</param>
     /// <param name="outputIntegrator">The output integrator for combining agent outputs.</param>
     /// <param name="agentBus">The message bus for agent communication.</param>
+    /// <param name="agentTransport">The transport used to invoke agent execution.</param>
     /// <param name="logger">The logger instance.</param>
     /// <param name="negotiationProtocol">Optional negotiation protocol for conflict resolution.</param>
     /// <param name="metrics">Optional metrics collector for performance tracking.</param>
+    /// <param name="runtimeSpecAccessor">Optional runtime spec accessor for endpoint routing.</param>
+    /// <param name="barrierContextAccessor">Optional barrier context accessor for request barrier propagation.</param>
+    /// <param name="barrierHierarchy">Optional barrier hierarchy for fallback/default routing context.</param>
+    /// <param name="barrierAuditLog">Optional barrier audit log for invocation events.</param>
+    /// <param name="barrierOptions">Optional barrier options for guard behavior.</param>
     public Orchestrator(
         IArchitectAgent architect,
         AgentFactory agentFactory,
@@ -76,10 +95,16 @@ public sealed class Orchestrator
         EscalationManager escalationManager,
         OutputIntegrator outputIntegrator,
         IAgentBus agentBus,
+        IAgentTransport agentTransport,
         ILoopKernel loops,
         ILogger<Orchestrator> logger,
         NegotiationProtocol? negotiationProtocol = null,
-        OrchestrationMetrics? metrics = null)
+        OrchestrationMetrics? metrics = null,
+        IOrchestrationRuntimeSpecAccessor? runtimeSpecAccessor = null,
+        IBarrierContextAccessor? barrierContextAccessor = null,
+        BarrierHierarchy? barrierHierarchy = null,
+        IBarrierAuditLog? barrierAuditLog = null,
+        IOptions<BarrierOptions>? barrierOptions = null)
     {
         _architect = architect ?? throw new ArgumentNullException(nameof(architect));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
@@ -91,10 +116,33 @@ public sealed class Orchestrator
         _escalationManager = escalationManager ?? throw new ArgumentNullException(nameof(escalationManager));
         _outputIntegrator = outputIntegrator ?? throw new ArgumentNullException(nameof(outputIntegrator));
         _agentBus = agentBus ?? throw new ArgumentNullException(nameof(agentBus));
+        _agentTransport = agentTransport ?? throw new ArgumentNullException(nameof(agentTransport));
+        _retryPolicy = new RetryPolicy(
+            strategy: RetryStrategy.Fixed,
+            maxAttempts: 3,
+            initialDelay: TimeSpan.FromMilliseconds(1),
+            maxDelay: TimeSpan.FromMilliseconds(1));
+        _circuitBreaker = new CircuitBreaker(
+            name: "orchestration-agent-transport",
+            failureThreshold: 3,
+            timeout: TimeSpan.FromSeconds(30));
         _loops = loops ?? throw new ArgumentNullException(nameof(loops));
         _negotiationProtocol = negotiationProtocol;
         _metrics = metrics;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _runtimeSpecAccessor = runtimeSpecAccessor;
+        _barrierContextAccessor = barrierContextAccessor;
+        _barrierHierarchy = barrierHierarchy;
+        _barrierGuard = barrierContextAccessor != null &&
+                        barrierAuditLog != null &&
+                        barrierHierarchy != null &&
+                        barrierOptions != null
+            ? new BarrierGuard(
+                barrierContextAccessor,
+                barrierAuditLog,
+                barrierHierarchy,
+                barrierOptions.Value)
+            : null;
     }
 
     /// <summary>
@@ -137,7 +185,17 @@ public sealed class Orchestrator
             using var decomposeProfiler = _metrics != null
                 ? new PerformanceProfiler("Decompose", _metrics, null)
                 : null;
-            var decomposition = await _architect.DecomposeAsync(request, cancellationToken);
+            var runtimeSpec = _runtimeSpecAccessor?.Current;
+            var barrierLevel = _barrierContextAccessor?.Current?.Level
+                ?? runtimeSpec?.BarrierLevel
+                ?? _barrierHierarchy?.Floor.Name;
+            var decompositionContext = new DecompositionContext
+            {
+                CorrelationId = correlationId,
+                BarrierLevel = barrierLevel,
+                PreferredRegion = runtimeSpec?.PreferredRegion
+            };
+            var decomposition = await _architect.DecomposeAsync(request, decompositionContext, cancellationToken);
             if (!decomposition.IsValid)
             {
                 _logger.LogWarning("Decomposition has validation errors: {ErrorCount}", decomposition.ValidationErrors.Count);
@@ -250,22 +308,67 @@ public sealed class Orchestrator
                     return LoopAction.Continue;
                 }
 
-                // Wait for dependencies
-                if (!_dependencyResolver.AreDependenciesResolved(agentId))
-                {
-                    var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
-                        container.Agent.Spec.Dependencies);
-                    await container.Agent.WaitForDependenciesAsync(dependencyOutputs, token);
-                }
-
                 // Execute agent
                 try
                 {
                     var agentStartTime = DateTimeOffset.UtcNow;
+                    if (_barrierGuard != null)
+                    {
+                        await _barrierGuard.AssertValidForInvocationAsync(
+                            agentId,
+                            correlationId,
+                            rootSpanId ?? string.Empty,
+                            token);
+
+                        if (_barrierContextAccessor?.Current is { } currentBarrier &&
+                            TryGetRequestedBarrier(container.Agent.Spec.Metadata, out var requestedBarrier))
+                        {
+                            _barrierGuard.AssertNoElevation(
+                                requestedBarrier,
+                                currentBarrier.Level,
+                                agentId,
+                                correlationId);
+                        }
+                    }
+
                     var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
                         container.Agent.Spec.Dependencies);
-                    var output = await _lifecycleManager.ExecuteAgentAsync(agentId, dependencyOutputs, token);
-                    var agentDuration = DateTimeOffset.UtcNow - agentStartTime;
+                    var invocation = new AgentInvocationRequest(
+                        AgentName: agentId,
+                        CorrelationId: correlationId,
+                        SpanId: rootSpanId,
+                        Payload: dependencyOutputs.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value),
+                        Options: new AgentInvocationOptions(
+                            Timeout: TimeSpan.FromMinutes(5),
+                            MaxRetries: 3,
+                            TargetEndpoint: container.Agent.Spec.TargetEndpoint),
+                        Metadata: new Dictionary<string, string>
+                        {
+                            ["domain"] = container.Agent.Spec.Domain,
+                            ["spanId"] = rootSpanId ?? string.Empty
+                        },
+                        DependencyOutputs: dependencyOutputs);
+
+                    var result = await SendThroughTransportAsync(invocation, token);
+                    if (!result.Success)
+                    {
+                        var errorCode = GetErrorCode(result) ?? "UNKNOWN";
+                        _logger.LogError(
+                            "Agent {AgentId} execution failed via transport. ErrorCode={ErrorCode}, Error={Error}",
+                            agentId,
+                            errorCode,
+                            result.ErrorMessage ?? "Unknown transport error");
+
+                        _escalationManager.EscalateIssue(
+                            "AgentExecution",
+                            $"Agent {agentId} execution failed ({errorCode}): {result.ErrorMessage ?? "Unknown transport error"}",
+                            EscalationSeverity.High);
+
+                        return LoopAction.Continue;
+                    }
+
+                    var output = result.Output ?? new { };
+                    var agentDuration = result.Duration ?? (DateTimeOffset.UtcNow - agentStartTime);
                     
                     outputs[agentId] = output;
                     _dependencyResolver.RecordOutput(agentId, output);
@@ -355,6 +458,159 @@ public sealed class Orchestrator
             _logger.LogError(ex, "Orchestration failed");
             throw;
         }
+    }
+
+    private static bool TryGetRequestedBarrier(
+        IReadOnlyDictionary<string, object?> metadata,
+        out string requestedBarrier)
+    {
+        requestedBarrier = string.Empty;
+        if (metadata.Count == 0)
+            return false;
+
+        if (!metadata.TryGetValue("barrierLevel", out var value) || value is null)
+            return false;
+
+        requestedBarrier = value.ToString() ?? string.Empty;
+        return !string.IsNullOrWhiteSpace(requestedBarrier);
+    }
+
+    private async Task<AgentResult> SendThroughTransportAsync(
+        AgentInvocationRequest request,
+        CancellationToken cancellationToken)
+    {
+        var initialResult = await _agentTransport.SendAsync(request, cancellationToken);
+        if (initialResult.Success)
+        {
+            return initialResult;
+        }
+
+        var errorCode = GetErrorCode(initialResult);
+        if (string.Equals(errorCode, "AGENT_NOT_FOUND", StringComparison.OrdinalIgnoreCase))
+        {
+            return initialResult;
+        }
+
+        if (string.Equals(errorCode, "TIMEOUT", StringComparison.OrdinalIgnoreCase))
+        {
+            return await ExecuteWithTimeoutRetryAsync(request, initialResult, cancellationToken);
+        }
+
+        return await ExecuteWithCircuitBreakerAsync(request, initialResult, cancellationToken);
+    }
+
+    private async Task<AgentResult> ExecuteWithTimeoutRetryAsync(
+        AgentInvocationRequest request,
+        AgentResult initialResult,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _retryPolicy.ExecuteAsync(async () =>
+            {
+                var retryResult = await _agentTransport.SendAsync(request, cancellationToken);
+                if (retryResult.Success)
+                {
+                    return retryResult;
+                }
+
+                if (string.Equals(GetErrorCode(retryResult), "TIMEOUT", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new TimeoutException(retryResult.ErrorMessage ?? "Agent transport timed out.");
+                }
+
+                return retryResult;
+            }, ex => ex is TimeoutException, cancellationToken);
+        }
+        catch (TimeoutException ex)
+        {
+            return initialResult with
+            {
+                ErrorMessage = ex.Message,
+                Metadata = MergeMetadata(initialResult.Metadata, "errorCode", "TIMEOUT")
+            };
+        }
+    }
+
+    private async Task<AgentResult> ExecuteWithCircuitBreakerAsync(
+        AgentInvocationRequest request,
+        AgentResult initialResult,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _circuitBreaker.ExecuteAsync(
+                request.AgentName,
+                () =>
+                {
+                    throw new AgentTransportFailureException(initialResult);
+                },
+                fallback: ex => ex switch
+                {
+                    AgentTransportFailureException transportFailure => transportFailure.Result,
+                    CircuitBreakerOpenException => initialResult with
+                    {
+                        Metadata = MergeMetadata(initialResult.Metadata, "errorCode", "CIRCUIT_OPEN")
+                    },
+                    _ => initialResult
+                },
+                cancellationToken: cancellationToken);
+        }
+        catch (AgentTransportFailureException ex)
+        {
+            return ex.Result;
+        }
+    }
+
+    private static string? GetErrorCode(AgentResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.ErrorCode))
+        {
+            return result.ErrorCode;
+        }
+
+        if (result.Metadata == null)
+        {
+            return null;
+        }
+
+        if (result.Metadata.TryGetValue("errorCode", out var value))
+        {
+            return value;
+        }
+
+        foreach (var kvp in result.Metadata)
+        {
+            if (string.Equals(kvp.Key, "errorCode", StringComparison.OrdinalIgnoreCase))
+            {
+                return kvp.Value;
+            }
+        }
+
+        return null;
+    }
+
+    private static IReadOnlyDictionary<string, string> MergeMetadata(
+        IReadOnlyDictionary<string, string>? metadata,
+        string key,
+        string value)
+    {
+        var merged = metadata != null
+            ? new Dictionary<string, string>(metadata, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        merged[key] = value;
+        return merged;
+    }
+
+    private sealed class AgentTransportFailureException : Exception
+    {
+        public AgentTransportFailureException(AgentResult result)
+            : base(result.ErrorMessage ?? "Agent transport failure.")
+        {
+            Result = result;
+        }
+
+        public AgentResult Result { get; }
     }
 
     /// <summary>

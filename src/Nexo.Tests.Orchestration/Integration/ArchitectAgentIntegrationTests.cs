@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Abstractions;
+using Nexo.Abstractions.Routing;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Models;
@@ -16,6 +17,7 @@ public class ArchitectAgentIntegrationTests
 {
     private readonly Mock<IModel> _modelMock;
     private readonly Mock<ICacheStrategy> _cacheMock;
+    private readonly Mock<IEndpointRouter> _routerMock;
     private readonly Mock<ILogger<ArchitectAgent>> _agentLoggerMock;
     private readonly Mock<ILogger<DomainRecognizer>> _domainLoggerMock;
     private readonly Mock<ILogger<DecompositionRetriever>> _retrieverLoggerMock;
@@ -26,11 +28,15 @@ public class ArchitectAgentIntegrationTests
     {
         _modelMock = new Mock<IModel>();
         _cacheMock = new Mock<ICacheStrategy>();
+        _routerMock = new Mock<IEndpointRouter>();
         _agentLoggerMock = new Mock<ILogger<ArchitectAgent>>();
         _domainLoggerMock = new Mock<ILogger<DomainRecognizer>>();
         _retrieverLoggerMock = new Mock<ILogger<DecompositionRetriever>>();
         _promptLoggerMock = new Mock<ILogger<DecompositionPromptBuilder>>();
         _parserLoggerMock = new Mock<ILogger<DecompositionJsonParser>>();
+        _routerMock
+            .Setup(r => r.ResolveAsync(It.IsAny<EndpointRoutingContext>(), It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.FromResult<string?>(null));
     }
 
     private ArchitectAgent CreateArchitectAgent(IEnumerable<IValidator>? validators = null)
@@ -48,6 +54,7 @@ public class ArchitectAgentIntegrationTests
             validatorsList,
             promptBuilder,
             parser,
+            _routerMock.Object,
             _agentLoggerMock.Object);
     }
 
@@ -93,29 +100,14 @@ public class ArchitectAgentIntegrationTests
     }
 
     [Fact]
-    public async Task DecomposeAsync_InvalidJson_RetriesWithCorrection()
+    public async Task DecomposeAsync_InvalidJson_UsesFallbackDecomposition()
     {
         // Arrange
         var invalidJson = "Invalid JSON";
-        var validJson = """
-            {
-              "agents": [
-                {
-                  "agentId": "combat-1",
-                  "domain": "Combat",
-                  "goal": "Design weapon system",
-                  "dependencies": [],
-                  "priority": 0
-                }
-              ],
-              "confidence": 0.9
-            }
-            """;
 
         _modelMock
-            .SetupSequence(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ModelOutput(invalidJson))
-            .ReturnsAsync(new ModelOutput(validJson));
+            .Setup(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ModelOutput(invalidJson));
 
         _cacheMock
             .Setup(c => c.GetAsync<List<string>>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -128,7 +120,9 @@ public class ArchitectAgentIntegrationTests
 
         // Assert
         result.Should().NotBeNull();
-        _modelMock.Verify(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()), Times.AtLeast(2));
+        result.Agents.Should().NotBeEmpty();
+        result.Agents[0].AgentId.Should().Be("fallback-1");
+        _modelMock.Verify(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

@@ -21,6 +21,12 @@ using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
+using Nexo.Abstractions.Routing;
+using Nexo.Abstractions.Transport;
+using Nexo.Orchestration.Transport;
+using Nexo.Runtime;
+using Nexo.Runtime.Routing;
+using Nexo.Transport.Grpc;
 
 namespace Nexo.Hosting;
 
@@ -76,6 +82,11 @@ public static class NexoServiceCollectionExtensions
         });
 
         services.AddNexoOrchestration();
+        services.AddOptions<GrpcTransportOptions>();
+        services.AddOptions<RoutingOptions>();
+        services.TryAddSingleton<IEndpointRegistry, InMemoryEndpointRegistry>();
+        services.TryAddSingleton<IGrpcChannelFactory, DefaultGrpcChannelFactory>();
+        services.AddNexoRuntimeTransport<InProcessAgentTransport, GrpcAgentTransport>();
         services.AddNexoPersistence();
         services.AddAdaptationInfrastructure(options.PatternStorePath);
         services.AddPipelineCompositionLayer();

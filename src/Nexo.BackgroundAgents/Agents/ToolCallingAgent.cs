@@ -15,14 +15,16 @@ public sealed class ToolCallingAgent : IAgent
 {
     private readonly IModel _model;
     private readonly ILogger<ToolCallingAgent>? _logger;
+    private readonly string? _objective;
 
     public string Name { get; }
 
-    public ToolCallingAgent(string name, IModel model, ILogger<ToolCallingAgent>? logger = null)
+    public ToolCallingAgent(string name, IModel model, ILogger<ToolCallingAgent>? logger = null, string? objective = null)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger;
+        _objective = objective;
     }
 
     /// <inheritdoc />
@@ -51,7 +53,7 @@ Respond with a single JSON object with a property ""tool_calls"" (array). Each e
         var messages = new List<(string role, string content)>
         {
             ("system", systemPrompt),
-            ("user", "Decide which tools to call based on the current state. Respond with JSON only.")
+            ("user", BuildUserPrompt(_objective))
         };
 
         try
@@ -122,5 +124,13 @@ Respond with a single JSON object with a property ""tool_calls"" (array). Each e
         if (text.StartsWith("{", StringComparison.Ordinal))
             return text;
         return null;
+    }
+
+    private static string BuildUserPrompt(string? objective)
+    {
+        if (string.IsNullOrWhiteSpace(objective))
+            return "Decide which tools to call based on the current state. Respond with JSON only.";
+
+        return $"Objective:\n{objective.Trim()}\n\nUse available tools to complete the objective. Respond with JSON only.";
     }
 }

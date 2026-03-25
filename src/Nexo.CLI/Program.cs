@@ -20,6 +20,8 @@ using Nexo.Core.Application.Common.Services;
 using Nexo.Hosting;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Persistence;
+using Nexo.Runtime;
+using Nexo.Transport.Grpc;
 
 namespace Nexo.CLI;
 
@@ -295,6 +297,39 @@ static class Program
             restartBgIdOpt,
             jsonOpt);
         backgroundAgentCmd.AddCommand(restartBgCmd);
+
+        // nexo background-agent autoscale
+        var autoscaleCmd = new Command("autoscale", "Demand-based autoscaling for role agents");
+        var autoscaleApplyRoleOpt = new Option<string>("--role", "Role to scale (e.g., extender, tester)") { IsRequired = true };
+        var autoscaleApplyDemandOpt = new Option<int>("--demand", "Current demand score for this role") { IsRequired = true };
+        var autoscaleApplyMinOpt = new Option<int>("--min-agents", () => 0, "Minimum desired agents for the role");
+        var autoscaleApplyMaxOpt = new Option<int>("--max-agents", () => 5, "Maximum desired agents for the role");
+        var autoscaleApplyUnitsOpt = new Option<int>("--units-per-agent", () => 1, "Demand units handled per agent (higher value = fewer agents)");
+        var autoscaleApplyIdleOpt = new Option<int>("--idle-seconds", () => 0, "Idle threshold before stopping surplus autoscaled agents");
+        var autoscaleApplyCmd = new Command("apply", "Apply one autoscale decision")
+        {
+            autoscaleApplyRoleOpt,
+            autoscaleApplyDemandOpt,
+            autoscaleApplyMinOpt,
+            autoscaleApplyMaxOpt,
+            autoscaleApplyUnitsOpt,
+            autoscaleApplyIdleOpt
+        };
+        autoscaleApplyCmd.SetHandler(
+            async (string role, int demand, int minAgents, int maxAgents, int unitsPerAgent, int idleSeconds, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
+                Environment.Exit(await cmd.AutoScaleAsync(role, demand, minAgents, maxAgents, unitsPerAgent, idleSeconds, formatJson));
+            },
+            autoscaleApplyRoleOpt,
+            autoscaleApplyDemandOpt,
+            autoscaleApplyMinOpt,
+            autoscaleApplyMaxOpt,
+            autoscaleApplyUnitsOpt,
+            autoscaleApplyIdleOpt,
+            jsonOpt);
+        autoscaleCmd.AddCommand(autoscaleApplyCmd);
+        backgroundAgentCmd.AddCommand(autoscaleCmd);
 
         // nexo background-agent execute
         var executeBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
@@ -703,38 +738,69 @@ static class Program
         var providerOpt = new Option<string?>(
             name: "--provider",
             description: "Override model provider (openai/azure/ollama/offline/mock-json/...)");
+        var barrierOpt = new Option<string?>(
+            name: "--barrier",
+            description: "Barrier level set at request boundary.");
+        var jwtOpt = new Option<string?>(
+            name: "--jwt",
+            description: "Raw bearer JWT used for identity-bound barrier resolution.");
+        var headerOpt = new Option<string[]>(
+            name: "--header",
+            description: "Additional request headers in 'name:value' form.")
+        {
+            AllowMultipleArgumentsPerToken = true
+        };
+        var preferredRegionOpt = new Option<string?>(
+            name: "--preferred-region",
+            description: "Preferred routing region (soft affinity).");
 
         var orchestrateEphemeralOpt = new Option<bool>("--ephemeral", () => false, "Use ephemeral Ollama container; discarded when command exits");
         orchestrateCmd.AddOption(runtimeSpecOpt);
         orchestrateCmd.AddOption(runtimeSpecJsonOpt);
         orchestrateCmd.AddOption(preferModelOpt);
         orchestrateCmd.AddOption(providerOpt);
+        orchestrateCmd.AddOption(barrierOpt);
+        orchestrateCmd.AddOption(jwtOpt);
+        orchestrateCmd.AddOption(headerOpt);
+        orchestrateCmd.AddOption(preferredRegionOpt);
         orchestrateCmd.AddOption(orchestrateEphemeralOpt);
 
-        orchestrateCmd.SetHandler(
-            async (string request, FileInfo? runtimeSpec, string? runtimeSpecJson, string? preferModel, string? provider, bool ephemeral, bool json, bool verbose) =>
-            {
-                if (ephemeral || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase))
-                    Environment.SetEnvironmentVariable("NEXO_EPHEMERAL_MODELS", "1");
-                var orchestrateCommand = ServiceProvider.GetRequiredService<OrchestrateCommand>();
-                var exitCode = await orchestrateCommand.ExecuteAsync(
-                    request,
-                    runtimeSpec?.FullName,
-                    runtimeSpecJson,
-                    preferModel,
-                    provider,
-                    json,
-                    verbose);
-                Environment.Exit(exitCode);
-            },
-            orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException(),
-            runtimeSpecOpt,
-            runtimeSpecJsonOpt,
-            preferModelOpt,
-            providerOpt,
-            orchestrateEphemeralOpt,
-            jsonOpt,
-            verboseOpt);
+        orchestrateCmd.SetHandler(async context =>
+        {
+            var request = context.ParseResult.GetValueForArgument(
+                orchestrateCmd.Arguments[0] as Argument<string> ?? throw new InvalidOperationException());
+            var runtimeSpec = context.ParseResult.GetValueForOption(runtimeSpecOpt);
+            var runtimeSpecJson = context.ParseResult.GetValueForOption(runtimeSpecJsonOpt);
+            var preferModel = context.ParseResult.GetValueForOption(preferModelOpt);
+            var provider = context.ParseResult.GetValueForOption(providerOpt);
+            var barrier = context.ParseResult.GetValueForOption(barrierOpt);
+            var jwt = context.ParseResult.GetValueForOption(jwtOpt);
+            var rawHeaders = context.ParseResult.GetValueForOption(headerOpt) ?? Array.Empty<string>();
+            var preferredRegion = context.ParseResult.GetValueForOption(preferredRegionOpt);
+            var ephemeral = context.ParseResult.GetValueForOption(orchestrateEphemeralOpt);
+            var json = context.ParseResult.GetValueForOption(jsonOpt);
+            var verbose = context.ParseResult.GetValueForOption(verboseOpt);
+
+            if (ephemeral || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase))
+                Environment.SetEnvironmentVariable("NEXO_EPHEMERAL_MODELS", "1");
+
+            using var scope = ServiceProvider.CreateScope();
+            var orchestrateCommand = scope.ServiceProvider.GetRequiredService<OrchestrateCommand>();
+            var headers = ParseHeaders(rawHeaders);
+            var exitCode = await orchestrateCommand.ExecuteAsync(
+                request,
+                runtimeSpec?.FullName,
+                runtimeSpecJson,
+                preferModel,
+                provider,
+                barrier,
+                preferredRegion,
+                json,
+                verbose,
+                jwt,
+                headers);
+            Environment.Exit(exitCode);
+        });
         root.AddCommand(orchestrateCmd);
 
         // nexo pipeline
@@ -793,6 +859,17 @@ static class Program
             jsonOpt,
             verboseOpt);
         pipelineCmd.AddCommand(pipelineRunCmd);
+
+        var pipelineDiagnosticsCmd = new Command("diagnostics", "Show resolved pipeline runtime configuration.");
+        pipelineDiagnosticsCmd.SetHandler(
+            (bool json) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<PipelineCommand>();
+                var exitCode = cmd.Diagnostics(json);
+                Environment.Exit(exitCode);
+            },
+            jsonOpt);
+        pipelineCmd.AddCommand(pipelineDiagnosticsCmd);
         root.AddCommand(pipelineCmd);
 
         // nexo escalate (resolves lazily)
@@ -1008,7 +1085,10 @@ static class Program
         root.AddCommand(configCmd);
         root.AddCommand(new DogfoodCommand());
         root.AddCommand(new BootstrapCommand());
+        root.AddCommand(new RuntimeCommand());
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
+        root.AddCommand(new SelfExtendCommand(
+            () => ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>()));
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
@@ -1030,8 +1110,11 @@ static class Program
     /// Registers the Nexo kernel via AddNexo(), then CLI-specific commands and adapters.
     /// </summary>
     /// <param name="services">Service collection to configure</param>
-    private static void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
     {
+        services.Configure<GrpcTransportOptions>(
+            context.Configuration.GetSection("Nexo:GrpcTransport"));
+        services.AddNexoRuntimeRouting(context.Configuration);
         services.AddNexo();
         services.TryAddSingleton<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementMetricsStore>(
             _ => new Nexo.Infrastructure.SelfImprovement.FileBasedSelfImprovementMetricsStore());
@@ -1041,7 +1124,9 @@ static class Program
         // Dog-food: tester agents run the app's own test pipeline
         services.TryAddSingleton<Nexo.BackgroundAgents.Testing.ITestRunRunner, Nexo.CLI.Commands.BackgroundAgent.TestRunRunnerAdapter>();
         // Dog-food: extender agents run self-extend cycle (LLM + tools with path policy)
-        services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner, Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>();
+        services.TryAddSingleton<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>();
+        services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner>(
+            sp => sp.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>());
 
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();
@@ -1087,6 +1172,29 @@ static class Program
             'd' or 'D' => TimeSpan.FromDays(value),
             _ => null
         };
+    }
+
+    private static IReadOnlyDictionary<string, string> ParseHeaders(IReadOnlyList<string> rawHeaders)
+    {
+        var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in rawHeaders)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                continue;
+
+            var separator = raw.IndexOf(':');
+            if (separator <= 0 || separator == raw.Length - 1)
+                continue;
+
+            var key = raw[..separator].Trim();
+            var value = raw[(separator + 1)..].Trim();
+            if (string.IsNullOrWhiteSpace(key))
+                continue;
+
+            headers[key] = value;
+        }
+
+        return headers;
     }
 
     private static IReadOnlyDictionary<string, string> ParsePipelineInputs(string[]? rawInputs)

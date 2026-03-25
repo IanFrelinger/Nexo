@@ -180,10 +180,20 @@ public sealed class DecompositionJsonParser
             var priority = agentElement.TryGetProperty("priority", out var priorityProp)
                 ? priorityProp.GetInt32()
                 : 0;
+            var name = agentElement.TryGetProperty("name", out var nameProp)
+                ? nameProp.GetString()
+                : null;
+            var requiredCapabilities = agentElement.TryGetProperty("requiredCapabilities", out var capabilitiesProp)
+                ? capabilitiesProp.EnumerateArray().Select(e => e.GetString()!).Where(s => !string.IsNullOrWhiteSpace(s)).ToList()
+                : new List<string>();
+            var metadata = agentElement.TryGetProperty("metadata", out var metadataProp)
+                ? ParseMetadata(metadataProp)
+                : new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
             return new AgentSpawnSpec
             {
                 AgentId = agentId,
+                Name = string.IsNullOrWhiteSpace(name) ? agentId : name!,
                 Domain = domain,
                 Goal = goal,
                 Description = description,
@@ -191,7 +201,9 @@ public sealed class DecompositionJsonParser
                 OutputSchema = outputSchema,
                 Constraints = constraints,
                 ResourceRequirements = resourceRequirements,
-                Priority = priority
+                Priority = priority,
+                RequiredCapabilities = requiredCapabilities,
+                Metadata = metadata
             };
         }
         catch (KeyNotFoundException ex)
@@ -266,6 +278,22 @@ public sealed class DecompositionJsonParser
         }
 
         return null;
+    }
+
+    private Dictionary<string, object?> ParseMetadata(JsonElement metadataElement)
+    {
+        try
+        {
+            var value = JsonSerializer.Deserialize<Dictionary<string, object?>>(
+                metadataElement.GetRawText(),
+                _jsonOptions);
+            return value ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse metadata object");
+            return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        }
     }
 
     private static string ExtractJsonFromMarkdown(string text)

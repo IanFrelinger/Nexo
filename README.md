@@ -30,6 +30,46 @@ dotnet run --project src/Nexo.CLI -- --help
 dotnet run --project src/Nexo.CLI -- test local
 ```
 
+## Pipeline Quickstart
+
+```bash
+# 1) Create a template
+cat > /tmp/nexo_pipeline_demo.json <<'JSON'
+{
+  "templateId": "demo",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+
+# 2) Validate the template
+dotnet run --project src/Nexo.CLI -- pipeline validate --template /tmp/nexo_pipeline_demo.json
+
+# 3) Run the pipeline
+dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-run --format-json
+
+# 4) Run diagnostics to see resolved runtime config
+dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
+
+# 5) Resume example with durable persistence (LiteDb) and permissive completion policy for the source fail case
+NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo-pipelines.db \
+NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
+NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
+dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-resume-source --input "fail:ingest:deterministic=true" --format-json
+
+NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo-pipelines.db \
+dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-resume-target --resume-run-id demo-resume-source --resume-failed-stages --format-json
+```
+
+Pipeline configuration precedence for runtime options is:
+1) defaults, 2) config sections under `Nexo:Pipelines:*`, 3) environment variables (`NEXO_PIPELINE_*`).
+
 ## CLI Commands (Kernel)
 
 | Command | Description |
@@ -44,9 +84,11 @@ dotnet run --project src/Nexo.CLI -- test local
 | `nexo validate` | Run architecture tests and contract checks |
 | `nexo agent` | Execute a named agent action |
 | `nexo orchestrate` | Run orchestration workflows |
+| `nexo pipeline` | Validate/run/resume pipelines and show runtime diagnostics |
 | `nexo config` | Show or update configuration |
 | `nexo bootstrap` | Linux-first machine readiness check/install for demo dependencies (macOS supported) |
 | `nexo chat` | Interactive CLI chat loop for orchestration-driven requests |
+| `nexo self-extend run --goal ... [--run-tests --test-filter SelfExtendGenerated]` | Objective-driven self-extension run; scaffolds composable extension commands and can execute generated extension tests |
 | `nexo background-agent` | Manage background agents (start, stop, logs, metrics) |
 | `nexo trust` | Trust & Information Architecture: audit log and access boundary |
 | `nexo test` | Run tests (local, portable, multi-env) |
@@ -94,6 +136,12 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
 - `docs/ProductionReadinessGate-v1.md` – Production readiness gate commands and criteria
 - `docs/ReleaseCandidateChecklist-v1.md` – One-page release checklist for RC sign-off
 - `docs/` – Additional architecture and usage guides
+
+## Barrier Identity Resolution Notes
+
+- JWT claim barrier resolution reads pre-parsed claims only; JWT signature validation must be handled by host authentication middleware.
+- API key barrier mapping must store SHA-256 key hashes, not plaintext keys.
+- API keys are never written in full to logs or audit details; only a short key prefix is recorded.
 
 ## License
 

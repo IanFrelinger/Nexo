@@ -1,0 +1,22 @@
+{
+  "model": {
+    "prefer": "deterministic",
+    "provider": "local"
+  },
+  "domains": {
+    "testing": {
+      "prefer": "deterministic",
+      "provider": "local"
+    },
+    "analysis": {
+      "prefer": "deterministic",
+      "provider": "local"
+    }
+  },
+  "agents": {
+    "architect": {
+      "prefer": "deterministic",
+      "provider": "local"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "model": {
+    "prefer": "agentic",
+    "provider": "ollama"
+  },
+  "domains": {
+    "testing": {
+      "prefer": "deterministic",
+      "provider": "ollama"
+    },
+    "analysis": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    },
+    "ui": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    }
+  },
+  "agents": {
+    "architect": {
+      "prefer": "agentic",
+      "provider": "ollama"
+    },
+    "qa-functional": {
+      "prefer": "deterministic",
+      "provider": "ollama"
+    }
+  }
+}

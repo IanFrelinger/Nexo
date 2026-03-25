@@ -1,0 +1,15 @@
+{
+  "domainPacks": [
+    "personal",
+    "ui"
+  ],
+  "preferences": {
+    "latency": "balanced",
+    "costProfile": "balanced",
+    "iterationStyle": "guided"
+  },
+  "uiCapabilities": [
+    "dynamic-ui"
+  ],
+  "qaPolicyProfile": "release"
+}

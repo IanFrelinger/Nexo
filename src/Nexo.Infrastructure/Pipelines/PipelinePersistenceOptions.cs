@@ -19,4 +19,11 @@ public sealed class PipelinePersistenceOptions
     /// Path used by durable providers.
     /// </summary>
     public string DatabasePath { get; set; } = "nexo-pipeline-runs.db";
+
+    /// <summary>
+    /// Returns true if provider is a supported built-in pipeline run store.
+    /// </summary>
+    public static bool IsKnownProvider(string? provider)
+        => string.Equals(provider, "InMemory", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(provider, "LiteDb", StringComparison.OrdinalIgnoreCase);
 }

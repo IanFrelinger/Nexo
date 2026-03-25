@@ -1,10 +1,16 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Nexo.Abstractions.Barriers;
+using Nexo.Abstractions.Barriers.Identity;
 using Nexo.CLI.Formatting;
 using Nexo.CLI.Runtime;
 using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Models;
+using Nexo.Orchestration.Barriers;
+using Nexo.Orchestration.Routing;
+using Nexo.Runtime.Barriers;
 
 namespace Nexo.CLI.Commands;
 
@@ -26,18 +32,33 @@ public class OrchestrateCommand
     private readonly ILogger<OrchestrateCommand> _logger;
     private readonly IOrchestrationRuntimeSpecAccessor _runtime;
     private readonly IEphemeralModelLifecycle? _ephemeralLifecycle;
+    private readonly IBarrierContextAccessor _barrierContextAccessor;
+    private readonly BarrierHierarchy _barrierHierarchy;
+    private readonly BarrierOptions _barrierOptions;
+    private readonly IBarrierAuditLog _barrierAuditLog;
+    private readonly IBarrierIdentityResolverPipeline _barrierResolverPipeline;
 
     public OrchestrateCommand(
         Orchestrator orchestrator,
         IConsoleRenderer renderer,
         ILogger<OrchestrateCommand> logger,
         IOrchestrationRuntimeSpecAccessor runtime,
+        IBarrierContextAccessor barrierContextAccessor,
+        BarrierHierarchy barrierHierarchy,
+        IOptions<BarrierOptions> barrierOptions,
+        IBarrierAuditLog barrierAuditLog,
+        IBarrierIdentityResolverPipeline barrierResolverPipeline,
         IEphemeralModelLifecycle? ephemeralLifecycle = null)
     {
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+        _barrierContextAccessor = barrierContextAccessor ?? throw new ArgumentNullException(nameof(barrierContextAccessor));
+        _barrierHierarchy = barrierHierarchy ?? throw new ArgumentNullException(nameof(barrierHierarchy));
+        _barrierOptions = barrierOptions?.Value ?? throw new ArgumentNullException(nameof(barrierOptions));
+        _barrierAuditLog = barrierAuditLog ?? throw new ArgumentNullException(nameof(barrierAuditLog));
+        _barrierResolverPipeline = barrierResolverPipeline ?? throw new ArgumentNullException(nameof(barrierResolverPipeline));
         _ephemeralLifecycle = ephemeralLifecycle;
     }
 
@@ -45,11 +66,22 @@ public class OrchestrateCommand
     /// Executes the orchestrate command.
     /// </summary>
     /// <param name="request">User request to orchestrate</param>
+    /// <param name="barrierLevel">Optional barrier level override.</param>
+    /// <param name="preferredRegion">Optional preferred routing region override.</param>
     /// <param name="json">Whether to output JSON format</param>
     /// <param name="verbose">Whether to show verbose progress output</param>
     /// <returns>Exit code (0 for success, non-zero for errors)</returns>
     public Task<int> ExecuteAsync(string request, bool json, bool verbose)
-        => ExecuteAsync(request, runtimeSpecPath: null, runtimeSpecJson: null, preferModel: null, provider: null, json, verbose);
+        => ExecuteAsync(
+            request,
+            runtimeSpecPath: null,
+            runtimeSpecJson: null,
+            preferModel: null,
+            provider: null,
+            barrierLevel: null,
+            preferredRegion: null,
+            json,
+            verbose);
 
     public async Task<int> ExecuteAsync(
         string request,
@@ -57,8 +89,12 @@ public class OrchestrateCommand
         string? runtimeSpecJson,
         string? preferModel,
         string? provider,
+        string? barrierLevel,
+        string? preferredRegion,
         bool json,
-        bool verbose)
+        bool verbose,
+        string? jwt = null,
+        IReadOnlyDictionary<string, string>? headers = null)
     {
         var correlationId = Guid.NewGuid().ToString();
         using var scope = _logger.BeginScope(new Dictionary<string, object>
@@ -82,6 +118,21 @@ public class OrchestrateCommand
             {
                 spec = spec with { Model = spec.Model with { Provider = provider!.Trim() } };
             }
+            if (!string.IsNullOrWhiteSpace(barrierLevel))
+            {
+                spec = spec with { BarrierLevel = barrierLevel.Trim() };
+            }
+            if (!string.IsNullOrWhiteSpace(preferredRegion))
+            {
+                spec = spec with { PreferredRegion = preferredRegion.Trim() };
+            }
+
+            await InitializeBarrierContextAsync(
+                barrierLevel: spec.BarrierLevel,
+                jwt: jwt,
+                headers: headers,
+                correlationId: correlationId,
+                cancellationToken: CancellationToken.None);
 
             var modelPrefer = spec.Model?.Prefer;
             OrchestrationResult result;
@@ -135,6 +186,15 @@ public class OrchestrateCommand
         catch (Exception ex)
         {
             _logger.LogError(ex, "Orchestration failed");
+            var errorCode = ex switch
+            {
+                BarrierContextMissingException b => b.ErrorCode,
+                BarrierElevationException b => b.ErrorCode,
+                BarrierCeilingExceededException b => b.ErrorCode,
+                ArgumentException a when string.Equals(a.ParamName, "level", StringComparison.Ordinal) => "BARRIER_VALIDATION_FAILED",
+                EndpointUnavailableException => "ENDPOINT_UNAVAILABLE",
+                _ => "UNEXPECTED_ERROR"
+            };
             if (!json)
             {
                 _renderer.RenderError($"Orchestration failed: {ex.Message}");
@@ -145,11 +205,111 @@ public class OrchestrateCommand
                 {
                     ok = false,
                     correlationId,
-                    error = ex.Message
+                    error = ex.Message,
+                    errorCode
                 });
             }
             return (int)ExitCode.UnexpectedError;
         }
+    }
+
+    private async Task InitializeBarrierContextAsync(
+        string? barrierLevel,
+        string? jwt,
+        IReadOnlyDictionary<string, string>? headers,
+        string correlationId,
+        CancellationToken cancellationToken)
+    {
+        var safeHeaders = headers ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var resolutionContext = new BarrierResolutionContext(
+            CorrelationId: correlationId,
+            ExplicitLevel: string.IsNullOrWhiteSpace(barrierLevel) ? null : barrierLevel,
+            Headers: safeHeaders,
+            CertSubjects: Array.Empty<string>(),
+            CertSans: Array.Empty<string>(),
+            RawJwt: jwt,
+            JwtClaims: JwtClaimParser.ParseClaims(jwt),
+            ApiKey: TryGetApiKey(safeHeaders));
+
+        var result = await _barrierResolverPipeline.ResolveAsync(resolutionContext, cancellationToken);
+        if (result is null)
+        {
+            if (_barrierOptions.RequireExplicitBarrier)
+                throw new BarrierContextMissingException("*", correlationId);
+
+            var defaultContext = BarrierContext.Create(
+                _barrierHierarchy.Floor.Name,
+                BarrierAuthoritySource.Default,
+                "*",
+                correlationId,
+                _barrierHierarchy);
+
+            _barrierContextAccessor.Initialize(defaultContext);
+            await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
+                BarrierAuditEventType.DefaultApplied,
+                defaultContext.Level,
+                defaultContext.AuthoritySource,
+                "*",
+                correlationId,
+                string.Empty,
+                DateTimeOffset.UtcNow,
+                "No explicit barrier set at request boundary; defaulted to floor level."),
+                cancellationToken);
+            await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
+                BarrierAuditEventType.ContextInitialized,
+                defaultContext.Level,
+                defaultContext.AuthoritySource,
+                defaultContext.IssuedTo,
+                correlationId,
+                string.Empty,
+                DateTimeOffset.UtcNow),
+                cancellationToken);
+            return;
+        }
+
+        await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
+            BarrierAuditEventType.IdentityResolved,
+            result.ResolvedLevel,
+            result.AuthoritySource,
+            "*",
+            correlationId,
+            string.Empty,
+            DateTimeOffset.UtcNow,
+            $"Resolved by: {result.ResolverName}. {result.Detail}"),
+            cancellationToken);
+
+        var context = BarrierContext.Create(
+            result.ResolvedLevel,
+            result.AuthoritySource,
+            "*",
+            correlationId,
+            _barrierHierarchy,
+            resolutionDetail: string.IsNullOrWhiteSpace(result.Detail)
+                ? $"Resolved by: {result.ResolverName}."
+                : $"Resolved by: {result.ResolverName}. {result.Detail}");
+
+        _barrierContextAccessor.Initialize(context);
+        await _barrierAuditLog.RecordAsync(new BarrierAuditEvent(
+            BarrierAuditEventType.ContextInitialized,
+            context.Level,
+            context.AuthoritySource,
+            context.IssuedTo,
+            correlationId,
+            string.Empty,
+            DateTimeOffset.UtcNow),
+            cancellationToken);
+    }
+
+    private static string? TryGetApiKey(IReadOnlyDictionary<string, string> headers)
+    {
+        if (headers.TryGetValue("x-nexo-api-key", out var value))
+            return value;
+        foreach (var (key, headerValue) in headers)
+        {
+            if (string.Equals(key, "x-nexo-api-key", StringComparison.OrdinalIgnoreCase))
+                return headerValue;
+        }
+        return null;
     }
 }
 

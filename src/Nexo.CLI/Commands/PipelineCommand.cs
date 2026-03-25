@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Pipelines.Models;
 using Nexo.Core.Application.Pipelines.Ports;
+using Nexo.Infrastructure.Pipelines;
 
 namespace Nexo.CLI.Commands;
 
@@ -15,17 +17,26 @@ public sealed class PipelineCommand
     private readonly IPipelineTemplateValidator _validator;
     private readonly IPipelineOrchestrator _orchestrator;
     private readonly IConsoleRenderer _renderer;
+    private readonly IOptions<PipelineExecutionOptions> _executionOptions;
+    private readonly IOptions<PipelinePersistenceOptions> _persistenceOptions;
+    private readonly IOptions<PipelineExecutionAdapterOptions> _adapterOptions;
     private readonly ILogger<PipelineCommand> _logger;
 
     public PipelineCommand(
         IPipelineTemplateValidator validator,
         IPipelineOrchestrator orchestrator,
         IConsoleRenderer renderer,
+        IOptions<PipelineExecutionOptions> executionOptions,
+        IOptions<PipelinePersistenceOptions> persistenceOptions,
+        IOptions<PipelineExecutionAdapterOptions> adapterOptions,
         ILogger<PipelineCommand> logger)
     {
         _validator = validator ?? throw new ArgumentNullException(nameof(validator));
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _renderer = renderer ?? throw new ArgumentNullException(nameof(renderer));
+        _executionOptions = executionOptions ?? throw new ArgumentNullException(nameof(executionOptions));
+        _persistenceOptions = persistenceOptions ?? throw new ArgumentNullException(nameof(persistenceOptions));
+        _adapterOptions = adapterOptions ?? throw new ArgumentNullException(nameof(adapterOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -194,6 +205,52 @@ public sealed class PipelineCommand
             }
             return (int)ExitCode.UnexpectedError;
         }
+    }
+
+    public int Diagnostics(bool json)
+    {
+        var execution = _executionOptions.Value;
+        var persistence = _persistenceOptions.Value;
+        var adapters = _adapterOptions.Value;
+        var knownProvider = PipelinePersistenceOptions.IsKnownProvider(persistence.Provider);
+
+        var payload = new
+        {
+            execution = new
+            {
+                execution.MaxRetryAttempts,
+                execution.RetryDelayMs,
+                execution.ResumeFailedStages,
+                execution.CompletionPolicy,
+                execution.AllowMissingResumeSource,
+                execution.EnableTestHooks
+            },
+            persistence = new
+            {
+                persistence.Provider,
+                persistence.DatabasePath,
+                knownProvider
+            },
+            adapters = new
+            {
+                adapters.DeterministicAdapter,
+                adapters.AgenticAdapter
+            }
+        };
+
+        if (json)
+        {
+            _renderer.RenderJson(new { ok = true, data = payload });
+        }
+        else
+        {
+            _renderer.RenderSuccess("Pipeline diagnostics");
+            _renderer.RenderSuccess($"  Execution: retries={execution.MaxRetryAttempts}, delayMs={execution.RetryDelayMs}, resumeFailed={execution.ResumeFailedStages}, completionPolicy={execution.CompletionPolicy}, allowMissingResume={execution.AllowMissingResumeSource}, testHooks={execution.EnableTestHooks}");
+            _renderer.RenderSuccess($"  Persistence: provider={persistence.Provider}, databasePath={persistence.DatabasePath}, knownProvider={knownProvider}");
+            _renderer.RenderSuccess($"  Adapters: deterministic={adapters.DeterministicAdapter}, agentic={adapters.AgenticAdapter}");
+        }
+
+        return knownProvider ? (int)ExitCode.Ok : (int)ExitCode.ValidationFailed;
     }
 
     private static PipelineTemplate LoadTemplate(string templatePath)

@@ -1,0 +1,3 @@
+Create a visual Avalonia app transform that replaces the shell with strict visual QA.
+Scaffold dynamic UI hotload features with composable visual and aesthetic QA gates.
+Generate a polished in-framework feature extension with strict visual fallback policy.

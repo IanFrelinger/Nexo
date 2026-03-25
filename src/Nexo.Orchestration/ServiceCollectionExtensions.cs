@@ -14,8 +14,12 @@ using Nexo.Orchestration.Coordination.Conflicts;
 using Nexo.Orchestration.Coordination.ErrorRecovery;
 using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
+using Nexo.Orchestration.Barriers;
+using Nexo.Orchestration.Routing;
 using Nexo.Orchestration.Validation;
 using Nexo.Orchestration.Models;
+using Nexo.Abstractions.Barriers;
+using Nexo.Abstractions.Routing;
 
 namespace Nexo.Orchestration;
 
@@ -50,6 +54,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DecompositionPromptBuilder>();
         services.AddSingleton<DecompositionJsonParser>();
         services.AddSingleton<IArchitectAgent, ArchitectAgent>();
+        services.TryAddSingleton<IEndpointRegistry, EmptyEndpointRegistry>();
+        services.AddSingleton<IEndpointRouter, CompositeEndpointRouter>();
+        services.AddSingleton<IRoutingPolicy, CapabilityRoutingPolicy>();
+        services.AddSingleton<IRoutingPolicy, BarrierRoutingPolicy>();
+        services.AddSingleton<IRoutingPolicy, GeographicAffinityPolicy>();
+        services.AddSingleton<IRoutingPolicy, HealthFilterPolicy>();
+        services.AddSingleton<IRoutingPolicy, PrioritySelectionPolicy>();
+        services.TryAddSingleton<IBarrierAuditLog, NoopBarrierAuditLog>();
 
         // Validation
         services.AddSingleton<IValidator, SchemaValidator>();
@@ -89,7 +101,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<OrchestrationMetrics>();
 
         // Orchestrator
-        services.AddSingleton<Orchestrator>();
+        services.AddScoped<Orchestrator>();
 
         // Asset Storage (default to local storage)
         // Note: IAssetStorage should be registered by consuming application
@@ -103,6 +115,19 @@ public static class ServiceCollectionExtensions
         // services.AddSingleton<ITelemetryStore, InMemoryTelemetryStore>();
 
         return services;
+    }
+
+    private sealed class EmptyEndpointRegistry : IEndpointRegistry
+    {
+        public IReadOnlyList<EndpointDescriptor> GetAll() => Array.Empty<EndpointDescriptor>();
+        public void Register(EndpointDescriptor descriptor) { }
+        public void UpdateHealth(string endpoint, bool isHealthy) { }
+    }
+
+    private sealed class NoopBarrierAuditLog : IBarrierAuditLog
+    {
+        public ValueTask RecordAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)
+            => ValueTask.CompletedTask;
     }
 
     /// <summary>

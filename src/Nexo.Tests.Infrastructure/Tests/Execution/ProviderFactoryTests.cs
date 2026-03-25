@@ -26,6 +26,14 @@ public class ProviderFactoryTests : UnitTestBase
         {
             await TestIsProviderAvailable();
             await TestExecuteLLMAsync();
+            await TestExecuteLLMAsync_SelfExtendUnityBootstrap();
+            await TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced();
+            await TestExecuteLLMAsync_SelfExtendUnityBootstrap_GeneratesComposableCommandScaffolds();
+            await TestExecuteLLMAsync_SelfExtendPersonalApp_GeneratesComposableCommandScaffolds();
+            await TestExecuteLLMAsync_SelfExtendUiDemo_GeneratesDomainAndUiScaffolds();
+            await TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule();
+            await TestExecuteLLMAsync_SelfExtendAvaloniaHotload_GeneratesFeatureDescriptor();
+            await TestExecuteLLMAsync_SelfExtendAvaloniaTransform_GeneratesReplacementDescriptor();
             await TestExecuteVisionAsync();
             
             return new TestResult
@@ -163,6 +171,347 @@ public class ProviderFactoryTests : UnitTestBase
         }).GetAwaiter().GetResult();
     }
 
+    private async Task TestExecuteLLMAsync_SelfExtendUnityBootstrap()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Generate Unity bootstrap files (IGeneratedGameplaySystem, SystemContext, DashAbilitySystem).
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        AssertTrue(doc.RootElement.TryGetProperty("tool_calls", out var calls), "tool_calls should exist");
+        AssertEqual(JsonValueKind.Array, calls.ValueKind);
+        AssertTrue(calls.GetArrayLength() >= 3, "Expected at least 3 repo.fs.write calls");
+
+        var first = calls[0];
+        AssertEqual("repo.fs.write", first.GetProperty("id").GetString());
+        var firstArgs = first.GetProperty("arguments");
+        AssertEqual("/workspace", firstArgs.GetProperty("root").GetString());
+        AssertEqual("docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs", firstArgs.GetProperty("path").GetString());
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Generate a richer Unity gameplay extension layer for Mono compatibility. Required files: IGeneratedGameplaySystem, SystemContext, DashAbilitySystem with cooldown fields, GeneratedSystemErrorState for in-game compile errors, and GeneratedSystemInspectorSnapshot for raw code inspection.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        AssertTrue(doc.RootElement.TryGetProperty("tool_calls", out var calls), "tool_calls should exist");
+        AssertEqual(JsonValueKind.Array, calls.ValueKind);
+        AssertTrue(calls.GetArrayLength() >= 5, "Expected at least 5 repo.fs.write calls for nuanced objective");
+
+        var sawErrorState = false;
+        var sawInspectorSnapshot = false;
+        var sawCooldownInDash = false;
+
+        foreach (var call in calls.EnumerateArray())
+        {
+            var args = call.GetProperty("arguments");
+            var path = args.GetProperty("path").GetString() ?? string.Empty;
+            if (path == "docs/UnityBootstrapGenerated/GeneratedSystemErrorState.cs")
+                sawErrorState = true;
+            if (path == "docs/UnityBootstrapGenerated/GeneratedSystemInspectorSnapshot.cs")
+                sawInspectorSnapshot = true;
+            if (path == "docs/UnityBootstrapGenerated/DashAbilitySystem.cs")
+            {
+                var content = args.GetProperty("content").GetString() ?? string.Empty;
+                sawCooldownInDash = content.Contains("DashCooldownSeconds", StringComparison.Ordinal);
+            }
+        }
+
+        AssertTrue(sawErrorState, "Expected GeneratedSystemErrorState.cs tool call");
+        AssertTrue(sawInspectorSnapshot, "Expected GeneratedSystemInspectorSnapshot.cs tool call");
+        AssertTrue(sawCooldownInDash, "Expected cooldown field usage in DashAbilitySystem.cs content");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUnityBootstrap_GeneratesComposableCommandScaffolds()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Generate a broad Unity adaptation package for a movement-combat vertical slice. Required: IGeneratedGameplaySystem, SystemContext, DashAbilitySystem, JumpAbilitySystem, SprintAbilitySystem, AbilityRegistry, GeneratedSystemErrorState, GeneratedSystemInspectorSnapshot, and a short adaptation README. Include cooldowns, compile-failure fallback metadata, and inspector raw-code visibility. Keep code in docs/UnityBootstrapGenerated.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        var paths = new List<string>();
+        foreach (var call in calls.EnumerateArray())
+        {
+            paths.Add(call.GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty);
+        }
+
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs"),
+            "Expected composable command contract scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBundleCommand.cs"),
+            "Expected composed bundle command scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/DashExtensionCommandStructureTests.cs"),
+            "Expected generated test scaffold for extension command structure.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendPersonalApp_GeneratesComposableCommandScaffolds()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Scaffold a personalized productivity application for an individual user with profile, preferences, tasks, reminders, and progress dashboard. Write artifacts under docs/PersonalAppGenerated and scaffold composable extension commands plus tests so the app can compose with existing backend infrastructure.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        var paths = new List<string>();
+        foreach (var call in calls.EnumerateArray())
+        {
+            paths.Add(call.GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty);
+        }
+
+        AssertTrue(paths.Contains("docs/PersonalAppGenerated/UserProfile.cs"),
+            "Expected personal app user profile scaffold.");
+        AssertTrue(paths.Contains("docs/PersonalAppGenerated/ProgressDashboard.cs"),
+            "Expected personal app dashboard scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/ProfileExtensionCommand.cs"),
+            "Expected generated profile extension command scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommand.cs"),
+            "Expected composed personal bundle command scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/ProfileExtensionCommandStructureTests.cs"),
+            "Expected generated test scaffold for profile extension command structure.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs"),
+            "Expected generated test scaffold for personal bundle composition.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUiDemo_GeneratesDomainAndUiScaffolds()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Create an interactive demo app with a chatbot interface that explains Nexo, retains domain knowledge in a dedicated layer, and can scaffold + dynamically load new features with UI updates.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        var paths = new List<string>();
+        var appJsContent = string.Empty;
+        var htmlContent = string.Empty;
+        var avaloniaContractsContent = string.Empty;
+        var avaloniaHostProgramContent = string.Empty;
+        foreach (var call in calls.EnumerateArray())
+        {
+            var args = call.GetProperty("arguments");
+            var path = args.GetProperty("path").GetString() ?? string.Empty;
+            paths.Add(path);
+            if (path == "docs/UiDomainDemoGenerated/app/app.js")
+                appJsContent = args.GetProperty("content").GetString() ?? string.Empty;
+            if (path == "docs/UiDomainDemoGenerated/app/index.html")
+                htmlContent = args.GetProperty("content").GetString() ?? string.Empty;
+            if (path == "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions/UiContracts.cs")
+                avaloniaContractsContent = args.GetProperty("content").GetString() ?? string.Empty;
+            if (path == "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Program.cs")
+                avaloniaHostProgramContent = args.GetProperty("content").GetString() ?? string.Empty;
+        }
+
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/index.html"),
+            "Expected generated UI index scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/app/domain-knowledge.json"),
+            "Expected generated retained domain knowledge catalog.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/UiDemoHost.csproj"),
+            "Expected generated .NET host project scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/Program.cs"),
+            "Expected generated .NET host program scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/UiDemoSmoke.csproj"),
+            "Expected generated .NET smoke project scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/host/SmokeProgram.cs"),
+            "Expected generated .NET smoke program scaffold.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions/UiContracts.cs"),
+            "Expected generated Avalonia UI abstraction contracts.");
+        AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Program.cs"),
+            "Expected generated Avalonia host program scaffold.");
+        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs"),
+            "Expected generated UI demo bundle command.");
+        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs"),
+            "Expected generated test for UI/domain knowledge retention.");
+        AssertTrue(htmlContent.Contains("Nexo Chatbot", StringComparison.Ordinal),
+            "Expected chatbot interface in generated UI HTML.");
+        AssertTrue(appJsContent.Contains("/api/scaffold-feature", StringComparison.Ordinal),
+            "Expected real scaffold API call in generated UI JS.");
+        AssertTrue(appJsContent.Contains("import(moduleUrl)", StringComparison.Ordinal),
+            "Expected dynamic module import in generated UI JS.");
+        AssertTrue(appJsContent.Contains("explainNexo", StringComparison.Ordinal),
+            "Expected Nexo explainer behavior in generated UI JS.");
+        AssertTrue(avaloniaContractsContent.Contains("ExperienceMode", StringComparison.Ordinal),
+            "Expected Avalonia contracts to include descriptor experience mode.");
+        AssertTrue(avaloniaHostProgramContent.Contains("AVALONIA_APP_TRANSFORM", StringComparison.Ordinal),
+            "Expected Avalonia host scaffold to support full app transformation objective.");
+        AssertTrue(avaloniaHostProgramContent.Contains("Galactic Operations Console", StringComparison.Ordinal),
+            "Expected Avalonia host scaffold to include a distinct transformed application shell.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendUiFeatureHotload_GeneratesFeatureModule()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+Scaffold a hot-loadable UI feature module for the Nexo interactive demo.
+UI_FEATURE_HOTLOAD
+Feature request: Add inventory notification panel
+Write output module under docs/UiDomainDemoGenerated/app/generated.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        AssertEqual(1, calls.GetArrayLength(), "Expected one module write call for hotload objective.");
+        var path = calls[0].GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty;
+        var content = calls[0].GetProperty("arguments").GetProperty("content").GetString() ?? string.Empty;
+        AssertTrue(path.StartsWith("docs/UiDomainDemoGenerated/app/generated/", StringComparison.Ordinal),
+            "Expected generated feature module path under app/generated.");
+        AssertTrue(content.Contains("export function mountFeature", StringComparison.Ordinal),
+            "Expected generated feature module to export mountFeature.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendAvaloniaHotload_GeneratesFeatureDescriptor()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+AVALONIA_FEATURE_HOTLOAD Feature request: Add slick onboarding rail. Write output descriptor under docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        AssertEqual(1, calls.GetArrayLength(), "Expected one descriptor write call for Avalonia hotload objective.");
+        var path = calls[0].GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty;
+        var content = calls[0].GetProperty("arguments").GetProperty("content").GetString() ?? string.Empty;
+        AssertTrue(path.StartsWith("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/", StringComparison.Ordinal),
+            "Expected generated Avalonia descriptor path under GeneratedExtensions.");
+        AssertTrue(content.Contains("\"Root\"", StringComparison.Ordinal),
+            "Expected generated Avalonia descriptor to include root node.");
+        AssertTrue(content.Contains("\"Kind\": \"panel\"", StringComparison.Ordinal),
+            "Expected descriptor root node kind panel.");
+        AssertTrue(content.Contains("\"ExperienceMode\": \"augment\"", StringComparison.Ordinal),
+            "Expected hotload descriptor to default to augment mode.");
+    }
+
+    private async Task TestExecuteLLMAsync_SelfExtendAvaloniaTransform_GeneratesReplacementDescriptor()
+    {
+        var mockLogger = new Mock<ILogger<ProviderFactory>>();
+        var factory = new ProviderFactory(mockLogger.Object);
+
+        const string systemPrompt = """
+You are a self-extending code agent. You may call tools to read/write files in the repository.
+Current world state (JSON): {"RepoRoot":"/workspace","OutputRoot":"/workspace/out"}
+Available tools:
+- repo.fs.write: Write a file under the repo root
+""";
+
+        const string userPrompt = """
+Objective:
+AVALONIA_APP_TRANSFORM Feature request: Completely transform into a mission operations application. Write output descriptor under docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions.
+""";
+
+        var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+            await factory.ExecuteLLMAsync("mock-json", systemPrompt, userPrompt, new { }, CancellationToken.None));
+
+        using var doc = JsonDocument.Parse(result);
+        var calls = doc.RootElement.GetProperty("tool_calls");
+        AssertEqual(1, calls.GetArrayLength(), "Expected one descriptor write call for Avalonia app transform objective.");
+        var path = calls[0].GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty;
+        var content = calls[0].GetProperty("arguments").GetProperty("content").GetString() ?? string.Empty;
+        AssertTrue(path.StartsWith("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/GeneratedExtensions/", StringComparison.Ordinal),
+            "Expected generated Avalonia transform descriptor path under GeneratedExtensions.");
+        AssertTrue(content.Contains("\"ExperienceMode\": \"transform\"", StringComparison.Ordinal),
+            "Expected descriptor to request full shell transformation.");
+        AssertTrue(content.Contains("\"Command\": \"shell:restore\"", StringComparison.Ordinal),
+            "Expected transformed descriptor to include explicit restore command.");
+        AssertTrue(content.Contains("\"Layout\": \"horizontal\"", StringComparison.Ordinal),
+            "Expected transformed descriptor to include adaptive horizontal layout containers.");
+    }
+
     private static async Task AssertThrowsAsync<T>(Func<Task> action) where T : Exception
     {
         try
@@ -213,6 +562,20 @@ public class ProviderFactoryTests : UnitTestBase
         {
             Environment.SetEnvironmentVariable(key, value);
             await action();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, old);
+        }
+    }
+
+    private static async Task<T> WithEnv<T>(string key, string? value, Func<Task<T>> action)
+    {
+        var old = Environment.GetEnvironmentVariable(key);
+        try
+        {
+            Environment.SetEnvironmentVariable(key, value);
+            return await action();
         }
         finally
         {

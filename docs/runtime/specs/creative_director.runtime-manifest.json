@@ -1,0 +1,19 @@
+{
+  "domainPacks": [
+    "personal",
+    "ui",
+    "studio",
+    "creative"
+  ],
+  "preferences": {
+    "directorMode": "supervised",
+    "aestheticPriority": "high",
+    "feedbackCadence": "iteration-end"
+  },
+  "uiCapabilities": [
+    "dynamic-ui",
+    "visual-qa",
+    "storyboard"
+  ],
+  "qaPolicyProfile": "release"
+}

@@ -1,0 +1,13 @@
+{
+  "domainPacks": [
+    "cli",
+    "automation"
+  ],
+  "preferences": {
+    "latency": "low",
+    "costProfile": "low",
+    "changeScope": "minimal"
+  },
+  "uiCapabilities": [],
+  "qaPolicyProfile": "demo"
+}

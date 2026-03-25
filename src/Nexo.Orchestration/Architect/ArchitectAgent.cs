@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
+using Nexo.Abstractions.Barriers;
+using Nexo.Abstractions.Routing;
 using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Architect.Parsers;
 using Nexo.Orchestration.Architect.Prompts;
@@ -30,6 +32,7 @@ public sealed class ArchitectAgent : IArchitectAgent
     private readonly IReadOnlyList<IValidator> _validators;
     private readonly DecompositionPromptBuilder _promptBuilder;
     private readonly DecompositionJsonParser _parser;
+    private readonly IEndpointRouter _router;
     private readonly ILogger<ArchitectAgent> _logger;
     private const int MaxCorrectionAttempts = 3;
 
@@ -42,6 +45,7 @@ public sealed class ArchitectAgent : IArchitectAgent
     /// <param name="validators">The validators for validating decomposition results.</param>
     /// <param name="promptBuilder">The prompt builder for constructing LLM prompts.</param>
     /// <param name="parser">The JSON parser for parsing decomposition results.</param>
+    /// <param name="router">Endpoint router for assigning per-agent target endpoints.</param>
     /// <param name="logger">The logger instance.</param>
     public ArchitectAgent(
         IModel model,
@@ -50,6 +54,7 @@ public sealed class ArchitectAgent : IArchitectAgent
         IEnumerable<IValidator> validators,
         DecompositionPromptBuilder promptBuilder,
         DecompositionJsonParser parser,
+        IEndpointRouter router,
         ILogger<ArchitectAgent> logger)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
@@ -58,6 +63,7 @@ public sealed class ArchitectAgent : IArchitectAgent
         _validators = validators?.ToList() ?? throw new ArgumentNullException(nameof(validators));
         _promptBuilder = promptBuilder ?? throw new ArgumentNullException(nameof(promptBuilder));
         _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+        _router = router ?? throw new ArgumentNullException(nameof(router));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -183,7 +189,7 @@ public sealed class ArchitectAgent : IArchitectAgent
             if (result.IsValid)
             {
                 _logger.LogInformation("Decomposition successful after {Attempts} attempt(s)", attempts);
-                return result;
+                return await ApplyRoutingAsync(result, context, cancellationToken);
             }
 
             // If invalid and we have more attempts, build correction prompt
@@ -198,7 +204,7 @@ public sealed class ArchitectAgent : IArchitectAgent
         _logger.LogWarning("Decomposition completed with {ErrorCount} validation errors after {Attempts} attempts",
             result?.ValidationErrors.Count ?? 0, attempts);
 
-        return result ?? new DecompositionResult
+        var finalResult = result ?? new DecompositionResult
         {
             Agents = Array.Empty<AgentSpawnSpec>(),
             OriginalRequest = request,
@@ -213,6 +219,45 @@ public sealed class ArchitectAgent : IArchitectAgent
                 }
             }
         };
+
+        return await ApplyRoutingAsync(finalResult, context, cancellationToken);
+    }
+
+    private async Task<DecompositionResult> ApplyRoutingAsync(
+        DecompositionResult result,
+        DecompositionContext context,
+        CancellationToken cancellationToken)
+    {
+        if (result.Agents.Count == 0)
+        {
+            return result;
+        }
+
+        var barrierLevel = string.IsNullOrWhiteSpace(context.BarrierLevel)
+            ? string.Empty
+            : context.BarrierLevel;
+
+        var routedAgents = new List<AgentSpawnSpec>(result.Agents.Count);
+        foreach (var spec in result.Agents)
+        {
+            var agentName = string.IsNullOrWhiteSpace(spec.Name) ? spec.AgentId : spec.Name;
+            var routingContext = new EndpointRoutingContext(
+                AgentName: agentName,
+                CorrelationId: context.CorrelationId,
+                RequiredCapabilities: spec.RequiredCapabilities,
+                BarrierLevel: barrierLevel,
+                PreferredRegion: context.PreferredRegion,
+                AgentMetadata: spec.Metadata);
+
+            var targetEndpoint = await _router.ResolveAsync(routingContext, cancellationToken);
+            routedAgents.Add(spec with
+            {
+                Name = agentName,
+                TargetEndpoint = targetEndpoint
+            });
+        }
+
+        return result with { Agents = routedAgents };
     }
 }
 
