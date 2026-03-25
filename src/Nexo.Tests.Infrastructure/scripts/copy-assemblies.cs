@@ -3,6 +3,7 @@
 // Or compiled to a single file and executed.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Linq;
@@ -15,6 +16,16 @@ if (args.Length < 2)
 
 var depsJsonPath = args[0];
 var outputDir = args[1];
+// Windows callers can pass an escaped quote suffix when an output path ends in '\' and
+// the argument itself is quoted by MSBuild Exec. Trim any accidental wrapping quotes and
+// normalize trailing separators so directory creation always receives a valid path.
+outputDir = outputDir.Trim().Trim('"');
+outputDir = outputDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+if (string.IsNullOrWhiteSpace(outputDir))
+{
+    Console.Error.WriteLine("Output directory argument is empty after normalization.");
+    Environment.Exit(1);
+}
 var nugetRoot = args.Length > 2 ? args[2] : Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
     ".nuget", "packages");
@@ -68,9 +79,6 @@ foreach (var libProperty in runtime.EnumerateObject())
     if (!libName.Contains('/'))
         continue;
     
-    if (!libProperty.Value.TryGetProperty("runtime", out var runtimePaths))
-        continue;
-    
     // Extract package name and version
     var parts = libName.Split('/', 2);
     if (parts.Length != 2)
@@ -80,23 +88,41 @@ foreach (var libProperty in runtime.EnumerateObject())
     var pkgVersion = parts[1];
     var pkgNameLower = pkgName.ToLowerInvariant(); // NuGet package folders are lowercase
     
-    // Process each runtime path
-    foreach (var runtimePathProperty in runtimePaths.EnumerateObject())
+    // Collect runtime assembly paths from both "runtime" and "runtimeTargets".
+    // On Windows RID-specific graphs, dependencies are often emitted in runtimeTargets.
+    var runtimeAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    if (libProperty.Value.TryGetProperty("runtime", out var runtimePaths))
     {
-        var path = runtimePathProperty.Name;
-        
+        foreach (var runtimePathProperty in runtimePaths.EnumerateObject())
+            runtimeAssetPaths.Add(runtimePathProperty.Name);
+    }
+    if (libProperty.Value.TryGetProperty("runtimeTargets", out var runtimeTargets))
+    {
+        foreach (var runtimeTargetProperty in runtimeTargets.EnumerateObject())
+        {
+            if (!runtimeTargetProperty.Value.TryGetProperty("assetType", out var assetType) ||
+                !string.Equals(assetType.GetString(), "runtime", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            runtimeAssetPaths.Add(runtimeTargetProperty.Name);
+        }
+    }
+
+    // Process each runtime path
+    foreach (var path in runtimeAssetPaths)
+    {
         // Only process .dll files
         if (!path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
             continue;
-        
+
         // Build source path - normalize path separators
         var libPath = path.Replace('/', Path.DirectorySeparatorChar);
         var sourcePath = Path.Combine(nugetRoot, pkgNameLower, pkgVersion, libPath);
-        
+
         // Build destination path
         var dllName = Path.GetFileName(path);
         var destPath = Path.Combine(outputDir, dllName);
-        
+
         // Copy if source exists
         if (File.Exists(sourcePath))
         {
