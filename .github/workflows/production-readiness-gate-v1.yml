@@ -46,7 +46,7 @@ jobs:
 
       - name: Restore
         shell: bash
-        run: dotnet restore
+        run: dotnet restore Nexo.sln
 
       - name: Build checks
         shell: bash
