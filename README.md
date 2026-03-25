@@ -91,6 +91,8 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
 
 - `docs/TrustAndInformationArchitecture.md` – Trust & Information Architecture
 - `docs/Testing.md` – Test guard rails, timeout policy, and running tests
+- `docs/ProductionReadinessGate-v1.md` – Production readiness gate commands and criteria
+- `docs/ReleaseCandidateChecklist-v1.md` – One-page release checklist for RC sign-off
 - `docs/` – Additional architecture and usage guides
 
 ## License

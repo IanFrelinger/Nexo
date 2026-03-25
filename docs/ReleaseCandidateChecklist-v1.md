@@ -1,0 +1,49 @@
+# Release Candidate Checklist v1
+
+Use this checklist to move from "locally passing" to "release-ready with evidence."
+
+## 1) CI gate (mandatory)
+
+- [ ] Trigger `production-readiness-gate-v1` in GitHub Actions.
+- [ ] Confirm matrix jobs pass on:
+  - [ ] ubuntu-latest
+  - [ ] windows-latest
+  - [ ] macos-latest
+- [ ] Confirm uploaded artifacts include:
+  - [ ] test TRX files
+  - [ ] `gate-validate.log`
+  - [ ] `gate-run-success.log`
+  - [ ] `gate-run-fallback.log`
+  - [ ] `gate-diagnostics.log`
+  - [ ] `gate-resume-source.log`
+  - [ ] `gate-resume-target.log`
+
+## 2) Runtime correctness review
+
+- [ ] Verify `gate-run-fallback.log` shows `hybrid` stage worker type as `Agentic`.
+- [ ] Verify `gate-resume-source.log` has run state `Failed` (intentional source failure).
+- [ ] Verify `gate-resume-target.log` has run state `Completed`.
+- [ ] Verify `gate-diagnostics.log` reports known persistence provider and resolved adapter keys.
+
+## 3) Exceptions policy (mandatory)
+
+For each open High/Critical exception:
+
+- [ ] Owner assigned
+- [ ] Expiration date set
+- [ ] Mitigation plan documented
+- [ ] Explicit sign-off recorded
+
+If any item is missing for any High/Critical exception, release is blocked.
+
+## 4) Rollback readiness (mandatory)
+
+- [ ] Rollback command/procedure documented.
+- [ ] Rollback tested in staging or equivalent environment.
+- [ ] Responsible operator/team identified.
+
+## 5) Release decision
+
+- [ ] All sections above complete.
+- [ ] Product/engineering sign-off recorded.
+- [ ] Release candidate promoted.
