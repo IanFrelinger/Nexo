@@ -147,6 +147,26 @@ public sealed class PipelineServiceCollectionExtensionsTests
     }
 
     [Fact]
+    public void AddPipelineCompositionLayer_WithNumericBooleanEnv_ParsesAsBoolean()
+    {
+        Environment.SetEnvironmentVariable("NEXO_PIPELINE_ENABLE_TEST_HOOKS", "1");
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddPipelineCompositionLayer();
+            using var provider = services.BuildServiceProvider();
+
+            var options = provider.GetRequiredService<IOptions<PipelineExecutionOptions>>().Value;
+            options.EnableTestHooks.Should().BeTrue();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_PIPELINE_ENABLE_TEST_HOOKS", null);
+        }
+    }
+
+    [Fact]
     public void AddPipelineCompositionLayer_RegistersDefaultExecutionAdapters()
     {
         var services = new ServiceCollection();
