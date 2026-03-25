@@ -4,10 +4,11 @@ on:
   push:
     branches:
       - master
+      - cursor/detailed-project-statistics-272c
     paths:
       - ".github/workflows/production-readiness-gate-v1.yml"
       - "docs/ProductionReadinessGate-v1.md"
-      - "docs/ReleaseCandidateChecklist.md"
+      - "docs/ReleaseCandidateChecklist-v1.md"
       - "src/Nexo.Core.Application/Pipelines/**"
       - "src/Nexo.Infrastructure/Pipelines/**"
       - "src/Nexo.CLI/**"
