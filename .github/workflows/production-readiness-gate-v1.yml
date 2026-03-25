@@ -95,7 +95,14 @@ jobs:
       - name: CLI operational checks
         shell: bash
         run: |
-          cat > /tmp/pipeline_gate_demo.json <<'JSON'
+          TMP_ROOT="$RUNNER_TEMP"
+          TEMPLATE_PATH="$TMP_ROOT/pipeline_gate_demo.json"
+          VALIDATE_LOG="$TMP_ROOT/gate-validate.log"
+          SUCCESS_LOG="$TMP_ROOT/gate-run-success.log"
+          FALLBACK_LOG="$TMP_ROOT/gate-run-fallback.log"
+          DIAGNOSTICS_LOG="$TMP_ROOT/gate-diagnostics.log"
+
+          cat > "$TEMPLATE_PATH" <<'JSON'
           {
             "templateId": "gate-demo",
             "version": "1.0",
@@ -109,13 +116,14 @@ jobs:
           }
           JSON
 
-          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline validate --template /tmp/pipeline_gate_demo.json | tee /tmp/gate-validate.log
-          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json | tee /tmp/gate-run-success.log
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline validate --template "$TEMPLATE_PATH" | tee "$VALIDATE_LOG"
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-success --format-json | tee "$SUCCESS_LOG"
           NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
-          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee /tmp/gate-run-fallback.log
-          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline diagnostics --format-json | tee /tmp/gate-diagnostics.log
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee "$FALLBACK_LOG"
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline diagnostics --format-json | tee "$DIAGNOSTICS_LOG"
 
           python - <<'PY'
+          import os
           import json
 
           def parse_final_json(path: str) -> dict:
@@ -126,8 +134,9 @@ jobs:
                   raise SystemExit(f"No JSON payload found in {path}")
               return json.loads(json_lines[-1])
 
-          success = parse_final_json("/tmp/gate-run-success.log")
-          fallback = parse_final_json("/tmp/gate-run-fallback.log")
+          tmp_root = os.environ["RUNNER_TEMP"]
+          success = parse_final_json(os.path.join(tmp_root, "gate-run-success.log"))
+          fallback = parse_final_json(os.path.join(tmp_root, "gate-run-fallback.log"))
 
           if not success.get("ok"):
               raise SystemExit("Success run did not return ok=true")
@@ -145,9 +154,15 @@ jobs:
       - name: Durable resume checks (LiteDb)
         shell: bash
         run: |
+          TMP_ROOT="$RUNNER_TEMP"
+          TEMPLATE_PATH="$TMP_ROOT/pipeline_gate_demo.json"
+          RESUME_DB="$TMP_ROOT/nexo_pipeline_gate_resume.db"
+          RESUME_SOURCE_LOG="$TMP_ROOT/gate-resume-source.log"
+          RESUME_TARGET_LOG="$TMP_ROOT/gate-resume-target.log"
+
           set +e
-          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
-          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee /tmp/gate-resume-source.log
+          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee "$RESUME_SOURCE_LOG"
           source_exit=$?
           set -e
 
@@ -156,10 +171,11 @@ jobs:
             exit 1
           fi
 
-          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
-          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee /tmp/gate-resume-target.log
+          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" \
+          dotnet run --project src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee "$RESUME_TARGET_LOG"
 
           python - <<'PY'
+          import os
           import json
 
           def parse_final_json(path: str) -> dict:
@@ -170,8 +186,9 @@ jobs:
                   raise SystemExit(f"No JSON payload found in {path}")
               return json.loads(json_lines[-1])
 
-          source = parse_final_json("/tmp/gate-resume-source.log")
-          target = parse_final_json("/tmp/gate-resume-target.log")
+          tmp_root = os.environ["RUNNER_TEMP"]
+          source = parse_final_json(os.path.join(tmp_root, "gate-resume-source.log"))
+          target = parse_final_json(os.path.join(tmp_root, "gate-resume-target.log"))
 
           if source.get("data", {}).get("state") != "Failed":
               raise SystemExit("Source run is expected to fail for durable resume check")
@@ -184,7 +201,7 @@ jobs:
       - name: Cleanup temp artifacts
         if: always()
         shell: bash
-        run: rm -f /tmp/pipeline_gate_demo.json /tmp/nexo_pipeline_gate_resume.db
+        run: rm -f "$RUNNER_TEMP/pipeline_gate_demo.json" "$RUNNER_TEMP/nexo_pipeline_gate_resume.db"
 
       - name: Upload test and gate artifacts
         if: always()
@@ -193,10 +210,10 @@ jobs:
           name: production-readiness-gate-v1-artifacts-${{ matrix.os }}
           path: |
             test-results/**/*.trx
-            /tmp/gate-validate.log
-            /tmp/gate-run-success.log
-            /tmp/gate-run-fallback.log
-            /tmp/gate-diagnostics.log
-            /tmp/gate-resume-source.log
-            /tmp/gate-resume-target.log
+            ${{ runner.temp }}/gate-validate.log
+            ${{ runner.temp }}/gate-run-success.log
+            ${{ runner.temp }}/gate-run-fallback.log
+            ${{ runner.temp }}/gate-diagnostics.log
+            ${{ runner.temp }}/gate-resume-source.log
+            ${{ runner.temp }}/gate-resume-target.log
           retention-days: 14
