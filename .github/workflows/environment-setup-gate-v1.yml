@@ -115,8 +115,6 @@ jobs:
         include:
           - image: mcr.microsoft.com/dotnet/sdk:9.0
             image_id: dotnet-sdk-9-0
-          - image: mcr.microsoft.com/dotnet/sdk:8.0
-            image_id: dotnet-sdk-8-0
 
     steps:
       - name: Checkout

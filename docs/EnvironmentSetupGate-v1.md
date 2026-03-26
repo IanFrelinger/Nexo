@@ -11,14 +11,12 @@ Fail fast on environment drift before deeper functional gates run.
 - `ubuntu-latest`
 - `macos-latest`
 - `windows-latest`
-- Ephemeral Linux containers:
+- Ephemeral Linux container:
   - `mcr.microsoft.com/dotnet/sdk:9.0`
-  - `mcr.microsoft.com/dotnet/sdk:8.0`
 
 Ephemeral container validation (Linux):
 
 - `mcr.microsoft.com/dotnet/sdk:9.0`
-- `mcr.microsoft.com/dotnet/sdk:8.0`
 
 ## Gate workflow
 
