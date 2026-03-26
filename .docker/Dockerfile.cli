@@ -5,17 +5,19 @@ ARG DOTNET_RUNTIME_VERSION=8.0
 ARG TARGETFRAMEWORK=net8.0
 ARG TARGETARCH=amd64
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION} AS build
+ARG TARGETFRAMEWORK
 WORKDIR /src
 
 COPY . .
 
 # Skip CopyAssemblies (test infra script; not needed for CLI publish)
 ENV SkipCopyAssemblies=true
+ENV TARGETFRAMEWORK=${TARGETFRAMEWORK:-net8.0}
 
 # Restore and publish CLI - framework dependent by default.
-RUN dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework=${TARGETFRAMEWORK} && \
+RUN dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework="${TARGETFRAMEWORK}" && \
     dotnet publish src/Nexo.CLI/Nexo.CLI.csproj -c Release -o /app/publish \
-        --self-contained false -p:TargetFramework=${TARGETFRAMEWORK} -p:SkipCopyAssemblies=true
+        --self-contained false -p:TargetFramework="${TARGETFRAMEWORK}" -p:SkipCopyAssemblies=true
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/runtime:${DOTNET_RUNTIME_VERSION}
