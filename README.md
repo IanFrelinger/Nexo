@@ -58,16 +58,15 @@ docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
 docker run --rm nexo-cli:local --help
 ```
 
-Build with explicit architecture/runtime IDs:
+Build with explicit framework/runtime versions:
 
 ```bash
 docker build \
-  --build-arg DOTNET_VERSION=9.0 \
+  --build-arg DOTNET_SDK_VERSION=9.0 \
   --build-arg TARGETFRAMEWORK=net8.0 \
-  --build-arg TARGETRID=linux-x64 \
-  --build-arg RUNTIME_DOTNET_VERSION=8.0 \
+  --build-arg DOTNET_RUNTIME_VERSION=8.0 \
   -f .docker/Dockerfile.cli \
-  -t nexo-cli:linux-x64 .
+  -t nexo-cli:net8 .
 ```
 
 ### 2) Clone and build
@@ -75,7 +74,8 @@ docker build \
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
-dotnet build Nexo.sln
+bash scripts/setup/setup.sh all
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 ### 3) Confirm CLI is working
@@ -86,7 +86,26 @@ dotnet run --project src/Nexo.CLI -- --help
 
 ### 4) Run a first high-signal command
 
+`validate` can execute a broad architecture/test sweep and may be heavier on constrained hosts. For first-run confidence, start with CLI help and a pipeline validate command:
+
 ```bash
+dotnet run --project src/Nexo.CLI -- --help
+tmp_dir="$(mktemp -d)"
+template_path="$tmp_dir/nexo_pipeline_quickstart.json"
+cat > "$template_path" <<'JSON'
+{
+  "templateId": "quickstart",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+dotnet run --project src/Nexo.CLI -- pipeline validate --template "$template_path"
 dotnet run --project src/Nexo.CLI -- validate
 ```
 

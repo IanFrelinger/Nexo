@@ -19,15 +19,14 @@ In ~15 minutes, you will:
   - Docker (multi-environment testing workflows)
   - Ollama/OpenAI/Azure credentials (model-backed commands)
 
-## 1) Clone and build
+## 1) Clone
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
-dotnet build Nexo.sln
 ```
 
-### Optional: run platform setup script first
+## 2) Run platform setup script (recommended first run)
 
 These scripts validate/install base dependencies and restore the setup-gate baseline NuGet graph for this repository:
 
@@ -43,7 +42,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
 powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 ```
 
-## 2) Verify CLI is available
+## 3) Build only the CLI project (workload-safe baseline)
+
+`Nexo.sln` includes mobile projects that may require platform workloads (`maui-android`, etc.). For first run, build the CLI path first:
+
+```bash
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+```
+
+## 4) Verify CLI is available
 
 ```bash
 dotnet run --project src/Nexo.CLI -- --help
@@ -51,19 +58,19 @@ dotnet run --project src/Nexo.CLI -- --help
 
 You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, and `orchestrate`.
 
-## 3) Run first high-signal commands
+## 5) Run first high-signal commands
 
 Run these from the repository root:
 
 ```bash
-# architecture and contract checks
-dotnet run --project src/Nexo.CLI -- validate
-
 # code and assembly analysis
 dotnet run --project src/Nexo.CLI -- analyze --path .
+
+# optional (heavier) architecture/test validation
+dotnet run --project src/Nexo.CLI -- validate
 ```
 
-## 4) Run your first pipeline
+## 6) Run your first pipeline
 
 Create a minimal template:
 
@@ -91,7 +98,7 @@ dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_
 dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
 ```
 
-## 5) Optional provider setup
+## 7) Optional provider setup
 
 If you plan to run model-backed workflows:
 
@@ -111,7 +118,7 @@ export OLLAMA_MODEL="llama3.1"
 
 Provider behavior and full configuration are documented in `docs/Configuration.md`.
 
-## 6) Testing workflows
+## 8) Testing workflows
 
 ```bash
 # targeted infrastructure tests
@@ -123,7 +130,7 @@ dotnet run --project src/Nexo.CLI -- test local
 
 For timeout policy and anti-hang guidance, see `docs/Testing.md`.
 
-## 7) Embed in your host application
+## 9) Embed in your host application
 
 At minimum:
 
@@ -138,6 +145,7 @@ Then resolve application ports from DI (analysis, validation, orchestration, etc
 ## Common pitfalls
 
 - If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`9.x`).
+- `dotnet build Nexo.sln` can require mobile workloads depending on host; use setup scripts + CLI project build first.
 - Prefer running heavy validations sequentially (not in parallel terminals) to avoid resource pressure.
 - For CI parity, use the documented gate workflows under `.github/workflows/`.
 
