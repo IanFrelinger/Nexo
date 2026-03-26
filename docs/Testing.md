@@ -41,7 +41,9 @@ make test
 # Or directly (add --blame-hang-dump-type none to avoid 6GB dumps on hangs)
 dotnet test --blame-hang-timeout 30s --blame-hang-dump-type none
 
-# nexo validate: streams test output by default (non-JSON) so you can see progress
+# nexo validate: high-signal check, but can fail in some host environments
+# due to platform-specific test/runtime constraints.
+# Prefer running after setup scripts and initial CLI smoke checks.
 nexo validate
 
 # nexo dogfood: add --verbose to stream build/test output
