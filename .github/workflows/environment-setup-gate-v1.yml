@@ -113,10 +113,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: ubuntu:24.04
-            image_id: ubuntu-24-04
-          - image: debian:12
-            image_id: debian-12
+          - image: mcr.microsoft.com/dotnet/sdk:9.0
+            image_id: dotnet-sdk-9-0
+          - image: mcr.microsoft.com/dotnet/sdk:8.0
+            image_id: dotnet-sdk-8-0
 
     steps:
       - name: Checkout
@@ -142,7 +142,6 @@ jobs:
                 apt-get update
                 apt-get install -y ca-certificates curl git gnupg bash
               fi
-              bash scripts/setup/setup-linux.sh apply --yes
               bash scripts/setup/setup-linux.sh check
               bash scripts/setup/setup-linux.sh restore
               dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal

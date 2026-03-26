@@ -22,7 +22,8 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 
 ### Environment setup scripts (Windows/macOS/Linux)
 
-Use the setup scripts to validate or install required tooling and restore baseline NuGet packages used by the core CI gates:
+Use the setup scripts to validate or install required tooling and restore baseline NuGet packages used by the core CI gates.
+The CI setup gate also validates these scripts in ephemeral Linux containers (`mcr.microsoft.com/dotnet/sdk:9.0` and `8.0`) on every run:
 
 ```bash
 # Linux/macOS: check required dependencies

@@ -20,6 +20,7 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
   - [ ] `gate-resume-source.log`
   - [ ] `gate-resume-target.log`
   - [ ] `setup-gate-summary-<os>.txt`
+  - [ ] `setup-gate-ephemeral-summary-*.txt`
 
 ## 2) Runtime correctness review
 

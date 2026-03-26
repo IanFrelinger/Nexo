@@ -11,6 +11,9 @@ Fail fast on environment drift before deeper functional gates run.
 - `ubuntu-latest`
 - `macos-latest`
 - `windows-latest`
+- Ephemeral Linux containers:
+  - `mcr.microsoft.com/dotnet/sdk:9.0`
+  - `mcr.microsoft.com/dotnet/sdk:8.0`
 
 Ephemeral container validation (Linux):
 
@@ -31,6 +34,14 @@ Each matrix job performs:
    - Linux/macOS: `bash scripts/setup/setup.sh restore`
    - Windows: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore`
 4. Verify post-restore build readiness:
+   - `dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+
+Ephemeral container lanes perform:
+
+1. Start a fresh container image for each run.
+2. Execute:
+   - `bash scripts/setup/setup-linux.sh check`
+   - `bash scripts/setup/setup-linux.sh restore`
    - `dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
 
 Additionally, ephemeral Linux container jobs run in fresh containers and execute:
