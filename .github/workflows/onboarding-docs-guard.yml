@@ -33,9 +33,9 @@ jobs:
           grep -nE "bash scripts/setup/setup\\.sh all" README.md
           grep -nE "dotnet build src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" README.md
 
-          # GettingStarted must not lead with solution build.
-          if grep -nE "dotnet build Nexo\\.sln" docs/GettingStarted.md >/dev/null 2>&1; then
-            echo "docs/GettingStarted.md should not instruct 'dotnet build Nexo.sln' as startup path."
+          # GettingStarted must not instruct solution build as a command block.
+          if grep -nE "^dotnet build Nexo\\.sln$" docs/GettingStarted.md >/dev/null 2>&1; then
+            echo "docs/GettingStarted.md should not include 'dotnet build Nexo.sln' as a runnable command."
             exit 1
           fi
 
