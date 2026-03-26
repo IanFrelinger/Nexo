@@ -1,0 +1,107 @@
+name: Environment Setup Gate v1
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/environment-setup-gate-v1.yml"
+      - "scripts/setup/**"
+      - "global.json"
+      - "Nexo.sln"
+      - "Nexo.Kernel.sln"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "src/**"
+      - "docs/EnvironmentSetupGate-v1.md"
+      - "docs/ReleaseCandidateChecklist-v1.md"
+      - "README.md"
+  pull_request:
+    paths:
+      - ".github/workflows/environment-setup-gate-v1.yml"
+      - "scripts/setup/**"
+      - "global.json"
+      - "Nexo.sln"
+      - "Nexo.Kernel.sln"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "src/**"
+      - "docs/EnvironmentSetupGate-v1.md"
+      - "docs/ReleaseCandidateChecklist-v1.md"
+      - "README.md"
+  workflow_dispatch:
+
+jobs:
+  setup-gate:
+    name: Setup gate - ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Run setup check (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bash scripts/setup/setup.sh check
+
+      - name: Run setup restore (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bash scripts/setup/setup.sh restore
+
+      - name: Run setup check (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./scripts/setup/setup.ps1 -Mode check
+
+      - name: Run setup restore (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./scripts/setup/setup.ps1 -Mode restore
+
+      - name: Post-restore verification
+        shell: bash
+        run: |
+          dotnet --info
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+
+      - name: Emit setup gate summary
+        if: always()
+        shell: bash
+        run: |
+          SUMMARY_FILE="${RUNNER_TEMP}/setup-gate-summary-${{ matrix.os }}.txt"
+          {
+            echo "environment-setup-gate-v1 summary"
+            echo "runner_os=${{ runner.os }}"
+            echo "matrix_os=${{ matrix.os }}"
+            echo "workflow=${{ github.workflow }}"
+            echo "run_id=${{ github.run_id }}"
+            echo "status=completed"
+          } > "${SUMMARY_FILE}"
+
+      - name: Upload setup gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-setup-gate-v1-artifacts-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/setup-gate-summary-${{ matrix.os }}.txt
+          retention-days: 14

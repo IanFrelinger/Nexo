@@ -211,3 +211,14 @@ Release candidate can proceed only when all are true:
 - [ ] CI gate green on target branch.
 - [ ] Rollback plan documented and tested.
 
+---
+
+## 7) Environment setup gate (recommended second gate)
+
+Run `environment-setup-gate-v1` in GitHub Actions to validate dependency bootstrap and NuGet restore for each platform:
+
+- `ubuntu-latest`: `scripts/setup/setup.sh check` + `scripts/setup/setup.sh restore`
+- `macos-latest`: `scripts/setup/setup.sh check` + `scripts/setup/setup.sh restore`
+- `windows-latest`: `scripts/setup/setup.ps1 -Mode check` + `scripts/setup/setup.ps1 -Mode restore`
+
+This gate validates the repo can be prepared cleanly on each OS before functional/runtime gates run.

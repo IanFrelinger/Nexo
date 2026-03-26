@@ -1,0 +1,62 @@
+# Environment Setup Gate v1
+
+This gate verifies that each supported host platform can bootstrap a working Nexo development environment and restore required NuGet dependencies.
+
+## Goal
+
+Fail fast on environment drift before deeper functional gates run.
+
+## Platforms
+
+- `ubuntu-latest`
+- `macos-latest`
+- `windows-latest`
+
+## Gate workflow
+
+Workflow file: `.github/workflows/environment-setup-gate-v1.yml`
+
+Each matrix job performs:
+
+1. Setup .NET SDK (`9.0.x`, `8.0.x`).
+2. Run platform setup dependency check:
+   - Linux/macOS: `bash scripts/setup/setup.sh check`
+   - Windows: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check`
+3. Run platform restore:
+   - Linux/macOS: `bash scripts/setup/setup.sh restore`
+   - Windows: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore`
+4. Verify post-restore build readiness:
+   - `dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+
+## Local usage
+
+### Linux/macOS
+
+```bash
+bash scripts/setup/setup.sh check
+bash scripts/setup/setup.sh restore
+```
+
+### Windows PowerShell
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore
+```
+
+## Pass criteria
+
+- Dependency check completes with all required dependencies present.
+- NuGet restore succeeds for the setup baseline project set:
+  - `src/Nexo.Core.Application/Nexo.Core.Application.csproj`
+  - `src/Nexo.Infrastructure/Nexo.Infrastructure.csproj`
+  - `src/Nexo.CLI/Nexo.CLI.csproj`
+  - `src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj`
+  - `src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj`
+- CLI project builds with `--no-restore` after restore.
+
+## Failure criteria
+
+- Any setup script command exits non-zero.
+- Any restore step exits non-zero.
+- Post-restore build fails.

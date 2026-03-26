@@ -20,6 +20,32 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 - Optional: Docker (for containerized test workflows)
 - Optional: Ollama/OpenAI/Azure credentials (for live model backends)
 
+### Environment setup scripts (Windows/macOS/Linux)
+
+Use the setup scripts to validate or install required tooling and restore baseline NuGet packages used by the core CI gates:
+
+```bash
+# Linux/macOS: check required dependencies
+bash scripts/setup/setup.sh check
+
+# Linux/macOS: restore NuGet packages/solutions
+bash scripts/setup/setup.sh restore
+
+# Linux/macOS: run check + restore
+bash scripts/setup/setup.sh all
+```
+
+```powershell
+# Windows PowerShell: check required dependencies
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
+
+# Windows PowerShell: restore NuGet packages/solutions
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore
+
+# Windows PowerShell: run check + restore
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+```
+
 ### 2) Clone and build
 
 ```bash
@@ -132,6 +158,7 @@ Core references:
 - `docs/Testing.md` – test strategy, guard rails, and commands
 - `docs/TrustAndInformationArchitecture.md` – trust model, barriers, audit
 - `docs/ProductionReadinessGate-v1.md` – production gate procedure
+- `docs/EnvironmentSetupGate-v1.md` – cross-platform dependency/bootstrap gate
 - `docs/ReleaseCandidateChecklist-v1.md` – RC readiness checklist
 
 ## Trust Notes

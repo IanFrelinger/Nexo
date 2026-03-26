@@ -27,6 +27,22 @@ cd Nexo
 dotnet build Nexo.sln
 ```
 
+### Optional: run platform setup script first
+
+These scripts validate/install base dependencies and restore the setup-gate baseline NuGet graph for this repository:
+
+```bash
+# Linux/macOS
+bash scripts/setup/setup.sh check
+bash scripts/setup/setup.sh all
+```
+
+```powershell
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
+powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+```
+
 ## 2) Verify CLI is available
 
 ```bash
