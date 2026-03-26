@@ -105,3 +105,65 @@ jobs:
           path: |
             ${{ runner.temp }}/setup-gate-summary-${{ matrix.os }}.txt
           retention-days: 14
+
+  setup-gate-ephemeral-linux:
+    name: Setup gate (ephemeral container) - ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - ubuntu:24.04
+          - debian:12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Docker
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+
+      - name: Run setup scripts in ephemeral container
+        shell: bash
+        run: |
+          docker pull "${{ matrix.image }}"
+          docker run --rm \
+            -v "${{ github.workspace }}:/repo" \
+            -w /repo \
+            "${{ matrix.image }}" \
+            bash -lc '
+              set -euo pipefail
+              export DEBIAN_FRONTEND=noninteractive
+              if command -v apt-get >/dev/null 2>&1; then
+                apt-get update
+                apt-get install -y ca-certificates curl git gnupg bash
+              fi
+              bash scripts/setup/setup-linux.sh apply --yes
+              bash scripts/setup/setup-linux.sh restore
+              dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+            '
+
+      - name: Emit ephemeral setup summary
+        if: always()
+        shell: bash
+        run: |
+          SUMMARY_FILE="${RUNNER_TEMP}/setup-gate-ephemeral-summary-${{ matrix.image//[:\/]/- }}.txt"
+          {
+            echo "environment-setup-gate-v1 ephemeral summary"
+            echo "container_image=${{ matrix.image }}"
+            echo "workflow=${{ github.workflow }}"
+            echo "run_id=${{ github.run_id }}"
+            echo "status=completed"
+          } > "${SUMMARY_FILE}"
+
+      - name: Upload ephemeral setup artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: environment-setup-gate-v1-ephemeral-${{ matrix.image }}
+          path: |
+            ${{ runner.temp }}/setup-gate-ephemeral-summary-${{ matrix.image//[:\/]/- }}.txt
+          retention-days: 14

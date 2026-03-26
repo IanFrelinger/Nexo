@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# If dotnet was previously installed via dotnet-install.sh, include it in PATH.
+export PATH="${HOME}/.dotnet:${HOME}/.dotnet/tools:${PATH}"
 
 MODE="${1:-check}"
 shift || true

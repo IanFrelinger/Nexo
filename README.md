@@ -46,6 +46,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 ```
 
+Ephemeral setup validation also runs in CI via `environment-setup-gate-v1`, including disposable Linux container jobs that execute setup checks in fresh environments.
+
 ### 2) Clone and build
 
 ```bash

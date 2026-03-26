@@ -6,6 +6,7 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 
 - [ ] Trigger `production-readiness-gate-v1` in GitHub Actions.
 - [ ] Trigger `environment-setup-gate-v1` in GitHub Actions.
+- [ ] Confirm ephemeral setup container jobs pass for each distro in matrix.
 - [ ] Confirm matrix jobs pass on:
   - [ ] ubuntu-latest
   - [ ] windows-latest
