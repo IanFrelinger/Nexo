@@ -142,7 +142,6 @@ jobs:
                 apt-get update
                 apt-get install -y ca-certificates curl git gnupg bash
               fi
-              export PATH="/root/.dotnet:/root/.dotnet/tools:${PATH}"
               bash scripts/setup/setup-linux.sh apply --yes
               bash scripts/setup/setup-linux.sh check
               bash scripts/setup/setup-linux.sh restore

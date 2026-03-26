@@ -4,7 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # If dotnet was previously installed via dotnet-install.sh, include it in PATH.
-export PATH="${HOME}/.dotnet:${HOME}/.dotnet/tools:${PATH}"
+export DOTNET_ROOT="${HOME}/.dotnet"
+export PATH="${DOTNET_ROOT}:${DOTNET_ROOT}/tools:${PATH}"
 
 MODE="${1:-check}"
 shift || true
@@ -145,7 +146,8 @@ install_dotnet_user_local() {
   curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${install_script}"
   bash "${install_script}" --channel 9.0 --install-dir "${HOME}/.dotnet"
   rm -f "${install_script}"
-  export PATH="${HOME}/.dotnet:${HOME}/.dotnet/tools:${PATH}"
+  export DOTNET_ROOT="${HOME}/.dotnet"
+  export PATH="${DOTNET_ROOT}:${DOTNET_ROOT}/tools:${PATH}"
   if [[ -x "${HOME}/.dotnet/dotnet" ]]; then
     ln -sf "${HOME}/.dotnet/dotnet" /usr/local/bin/dotnet 2>/dev/null || true
   fi
