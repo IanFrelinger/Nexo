@@ -1,40 +1,78 @@
 # Nexo
 
-Nexo is a .NET platform for AI-assisted development and testing. The kernel provides agents, orchestrators, and a CLI for code analysis, observe/adapt/improve (self-extending loop), Trust & Information Architecture, and multi-platform testing.
+Nexo is a .NET framework and CLI for building AI-enabled software with orchestration, trust controls, adaptive pipelines, and test automation.
 
-## Features (Kernel)
+Repository: <https://github.com/IanFrelinger/Nexo>
 
-- **Observe, Adapt, Improve**: Self-extending loop — observe development workflow, analyze bricks, adapt from violations
-- **Code Analysis & Validation**: Architecture policies, assembly analysis, and validation
-- **Background Agents**: Scheduled agents for RAG, web search, code analysis, and self-extend pipelines
-- **Orchestration**: Multi-agent workflows with MediatR, FluentValidation, and workflow definitions
-- **Trust & Information Architecture**: Data taxonomy, sanitization, access boundary, audit
-- **Multi-Platform Testing**: Run tests across Docker, portable scope, local
+## Why Nexo
 
-## Prerequisites
+- Build AI-powered workflows as composable, testable runtime pipelines.
+- Mix deterministic and agentic execution with fallback chains.
+- Enforce trust boundaries (barriers, audit, routing policy).
+- Run validation and multi-environment checks from one CLI.
 
-- .NET 8 SDK
-- Docker (optional, for multi-platform test execution)
-- Ollama (optional, for local LLM/vision; see [Providers](#providers))
+## Quick Start (5 minutes)
 
-## Quick Start
+### 1) Prerequisites
+
+- .NET SDK 9.x (the repo is pinned by `global.json`)
+- Git
+- Optional: Docker (for containerized test workflows)
+- Optional: Ollama/OpenAI/Azure credentials (for live model backends)
+
+### Environment setup scripts (Windows/macOS/Linux)
+
+Use the setup scripts to validate or install required tooling and restore baseline NuGet packages used by the core CI gates:
 
 ```bash
-# Build the solution
-dotnet build Nexo.sln
+# Linux/macOS: check required dependencies
+bash scripts/setup/setup.sh check
 
-# Run the CLI
-dotnet run --project src/Nexo.CLI -- --help
+# Linux/macOS: restore NuGet packages/solutions
+bash scripts/setup/setup.sh restore
 
-# Run tests locally
-dotnet run --project src/Nexo.CLI -- test local
+# Linux/macOS: run check + restore
+bash scripts/setup/setup.sh all
 ```
 
-## Pipeline Quickstart
+```powershell
+# Windows PowerShell: check required dependencies
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
+
+# Windows PowerShell: restore NuGet packages/solutions
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore
+
+# Windows PowerShell: run check + restore
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+```
+
+### 2) Clone and build
 
 ```bash
-# 1) Create a template
-cat > /tmp/nexo_pipeline_demo.json <<'JSON'
+git clone https://github.com/IanFrelinger/Nexo.git
+cd Nexo
+dotnet build Nexo.sln
+```
+
+### 3) Confirm CLI is working
+
+```bash
+dotnet run --project src/Nexo.CLI -- --help
+```
+
+### 4) Run a first high-signal command
+
+```bash
+dotnet run --project src/Nexo.CLI -- validate
+```
+
+## First Successful Pipeline Run
+
+```bash
+tmp_dir="$(mktemp -d)"
+template_path="$tmp_dir/nexo_pipeline_demo.json"
+
+cat > "$template_path" <<'JSON'
 {
   "templateId": "demo",
   "version": "1.0",
@@ -48,100 +86,86 @@ cat > /tmp/nexo_pipeline_demo.json <<'JSON'
 }
 JSON
 
-# 2) Validate the template
-dotnet run --project src/Nexo.CLI -- pipeline validate --template /tmp/nexo_pipeline_demo.json
-
-# 3) Run the pipeline
-dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-run --format-json
-
-# 4) Run diagnostics to see resolved runtime config
+dotnet run --project src/Nexo.CLI -- pipeline validate --template "$template_path"
+dotnet run --project src/Nexo.CLI -- pipeline run --template "$template_path" --run-id demo-run --format-json
 dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
-
-# 5) Resume example with durable persistence (LiteDb) and permissive completion policy for the source fail case
-NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo-pipelines.db \
-NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
-NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
-dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-resume-source --input "fail:ingest:deterministic=true" --format-json
-
-NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo-pipelines.db \
-dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-resume-target --resume-run-id demo-resume-source --resume-failed-stages --format-json
 ```
 
-Pipeline configuration precedence for runtime options is:
-1) defaults, 2) config sections under `Nexo:Pipelines:*`, 3) environment variables (`NEXO_PIPELINE_*`).
+Pipeline runtime option precedence:
+1) defaults, 2) config under `Nexo:Pipelines:*`, 3) environment variables (`NEXO_PIPELINE_*`).
 
-## CLI Commands (Kernel)
+## Common CLI Workflows
 
-| Command | Description |
-|---------|-------------|
-| `nexo observe` | Observe development workflow (file system, processes); detect patterns |
-| `nexo adapt` | Decompose brick to manifest, apply fixes, recompile |
-| `nexo improve` | Analyze brick code, run adaptation for each violation |
-| `nexo self-context` | Assemble and display self-context (adaptations, executions, patterns) |
-| `nexo compose` | Compose an agent from capability components |
-| `nexo mesh` | Discover and advertise capabilities |
-| `nexo analyze` | Run code/assembly analyzers and policies |
-| `nexo validate` | Run architecture tests and contract checks |
-| `nexo agent` | Execute a named agent action |
-| `nexo orchestrate` | Run orchestration workflows |
-| `nexo pipeline` | Validate/run/resume pipelines and show runtime diagnostics |
-| `nexo config` | Show or update configuration |
-| `nexo bootstrap` | Linux-first machine readiness check/install for demo dependencies (macOS supported) |
-| `nexo chat` | Interactive CLI chat loop for orchestration-driven requests |
-| `nexo self-extend run --goal ... [--run-tests --test-filter SelfExtendGenerated]` | Objective-driven self-extension run; scaffolds composable extension commands and can execute generated extension tests |
-| `nexo background-agent` | Manage background agents (start, stop, logs, metrics) |
-| `nexo trust` | Trust & Information Architecture: audit log and access boundary |
-| `nexo test` | Run tests (local, portable, multi-env) |
-| `nexo docker` | Docker operations (build, run, clean, ps, images) |
+| Goal | Command |
+|------|---------|
+| Show all commands | `dotnet run --project src/Nexo.CLI -- --help` |
+| Validate architecture/contracts | `dotnet run --project src/Nexo.CLI -- validate` |
+| Analyze source/assemblies | `dotnet run --project src/Nexo.CLI -- analyze --path .` |
+| Run pipeline template | `dotnet run --project src/Nexo.CLI -- pipeline run --template <file>` |
+| View trust boundary/audit | `dotnet run --project src/Nexo.CLI -- trust --help` |
+| Run local test entrypoint | `dotnet run --project src/Nexo.CLI -- test local` |
+| CI verification bundle | `dotnet run --project src/Nexo.CLI -- ci` |
 
 ## Providers
 
-LLM and vision models are routed by the `provider` setting:
+LLM/vision routing is provider-based:
 
-| Provider | Description |
-|----------|-------------|
-| `offline` / `mock` / `mock-json` | No external services; deterministic responses for CI/demo |
-| `ollama` | Local Ollama (set `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_VISION_MODEL`) |
-| `openai` | OpenAI API (set `OPENAI_API_KEY`) |
-| `azure` | Azure OpenAI (set `AZURE_OPENAI_*` env vars) |
-## Project Structure
+| Provider | Notes |
+|----------|-------|
+| `offline`, `mock`, `mock-json` | deterministic/local-friendly paths |
+| `ollama` | local model runtime (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`) |
+| `openai` | requires `OPENAI_API_KEY` |
+| `azure` | requires `AZURE_OPENAI_*` settings |
 
-```
+## Project Layout
+
+```text
 Nexo/
 ├── src/
-│   ├── Nexo.CLI/                 # Command-line interface
-│   ├── Nexo.Infrastructure/      # ProviderFactory, execution, IO
-│   ├── Nexo.Orchestration/       # Workflows, agents
-│   ├── Nexo.Core.Domain/         # Domain models, bricks, execution
-│   ├── Nexo.Core.Application/   # Use cases, ports, services
-│   ├── Nexo.BackgroundAgents/   # Background agent scheduling
-│   └── Nexo.Tests.*/             # Unit and integration tests
-├── docs/                         # Architecture, specs, examples
-├── .docker/                      # Dockerfiles for multi-platform testing
+│   ├── Nexo.CLI/                 # CLI surface
+│   ├── Nexo.Hosting/             # AddNexo() integration entrypoint
+│   ├── Nexo.Infrastructure/      # execution, persistence, adapters
+│   ├── Nexo.Orchestration/       # orchestrator, routing, coordination
+│   ├── Nexo.Runtime/             # runtime services and barrier plumbing
+│   ├── Nexo.Core.Application/    # use cases and ports
+│   ├── Nexo.Core.Domain/         # domain model
+│   └── Nexo.Tests.*/             # test suites
+├── docs/                         # docs, specs, guides
+├── .docker/                      # docker test/runtime definitions
+├── global.json                   # SDK pin
 └── Nexo.sln
 ```
 
 ## Testing
 
 ```bash
+# full solution tests
 dotnet test Nexo.sln
-# Filter to specific test project:
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+
+# focused pipeline tests
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
 ```
 
-## Documentation
+## Documentation Map
 
-- `docs/TrustAndInformationArchitecture.md` – Trust & Information Architecture
-- `docs/Testing.md` – Test guard rails, timeout policy, and running tests
-- `docs/ProductionReadinessGate-v1.md` – Production readiness gate commands and criteria
-- `docs/ReleaseCandidateChecklist-v1.md` – One-page release checklist for RC sign-off
-- `docs/` – Additional architecture and usage guides
+Start here:
+- `docs/GettingStarted.md` – guided first-hour setup and usage
+- `docs/DocsIndex.md` – where to find docs by task
 
-## Barrier Identity Resolution Notes
+Core references:
+- `docs/Configuration.md` – environment/config options
+- `docs/Architecture.md` – architecture and subsystem overview
+- `docs/Testing.md` – test strategy, guard rails, and commands
+- `docs/TrustAndInformationArchitecture.md` – trust model, barriers, audit
+- `docs/ProductionReadinessGate-v1.md` – production gate procedure
+- `docs/EnvironmentSetupGate-v1.md` – cross-platform dependency/bootstrap gate
+- `docs/ReleaseCandidateChecklist-v1.md` – RC readiness checklist
 
-- JWT claim barrier resolution reads pre-parsed claims only; JWT signature validation must be handled by host authentication middleware.
-- API key barrier mapping must store SHA-256 key hashes, not plaintext keys.
-- API keys are never written in full to logs or audit details; only a short key prefix is recorded.
+## Trust Notes
+
+- JWT barrier resolution reads pre-validated claims from host auth middleware.
+- API keys are stored as SHA-256 hashes, not plaintext.
+- Audit details never include full API key values.
 
 ## License
 

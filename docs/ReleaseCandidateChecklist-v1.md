@@ -5,6 +5,7 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 ## 1) CI gate (mandatory)
 
 - [ ] Trigger `production-readiness-gate-v1` in GitHub Actions.
+- [ ] Trigger `environment-setup-gate-v1` in GitHub Actions.
 - [ ] Confirm matrix jobs pass on:
   - [ ] ubuntu-latest
   - [ ] windows-latest
@@ -17,6 +18,7 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
   - [ ] `gate-diagnostics.log`
   - [ ] `gate-resume-source.log`
   - [ ] `gate-resume-target.log`
+  - [ ] `setup-gate-summary-<os>.txt`
 
 ## 2) Runtime correctness review
 
