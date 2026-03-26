@@ -146,6 +146,9 @@ install_dotnet_user_local() {
   bash "${install_script}" --channel 9.0 --install-dir "${HOME}/.dotnet"
   rm -f "${install_script}"
   export PATH="${HOME}/.dotnet:${HOME}/.dotnet/tools:${PATH}"
+  if [[ -x "${HOME}/.dotnet/dotnet" ]]; then
+    ln -sf "${HOME}/.dotnet/dotnet" /usr/local/bin/dotnet 2>/dev/null || true
+  fi
 }
 
 ensure_repo_files() {
