@@ -1,0 +1,76 @@
+name: Container Image Publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - ".github/workflows/container-image-publish.yml"
+      - ".docker/Dockerfile.cli"
+      - ".dockerignore"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Runtime/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "global.json"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Define image metadata
+        shell: bash
+        run: |
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          IMAGE="ghcr.io/${OWNER_LC}/nexo-cli"
+          SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::12}"
+          echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
+          echo "SHA_TAG=${SHA_TAG}" >> "${GITHUB_ENV}"
+
+      - name: Build and push linux/amd64 image for smoke test
+        shell: bash
+        run: |
+          docker buildx build \
+            --file .docker/Dockerfile.cli \
+            --platform linux/amd64 \
+            --tag "${SHA_TAG}" \
+            --push \
+            .
+
+      - name: Smoke test published image
+        shell: bash
+        run: |
+          docker run --rm "${SHA_TAG}" --help
+
+      - name: Publish latest multi-arch image
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          docker buildx build \
+            --file .docker/Dockerfile.cli \
+            --platform linux/amd64,linux/arm64 \
+            --tag "${IMAGE}:latest" \
+            --push \
+            .

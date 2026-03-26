@@ -1,0 +1,45 @@
+name: Onboarding Docs Guard
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - "README.md"
+      - "docs/GettingStarted.md"
+      - ".github/workflows/onboarding-docs-guard.yml"
+  pull_request:
+    paths:
+      - "README.md"
+      - "docs/GettingStarted.md"
+      - ".github/workflows/onboarding-docs-guard.yml"
+  workflow_dispatch:
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure workload-safe startup commands are present
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # README must direct first-run setup through setup scripts + CLI project build.
+          rg -n "bash scripts/setup/setup\\.sh all" README.md
+          rg -n "dotnet build src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" README.md
+
+          # GettingStarted must not lead with solution build.
+          if rg -n "dotnet build Nexo\\.sln" docs/GettingStarted.md >/dev/null 2>&1; then
+            echo "docs/GettingStarted.md should not instruct 'dotnet build Nexo.sln' as startup path."
+            exit 1
+          fi
+
+          # GettingStarted should include the setup-script-first path.
+          rg -n "scripts/setup/setup\\.sh all" docs/GettingStarted.md
+          rg -n "dotnet build src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" docs/GettingStarted.md
+

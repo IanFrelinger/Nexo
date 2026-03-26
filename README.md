@@ -58,6 +58,13 @@ docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
 docker run --rm nexo-cli:local --help
 ```
 
+Pull published image (GHCR):
+
+```bash
+docker pull ghcr.io/ianfrelinger/nexo-cli:latest
+docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
+```
+
 Build with explicit framework/runtime versions:
 
 ```bash
@@ -67,6 +74,16 @@ docker build \
   --build-arg DOTNET_RUNTIME_VERSION=8.0 \
   -f .docker/Dockerfile.cli \
   -t nexo-cli:net8 .
+```
+
+Validate a pipeline template from your current workspace using the published image:
+
+```bash
+docker run --rm \
+  -v "$PWD:/work" \
+  -w /work \
+  ghcr.io/ianfrelinger/nexo-cli:latest \
+  pipeline validate --template /work/path/to/template.json
 ```
 
 ### 2) Clone and build
