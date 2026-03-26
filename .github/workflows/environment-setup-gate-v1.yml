@@ -112,9 +112,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - ubuntu:24.04
-          - debian:12
+        include:
+          - image: ubuntu:24.04
+            image_id: ubuntu-24-04
+          - image: debian:12
+            image_id: debian-12
 
     steps:
       - name: Checkout
@@ -150,7 +152,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          SUMMARY_FILE="${RUNNER_TEMP}/setup-gate-ephemeral-summary-${{ matrix.image//[:\/]/- }}.txt"
+          SUMMARY_FILE="${RUNNER_TEMP}/setup-gate-ephemeral-summary-${{ matrix.image_id }}.txt"
           {
             echo "environment-setup-gate-v1 ephemeral summary"
             echo "container_image=${{ matrix.image }}"
@@ -163,7 +165,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: environment-setup-gate-v1-ephemeral-${{ matrix.image }}
+          name: environment-setup-gate-v1-ephemeral-${{ matrix.image_id }}
           path: |
-            ${{ runner.temp }}/setup-gate-ephemeral-summary-${{ matrix.image//[:\/]/- }}.txt
+            ${{ runner.temp }}/setup-gate-ephemeral-summary-${{ matrix.image_id }}.txt
           retention-days: 14
