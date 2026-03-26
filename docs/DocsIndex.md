@@ -12,6 +12,7 @@ Use this page as the navigation starting point for docs.
 
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
+- `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `docs/ReleaseCandidateChecklist-v1.md` — release candidate sign-off checklist.
 - `docs/Testing.md` — test guard rails, timeout policy, and workflow guidance.
 

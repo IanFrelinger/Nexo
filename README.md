@@ -49,6 +49,27 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 
 Ephemeral setup validation also runs in CI via `environment-setup-gate-v1`, including disposable Linux container jobs that execute setup checks in fresh environments.
 
+### Container image usage (flexible deployability)
+
+Build local CLI image:
+
+```bash
+docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
+docker run --rm nexo-cli:local --help
+```
+
+Build with explicit architecture/runtime IDs:
+
+```bash
+docker build \
+  --build-arg DOTNET_VERSION=9.0 \
+  --build-arg TARGETFRAMEWORK=net8.0 \
+  --build-arg TARGETRID=linux-x64 \
+  --build-arg RUNTIME_DOTNET_VERSION=8.0 \
+  -f .docker/Dockerfile.cli \
+  -t nexo-cli:linux-x64 .
+```
+
 ### 2) Clone and build
 
 ```bash
