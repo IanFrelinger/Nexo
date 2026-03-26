@@ -20,7 +20,7 @@ function Test-Admin {
 }
 
 function Ensure-Windows {
-    if (-not $IsWindows) {
+    if (-not $env:OS -or $env:OS -ne "Windows_NT") {
         throw "This script only supports Windows hosts."
     }
 }
