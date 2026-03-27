@@ -19,6 +19,8 @@ public class BackgroundAgentCommandTests : UnitTestBase
         {
             await TestListEmpty();
             await TestListFormatJson();
+            await TestDaemonRejectsInvalidDuration();
+            await TestDaemonRejectsMissingConfig();
             await TestAutoscaleStopsIdleSurplusAutoAgents();
             await TestAutoscaleRestartsStoppedAutoAgentWhenDemandIncreases();
             await TestCalculateDesiredAgentCount();
@@ -219,6 +221,31 @@ public class BackgroundAgentCommandTests : UnitTestBase
 
         AssertEqual(0, exitCode);
         registry.Verify(r => r.StartAsync("autoscale-extender-1", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private async Task TestDaemonRejectsInvalidDuration()
+    {
+        var command = new BackgroundAgentDaemonCommand();
+        var exitCode = await command.RunAsync(
+            configPath: null,
+            duration: "invalid",
+            patternStorePath: null,
+            disableObservation: false,
+            formatJson: true);
+        AssertEqual(1, exitCode);
+    }
+
+    private async Task TestDaemonRejectsMissingConfig()
+    {
+        var command = new BackgroundAgentDaemonCommand();
+        var missingPath = Path.Combine(Path.GetTempPath(), $"nexo-missing-{Guid.NewGuid():N}.json");
+        var exitCode = await command.RunAsync(
+            configPath: missingPath,
+            duration: "1s",
+            patternStorePath: null,
+            disableObservation: false,
+            formatJson: true);
+        AssertEqual(1, exitCode);
     }
 
     private Task TestCalculateDesiredAgentCount()

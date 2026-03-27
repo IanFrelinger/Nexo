@@ -161,6 +161,7 @@ Pipeline runtime option precedence:
 | Show all commands | `dotnet run --project src/Nexo.CLI -- --help` |
 | Validate architecture/contracts | `dotnet run --project src/Nexo.CLI -- validate` |
 | Analyze source/assemblies | `dotnet run --project src/Nexo.CLI -- analyze --path .` |
+| Run background-agent daemon mode | `dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 10m` |
 | Run pipeline template | `dotnet run --project src/Nexo.CLI -- pipeline run --template <file>` |
 | View trust boundary/audit | `dotnet run --project src/Nexo.CLI -- trust --help` |
 | Run local test entrypoint | `dotnet run --project src/Nexo.CLI -- test local` |

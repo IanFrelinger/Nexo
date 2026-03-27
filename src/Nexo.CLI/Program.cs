@@ -553,6 +553,37 @@ static class Program
         webSearchCmd.AddCommand(webSearchTestCmd);
         backgroundAgentCmd.AddCommand(webSearchCmd);
 
+        // nexo background-agent daemon
+        var daemonConfigOpt = new Option<FileInfo?>("--config", "Optional JSON config file with BackgroundAgents:Agents entries.");
+        var daemonDurationOpt = new Option<string?>("--duration", "Optional run duration (e.g. 30s, 5m, 1h). Omit to run until Ctrl+C.");
+        var daemonPatternStoreOpt = new Option<string?>("--pattern-store-path", "Optional pattern store path override.");
+        var daemonDisableObservationOpt = new Option<bool>("--disable-observation", "Disable observation pipeline while running daemon mode.");
+        var daemonCmd = new Command("daemon", "Run background agents in long-lived daemon mode")
+        {
+            daemonConfigOpt,
+            daemonDurationOpt,
+            daemonPatternStoreOpt,
+            daemonDisableObservationOpt
+        };
+        daemonCmd.SetHandler(
+            async (FileInfo? config, string? duration, string? patternStorePath, bool disableObservation, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.BackgroundAgentDaemonCommand>();
+                var exitCode = await cmd.RunAsync(
+                    config?.FullName,
+                    duration,
+                    patternStorePath,
+                    disableObservation,
+                    formatJson);
+                Environment.Exit(exitCode);
+            },
+            daemonConfigOpt,
+            daemonDurationOpt,
+            daemonPatternStoreOpt,
+            daemonDisableObservationOpt,
+            jsonOpt);
+        backgroundAgentCmd.AddCommand(daemonCmd);
+
         // nexo trust - Audit and access boundary (Phase 4)
         var trustCmd = new Command("trust", "Trust & Information Architecture: audit log and access boundary");
         var trustAuditCmd = new Command("audit", "Show or export data decision audit log")
@@ -1141,6 +1172,7 @@ static class Program
         services.AddScoped<PipelineCommand>();
         services.AddScoped<MaintenanceCommand>();
         services.AddScoped<BackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.BackgroundAgentDaemonCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();

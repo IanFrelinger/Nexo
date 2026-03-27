@@ -58,6 +58,22 @@ dotnet run --project src/Nexo.CLI -- --help
 
 You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, and `orchestrate`.
 
+## 4b) Run background-agent daemon mode (optional)
+
+Use this when you want Nexo to run as a long-lived local process with hosted background agents.
+If your config does not define `Nexo:Barriers:Levels`, the daemon defaults to `["public","internal"]` for local bootstrap.
+
+```bash
+# run for 30 seconds (smoke test)
+dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 30s
+
+# run until Ctrl+C
+dotnet run --project src/Nexo.CLI -- background-agent daemon
+
+# use an explicit background-agent config file
+dotnet run --project src/Nexo.CLI -- background-agent daemon --config docs/background-agents/examples/minimal-agent.json
+```
+
 ## 5) Run first high-signal commands
 
 Run these from the repository root:
