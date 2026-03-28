@@ -92,6 +92,7 @@ dotnet publish "${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj" \
   -c Release \
   -r "${RID}" \
   --self-contained true \
+  -p:IncludeTestProjectReferences=false \
   -p:PublishSingleFile=true \
   -p:IncludeNativeLibrariesForSelfExtract=true \
   -o "${publish_dir}"

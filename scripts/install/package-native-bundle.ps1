@@ -33,6 +33,7 @@ try {
         -c Release `
         -r $Rid `
         --self-contained true `
+        -p:IncludeTestProjectReferences=false `
         -p:PublishSingleFile=true `
         -p:IncludeNativeLibrariesForSelfExtract=true `
         -o $publishDir
