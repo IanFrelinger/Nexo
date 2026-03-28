@@ -7,11 +7,12 @@ DEFAULT_INSTALL_DIR="${HOME}/Nexo"
 REPO_URL="${DEFAULT_REPO_URL}"
 INSTALL_DIR="${DEFAULT_INSTALL_DIR}"
 BRANCH=""
+START_DAEMON=false
+DAEMON_DURATION=""
 INCLUDE_OPTIONAL=false
 YES=false
-SKIP_BUILD=false
-RUN_CONTAINER_SMOKE=false
 DRY_RUN=false
+SKIP_BUILD=false
 
 usage() {
   echo "Usage: scripts/install/install-macos.sh [options]"
@@ -20,10 +21,11 @@ usage() {
   echo "  --repo-url <url>          Git repository URL (default: ${DEFAULT_REPO_URL})"
   echo "  --install-dir <path>      Installation directory (default: ${DEFAULT_INSTALL_DIR})"
   echo "  --branch <name>           Optional git branch/tag to checkout"
-  echo "  --include-optional        Include optional dependencies in setup apply"
-  echo "  --yes                     Auto-confirm dependency installation prompts"
-  echo "  --skip-build              Skip CLI build smoke step"
-  echo "  --run-container-smoke     Run container smoke after native setup (requires Docker)"
+  echo "  --include-optional        Include optional dependencies during setup"
+  echo "  --yes                     Auto-confirm setup dependency installation prompts"
+  echo "  --skip-build              Skip 'dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore'"
+  echo "  --start-daemon            Start background-agent daemon after install"
+  echo "  --daemon-duration <dur>   Daemon run duration (e.g. 30s, 5m). Omit to run until Ctrl+C"
   echo "  --dry-run                 Print actions without executing"
   echo "  -h, --help                Show help"
 }
@@ -67,8 +69,13 @@ while [[ $# -gt 0 ]]; do
     --skip-build)
       SKIP_BUILD=true
       ;;
-    --run-container-smoke)
-      RUN_CONTAINER_SMOKE=true
+    --start-daemon)
+      START_DAEMON=true
+      ;;
+    --daemon-duration)
+      require_value "$1" "${2:-}"
+      DAEMON_DURATION="$2"
+      shift
       ;;
     --dry-run)
       DRY_RUN=true
@@ -154,6 +161,20 @@ run_setup() {
   run_in_repo "${target_dir}" bash scripts/setup/setup.sh restore
 }
 
+ensure_dotnet_sdk9() {
+  local target_dir="$1"
+  local install_script="${target_dir}/scripts/setup/setup-macos.sh"
+  if [[ ! -f "${install_script}" ]]; then
+    die "Missing setup script: ${install_script}"
+  fi
+
+  # setup-macos.sh check fails when required dependencies are missing, including dotnet.
+  # apply installs missing requirements (brew + dotnet-sdk), and then we re-check.
+  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh check
+  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh apply --yes
+  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh check
+}
+
 run_build() {
   local target_dir="$1"
   if [[ "${SKIP_BUILD}" == "true" ]]; then
@@ -162,16 +183,18 @@ run_build() {
   run_in_repo "${target_dir}" dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 }
 
-run_container_smoke() {
+start_daemon() {
   local target_dir="$1"
-  if [[ "${RUN_CONTAINER_SMOKE}" != "true" ]]; then
+  if [[ "${START_DAEMON}" != "true" ]]; then
     return
   fi
 
-  local image="ghcr.io/ianfrelinger/nexo-cli:latest"
-  run_in_repo "${target_dir}" docker pull "${image}"
-  run_in_repo "${target_dir}" docker run --rm "${image}" --help
-  run_in_repo "${target_dir}" docker run --rm -v "${target_dir}:/work" -w /work "${image}" --help
+  local daemon_args=(run --project src/Nexo.CLI -- background-agent daemon)
+  if [[ -n "${DAEMON_DURATION}" ]]; then
+    daemon_args+=(--duration "${DAEMON_DURATION}")
+  fi
+
+  run_in_repo "${target_dir}" dotnet "${daemon_args[@]}"
 }
 
 print_next_steps() {
@@ -183,14 +206,14 @@ print_next_steps() {
   echo "Next commands:"
   echo "  cd \"${target_dir}\""
   echo "  dotnet run --project src/Nexo.CLI -- --help"
-  echo "  dotnet run --project src/Nexo.CLI -- validate"
+  echo "  dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 30s"
 }
 
 main() {
   require_macos
   expand_install_dir
 
-  echo "Nexo macOS one-shot installer"
+  echo "Nexo macOS installer"
   echo "  repo-url: ${REPO_URL}"
   echo "  install-dir: ${INSTALL_DIR}"
   if [[ -n "${BRANCH}" ]]; then
@@ -198,9 +221,10 @@ main() {
   fi
 
   sync_repo "${INSTALL_DIR}"
+  ensure_dotnet_sdk9 "${INSTALL_DIR}"
   run_setup "${INSTALL_DIR}"
   run_build "${INSTALL_DIR}"
-  run_container_smoke "${INSTALL_DIR}"
+  start_daemon "${INSTALL_DIR}"
   print_next_steps "${INSTALL_DIR}"
 }
 

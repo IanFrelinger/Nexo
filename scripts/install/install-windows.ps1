@@ -6,7 +6,8 @@ param(
     [switch]$IncludeOptional,
     [switch]$Yes,
     [switch]$SkipBuild,
-    [switch]$RunContainerSmoke,
+    [switch]$StartDaemon,
+    [string]$DaemonDuration,
     [switch]$DryRun
 )
 
@@ -29,7 +30,8 @@ if (-not [string]::IsNullOrWhiteSpace($Branch)) { $invokeArgs += @("-Branch", $B
 if ($IncludeOptional) { $invokeArgs += "-IncludeOptional" }
 if ($Yes) { $invokeArgs += "-Yes" }
 if ($SkipBuild) { $invokeArgs += "-SkipBuild" }
-if ($RunContainerSmoke) { $invokeArgs += "-RunContainerSmoke" }
+if ($StartDaemon) { $invokeArgs += "-StartDaemon" }
+if (-not [string]::IsNullOrWhiteSpace($DaemonDuration)) { $invokeArgs += @("-DaemonDuration", $DaemonDuration) }
 if ($DryRun) { $invokeArgs += "-DryRun" }
 
 & powershell @invokeArgs

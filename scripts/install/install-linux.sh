@@ -7,11 +7,12 @@ DEFAULT_INSTALL_DIR="${HOME}/Nexo"
 REPO_URL="${DEFAULT_REPO_URL}"
 INSTALL_DIR="${DEFAULT_INSTALL_DIR}"
 BRANCH=""
+START_DAEMON=false
+DAEMON_DURATION=""
 INCLUDE_OPTIONAL=false
 YES=false
-SKIP_BUILD=false
-RUN_CONTAINER_SMOKE=false
 DRY_RUN=false
+SKIP_BUILD=false
 
 usage() {
   echo "Usage: scripts/install/install-linux.sh [options]"
@@ -20,10 +21,11 @@ usage() {
   echo "  --repo-url <url>          Git repository URL (default: ${DEFAULT_REPO_URL})"
   echo "  --install-dir <path>      Installation directory (default: ${DEFAULT_INSTALL_DIR})"
   echo "  --branch <name>           Optional git branch/tag to checkout"
-  echo "  --include-optional        Include optional dependencies in setup apply"
-  echo "  --yes                     Auto-confirm dependency installation prompts"
-  echo "  --skip-build              Skip CLI build smoke step"
-  echo "  --run-container-smoke     Run container smoke after native setup (requires Docker)"
+  echo "  --include-optional        Include optional dependencies during setup"
+  echo "  --yes                     Auto-confirm setup dependency installation prompts"
+  echo "  --skip-build              Skip 'dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore'"
+  echo "  --start-daemon            Start background-agent daemon after install"
+  echo "  --daemon-duration <dur>   Daemon run duration (e.g. 30s, 5m). Omit to run until Ctrl+C"
   echo "  --dry-run                 Print actions without executing"
   echo "  -h, --help                Show help"
 }
@@ -67,8 +69,13 @@ while [[ $# -gt 0 ]]; do
     --skip-build)
       SKIP_BUILD=true
       ;;
-    --run-container-smoke)
-      RUN_CONTAINER_SMOKE=true
+    --start-daemon)
+      START_DAEMON=true
+      ;;
+    --daemon-duration)
+      require_value "$1" "${2:-}"
+      DAEMON_DURATION="$2"
+      shift
       ;;
     --dry-run)
       DRY_RUN=true
@@ -96,6 +103,101 @@ expand_install_dir() {
   elif [[ "${INSTALL_DIR}" == ~/* ]]; then
     INSTALL_DIR="${HOME}/${INSTALL_DIR#~/}"
   fi
+}
+
+dotnet_major() {
+  if ! command -v dotnet >/dev/null 2>&1; then
+    echo "0"
+    return
+  fi
+
+  local version
+  version="$(dotnet --version 2>/dev/null || true)"
+  if [[ -z "${version}" ]]; then
+    echo "0"
+    return
+  fi
+
+  echo "${version%%.*}"
+}
+
+has_supported_dotnet() {
+  local major
+  major="$(dotnet_major)"
+  [[ "${major}" -ge 9 ]]
+}
+
+configure_dotnet_env() {
+  if [[ -x "${HOME}/.dotnet/dotnet" ]]; then
+    export DOTNET_ROOT="${HOME}/.dotnet"
+    export PATH="${DOTNET_ROOT}:${DOTNET_ROOT}/tools:${PATH}"
+  fi
+}
+
+persist_dotnet_env() {
+  local profile_path="${HOME}/.bashrc"
+  local marker="# nexo-dotnet-env"
+  local block="${marker}
+export DOTNET_ROOT=\"${HOME}/.dotnet\"
+export PATH=\"\${DOTNET_ROOT}:\${DOTNET_ROOT}/tools:\${PATH}\""
+
+  if [[ "${DRY_RUN}" == "true" ]]; then
+    echo "[dry-run] ensure DOTNET_ROOT and PATH persisted in ${profile_path}"
+    return
+  fi
+
+  if [[ ! -f "${profile_path}" ]]; then
+    printf '%s\n' "${block}" >> "${profile_path}"
+    return
+  fi
+
+  if grep -Fq "${marker}" "${profile_path}"; then
+    return
+  fi
+
+  printf '\n%s\n' "${block}" >> "${profile_path}"
+}
+
+install_dotnet_user_local() {
+  local install_script
+  install_script="$(mktemp)"
+
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${install_script}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "${install_script}" https://dot.net/v1/dotnet-install.sh
+  else
+    rm -f "${install_script}"
+    die "Unable to install .NET automatically: curl or wget is required."
+  fi
+
+  bash "${install_script}" --channel 9.0 --install-dir "${HOME}/.dotnet"
+  rm -f "${install_script}"
+}
+
+ensure_dotnet_ready() {
+  configure_dotnet_env
+  if has_supported_dotnet; then
+    persist_dotnet_env
+    return
+  fi
+
+  echo "Installing .NET SDK 9 via user-local installer..."
+  if [[ "${DRY_RUN}" == "true" ]]; then
+    echo "[dry-run] install_dotnet_user_local"
+    echo "[dry-run] configure_dotnet_env"
+    echo "[dry-run] verify dotnet SDK >= 9"
+    return
+  fi
+
+  install_dotnet_user_local
+  configure_dotnet_env
+
+  if ! has_supported_dotnet; then
+    die ".NET SDK 9 installation completed but dotnet is still unavailable in this shell."
+  fi
+
+  persist_dotnet_env
 }
 
 run_cmd() {
@@ -140,7 +242,7 @@ sync_repo() {
   fi
 }
 
-run_setup() {
+run_setup_apply() {
   local target_dir="$1"
   local setup_args=(scripts/setup/setup.sh apply)
   if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
@@ -151,6 +253,10 @@ run_setup() {
   fi
 
   run_in_repo "${target_dir}" bash "${setup_args[@]}"
+}
+
+run_setup_restore() {
+  local target_dir="$1"
   run_in_repo "${target_dir}" bash scripts/setup/setup.sh restore
 }
 
@@ -162,16 +268,17 @@ run_build() {
   run_in_repo "${target_dir}" dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 }
 
-run_container_smoke() {
+start_daemon() {
   local target_dir="$1"
-  if [[ "${RUN_CONTAINER_SMOKE}" != "true" ]]; then
+  if [[ "${START_DAEMON}" != "true" ]]; then
     return
   fi
 
-  local image="ghcr.io/ianfrelinger/nexo-cli:latest"
-  run_in_repo "${target_dir}" docker pull "${image}"
-  run_in_repo "${target_dir}" docker run --rm "${image}" --help
-  run_in_repo "${target_dir}" docker run --rm -v "${target_dir}:/work" -w /work "${image}" --help
+  local daemon_args=(run --project src/Nexo.CLI -- background-agent daemon)
+  if [[ -n "${DAEMON_DURATION}" ]]; then
+    daemon_args+=(--duration "${DAEMON_DURATION}")
+  fi
+  run_in_repo "${target_dir}" dotnet "${daemon_args[@]}"
 }
 
 print_next_steps() {
@@ -183,14 +290,14 @@ print_next_steps() {
   echo "Next commands:"
   echo "  cd \"${target_dir}\""
   echo "  dotnet run --project src/Nexo.CLI -- --help"
-  echo "  dotnet run --project src/Nexo.CLI -- validate"
+  echo "  dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 30s"
 }
 
 main() {
   require_linux
   expand_install_dir
 
-  echo "Nexo Linux one-shot installer"
+  echo "Nexo Linux installer"
   echo "  repo-url: ${REPO_URL}"
   echo "  install-dir: ${INSTALL_DIR}"
   if [[ -n "${BRANCH}" ]]; then
@@ -198,9 +305,11 @@ main() {
   fi
 
   sync_repo "${INSTALL_DIR}"
-  run_setup "${INSTALL_DIR}"
+  run_setup_apply "${INSTALL_DIR}"
+  ensure_dotnet_ready
+  run_setup_restore "${INSTALL_DIR}"
   run_build "${INSTALL_DIR}"
-  run_container_smoke "${INSTALL_DIR}"
+  start_daemon "${INSTALL_DIR}"
   print_next_steps "${INSTALL_DIR}"
 }
 

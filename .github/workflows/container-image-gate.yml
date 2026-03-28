@@ -1,0 +1,67 @@
+name: Container Image Gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/container-image-gate.yml"
+      - ".docker/Dockerfile.cli"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Runtime/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "README.md"
+  pull_request:
+    paths:
+      - ".github/workflows/container-image-gate.yml"
+      - ".docker/Dockerfile.cli"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Runtime/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "README.md"
+  workflow_dispatch:
+
+jobs:
+  container-image-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build local amd64 image
+        shell: bash
+        run: |
+          docker build \
+            --file .docker/Dockerfile.cli \
+            --tag nexo-cli:gate-amd64 \
+            .
+
+      - name: Smoke run amd64 image
+        shell: bash
+        run: |
+          docker run --rm nexo-cli:gate-amd64 --help
+
+      - name: Validate multi-arch buildability (no push)
+        shell: bash
+        run: |
+          docker buildx build \
+            --file .docker/Dockerfile.cli \
+            --platform linux/amd64,linux/arm64 \
+            --tag nexo-cli:gate-multiarch \
+            --output type=cacheonly \
+            .

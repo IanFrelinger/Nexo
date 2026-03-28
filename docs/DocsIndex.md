@@ -7,14 +7,18 @@ Use this page as the navigation starting point for docs.
 1. `docs/GettingStarted.md` — install, first commands, first pipeline, and first trust checks.
 2. `README.md` — two-lane quickstart (container-first and native setup).
 3. `docs/OneClickInstall.md` — one-shot installer wrappers for Linux/macOS/Windows.
-4. `scripts/setup/setup.sh` and `scripts/setup/setup.ps1` — cross-platform dependency bootstrap + restore helpers.
-5. `docs/Architecture.md` — layered architecture and component boundaries.
+4. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
+5. `scripts/setup/setup.sh` and `scripts/setup/setup.ps1` — cross-platform dependency bootstrap + restore helpers.
+6. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
+- `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
+- `.github/workflows/container-image-publish.yml` — publish official GHCR CLI image (latest + sha tags).
+- `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
 - `docs/ReleaseCandidateChecklist-v1.md` — release candidate sign-off checklist.
 - `docs/Testing.md` — test guard rails, timeout policy, and workflow guidance.
 
@@ -35,4 +39,3 @@ Use this page as the navigation starting point for docs.
 - `docs/Persistence.md` — persistence behavior and options.
 - `docs/ComponentLibrary.md` — component catalog references.
 - `docs/UnitySidecarDemo.md` — Unity sidecar demonstration notes.
-

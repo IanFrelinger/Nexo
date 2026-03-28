@@ -68,6 +68,22 @@ dotnet run --project src/Nexo.CLI -- doctor --json
 
 You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, and `orchestrate`.
 
+## 2b) Run background-agent daemon mode (optional)
+
+Use this when you want Nexo to run as a long-lived local process with hosted background agents.
+If your config does not define `Nexo:Barriers:Levels`, the daemon defaults to `["public","internal"]` for local bootstrap.
+
+```bash
+# run for 30 seconds (smoke test)
+dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 30s
+
+# run until Ctrl+C
+dotnet run --project src/Nexo.CLI -- background-agent daemon
+
+# use an explicit background-agent config file
+dotnet run --project src/Nexo.CLI -- background-agent daemon --config docs/background-agents/examples/minimal-agent.json
+```
+
 ## 3) First success command (high confidence, low friction)
 
 ```bash
@@ -94,11 +110,11 @@ dotnet run --project src/Nexo.CLI -- pipeline validate --template "$template_pat
 Run these from the repository root:
 
 ```bash
-# architecture and contract checks
-dotnet run --project src/Nexo.CLI -- validate
-
 # code and assembly analysis
 dotnet run --project src/Nexo.CLI -- analyze --path .
+
+# optional (heavier) architecture/test validation
+dotnet run --project src/Nexo.CLI -- validate
 ```
 
 ## 5) Run your first pipeline
@@ -176,6 +192,7 @@ Then resolve application ports from DI (analysis, validation, orchestration, etc
 ## Common pitfalls
 
 - If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`9.x`).
+- `dotnet build Nexo.sln` can require mobile workloads depending on host; use setup scripts + CLI project build first.
 - Prefer running heavy validations sequentially (not in parallel terminals) to avoid resource pressure.
 - For CI parity, use the documented gate workflows under `.github/workflows/`.
 - If native setup is blocking, switch to container lane first and continue there.

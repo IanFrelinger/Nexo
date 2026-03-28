@@ -6,6 +6,10 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 
 - [ ] Trigger `production-readiness-gate-v1` in GitHub Actions.
 - [ ] Trigger `environment-setup-gate-v1` in GitHub Actions.
+- [ ] Trigger `container-image-gate` in GitHub Actions.
+- [ ] Trigger `container-image-publish` in GitHub Actions (or verify latest successful publish on `master`).
+- [ ] Trigger `onboarding-docs-guard` in GitHub Actions.
+- [ ] Confirm ephemeral setup container jobs pass for each distro in matrix.
 - [ ] Confirm matrix jobs pass on:
   - [ ] ubuntu-latest
   - [ ] windows-latest
@@ -19,6 +23,9 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
   - [ ] `gate-resume-source.log`
   - [ ] `gate-resume-target.log`
   - [ ] `setup-gate-summary-<os>.txt`
+  - [ ] `setup-gate-ephemeral-summary-*.txt`
+  - [ ] container image gate summary + smoke logs
+  - [ ] published image smoke log (`docker run ... --help` in publish workflow)
 
 ## 2) Runtime correctness review
 

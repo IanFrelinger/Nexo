@@ -47,7 +47,8 @@ bash scripts/install/install.sh --yes
 
 ### Environment setup scripts (Windows/macOS/Linux)
 
-Use the setup scripts to validate or install required tooling and restore baseline NuGet packages used by the core CI gates:
+Use the setup scripts to validate or install required tooling and restore baseline NuGet packages used by the core CI gates.
+The CI setup gate also validates these scripts in an ephemeral Linux container (`mcr.microsoft.com/dotnet/sdk:9.0`) on every run:
 
 ```bash
 # Linux/macOS: check required dependencies
@@ -71,7 +72,72 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 ```
 
-### 2) Clone and build (native)
+### One-click bootstrap installers (Option 1)
+
+For single-command install/bootstrap wrappers, see:
+
+- `docs/OneClickInstall.md`
+
+These wrappers include `.NET SDK 9` bootstrap logic before restore/build.
+
+Quick examples:
+
+```bash
+bash scripts/install/install.sh --yes
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
+```
+
+Container-first one-shot bootstrap (installs Docker if needed, pulls CLI + SDK images, smoke-runs both):
+
+```bash
+bash scripts/install/container-bootstrap.sh --yes
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
+```
+
+### Container image usage (flexible deployability)
+
+Build local CLI image:
+
+```bash
+docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
+docker run --rm nexo-cli:local --help
+```
+
+Pull published image (GHCR):
+
+```bash
+docker pull ghcr.io/ianfrelinger/nexo-cli:latest
+docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
+```
+
+Build with explicit framework/runtime versions:
+
+```bash
+docker build \
+  --build-arg DOTNET_SDK_VERSION=9.0 \
+  --build-arg TARGETFRAMEWORK=net8.0 \
+  --build-arg DOTNET_RUNTIME_VERSION=8.0 \
+  -f .docker/Dockerfile.cli \
+  -t nexo-cli:net8 .
+```
+
+Validate a pipeline template from your current workspace using the published image:
+
+```bash
+docker run --rm \
+  -v "$PWD:/work" \
+  -w /work \
+  ghcr.io/ianfrelinger/nexo-cli:latest \
+  pipeline validate --template /work/path/to/template.json
+```
+
+### 2) Clone and build
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
@@ -93,6 +159,8 @@ dotnet run --project src/Nexo.CLI -- doctor --json
 ```
 
 ### 4) Run a first high-signal command
+
+`validate` can execute a broad architecture/test sweep and may be heavier on constrained hosts. For first-run confidence, start with CLI help and a pipeline validate command:
 
 ```bash
 dotnet run --project src/Nexo.CLI -- --help
@@ -150,6 +218,7 @@ Pipeline runtime option precedence:
 | Show all commands | `dotnet run --project src/Nexo.CLI -- --help` |
 | Validate architecture/contracts | `dotnet run --project src/Nexo.CLI -- validate` |
 | Analyze source/assemblies | `dotnet run --project src/Nexo.CLI -- analyze --path .` |
+| Run background-agent daemon mode | `dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 10m` |
 | Run pipeline template | `dotnet run --project src/Nexo.CLI -- pipeline run --template <file>` |
 | View trust boundary/audit | `dotnet run --project src/Nexo.CLI -- trust --help` |
 | Run local test entrypoint | `dotnet run --project src/Nexo.CLI -- test local` |

@@ -6,7 +6,8 @@ param(
     [switch]$IncludeOptional,
     [switch]$Yes,
     [switch]$SkipBuild,
-    [switch]$RunContainerSmoke,
+    [switch]$StartDaemon,
+    [string]$DaemonDuration,
     [switch]$DryRun
 )
 
@@ -24,6 +25,43 @@ function Invoke-Step {
     Invoke-Expression $Command
     if ($LASTEXITCODE -ne 0) {
         throw "Command failed (exit $LASTEXITCODE): $Command"
+    }
+}
+
+function Get-DotnetMajor {
+    if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+        return 0
+    }
+    $version = (& dotnet --version) 2>$null
+    if ([string]::IsNullOrWhiteSpace($version)) {
+        return 0
+    }
+    return [int]($version.Split('.')[0])
+}
+
+function Install-DotnetWithWinget {
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        throw "winget is required to install .NET SDK automatically."
+    }
+    Invoke-Step "winget install --id Microsoft.DotNet.SDK.9 --exact --accept-package-agreements --accept-source-agreements --silent"
+}
+
+function Ensure-Dotnet {
+    $major = Get-DotnetMajor
+    if ($major -ge 9) {
+        return
+    }
+
+    Write-Host ".NET SDK 9+ not found. Installing..."
+    Install-DotnetWithWinget
+
+    if ($DryRun.IsPresent) {
+        return
+    }
+
+    $major = Get-DotnetMajor
+    if ($major -lt 9) {
+        throw ".NET SDK 9+ installation did not complete successfully."
     }
 }
 
@@ -87,17 +125,19 @@ function Run-Build {
     Invoke-Step "Set-Location \"$TargetDir\"; dotnet build src\Nexo.CLI\Nexo.CLI.csproj --no-restore"
 }
 
-function Run-ContainerSmoke {
+function Run-Daemon {
     param([Parameter(Mandatory = $true)][string]$TargetDir)
 
-    if (-not $RunContainerSmoke.IsPresent) {
+    if (-not $StartDaemon.IsPresent) {
         return
     }
 
-    $image = "ghcr.io/ianfrelinger/nexo-cli:latest"
-    Invoke-Step "Set-Location \"$TargetDir\"; docker pull $image"
-    Invoke-Step "Set-Location \"$TargetDir\"; docker run --rm $image --help"
-    Invoke-Step "Set-Location \"$TargetDir\"; docker run --rm -v \"$TargetDir:/work\" -w /work $image --help"
+    $daemonCmd = "Set-Location \"$TargetDir\"; dotnet run --project src\Nexo.CLI -- background-agent daemon"
+    if (-not [string]::IsNullOrWhiteSpace($DaemonDuration)) {
+        $daemonCmd += " --duration $DaemonDuration"
+    }
+
+    Invoke-Step $daemonCmd
 }
 
 function Print-NextSteps {
@@ -110,17 +150,18 @@ function Print-NextSteps {
     Write-Host "Next commands:"
     Write-Host "  Set-Location \"$TargetDir\""
     Write-Host "  dotnet run --project src\Nexo.CLI -- --help"
-    Write-Host "  dotnet run --project src\Nexo.CLI -- validate"
+    Write-Host "  dotnet run --project src\Nexo.CLI -- background-agent daemon --duration 30s"
 }
 
 Ensure-Windows
+Ensure-Dotnet
 
 $expandedInstallDir = [Environment]::ExpandEnvironmentVariables($InstallDir)
 if ($expandedInstallDir.StartsWith('~')) {
     $expandedInstallDir = Join-Path $HOME $expandedInstallDir.Substring(1).TrimStart('\\', '/')
 }
 
-Write-Host "Nexo Windows one-shot installer"
+Write-Host "Nexo Windows installer"
 Write-Host "  repo-url: $RepoUrl"
 Write-Host "  install-dir: $expandedInstallDir"
 if (-not [string]::IsNullOrWhiteSpace($Branch)) {
@@ -130,5 +171,5 @@ if (-not [string]::IsNullOrWhiteSpace($Branch)) {
 Sync-Repo -TargetDir $expandedInstallDir
 Run-Setup -TargetDir $expandedInstallDir
 Run-Build -TargetDir $expandedInstallDir
-Run-ContainerSmoke -TargetDir $expandedInstallDir
+Run-Daemon -TargetDir $expandedInstallDir
 Print-NextSteps -TargetDir $expandedInstallDir
