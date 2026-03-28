@@ -28,6 +28,43 @@ function Invoke-Step {
     }
 }
 
+function Get-DotnetMajor {
+    if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+        return 0
+    }
+    $version = (& dotnet --version) 2>$null
+    if ([string]::IsNullOrWhiteSpace($version)) {
+        return 0
+    }
+    return [int]($version.Split('.')[0])
+}
+
+function Install-DotnetWithWinget {
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        throw "winget is required to install .NET SDK automatically."
+    }
+    Invoke-Step "winget install --id Microsoft.DotNet.SDK.9 --exact --accept-package-agreements --accept-source-agreements --silent"
+}
+
+function Ensure-Dotnet {
+    $major = Get-DotnetMajor
+    if ($major -ge 9) {
+        return
+    }
+
+    Write-Host ".NET SDK 9+ not found. Installing..."
+    Install-DotnetWithWinget
+
+    if ($DryRun.IsPresent) {
+        return
+    }
+
+    $major = Get-DotnetMajor
+    if ($major -lt 9) {
+        throw ".NET SDK 9+ installation did not complete successfully."
+    }
+}
+
 function Ensure-Windows {
     if (-not $env:OS -or $env:OS -ne "Windows_NT") {
         throw "This installer only supports Windows hosts."
@@ -117,6 +154,7 @@ function Print-NextSteps {
 }
 
 Ensure-Windows
+Ensure-Dotnet
 
 $expandedInstallDir = [Environment]::ExpandEnvironmentVariables($InstallDir)
 if ($expandedInstallDir.StartsWith('~')) {

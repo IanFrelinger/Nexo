@@ -161,6 +161,20 @@ run_setup() {
   run_in_repo "${target_dir}" bash scripts/setup/setup.sh restore
 }
 
+ensure_dotnet_sdk9() {
+  local target_dir="$1"
+  local install_script="${target_dir}/scripts/setup/setup-macos.sh"
+  if [[ ! -f "${install_script}" ]]; then
+    die "Missing setup script: ${install_script}"
+  fi
+
+  # setup-macos.sh check fails when required dependencies are missing, including dotnet.
+  # apply installs missing requirements (brew + dotnet-sdk), and then we re-check.
+  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh check
+  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh apply --yes
+  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh check
+}
+
 run_build() {
   local target_dir="$1"
   if [[ "${SKIP_BUILD}" == "true" ]]; then
@@ -207,6 +221,7 @@ main() {
   fi
 
   sync_repo "${INSTALL_DIR}"
+  ensure_dotnet_sdk9 "${INSTALL_DIR}"
   run_setup "${INSTALL_DIR}"
   run_build "${INSTALL_DIR}"
   start_daemon "${INSTALL_DIR}"

@@ -7,10 +7,11 @@ This guide provides "single-command" install/bootstrap paths for each platform u
 For Linux, macOS, and Windows installers:
 
 1. Clone or update the Nexo repo.
-2. Run platform dependency setup (`scripts/setup/setup.*` in `apply` mode).
-3. Run restore for baseline project graph.
-4. Build CLI (`src/Nexo.CLI/Nexo.CLI.csproj`).
-5. Optionally start `background-agent daemon`.
+2. Ensure `.NET SDK 9` is installed/configured for the current session (installer wrapper responsibility).
+3. Run platform dependency setup (`scripts/setup/setup.*` in `apply` mode).
+4. Run restore for baseline project graph.
+5. Build CLI (`src/Nexo.CLI/Nexo.CLI.csproj`).
+6. Optionally start `background-agent daemon`.
 
 ## Linux / macOS
 

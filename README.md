@@ -55,6 +55,8 @@ For single-command install/bootstrap wrappers, see:
 
 - `docs/OneClickInstall.md`
 
+These wrappers include `.NET SDK 9` bootstrap logic before restore/build.
+
 Quick examples:
 
 ```bash
