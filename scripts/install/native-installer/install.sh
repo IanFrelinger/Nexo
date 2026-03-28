@@ -9,6 +9,7 @@ SOURCE_APP_DIR="${SCRIPT_DIR}/app"
 TARGET_APP_BINARY="${INSTALL_APP_DIR}/Nexo.CLI"
 PATH_EXPORT_LINE="export PATH=\"${INSTALL_BIN_DIR}:\$PATH\""
 INSTALL_MARKER="# Added by Nexo native installer"
+PATH_LINE_ADDED=false
 
 if [[ ! -d "${SOURCE_APP_DIR}" ]]; then
   echo "Missing bundled app directory at ${SOURCE_APP_DIR}" >&2
@@ -28,6 +29,7 @@ append_path_if_needed() {
   fi
 
   if [[ "${export_present}" == "true" ]]; then
+    PATH_LINE_ADDED=false
     return
   fi
 
@@ -38,6 +40,7 @@ append_path_if_needed() {
     fi
     echo "${PATH_EXPORT_LINE}"
   } >> "${profile_path}"
+  PATH_LINE_ADDED=true
 }
 
 mkdir -p "$(dirname "${INSTALL_APP_DIR}")"
@@ -75,8 +78,12 @@ case ":${PATH}:" in
     fi
     append_path_if_needed "${target_profile}"
     echo ""
-    echo "Added ${INSTALL_BIN_DIR} to PATH in ${target_profile}"
-    echo "Restart your terminal (or run: source \"${target_profile}\") to use 'nexo' directly."
+    if [[ "${PATH_LINE_ADDED}" == "true" ]]; then
+      echo "Added ${INSTALL_BIN_DIR} to PATH in ${target_profile}"
+      echo "Restart your terminal (or run: source \"${target_profile}\") to use 'nexo' directly."
+    else
+      echo "PATH already configured for ${INSTALL_BIN_DIR} in ${target_profile}"
+    fi
     ;;
 esac
 
