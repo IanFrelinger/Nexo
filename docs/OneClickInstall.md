@@ -60,7 +60,7 @@ For distribution-ready native installer bundles, use the GitHub Actions workflow
 - Workflow: `.github/workflows/native-installer-packages.yml`
 - Trigger: **Actions** -> **Native Installer Packages** -> **Run workflow** (optional `version` input)
 
-This one-button run builds self-contained CLI installer bundles for:
+This one-button run builds self-contained CLI app-directory installer bundles for:
 
 - Linux (`linux-x64`)
 - macOS (`osx-x64`)
@@ -76,7 +76,7 @@ Each run uploads one artifact per platform:
 
 Each bundle includes:
 
-1. Self-contained CLI binary (`bin/nexo` or `bin/nexo.exe`).
+1. Self-contained CLI runtime directory (`bin/` with `Nexo.CLI` entrypoint).
 2. Platform-native install launcher (`install.sh`, `install.command`, or `install.ps1`).
 3. A bundle README with install and verification commands.
 
@@ -84,7 +84,7 @@ Each bundle includes:
 
 The bundle installers:
 
-1. Copy the CLI to `$HOME/.local/bin` (`nexo` or `nexo.exe`).
+1. Copy the CLI runtime to `$HOME/.local/share/nexo` and install a launcher at `$HOME/.local/bin/nexo` (or `nexo.ps1` on Windows).
 2. Keep installation user-scoped (no admin/root required).
 3. Print PATH guidance if `$HOME/.local/bin` is not on PATH.
 

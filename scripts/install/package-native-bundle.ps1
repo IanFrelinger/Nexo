@@ -34,8 +34,6 @@ try {
         -r $Rid `
         --self-contained true `
         -p:IncludeTestProjectReferences=false `
-        -p:PublishSingleFile=true `
-        -p:IncludeNativeLibrariesForSelfExtract=true `
         -o $publishDir
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet publish failed with exit code $LASTEXITCODE"
@@ -48,10 +46,10 @@ try {
 
     $bundleName = "nexo-native-installer-windows-$Rid"
     $bundleDir = Join-Path $workDir $bundleName
-    $binDir = Join-Path $bundleDir "bin"
-    New-Item -ItemType Directory -Path $binDir -Force | Out-Null
+    $appDir = Join-Path $bundleDir "app"
+    New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 
-    Copy-Item $sourceBinary (Join-Path $binDir "nexo.exe")
+    Copy-Item (Join-Path $publishDir "*") $appDir -Recurse -Force
     Copy-Item (Join-Path $templateDir "install.ps1") (Join-Path $bundleDir "install.ps1")
 
     $readmePath = Join-Path $bundleDir "README.md"
@@ -60,7 +58,7 @@ try {
 
 Version: $Version
 
-This bundle contains a self-contained `nexo.exe` CLI binary and an install wrapper.
+This bundle contains a self-contained Nexo CLI app directory and an install wrapper.
 
 ## Install
 
@@ -70,9 +68,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 ## What install does
 
-1. Copies `bin\nexo.exe` to `$HOME\.local\bin\nexo.exe`.
-2. Adds execute/access bits as needed by Windows file ACL defaults.
-3. Prints PATH guidance if `$HOME\.local\bin` is not currently on PATH.
+1. Copies the `app` directory to `$HOME\.local\share\nexo`.
+2. Creates/updates a launcher at `$HOME\.local\bin\nexo.ps1`.
+3. Creates/updates a launcher at `$HOME\.local\bin\nexo.cmd`.
+4. Prints PATH guidance if `$HOME\.local\bin` is not currently on PATH.
 
 ## Verify
 

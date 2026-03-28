@@ -11,17 +11,23 @@ $installBase = if ([string]::IsNullOrWhiteSpace($env:NEXO_INSTALL_BASE)) {
 else {
     $env:NEXO_INSTALL_BASE
 }
-$targetPath = Join-Path $installBase "nexo.exe"
-$sourcePath = Join-Path $scriptDir "bin\nexo.exe"
+$appSourceDir = Join-Path $scriptDir "bin\nexo-app"
+$appTargetDir = Join-Path $installBase "nexo-app"
+$targetPath = Join-Path $installBase "nexo.cmd"
+$targetExe = Join-Path $appTargetDir "Nexo.CLI.exe"
 
-if (-not (Test-Path $sourcePath)) {
-    throw "Missing bundled binary at $sourcePath"
+if (-not (Test-Path $appSourceDir)) {
+    throw "Missing bundled app directory at $appSourceDir"
 }
 
 New-Item -ItemType Directory -Path $installBase -Force | Out-Null
-Copy-Item $sourcePath $targetPath -Force
+if (Test-Path $appTargetDir) {
+    Remove-Item -Path $appTargetDir -Recurse -Force
+}
+Copy-Item $appSourceDir $appTargetDir -Recurse -Force
+"@echo off`r`n`"$targetExe`" %*" | Set-Content -Path $targetPath -NoNewline
 
-Write-Host "Installed nexo to $targetPath"
+Write-Host "Installed nexo launcher to $targetPath"
 
 $pathParts = @()
 if (-not [string]::IsNullOrWhiteSpace($env:PATH)) {
@@ -37,4 +43,4 @@ if (-not ($pathParts -contains $installBase)) {
 
 Write-Host ""
 Write-Host "Verify with:"
-Write-Host "  $targetPath --help"
+Write-Host "  nexo --help"

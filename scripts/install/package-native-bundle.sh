@@ -93,8 +93,6 @@ dotnet publish "${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj" \
   -r "${RID}" \
   --self-contained true \
   -p:IncludeTestProjectReferences=false \
-  -p:PublishSingleFile=true \
-  -p:IncludeNativeLibrariesForSelfExtract=true \
   -o "${publish_dir}"
 
 source_binary="${publish_dir}/Nexo.CLI"
@@ -105,10 +103,10 @@ fi
 
 bundle_name="nexo-native-installer-${PLATFORM}-${RID}"
 bundle_dir="${work_dir}/${bundle_name}"
-mkdir -p "${bundle_dir}/bin"
+mkdir -p "${bundle_dir}"
 
-cp "${source_binary}" "${bundle_dir}/bin/nexo"
-chmod +x "${bundle_dir}/bin/nexo"
+cp -R "${publish_dir}" "${bundle_dir}/app"
+chmod +x "${bundle_dir}/app/Nexo.CLI"
 
 cp "${TEMPLATE_DIR}/install.sh" "${bundle_dir}/install.sh"
 chmod +x "${bundle_dir}/install.sh"
@@ -123,7 +121,7 @@ cat > "${bundle_dir}/README.md" <<EOF
 
 Version: ${VERSION}
 
-This bundle contains a self-contained \`nexo\` CLI binary and an install wrapper.
+This bundle contains a self-contained \`nexo\` CLI app directory and an install wrapper.
 
 ## Install
 
@@ -142,8 +140,9 @@ This bundle contains a self-contained \`nexo\` CLI binary and an install wrapper
 ## What install does
 
 1. Copies \`bin/nexo\` to \`\$HOME/.local/bin/nexo\`.
-2. Marks it executable.
-3. Prints PATH guidance if \`\$HOME/.local/bin\` is not currently on PATH.
+2. Copies runtime dependencies to \`\$HOME/.local/lib/nexo\`.
+3. Marks \`nexo\` executable.
+4. Prints PATH guidance if \`\$HOME/.local/bin\` is not currently on PATH.
 
 ## Verify
 
