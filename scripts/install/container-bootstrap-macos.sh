@@ -2,7 +2,9 @@
 set -euo pipefail
 
 DEFAULT_IMAGE="ghcr.io/ianfrelinger/nexo-cli:latest"
+DEFAULT_SDK_IMAGE="mcr.microsoft.com/dotnet/sdk:9.0"
 IMAGE="${DEFAULT_IMAGE}"
+SDK_IMAGE="${DEFAULT_SDK_IMAGE}"
 WORKSPACE_DIR=""
 YES=false
 DRY_RUN=false
@@ -13,6 +15,7 @@ usage() {
   echo "Options:"
   echo "  --image <ref>            Container image to pull/run (default: ${DEFAULT_IMAGE})"
   echo "  --workspace <path>       Optional host workspace to mount at /work"
+  echo "  --sdk-image <ref>        SDK container image for build/restore tasks (default: ${DEFAULT_SDK_IMAGE})"
   echo "  --yes                    Auto-confirm install prompts"
   echo "  --dry-run                Print actions without executing"
   echo "  -h, --help               Show help"
@@ -41,6 +44,11 @@ while [[ $# -gt 0 ]]; do
     --workspace)
       require_value "$1" "${2:-}"
       WORKSPACE_DIR="$2"
+      shift
+      ;;
+    --sdk-image)
+      require_value "$1" "${2:-}"
+      SDK_IMAGE="$2"
       shift
       ;;
     --yes)
@@ -133,7 +141,9 @@ TXT
 
 run_container_smoke() {
   run_cmd docker pull "$IMAGE"
+  run_cmd docker pull "$SDK_IMAGE"
   run_cmd docker run --rm "$IMAGE" --help
+  run_cmd docker run --rm "$SDK_IMAGE" dotnet --info
 
   if [[ -n "$WORKSPACE_DIR" ]]; then
     local abs_workspace="$WORKSPACE_DIR"
@@ -148,6 +158,7 @@ run_container_smoke() {
     fi
 
     run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$IMAGE" --help
+    run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$SDK_IMAGE" dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
   fi
 }
 
@@ -159,12 +170,15 @@ main() {
 
   echo ""
   echo "Container bootstrap complete."
-  echo "Image: $IMAGE"
+  echo "CLI image: $IMAGE"
+  echo "SDK image: $SDK_IMAGE"
   echo ""
   echo "Examples:"
   echo "  docker run --rm $IMAGE --help"
+  echo "  docker run --rm $SDK_IMAGE dotnet --info"
   if [[ -n "$WORKSPACE_DIR" ]]; then
     echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $IMAGE pipeline validate --template /work/path/to/template.json"
+    echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $SDK_IMAGE dotnet build src/Nexo.CLI/Nexo.CLI.csproj"
   fi
 }
 

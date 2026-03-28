@@ -22,7 +22,7 @@ If you want to run Nexo purely via container, use the container bootstrap wrappe
 Unified entrypoint:
 
 ```bash
-bash scripts/install/container-bootstrap.sh --yes
+bash scripts/install/container-bootstrap.sh --yes --workspace "$PWD"
 ```
 
 Linux/macOS-specific entrypoints:
@@ -35,7 +35,7 @@ bash scripts/install/container-bootstrap-macos.sh --yes
 ### Windows PowerShell
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes -Workspace .
 ```
 
 or:
@@ -49,8 +49,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-
 1. Ensures Docker is installed (installs if missing when possible).
 2. Ensures Docker daemon is reachable.
 3. Pulls `ghcr.io/ianfrelinger/nexo-cli:latest` (or your `--image` override).
-4. Smoke-runs `docker run --rm <image> --help`.
-5. Optionally validates mount path with `--workspace` and runs the same smoke command in mounted mode.
+4. Pulls `mcr.microsoft.com/dotnet/sdk:9.0` (or your `--sdk-image` override).
+5. Smoke-runs both CLI and SDK images.
+6. Optionally validates mount path with `--workspace` and runs mounted smoke checks.
+7. If `--workspace` is set and the Nexo repo is mounted, runs SDK restore smoke on `src/Nexo.CLI/Nexo.CLI.csproj`.
 
 ## Linux / macOS
 

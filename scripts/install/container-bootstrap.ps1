@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [string]$Image = "ghcr.io/ianfrelinger/nexo-cli:latest",
+    [string]$SdkImage = "mcr.microsoft.com/dotnet/sdk:9.0",
     [string]$Workspace,
+    [switch]$WithSdk,
     [switch]$Yes,
     [switch]$DryRun
 )
@@ -85,12 +87,26 @@ function Run-ContainerSmoke {
     Invoke-Step "docker pull $Image"
     Invoke-Step "docker run --rm $Image --help"
 
+    if ($WithSdk.IsPresent) {
+        Invoke-Step "docker pull $SdkImage"
+        Invoke-Step "docker run --rm $SdkImage dotnet --info"
+    }
+
     if (-not [string]::IsNullOrWhiteSpace($Workspace)) {
         $resolvedWorkspace = $Workspace
         if (-not $DryRun.IsPresent) {
             $resolvedWorkspace = (Resolve-Path $Workspace).Path
         }
         Invoke-Step "docker run --rm -v \"$resolvedWorkspace:/work\" -w /work $Image --help"
+        if ($WithSdk.IsPresent) {
+            Invoke-Step "docker run --rm -v \"$resolvedWorkspace:/work\" -w /work $SdkImage dotnet --info"
+            if ($DryRun.IsPresent) {
+                Write-Host "[dry-run] docker run --rm -v `"$resolvedWorkspace:/work`" -w /work $SdkImage bash -lc 'if [ -f src/Nexo.CLI/Nexo.CLI.csproj ]; then dotnet restore src/Nexo.CLI/Nexo.CLI.csproj; else echo no_cli_project_found; fi'"
+            }
+            else {
+                Invoke-Step "docker run --rm -v \"$resolvedWorkspace:/work\" -w /work $SdkImage sh -lc 'if [ -f src/Nexo.CLI/Nexo.CLI.csproj ]; then dotnet restore src/Nexo.CLI/Nexo.CLI.csproj; else echo no_cli_project_found; fi'"
+            }
+        }
     }
 }
 
@@ -102,9 +118,15 @@ Run-ContainerSmoke
 Write-Host ""
 Write-Host "Container bootstrap complete."
 Write-Host "Image: $Image"
+if ($WithSdk.IsPresent) {
+    Write-Host "SDK image: $SdkImage"
+}
 Write-Host ""
 Write-Host "Examples:"
 Write-Host "  docker run --rm $Image --help"
 if (-not [string]::IsNullOrWhiteSpace($Workspace)) {
     Write-Host "  docker run --rm -v \"$Workspace:/work\" -w /work $Image pipeline validate --template /work/path/to/template.json"
+    if ($WithSdk.IsPresent) {
+        Write-Host "  docker run --rm -v \"$Workspace:/work\" -w /work $SdkImage dotnet restore src/Nexo.CLI/Nexo.CLI.csproj"
+    }
 }
