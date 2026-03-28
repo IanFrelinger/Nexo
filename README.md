@@ -13,6 +13,25 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 
 ## Quick Start (5 minutes)
 
+### Choose your lane (recommended)
+
+**Lane A: fastest path (container runtime)**
+
+```bash
+docker pull ghcr.io/ianfrelinger/nexo-cli:latest
+docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
+```
+
+**Lane B: full local dev path (native SDK)**
+
+```bash
+git clone https://github.com/IanFrelinger/Nexo.git
+cd Nexo
+bash scripts/setup/setup.sh all
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project src/Nexo.CLI -- --help
+```
+
 ### 1) Prerequisites
 
 - .NET SDK 9.x (the repo is pinned by `global.json`)
@@ -46,12 +65,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 ```
 
-### 2) Clone and build
+### 2) Clone and build (native)
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
-dotnet build Nexo.sln
+bash scripts/setup/setup.sh all
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 ### 3) Confirm CLI is working
@@ -63,6 +83,23 @@ dotnet run --project src/Nexo.CLI -- --help
 ### 4) Run a first high-signal command
 
 ```bash
+dotnet run --project src/Nexo.CLI -- --help
+tmp_dir="$(mktemp -d)"
+template_path="$tmp_dir/nexo_pipeline_quickstart.json"
+cat > "$template_path" <<'JSON'
+{
+  "templateId": "quickstart",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+dotnet run --project src/Nexo.CLI -- pipeline validate --template "$template_path"
 dotnet run --project src/Nexo.CLI -- validate
 ```
 
@@ -156,6 +193,7 @@ Core references:
 - `docs/Configuration.md` – environment/config options
 - `docs/Architecture.md` – architecture and subsystem overview
 - `docs/Testing.md` – test strategy, guard rails, and commands
+- `docs/OnboardingAutomation.md` – what setup is automated vs. still manual
 - `docs/TrustAndInformationArchitecture.md` – trust model, barriers, audit
 - `docs/ProductionReadinessGate-v1.md` – production gate procedure
 - `docs/EnvironmentSetupGate-v1.md` – cross-platform dependency/bootstrap gate

@@ -4,12 +4,12 @@ This guide is for first-time users who want to run Nexo quickly and understand t
 
 ## What you will do
 
-In ~15 minutes, you will:
+In ~10-15 minutes, you will:
 
-1. Build and run the CLI.
-2. Run validation and analysis.
-3. Execute a pipeline template.
-4. Inspect runtime diagnostics.
+1. Pick one startup lane (container-first or native).
+2. Verify CLI is working.
+3. Validate and run a minimal pipeline.
+4. Move to deeper validation/testing only after first success.
 
 ## Prerequisites
 
@@ -19,28 +19,39 @@ In ~15 minutes, you will:
   - Docker (multi-environment testing workflows)
   - Ollama/OpenAI/Azure credentials (model-backed commands)
 
-## 1) Clone and build
+## 1) Choose your startup lane
+
+### Lane A (fastest): container-first
+
+Use this when local SDK/workload setup is causing friction.
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git
-cd Nexo
-dotnet build Nexo.sln
+docker pull ghcr.io/ianfrelinger/nexo-cli:latest
+docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
-### Optional: run platform setup script first
+With workspace mount:
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --help
+```
+
+### Lane B (full local dev): native setup scripts + CLI build
 
 These scripts validate/install base dependencies and restore the setup-gate baseline NuGet graph for this repository:
 
 ```bash
-# Linux/macOS
-bash scripts/setup/setup.sh check
+git clone https://github.com/IanFrelinger/Nexo.git
+cd Nexo
 bash scripts/setup/setup.sh all
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 ```powershell
-# Windows PowerShell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
-powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+git clone https://github.com/IanFrelinger/Nexo.git
+Set-Location Nexo
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+dotnet build src\Nexo.CLI\Nexo.CLI.csproj --no-restore
 ```
 
 ## 2) Verify CLI is available
@@ -51,7 +62,28 @@ dotnet run --project src/Nexo.CLI -- --help
 
 You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, and `orchestrate`.
 
-## 3) Run first high-signal commands
+## 3) First success command (high confidence, low friction)
+
+```bash
+tmp_dir="$(mktemp -d)"
+template_path="$tmp_dir/nexo_quickstart.json"
+cat > "$template_path" <<'JSON'
+{
+  "templateId": "quickstart",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+dotnet run --project src/Nexo.CLI -- pipeline validate --template "$template_path"
+```
+
+## 4) Run first high-signal commands
 
 Run these from the repository root:
 
@@ -63,7 +95,7 @@ dotnet run --project src/Nexo.CLI -- validate
 dotnet run --project src/Nexo.CLI -- analyze --path .
 ```
 
-## 4) Run your first pipeline
+## 5) Run your first pipeline
 
 Create a minimal template:
 
@@ -91,7 +123,7 @@ dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_
 dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
 ```
 
-## 5) Optional provider setup
+## 6) Optional provider setup
 
 If you plan to run model-backed workflows:
 
@@ -111,7 +143,7 @@ export OLLAMA_MODEL="llama3.1"
 
 Provider behavior and full configuration are documented in `docs/Configuration.md`.
 
-## 6) Testing workflows
+## 7) Testing workflows
 
 ```bash
 # targeted infrastructure tests
@@ -123,7 +155,7 @@ dotnet run --project src/Nexo.CLI -- test local
 
 For timeout policy and anti-hang guidance, see `docs/Testing.md`.
 
-## 7) Embed in your host application
+## 8) Embed in your host application
 
 At minimum:
 
@@ -140,6 +172,7 @@ Then resolve application ports from DI (analysis, validation, orchestration, etc
 - If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`9.x`).
 - Prefer running heavy validations sequentially (not in parallel terminals) to avoid resource pressure.
 - For CI parity, use the documented gate workflows under `.github/workflows/`.
+- If native setup is blocking, switch to container lane first and continue there.
 
 ## Next documents to read
 

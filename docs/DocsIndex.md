@@ -5,8 +5,9 @@ Use this page as the navigation starting point for docs.
 ## Start Here
 
 1. `docs/GettingStarted.md` — install, first commands, first pipeline, and first trust checks.
-2. `README.md` — quick project overview, examples, and command map.
-3. `docs/Architecture.md` — layered architecture and component boundaries.
+2. `README.md` — two-lane quickstart (container-first and native setup).
+3. `scripts/setup/setup.sh` and `scripts/setup/setup.ps1` — cross-platform dependency bootstrap + restore helpers.
+4. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 
