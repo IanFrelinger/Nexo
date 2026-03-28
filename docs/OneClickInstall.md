@@ -78,6 +78,8 @@ bash scripts/install/install-macos.sh --yes
 
 Unified PowerShell entrypoint:
 
+Script path reference: `scripts/install/install.ps1`
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
 ```
