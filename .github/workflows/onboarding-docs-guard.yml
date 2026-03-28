@@ -33,6 +33,7 @@ jobs:
           rg -n "Lane A: fastest path \\(container runtime\\)" README.md
           rg -n "Lane B: full local dev path \\(native SDK\\)" README.md
           rg -n "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help" README.md
+          rg -n "bash scripts/install/install\.sh --yes" README.md
           rg -n "bash scripts/setup/setup\.sh all" README.md
           rg -n "dotnet build src/Nexo\.CLI/Nexo\.CLI\.csproj --no-restore" README.md
 
@@ -45,6 +46,8 @@ jobs:
           # GettingStarted should reflect same workload-safe baseline + container lane.
           rg -n "Fastest path \(container-first\)" docs/GettingStarted.md
           rg -n "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help" docs/GettingStarted.md
+          rg -n "bash scripts/install/install\.sh --yes" docs/GettingStarted.md
+          rg -n "nexo doctor --json" docs/GettingStarted.md
           rg -n "bash scripts/setup/setup\.sh all" docs/GettingStarted.md
           rg -n "dotnet build src/Nexo\.CLI/Nexo\.CLI\.csproj --no-restore" docs/GettingStarted.md
 

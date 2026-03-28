@@ -32,6 +32,12 @@ dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 dotnet run --project src/Nexo.CLI -- --help
 ```
 
+Prefer this one-shot installer if you want fewer manual steps:
+
+```bash
+bash scripts/install/install.sh --yes
+```
+
 ### 1) Prerequisites
 
 - .NET SDK 9.x (the repo is pinned by `global.json`)
@@ -78,6 +84,12 @@ dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 
 ```bash
 dotnet run --project src/Nexo.CLI -- --help
+```
+
+### 3b) Run onboarding doctor (single pass/fail report)
+
+```bash
+dotnet run --project src/Nexo.CLI -- doctor --json
 ```
 
 ### 4) Run a first high-signal command
@@ -193,6 +205,7 @@ Core references:
 - `docs/Configuration.md` – environment/config options
 - `docs/Architecture.md` – architecture and subsystem overview
 - `docs/Testing.md` – test strategy, guard rails, and commands
+- `docs/OneClickInstall.md` – one-shot install wrappers for Linux/macOS/Windows
 - `docs/OnboardingAutomation.md` – what setup is automated vs. still manual
 - `docs/TrustAndInformationArchitecture.md` – trust model, barriers, audit
 - `docs/ProductionReadinessGate-v1.md` – production gate procedure

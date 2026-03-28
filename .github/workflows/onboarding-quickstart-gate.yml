@@ -1,0 +1,115 @@
+name: onboarding-quickstart-gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - '.github/workflows/onboarding-quickstart-gate.yml'
+      - 'README.md'
+      - 'docs/GettingStarted.md'
+      - 'docs/OnboardingAutomation.md'
+      - 'scripts/setup/**'
+      - 'scripts/install/**'
+      - 'src/Nexo.CLI/**'
+      - 'global.json'
+  pull_request:
+    paths:
+      - '.github/workflows/onboarding-quickstart-gate.yml'
+      - 'README.md'
+      - 'docs/GettingStarted.md'
+      - 'docs/OnboardingAutomation.md'
+      - 'scripts/setup/**'
+      - 'scripts/install/**'
+      - 'src/Nexo.CLI/**'
+      - 'global.json'
+  workflow_dispatch:
+
+jobs:
+  quickstart-linux-native:
+    name: quickstart-native-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Native lane quickstart commands
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/setup/setup.sh check
+          bash scripts/setup/setup.sh restore
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+          dotnet run --project src/Nexo.CLI -- --help
+          dotnet run --project src/Nexo.CLI -- doctor --json
+
+      - name: Emit native quickstart summary
+        if: always()
+        shell: bash
+        run: |
+          SUMMARY_FILE="${RUNNER_TEMP}/onboarding-quickstart-native-linux-summary.txt"
+          {
+            echo "onboarding-quickstart-gate native linux summary"
+            echo "workflow=${GITHUB_WORKFLOW}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "status=completed"
+          } > "${SUMMARY_FILE}"
+
+      - name: Upload native quickstart artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-quickstart-native-linux
+          path: |
+            ${{ runner.temp }}/onboarding-quickstart-native-linux-summary.txt
+          retention-days: 14
+
+  quickstart-linux-ephemeral-container:
+    name: quickstart-container-ephemeral-linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker availability
+        shell: bash
+        run: docker --version
+
+      - name: Run container lane in ephemeral container
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE="ghcr.io/ianfrelinger/nexo-cli:latest"
+          docker pull "${IMAGE}"
+          docker run --rm "${IMAGE}" --help
+          docker run --rm -v "${GITHUB_WORKSPACE}:/work" -w /work "${IMAGE}" --help
+
+      - name: Emit container quickstart summary
+        if: always()
+        shell: bash
+        run: |
+          SUMMARY_FILE="${RUNNER_TEMP}/onboarding-quickstart-container-linux-summary.txt"
+          {
+            echo "onboarding-quickstart-gate container linux summary"
+            echo "workflow=${GITHUB_WORKFLOW}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "status=completed"
+          } > "${SUMMARY_FILE}"
+
+      - name: Upload container quickstart artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: onboarding-quickstart-container-linux
+          path: |
+            ${{ runner.temp }}/onboarding-quickstart-container-linux-summary.txt
+          retention-days: 14

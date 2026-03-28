@@ -9,8 +9,7 @@ public sealed class BootstrapCommand : Command
 {
     public BootstrapCommand() : base("bootstrap", "Linux-first environment bootstrap (check/install dependencies)")
     {
-        AddAlias("doctor");
-
+        AddAlias("doctor-legacy");
         var includeOptionalOpt = new Option<bool>(
             "--include-optional",
             () => false,
@@ -185,7 +184,7 @@ internal static class BootstrapRuntime
             "dotnet",
             ".NET SDK",
             "command -v dotnet",
-            "sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0",
+            "sudo apt-get update && sudo apt-get install -y dotnet-sdk-9.0",
             true,
             false),
         new(

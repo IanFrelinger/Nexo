@@ -43,21 +43,27 @@ These scripts validate/install base dependencies and restore the setup-gate base
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
-bash scripts/setup/setup.sh all
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+bash scripts/install/install.sh --yes
 ```
 
 ```powershell
 git clone https://github.com/IanFrelinger/Nexo.git
 Set-Location Nexo
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
-dotnet build src\Nexo.CLI\Nexo.CLI.csproj --no-restore
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
+```
+
+If you prefer the lower-level setup script flow instead of one-shot installer wrappers:
+
+```bash
+bash scripts/setup/setup.sh all
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 ## 2) Verify CLI is available
 
 ```bash
 dotnet run --project src/Nexo.CLI -- --help
+dotnet run --project src/Nexo.CLI -- doctor --json
 ```
 
 You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, and `orchestrate`.

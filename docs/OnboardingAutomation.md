@@ -48,14 +48,19 @@ These are automated by running container commands directly:
 3. Persisting organization-specific shell/profile env defaults.
 4. Debugging host-specific permission/network constraints.
 
-## Recommended next automation upgrades
+## Recently added automation upgrades
 
-1. Add cross-platform one-shot installers under `scripts/install/` to orchestrate:
+1. Added cross-platform one-shot installers under `scripts/install/` to orchestrate:
    - clone/update repo,
    - setup `apply`/`restore`,
    - CLI build smoke,
    - optional container smoke.
-2. Add `nexo doctor` command that returns a single pass/fail onboarding report.
-3. Add CI gate to validate first-run docs commands end-to-end in ephemeral jobs.
-4. Add non-interactive mode for all bootstrap/install flows by default (`--yes` parity everywhere).
+2. Added `nexo doctor` command with a single pass/fail onboarding summary (machine-readable via `--json`).
+3. Added CI gate (`onboarding-quickstart-gate`) to validate first-run docs commands end-to-end in ephemeral jobs.
+
+## Next recommended upgrades
+
+1. Default all wrappers to non-interactive mode with explicit opt-out (`--yes` parity everywhere).
+2. Add a richer `nexo doctor --fix` mode that can run safe remediations automatically.
+3. Add periodic scheduled onboarding gate runs to detect ecosystem drift early.
 
