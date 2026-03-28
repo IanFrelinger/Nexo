@@ -2,34 +2,43 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_BASE="${NEXO_INSTALL_BASE:-${HOME}/.local/share/nexo}"
-BIN_DIR="${INSTALL_BASE}/bin"
-TARGET_PATH="${BIN_DIR}/nexo"
-SOURCE_BIN_DIR="${SCRIPT_DIR}/bin"
-SOURCE_PATH="${SOURCE_BIN_DIR}/nexo"
+INSTALL_BIN_DIR="${NEXO_INSTALL_BIN:-${HOME}/.local/bin}"
+INSTALL_APP_DIR="${NEXO_INSTALL_APP:-${HOME}/.local/lib/nexo}"
+TARGET_BIN_PATH="${INSTALL_BIN_DIR}/nexo"
+SOURCE_APP_DIR="${SCRIPT_DIR}/app"
+TARGET_APP_BINARY="${INSTALL_APP_DIR}/Nexo.CLI"
 
-if [[ ! -d "${SOURCE_BIN_DIR}" ]]; then
-  echo "Missing bundled app directory at ${SOURCE_BIN_DIR}" >&2
+if [[ ! -d "${SOURCE_APP_DIR}" ]]; then
+  echo "Missing bundled app directory at ${SOURCE_APP_DIR}" >&2
   exit 1
 fi
 
-mkdir -p "${BIN_DIR}"
-cp -R "${SOURCE_BIN_DIR}/." "${BIN_DIR}/"
-chmod +x "${TARGET_PATH}"
+mkdir -p "$(dirname "${INSTALL_APP_DIR}")"
+rm -rf "${INSTALL_APP_DIR}"
+cp -R "${SOURCE_APP_DIR}" "${INSTALL_APP_DIR}"
 
-echo "Installed nexo to ${BIN_DIR}"
+mkdir -p "${INSTALL_BIN_DIR}"
+cat > "${TARGET_BIN_PATH}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "${TARGET_APP_BINARY}" "\$@"
+EOF
+chmod +x "${TARGET_BIN_PATH}"
+
+echo "Installed nexo launcher to ${TARGET_BIN_PATH}"
+echo "Installed app to ${INSTALL_APP_DIR}"
 
 case ":${PATH}:" in
-  *":${BIN_DIR}:"*)
+  *":${INSTALL_BIN_DIR}:"*)
     ;;
   *)
     echo ""
-    echo "PATH update recommended: add ${BIN_DIR}"
+    echo "PATH update recommended: add ${INSTALL_BIN_DIR}"
     echo "Example:"
-    echo "  echo 'export PATH=\"${BIN_DIR}:\$PATH\"' >> \"${HOME}/.bashrc\""
+    echo "  echo 'export PATH=\"${INSTALL_BIN_DIR}:\$PATH\"' >> \"${HOME}/.bashrc\""
     ;;
 esac
 
 echo ""
 echo "Verify with:"
-echo "  ${TARGET_PATH} --help"
+echo "  ${TARGET_BIN_PATH} --help"

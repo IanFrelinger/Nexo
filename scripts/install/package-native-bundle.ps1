@@ -69,10 +69,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 ## What install does
 
-1. Copies the `app` directory to `$HOME\.local\share\nexo`.
-2. Creates/updates a launcher at `$HOME\.local\bin\nexo.ps1`.
-3. Creates/updates a launcher at `$HOME\.local\bin\nexo.cmd`.
-4. Prints PATH guidance if `$HOME\.local\bin` is not currently on PATH.
+1. Copies the `app` directory to `$HOME\.local\share\nexo\app`.
+2. Creates/updates launchers at `$HOME\.local\bin\nexo.ps1` and `$HOME\.local\bin\nexo.cmd`.
+3. Prints PATH guidance if `$HOME\.local\bin` is not currently on PATH.
 
 ## Verify
 
