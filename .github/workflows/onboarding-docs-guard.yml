@@ -28,9 +28,10 @@ jobs:
           set -euo pipefail
 
           # README must include the two-lane framing and concrete commands.
-          rg -n "Quick Start \(5 minutes\): choose your lane" README.md
-          rg -n "Fastest path \(container-first\)" README.md
-          rg -n "Full local development path \(native\)" README.md
+          rg -n "## Quick Start \\(5 minutes\\)" README.md
+          rg -n "Choose your lane \\(recommended\\)" README.md
+          rg -n "Lane A: fastest path \\(container runtime\\)" README.md
+          rg -n "Lane B: full local dev path \\(native SDK\\)" README.md
           rg -n "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help" README.md
           rg -n "bash scripts/setup/setup\.sh all" README.md
           rg -n "dotnet build src/Nexo\.CLI/Nexo\.CLI\.csproj --no-restore" README.md
