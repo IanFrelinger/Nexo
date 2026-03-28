@@ -84,9 +84,10 @@ Each bundle includes:
 
 The bundle installers:
 
-1. Copy the CLI runtime to a user-scoped app path and install a launcher at `$HOME/.local/bin/nexo` (or `nexo.ps1` on Windows).
+1. Copy the CLI runtime to a user-scoped app path and install launchers under `$HOME/.local/bin`.
 2. Keep installation user-scoped (no admin/root required).
-3. Print PATH guidance if `$HOME/.local/bin` is not on PATH.
+3. Auto-update shell profile PATH on Linux/macOS when needed (non-destructive append).
+4. Run a post-install smoke check (`nexo --version`) and exit non-zero on failure.
 
 ## Linux / macOS
 

@@ -17,6 +17,7 @@ $appTargetDir = Join-Path $installBase "app"
 $targetCmdPath = Join-Path $binDir "nexo.cmd"
 $targetPs1Path = Join-Path $binDir "nexo.ps1"
 $targetExe = Join-Path $appTargetDir "Nexo.CLI.exe"
+$pathUpdated = $false
 
 if (-not (Test-Path $appSourceDir)) {
     throw "Missing bundled app directory at $appSourceDir"
@@ -45,11 +46,32 @@ if (-not [string]::IsNullOrWhiteSpace($env:PATH)) {
 
 if (-not ($pathParts -contains $binDir)) {
     Write-Host ""
-    Write-Host "PATH update recommended: add $binDir"
-    Write-Host "Example (current user):"
-    Write-Host "  [Environment]::SetEnvironmentVariable('Path', `$env:Path + ';$binDir', 'User')"
+    $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+    if ([string]::IsNullOrWhiteSpace($userPath)) {
+        [Environment]::SetEnvironmentVariable('Path', $binDir, 'User')
+    }
+    elseif ($userPath.Split(';') -notcontains $binDir) {
+        [Environment]::SetEnvironmentVariable('Path', "$userPath;$binDir", 'User')
+    }
+
+    $env:PATH = "$binDir;$env:PATH"
+    $pathUpdated = $true
+    Write-Host "Added $binDir to the user PATH."
 }
 
 Write-Host ""
 Write-Host "Verify with:"
 Write-Host "  nexo --help"
+
+Write-Host ""
+Write-Host "Running post-install smoke check..."
+& $targetExe --help | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Post-install validation failed. Command exited with code $LASTEXITCODE"
+}
+Write-Host "Post-install smoke check passed."
+
+if ($pathUpdated) {
+    Write-Host ""
+    Write-Host "Open a new terminal to use 'nexo' from PATH everywhere."
+}

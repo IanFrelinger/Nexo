@@ -140,10 +140,10 @@ This bundle contains a self-contained \`nexo\` CLI app directory and an install 
 
 ## What install does
 
-1. Copies \`bin/nexo\` to \`\$HOME/.local/bin/nexo\`.
-2. Copies runtime dependencies to \`\$HOME/.local/lib/nexo\`.
-3. Marks \`nexo\` executable.
-4. Prints PATH guidance if \`\$HOME/.local/bin\` is not currently on PATH.
+1. Copies runtime dependencies to \`\$HOME/.local/lib/nexo\`.
+2. Installs launcher at \`\$HOME/.local/bin/nexo\`.
+3. Adds \`\$HOME/.local/bin\` to your shell profile when needed.
+4. Runs a post-install smoke test (\`nexo --version\`).
 
 ## Verify
 

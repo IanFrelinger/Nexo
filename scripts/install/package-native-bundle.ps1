@@ -67,11 +67,14 @@ This bundle contains a self-contained Nexo CLI app directory and an install wrap
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
+The installer runs a post-install `nexo --help` smoke check and exits non-zero if setup is not usable.
+
 ## What install does
 
 1. Copies the `app` directory to `$HOME\.local\share\nexo\app`.
 2. Creates/updates launchers at `$HOME\.local\bin\nexo.ps1` and `$HOME\.local\bin\nexo.cmd`.
-3. Prints PATH guidance if `$HOME\.local\bin` is not currently on PATH.
+3. Updates the current-user PATH to include `$HOME\.local\bin` when missing.
+4. Prints final verification command and launch paths.
 
 ## Verify
 

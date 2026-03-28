@@ -2,6 +2,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+AUTO_CLOSE=false
+
+for arg in "$@"; do
+  case "${arg}" in
+    --no-pause)
+      AUTO_CLOSE=true
+      ;;
+  esac
+done
 
 echo "============================================="
 echo " Nexo Native Installer (macOS)"
@@ -17,4 +26,6 @@ fi
 
 echo ""
 echo "Install complete."
-read -r -p "Press Enter to close this window..."
+if [[ "${AUTO_CLOSE}" != "true" ]]; then
+  read -r -p "Press Enter to close this window..."
+fi
