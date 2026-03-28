@@ -67,6 +67,16 @@ bash scripts/install/install.sh --yes
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
 ```
 
+Container-first one-shot bootstrap (installs Docker if needed, pulls image, smoke-runs):
+
+```bash
+bash scripts/install/container-bootstrap.sh --yes
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
+```
+
 ### Container image usage (flexible deployability)
 
 Build local CLI image:

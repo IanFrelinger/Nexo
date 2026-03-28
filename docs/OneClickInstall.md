@@ -13,6 +13,45 @@ For Linux, macOS, and Windows installers:
 5. Build CLI (`src/Nexo.CLI/Nexo.CLI.csproj`).
 6. Optionally start `background-agent daemon`.
 
+## One-shot container bootstrap (no native build path)
+
+If you want to run Nexo purely via container, use the container bootstrap wrappers under `scripts/install/`.
+
+### Linux / macOS
+
+Unified entrypoint:
+
+```bash
+bash scripts/install/container-bootstrap.sh --yes
+```
+
+Linux/macOS-specific entrypoints:
+
+```bash
+bash scripts/install/container-bootstrap-linux.sh --yes
+bash scripts/install/container-bootstrap-macos.sh --yes
+```
+
+### Windows PowerShell
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
+```
+
+or:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap-windows.ps1 -Yes
+```
+
+### What the container bootstrap does
+
+1. Ensures Docker is installed (installs if missing when possible).
+2. Ensures Docker daemon is reachable.
+3. Pulls `ghcr.io/ianfrelinger/nexo-cli:latest` (or your `--image` override).
+4. Smoke-runs `docker run --rm <image> --help`.
+5. Optionally validates mount path with `--workspace` and runs the same smoke command in mounted mode.
+
 ## Linux / macOS
 
 Unified entrypoint (auto-detects OS):

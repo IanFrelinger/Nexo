@@ -6,8 +6,9 @@ Use this page as the navigation starting point for docs.
 
 1. `docs/GettingStarted.md` — install, first commands, first pipeline, and first trust checks.
 2. `docs/OneClickInstall.md` — single-command install/bootstrap wrappers for Linux, macOS, and Windows.
-3. `README.md` — quick project overview, examples, and command map.
-4. `docs/Architecture.md` — layered architecture and component boundaries.
+3. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
+4. `README.md` — quick project overview, examples, and command map.
+5. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 
