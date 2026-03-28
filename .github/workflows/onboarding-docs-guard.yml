@@ -34,37 +34,37 @@ jobs:
           set -euo pipefail
 
           # README must include lane-based onboarding and safe build path.
-          rg -n "## Quick Start \(5 minutes\)" README.md
-          rg -n "Choose your lane \(recommended\)" README.md
-          rg -n "Lane A: fastest path \(container runtime\)" README.md
-          rg -n "Lane B: full local dev path \(native SDK\)" README.md
-          rg -n "scripts/install/install\.sh --yes" README.md
-          rg -n "dotnet build src/Nexo\.CLI/Nexo\.CLI\.csproj --no-restore" README.md
+          grep -nE "## Quick Start \\(5 minutes\\)" README.md
+          grep -nE "Choose your lane \\(recommended\\)" README.md
+          grep -nE "Lane A: fastest path \\(container runtime\\)" README.md
+          grep -nE "Lane B: full local dev path \\(native SDK\\)" README.md
+          grep -nE "scripts/install/install\\.sh --yes" README.md
+          grep -nE "dotnet build src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" README.md
 
-          if rg -n "dotnet build Nexo\.sln" README.md >/dev/null 2>&1; then
+          if grep -nE "dotnet build Nexo\\.sln" README.md >/dev/null 2>&1; then
             echo "README.md should not recommend 'dotnet build Nexo.sln' in onboarding paths."
             exit 1
           fi
 
           # GettingStarted should include lane + install wrappers + doctor.
-          rg -n "Lane A \(fastest\): container-first" docs/GettingStarted.md
-          rg -n "scripts/install/install\.sh --yes" docs/GettingStarted.md
-          rg -n "dotnet run --project src/Nexo.CLI -- doctor --json" docs/GettingStarted.md
-          rg -n "dotnet build src/Nexo\.CLI/Nexo\.CLI\.csproj --no-restore" docs/GettingStarted.md
+          grep -nE "Lane A \\(fastest\\): container-first" docs/GettingStarted.md
+          grep -nE "scripts/install/install\\.sh --yes" docs/GettingStarted.md
+          grep -nE "dotnet run --project src/Nexo\\.CLI -- doctor --json" docs/GettingStarted.md
+          grep -nE "dotnet build src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" docs/GettingStarted.md
 
-          if rg -n "^dotnet build Nexo\.sln$" docs/GettingStarted.md >/dev/null 2>&1; then
+          if grep -nE "^dotnet build Nexo\\.sln$" docs/GettingStarted.md >/dev/null 2>&1; then
             echo "docs/GettingStarted.md should not include 'dotnet build Nexo.sln' as a runnable command."
             exit 1
           fi
 
           # OneClickInstall must include platform wrappers.
-          rg -n "scripts/install/install\.sh" docs/OneClickInstall.md
-          rg -n "scripts/install/install\.ps1" docs/OneClickInstall.md
+          grep -nE "scripts/install/install\\.sh" docs/OneClickInstall.md
+          grep -nE "scripts/install/install\\.ps1" docs/OneClickInstall.md
 
           # Docs index must route users correctly.
-          rg -n "docs/GettingStarted\.md" docs/DocsIndex.md
-          rg -n "scripts/setup/setup\.sh" docs/DocsIndex.md
-          rg -n "onboarding-quickstart-gate\.yml" docs/DocsIndex.md
+          grep -nE "docs/GettingStarted\\.md" docs/DocsIndex.md
+          grep -nE "scripts/setup/setup\\.sh" docs/DocsIndex.md
+          grep -nE "onboarding-quickstart-gate\\.yml" docs/DocsIndex.md
 
       - name: Emit onboarding docs guard summary
         if: always()
