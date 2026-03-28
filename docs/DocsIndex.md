@@ -5,8 +5,9 @@ Use this page as the navigation starting point for docs.
 ## Start Here
 
 1. `docs/GettingStarted.md` — install, first commands, first pipeline, and first trust checks.
-2. `README.md` — quick project overview, examples, and command map.
-3. `docs/Architecture.md` — layered architecture and component boundaries.
+2. `docs/OneClickInstall.md` — single-command install/bootstrap wrappers for Linux, macOS, and Windows.
+3. `README.md` — quick project overview, examples, and command map.
+4. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 

@@ -9,11 +9,13 @@ on:
     paths:
       - "README.md"
       - "docs/GettingStarted.md"
+      - "docs/OneClickInstall.md"
       - ".github/workflows/onboarding-docs-guard.yml"
   pull_request:
     paths:
       - "README.md"
       - "docs/GettingStarted.md"
+      - "docs/OneClickInstall.md"
       - ".github/workflows/onboarding-docs-guard.yml"
   workflow_dispatch:
 
@@ -32,6 +34,7 @@ jobs:
           # README must direct first-run setup through setup scripts + CLI project build.
           grep -nE "bash scripts/setup/setup\\.sh all" README.md
           grep -nE "dotnet build src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" README.md
+          grep -nE "scripts/install/install\\.sh --yes" README.md
 
           # GettingStarted must not instruct solution build as a command block.
           if grep -nE "^dotnet build Nexo\\.sln$" docs/GettingStarted.md >/dev/null 2>&1; then
@@ -42,4 +45,8 @@ jobs:
           # GettingStarted should include the setup-script-first path.
           grep -nE "scripts/setup/setup\\.sh all" docs/GettingStarted.md
           grep -nE "dotnet build src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" docs/GettingStarted.md
+
+          # OneClickInstall should include platform wrappers.
+          grep -nE "scripts/install/install\\.sh" docs/OneClickInstall.md
+          grep -nE "scripts/install/install\\.ps1" docs/OneClickInstall.md
 

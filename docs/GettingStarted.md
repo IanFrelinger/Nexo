@@ -42,6 +42,20 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
 powershell -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 ```
 
+## 2b) One-click installer wrappers (Option 1)
+
+If you want a single-command bootstrap that clones/updates repo + setup + restore + CLI build:
+
+```bash
+# Linux/macOS unified entrypoint
+bash scripts/install/install.sh --yes
+```
+
+```powershell
+# Windows PowerShell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
+```
+
 ## 3) Build only the CLI project (workload-safe baseline)
 
 `Nexo.sln` includes mobile projects that may require platform workloads (`maui-android`, etc.). For first run, build the CLI path first:

@@ -49,6 +49,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 
 Ephemeral setup validation also runs in CI via `environment-setup-gate-v1`, including disposable Linux container jobs that execute setup checks in fresh environments.
 
+### One-click bootstrap installers (Option 1)
+
+For single-command install/bootstrap wrappers, see:
+
+- `docs/OneClickInstall.md`
+
+Quick examples:
+
+```bash
+bash scripts/install/install.sh --yes
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
+```
+
 ### Container image usage (flexible deployability)
 
 Build local CLI image:
@@ -220,6 +236,7 @@ Core references:
 - `docs/TrustAndInformationArchitecture.md` – trust model, barriers, audit
 - `docs/ProductionReadinessGate-v1.md` – production gate procedure
 - `docs/EnvironmentSetupGate-v1.md` – cross-platform dependency/bootstrap gate
+- `docs/OneClickInstall.md` – single-command install/bootstrap wrappers for Linux/macOS/Windows
 - `docs/ReleaseCandidateChecklist-v1.md` – RC readiness checklist
 
 ## Trust Notes
