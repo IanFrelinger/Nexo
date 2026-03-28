@@ -32,7 +32,7 @@ if [[ ! -f "${REPO_ROOT}/scripts/install/install-macos.sh" ]]; then
 fi
 
 EXIT_CODE=0
-if ! bash "${REPO_ROOT}/scripts/install/install-macos.sh" --yes --hero "${FORWARD_ARGS[@]}"; then
+if ! bash "${REPO_ROOT}/scripts/install/install-macos.sh" --yes --hero --no-dev-deps "${FORWARD_ARGS[@]}"; then
   EXIT_CODE=$?
   echo ""
   echo "Setup finished with errors. Scroll up in this window for details."

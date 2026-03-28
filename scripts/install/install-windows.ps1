@@ -8,6 +8,7 @@ param(
     [switch]$SkipBuild,
     [switch]$StartDaemon,
     [string]$DaemonDuration,
+    [switch]$Hero,
     [switch]$DryRun
 )
 
@@ -32,6 +33,7 @@ if ($Yes) { $invokeArgs += "-Yes" }
 if ($SkipBuild) { $invokeArgs += "-SkipBuild" }
 if ($StartDaemon) { $invokeArgs += "-StartDaemon" }
 if (-not [string]::IsNullOrWhiteSpace($DaemonDuration)) { $invokeArgs += @("-DaemonDuration", $DaemonDuration) }
+if ($Hero) { $invokeArgs += "-Hero" }
 if ($DryRun) { $invokeArgs += "-DryRun" }
 
 & powershell @invokeArgs

@@ -8,10 +8,10 @@ For Linux, macOS, and Windows installers:
 
 1. Clone or update the Nexo repo.
 2. Ensure `.NET SDK 9` is installed/configured for the current session (installer wrapper responsibility).
-3. Run platform dependency setup (`scripts/setup/setup.*` in `apply` mode).
-4. Run restore for baseline project graph.
+3. Ensure `.NET SDK 9` is present and configured for the current shell/user.
+4. Restore baseline project graph.
 5. Build CLI (`src/Nexo.CLI/Nexo.CLI.csproj`).
-6. Optionally start `background-agent daemon`.
+6. Optionally run full first-user "hero" checks (`--hero`) and then start `background-agent daemon`.
 
 ## One-shot container bootstrap (no native build path)
 
@@ -76,6 +76,12 @@ Linux-specific entrypoint:
 bash scripts/install/install-linux.sh --yes
 ```
 
+Linux non-CLI one-click launcher:
+
+```bash
+bash scripts/install/nexo-zero-to-hero-linux.sh
+```
+
 macOS-specific entrypoint:
 
 ```bash
@@ -98,6 +104,12 @@ Windows wrapper alias:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install-windows.ps1 -Yes
 ```
 
+Windows non-CLI one-click launcher:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\nexo-zero-to-hero-windows.ps1
+```
+
 ## Common options
 
 All installer entrypoints support equivalent options:
@@ -108,6 +120,7 @@ All installer entrypoints support equivalent options:
 - `--include-optional` / `-IncludeOptional` — install optional deps (Docker/Ollama) if missing.
 - `--yes` / `-Yes` — auto-confirm dependency install prompts.
 - `--skip-build` / `-SkipBuild` — skip CLI build after restore.
+- `--hero` / `-Hero` — run first-user checks (`--help`, `doctor --json`, quickstart pipeline validate/run/diagnostics).
 - `--start-daemon` / `-StartDaemon` — start `background-agent daemon` after setup.
 - `--daemon-duration` / `-DaemonDuration` — bound daemon runtime (e.g. `30s`, `5m`).
 - `--dry-run` / `-DryRun` — print planned actions without changing system state.
@@ -120,10 +133,22 @@ Install into custom path and run daemon for 30 seconds:
 bash scripts/install/install.sh --install-dir "$HOME/NexoProd" --yes --start-daemon --daemon-duration 30s
 ```
 
-Run complete zero-to-hero macOS flow (install + doctor + pipeline validate):
+Run complete zero-to-hero macOS flow (install + doctor + pipeline validate/run):
 
 ```bash
 bash scripts/install/install-macos.sh --yes --hero
+```
+
+Run complete zero-to-hero Linux flow:
+
+```bash
+bash scripts/install/install-linux.sh --yes --hero
+```
+
+Run complete zero-to-hero Windows flow:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes -Hero
 ```
 
 PowerShell equivalent:

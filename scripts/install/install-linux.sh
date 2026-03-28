@@ -9,10 +9,10 @@ INSTALL_DIR="${DEFAULT_INSTALL_DIR}"
 BRANCH=""
 START_DAEMON=false
 DAEMON_DURATION=""
-INCLUDE_OPTIONAL=false
 YES=false
 DRY_RUN=false
 SKIP_BUILD=false
+RUN_HERO=false
 
 usage() {
   echo "Usage: scripts/install/install-linux.sh [options]"
@@ -21,11 +21,11 @@ usage() {
   echo "  --repo-url <url>          Git repository URL (default: ${DEFAULT_REPO_URL})"
   echo "  --install-dir <path>      Installation directory (default: ${DEFAULT_INSTALL_DIR})"
   echo "  --branch <name>           Optional git branch/tag to checkout"
-  echo "  --include-optional        Include optional dependencies during setup"
   echo "  --yes                     Auto-confirm setup dependency installation prompts"
   echo "  --skip-build              Skip 'dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore'"
   echo "  --start-daemon            Start background-agent daemon after install"
   echo "  --daemon-duration <dur>   Daemon run duration (e.g. 30s, 5m). Omit to run until Ctrl+C"
+  echo "  --hero                    Run onboarding checks and a first pipeline after install"
   echo "  --dry-run                 Print actions without executing"
   echo "  -h, --help                Show help"
 }
@@ -60,9 +60,6 @@ while [[ $# -gt 0 ]]; do
       BRANCH="$2"
       shift
       ;;
-    --include-optional)
-      INCLUDE_OPTIONAL=true
-      ;;
     --yes)
       YES=true
       ;;
@@ -76,6 +73,9 @@ while [[ $# -gt 0 ]]; do
       require_value "$1" "${2:-}"
       DAEMON_DURATION="$2"
       shift
+      ;;
+    --hero)
+      RUN_HERO=true
       ;;
     --dry-run)
       DRY_RUN=true
@@ -242,22 +242,9 @@ sync_repo() {
   fi
 }
 
-run_setup_apply() {
+run_restore() {
   local target_dir="$1"
-  local setup_args=(scripts/setup/setup.sh apply)
-  if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
-    setup_args+=(--include-optional)
-  fi
-  if [[ "${YES}" == "true" ]]; then
-    setup_args+=(--yes)
-  fi
-
-  run_in_repo "${target_dir}" bash "${setup_args[@]}"
-}
-
-run_setup_restore() {
-  local target_dir="$1"
-  run_in_repo "${target_dir}" bash scripts/setup/setup.sh restore
+  run_in_repo "${target_dir}" dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
 }
 
 run_build() {
@@ -279,6 +266,46 @@ start_daemon() {
     daemon_args+=(--duration "${DAEMON_DURATION}")
   fi
   run_in_repo "${target_dir}" dotnet "${daemon_args[@]}"
+}
+
+run_hero_flow() {
+  local target_dir="$1"
+  if [[ "${RUN_HERO}" != "true" ]]; then
+    return
+  fi
+
+  if [[ "${DRY_RUN}" == "true" ]]; then
+    echo "[dry-run] (cd \"${target_dir}\" && dotnet run --project src/Nexo.CLI -- --help)"
+    echo "[dry-run] (cd \"${target_dir}\" && dotnet run --project src/Nexo.CLI -- doctor --json)"
+    echo "[dry-run] create quickstart template and run pipeline validate/run/diagnostics"
+    return
+  fi
+
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+  trap 'rm -rf "${tmp_dir}"' RETURN
+
+  local template_path="${tmp_dir}/nexo_quickstart.json"
+  cat > "${template_path}" <<'JSON'
+{
+  "templateId": "quickstart",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+
+  local run_id="hero-$(date +%s)"
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- --help
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- doctor --json
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- pipeline validate --template "${template_path}"
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- pipeline run --template "${template_path}" --run-id "${run_id}" --format-json
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
 }
 
 print_next_steps() {
@@ -305,10 +332,10 @@ main() {
   fi
 
   sync_repo "${INSTALL_DIR}"
-  run_setup_apply "${INSTALL_DIR}"
   ensure_dotnet_ready
-  run_setup_restore "${INSTALL_DIR}"
+  run_restore "${INSTALL_DIR}"
   run_build "${INSTALL_DIR}"
+  run_hero_flow "${INSTALL_DIR}"
   start_daemon "${INSTALL_DIR}"
   print_next_steps "${INSTALL_DIR}"
 }

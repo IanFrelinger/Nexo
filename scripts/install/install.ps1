@@ -3,11 +3,11 @@ param(
     [string]$RepoUrl = "https://github.com/IanFrelinger/Nexo.git",
     [string]$InstallDir = "$HOME\Nexo",
     [string]$Branch,
-    [switch]$IncludeOptional,
     [switch]$Yes,
     [switch]$SkipBuild,
     [switch]$StartDaemon,
     [string]$DaemonDuration,
+    [switch]$Hero,
     [switch]$DryRun
 )
 
@@ -107,12 +107,51 @@ function Sync-Repo {
 function Run-Setup {
     param([Parameter(Mandatory = $true)][string]$TargetDir)
 
-    $setupArgs = "-Mode apply"
-    if ($IncludeOptional.IsPresent) { $setupArgs += " -IncludeOptional" }
-    if ($Yes.IsPresent) { $setupArgs += " -Yes" }
-
-    Invoke-Step "Set-Location \"$TargetDir\"; powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 $setupArgs"
     Invoke-Step "Set-Location \"$TargetDir\"; powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore"
+}
+
+function Run-HeroFlow {
+    param([Parameter(Mandatory = $true)][string]$TargetDir)
+
+    if (-not $Hero.IsPresent) {
+        return
+    }
+
+    if ($DryRun.IsPresent) {
+        Write-Host "[dry-run] Set-Location ""$TargetDir""; dotnet run --project src\Nexo.CLI -- --help"
+        Write-Host "[dry-run] Set-Location ""$TargetDir""; dotnet run --project src\Nexo.CLI -- doctor --json"
+        Write-Host "[dry-run] create quickstart template and run pipeline validate/run/diagnostics"
+        return
+    }
+
+    $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("nexo-hero-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Path $tmpDir -Force | Out-Null
+    try {
+        $templatePath = Join-Path $tmpDir "nexo_quickstart.json"
+        @'
+{
+  "templateId": "quickstart",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+'@ | Set-Content -Path $templatePath -NoNewline
+
+        $runId = "hero-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
+        Invoke-Step "Set-Location ""$TargetDir""; dotnet run --project src\Nexo.CLI -- --help"
+        Invoke-Step "Set-Location ""$TargetDir""; dotnet run --project src\Nexo.CLI -- doctor --json"
+        Invoke-Step "Set-Location ""$TargetDir""; dotnet run --project src\Nexo.CLI -- pipeline validate --template ""$templatePath"""
+        Invoke-Step "Set-Location ""$TargetDir""; dotnet run --project src\Nexo.CLI -- pipeline run --template ""$templatePath"" --run-id $runId --format-json"
+        Invoke-Step "Set-Location ""$TargetDir""; dotnet run --project src\Nexo.CLI -- pipeline diagnostics --format-json"
+    }
+    finally {
+        Remove-Item -Path $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Run-Build {
@@ -171,5 +210,6 @@ if (-not [string]::IsNullOrWhiteSpace($Branch)) {
 Sync-Repo -TargetDir $expandedInstallDir
 Run-Setup -TargetDir $expandedInstallDir
 Run-Build -TargetDir $expandedInstallDir
+Run-HeroFlow -TargetDir $expandedInstallDir
 Run-Daemon -TargetDir $expandedInstallDir
 Print-NextSteps -TargetDir $expandedInstallDir
