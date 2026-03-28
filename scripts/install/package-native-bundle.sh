@@ -93,6 +93,7 @@ dotnet publish "${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj" \
   -r "${RID}" \
   --self-contained true \
   -p:IncludeTestProjectReferences=false \
+  -p:ErrorOnDuplicatePublishOutputFiles=false \
   -o "${publish_dir}"
 
 source_binary="${publish_dir}/Nexo.CLI"

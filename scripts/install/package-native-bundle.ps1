@@ -34,6 +34,7 @@ try {
         -r $Rid `
         --self-contained true `
         -p:IncludeTestProjectReferences=false `
+        -p:ErrorOnDuplicatePublishOutputFiles=false `
         -o $publishDir
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet publish failed with exit code $LASTEXITCODE"
