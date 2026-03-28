@@ -52,6 +52,13 @@ Set-Location Nexo
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
 ```
 
+macOS "zero-to-hero" one-click launcher (double-click in Finder):
+
+```bash
+chmod +x scripts/install/nexo-zero-to-hero-macos.command
+open scripts/install/nexo-zero-to-hero-macos.command
+```
+
 If you prefer the lower-level setup script flow instead of one-shot installer wrappers:
 
 ```bash

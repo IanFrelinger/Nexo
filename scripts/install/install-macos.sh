@@ -13,6 +13,7 @@ INCLUDE_OPTIONAL=false
 YES=false
 DRY_RUN=false
 SKIP_BUILD=false
+RUN_HERO=false
 
 usage() {
   echo "Usage: scripts/install/install-macos.sh [options]"
@@ -26,6 +27,7 @@ usage() {
   echo "  --skip-build              Skip 'dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore'"
   echo "  --start-daemon            Start background-agent daemon after install"
   echo "  --daemon-duration <dur>   Daemon run duration (e.g. 30s, 5m). Omit to run until Ctrl+C"
+  echo "  --hero                    Run onboarding checks and a first pipeline after install"
   echo "  --dry-run                 Print actions without executing"
   echo "  -h, --help                Show help"
 }
@@ -76,6 +78,9 @@ while [[ $# -gt 0 ]]; do
       require_value "$1" "${2:-}"
       DAEMON_DURATION="$2"
       shift
+      ;;
+    --hero)
+      RUN_HERO=true
       ;;
     --dry-run)
       DRY_RUN=true
@@ -197,6 +202,46 @@ start_daemon() {
   run_in_repo "${target_dir}" dotnet "${daemon_args[@]}"
 }
 
+run_hero_flow() {
+  local target_dir="$1"
+  if [[ "${RUN_HERO}" != "true" ]]; then
+    return
+  fi
+
+  if [[ "${DRY_RUN}" == "true" ]]; then
+    echo "[dry-run] (cd \"${target_dir}\" && dotnet run --project src/Nexo.CLI -- --help)"
+    echo "[dry-run] (cd \"${target_dir}\" && dotnet run --project src/Nexo.CLI -- doctor --json)"
+    echo "[dry-run] create quickstart template and run pipeline validate/run/diagnostics"
+    return
+  fi
+
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+  trap 'rm -rf "${tmp_dir}"' RETURN
+
+  local template_path="${tmp_dir}/nexo_quickstart.json"
+  cat > "${template_path}" <<'JSON'
+{
+  "templateId": "quickstart",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
+
+  local run_id="hero-$(date +%s)"
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- --help
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- doctor --json
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- pipeline validate --template "${template_path}"
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- pipeline run --template "${template_path}" --run-id "${run_id}" --format-json
+  run_in_repo "${target_dir}" dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
+}
+
 print_next_steps() {
   local target_dir="$1"
   echo ""
@@ -224,6 +269,7 @@ main() {
   ensure_dotnet_sdk9 "${INSTALL_DIR}"
   run_setup "${INSTALL_DIR}"
   run_build "${INSTALL_DIR}"
+  run_hero_flow "${INSTALL_DIR}"
   start_daemon "${INSTALL_DIR}"
   print_next_steps "${INSTALL_DIR}"
 }

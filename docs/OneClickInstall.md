@@ -62,6 +62,14 @@ Unified entrypoint (auto-detects OS):
 bash scripts/install/install.sh --yes
 ```
 
+macOS non-CLI one-click launcher (double-click in Finder):
+
+```bash
+scripts/install/nexo-zero-to-hero-macos.command
+```
+
+This launcher opens Terminal, runs install + doctor + quickstart pipeline validation, and leaves a success/failure summary on screen.
+
 Linux-specific entrypoint:
 
 ```bash
@@ -110,6 +118,12 @@ Install into custom path and run daemon for 30 seconds:
 
 ```bash
 bash scripts/install/install.sh --install-dir "$HOME/NexoProd" --yes --start-daemon --daemon-duration 30s
+```
+
+Run complete zero-to-hero macOS flow (install + doctor + pipeline validate):
+
+```bash
+bash scripts/install/install-macos.sh --yes --hero
 ```
 
 PowerShell equivalent:
