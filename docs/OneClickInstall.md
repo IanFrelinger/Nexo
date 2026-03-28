@@ -7,11 +7,10 @@ This guide provides single-command install/bootstrap paths for each platform usi
 For Linux, macOS, and Windows installers:
 
 1. Clone or update the Nexo repo.
-2. Ensure `.NET SDK 9` is installed/configured for the current session (installer wrapper responsibility).
-3. Ensure `.NET SDK 9` is present and configured for the current shell/user.
-4. Restore baseline project graph.
-5. Build CLI (`src/Nexo.CLI/Nexo.CLI.csproj`).
-6. Optionally run full first-user "hero" checks (`--hero`) and then start `background-agent daemon`.
+2. Verify `.NET SDK 9+` is already installed (no auto-install is performed).
+3. Run setup preflight checks (`scripts/setup/setup.* check`) and restore baseline project graph.
+4. Build CLI (`src/Nexo.CLI/Nexo.CLI.csproj`).
+5. Optionally run full first-user "hero" checks (`--hero`) and then start `background-agent daemon`.
 
 ## One-shot container bootstrap (no native build path)
 
@@ -117,7 +116,6 @@ All installer entrypoints support equivalent options:
 - `--repo-url` / `-RepoUrl` — override repo URL.
 - `--install-dir` / `-InstallDir` — install target path.
 - `--branch` / `-Branch` — checkout a branch/tag after clone.
-- `--include-optional` / `-IncludeOptional` — install optional deps (Docker/Ollama) if missing.
 - `--yes` / `-Yes` — auto-confirm dependency install prompts.
 - `--skip-build` / `-SkipBuild` — skip CLI build after restore.
 - `--hero` / `-Hero` — run first-user checks (`--help`, `doctor --json`, quickstart pipeline validate/run/diagnostics).

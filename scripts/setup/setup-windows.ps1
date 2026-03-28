@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 [CmdletBinding()]
 param(
-    [ValidateSet("check", "apply", "restore", "all")]
+    [ValidateSet("check", "restore", "all", "apply")]
     [string]$Mode = "check",
     [switch]$IncludeOptional,
     [switch]$Yes
@@ -75,7 +75,7 @@ function Ensure-RepoFiles {
 function Invoke-Restore {
     Ensure-RepoFiles
     if (-not (Test-CommandExists -Name "dotnet")) {
-        throw "dotnet not found. Run apply first."
+        throw "dotnet not found. Install .NET SDK 9+ via your IDE, then re-run setup check/restore."
     }
 
     $restoreTargets = @(
@@ -133,65 +133,38 @@ function Invoke-DependencyCheck {
     }
 
     if ($missingRequired.Count -gt 0) {
+        foreach ($dep in $missingRequired) {
+            switch ($dep) {
+                "git" { Write-Host "  - Install Git via your IDE or system installer." }
+                "curl" { Write-Host "  - Install curl via system tooling." }
+                "dotnet" { Write-Host "  - Install .NET SDK 9+ via your IDE installer (recommended)." }
+                default { Write-Host "  - Install $dep manually." }
+            }
+        }
         throw "Missing required dependencies: $($missingRequired -join ', ')"
     }
 
     if ($IncludeOptional.IsPresent -and $missingOptional.Count -gt 0) {
+        foreach ($dep in $missingOptional) {
+            switch ($dep) {
+                "docker" { Write-Host "  - Install Docker Desktop manually if needed." }
+                "ollama" { Write-Host "  - Install Ollama manually if needed." }
+                default { Write-Host "  - Install $dep manually." }
+            }
+        }
         throw "Missing optional dependencies (requested): $($missingOptional -join ', ')"
     }
 
     Write-Host "Dependency check passed."
 }
 
-function Invoke-DependencyInstall {
-    $missingRequired = New-Object System.Collections.Generic.List[string]
-    $missingOptional = New-Object System.Collections.Generic.List[string]
-
-    if (-not (Test-CommandExists -Name "git")) { $missingRequired.Add("git") }
-    if (-not (Test-CommandExists -Name "curl")) { $missingRequired.Add("curl") }
-    if (-not (Test-SupportedDotnet)) { $missingRequired.Add("dotnet") }
-
-    if ($IncludeOptional.IsPresent) {
-        if (-not (Test-CommandExists -Name "docker")) { $missingOptional.Add("docker") }
-        if (-not (Test-CommandExists -Name "ollama")) { $missingOptional.Add("ollama") }
-    }
-
-    if ($missingRequired.Count -eq 0 -and $missingOptional.Count -eq 0) {
-        Write-Host "No dependencies to install."
-        return
-    }
-
-    Write-Host "Install plan:"
-    foreach ($dep in $missingRequired) { Write-Host "  - required: $dep" }
-    foreach ($dep in $missingOptional) { Write-Host "  - optional: $dep" }
-
-    if (-not $Yes.IsPresent) {
-        $answer = Read-Host "Proceed with installation? [y/N]"
-        if ($answer -notin @("y", "Y")) {
-            throw "Cancelled."
-        }
-    }
-
-    if (-not (Test-Admin)) {
-        throw "Installation requires elevated PowerShell (Run as Administrator)."
-    }
-
-    foreach ($dep in $missingRequired) {
-        switch ($dep) {
-            "git" { Install-WingetPackage -Id "Git.Git" -DisplayName "Git" }
-            "curl" { Install-WingetPackage -Id "cURL.cURL" -DisplayName "curl" }
-            "dotnet" { Install-WingetPackage -Id "Microsoft.DotNet.SDK.9" -DisplayName ".NET SDK 9" }
-            default { throw "Unsupported required dependency: $dep" }
-        }
-    }
-
-    foreach ($dep in $missingOptional) {
-        switch ($dep) {
-            "docker" { Install-WingetPackage -Id "Docker.DockerDesktop" -DisplayName "Docker Desktop" }
-            "ollama" { Install-WingetPackage -Id "Ollama.Ollama" -DisplayName "Ollama" }
-            default { Write-Warning "Unsupported optional dependency: $dep" }
-        }
-    }
+function Disable-ApplyMode {
+    throw @"
+Mode 'apply' has been removed.
+This repository no longer auto-installs host dependencies from setup scripts.
+Install prerequisites via your IDE/system installer, then run:
+  .\scripts\setup\setup.ps1 -Mode check
+"@
 }
 
 Ensure-Windows
@@ -201,8 +174,7 @@ switch ($Mode) {
         Invoke-DependencyCheck
     }
     "apply" {
-        Invoke-DependencyInstall
-        Invoke-DependencyCheck
+        Disable-ApplyMode
     }
     "restore" {
         Invoke-Restore

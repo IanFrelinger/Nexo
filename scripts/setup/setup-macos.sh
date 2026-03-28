@@ -8,10 +8,12 @@ MODE="${1:-check}"
 shift || true
 
 INCLUDE_OPTIONAL=false
-YES=false
 
 usage() {
-  echo "Usage: scripts/setup/setup-macos.sh <check|apply|restore|all> [--include-optional] [--yes]"
+  echo "Usage: scripts/setup/setup-macos.sh <check|restore|all|apply> [--include-optional]"
+  echo ""
+  echo "Notes:"
+  echo "  - 'apply' mode is intentionally disabled; install host dependencies via IDE/system package manager."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -20,7 +22,7 @@ while [[ $# -gt 0 ]]; do
       INCLUDE_OPTIONAL=true
       ;;
     --yes)
-      YES=true
+      # Backward-compatible no-op: this script no longer installs dependencies.
       ;;
     -h|--help)
       usage
@@ -93,7 +95,7 @@ ensure_repo_files() {
 run_restore() {
   ensure_repo_files
   if ! has_command dotnet; then
-    echo "dotnet not found. Run apply first." >&2
+    echo "dotnet not found. Install .NET SDK 9+ via your IDE, then re-run setup check/restore." >&2
     return 1
   fi
 
@@ -161,105 +163,43 @@ check_dependencies() {
 
   if [[ "${#missing_required[@]}" -gt 0 ]]; then
     echo "Missing required dependencies: ${missing_required[*]}" >&2
+    for dep in "${missing_required[@]}"; do
+      echo "  - $(print_missing_guidance "${dep}")" >&2
+    done
     return 1
   fi
 
   if [[ "${INCLUDE_OPTIONAL}" == "true" && "${#missing_optional[@]}" -gt 0 ]]; then
     echo "Missing optional dependencies (requested): ${missing_optional[*]}" >&2
+    for dep in "${missing_optional[@]}"; do
+      echo "  - $(print_missing_guidance "${dep}")" >&2
+    done
     return 1
   fi
 
   echo "Dependency check passed."
 }
 
-ensure_homebrew() {
-  if has_command brew; then
-    return 0
-  fi
-
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-  if [[ -x /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [[ -x /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
-  fi
+print_missing_guidance() {
+  local dep="$1"
+  case "${dep}" in
+    git) echo "Install Git using Xcode Command Line Tools, Homebrew, or your IDE tooling." ;;
+    curl) echo "Install curl using your system package manager." ;;
+    brew) echo "Install Homebrew from https://brew.sh/." ;;
+    dotnet) echo "Install .NET SDK 9+ using your IDE installer (recommended)." ;;
+    docker) echo "Install Docker Desktop manually if you need container workflows." ;;
+    ollama) echo "Install Ollama manually if you need local model execution." ;;
+    zstd) echo "Install zstd manually if required by your workload." ;;
+    *) echo "Install ${dep} manually." ;;
+  esac
 }
 
-install_missing_dependencies() {
-  local missing_required=()
-  local missing_optional=()
-
-  if ! has_command git; then missing_required+=("git"); fi
-  if ! has_command curl; then missing_required+=("curl"); fi
-  if ! has_command brew; then missing_required+=("brew"); fi
-  if ! has_supported_dotnet; then missing_required+=("dotnet"); fi
-  if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
-    if ! has_command docker; then missing_optional+=("docker"); fi
-    if ! has_command ollama; then missing_optional+=("ollama"); fi
-    if ! has_command zstd; then missing_optional+=("zstd"); fi
-  fi
-
-  if [[ "${#missing_required[@]}" -eq 0 && "${#missing_optional[@]}" -eq 0 ]]; then
-    echo "No dependencies to install."
-    return 0
-  fi
-
-  echo "Install plan:"
-  for dep in "${missing_required[@]}"; do
-    echo "  - required: ${dep}"
-  done
-  for dep in "${missing_optional[@]}"; do
-    echo "  - optional: ${dep}"
-  done
-
-  if [[ "${YES}" != "true" ]]; then
-    read -r -p "Proceed with installation? [y/N]: " answer
-    if [[ "${answer}" != "y" && "${answer}" != "Y" ]]; then
-      echo "Cancelled."
-      return 130
-    fi
-  fi
-
-  ensure_homebrew
-
-  for dep in "${missing_required[@]}"; do
-    case "${dep}" in
-      git)
-        brew install git
-        ;;
-      curl)
-        brew install curl
-        ;;
-      brew)
-        # Already handled by ensure_homebrew.
-        ;;
-      dotnet)
-        brew install --cask dotnet-sdk
-        ;;
-      *)
-        echo "Unsupported required dependency: ${dep}" >&2
-        return 1
-        ;;
-    esac
-  done
-
-  for dep in "${missing_optional[@]}"; do
-    case "${dep}" in
-      docker)
-        brew install --cask docker
-        ;;
-      ollama)
-        brew install ollama
-        ;;
-      zstd)
-        brew install zstd
-        ;;
-      *)
-        echo "Unsupported optional dependency: ${dep}" >&2
-        ;;
-    esac
-  done
+disable_apply_mode() {
+  echo "Mode 'apply' has been removed." >&2
+  echo "This repository no longer auto-installs host dependencies from setup scripts." >&2
+  echo "Install prerequisites via your IDE or system package manager, then run:" >&2
+  echo "  bash scripts/setup/setup-macos.sh check" >&2
+  exit 2
 }
 
 main() {
@@ -269,8 +209,7 @@ main() {
       check_dependencies
       ;;
     apply)
-      install_missing_dependencies
-      check_dependencies
+      disable_apply_mode
       ;;
     restore)
       run_restore

@@ -105,99 +105,22 @@ expand_install_dir() {
   fi
 }
 
-dotnet_major() {
-  if ! command -v dotnet >/dev/null 2>&1; then
-    echo "0"
-    return
-  fi
-
-  local version
-  version="$(dotnet --version 2>/dev/null || true)"
-  if [[ -z "${version}" ]]; then
-    echo "0"
-    return
-  fi
-
-  echo "${version%%.*}"
-}
-
-has_supported_dotnet() {
-  local major
-  major="$(dotnet_major)"
-  [[ "${major}" -ge 9 ]]
-}
-
-configure_dotnet_env() {
-  if [[ -x "${HOME}/.dotnet/dotnet" ]]; then
-    export DOTNET_ROOT="${HOME}/.dotnet"
-    export PATH="${DOTNET_ROOT}:${DOTNET_ROOT}/tools:${PATH}"
-  fi
-}
-
-persist_dotnet_env() {
-  local profile_path="${HOME}/.bashrc"
-  local marker="# nexo-dotnet-env"
-  local block="${marker}
-export DOTNET_ROOT=\"${HOME}/.dotnet\"
-export PATH=\"\${DOTNET_ROOT}:\${DOTNET_ROOT}/tools:\${PATH}\""
-
-  if [[ "${DRY_RUN}" == "true" ]]; then
-    echo "[dry-run] ensure DOTNET_ROOT and PATH persisted in ${profile_path}"
-    return
-  fi
-
-  if [[ ! -f "${profile_path}" ]]; then
-    printf '%s\n' "${block}" >> "${profile_path}"
-    return
-  fi
-
-  if grep -Fq "${marker}" "${profile_path}"; then
-    return
-  fi
-
-  printf '\n%s\n' "${block}" >> "${profile_path}"
-}
-
-install_dotnet_user_local() {
-  local install_script
-  install_script="$(mktemp)"
-
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${install_script}"
-  elif command -v wget >/dev/null 2>&1; then
-    wget -qO "${install_script}" https://dot.net/v1/dotnet-install.sh
-  else
-    rm -f "${install_script}"
-    die "Unable to install .NET automatically: curl or wget is required."
-  fi
-
-  bash "${install_script}" --channel 9.0 --install-dir "${HOME}/.dotnet"
-  rm -f "${install_script}"
-}
-
 ensure_dotnet_ready() {
-  configure_dotnet_env
-  if has_supported_dotnet; then
-    persist_dotnet_env
-    return
-  fi
-
-  echo "Installing .NET SDK 9 via user-local installer..."
   if [[ "${DRY_RUN}" == "true" ]]; then
-    echo "[dry-run] install_dotnet_user_local"
-    echo "[dry-run] configure_dotnet_env"
-    echo "[dry-run] verify dotnet SDK >= 9"
+    echo "[dry-run] verify dotnet SDK >= 9 is already installed"
     return
   fi
 
-  install_dotnet_user_local
-  configure_dotnet_env
-
-  if ! has_supported_dotnet; then
-    die ".NET SDK 9 installation completed but dotnet is still unavailable in this shell."
+  if ! command -v dotnet >/dev/null 2>&1; then
+    die ".NET SDK 9+ is required but 'dotnet' was not found. Install it via your IDE and rerun."
   fi
 
-  persist_dotnet_env
+  local version major
+  version="$(dotnet --version 2>/dev/null || true)"
+  major="${version%%.*}"
+  if [[ -z "${version}" || -z "${major}" || "${major}" -lt 9 ]]; then
+    die ".NET SDK 9+ is required (found: ${version:-none}). Install/update via your IDE and rerun."
+  fi
 }
 
 run_cmd() {

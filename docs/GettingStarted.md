@@ -38,7 +38,7 @@ docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --
 
 ### Lane B (full local dev): native setup scripts + CLI build
 
-These scripts validate/install base dependencies and restore the setup-gate baseline NuGet graph for this repository:
+These scripts validate prerequisites and restore the setup-gate baseline NuGet graph for this repository:
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git

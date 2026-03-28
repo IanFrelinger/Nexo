@@ -9,7 +9,6 @@ INSTALL_DIR="${DEFAULT_INSTALL_DIR}"
 BRANCH=""
 START_DAEMON=false
 DAEMON_DURATION=""
-INCLUDE_OPTIONAL=false
 YES=false
 DRY_RUN=false
 SKIP_BUILD=false
@@ -22,7 +21,6 @@ usage() {
   echo "  --repo-url <url>          Git repository URL (default: ${DEFAULT_REPO_URL})"
   echo "  --install-dir <path>      Installation directory (default: ${DEFAULT_INSTALL_DIR})"
   echo "  --branch <name>           Optional git branch/tag to checkout"
-  echo "  --include-optional        Include optional dependencies during setup"
   echo "  --yes                     Auto-confirm setup dependency installation prompts"
   echo "  --skip-build              Skip 'dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore'"
   echo "  --start-daemon            Start background-agent daemon after install"
@@ -63,7 +61,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --include-optional)
-      INCLUDE_OPTIONAL=true
+      # Backward-compatible no-op: dependencies are no longer auto-installed by this script.
       ;;
     --yes)
       YES=true
@@ -152,32 +150,10 @@ sync_repo() {
   fi
 }
 
-run_setup() {
+run_setup_checks_and_restore() {
   local target_dir="$1"
-  local setup_args=(scripts/setup/setup.sh apply)
-  if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
-    setup_args+=(--include-optional)
-  fi
-  if [[ "${YES}" == "true" ]]; then
-    setup_args+=(--yes)
-  fi
-
-  run_in_repo "${target_dir}" bash "${setup_args[@]}"
+  run_in_repo "${target_dir}" bash scripts/setup/setup.sh check
   run_in_repo "${target_dir}" bash scripts/setup/setup.sh restore
-}
-
-ensure_dotnet_sdk9() {
-  local target_dir="$1"
-  local install_script="${target_dir}/scripts/setup/setup-macos.sh"
-  if [[ ! -f "${install_script}" ]]; then
-    die "Missing setup script: ${install_script}"
-  fi
-
-  # setup-macos.sh check fails when required dependencies are missing, including dotnet.
-  # apply installs missing requirements (brew + dotnet-sdk), and then we re-check.
-  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh check
-  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh apply --yes
-  run_in_repo "${target_dir}" bash scripts/setup/setup-macos.sh check
 }
 
 run_build() {
@@ -266,8 +242,7 @@ main() {
   fi
 
   sync_repo "${INSTALL_DIR}"
-  ensure_dotnet_sdk9 "${INSTALL_DIR}"
-  run_setup "${INSTALL_DIR}"
+  run_setup_checks_and_restore "${INSTALL_DIR}"
   run_build "${INSTALL_DIR}"
   run_hero_flow "${INSTALL_DIR}"
   start_daemon "${INSTALL_DIR}"

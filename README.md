@@ -47,7 +47,7 @@ bash scripts/install/install.sh --yes
 
 ### Environment setup scripts (Windows/macOS/Linux)
 
-Use the setup scripts to validate or install required tooling and restore baseline NuGet packages used by the core CI gates.
+Use the setup scripts to validate required tooling and restore baseline NuGet packages used by the core CI gates.
 The CI setup gate also validates these scripts in an ephemeral Linux container (`mcr.microsoft.com/dotnet/sdk:9.0`) on every run:
 
 ```bash
@@ -78,7 +78,7 @@ For single-command install/bootstrap wrappers, see:
 
 - `docs/OneClickInstall.md`
 
-These wrappers include `.NET SDK 9` bootstrap logic before restore/build.
+These wrappers assume prerequisites (including `.NET SDK 9`) are already installed and then run restore/build checks.
 
 Quick examples:
 

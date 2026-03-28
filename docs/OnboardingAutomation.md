@@ -17,12 +17,9 @@ These are automated by `scripts/setup/setup.sh` (Linux/macOS) and `scripts/setup
 
 1. Dependency checks (`check` mode): verifies required tools and SDK version.
 2. Optional dependency checks (Docker/Ollama/zstd where applicable).
-3. Dependency installation (`apply` mode), including:
-   - .NET SDK 9+ bootstrap/install path
-   - Git/curl install when missing
-   - optional deps when requested
-4. Targeted restore (`restore` mode) for core projects.
-5. Combined setup flow (`all` mode): dependency check + restore.
+3. Targeted restore (`restore` mode) for core projects.
+4. Combined setup flow (`all` mode): dependency check + restore.
+5. `apply` mode intentionally exits with guidance (host dependency installation is now manual/IDE-managed).
 
 ### Container lane (Docker commands)
 
@@ -35,7 +32,7 @@ These are automated by running container commands directly:
 ## Partially automated
 
 1. Docker installation/configuration:
-   - Setup scripts can install Docker on many hosts, but daemon startup/permissions can still require user action.
+   - Setup scripts only check for Docker; installation/daemon permissions remain manual.
 2. Optional model/provider setup:
    - Env vars and credentials are still user-provided.
 3. Platform-specific host policies:
@@ -52,15 +49,15 @@ These are automated by running container commands directly:
 
 1. Added cross-platform one-shot installers under `scripts/install/` to orchestrate:
    - clone/update repo,
-   - setup `apply`/`restore`,
+   - setup `check`/`restore`,
    - CLI build smoke,
-   - optional container smoke.
+   - optional hero flow checks (`--help`, `doctor`, quickstart pipeline).
 2. Added `nexo doctor` command with a single pass/fail onboarding summary (machine-readable via `--json`).
 3. Added CI gate (`onboarding-quickstart-gate`) to validate first-run docs commands end-to-end in ephemeral jobs.
 
 ## Next recommended upgrades
 
-1. Default all wrappers to non-interactive mode with explicit opt-out (`--yes` parity everywhere).
-2. Add a richer `nexo doctor --fix` mode that can run safe remediations automatically.
+1. Add clearer platform-specific troubleshooting pages for missing required tools.
+2. Add a richer `nexo doctor --fix` mode that proposes (not executes) safe remediations.
 3. Add periodic scheduled onboarding gate runs to detect ecosystem drift early.
 

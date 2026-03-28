@@ -3,7 +3,6 @@ param(
     [string]$RepoUrl = "https://github.com/IanFrelinger/Nexo.git",
     [string]$InstallDir = "$HOME\Nexo",
     [string]$Branch,
-    [switch]$IncludeOptional,
     [switch]$Yes,
     [switch]$SkipBuild,
     [switch]$StartDaemon,
@@ -28,7 +27,6 @@ $invokeArgs = @(
 )
 
 if (-not [string]::IsNullOrWhiteSpace($Branch)) { $invokeArgs += @("-Branch", $Branch) }
-if ($IncludeOptional) { $invokeArgs += "-IncludeOptional" }
 if ($Yes) { $invokeArgs += "-Yes" }
 if ($SkipBuild) { $invokeArgs += "-SkipBuild" }
 if ($StartDaemon) { $invokeArgs += "-StartDaemon" }

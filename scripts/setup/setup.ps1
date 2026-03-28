@@ -2,8 +2,7 @@
 param(
     [ValidateSet("check", "apply", "restore", "all")]
     [string]$Mode = "check",
-    [switch]$IncludeOptional,
-    [switch]$Yes
+    [switch]$IncludeOptional
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -16,7 +15,6 @@ if (-not (Test-Path $windowsSetup)) {
 
 $args = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $windowsSetup, "-Mode", $Mode)
 if ($IncludeOptional) { $args += "-IncludeOptional" }
-if ($Yes) { $args += "-Yes" }
 
 Push-Location $repoRoot
 try {

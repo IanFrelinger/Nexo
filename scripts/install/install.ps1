@@ -39,30 +39,13 @@ function Get-DotnetMajor {
     return [int]($version.Split('.')[0])
 }
 
-function Install-DotnetWithWinget {
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        throw "winget is required to install .NET SDK automatically."
-    }
-    Invoke-Step "winget install --id Microsoft.DotNet.SDK.9 --exact --accept-package-agreements --accept-source-agreements --silent"
-}
-
 function Ensure-Dotnet {
     $major = Get-DotnetMajor
     if ($major -ge 9) {
         return
     }
 
-    Write-Host ".NET SDK 9+ not found. Installing..."
-    Install-DotnetWithWinget
-
-    if ($DryRun.IsPresent) {
-        return
-    }
-
-    $major = Get-DotnetMajor
-    if ($major -lt 9) {
-        throw ".NET SDK 9+ installation did not complete successfully."
-    }
+    throw ".NET SDK 9+ is required. Install/update it via your IDE, then re-run this installer."
 }
 
 function Ensure-Windows {
