@@ -18,7 +18,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
 
       - name: Build CLI
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
@@ -39,7 +39,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
 
       - name: Build CLI
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
@@ -59,7 +59,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
 
       - name: Build CLI
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
