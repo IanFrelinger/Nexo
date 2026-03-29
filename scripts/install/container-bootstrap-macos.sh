@@ -8,6 +8,7 @@ SDK_IMAGE="${DEFAULT_SDK_IMAGE}"
 WORKSPACE_DIR=""
 YES=false
 DRY_RUN=false
+GUIDED=false
 
 usage() {
   echo "Usage: scripts/install/container-bootstrap-macos.sh [options]"
@@ -17,6 +18,7 @@ usage() {
   echo "  --workspace <path>       Optional host workspace to mount at /work"
   echo "  --sdk-image <ref>        SDK container image for build/restore tasks (default: ${DEFAULT_SDK_IMAGE})"
   echo "  --yes                    Auto-confirm install prompts"
+  echo "  --guided                 Explain each step in plain language for non-technical users"
   echo "  --dry-run                Print actions without executing"
   echo "  -h, --help               Show help"
 }
@@ -54,6 +56,9 @@ while [[ $# -gt 0 ]]; do
     --yes)
       YES=true
       ;;
+    --guided)
+      GUIDED=true
+      ;;
     --dry-run)
       DRY_RUN=true
       ;;
@@ -82,6 +87,25 @@ run_cmd() {
   "$@"
 }
 
+print_guided_intro() {
+  if [[ "${GUIDED}" != "true" ]]; then
+    return
+  fi
+
+  echo "============================================="
+  echo " Nexo Container Setup (Guided)"
+  echo "============================================="
+  echo ""
+  echo "This setup will:"
+  echo "  1) ensure Docker Desktop is installed"
+  echo "  2) ensure Docker is running"
+  echo "  3) pull Nexo runtime container images"
+  echo "  4) run a quick health check"
+  echo ""
+  echo "You do NOT need to know Docker internals."
+  echo ""
+}
+
 ensure_homebrew() {
   if command -v brew >/dev/null 2>&1; then
     return
@@ -107,6 +131,7 @@ ensure_homebrew() {
 
 install_docker_if_missing() {
   if command -v docker >/dev/null 2>&1; then
+    [[ "${GUIDED}" == "true" ]] && echo "[guided] Docker CLI already detected."
     return
   fi
 
@@ -120,6 +145,7 @@ install_docker_if_missing() {
   fi
 
   run_cmd brew install --cask docker
+  [[ "${GUIDED}" == "true" ]] && echo "[guided] Docker Desktop install command completed."
 }
 
 ensure_docker_daemon() {
@@ -129,6 +155,7 @@ ensure_docker_daemon() {
   fi
 
   if docker info >/dev/null 2>&1; then
+    [[ "${GUIDED}" == "true" ]] && echo "[guided] Docker daemon is running."
     return
   fi
 
@@ -164,6 +191,7 @@ run_container_smoke() {
 
 main() {
   require_macos
+  print_guided_intro
   install_docker_if_missing
   ensure_docker_daemon
   run_container_smoke

@@ -9,6 +9,7 @@ INCLUDE_OPTIONAL=false
 YES=false
 DRY_RUN=false
 WORKSPACE_DIR=""
+GUIDED=false
 
 usage() {
   echo "Usage: scripts/install/container-bootstrap-linux.sh [options]"
@@ -19,6 +20,7 @@ usage() {
   echo "  --workspace <path>       Optional host workspace to mount at /work"
   echo "  --include-optional       Also install optional host dependencies when possible"
   echo "  --yes                    Auto-confirm install prompts"
+  echo "  --guided                 Print beginner-friendly setup explanations"
   echo "  --dry-run                Print actions without executing"
   echo "  -h, --help               Show help"
 }
@@ -58,6 +60,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --yes)
       YES=true
+      ;;
+    --guided)
+      GUIDED=true
       ;;
     --dry-run)
       DRY_RUN=true
@@ -104,6 +109,26 @@ run_cmd() {
     return 0
   fi
   "$@"
+}
+
+print_guided_banner() {
+  if [[ "${GUIDED}" != "true" ]]; then
+    return
+  fi
+  cat <<'TXT'
+=============================================
+ Nexo Container One-Click Setup (Linux)
+=============================================
+
+This setup will:
+  1) install Docker if missing
+  2) start Docker daemon if needed
+  3) pull Nexo runtime + SDK images
+  4) run smoke checks so you can use it immediately
+
+You do NOT need to know container tooling details.
+
+TXT
 }
 
 pkg_manager() {
@@ -221,6 +246,7 @@ run_container_smoke() {
 
 main() {
   require_linux
+  print_guided_banner
   install_docker_if_missing
   ensure_docker_daemon
 

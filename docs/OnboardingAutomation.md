@@ -24,11 +24,13 @@ These are automated by `scripts/setup/setup.sh` (Linux/macOS) and `scripts/setup
 
 ### Container lane (Docker commands)
 
-These are automated by running container commands directly:
+These are automated by running container commands directly (or via guided wrappers under `scripts/install/container-one-click.*`):
 
-1. Pull runtime image.
-2. Run CLI smoke command (`--help`).
-3. Run mounted workspace commands (`-v "$PWD:/work" -w /work`).
+1. Ensure Docker is installed where possible (Linux package manager / Homebrew / winget).
+2. Validate Docker daemon reachability.
+3. Pull runtime image and SDK image.
+4. Run CLI + SDK smoke checks.
+5. Optionally run mounted workspace smoke checks (`-v "$PWD:/work" -w /work`).
 
 ## Partially automated
 
