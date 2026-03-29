@@ -78,7 +78,7 @@ For single-command install/bootstrap wrappers, see:
 
 - `docs/OneClickInstall.md`
 
-These wrappers assume prerequisites (including `.NET SDK 9`) are already installed and then run restore/build checks.
+These wrappers can auto-install missing required prerequisites (including `.NET SDK 9`) in guided mode, then run restore/build checks.
 
 Quick examples:
 

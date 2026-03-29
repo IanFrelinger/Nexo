@@ -186,9 +186,10 @@ clean-test-artifacts:
 
 # Package CLI as single-file executable
 package-cli:
-	dotnet publish src/Nexo.CLI -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -o dist/linux
-	dotnet publish src/Nexo.CLI -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o dist/windows
-	dotnet publish src/Nexo.CLI -c Release -r osx-x64 --self-contained -p:PublishSingleFile=true -o dist/macos
+	mkdir -p dist/native-installer
+	bash scripts/install/package-native-bundle.sh --rid linux-x64 --platform linux --version dev --output-dir dist/native-installer
+	bash scripts/install/package-native-bundle.sh --rid osx-x64 --platform macos --version dev --output-dir dist/native-installer
+	powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\package-native-bundle.ps1 -Rid win-x64 -Version dev -OutputDir dist/native-installer
 
 # Pack NuGet library packages (Nexo.Hosting, Nexo.CLI tool)
 pack:
