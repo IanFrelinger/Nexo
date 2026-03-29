@@ -10,8 +10,8 @@ public sealed class DoctorCommandTests : UnitTestBase
     {
         try
         {
-            await TestRunAsyncReturnsExitCode();
-            await TestJsonOutputContainsOkField();
+            await TestRunAsyncReturnsExitCode().ConfigureAwait(false);
+            await TestJsonOutputContainsOkField().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(DoctorCommandTests),
@@ -44,20 +44,20 @@ public sealed class DoctorCommandTests : UnitTestBase
         }
     }
 
-    private static async Task TestRunAsyncReturnsExitCode()
+    private async Task TestRunAsyncReturnsExitCode()
     {
-        var exitCode = await DoctorCommand.ExecuteAsync("demo", includeOptional: false, json: false, CancellationToken.None);
+        var exitCode = await DoctorCommand.ExecuteAsync("demo", includeOptional: false, json: false, CancellationToken.None).ConfigureAwait(false);
         AssertTrue(exitCode == 0 || exitCode == 1, "Doctor exit code should be deterministic (0 or 1).");
     }
 
-    private static async Task TestJsonOutputContainsOkField()
+    private async Task TestJsonOutputContainsOkField()
     {
         var originalOut = Console.Out;
         using var writer = new StringWriter();
         Console.SetOut(writer);
         try
         {
-            var exitCode = await DoctorCommand.ExecuteAsync("demo", includeOptional: false, json: true, CancellationToken.None);
+            var exitCode = await DoctorCommand.ExecuteAsync("demo", includeOptional: false, json: true, CancellationToken.None).ConfigureAwait(false);
             AssertTrue(exitCode == 0 || exitCode == 1, "Doctor JSON exit code should be deterministic (0 or 1).");
             var output = writer.ToString();
             AssertTrue(output.Contains("\"ok\"", StringComparison.OrdinalIgnoreCase), "Doctor JSON output should include 'ok'.");
