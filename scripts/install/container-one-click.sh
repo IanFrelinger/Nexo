@@ -94,6 +94,17 @@ echo ""
 echo "You do NOT need to know Docker commands."
 echo ""
 
+if [[ -n "${DAEMON_DURATION}" ]]; then
+  if [[ "${DRY_RUN}" == "true" ]]; then
+    echo "[dry-run] docker run --rm -v \"${WORKSPACE_DIR}:/work\" -w /work \"${IMAGE:-ghcr.io/ianfrelinger/nexo-cli:latest}\" background-agent daemon --duration \"${DAEMON_DURATION}\""
+  else
+    daemon_image="${IMAGE:-ghcr.io/ianfrelinger/nexo-cli:latest}"
+    echo "Running container background-agent daemon smoke test (${DAEMON_DURATION})..."
+    docker run --rm -v "${WORKSPACE_DIR}:/work" -w /work "${daemon_image}" background-agent daemon --duration "${DAEMON_DURATION}"
+  fi
+  echo ""
+fi
+
 bootstrap_args=()
 if [[ "${YES}" == "true" ]]; then
   bootstrap_args+=(--yes)
