@@ -152,6 +152,11 @@ sync_repo() {
 
 run_setup_checks_and_restore() {
   local target_dir="$1"
+  if [[ "${YES}" == "true" ]]; then
+    run_in_repo "${target_dir}" bash scripts/setup/setup.sh apply --yes
+  else
+    run_in_repo "${target_dir}" bash scripts/setup/setup.sh apply
+  fi
   run_in_repo "${target_dir}" bash scripts/setup/setup.sh check
   run_in_repo "${target_dir}" bash scripts/setup/setup.sh restore
 }

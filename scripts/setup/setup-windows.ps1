@@ -56,6 +56,67 @@ function Install-WingetPackage {
     }
 }
 
+function Ensure-Winget {
+    if (-not (Test-CommandExists -Name "winget")) {
+        throw "winget is required for auto-install mode. Install App Installer from Microsoft Store and retry."
+    }
+}
+
+function Invoke-ApplyDependencies {
+    $requiredToInstall = New-Object System.Collections.Generic.List[string]
+    $optionalToInstall = New-Object System.Collections.Generic.List[string]
+
+    if (-not (Test-CommandExists -Name "git")) { $requiredToInstall.Add("git") }
+    if (-not (Test-CommandExists -Name "curl")) { $requiredToInstall.Add("curl") }
+    if (-not (Test-SupportedDotnet)) { $requiredToInstall.Add("dotnet") }
+
+    if (-not (Test-CommandExists -Name "docker")) { $optionalToInstall.Add("docker") }
+    if (-not (Test-CommandExists -Name "ollama")) { $optionalToInstall.Add("ollama") }
+
+    if ($requiredToInstall.Count -eq 0 -and ((-not $IncludeOptional.IsPresent) -or $optionalToInstall.Count -eq 0)) {
+        Write-Host "No dependency installation required."
+        return
+    }
+
+    Ensure-Winget
+
+    foreach ($dep in $requiredToInstall) {
+        switch ($dep) {
+            "git" {
+                Write-Host "Installing Git..."
+                Install-WingetPackage -Id "Git.Git" -DisplayName "Git"
+            }
+            "curl" {
+                Write-Host "curl is bundled with modern Windows builds. Skipping auto-install."
+            }
+            "dotnet" {
+                Write-Host "Installing .NET SDK 9..."
+                Install-WingetPackage -Id "Microsoft.DotNet.SDK.9" -DisplayName ".NET SDK 9"
+            }
+            default {
+                throw "Unsupported required dependency in apply mode: $dep"
+            }
+        }
+    }
+
+    if ($IncludeOptional.IsPresent) {
+        foreach ($dep in $optionalToInstall) {
+            switch ($dep) {
+                "docker" {
+                    Write-Host "Installing Docker Desktop (optional)..."
+                    Install-WingetPackage -Id "Docker.DockerDesktop" -DisplayName "Docker Desktop"
+                }
+                "ollama" {
+                    Write-Host "Installing Ollama (optional)..."
+                    Install-WingetPackage -Id "Ollama.Ollama" -DisplayName "Ollama"
+                }
+            }
+        }
+    }
+
+    Invoke-DependencyCheck
+}
+
 function Ensure-RepoFiles {
     $required = @(
         (Join-Path $RepoRoot "Nexo.sln"),
@@ -159,12 +220,7 @@ function Invoke-DependencyCheck {
 }
 
 function Disable-ApplyMode {
-    throw @"
-Mode 'apply' has been removed.
-This repository no longer auto-installs host dependencies from setup scripts.
-Install prerequisites via your IDE/system installer, then run:
-  .\scripts\setup\setup.ps1 -Mode check
-"@
+    throw "Disable-ApplyMode is deprecated and should not be called."
 }
 
 Ensure-Windows
@@ -174,12 +230,13 @@ switch ($Mode) {
         Invoke-DependencyCheck
     }
     "apply" {
-        Disable-ApplyMode
+        Invoke-ApplyDependencies
     }
     "restore" {
         Invoke-Restore
     }
     "all" {
+        Invoke-ApplyDependencies
         Invoke-DependencyCheck
         Invoke-Restore
     }

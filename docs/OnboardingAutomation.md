@@ -19,7 +19,7 @@ These are automated by `scripts/setup/setup.sh` (Linux/macOS) and `scripts/setup
 2. Optional dependency checks (Docker/Ollama/zstd where applicable).
 3. Targeted restore (`restore` mode) for core projects.
 4. Combined setup flow (`all` mode): dependency check + restore.
-5. `apply` mode intentionally exits with guidance (host dependency installation is now manual/IDE-managed).
+5. `apply` mode auto-installs missing required host dependencies where supported, then verifies setup health.
 
 ### Container lane (Docker commands)
 
@@ -32,7 +32,7 @@ These are automated by running container commands directly:
 ## Partially automated
 
 1. Docker installation/configuration:
-   - Setup scripts only check for Docker; installation/daemon permissions remain manual.
+   - Linux/Windows setup scripts can attempt Docker install in optional mode, but daemon startup/permissions may still need manual completion.
 2. Optional model/provider setup:
    - Env vars and credentials are still user-provided.
 3. Platform-specific host policies:
@@ -42,8 +42,7 @@ These are automated by running container commands directly:
 
 1. API credential provisioning (`OPENAI_API_KEY`, `AZURE_OPENAI_*`, etc.).
 2. Selecting runtime lane for team conventions (container-only vs native dev).
-3. Persisting organization-specific shell/profile env defaults.
-4. Debugging host-specific permission/network constraints.
+3. Debugging host-specific permission/network constraints (enterprise images, locked-down package manager access).
 
 ## Recently added automation upgrades
 
@@ -58,6 +57,6 @@ These are automated by running container commands directly:
 ## Next recommended upgrades
 
 1. Add clearer platform-specific troubleshooting pages for missing required tools.
-2. Add a richer `nexo doctor --fix` mode that proposes (not executes) safe remediations.
+2. Add a richer `nexo doctor --fix` mode that can execute safe remediations with explicit user confirmation.
 3. Add periodic scheduled onboarding gate runs to detect ecosystem drift early.
 

@@ -4,6 +4,7 @@ set -euo pipefail
 DEFAULT_REPO_URL="https://github.com/IanFrelinger/Nexo.git"
 DEFAULT_INSTALL_DIR="${HOME}/Nexo"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_URL="${DEFAULT_REPO_URL}"
 INSTALL_DIR="${DEFAULT_INSTALL_DIR}"
 BRANCH=""
@@ -167,7 +168,7 @@ sync_repo() {
 
 run_restore() {
   local target_dir="$1"
-  run_in_repo "${target_dir}" dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+  run_in_repo "${target_dir}" bash scripts/setup/setup.sh restore --yes
 }
 
 run_build() {
@@ -253,6 +254,9 @@ main() {
   if [[ -n "${BRANCH}" ]]; then
     echo "  branch: ${BRANCH}"
   fi
+
+  # Fire-and-forget bootstrap: install missing host prerequisites first.
+  run_cmd bash "${SCRIPT_DIR}/../setup/setup.sh" apply --yes
 
   sync_repo "${INSTALL_DIR}"
   ensure_dotnet_ready
