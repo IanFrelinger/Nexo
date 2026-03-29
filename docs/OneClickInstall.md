@@ -53,6 +53,42 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-
 6. Optionally validates mount path with `--workspace` and runs mounted smoke checks.
 7. If `--workspace` is set and the Nexo repo is mounted, runs SDK restore smoke on `src/Nexo.CLI/Nexo.CLI.csproj`.
 
+## Packaged native installer artifacts (single-button release build)
+
+For distribution-ready native installer bundles, use the GitHub Actions workflow:
+
+- Workflow: `.github/workflows/native-installer-packages.yml`
+- Trigger: **Actions** -> **Native Installer Packages** -> **Run workflow** (optional `version` input)
+
+This one-button run builds self-contained CLI app-directory installer bundles for:
+
+- Linux (`linux-x64`)
+- macOS (`osx-x64`)
+- Windows (`win-x64`)
+
+### Output artifacts
+
+Each run uploads one artifact per platform:
+
+- `nexo-native-installer-linux-x64` (`.tar.gz`)
+- `nexo-native-installer-macos-x64` (`.tar.gz`)
+- `nexo-native-installer-windows-x64` (`.zip`)
+
+Each bundle includes:
+
+1. Self-contained CLI runtime directory (`app/` with `Nexo.CLI` entrypoint).
+2. Platform-native install launcher (`install.sh`, `install.command`, or `install.ps1`).
+3. A bundle README with install and verification commands.
+
+### End-user install behavior
+
+The bundle installers:
+
+1. Copy the CLI runtime to a user-scoped app path and install launchers under `$HOME/.local/bin`.
+2. Keep installation user-scoped (no admin/root required).
+3. Auto-update shell profile PATH on Linux/macOS when needed (non-destructive append).
+4. Run a post-install smoke check (`nexo --version`) and exit non-zero on failure.
+
 ## Linux / macOS
 
 Unified entrypoint (auto-detects OS):
