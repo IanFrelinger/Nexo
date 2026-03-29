@@ -18,7 +18,9 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+        run: |
+          dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build CLI
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
@@ -39,7 +41,9 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+        run: |
+          dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build CLI
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
@@ -59,7 +63,9 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+        run: |
+          dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build CLI
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
