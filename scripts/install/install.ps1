@@ -90,7 +90,9 @@ function Sync-Repo {
 function Run-Setup {
     param([Parameter(Mandatory = $true)][string]$TargetDir)
 
-    Invoke-Step "Set-Location \"$TargetDir\"; powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore"
+    $setupMode = if ($Yes.IsPresent) { "all" } else { "check" }
+    Invoke-Step "Set-Location \"$TargetDir\"; powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode $setupMode -Yes:$($Yes.IsPresent)"
+    Invoke-Step "Set-Location \"$TargetDir\"; powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore -Yes:$($Yes.IsPresent)"
 }
 
 function Run-HeroFlow {
@@ -176,7 +178,6 @@ function Print-NextSteps {
 }
 
 Ensure-Windows
-Ensure-Dotnet
 
 $expandedInstallDir = [Environment]::ExpandEnvironmentVariables($InstallDir)
 if ($expandedInstallDir.StartsWith('~')) {

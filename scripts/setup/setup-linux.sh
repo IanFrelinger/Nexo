@@ -9,12 +9,16 @@ shift || true
 
 INCLUDE_OPTIONAL=false
 FULL_RESTORE=false
+AUTO_YES=false
+PKG_MANAGER=""
+APT_UPDATED=false
 
 usage() {
   echo "Usage: scripts/setup/setup-linux.sh <check|restore|all|apply> [--include-optional] [--full-restore]"
   echo ""
   echo "Notes:"
-  echo "  - 'apply' mode is intentionally disabled; install host dependencies via IDE/system package manager."
+  echo "  - 'apply' mode installs missing host dependencies where possible."
+  echo "  - pass --yes for non-interactive fire-and-forget setup."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -26,7 +30,7 @@ while [[ $# -gt 0 ]]; do
       FULL_RESTORE=true
       ;;
     --yes)
-      # Backward-compatible no-op: this script no longer installs dependencies.
+      AUTO_YES=true
       ;;
     -h|--help)
       usage
@@ -74,6 +78,214 @@ has_supported_dotnet() {
   [[ "${major}" -ge 9 ]]
 }
 
+ensure_package_manager() {
+  if [[ -n "${PKG_MANAGER}" ]]; then
+    return
+  fi
+
+  if has_command apt-get; then
+    PKG_MANAGER="apt"
+  elif has_command dnf; then
+    PKG_MANAGER="dnf"
+  elif has_command yum; then
+    PKG_MANAGER="yum"
+  elif has_command pacman; then
+    PKG_MANAGER="pacman"
+  elif has_command zypper; then
+    PKG_MANAGER="zypper"
+  elif has_command apk; then
+    PKG_MANAGER="apk"
+  else
+    echo "No supported Linux package manager found (apt/dnf/yum/pacman/zypper/apk)." >&2
+    exit 1
+  fi
+}
+
+confirm_or_exit() {
+  local prompt="$1"
+  if [[ "${AUTO_YES}" == "true" ]]; then
+    return
+  fi
+
+  if [[ ! -t 0 ]]; then
+    echo "Non-interactive shell detected; re-run with --yes for automatic dependency installation." >&2
+    exit 1
+  fi
+
+  local response
+  read -r -p "${prompt} [y/N] " response
+  case "${response}" in
+    y|Y|yes|YES)
+      ;;
+    *)
+      echo "Aborted by user."
+      exit 1
+      ;;
+  esac
+}
+
+run_privileged() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    "$@"
+    return
+  fi
+
+  if has_command sudo; then
+    sudo "$@"
+    return
+  fi
+
+  echo "Root privileges are required for system package installation (sudo not found)." >&2
+  exit 1
+}
+
+linux_package_name() {
+  local dep="$1"
+  ensure_package_manager
+
+  case "${dep}" in
+    git) echo "git" ;;
+    curl) echo "curl" ;;
+    zstd) echo "zstd" ;;
+    docker)
+      case "${PKG_MANAGER}" in
+        apt) echo "docker.io" ;;
+        dnf|yum|pacman|zypper|apk) echo "docker" ;;
+      esac
+      ;;
+    *)
+      echo ""
+      ;;
+  esac
+}
+
+install_system_dependency() {
+  local dep="$1"
+  local package_name
+  package_name="$(linux_package_name "${dep}")"
+  if [[ -z "${package_name}" ]]; then
+    echo "No package mapping found for dependency '${dep}' on this distribution." >&2
+    return 1
+  fi
+
+  confirm_or_exit "Install missing dependency '${dep}' using ${PKG_MANAGER}?"
+
+  case "${PKG_MANAGER}" in
+    apt)
+      if [[ "${APT_UPDATED}" != "true" ]]; then
+        run_privileged apt-get update
+        APT_UPDATED=true
+      fi
+      run_privileged apt-get install -y "${package_name}"
+      ;;
+    dnf)
+      run_privileged dnf install -y "${package_name}"
+      ;;
+    yum)
+      run_privileged yum install -y "${package_name}"
+      ;;
+    pacman)
+      run_privileged pacman -Sy --noconfirm "${package_name}"
+      ;;
+    zypper)
+      run_privileged zypper --non-interactive install "${package_name}"
+      ;;
+    apk)
+      run_privileged apk add --no-cache "${package_name}"
+      ;;
+    *)
+      echo "Unsupported package manager: ${PKG_MANAGER}" >&2
+      return 1
+      ;;
+  esac
+}
+
+ensure_dotnet_path() {
+  export PATH="${HOME}/.dotnet:${HOME}/.dotnet/tools:${PATH}"
+
+  local marker="# Added by Nexo setup (dotnet)"
+  local export_line='export PATH="$HOME/.dotnet:$HOME/.dotnet/tools:$PATH"'
+  local target_profile=""
+
+  for candidate in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.profile"; do
+    if [[ -f "${candidate}" ]]; then
+      target_profile="${candidate}"
+      break
+    fi
+  done
+
+  if [[ -z "${target_profile}" ]]; then
+    target_profile="${HOME}/.profile"
+  fi
+
+  local marker_present=false
+  local line_present=false
+
+  if [[ -f "${target_profile}" ]]; then
+    while IFS= read -r line; do
+      [[ "${line}" == "${marker}" ]] && marker_present=true
+      [[ "${line}" == "${export_line}" ]] && line_present=true
+    done < "${target_profile}"
+  fi
+
+  if [[ "${line_present}" != "true" ]]; then
+    {
+      echo ""
+      if [[ "${marker_present}" != "true" ]]; then
+        echo "${marker}"
+      fi
+      echo "${export_line}"
+    } >> "${target_profile}"
+  fi
+}
+
+install_dotnet_sdk() {
+  if has_supported_dotnet; then
+    return
+  fi
+
+  if ! has_command curl; then
+    install_system_dependency "curl"
+  fi
+
+  confirm_or_exit "Install .NET SDK 9.x to ${HOME}/.dotnet?"
+
+  local installer
+  installer="$(mktemp)"
+  curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${installer}"
+  bash "${installer}" --channel 9.0 --install-dir "${HOME}/.dotnet"
+  rm -f "${installer}"
+
+  ensure_dotnet_path
+
+  if ! has_supported_dotnet; then
+    echo "Failed to install .NET SDK 9.x automatically." >&2
+    return 1
+  fi
+}
+
+install_optional_dependency() {
+  local dep="$1"
+  case "${dep}" in
+    docker|zstd)
+      install_system_dependency "${dep}"
+      ;;
+    ollama)
+      if has_command ollama; then
+        return
+      fi
+      if ! has_command curl; then
+        install_system_dependency "curl"
+      fi
+      confirm_or_exit "Install optional dependency 'ollama'?"
+      curl -fsSL https://ollama.com/install.sh | sh
+      ;;
+    *)
+      return
+      ;;
+  esac
+}
+
 ensure_repo_files() {
   local restore_targets=(
     "src/Nexo.Core.Application/Nexo.Core.Application.csproj"
@@ -100,8 +312,8 @@ ensure_repo_files() {
 
 run_restore() {
   ensure_repo_files
-  if ! has_command dotnet; then
-    echo "dotnet not found. Install .NET SDK 9+ via your IDE, then re-run setup check/restore." >&2
+  if ! has_supported_dotnet; then
+    echo "dotnet SDK 9+ not found. Run apply mode first: bash scripts/setup/setup-linux.sh apply --yes" >&2
     return 1
   fi
 
@@ -121,9 +333,9 @@ run_restore() {
 print_missing_guidance() {
   local dep="$1"
   case "${dep}" in
-    git) echo "Install Git using your IDE tooling or distro package manager." ;;
-    curl) echo "Install curl using your distro package manager." ;;
-    dotnet) echo "Install .NET SDK 9+ using your IDE installer (recommended)." ;;
+    git) echo "Run: bash scripts/setup/setup-linux.sh apply --yes (auto-installs git)." ;;
+    curl) echo "Run: bash scripts/setup/setup-linux.sh apply --yes (auto-installs curl)." ;;
+    dotnet) echo "Run: bash scripts/setup/setup-linux.sh apply --yes (auto-installs .NET SDK 9 locally)." ;;
     docker) echo "Install Docker Desktop/Engine manually if you need container workflows." ;;
     ollama) echo "Install Ollama manually if you need local model execution." ;;
     zstd) echo "Install zstd manually if required by your workload." ;;
@@ -198,12 +410,30 @@ check_dependencies() {
   echo "Dependency check passed."
 }
 
-disable_apply_mode() {
-  echo "Mode 'apply' has been removed." >&2
-  echo "This repository no longer auto-installs host dependencies from setup scripts." >&2
-  echo "Install prerequisites via your IDE or system package manager, then run:" >&2
-  echo "  bash scripts/setup/setup-linux.sh check" >&2
-  exit 2
+apply_dependencies() {
+  if ! has_command git; then
+    install_system_dependency "git"
+  fi
+  if ! has_command curl; then
+    install_system_dependency "curl"
+  fi
+  if ! has_supported_dotnet; then
+    install_dotnet_sdk
+  fi
+
+  if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
+    if ! has_command docker; then
+      install_optional_dependency "docker"
+    fi
+    if ! has_command ollama; then
+      install_optional_dependency "ollama"
+    fi
+    if ! has_command zstd; then
+      install_optional_dependency "zstd"
+    fi
+  fi
+
+  check_dependencies
 }
 
 main() {
@@ -213,13 +443,13 @@ main() {
       check_dependencies
       ;;
     apply)
-      disable_apply_mode
+      apply_dependencies
       ;;
     restore)
       run_restore
       ;;
     all)
-      check_dependencies
+      apply_dependencies
       run_restore
       ;;
     *)

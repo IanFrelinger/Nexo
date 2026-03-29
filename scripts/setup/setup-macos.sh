@@ -11,9 +11,6 @@ INCLUDE_OPTIONAL=false
 
 usage() {
   echo "Usage: scripts/setup/setup-macos.sh <check|restore|all|apply> [--include-optional]"
-  echo ""
-  echo "Notes:"
-  echo "  - 'apply' mode is intentionally disabled; install host dependencies via IDE/system package manager."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -22,7 +19,7 @@ while [[ $# -gt 0 ]]; do
       INCLUDE_OPTIONAL=true
       ;;
     --yes)
-      # Backward-compatible no-op: this script no longer installs dependencies.
+      # Accepted for cross-platform parity; Homebrew installs are already non-interactive here.
       ;;
     -h|--help)
       usage
@@ -37,6 +34,12 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
 require_macos() {
   if [[ "$(uname -s)" != "Darwin" ]]; then
     echo "This script only supports macOS hosts." >&2
@@ -46,6 +49,10 @@ require_macos() {
 
 has_command() {
   command -v "$1" >/dev/null 2>&1
+}
+
+is_ci() {
+  [[ -n "${CI:-}" ]]
 }
 
 dotnet_major() {
@@ -194,12 +201,86 @@ print_missing_guidance() {
   esac
 }
 
-disable_apply_mode() {
-  echo "Mode 'apply' has been removed." >&2
-  echo "This repository no longer auto-installs host dependencies from setup scripts." >&2
-  echo "Install prerequisites via your IDE or system package manager, then run:" >&2
-  echo "  bash scripts/setup/setup-macos.sh check" >&2
-  exit 2
+install_xcode_clt_if_needed() {
+  if xcode-select -p >/dev/null 2>&1; then
+    return
+  fi
+
+  if is_ci; then
+    echo "Xcode Command Line Tools are required on macOS and were not found." >&2
+    echo "Install manually on this CI image before running setup." >&2
+    exit 1
+  fi
+
+  echo "Installing Xcode Command Line Tools (this may prompt for confirmation)..."
+  xcode-select --install >/dev/null 2>&1 || true
+  echo "Xcode Command Line Tools installer launched."
+  echo "Complete the installation, then re-run this command."
+  exit 1
+}
+
+install_homebrew_if_needed() {
+  if has_command brew; then
+    return
+  fi
+
+  install_xcode_clt_if_needed
+  echo "Installing Homebrew..."
+  NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+
+  if ! has_command brew; then
+    echo "Homebrew installation did not complete successfully." >&2
+    exit 1
+  fi
+}
+
+brew_install_if_missing() {
+  local formula="$1"
+  local label="$2"
+  local optional="${3:-false}"
+  if has_command "${formula}"; then
+    echo "  [OK] ${label}${optional:+ (optional)}"
+    return
+  fi
+  echo "  [INSTALL] ${label}${optional:+ (optional)} via Homebrew"
+  brew install "${formula}"
+}
+
+ensure_dotnet_ready_or_install() {
+  if has_supported_dotnet; then
+    return
+  fi
+  echo "  [INSTALL] dotnet SDK >= 9 via Homebrew"
+  brew install --cask dotnet-sdk
+}
+
+apply_dependencies() {
+  echo "Applying required dependencies (macOS)..."
+  install_homebrew_if_needed
+  brew update
+  brew_install_if_missing git git
+  brew_install_if_missing curl curl
+  ensure_dotnet_ready_or_install
+
+  if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
+    if ! has_command docker; then
+      echo "  [INFO] Optional dependency docker is not auto-installed on macOS."
+      echo "         Install Docker Desktop manually from https://www.docker.com/products/docker-desktop/"
+    fi
+    if ! has_command ollama; then
+      echo "  [INSTALL] ollama (optional) via Homebrew"
+      brew install ollama
+    fi
+    brew_install_if_missing zstd zstd true
+  fi
+
+  check_dependencies
 }
 
 main() {
@@ -209,13 +290,13 @@ main() {
       check_dependencies
       ;;
     apply)
-      disable_apply_mode
+      apply_dependencies
       ;;
     restore)
       run_restore
       ;;
     all)
-      check_dependencies
+      apply_dependencies
       run_restore
       ;;
     *)
