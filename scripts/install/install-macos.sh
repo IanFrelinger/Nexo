@@ -246,6 +246,9 @@ main() {
     echo "  branch: ${BRANCH}"
   fi
 
+  # Fire-and-forget bootstrap: install missing host prerequisites first.
+  run_cmd bash "${SCRIPT_DIR}/../setup/setup.sh" apply --yes
+
   sync_repo "${INSTALL_DIR}"
   run_setup_checks_and_restore "${INSTALL_DIR}"
   run_build "${INSTALL_DIR}"

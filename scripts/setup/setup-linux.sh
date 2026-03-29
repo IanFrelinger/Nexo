@@ -4,14 +4,20 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-MODE="${1:-check}"
-shift || true
+MODE="check"
+
+if [[ $# -gt 0 && "${1}" != --* ]]; then
+  MODE="$1"
+  shift
+fi
 
 INCLUDE_OPTIONAL=false
 FULL_RESTORE=false
 AUTO_YES=false
 PKG_MANAGER=""
 APT_UPDATED=false
+OS_RELEASE_ID=""
+OS_RELEASE_ID_LIKE=""
 
 usage() {
   echo "Usage: scripts/setup/setup-linux.sh <check|restore|all|apply> [--include-optional] [--full-restore]"
@@ -78,6 +84,82 @@ has_supported_dotnet() {
   [[ "${major}" -ge 9 ]]
 }
 
+load_os_release() {
+  if [[ -n "${OS_RELEASE_ID}" ]]; then
+    return
+  fi
+
+  if [[ -f /etc/os-release ]]; then
+    OS_RELEASE_ID="$(. /etc/os-release && echo "${ID:-}")"
+    OS_RELEASE_ID_LIKE="$(. /etc/os-release && echo "${ID_LIKE:-}")"
+  fi
+}
+
+persist_homebrew_shellenv() {
+  local marker="# Added by Nexo setup (linuxbrew)"
+  local export_line='eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
+  local target_profile=""
+
+  for candidate in "${HOME}/.bashrc" "${HOME}/.zshrc" "${HOME}/.profile"; do
+    if [[ -f "${candidate}" ]]; then
+      target_profile="${candidate}"
+      break
+    fi
+  done
+
+  if [[ -z "${target_profile}" ]]; then
+    target_profile="${HOME}/.profile"
+  fi
+
+  local marker_present=false
+  local line_present=false
+  if [[ -f "${target_profile}" ]]; then
+    while IFS= read -r line; do
+      [[ "${line}" == "${marker}" ]] && marker_present=true
+      [[ "${line}" == "${export_line}" ]] && line_present=true
+    done < "${target_profile}"
+  fi
+
+  if [[ "${line_present}" != "true" ]]; then
+    {
+      echo ""
+      if [[ "${marker_present}" != "true" ]]; then
+        echo "${marker}"
+      fi
+      echo "${export_line}"
+    } >> "${target_profile}"
+  fi
+}
+
+bootstrap_homebrew_linux() {
+  if has_command brew; then
+    return
+  fi
+
+  if ! has_command curl; then
+    echo "Cannot bootstrap Homebrew without curl." >&2
+    echo "Install curl manually, then re-run setup." >&2
+    exit 1
+  fi
+
+  confirm_or_exit "No supported package manager detected. Bootstrap Homebrew package manager now?"
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  if [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+    persist_homebrew_shellenv
+  elif [[ -x "${HOME}/.linuxbrew/bin/brew" ]]; then
+    eval "$("${HOME}/.linuxbrew/bin/brew" shellenv)"
+    persist_homebrew_shellenv
+  fi
+
+  if ! has_command brew; then
+    echo "Failed to bootstrap Homebrew automatically." >&2
+    echo "Install a system package manager (apt/dnf/yum/pacman/zypper/apk) or Homebrew, then retry." >&2
+    exit 1
+  fi
+}
+
 ensure_package_manager() {
   if [[ -n "${PKG_MANAGER}" ]]; then
     return
@@ -95,9 +177,16 @@ ensure_package_manager() {
     PKG_MANAGER="zypper"
   elif has_command apk; then
     PKG_MANAGER="apk"
+  elif has_command brew; then
+    PKG_MANAGER="brew"
   else
+    load_os_release
     echo "No supported Linux package manager found (apt/dnf/yum/pacman/zypper/apk)." >&2
-    exit 1
+    if [[ -n "${OS_RELEASE_ID}" ]]; then
+      echo "Detected distro ID: ${OS_RELEASE_ID}${OS_RELEASE_ID_LIKE:+ (like: ${OS_RELEASE_ID_LIKE})}" >&2
+    fi
+    bootstrap_homebrew_linux
+    PKG_MANAGER="brew"
   fi
 }
 
@@ -150,7 +239,7 @@ linux_package_name() {
     docker)
       case "${PKG_MANAGER}" in
         apt) echo "docker.io" ;;
-        dnf|yum|pacman|zypper|apk) echo "docker" ;;
+        dnf|yum|pacman|zypper|apk|brew) echo "docker" ;;
       esac
       ;;
     *)
@@ -192,6 +281,9 @@ install_system_dependency() {
       ;;
     apk)
       run_privileged apk add --no-cache "${package_name}"
+      ;;
+    brew)
+      brew install "${package_name}"
       ;;
     *)
       echo "Unsupported package manager: ${PKG_MANAGER}" >&2
@@ -241,6 +333,18 @@ ensure_dotnet_path() {
 
 install_dotnet_sdk() {
   if has_supported_dotnet; then
+    return
+  fi
+
+  ensure_package_manager
+  if [[ "${PKG_MANAGER}" == "brew" ]]; then
+    confirm_or_exit "Install .NET SDK 9.x using Homebrew?"
+    brew install dotnet-sdk
+    ensure_dotnet_path
+    if ! has_supported_dotnet; then
+      echo "Failed to install .NET SDK 9.x via Homebrew." >&2
+      return 1
+    fi
     return
   fi
 

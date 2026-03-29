@@ -2,12 +2,22 @@
 
 This guide provides single-command install/bootstrap paths for each platform using wrappers in `scripts/install/`.
 
+For the most beginner-friendly onboarding (Anaconda-style guided prompts + package-manager setup guidance), use:
+
+```bash
+bash scripts/install/one-click.sh --yes
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\one-click.ps1 -Yes
+```
+
 ## What these installers do
 
 For Linux, macOS, and Windows installers:
 
 1. Clone or update the Nexo repo.
-2. Verify `.NET SDK 9+` is already installed (no auto-install is performed).
+2. Auto-bootstrap required prerequisites where possible (`git`, `curl`, package manager setup guidance, `.NET SDK 9+`).
 3. Run setup preflight checks (`scripts/setup/setup.* check`) and restore baseline project graph.
 4. Build CLI (`src/Nexo.CLI/Nexo.CLI.csproj`).
 5. Optionally run full first-user "hero" checks (`--hero`) and then start `background-agent daemon`.
@@ -97,6 +107,12 @@ Unified entrypoint (auto-detects OS):
 bash scripts/install/install.sh --yes
 ```
 
+Guided one-click wrapper (recommended for non-technical users):
+
+```bash
+bash scripts/install/one-click.sh --yes
+```
+
 macOS non-CLI one-click launcher (double-click in Finder):
 
 ```bash
@@ -131,6 +147,12 @@ Script path reference: `scripts/install/install.ps1`
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
+```
+
+Guided one-click wrapper:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\one-click.ps1 -Yes
 ```
 
 Windows wrapper alias:

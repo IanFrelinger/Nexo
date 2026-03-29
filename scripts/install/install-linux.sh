@@ -256,7 +256,7 @@ main() {
   fi
 
   # Fire-and-forget bootstrap: install missing host prerequisites first.
-  run_cmd bash "${SCRIPT_DIR}/../setup/setup.sh" apply --yes
+  run_cmd bash "${SCRIPT_DIR}/../setup/setup.sh" apply --yes --guided
 
   sync_repo "${INSTALL_DIR}"
   ensure_dotnet_ready
