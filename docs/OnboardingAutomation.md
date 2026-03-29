@@ -20,6 +20,7 @@ These are automated by `scripts/setup/setup.sh` (Linux/macOS) and `scripts/setup
 3. Targeted restore (`restore` mode) for core projects.
 4. Combined setup flow (`all` mode): dependency check + restore.
 5. `apply` mode auto-installs missing required host dependencies where supported, then verifies setup health.
+6. `apply --yes` enables non-interactive dependency bootstrap for “fire-and-forget” installs.
 
 ### Container lane (Docker commands)
 

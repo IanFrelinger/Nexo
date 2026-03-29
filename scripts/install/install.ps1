@@ -95,6 +95,13 @@ function Run-Setup {
     Invoke-Step "Set-Location \"$TargetDir\"; powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore -Yes:$($Yes.IsPresent)"
 }
 
+function Bootstrap-HostDependencies {
+    if (-not $Yes.IsPresent) {
+        Write-Host "Tip: pass -Yes for fully automatic fire-and-forget setup."
+    }
+    Invoke-Step "Set-Location \"$PSScriptRoot\..\..\"; powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode apply -Yes:$($Yes.IsPresent)"
+}
+
 function Run-HeroFlow {
     param([Parameter(Mandatory = $true)][string]$TargetDir)
 
@@ -191,6 +198,7 @@ if (-not [string]::IsNullOrWhiteSpace($Branch)) {
     Write-Host "  branch: $Branch"
 }
 
+Bootstrap-HostDependencies
 Sync-Repo -TargetDir $expandedInstallDir
 Run-Setup -TargetDir $expandedInstallDir
 Run-Build -TargetDir $expandedInstallDir

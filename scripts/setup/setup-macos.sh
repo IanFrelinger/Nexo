@@ -4,13 +4,29 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-MODE="${1:-check}"
-shift || true
+MODE="check"
+if [[ $# -gt 0 ]]; then
+  case "$1" in
+    check|restore|all|apply)
+      MODE="$1"
+      shift
+      ;;
+    -h|--help)
+      MODE="help"
+      shift
+      ;;
+  esac
+fi
 
 INCLUDE_OPTIONAL=false
+AUTO_YES=false
 
 usage() {
-  echo "Usage: scripts/setup/setup-macos.sh <check|restore|all|apply> [--include-optional]"
+  echo "Usage: scripts/setup/setup-macos.sh <check|restore|all|apply> [--include-optional] [--yes]"
+  echo ""
+  echo "Notes:"
+  echo "  - 'apply' mode installs missing host dependencies where possible."
+  echo "  - pass --yes for non-interactive fire-and-forget setup."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -19,7 +35,7 @@ while [[ $# -gt 0 ]]; do
       INCLUDE_OPTIONAL=true
       ;;
     --yes)
-      # Accepted for cross-platform parity; Homebrew installs are already non-interactive here.
+      AUTO_YES=true
       ;;
     -h|--help)
       usage
@@ -49,6 +65,29 @@ require_macos() {
 
 has_command() {
   command -v "$1" >/dev/null 2>&1
+}
+
+confirm_or_exit() {
+  local prompt="$1"
+  if [[ "${AUTO_YES}" == "true" ]]; then
+    return
+  fi
+
+  if [[ ! -t 0 ]]; then
+    echo "Non-interactive shell detected; re-run with --yes for automatic dependency installation." >&2
+    exit 1
+  fi
+
+  local response
+  read -r -p "${prompt} [y/N] " response
+  case "${response}" in
+    y|Y|yes|YES)
+      ;;
+    *)
+      echo "Aborted by user."
+      exit 1
+      ;;
+  esac
 }
 
 is_ci() {
@@ -225,6 +264,7 @@ install_homebrew_if_needed() {
   fi
 
   install_xcode_clt_if_needed
+  confirm_or_exit "Homebrew is required to auto-install dependencies. Install Homebrew now?"
   echo "Installing Homebrew..."
   NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
@@ -263,6 +303,9 @@ ensure_dotnet_ready_or_install() {
 apply_dependencies() {
   echo "Applying required dependencies (macOS)..."
   install_homebrew_if_needed
+  if [[ "${AUTO_YES}" != "true" ]]; then
+    confirm_or_exit "Nexo will use Homebrew to install required dependencies (git/curl/dotnet if missing). Continue?"
+  fi
   brew update
   brew_install_if_missing git git
   brew_install_if_missing curl curl
@@ -285,6 +328,10 @@ apply_dependencies() {
 
 main() {
   require_macos
+  if [[ "${MODE}" == "help" ]]; then
+    usage
+    exit 0
+  fi
   case "${MODE}" in
     check)
       check_dependencies
