@@ -1134,7 +1134,11 @@ public sealed class RuntimeCommand : Command
 
         var enrichedGoal = AdaptiveRuntimePlanResolver.EnrichGoal(goal, context.Manifest, context.Plan);
 
-        var bootstrapBefore = await BootstrapRuntime.AssessDemoAsync(context.Plan.BootstrapProfile, includeOptional: false, ct).ConfigureAwait(false);
+        var bootstrapBefore = await BootstrapRuntime.AssessDemoAsync(
+            context.Plan.BootstrapProfile,
+            includeOptional: false,
+            ct,
+            relaxStrictVisualHostDeps: allowMock).ConfigureAwait(false);
         BootstrapAssessment bootstrapAfter = bootstrapBefore;
         int? bootstrapApplyExit = null;
         var bootstrapApplied = false;
@@ -1148,7 +1152,11 @@ public sealed class RuntimeCommand : Command
                 dryRun: bootstrapDryRun,
                 json: false,
                 ct).ConfigureAwait(false);
-            bootstrapAfter = await BootstrapRuntime.AssessDemoAsync(context.Plan.BootstrapProfile, includeOptional: false, ct).ConfigureAwait(false);
+            bootstrapAfter = await BootstrapRuntime.AssessDemoAsync(
+                context.Plan.BootstrapProfile,
+                includeOptional: false,
+                ct,
+                relaxStrictVisualHostDeps: allowMock).ConfigureAwait(false);
         }
 
         var bootstrapOk =
