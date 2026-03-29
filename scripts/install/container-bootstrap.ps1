@@ -3,6 +3,7 @@ param(
     [string]$Image = "ghcr.io/ianfrelinger/nexo-cli:latest",
     [string]$SdkImage = "mcr.microsoft.com/dotnet/sdk:9.0",
     [string]$Workspace,
+    [switch]$Guided,
     [switch]$WithSdk,
     [switch]$Yes,
     [switch]$DryRun
@@ -111,6 +112,22 @@ function Run-ContainerSmoke {
 }
 
 Ensure-Windows
+
+if ($Guided.IsPresent) {
+    Write-Host "============================================="
+    Write-Host " Nexo Guided Container Bootstrap (Windows)"
+    Write-Host "============================================="
+    Write-Host ""
+    Write-Host "This setup will:"
+    Write-Host "  1) ensure Docker Desktop is installed"
+    Write-Host "  2) verify Docker is running"
+    Write-Host "  3) pull Nexo CLI and SDK images"
+    Write-Host "  4) run smoke checks"
+    Write-Host ""
+    Write-Host "You do NOT need to know containers to continue."
+    Write-Host ""
+}
+
 Ensure-Docker
 Ensure-DockerDaemon
 Run-ContainerSmoke

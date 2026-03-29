@@ -26,6 +26,16 @@ For Linux, macOS, and Windows installers:
 
 If you want to run Nexo purely via container, use container bootstrap wrappers under `scripts/install/`.
 
+For the most beginner-friendly container onboarding:
+
+```bash
+bash scripts/install/container-one-click.sh --yes --workspace "$PWD"
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-one-click.ps1 -Yes -Workspace .
+```
+
 ### Linux / macOS
 
 Unified entrypoint:
@@ -62,6 +72,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-
 5. Smoke-runs both CLI and SDK images.
 6. Optionally validates mount path with `--workspace` and runs mounted smoke checks.
 7. If `--workspace` is set and the Nexo repo is mounted, runs SDK restore smoke on `src/Nexo.CLI/Nexo.CLI.csproj`.
+8. In guided mode, prints plain-language progress and what to do next (no package-manager knowledge required).
 
 ## Packaged native installer artifacts (single-button release build)
 
