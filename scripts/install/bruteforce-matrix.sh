@@ -4,9 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 LOG_PATH="${REPO_ROOT}/.artifacts/install_bruteforce_matrix.log"
+SUMMARY_PATH="${REPO_ROOT}/.artifacts/install_bruteforce_summary.log"
 
 mkdir -p "$(dirname "${LOG_PATH}")"
 : > "${LOG_PATH}"
+: > "${SUMMARY_PATH}"
 
 TOTAL_CASES=0
 PASSED_CASES=0
@@ -72,7 +74,9 @@ run_case "setup-linux unknown mode" "fail" \
   "bash ${REPO_ROOT}/scripts/setup/setup-linux.sh banana"
 
 run_case "setup-linux noninteractive no-yes missing deps path" "fail" \
-  "PATH=/usr/bin:/bin env -i PATH=/usr/bin:/bin HOME=\$HOME bash ${REPO_ROOT}/scripts/setup/setup-linux.sh apply"
+  "tmp_path=\"\$(mktemp -d)\" && \
+   ln -s /usr/bin/apt-get \"\${tmp_path}/apt-get\" && \
+   PATH=\"\${tmp_path}\" env -i PATH=\"\${tmp_path}\" HOME=\$HOME /usr/bin/bash ${REPO_ROOT}/scripts/setup/setup-linux.sh apply"
 
 run_case "setup-linux guided apply with yes" "pass" \
   "bash ${REPO_ROOT}/scripts/setup/setup-linux.sh apply --yes --guided"
@@ -107,6 +111,9 @@ run_case "container dispatcher unsupported os via uname override" "fail" \
 run_case "dotnet restore CLI project" "pass" \
   "dotnet restore ${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj"
 
+run_case "dotnet restore copy-assemblies helper project" "pass" \
+  "dotnet restore ${REPO_ROOT}/src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj"
+
 run_case "dotnet build CLI project" "pass" \
   "dotnet build ${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal"
 
@@ -116,7 +123,7 @@ run_case "dotnet build CLI project" "pass" \
   echo "passed_cases=${PASSED_CASES}"
   echo "failed_cases=${FAILED_CASES}"
   echo "log_path=${LOG_PATH}"
-} | tee -a "${LOG_PATH}"
+} | tee -a "${LOG_PATH}" | tee "${SUMMARY_PATH}"
 
 if [[ ${FAILED_CASES} -ne 0 ]]; then
   exit 1

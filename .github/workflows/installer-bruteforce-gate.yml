@@ -47,6 +47,6 @@ jobs:
         with:
           name: installer-bruteforce-matrix
           path: |
-            ./artifacts/install_bruteforce_matrix.log
-            ./artifacts/install_bruteforce_summary.log
+            ./.artifacts/install_bruteforce_matrix.log
+            ./.artifacts/install_bruteforce_summary.log
           retention-days: 14

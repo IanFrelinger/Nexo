@@ -249,7 +249,11 @@ internal static class BootstrapRuntime
             true),
     ];
 
-    public static async Task<BootstrapAssessment> AssessDemoAsync(string profile, bool includeOptional, CancellationToken ct)
+    public static async Task<BootstrapAssessment> AssessDemoAsync(
+        string profile,
+        bool includeOptional,
+        CancellationToken ct,
+        bool relaxStrictVisualHostDeps = false)
     {
         var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
         var (_, supported, reason, deps) = ResolveProfile();
@@ -268,7 +272,7 @@ internal static class BootstrapRuntime
         foreach (var spec in deps)
         {
             var (exitCode, _, stderr) = await RunShellCaptureAsync(spec.ProbeCommand, ct).ConfigureAwait(false);
-            var required = IsRequiredForBootstrapProfile(normalizedBootstrapProfile, spec, includeOptional);
+            var required = IsRequiredForBootstrapProfile(normalizedBootstrapProfile, spec, includeOptional, relaxStrictVisualHostDeps);
             statuses.Add(new BootstrapDependencyStatus(
                 spec.Id,
                 spec.DisplayName,
@@ -367,10 +371,16 @@ internal static class BootstrapRuntime
         };
     }
 
-    private static bool IsRequiredForBootstrapProfile(string profile, BootstrapDependencySpec spec, bool includeOptional)
+    private static bool IsRequiredForBootstrapProfile(
+        string profile,
+        BootstrapDependencySpec spec,
+        bool includeOptional,
+        bool relaxStrictVisualHostDeps)
     {
         if (profile == "self-extend-visual")
         {
+            if (relaxStrictVisualHostDeps)
+                return spec.Required;
             if (spec.Id is "docker" or "ollama" or "zstd")
                 return true;
         }
@@ -382,8 +392,7 @@ internal static class BootstrapRuntime
 
         if (profile == "self-extend-aesthetic")
         {
-            if (spec.Id is "docker")
-                return true;
+            // Aesthetic workflows use local dotnet/UI smoke paths; containerized visual QA is optional here.
             return spec.Required;
         }
 

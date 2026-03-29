@@ -54,6 +54,10 @@
     <ProjectReference Include="../Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nexo.Tests.CLI" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(IncludeTestProjectReferences)' != 'false'">
     <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
     <ProjectReference Include="../Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />

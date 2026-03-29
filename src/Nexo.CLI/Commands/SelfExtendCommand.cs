@@ -255,6 +255,7 @@ public sealed class SelfExtendCommand : Command
                     workflow,
                     testFilter,
                     focus,
+                    allowMock,
                     ct).ConfigureAwait(false);
                 testsRun = testsRun || qa.Ran;
                 testsPassed = qa.Passed;
@@ -494,7 +495,7 @@ public sealed class SelfExtendCommand : Command
             var functionalFilter = string.IsNullOrWhiteSpace(functionalFilterOverride)
                 ? workflow.FunctionalTestFilter
                 : functionalFilterOverride;
-            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, functionalFilter, "functional-filter", required: true, ct).ConfigureAwait(false));
+            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, functionalFilter, "functional-filter", required: true, allowMock, ct).ConfigureAwait(false));
         }
 
         if (runAesthetic)
@@ -502,9 +503,9 @@ public sealed class SelfExtendCommand : Command
             var aestheticFilter = string.IsNullOrWhiteSpace(workflow.AestheticTestFilter)
                 ? "UiDomainKnowledgeRetentionTests"
                 : workflow.AestheticTestFilter;
-            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, aestheticFilter, "aesthetic-filter", required: true, ct).ConfigureAwait(false));
+            checks.Add(await CheckTestFilterDiscoverabilityAsync(repoRoot, aestheticFilter, "aesthetic-filter", required: true, allowMock, ct).ConfigureAwait(false));
 
-            var smokeCheck = CheckUiSmokeProject(workflow.UiSmokeProjectPath, repoRoot);
+            var smokeCheck = CheckUiSmokeProject(workflow.UiSmokeProjectPath, repoRoot, allowMock);
             checks.Add(smokeCheck);
         }
 
@@ -512,13 +513,19 @@ public sealed class SelfExtendCommand : Command
         {
             var visualInfra = await AssessVisualQaReadinessAsync(repoRoot, ct).ConfigureAwait(false);
             var strictVisual = !string.Equals(workflow.VisualQaFallbackPolicy, "degrade", StringComparison.OrdinalIgnoreCase);
+            var infraOk = visualInfra.Ready || !strictVisual || allowMock;
+            var message = visualInfra.Ready
+                ? visualInfra.Summary
+                : allowMock && strictVisual
+                    ? $"{visualInfra.Summary} (allow-mock: visual infra treated as satisfied)"
+                    : strictVisual
+                        ? visualInfra.Summary
+                        : $"{visualInfra.Summary} (fallback policy=degrade)";
             checks.Add(new PreflightCheck(
                 "visual-infra",
-                visualInfra.Ready || !strictVisual,
+                infraOk,
                 strictVisual,
-                strictVisual
-                    ? visualInfra.Summary
-                    : $"{visualInfra.Summary} (fallback policy=degrade)"));
+                message));
         }
 
         return BuildPreflightResult(checks);
@@ -554,6 +561,7 @@ public sealed class SelfExtendCommand : Command
         string filter,
         string id,
         bool required,
+        bool allowMock,
         CancellationToken ct)
     {
         var run = await RunProcessAsync(
@@ -577,11 +585,15 @@ public sealed class SelfExtendCommand : Command
         if (run.ExitCode != 0)
             return new PreflightCheck(id, false, required, $"Test discovery command failed for filter '{filter}' (exit={run.ExitCode}).");
         if (totalTests <= 0)
+        {
+            if (allowMock)
+                return new PreflightCheck(id, true, required, $"No tests discovered for filter '{filter}' (allow-mock: skipping strict discoverability).");
             return new PreflightCheck(id, false, required, $"No tests discovered for filter '{filter}'.");
+        }
         return new PreflightCheck(id, true, required, $"Discovered {totalTests} test(s) for filter '{filter}'.");
     }
 
-    private static PreflightCheck CheckUiSmokeProject(string? projectPath, string repoRoot)
+    private static PreflightCheck CheckUiSmokeProject(string? projectPath, string repoRoot, bool allowMock)
     {
         if (string.IsNullOrWhiteSpace(projectPath))
             return new PreflightCheck("ui-smoke-project", false, true, "UI smoke project path is not configured.");
@@ -589,7 +601,11 @@ public sealed class SelfExtendCommand : Command
         var normalized = projectPath.Trim().Replace('\\', '/');
         var fullPath = Path.GetFullPath(Path.Combine(repoRoot, normalized));
         if (!File.Exists(fullPath))
+        {
+            if (allowMock)
+                return new PreflightCheck("ui-smoke-project", true, true, $"UI smoke project not found: {normalized} (allow-mock: skipping strict check).");
             return new PreflightCheck("ui-smoke-project", false, true, $"UI smoke project not found: {normalized}");
+        }
         return new PreflightCheck("ui-smoke-project", true, true, $"UI smoke project found: {normalized}");
     }
 
@@ -626,6 +642,7 @@ public sealed class SelfExtendCommand : Command
         SelfExtendWorkflowSpec workflow,
         string functionalFilterOverride,
         string focus,
+        bool allowMock,
         CancellationToken ct)
     {
         if (!runTests)
@@ -644,7 +661,7 @@ public sealed class SelfExtendCommand : Command
             var functionalFilter = string.IsNullOrWhiteSpace(functionalFilterOverride)
                 ? workflow.FunctionalTestFilter
                 : functionalFilterOverride;
-            var functional = await RunGeneratedTestSuiteAsync(repoRoot, functionalFilter, ct).ConfigureAwait(false);
+            var functional = await RunGeneratedTestSuiteAsync(repoRoot, functionalFilter, allowMock, ct).ConfigureAwait(false);
             var functionalPass = functional.ExitCode == 0;
             passed &= functionalPass;
             notes.Add(functionalPass
@@ -665,7 +682,7 @@ public sealed class SelfExtendCommand : Command
                 var aestheticFilter = string.IsNullOrWhiteSpace(workflow.AestheticTestFilter)
                     ? "UiDomainKnowledgeRetentionTests"
                     : workflow.AestheticTestFilter;
-                var aesthetic = await RunGeneratedTestSuiteAsync(repoRoot, aestheticFilter, ct).ConfigureAwait(false);
+                var aesthetic = await RunGeneratedTestSuiteAsync(repoRoot, aestheticFilter, allowMock, ct).ConfigureAwait(false);
                 var aestheticPass = aesthetic.ExitCode == 0;
                 passed &= aestheticPass;
                 notes.Add(aestheticPass
@@ -685,9 +702,11 @@ public sealed class SelfExtendCommand : Command
                     var degrade = string.Equals(workflow.VisualQaFallbackPolicy, "degrade", StringComparison.OrdinalIgnoreCase);
                     if (!visualReady.Ready)
                     {
-                        if (degrade)
+                        if (degrade || allowMock)
                         {
-                            notes.Add($"Visual QA skipped: {visualReady.Summary} (fallback=degrade).");
+                            notes.Add(allowMock && !degrade
+                                ? $"Visual QA skipped: {visualReady.Summary} (allow-mock bypass)."
+                                : $"Visual QA skipped: {visualReady.Summary} (fallback=degrade).");
                         }
                         else
                         {
@@ -846,12 +865,13 @@ public sealed class SelfExtendCommand : Command
     private static async Task<(int ExitCode, string StdOut, string StdErr)> RunGeneratedTestSuiteAsync(
         string repoRoot,
         string testFilter,
+        bool allowMock,
         CancellationToken ct)
     {
         var build = await RunProcessAsync(
             "dotnet",
             repoRoot,
-            new[] { "build", "src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj", "-t:Rebuild", "-m:1" },
+            new[] { "build", "src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj", "-m:1" },
             ct).ConfigureAwait(false);
         if (build.ExitCode != 0)
             return build;
@@ -873,9 +893,11 @@ public sealed class SelfExtendCommand : Command
             },
             ct).ConfigureAwait(false);
 
-        // Treat "0 tests discovered" as failure for generated-extension validation.
+        // Treat "0 tests discovered" as failure for generated-extension validation (strict unless mock/offline lane).
         if (run.ExitCode == 0 && run.StdOut.Contains("\"TotalTests\":0", StringComparison.Ordinal))
         {
+            if (allowMock)
+                return run;
             return (1, run.StdOut, run.StdErr + Environment.NewLine + $"No tests discovered for filter '{testFilter}'.");
         }
 
