@@ -20,9 +20,10 @@ fi
 
 INCLUDE_OPTIONAL=false
 AUTO_YES=false
+GUIDED=false
 
 usage() {
-  echo "Usage: scripts/setup/setup-macos.sh <check|restore|all|apply> [--include-optional] [--yes]"
+  echo "Usage: scripts/setup/setup-macos.sh <check|restore|all|apply> [--include-optional] [--yes] [--guided]"
   echo ""
   echo "Notes:"
   echo "  - 'apply' mode installs missing host dependencies where possible."
@@ -36,6 +37,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --yes)
       AUTO_YES=true
+      ;;
+    --guided)
+      GUIDED=true
       ;;
     -h|--help)
       usage
@@ -301,6 +305,15 @@ ensure_dotnet_ready_or_install() {
 }
 
 apply_dependencies() {
+  if [[ "${GUIDED}" == "true" ]]; then
+    echo "============================================="
+    echo " Nexo Setup Assistant (macOS)"
+    echo "============================================="
+    echo "This setup can install missing prerequisites for you."
+    echo "You do not need to know Homebrew commands."
+    echo ""
+  fi
+
   echo "Applying required dependencies (macOS)..."
   install_homebrew_if_needed
   if [[ "${AUTO_YES}" != "true" ]]; then

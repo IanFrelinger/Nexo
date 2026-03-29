@@ -14,6 +14,7 @@ fi
 INCLUDE_OPTIONAL=false
 FULL_RESTORE=false
 AUTO_YES=false
+GUIDED=false
 PKG_MANAGER=""
 APT_UPDATED=false
 OS_RELEASE_ID=""
@@ -25,6 +26,7 @@ usage() {
   echo "Notes:"
   echo "  - 'apply' mode installs missing host dependencies where possible."
   echo "  - pass --yes for non-interactive fire-and-forget setup."
+  echo "  - pass --guided to print plain-language setup explanations."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -38,6 +40,9 @@ while [[ $# -gt 0 ]]; do
     --yes)
       AUTO_YES=true
       ;;
+    --guided)
+      GUIDED=true
+      ;;
     -h|--help)
       usage
       exit 0
@@ -50,6 +55,13 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+guided_step() {
+  local message="$1"
+  if [[ "${GUIDED}" == "true" ]]; then
+    echo "[guided] ${message}"
+  fi
+}
 
 require_linux() {
   if [[ "$(uname -s)" != "Linux" ]]; then
@@ -515,17 +527,22 @@ check_dependencies() {
 }
 
 apply_dependencies() {
+  guided_step "Checking and installing required developer tools (git, curl, .NET SDK 9+) if missing."
   if ! has_command git; then
+    guided_step "Git is missing; installing it now."
     install_system_dependency "git"
   fi
   if ! has_command curl; then
+    guided_step "curl is missing; installing it now."
     install_system_dependency "curl"
   fi
   if ! has_supported_dotnet; then
+    guided_step ".NET SDK 9 is missing; installing it now."
     install_dotnet_sdk
   fi
 
   if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
+    guided_step "Optional dependencies were requested; installing what is missing."
     if ! has_command docker; then
       install_optional_dependency "docker"
     fi
@@ -537,6 +554,7 @@ apply_dependencies() {
     fi
   fi
 
+  guided_step "Dependency bootstrap finished. Running final verification checks."
   check_dependencies
 }
 
