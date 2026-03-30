@@ -25,8 +25,11 @@ public sealed class NcrStartupHealthServiceTests
     [Fact]
     public async Task StartAsync_DoesNotThrow_WhenOllamaUnavailable()
     {
+        using var httpClient = new HttpClient(new ThrowingHandler());
         var service = new NcrStartupHealthService(
-            new ThrowingOllamaBackend(),
+            new OllamaModelServingBackend(
+                httpClient,
+                Microsoft.Extensions.Options.Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" })),
             new LinuxPolicy(),
             NullLogger<NcrStartupHealthService>.Instance);
 
@@ -35,17 +38,9 @@ public sealed class NcrStartupHealthServiceTests
         await act.Should().NotThrowAsync();
     }
 
-    private sealed class ThrowingOllamaBackend : OllamaModelServingBackend
+    private sealed class ThrowingHandler : HttpMessageHandler
     {
-        public ThrowingOllamaBackend()
-            : base(new HttpClient(new ThrowingHandler()), Microsoft.Extensions.Options.Options.Create(new OllamaBackendOptions()))
-        {
-        }
-
-        private sealed class ThrowingHandler : HttpMessageHandler
-        {
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-                => throw new HttpRequestException("No route to host");
-        }
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => throw new HttpRequestException("No route to host");
     }
 }
