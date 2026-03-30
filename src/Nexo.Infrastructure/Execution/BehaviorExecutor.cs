@@ -22,6 +22,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
 {
     private readonly Nexo.Core.Domain.Execution.IBrickRegistry _brickRegistry;
     private readonly IProviderFactory _providerFactory;
+    private readonly IAgenticBrickEngine? _agenticBrickEngine;
     private readonly ISemanticCache _semanticCache;
     private readonly ILoopKernel _loops;
     private readonly ILogger<BehaviorExecutor> _logger;
@@ -35,6 +36,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     /// <param name="semanticCache">Semantic cache for brick outputs.</param>
     /// <param name="loops">Loop kernel for step iteration.</param>
     /// <param name="logger">Logger for diagnostics.</param>
+    /// <param name="agenticBrickEngine">Optional NCR-backed model resolution for agentic execution.</param>
     /// <param name="stepExecutionMode">Optional runtime mode override for steps.</param>
     public BehaviorExecutor(
         Nexo.Core.Domain.Execution.IBrickRegistry brickRegistry,
@@ -42,10 +44,12 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         ISemanticCache semanticCache,
         ILoopKernel loops,
         ILogger<BehaviorExecutor> logger,
+        IAgenticBrickEngine? agenticBrickEngine = null,
         IStepExecutionMode? stepExecutionMode = null)
     {
         _brickRegistry = brickRegistry;
         _providerFactory = providerFactory;
+        _agenticBrickEngine = agenticBrickEngine;
         _semanticCache = semanticCache;
         _loops = loops;
         _logger = logger;
@@ -174,16 +178,65 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
                         }
                         else
                         {
+                            var executionStart = DateTimeOffset.UtcNow;
+                            Nexo.Core.Application.NodeCapabilityRuntime.Models.ModelResolution? resolution = null;
                             try
                             {
-                                output = await brick.ExecuteAsync(brickInput, implementation, context, ct2);
+                                if (implementation == ImplementationType.Agentic && _agenticBrickEngine is not null)
+                                {
+                                    resolution = await _agenticBrickEngine.ResolveModelForBrickAsync(brick, context, ct2);
+                                    if (resolution.Target == Nexo.Core.Application.NodeCapabilityRuntime.Models.InferenceTarget.Escalate)
+                                    {
+                                        throw new InvalidOperationException($"Agentic execution escalated: {resolution.Reason}");
+                                    }
+
+                                    var provider = resolution.Model.Provider ?? resolution.Model.ProviderModelId ?? context.Provider;
+                                    if (!string.IsNullOrWhiteSpace(provider))
+                                    {
+                                        var stepContext = new OverrideProviderExecutionContext(context, provider);
+                                        output = await brick.ExecuteAsync(brickInput, implementation, stepContext, ct2);
+                                    }
+                                    else
+                                    {
+                                        output = await brick.ExecuteAsync(brickInput, implementation, context, ct2);
+                                    }
+                                }
+                                else
+                                {
+                                    output = await brick.ExecuteAsync(brickInput, implementation, context, ct2);
+                                }
                                 await _semanticCache.SetAsync(cacheKey, output, ct2);
+
+                                if (resolution is not null && _agenticBrickEngine is not null)
+                                {
+                                    await _agenticBrickEngine.RecordExecutionOutcomeAsync(
+                                        resolution,
+                                        new BrickExecutionOutcome
+                                        {
+                                            Succeeded = true,
+                                            Duration = DateTimeOffset.UtcNow - executionStart
+                                        },
+                                        ct2);
+                                }
                             }
                             catch (Exception ex)
                             {
                                 output = null;
                                 error = ex.Message;
                                 _logger.LogError(ex, "Error executing step {StepId} with {Implementation}", step.Id, implementation);
+                                if (resolution is not null && _agenticBrickEngine is not null)
+                                {
+                                    await _agenticBrickEngine.RecordExecutionOutcomeAsync(
+                                        resolution,
+                                        new BrickExecutionOutcome
+                                        {
+                                            Succeeded = false,
+                                            TimedOut = ex is TimeoutException,
+                                            Duration = DateTimeOffset.UtcNow - executionStart,
+                                            ErrorCode = ex.GetType().Name
+                                        },
+                                        ct2);
+                                }
                             }
                         }
 

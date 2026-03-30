@@ -5,7 +5,7 @@ namespace Nexo.BrickContracts;
 /// </summary>
 public class BrickExecuteRequestDto
 {
-    public string WireFormatVersion { get; set; } = "2025-01";
+    public string WireFormatVersion { get; set; } = Nexo.BrickContracts.WireFormatVersion.Current;
     public string BrickId { get; set; } = default!;
     /// <summary>"Deterministic" or "Agentic".</summary>
     public string Implementation { get; set; } = "Deterministic";

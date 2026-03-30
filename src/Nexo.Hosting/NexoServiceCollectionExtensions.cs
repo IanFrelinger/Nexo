@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -16,6 +17,7 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Maintenance;
+using Nexo.Infrastructure.NodeCapabilityRuntime;
 using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
@@ -53,6 +55,22 @@ public static class NexoServiceCollectionExtensions
         configure?.Invoke(options);
 
         services.AddHttpClient();
+        var configuration = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+        services.AddNodeCapabilityRuntimeCore(configuration);
+        if (OperatingSystem.IsWindows())
+            services.AddNodeCapabilityRuntimeWindows(configuration);
+        else if (OperatingSystem.IsMacOS())
+            services.AddNodeCapabilityRuntimeMacOS(configuration);
+        else if (OperatingSystem.IsLinux())
+            services.AddNodeCapabilityRuntimeLinux(configuration);
+        else if (OperatingSystem.IsIOS())
+            services.AddNodeCapabilityRuntimeiOS(configuration);
+        else if (OperatingSystem.IsAndroid())
+            services.AddNodeCapabilityRuntimeAndroid(configuration);
+        else
+            services.AddNodeCapabilityRuntimeLinux(configuration);
 
         services.AddMediatR(cfg =>
         {
@@ -193,6 +211,7 @@ public static class NexoServiceCollectionExtensions
                 sp.GetRequiredService<Nexo.Infrastructure.Execution.ISemanticCache>(),
                 sp.GetRequiredService<ILoopKernel>(),
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>(),
+                sp.GetService<Nexo.Core.Application.Execution.Ports.IAgenticBrickEngine>(),
                 sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(sp =>
         {

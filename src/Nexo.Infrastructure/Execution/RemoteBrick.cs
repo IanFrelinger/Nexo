@@ -49,6 +49,12 @@ public sealed class RemoteBrick : Brick
             UsageCount = catalogEntry.Metadata.UsageCount,
             LastUpdated = catalogEntry.Metadata.LastUpdated
         };
+
+        if (catalogEntry.HostCapabilities is not null)
+        {
+            var capabilitySuffix = string.Join(",", catalogEntry.HostCapabilities.SupportedCapabilities);
+            Description = $"{Description} [host:{catalogEntry.HostCapabilities.NodeId};caps:{capabilitySuffix}]";
+        }
     }
 
     public override async Task<BrickOutput> ExecuteAsync(

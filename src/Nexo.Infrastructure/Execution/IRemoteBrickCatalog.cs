@@ -1,4 +1,5 @@
 using Nexo.BrickContracts;
+using Nexo.BrickContracts.Capabilities;
 
 namespace Nexo.Infrastructure.Execution;
 
@@ -15,4 +16,9 @@ public interface IRemoteBrickCatalog
 
     /// <summary>Get one brick's metadata by id, or null if not found.</summary>
     Task<BrickCatalogEntryDto?> GetByIdAsync(string brickId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets remote node capabilities from companion endpoint.
+    /// </summary>
+    Task<NodeCapabilityManifestDto?> GetCapabilitiesAsync(CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.BrickContracts;
+using Nexo.BrickContracts.Capabilities;
 
 namespace Nexo.Infrastructure.Execution;
 
@@ -25,7 +26,17 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         try
         {
             var response = await _httpClient.GetFromJsonAsync<BrickCatalogResponseDto>("/api/bricks", cancellationToken).ConfigureAwait(false);
-            return response?.Bricks ?? [];
+            var bricks = response?.Bricks?.ToList() ?? [];
+            var capabilities = await GetCapabilitiesAsync(cancellationToken).ConfigureAwait(false);
+            if (capabilities is not null)
+            {
+                foreach (var entry in bricks)
+                {
+                    entry.HostCapabilities ??= capabilities;
+                }
+            }
+
+            return bricks;
         }
         catch (Exception ex)
         {
@@ -40,7 +51,14 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         try
         {
             var url = $"/api/bricks/{Uri.EscapeDataString(brickId)}";
-            return await _httpClient.GetFromJsonAsync<BrickCatalogEntryDto>(url, cancellationToken).ConfigureAwait(false);
+            var entry = await _httpClient.GetFromJsonAsync<BrickCatalogEntryDto>(url, cancellationToken).ConfigureAwait(false);
+            if (entry is null)
+            {
+                return null;
+            }
+
+            entry.HostCapabilities ??= await GetCapabilitiesAsync(cancellationToken).ConfigureAwait(false);
+            return entry;
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
@@ -49,6 +67,25 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         catch (Exception ex)
         {
             _logger?.LogWarning(ex, "Failed to fetch brick {BrickId} from {BaseUrl}", brickId, BaseUrl);
+            return null;
+        }
+    }
+
+    public async Task<NodeCapabilityManifestDto?> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _httpClient
+                .GetFromJsonAsync<NodeCapabilityManifestDto>("/api/capabilities", cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to fetch capabilities from {BaseUrl}", BaseUrl);
             return null;
         }
     }
