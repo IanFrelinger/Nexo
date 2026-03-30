@@ -42,6 +42,18 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `OLLAMA_VISION_MODEL` | Vision model | `richardyoung/smolvlm2-2.2b-instruct` |
 | `OLLAMA_TIMEOUT_SECONDS` | Request timeout | `300` |
 
+### Node Capability Runtime (NCR) Ollama
+
+Desktop NCR uses its own options-bound Ollama endpoint for model serving.
+
+| Key / Variable | Description | Default |
+|----------------|-------------|---------|
+| `Nexo:NodeCapabilityRuntime:Ollama:BaseUrl` (`Nexo__NodeCapabilityRuntime__Ollama__BaseUrl`) | NCR Ollama backend base URL used by desktop policy registrations | `http://127.0.0.1:11434` |
+
+Behavior notes:
+- On startup, NCR runs a health probe against the configured Ollama backend and logs a degraded warning if unreachable.
+- A degraded startup does not crash the host; agentic tasks may escalate until Ollama becomes reachable.
+
 ## Video (SmolVLM2)
 
 | Variable | Description | Default |

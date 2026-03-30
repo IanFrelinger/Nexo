@@ -36,6 +36,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         services.AddSingleton<ModelScoringService>();
         services.AddSingleton<INodeCapabilityRuntime, NodeCapabilityRuntime>();
         services.AddSingleton<IAgenticBrickEngine, NcrAgenticBrickEngine>();
+        services.AddHostedService<NcrStartupHealthService>();
         return services;
     }
 
