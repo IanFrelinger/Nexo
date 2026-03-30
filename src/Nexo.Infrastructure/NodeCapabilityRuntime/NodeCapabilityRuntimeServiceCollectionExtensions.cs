@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Execution.Ports;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Infrastructure.Execution.Agentic;
@@ -25,6 +27,8 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
 
         services.AddOptions<NodeCapabilityRuntimeOptions>()
             .Bind(configuration.GetSection(NodeCapabilityRuntimeOptions.SectionName));
+        services.AddOptions<OllamaBackendOptions>()
+            .Bind(configuration.GetSection(OllamaBackendOptions.SectionName));
 
         services.AddSingleton<IHardwareProfiler, EnvironmentHardwareProfiler>();
         services.AddSingleton<IModelServingBackend, NullModelServingBackend>();
@@ -37,23 +41,23 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
 
     public static IServiceCollection AddNodeCapabilityRuntimeWindows(
         this IServiceCollection services,
-        IConfiguration _)
+        IConfiguration configuration)
     {
-        return AddPolicy<WindowsPolicy>(services);
+        return AddDesktopPolicyAndBackend<WindowsPolicy>(services, configuration);
     }
 
     public static IServiceCollection AddNodeCapabilityRuntimeMacOS(
         this IServiceCollection services,
-        IConfiguration _)
+        IConfiguration configuration)
     {
-        return AddPolicy<MacOsPolicy>(services);
+        return AddDesktopPolicyAndBackend<MacOsPolicy>(services, configuration);
     }
 
     public static IServiceCollection AddNodeCapabilityRuntimeLinux(
         this IServiceCollection services,
-        IConfiguration _)
+        IConfiguration configuration)
     {
-        return AddPolicy<LinuxPolicy>(services);
+        return AddDesktopPolicyAndBackend<LinuxPolicy>(services, configuration);
     }
 
     public static IServiceCollection AddNodeCapabilityRuntimeiOS(
@@ -75,6 +79,35 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
     {
         if (services is null) throw new ArgumentNullException(nameof(services));
         services.AddSingleton<IPlatformPolicy, TPolicy>();
+        return services;
+    }
+
+    private static IServiceCollection AddDesktopPolicyAndBackend<TPolicy>(
+        IServiceCollection services,
+        IConfiguration configuration)
+        where TPolicy : class, IPlatformPolicy, new()
+    {
+        if (services is null) throw new ArgumentNullException(nameof(services));
+        if (configuration is null) throw new ArgumentNullException(nameof(configuration));
+
+        AddPolicy<TPolicy>(services);
+        services.AddOptions<OllamaBackendOptions>()
+            .Bind(configuration.GetSection(OllamaBackendOptions.SectionName));
+
+        services.AddHttpClient(nameof(OllamaModelServingBackend), (sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<OllamaBackendOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/", UriKind.Absolute);
+        });
+
+        services.RemoveAll<IModelServingBackend>();
+        services.AddSingleton<IModelServingBackend>(sp =>
+        {
+            var factory = sp.GetRequiredService<IHttpClientFactory>();
+            var client = factory.CreateClient(nameof(OllamaModelServingBackend));
+            var options = sp.GetRequiredService<IOptions<OllamaBackendOptions>>();
+            return new OllamaModelServingBackend(client, options);
+        });
         return services;
     }
 }
