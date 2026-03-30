@@ -1,4 +1,5 @@
-using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
@@ -11,7 +12,6 @@ namespace Nexo.Infrastructure.NodeCapabilityRuntime.Backends;
 /// </summary>
 public sealed class OllamaModelServingBackend : IModelServingBackend
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly HttpClient _httpClient;
 
     public OllamaModelServingBackend(HttpClient httpClient, IOptions<OllamaBackendOptions> options)
@@ -41,21 +41,8 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         var parameters = request.Parameters ?? new Dictionary<string, object>();
         var started = DateTimeOffset.UtcNow;
 
-        var payload = new
-        {
-            model = modelId,
-            stream = false,
-            messages = new object[]
-            {
-                new { role = "system", content = system },
-                new { role = "user", content = prompt }
-            },
-            options = parameters
-        };
-
-        using var response = await _httpClient
-            .PostAsJsonAsync("/api/chat", payload, JsonOptions, ct)
-            .ConfigureAwait(false);
+        var payload = BuildChatPayload(modelId, system, prompt, parameters);
+        using var response = await PostJsonAsync("/api/chat", payload, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
@@ -76,30 +63,24 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
     public async Task LoadModelAsync(string modelId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
-        var payload = new { model = modelId, prompt = string.Empty, stream = false, keep_alive = "30m" };
-        using var response = await _httpClient
-            .PostAsJsonAsync("/api/generate", payload, JsonOptions, ct)
-            .ConfigureAwait(false);
+        var payload = BuildGeneratePayload(modelId, "30m");
+        using var response = await PostJsonAsync("/api/generate", payload, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task UnloadModelAsync(string modelId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
-        var payload = new { model = modelId, prompt = string.Empty, keep_alive = "0s", stream = false };
-        using var response = await _httpClient
-            .PostAsJsonAsync("/api/generate", payload, JsonOptions, ct)
-            .ConfigureAwait(false);
+        var payload = BuildGeneratePayload(modelId, "0s");
+        using var response = await PostJsonAsync("/api/generate", payload, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
     }
 
     public async Task PullModelAsync(string modelId, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
-        var payload = new { name = modelId, stream = false };
-        using var response = await _httpClient
-            .PostAsJsonAsync("/api/pull", payload, JsonOptions, ct)
-            .ConfigureAwait(false);
+        var payload = BuildPullPayload(modelId);
+        using var response = await PostJsonAsync("/api/pull", payload, ct).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         progress?.Report(new PullProgress { ModelId = modelId, BytesDownloaded = 1, TotalBytes = 1 });
     }
@@ -139,5 +120,97 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
     {
         if (string.IsNullOrWhiteSpace(text)) return 0;
         return Math.Max(1, text.Length / 4);
+    }
+
+    private async Task<HttpResponseMessage> PostJsonAsync(
+        string requestUri,
+        string payload,
+        CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, requestUri)
+        {
+            Content = new StringContent(payload, Encoding.UTF8)
+        };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        return await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
+    }
+
+    private static string BuildChatPayload(
+        string modelId,
+        string systemPrompt,
+        string userPrompt,
+        IReadOnlyDictionary<string, object> parameters)
+    {
+        var systemEscaped = EscapeJsonString(systemPrompt);
+        var userEscaped = EscapeJsonString(userPrompt);
+        var modelEscaped = EscapeJsonString(modelId);
+        var optionsEntries = parameters
+            .Select(kvp => $"\"{EscapeJsonString(kvp.Key)}\":{FormatJsonValue(kvp.Value)}");
+        var options = "{"+ string.Join(",", optionsEntries) + "}";
+        return
+            $"{{\"model\":\"{modelEscaped}\",\"stream\":false," +
+            "\"messages\":[" +
+            $"{{\"role\":\"system\",\"content\":\"{systemEscaped}\"}}," +
+            $"{{\"role\":\"user\",\"content\":\"{userEscaped}\"}}" +
+            "]," +
+            $"\"options\":{options}" +
+            "}";
+    }
+
+    private static string BuildGeneratePayload(string modelId, string keepAlive)
+    {
+        return
+            $"{{\"model\":\"{EscapeJsonString(modelId)}\",\"prompt\":\"\",\"stream\":false,\"keep_alive\":\"{EscapeJsonString(keepAlive)}\"}}";
+    }
+
+    private static string BuildPullPayload(string modelId)
+    {
+        return $"{{\"name\":\"{EscapeJsonString(modelId)}\",\"stream\":false}}";
+    }
+
+    private static string EscapeJsonString(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+        var sb = new StringBuilder(value.Length + 8);
+        foreach (var ch in value)
+        {
+            switch (ch)
+            {
+                case '\"': sb.Append("\\\""); break;
+                case '\\': sb.Append("\\\\"); break;
+                case '\b': sb.Append("\\b"); break;
+                case '\f': sb.Append("\\f"); break;
+                case '\n': sb.Append("\\n"); break;
+                case '\r': sb.Append("\\r"); break;
+                case '\t': sb.Append("\\t"); break;
+                default:
+                    if (char.IsControl(ch))
+                    {
+                        sb.Append("\\u");
+                        sb.Append(((int)ch).ToString("x4"));
+                    }
+                    else
+                    {
+                        sb.Append(ch);
+                    }
+                    break;
+            }
+        }
+        return sb.ToString();
+    }
+
+    private static string FormatJsonValue(object value)
+    {
+        return value switch
+        {
+            null => "null",
+            bool b => b ? "true" : "false",
+            byte or sbyte or short or ushort or int or uint or long or ulong =>
+                Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "0",
+            float f => f.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            double d => d.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            decimal m => m.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            _ => $"\"{EscapeJsonString(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty)}\""
+        };
     }
 }

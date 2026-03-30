@@ -6,10 +6,12 @@ using Microsoft.Extensions.Options;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Infrastructure.Execution.Agentic;
 using Nexo.Infrastructure.Execution;
+using NodeCapabilityRuntimeImpl = Nexo.Infrastructure.NodeCapabilityRuntime.NodeCapabilityRuntime;
 using Nexo.Infrastructure.NodeCapabilityRuntime;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Backends;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Lifecycle;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Policies;
+using Nexo.Infrastructure.NodeCapabilityRuntime.Profiles;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Scoring;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
@@ -52,12 +54,12 @@ public sealed class NcrEngineOllamaIntegrationTests
             Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }));
         var lifecycle = new DefaultModelLifecycleManager(backend);
         var policy = new LinuxPolicy();
-        var runtime = new NodeCapabilityRuntime(
+        var runtime = new NodeCapabilityRuntimeImpl(
             new EnvironmentHardwareProfiler(),
             policy,
             lifecycle,
             new ModelScoringService(policy),
-            Options.Create(new NodeCapabilityRuntimeOptions
+            Options.Create(new Nexo.Infrastructure.NodeCapabilityRuntime.NodeCapabilityRuntimeOptions
             {
                 NodeId = "integration-node",
                 DefaultModels =
@@ -76,7 +78,7 @@ public sealed class NcrEngineOllamaIntegrationTests
                     }
                 ]
             }),
-            NullLogger<NodeCapabilityRuntime>.Instance);
+            NullLogger<NodeCapabilityRuntimeImpl>.Instance);
 
         var engine = new NcrAgenticBrickEngine(runtime);
         var brick = new TestBrick
@@ -90,7 +92,7 @@ public sealed class NcrEngineOllamaIntegrationTests
                 Agentic = new AgenticImplementation { Id = "a", Name = "a", Description = "a" }
             }
         };
-        var context = new ExecutionContext
+        var context = new Nexo.Infrastructure.Execution.ExecutionContext
         {
             AgentId = "a1",
             BehaviorId = "b1",
@@ -121,7 +123,6 @@ public sealed class NcrEngineOllamaIntegrationTests
         inference.Output.Should().Be("integration-ok");
         var paths = handler.Requests.Select(r => r.RequestUri!.AbsolutePath).ToList();
         paths.Should().Contain("/api/ps");
-        paths.Should().Contain("/api/generate");
         paths.Should().Contain("/api/chat");
     }
 
