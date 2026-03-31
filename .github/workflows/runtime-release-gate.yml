@@ -7,8 +7,12 @@ on:
     paths:
       - '.github/workflows/runtime-release-gate.yml'
       - 'src/Nexo.CLI/Commands/RuntimeCommand.cs'
+      - 'src/Nexo.CLI/Commands/SelfExtendCommand.cs'
+      - 'src/Nexo.CLI/Commands/BootstrapCommand.cs'
       - 'src/Nexo.CLI/Commands/CiCommand.cs'
+      - 'src/Nexo.CLI/Nexo.CLI.csproj'
       - 'src/Nexo.CLI/Runtime/**'
+      - 'src/Nexo.Tests.CLI/**'
       - 'docs/runtime/benchmarks/**'
 
 jobs:
@@ -37,7 +41,7 @@ jobs:
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Runtime release lane gate
-        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --core-min-total 3 --core-history-window 3 --visual-required-mode false --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1
+        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --core-min-total 3 --core-history-window 3 --visual-required-mode true --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1
 
   runtime-release-chaos:
     runs-on: ubuntu-latest
@@ -52,6 +56,9 @@ jobs:
 
       - name: Restore
         run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+
+      - name: Restore copy-assemblies helper
+        run: dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build
         run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
