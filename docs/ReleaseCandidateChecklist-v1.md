@@ -6,6 +6,10 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 
 - [ ] Trigger `production-readiness-gate-v1` in GitHub Actions.
 - [ ] Trigger `environment-setup-gate-v1` in GitHub Actions.
+- [ ] Trigger `runtime-release-gate` in GitHub Actions (core + visual required, chaos non-gating).
+- [ ] Trigger `runtime-release-promotion` in GitHub Actions (strict thresholds).
+- [ ] Trigger `installer-bruteforce-gate` in GitHub Actions.
+- [ ] Trigger `native-installer-packages` in GitHub Actions.
 - [ ] Trigger `container-image-gate` in GitHub Actions.
 - [ ] Trigger `container-image-publish` in GitHub Actions (or verify latest successful publish on `master`).
 - [ ] Trigger `onboarding-docs-guard` in GitHub Actions.
@@ -26,6 +30,9 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
   - [ ] `setup-gate-ephemeral-summary-*.txt`
   - [ ] container image gate summary + smoke logs
   - [ ] published image smoke log (`docker run ... --help` in publish workflow)
+  - [ ] runtime release lane logs (core, visual, chaos)
+  - [ ] installer brute-force matrix + summary logs
+  - [ ] native installer package artifacts (linux/macos/windows)
 
 ## 2) Runtime correctness review
 
