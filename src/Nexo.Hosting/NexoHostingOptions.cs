@@ -35,6 +35,12 @@ public sealed class NexoHostingOptions
     public bool DisableObservationPipeline { get; set; }
 
     /// <summary>
+    /// When true, observation pipeline store errors are fail-open (logged and skipped) instead of stopping the host.
+    /// Default: null (resolved from NEXO_OBSERVATION_FAIL_OPEN env var, then false).
+    /// </summary>
+    public bool? ObservationFailOpen { get; set; }
+
+    /// <summary>
     /// Base URL for the Nexo API when used as a remote client (e.g. for mobile thin client).
     /// </summary>
     public string? ApiBaseUrl { get; set; }

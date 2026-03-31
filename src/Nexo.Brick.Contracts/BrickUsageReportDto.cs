@@ -5,7 +5,7 @@ namespace Nexo.BrickContracts;
 /// </summary>
 public class BrickUsageReportDto
 {
-    public string WireFormatVersion { get; set; } = "2025-01";
+    public string WireFormatVersion { get; set; } = Nexo.BrickContracts.WireFormatVersion.Current;
     public string NodeId { get; set; } = default!;
     public List<BrickUsageRecordDto> Records { get; set; } = new();
 }

@@ -9,6 +9,8 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;
+using Nexo.Core.Application.Common.Ports;
+using Nexo.Core.Application.Execution.Ports;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Models;
 using Nexo.Core.Application.Common.Services;
@@ -184,7 +186,11 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         });
     }
 
-    private static BehaviorExecutor CreateExecutor(Brick brick, bool providerAvailable)
+    private static BehaviorExecutor CreateExecutor(
+        Brick brick,
+        bool providerAvailable,
+        IAgenticBrickEngine? agenticBrickEngine = null,
+        IMetricsCollector? metricsCollector = null)
     {
         var loggerFactory = LoggerFactory.Create(b => { });
 
@@ -197,7 +203,10 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             providerFactory,
             cache,
             new SequentialLoopKernel(),
-            loggerFactory.CreateLogger<BehaviorExecutor>());
+            loggerFactory.CreateLogger<BehaviorExecutor>(),
+            agenticBrickEngine,
+            null,
+            metricsCollector);
     }
 
     private sealed class SingleBrickRegistry : Nexo.Core.Domain.Execution.IBrickRegistry

@@ -2,7 +2,10 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Nexo.BrickContracts.Capabilities;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
+using Nexo.Core.Application.NodeCapabilityRuntime.Models;
+using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
 using Nexo.Orchestration.Coordination;
@@ -58,6 +61,11 @@ public static class NexoEndpoints
             .Produces<ExecutionRunResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/capabilities", GetCapabilitiesAsync)
+            .WithName("GetCapabilities")
+            .WithSummary("Get node capability manifest for brick routing")
+            .Produces<NodeCapabilityManifestDto>(StatusCodes.Status200OK);
 
         return app;
     }
@@ -179,6 +187,53 @@ public static class NexoEndpoints
         {
             return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
         }
+    }
+
+    private static async Task<IResult> GetCapabilitiesAsync(
+        [FromServices] INodeCapabilityRuntime runtime,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        var manifest = runtime.GetCapabilityManifest();
+        return Results.Ok(ToDto(manifest));
+    }
+
+    private static NodeCapabilityManifestDto ToDto(NodeCapabilityManifest manifest)
+    {
+        return new NodeCapabilityManifestDto
+        {
+            NodeId = manifest.NodeId,
+            Tier = manifest.Tier switch
+            {
+                NodeTier.Core => NodeTierDto.Core,
+                NodeTier.Standard => NodeTierDto.Standard,
+                NodeTier.Micro => NodeTierDto.Micro,
+                _ => NodeTierDto.Nano
+            },
+            Platform = manifest.Platform switch
+            {
+                PlatformType.Windows => PlatformTypeDto.Windows,
+                PlatformType.macOS => PlatformTypeDto.macOS,
+                PlatformType.Linux => PlatformTypeDto.Linux,
+                PlatformType.iOS => PlatformTypeDto.iOS,
+                PlatformType.Android => PlatformTypeDto.Android,
+                _ => PlatformTypeDto.Unknown
+            },
+            HotModelIds = manifest.HotModelIds,
+            AvailableModelIds = manifest.AvailableModelIds,
+            SupportedCapabilities = manifest.SupportedCapabilities.Select(cap => cap switch
+            {
+                TaskCapability.CodeGeneration => TaskCapabilityDto.CodeGeneration,
+                TaskCapability.Embeddings => TaskCapabilityDto.Embeddings,
+                TaskCapability.Vision => TaskCapabilityDto.Vision,
+                TaskCapability.Reasoning => TaskCapabilityDto.Reasoning,
+                TaskCapability.Classification => TaskCapabilityDto.Classification,
+                _ => TaskCapabilityDto.TextGeneration
+            }).ToArray(),
+            AcceptingRemoteWork = manifest.AcceptingRemoteWork,
+            GeneratedAt = manifest.GeneratedAt
+        };
     }
 }
 

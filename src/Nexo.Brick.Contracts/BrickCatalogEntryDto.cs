@@ -1,3 +1,5 @@
+using Nexo.BrickContracts.Capabilities;
+
 namespace Nexo.BrickContracts;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace Nexo.BrickContracts;
 /// </summary>
 public class BrickCatalogEntryDto
 {
-    public string WireFormatVersion { get; set; } = "2025-01";
+    public string WireFormatVersion { get; set; } = global::Nexo.BrickContracts.WireFormatVersion.Current;
     public string Id { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Version { get; set; } = "1.0.0";
@@ -22,4 +24,7 @@ public class BrickCatalogEntryDto
 
     /// <summary>Network-wide usage statistics (populated by central catalog when available).</summary>
     public BrickUsageStatsDto? UsageStats { get; set; }
+
+    /// <summary>Optional capability manifest for the host publishing this brick.</summary>
+    public NodeCapabilityManifestDto? HostCapabilities { get; set; }
 }

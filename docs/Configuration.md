@@ -42,6 +42,40 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `OLLAMA_VISION_MODEL` | Vision model | `richardyoung/smolvlm2-2.2b-instruct` |
 | `OLLAMA_TIMEOUT_SECONDS` | Request timeout | `300` |
 
+### Node Capability Runtime (NCR) Ollama
+
+Desktop NCR uses its own options-bound Ollama endpoint for model serving.
+
+| Key / Variable | Description | Default |
+|----------------|-------------|---------|
+| `Nexo:NodeCapabilityRuntime:Ollama:BaseUrl` (`Nexo__NodeCapabilityRuntime__Ollama__BaseUrl`) | NCR Ollama backend base URL used by desktop policy registrations | `http://127.0.0.1:11434` |
+
+Behavior notes:
+- On startup, NCR runs a health probe against the configured Ollama backend and logs a degraded warning if unreachable.
+- A degraded startup does not crash the host; agentic tasks may escalate until Ollama becomes reachable.
+- NCR records metrics for model resolution, model load, and Ollama endpoint latencies/error rates via `IMetricsCollector` keys under `ncr.*`.
+
+### NCR Capability Freshness
+
+Remote brick catalogs now use an in-memory stale capability snapshot fallback:
+- Fresh `/api/capabilities` responses are cached per remote base URL.
+- If a later capability fetch fails, the last known manifest is reused and marked stale internally.
+- Consumers should treat stale manifests as routing hints (not hard guarantees), and retry capability refresh periodically.
+- `Nexo:Execution:RemoteCapabilities:MaxStaleAge` (`Nexo__Execution__RemoteCapabilities__MaxStaleAge`) bounds stale fallback age (default `00:10:00`). If stale data exceeds this age, fallback is rejected.
+
+### NCR Telemetry SLO Suggestions (v1)
+
+Suggested starting SLOs/alerts using `ncr.*` metrics:
+- `ncr.model_resolution.target.Escalate`: alert if escalation ratio > 20% over 15 minutes for user-facing workloads.
+- `ncr.model_load.error` and `ncr.ollama.*.error`: alert on sustained non-zero error rate over 5 minutes.
+- `ncr.ollama.chat.duration`: track p95/p99; alert if p95 exceeds your interactive budget for 10+ minutes.
+- `ncr.profile.constraint_change`: watch for bursty spikes that correlate with thermal/memory pressure and escalation increases.
+
+Operational guidance:
+- Treat stale capability fallback as degraded mode; prefer conservative routing and periodic refresh attempts.
+- Keep `NEXO_ENDPOINT_HEALTH_DEGRADED_LOG_THRESHOLD` > 1 in noisy environments to reduce transient probe warning noise.
+- Set `NEXO_OBSERVATION_FAIL_OPEN=1` for production-style hosts that must continue serving even if observation store permissions are restricted.
+
 ## Video (SmolVLM2)
 
 | Variable | Description | Default |

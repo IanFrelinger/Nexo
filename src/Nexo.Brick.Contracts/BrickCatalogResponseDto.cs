@@ -5,7 +5,7 @@ namespace Nexo.BrickContracts;
 /// </summary>
 public class BrickCatalogResponseDto
 {
-    public string WireFormatVersion { get; set; } = "2025-01";
+    public string WireFormatVersion { get; set; } = Nexo.BrickContracts.WireFormatVersion.Current;
     public IReadOnlyList<BrickCatalogEntryDto> Bricks { get; set; } = [];
     public string? ContinuationToken { get; set; }
 }

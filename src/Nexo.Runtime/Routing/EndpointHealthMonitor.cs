@@ -16,6 +16,7 @@ public sealed class EndpointHealthMonitor : BackgroundService
     private readonly GrpcAgentTransport _grpcTransport;
     private readonly RoutingOptions _routingOptions;
     private readonly ILogger<EndpointHealthMonitor> _logger;
+    private readonly Dictionary<string, int> _consecutiveFailures = new(StringComparer.OrdinalIgnoreCase);
 
     public EndpointHealthMonitor(
         IEndpointRegistry endpointRegistry,
@@ -60,11 +61,20 @@ public sealed class EndpointHealthMonitor : BackgroundService
 
                 if (!health.IsHealthy)
                 {
-                    _logger.LogWarning(
-                        "Endpoint {EndpointName} ({Endpoint}) is degraded: {Diagnostic}",
-                        descriptor.Name,
-                        descriptor.Endpoint,
-                        health.DiagnosticMessage ?? health.Message ?? "No diagnostic message");
+                    var failures = IncrementFailureCount(descriptor.Endpoint);
+                    if (failures >= Math.Max(1, _routingOptions.DegradedLogFailureThreshold))
+                    {
+                        _logger.LogWarning(
+                            "Endpoint {EndpointName} ({Endpoint}) is degraded after {FailureCount} failed probes: {Diagnostic}",
+                            descriptor.Name,
+                            descriptor.Endpoint,
+                            failures,
+                            health.DiagnosticMessage ?? health.Message ?? "No diagnostic message");
+                    }
+                }
+                else
+                {
+                    ResetFailureCount(descriptor.Endpoint);
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -74,12 +84,36 @@ public sealed class EndpointHealthMonitor : BackgroundService
             catch (Exception ex)
             {
                 _endpointRegistry.UpdateHealth(descriptor.Endpoint, false);
-                _logger.LogWarning(
-                    ex,
-                    "Endpoint health probe failed for {EndpointName} ({Endpoint})",
-                    descriptor.Name,
-                    descriptor.Endpoint);
+                var failures = IncrementFailureCount(descriptor.Endpoint);
+                if (failures >= Math.Max(1, _routingOptions.DegradedLogFailureThreshold))
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Endpoint health probe failed for {EndpointName} ({Endpoint}) after {FailureCount} failed probes",
+                        descriptor.Name,
+                        descriptor.Endpoint,
+                        failures);
+                }
             }
+        }
+    }
+
+    private int IncrementFailureCount(string endpoint)
+    {
+        lock (_consecutiveFailures)
+        {
+            _consecutiveFailures.TryGetValue(endpoint, out var current);
+            var next = current + 1;
+            _consecutiveFailures[endpoint] = next;
+            return next;
+        }
+    }
+
+    private void ResetFailureCount(string endpoint)
+    {
+        lock (_consecutiveFailures)
+        {
+            _consecutiveFailures.Remove(endpoint);
         }
     }
 }

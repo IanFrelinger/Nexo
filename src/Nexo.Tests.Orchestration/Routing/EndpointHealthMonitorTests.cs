@@ -96,6 +96,50 @@ public sealed class EndpointHealthMonitorTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_UnhealthyProbe_DoesNotLogBeforeThreshold()
+    {
+        using var env = new EnvironmentVariableScope("DOTNET_ENVIRONMENT", "Development");
+        var endpoint = "http://127.0.0.1:6552";
+        var registry = new TestEndpointRegistry([
+            new EndpointDescriptor(
+                Endpoint: endpoint,
+                Name: "down-threshold",
+                SupportedCapabilities: ["CodeGeneration"],
+                AcceptedBarrierLevels: [],
+                Region: null,
+                Priority: 1,
+                IsHealthy: true)
+        ]);
+
+        using var transport = CreateGrpcTransport();
+        var logger = new Mock<ILogger<EndpointHealthMonitor>>();
+        var monitor = new EndpointHealthMonitor(
+            registry,
+            transport,
+            Options.Create(new RoutingOptions
+            {
+                HealthCheckIntervalSeconds = 30,
+                DegradedLogFailureThreshold = 2
+            }),
+            logger.Object);
+
+        await monitor.StartAsync(CancellationToken.None);
+        await Task.Delay(300);
+        await monitor.StopAsync(CancellationToken.None);
+
+        registry.Updates.Should().ContainSingle();
+        registry.Updates[0].isHealthy.Should().BeFalse();
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_CancellationRequested_StopsPromptly()
     {
         using var env = new EnvironmentVariableScope("DOTNET_ENVIRONMENT", "Development");

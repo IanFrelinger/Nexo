@@ -5,7 +5,7 @@ namespace Nexo.BrickContracts;
 /// </summary>
 public class BrickExecuteResponseDto
 {
-    public string WireFormatVersion { get; set; } = "2025-01";
+    public string WireFormatVersion { get; set; } = Nexo.BrickContracts.WireFormatVersion.Current;
     public bool Success { get; set; }
     public string? Summary { get; set; }
     /// <summary>Output key-value; binary values use {"__type":"bytes","base64":"..."}.</summary>

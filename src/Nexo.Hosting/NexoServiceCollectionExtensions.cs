@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -16,6 +17,7 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Maintenance;
+using Nexo.Infrastructure.NodeCapabilityRuntime;
 using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
@@ -53,6 +55,24 @@ public static class NexoServiceCollectionExtensions
         configure?.Invoke(options);
 
         services.AddHttpClient();
+        var configuration = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+        services.AddOptions<Nexo.Infrastructure.Execution.RemoteCapabilitiesOptions>()
+            .Bind(configuration.GetSection("Nexo:RemoteCapabilities"));
+        services.AddNodeCapabilityRuntimeCore(configuration);
+        if (OperatingSystem.IsWindows())
+            services.AddNodeCapabilityRuntimeWindows(configuration);
+        else if (OperatingSystem.IsMacOS())
+            services.AddNodeCapabilityRuntimeMacOS(configuration);
+        else if (OperatingSystem.IsLinux())
+            services.AddNodeCapabilityRuntimeLinux(configuration);
+        else if (OperatingSystem.IsIOS())
+            services.AddNodeCapabilityRuntimeiOS(configuration);
+        else if (OperatingSystem.IsAndroid())
+            services.AddNodeCapabilityRuntimeAndroid(configuration);
+        else
+            services.AddNodeCapabilityRuntimeLinux(configuration);
 
         services.AddMediatR(cfg =>
         {
@@ -95,10 +115,12 @@ public static class NexoServiceCollectionExtensions
         if (!options.DisableObservationPipeline)
         {
             var repoRoot = RepoPathResolver.FindRepoRoot();
+            var observationFailOpen = options.ObservationFailOpen ?? ParseBooleanEnvironmentVariable("NEXO_OBSERVATION_FAIL_OPEN");
             services.AddObservationPipeline(opts =>
             {
                 opts.RepoRoot = repoRoot;
                 opts.StorePath = options.PatternStorePath ?? "nexo-patterns.db";
+                opts.FailOpenOnStoreErrors = observationFailOpen;
             }, registerHostedService: options.RegisterBackgroundAgentHostedService);
         }
         services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
@@ -193,7 +215,9 @@ public static class NexoServiceCollectionExtensions
                 sp.GetRequiredService<Nexo.Infrastructure.Execution.ISemanticCache>(),
                 sp.GetRequiredService<ILoopKernel>(),
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>(),
-                sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>()));
+                sp.GetService<Nexo.Core.Application.Execution.Ports.IAgenticBrickEngine>(),
+                sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>(),
+                sp.GetService<IMetricsCollector>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(sp =>
         {
             var sdkOptions = sp.GetService<Nexo.Hosting.Sdk.NexoSdkOptions>();
@@ -276,5 +300,17 @@ public static class NexoServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    private static bool ParseBooleanEnvironmentVariable(string key)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 }
