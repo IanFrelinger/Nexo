@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.BackgroundAgents.Configuration;
@@ -26,6 +27,8 @@ namespace Nexo.BackgroundAgents;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
+    private const string ObservationDegradedModeEnv = "NEXO_OBSERVATION_DEGRADED_MODE";
+
     /// <summary>
     /// Adds background agent services including scheduler, registry, and policy integration.
     /// Requires orchestration (AgentFactory, LifecycleManager for BackgroundAgentService) and configuration to be registered.
@@ -149,6 +152,10 @@ public static class ServiceCollectionExtensions
     /// <param name="registerHostedService">If true, registers ObservationPipelineService (default true).</param>
     public static IServiceCollection AddObservationPipeline(this IServiceCollection services, Action<ObservationPipelineOptions>? configure = null, bool registerHostedService = true)
     {
+        var degradedModeEnabled = string.Equals(
+            Environment.GetEnvironmentVariable(ObservationDegradedModeEnv),
+            "1",
+            StringComparison.OrdinalIgnoreCase);
         services.Configure<ObservationPipelineOptions>(opts =>
         {
             configure?.Invoke(opts);
@@ -158,7 +165,19 @@ public static class ServiceCollectionExtensions
             var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ObservationPipelineOptions>>().Value;
             var repoRoot = opts.RepoRoot ?? Directory.GetCurrentDirectory();
             var storePath = Path.Combine(repoRoot, opts.StorePath);
-            return new LiteDbPatternStore(storePath);
+            if (!degradedModeEnabled)
+            {
+                return new LiteDbPatternStore(storePath);
+            }
+
+            try
+            {
+                return new LiteDbPatternStore(storePath);
+            }
+            catch
+            {
+                return new NoOpPatternStore();
+            }
         });
         services.AddSingleton<Nexo.Core.Application.Observation.Ports.IPatternProcessedStore>(sp =>
         {

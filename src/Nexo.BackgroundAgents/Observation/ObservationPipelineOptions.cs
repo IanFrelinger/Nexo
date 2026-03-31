@@ -25,4 +25,9 @@ public sealed class ObservationPipelineOptions
 
     /// <summary>Minimum edits to same path to emit repeated-edits pattern.</summary>
     public int RepeatedEditThreshold { get; set; } = 3;
+
+    /// <summary>
+    /// When true, observation pipeline logs store errors and degrades instead of rethrowing.
+    /// </summary>
+    public bool FailOpenOnStoreErrors { get; set; }
 }

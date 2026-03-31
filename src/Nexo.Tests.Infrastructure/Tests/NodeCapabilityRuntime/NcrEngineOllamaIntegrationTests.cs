@@ -236,6 +236,61 @@ public sealed class NcrEngineOllamaIntegrationTests
         handler.Requests.Select(r => r.RequestUri!.AbsolutePath).Should().Contain("/api/chat");
     }
 
+    [Fact]
+    public async Task RunInference_WithIntermittentFailures_CompletesAcrossAttempts()
+    {
+        var attempts = 0;
+        var handler = new FakeHttpMessageHandler((request, ct) =>
+        {
+            if (request.RequestUri!.AbsolutePath != "/api/chat")
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+            }
+
+            attempts++;
+            if (attempts <= 2)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            }
+
+            return Task.FromResult(JsonResponse("""
+            {
+              "message": {
+                "content": "eventual-ok"
+              }
+            }
+            """));
+        });
+
+        using var httpClient = new HttpClient(handler);
+        var backend = new OllamaModelServingBackend(
+            httpClient,
+            Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            backend.RunInferenceAsync(new InferenceRequest
+            {
+                ModelId = "phi3-mini",
+                Prompt = "hello"
+            }));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            backend.RunInferenceAsync(new InferenceRequest
+            {
+                ModelId = "phi3-mini",
+                Prompt = "hello"
+            }));
+
+        var final = await backend.RunInferenceAsync(new InferenceRequest
+        {
+            ModelId = "phi3-mini",
+            Prompt = "hello"
+        });
+
+        final.Output.Should().Be("eventual-ok");
+        attempts.Should().Be(3);
+    }
+
     [Fact(Timeout = Nexo.Tests.Infrastructure.Helpers.TestTimeouts.Integration)]
     public async Task LiveOllama_WhenEnabled_ResolvesAndInfers()
     {

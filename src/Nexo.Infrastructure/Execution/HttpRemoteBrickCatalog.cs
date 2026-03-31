@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nexo.BrickContracts;
 using Nexo.BrickContracts.Capabilities;
 
@@ -15,6 +16,7 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
     private readonly ILogger<HttpRemoteBrickCatalog>? _logger;
     private readonly StaleCapabilitiesSnapshotStore? _staleCapabilities;
     private readonly TimeSpan _capabilityTtl;
+    private readonly TimeSpan _maxStaleCapabilityAge;
     private readonly object _capabilityGate = new();
     private NodeCapabilityManifestDto? _cachedCapabilities;
     private DateTimeOffset _capabilitiesFetchedAt = DateTimeOffset.MinValue;
@@ -23,12 +25,14 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         HttpClient httpClient,
         ILogger<HttpRemoteBrickCatalog>? logger = null,
         StaleCapabilitiesSnapshotStore? staleCapabilities = null,
-        TimeSpan? capabilityTtl = null)
+        TimeSpan? capabilityTtl = null,
+        TimeSpan? maxStaleCapabilityAge = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger;
         _staleCapabilities = staleCapabilities;
         _capabilityTtl = capabilityTtl ?? TimeSpan.FromSeconds(30);
+        _maxStaleCapabilityAge = maxStaleCapabilityAge ?? TimeSpan.FromMinutes(5);
     }
 
     public string BaseUrl => _httpClient.BaseAddress?.ToString() ?? string.Empty;
@@ -128,7 +132,7 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
             _logger?.LogDebug("Capabilities endpoint not found at {BaseUrl}; using cached value when available.", BaseUrl);
             lock (_capabilityGate)
             {
-                var fallback = _cachedCapabilities ?? _staleCapabilities?.Get(BaseUrl);
+                var fallback = SelectEligibleStaleCapabilities();
                 return new CapabilitiesFetchResult
                 {
                     Capabilities = fallback,
@@ -141,7 +145,7 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
             _logger?.LogWarning(ex, "Failed to fetch capabilities from {BaseUrl}", BaseUrl);
             lock (_capabilityGate)
             {
-                var fallback = _cachedCapabilities ?? _staleCapabilities?.Get(BaseUrl);
+                var fallback = SelectEligibleStaleCapabilities();
                 return new CapabilitiesFetchResult
                 {
                     Capabilities = fallback,
@@ -149,6 +153,36 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
                 };
             }
         }
+    }
+
+    private NodeCapabilityManifestDto? SelectEligibleStaleCapabilities()
+    {
+        var stale = _cachedCapabilities ?? _staleCapabilities?.Get(BaseUrl);
+        if (stale is null)
+        {
+            return null;
+        }
+
+        var staleAge = DateTimeOffset.UtcNow - stale.GeneratedAt;
+        if (stale.GeneratedAt > DateTimeOffset.UtcNow.AddMinutes(1))
+        {
+            _logger?.LogWarning(
+                "Discarding stale capabilities for {BaseUrl}; manifest generatedAt is in the future ({GeneratedAt}).",
+                BaseUrl,
+                stale.GeneratedAt);
+            return null;
+        }
+        if (staleAge > _maxStaleCapabilityAge)
+        {
+            _logger?.LogWarning(
+                "Discarding stale capabilities for {BaseUrl}; age {AgeSeconds}s exceeds max {MaxAgeSeconds}s.",
+                BaseUrl,
+                staleAge.TotalSeconds,
+                _maxStaleCapabilityAge.TotalSeconds);
+            return null;
+        }
+
+        return stale;
     }
 
     private async Task<NodeCapabilityManifestDto?> FetchCapabilitiesAsync(CancellationToken cancellationToken)
@@ -248,6 +282,16 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         }
 
         return items.ToArray();
+    }
+
+    private bool IsStaleWithinAge(NodeCapabilityManifestDto manifest, DateTimeOffset now)
+    {
+        if (manifest.GeneratedAt == default)
+        {
+            return true;
+        }
+        var age = now - manifest.GeneratedAt;
+        return age <= _maxStaleCapabilityAge;
     }
 
     private static TEnum[] ReadEnumArray<TEnum>(JsonElement root, string propertyName)

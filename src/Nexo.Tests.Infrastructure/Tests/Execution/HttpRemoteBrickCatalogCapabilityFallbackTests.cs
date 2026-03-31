@@ -14,9 +14,10 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     [Fact]
     public async Task GetCapabilitiesAsync_ReturnsStaleSnapshot_WhenEndpointUnavailable()
     {
+        var freshGeneratedAt = DateTimeOffset.UtcNow.AddSeconds(-5).ToString("O");
         var responses = new Queue<Func<HttpRequestMessage, HttpResponseMessage>>(
         [
-            static _ => JsonResponse("""
+            _ => JsonResponse($$"""
             {
               "nodeId": "node-a",
               "tier": 1,
@@ -25,7 +26,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
               "availableModelIds": ["phi3-mini"],
               "supportedCapabilities": [0],
               "acceptingRemoteWork": true,
-              "generatedAt": "2026-01-01T00:00:00Z"
+              "generatedAt": "{{freshGeneratedAt}}"
             }
             """),
             static _ => throw new HttpRequestException("network down")
@@ -55,8 +56,78 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     }
 
     [Fact]
+    public async Task GetCapabilitiesAsync_DropsStaleSnapshot_WhenOlderThanMaxAge()
+    {
+        var staleStore = new StaleCapabilitiesSnapshotStore();
+        var tooOld = DateTimeOffset.UtcNow.AddMinutes(-20);
+        staleStore.Put("http://remote:7777/", new NodeCapabilityManifestDto
+        {
+            NodeId = "node-stale",
+            Tier = NodeTierDto.Micro,
+            Platform = PlatformTypeDto.Linux,
+            HotModelIds = [],
+            AvailableModelIds = ["phi3-mini"],
+            SupportedCapabilities = [TaskCapabilityDto.TextGeneration],
+            AcceptingRemoteWork = true,
+            GeneratedAt = tooOld
+        });
+
+        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))))
+        {
+            BaseAddress = new Uri("http://remote:7777", UriKind.Absolute)
+        };
+
+        var sut = new HttpRemoteBrickCatalog(
+            httpClient,
+            NullLogger<HttpRemoteBrickCatalog>.Instance,
+            staleStore,
+            capabilityTtl: TimeSpan.Zero,
+            maxStaleCapabilityAge: TimeSpan.FromMinutes(5));
+
+        var fetch = await sut.GetCapabilitiesWithStalenessAsync();
+        fetch.Capabilities.Should().BeNull();
+        fetch.IsStale.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetCapabilitiesAsync_DropsFutureTimestampSnapshot()
+    {
+        var staleStore = new StaleCapabilitiesSnapshotStore();
+        staleStore.Put("http://remote:7777/", new NodeCapabilityManifestDto
+        {
+            NodeId = "node-future",
+            Tier = NodeTierDto.Standard,
+            Platform = PlatformTypeDto.Linux,
+            HotModelIds = [],
+            AvailableModelIds = ["phi3-mini"],
+            SupportedCapabilities = [TaskCapabilityDto.TextGeneration],
+            AcceptingRemoteWork = true,
+            GeneratedAt = DateTimeOffset.UtcNow.AddHours(1)
+        });
+
+        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))))
+        {
+            BaseAddress = new Uri("http://remote:7777", UriKind.Absolute)
+        };
+
+        var sut = new HttpRemoteBrickCatalog(
+            httpClient,
+            NullLogger<HttpRemoteBrickCatalog>.Instance,
+            staleStore,
+            capabilityTtl: TimeSpan.Zero,
+            maxStaleCapabilityAge: TimeSpan.FromMinutes(15));
+
+        var fetch = await sut.GetCapabilitiesWithStalenessAsync();
+        fetch.Capabilities.Should().BeNull();
+        fetch.IsStale.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task GetAllAsync_AttachesCapabilitiesFromStaleCache_WhenFreshFetchFails()
     {
+        var freshGeneratedAt = DateTimeOffset.UtcNow.AddSeconds(-5).ToString("O");
         var capabilitiesCalls = 0;
         var brickCalls = 0;
         using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
@@ -65,7 +136,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
             {
                 capabilitiesCalls++;
                 return capabilitiesCalls == 1
-                    ? Task.FromResult(JsonResponse("""
+                    ? Task.FromResult(JsonResponse($$"""
                     {
                       "nodeId": "node-cache",
                       "tier": 2,
@@ -74,7 +145,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
                       "availableModelIds": ["phi3-mini"],
                       "supportedCapabilities": [0],
                       "acceptingRemoteWork": true,
-                      "generatedAt": "2026-01-01T00:00:00Z"
+                      "generatedAt": "{{freshGeneratedAt}}"
                     }
                     """))
                     : Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));

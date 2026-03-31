@@ -61,6 +61,20 @@ Remote brick catalogs now use an in-memory stale capability snapshot fallback:
 - Fresh `/api/capabilities` responses are cached per remote base URL.
 - If a later capability fetch fails, the last known manifest is reused and marked stale internally.
 - Consumers should treat stale manifests as routing hints (not hard guarantees), and retry capability refresh periodically.
+- `Nexo:Execution:RemoteCapabilities:MaxStaleAge` (`Nexo__Execution__RemoteCapabilities__MaxStaleAge`) bounds stale fallback age (default `00:10:00`). If stale data exceeds this age, fallback is rejected.
+
+### NCR Telemetry SLO Suggestions (v1)
+
+Suggested starting SLOs/alerts using `ncr.*` metrics:
+- `ncr.model_resolution.target.Escalate`: alert if escalation ratio > 20% over 15 minutes for user-facing workloads.
+- `ncr.model_load.error` and `ncr.ollama.*.error`: alert on sustained non-zero error rate over 5 minutes.
+- `ncr.ollama.chat.duration`: track p95/p99; alert if p95 exceeds your interactive budget for 10+ minutes.
+- `ncr.profile.constraint_change`: watch for bursty spikes that correlate with thermal/memory pressure and escalation increases.
+
+Operational guidance:
+- Treat stale capability fallback as degraded mode; prefer conservative routing and periodic refresh attempts.
+- Keep `NEXO_ENDPOINT_HEALTH_DEGRADED_LOG_THRESHOLD` > 1 in noisy environments to reduce transient probe warning noise.
+- Set `NEXO_OBSERVATION_FAIL_OPEN=1` for production-style hosts that must continue serving even if observation store permissions are restricted.
 
 ## Video (SmolVLM2)
 

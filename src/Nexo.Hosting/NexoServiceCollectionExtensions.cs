@@ -58,6 +58,8 @@ public static class NexoServiceCollectionExtensions
         var configuration = new ConfigurationBuilder()
             .AddEnvironmentVariables()
             .Build();
+        services.AddOptions<Nexo.Infrastructure.Execution.RemoteCapabilitiesOptions>()
+            .Bind(configuration.GetSection("Nexo:RemoteCapabilities"));
         services.AddNodeCapabilityRuntimeCore(configuration);
         if (OperatingSystem.IsWindows())
             services.AddNodeCapabilityRuntimeWindows(configuration);
@@ -113,10 +115,12 @@ public static class NexoServiceCollectionExtensions
         if (!options.DisableObservationPipeline)
         {
             var repoRoot = RepoPathResolver.FindRepoRoot();
+            var observationFailOpen = options.ObservationFailOpen ?? ParseBooleanEnvironmentVariable("NEXO_OBSERVATION_FAIL_OPEN");
             services.AddObservationPipeline(opts =>
             {
                 opts.RepoRoot = repoRoot;
                 opts.StorePath = options.PatternStorePath ?? "nexo-patterns.db";
+                opts.FailOpenOnStoreErrors = observationFailOpen;
             }, registerHostedService: options.RegisterBackgroundAgentHostedService);
         }
         services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
@@ -296,5 +300,17 @@ public static class NexoServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    private static bool ParseBooleanEnvironmentVariable(string key)
+    {
+        var value = Environment.GetEnvironmentVariable(key);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 }

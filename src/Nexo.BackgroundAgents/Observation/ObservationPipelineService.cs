@@ -91,6 +91,15 @@ public sealed class ObservationPipelineService : BackgroundService
         }
         catch (Exception ex)
         {
+            if (ex is UnauthorizedAccessException || ex is IOException)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Observation pipeline degraded due to storage/permission issue. " +
+                    "Service will stay active and continue retrying with next events.");
+                return;
+            }
+
             _logger.LogError(ex, "Observation pipeline failed: {Error}", ex.Message);
             throw;
         }

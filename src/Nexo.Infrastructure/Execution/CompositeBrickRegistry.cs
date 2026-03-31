@@ -41,7 +41,15 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
                 if (entry != null)
                 {
                     var executeBaseUrl = entry.HostBaseUrl ?? catalog.BaseUrl.TrimEnd('/');
-                    entry.HostCapabilities ??= catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult().Capabilities;
+                    var capabilityFetch = catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult();
+                    entry.HostCapabilities ??= capabilityFetch.Capabilities;
+                    if (capabilityFetch.IsStale)
+                    {
+                        _logger?.LogWarning(
+                            "Remote brick {BrickId} from {BaseUrl} is using stale host capability data.",
+                            entry.Id,
+                            catalog.BaseUrl);
+                    }
                     return new RemoteBrick(entry, _httpClient, executeBaseUrl, null);
                 }
             }
@@ -67,7 +75,14 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
             {
                 var entries = catalog.GetAllAsync().GetAwaiter().GetResult();
                 var baseUrl = catalog.BaseUrl.TrimEnd('/');
-                var hostCapabilities = catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult().Capabilities;
+                var capabilityFetch = catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult();
+                var hostCapabilities = capabilityFetch.Capabilities;
+                if (capabilityFetch.IsStale)
+                {
+                    _logger?.LogWarning(
+                        "Remote catalog {BaseUrl} returned stale host capability data for brick list.",
+                        catalog.BaseUrl);
+                }
                 foreach (var entry in entries)
                 {
                     if (set.ContainsKey(entry.Id)) continue;
