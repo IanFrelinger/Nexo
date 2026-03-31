@@ -53,6 +53,14 @@ Desktop NCR uses its own options-bound Ollama endpoint for model serving.
 Behavior notes:
 - On startup, NCR runs a health probe against the configured Ollama backend and logs a degraded warning if unreachable.
 - A degraded startup does not crash the host; agentic tasks may escalate until Ollama becomes reachable.
+- NCR records metrics for model resolution, model load, and Ollama endpoint latencies/error rates via `IMetricsCollector` keys under `ncr.*`.
+
+### NCR Capability Freshness
+
+Remote brick catalogs now use an in-memory stale capability snapshot fallback:
+- Fresh `/api/capabilities` responses are cached per remote base URL.
+- If a later capability fetch fails, the last known manifest is reused and marked stale internally.
+- Consumers should treat stale manifests as routing hints (not hard guarantees), and retry capability refresh periodically.
 
 ## Video (SmolVLM2)
 

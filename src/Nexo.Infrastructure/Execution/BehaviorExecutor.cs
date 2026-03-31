@@ -27,6 +27,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     private readonly ILoopKernel _loops;
     private readonly ILogger<BehaviorExecutor> _logger;
     private readonly IStepExecutionMode? _stepExecutionMode;
+    private readonly IMetricsCollector? _metricsCollector;
     
     /// <summary>
     /// Creates a new behavior executor.
@@ -38,6 +39,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     /// <param name="logger">Logger for diagnostics.</param>
     /// <param name="agenticBrickEngine">Optional NCR-backed model resolution for agentic execution.</param>
     /// <param name="stepExecutionMode">Optional runtime mode override for steps.</param>
+    /// <param name="metricsCollector">Optional telemetry collector for execution metrics.</param>
     public BehaviorExecutor(
         Nexo.Core.Domain.Execution.IBrickRegistry brickRegistry,
         IProviderFactory providerFactory,
@@ -45,7 +47,8 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         ILoopKernel loops,
         ILogger<BehaviorExecutor> logger,
         IAgenticBrickEngine? agenticBrickEngine = null,
-        IStepExecutionMode? stepExecutionMode = null)
+        IStepExecutionMode? stepExecutionMode = null,
+        IMetricsCollector? metricsCollector = null)
     {
         _brickRegistry = brickRegistry;
         _providerFactory = providerFactory;
@@ -54,6 +57,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         _loops = loops;
         _logger = logger;
         _stepExecutionMode = stepExecutionMode;
+        _metricsCollector = metricsCollector;
     }
     
     /// <inheritdoc />
@@ -187,27 +191,49 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
                                     resolution = await _agenticBrickEngine.ResolveModelForBrickAsync(brick, context, ct2);
                                     if (resolution.Target == Nexo.Core.Application.NodeCapabilityRuntime.Models.InferenceTarget.Escalate)
                                     {
-                                        throw new InvalidOperationException($"Agentic execution escalated: {resolution.Reason}");
-                                    }
-
-                                    var provider = resolution.Model.Provider ?? resolution.Model.ProviderModelId ?? context.Provider;
-                                    if (!string.IsNullOrWhiteSpace(provider))
-                                    {
-                                        var stepContext = new OverrideProviderExecutionContext(context, provider);
-                                        output = await brick.ExecuteAsync(brickInput, implementation, stepContext, ct2);
+                                        var modelId = string.IsNullOrWhiteSpace(resolution.Model.Id)
+                                            ? null
+                                            : resolution.Model.Id;
+                                        var provider = resolution.Model.Provider ?? resolution.Model.ProviderModelId ?? context.Provider;
+                                        error = $"Agentic execution escalated: {resolution.Reason}";
+                                        _metricsCollector?.IncrementCounter($"ncr.execution.escalated.{resolution.Reason}");
+                                        await writer.WriteAsync(
+                                            new AgenticEscalatedEvent(step.Id, brick.Id, resolution.Reason.ToString(), modelId, provider),
+                                            ct2);
+                                        await _agenticBrickEngine.RecordExecutionOutcomeAsync(
+                                            resolution,
+                                            new BrickExecutionOutcome
+                                            {
+                                                Succeeded = false,
+                                                Duration = DateTimeOffset.UtcNow - executionStart,
+                                                ErrorCode = "Escalated"
+                                            },
+                                            ct2);
                                     }
                                     else
                                     {
-                                        output = await brick.ExecuteAsync(brickInput, implementation, context, ct2);
+                                        var provider = resolution.Model.Provider ?? resolution.Model.ProviderModelId ?? context.Provider;
+                                        if (!string.IsNullOrWhiteSpace(provider))
+                                        {
+                                            var stepContext = new OverrideProviderExecutionContext(context, provider);
+                                            output = await brick.ExecuteAsync(brickInput, implementation, stepContext, ct2);
+                                        }
+                                        else
+                                        {
+                                            output = await brick.ExecuteAsync(brickInput, implementation, context, ct2);
+                                        }
                                     }
                                 }
                                 else
                                 {
                                     output = await brick.ExecuteAsync(brickInput, implementation, context, ct2);
                                 }
-                                await _semanticCache.SetAsync(cacheKey, output, ct2);
+                                if (output is not null)
+                                {
+                                    await _semanticCache.SetAsync(cacheKey, output, ct2);
+                                }
 
-                                if (resolution is not null && _agenticBrickEngine is not null)
+                                if (resolution is not null && _agenticBrickEngine is not null && output is not null)
                                 {
                                     await _agenticBrickEngine.RecordExecutionOutcomeAsync(
                                         resolution,
@@ -244,6 +270,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
 
                         if (output != null)
                         {
+                            _metricsCollector?.RecordExecutionTime("ncr.execution.step.duration", stopwatch.Elapsed);
                             MapOutputs(step.OutputMapping, output, context);
                             await writer.WriteAsync(new StepCompletedEvent(
                                 step.Id,
@@ -257,6 +284,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
                         }
 
                         await writer.WriteAsync(new StepErrorEvent(step.Id, error ?? "Step failed", stopwatch.ElapsedMilliseconds), ct2);
+                        _metricsCollector?.IncrementCounter("ncr.execution.step.error");
 
                         if (!options.SwapOnFailure)
                         {

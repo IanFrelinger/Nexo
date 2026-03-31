@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 
@@ -13,10 +14,15 @@ namespace Nexo.Infrastructure.NodeCapabilityRuntime.Backends;
 public sealed class OllamaModelServingBackend : IModelServingBackend
 {
     private readonly HttpClient _httpClient;
+    private readonly IMetricsCollector? _metricsCollector;
 
-    public OllamaModelServingBackend(HttpClient httpClient, IOptions<OllamaBackendOptions> options)
+    public OllamaModelServingBackend(
+        HttpClient httpClient,
+        IOptions<OllamaBackendOptions> options,
+        IMetricsCollector? metricsCollector = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _metricsCollector = metricsCollector;
         var opts = options?.Value ?? throw new ArgumentNullException(nameof(options));
         if (_httpClient.BaseAddress is null)
         {
@@ -28,8 +34,20 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
 
     public async Task<bool> IsAvailableAsync(CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync("/api/tags", ct).ConfigureAwait(false);
-        return response.IsSuccessStatusCode;
+        var started = DateTimeOffset.UtcNow;
+        try
+        {
+            using var response = await _httpClient.GetAsync("/api/tags", ct).ConfigureAwait(false);
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.tags.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter(response.IsSuccessStatusCode ? "ncr.ollama.tags.success" : "ncr.ollama.tags.failure");
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.tags.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter("ncr.ollama.tags.error");
+            throw;
+        }
     }
 
     public async Task<InferenceResult> RunInferenceAsync(InferenceRequest request, CancellationToken ct = default)
@@ -41,79 +59,142 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         var parameters = request.Parameters ?? new Dictionary<string, object>();
         var started = DateTimeOffset.UtcNow;
 
-        var payload = BuildChatPayload(modelId, system, prompt, parameters);
-        using var response = await PostJsonAsync("/api/chat", payload, ct).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
-        var content = doc.RootElement
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString() ?? string.Empty;
-
-        return new InferenceResult
+        try
         {
-            Output = content,
-            TokenCount = ApproximateTokenCount(content),
-            Duration = DateTimeOffset.UtcNow - started
-        };
+            var payload = BuildChatPayload(modelId, system, prompt, parameters);
+            _metricsCollector?.IncrementCounter("ncr.ollama.chat.request");
+            using var response = await PostJsonAsync("/api/chat", payload, ct).ConfigureAwait(false);
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.chat.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter(response.IsSuccessStatusCode ? "ncr.ollama.chat.success" : "ncr.ollama.chat.failure");
+            response.EnsureSuccessStatusCode();
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
+            var content = doc.RootElement
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString() ?? string.Empty;
+
+            return new InferenceResult
+            {
+                Output = content,
+                TokenCount = ApproximateTokenCount(content),
+                Duration = DateTimeOffset.UtcNow - started
+            };
+        }
+        catch
+        {
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.chat.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter("ncr.ollama.chat.error");
+            throw;
+        }
     }
 
     public async Task LoadModelAsync(string modelId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
-        var payload = BuildGeneratePayload(modelId, "30m");
-        using var response = await PostJsonAsync("/api/generate", payload, ct).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        var started = DateTimeOffset.UtcNow;
+        try
+        {
+            var payload = BuildGeneratePayload(modelId, "30m");
+            _metricsCollector?.IncrementCounter("ncr.ollama.generate.request");
+            using var response = await PostJsonAsync("/api/generate", payload, ct).ConfigureAwait(false);
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.generate.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter(response.IsSuccessStatusCode ? "ncr.ollama.generate.success" : "ncr.ollama.generate.failure");
+            response.EnsureSuccessStatusCode();
+        }
+        catch
+        {
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.generate.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter("ncr.ollama.generate.error");
+            throw;
+        }
     }
 
     public async Task UnloadModelAsync(string modelId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
-        var payload = BuildGeneratePayload(modelId, "0s");
-        using var response = await PostJsonAsync("/api/generate", payload, ct).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        var started = DateTimeOffset.UtcNow;
+        try
+        {
+            var payload = BuildGeneratePayload(modelId, "0s");
+            _metricsCollector?.IncrementCounter("ncr.ollama.generate.request");
+            using var response = await PostJsonAsync("/api/generate", payload, ct).ConfigureAwait(false);
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.generate.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter(response.IsSuccessStatusCode ? "ncr.ollama.generate.success" : "ncr.ollama.generate.failure");
+            response.EnsureSuccessStatusCode();
+        }
+        catch
+        {
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.generate.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter("ncr.ollama.generate.error");
+            throw;
+        }
     }
 
     public async Task PullModelAsync(string modelId, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
-        var payload = BuildPullPayload(modelId);
-        using var response = await PostJsonAsync("/api/pull", payload, ct).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        progress?.Report(new PullProgress { ModelId = modelId, BytesDownloaded = 1, TotalBytes = 1 });
+        var started = DateTimeOffset.UtcNow;
+        try
+        {
+            var payload = BuildPullPayload(modelId);
+            _metricsCollector?.IncrementCounter("ncr.ollama.pull.request");
+            using var response = await PostJsonAsync("/api/pull", payload, ct).ConfigureAwait(false);
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.pull.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter(response.IsSuccessStatusCode ? "ncr.ollama.pull.success" : "ncr.ollama.pull.failure");
+            response.EnsureSuccessStatusCode();
+            progress?.Report(new PullProgress { ModelId = modelId, BytesDownloaded = 1, TotalBytes = 1 });
+        }
+        catch
+        {
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.pull.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter("ncr.ollama.pull.error");
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<string>> ListLoadedModelsAsync(CancellationToken ct = default)
     {
-        using var response = await _httpClient.GetAsync("/api/ps", ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        var started = DateTimeOffset.UtcNow;
+        try
         {
-            return [];
-        }
-
-        await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
-        if (!doc.RootElement.TryGetProperty("models", out var models) || models.ValueKind != JsonValueKind.Array)
-        {
-            return [];
-        }
-
-        var names = new List<string>();
-        foreach (var model in models.EnumerateArray())
-        {
-            if (model.TryGetProperty("name", out var name))
+            using var response = await _httpClient.GetAsync("/api/ps", ct).ConfigureAwait(false);
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.ps.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter(response.IsSuccessStatusCode ? "ncr.ollama.ps.success" : "ncr.ollama.ps.failure");
+            if (!response.IsSuccessStatusCode)
             {
-                var parsed = name.GetString();
-                if (!string.IsNullOrWhiteSpace(parsed))
+                return [];
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
+            if (!doc.RootElement.TryGetProperty("models", out var models) || models.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var names = new List<string>();
+            foreach (var model in models.EnumerateArray())
+            {
+                if (model.TryGetProperty("name", out var name))
                 {
-                    names.Add(parsed);
+                    var parsed = name.GetString();
+                    if (!string.IsNullOrWhiteSpace(parsed))
+                    {
+                        names.Add(parsed);
+                    }
                 }
             }
-        }
 
-        return names;
+            return names;
+        }
+        catch
+        {
+            _metricsCollector?.RecordExecutionTime("ncr.ollama.ps.duration", DateTimeOffset.UtcNow - started);
+            _metricsCollector?.IncrementCounter("ncr.ollama.ps.error");
+            throw;
+        }
     }
 
     private static int ApproximateTokenCount(string text)

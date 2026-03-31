@@ -41,6 +41,7 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
                 if (entry != null)
                 {
                     var executeBaseUrl = entry.HostBaseUrl ?? catalog.BaseUrl.TrimEnd('/');
+                    entry.HostCapabilities ??= catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult().Capabilities;
                     return new RemoteBrick(entry, _httpClient, executeBaseUrl, null);
                 }
             }
@@ -66,9 +67,11 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
             {
                 var entries = catalog.GetAllAsync().GetAwaiter().GetResult();
                 var baseUrl = catalog.BaseUrl.TrimEnd('/');
+                var hostCapabilities = catalog.GetCapabilitiesWithStalenessAsync().GetAwaiter().GetResult().Capabilities;
                 foreach (var entry in entries)
                 {
                     if (set.ContainsKey(entry.Id)) continue;
+                    entry.HostCapabilities ??= hostCapabilities;
                     set[entry.Id] = new RemoteBrick(entry, _httpClient, entry.HostBaseUrl ?? baseUrl, null);
                 }
             }

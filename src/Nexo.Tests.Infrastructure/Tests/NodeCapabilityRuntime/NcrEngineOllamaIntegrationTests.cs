@@ -127,6 +127,115 @@ public sealed class NcrEngineOllamaIntegrationTests
         paths.Should().Contain("/api/chat");
     }
 
+    [Fact]
+    public async Task ResolveModel_WhenBackendUnavailable_Throws_AndRecordsFailureSignal()
+    {
+        var handler = new FakeHttpMessageHandler((request, ct) =>
+        {
+            return request.RequestUri!.AbsolutePath switch
+            {
+                "/api/ps" => Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)),
+                _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound))
+            };
+        });
+
+        using var httpClient = new HttpClient(handler);
+        var backend = new OllamaModelServingBackend(
+            httpClient,
+            Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }));
+        var lifecycle = new DefaultModelLifecycleManager(backend);
+        var policy = new LinuxPolicy();
+        var runtime = new NodeCapabilityRuntimeImpl(
+            new EnvironmentHardwareProfiler(),
+            policy,
+            lifecycle,
+            new ModelScoringService(policy),
+            Options.Create(new Nexo.Infrastructure.NodeCapabilityRuntime.NodeCapabilityRuntimeOptions
+            {
+                NodeId = "integration-node-failure",
+                DefaultModels =
+                [
+                    new ModelDescriptor
+                    {
+                        Id = "phi3-mini",
+                        Provider = "ollama",
+                        ProviderModelId = "phi3-mini",
+                        State = ModelState.Warm,
+                        QualityScore = 0.8f,
+                        SpeedScore = 0.8f,
+                        MinRAMRequiredBytes = 1024L * 1024 * 1024,
+                        Capabilities = new HashSet<TaskCapability> { TaskCapability.TextGeneration },
+                        SupportedPlatforms = new HashSet<PlatformType> { PlatformType.Linux }
+                    }
+                ]
+            }),
+            NullLogger<NodeCapabilityRuntimeImpl>.Instance);
+
+        var engine = new NcrAgenticBrickEngine(runtime);
+        var brick = new TestBrick
+        {
+            Id = "gen-failure",
+            Name = "gen-failure",
+            Category = BrickCategory.Generation,
+            Description = "generation",
+            Implementations = new BrickImplementations
+            {
+                Agentic = new AgenticImplementation { Id = "a", Name = "a", Description = "a" }
+            }
+        };
+        var context = new Nexo.Infrastructure.Execution.ExecutionContext
+        {
+            AgentId = "a1",
+            BehaviorId = "b1",
+            Provider = "ollama",
+            Variables = new Dictionary<string, object>
+            {
+                ["nexo:user_facing"] = true
+            }
+        };
+
+        var act = async () => await engine.ResolveModelForBrickAsync(brick, context, CancellationToken.None);
+        await act.Should().ThrowAsync<HttpRequestException>();
+        handler.Requests.Select(r => r.RequestUri!.AbsolutePath).Should().Contain("/api/ps");
+    }
+
+    [Fact]
+    public async Task RunInference_WhenSlowResponse_Completes_WithMeasuredDuration()
+    {
+        var handler = new FakeHttpMessageHandler(async (request, ct) =>
+        {
+            if (request.RequestUri!.AbsolutePath == "/api/chat")
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(120), ct);
+                return JsonResponse("""
+                {
+                  "message": {
+                    "content": "slow-ok"
+                  }
+                }
+                """);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        using var httpClient = new HttpClient(handler);
+        var backend = new OllamaModelServingBackend(
+            httpClient,
+            Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }));
+
+        var inference = await backend.RunInferenceAsync(new InferenceRequest
+        {
+            ModelId = "phi3-mini",
+            Prompt = "hello",
+            SystemPrompt = "sys"
+        });
+
+        inference.Output.Should().Be("slow-ok");
+        inference.Duration.Should().BeGreaterThan(TimeSpan.FromMilliseconds(100));
+        handler.Requests.Select(r => r.RequestUri!.AbsolutePath).Should().Contain("/api/chat");
+    }
+
     [Fact(Timeout = Nexo.Tests.Infrastructure.Helpers.TestTimeouts.Integration)]
     public async Task LiveOllama_WhenEnabled_ResolvesAndInfers()
     {

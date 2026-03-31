@@ -212,7 +212,8 @@ public static class NexoServiceCollectionExtensions
                 sp.GetRequiredService<ILoopKernel>(),
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.BehaviorExecutor>>(),
                 sp.GetService<Nexo.Core.Application.Execution.Ports.IAgenticBrickEngine>(),
-                sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>()));
+                sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>(),
+                sp.GetService<IMetricsCollector>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(sp =>
         {
             var sdkOptions = sp.GetService<Nexo.Hosting.Sdk.NexoSdkOptions>();

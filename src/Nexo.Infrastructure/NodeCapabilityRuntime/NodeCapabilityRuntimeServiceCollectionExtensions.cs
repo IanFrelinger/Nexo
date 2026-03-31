@@ -107,7 +107,8 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
             var factory = sp.GetRequiredService<IHttpClientFactory>();
             var client = factory.CreateClient(nameof(OllamaModelServingBackend));
             var options = sp.GetRequiredService<IOptions<OllamaBackendOptions>>();
-            return new OllamaModelServingBackend(client, options);
+            var metrics = sp.GetService<Nexo.Core.Application.Common.Ports.IMetricsCollector>();
+            return new OllamaModelServingBackend(client, options, metrics);
         });
         return services;
     }
