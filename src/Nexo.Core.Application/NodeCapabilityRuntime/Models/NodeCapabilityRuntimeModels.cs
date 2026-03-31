@@ -165,8 +165,8 @@ public sealed record ModelDescriptor
     public long MinVRAMRequiredBytes { get; init; }
     public long MinRAMRequiredBytes { get; init; }
     public bool RequiresRemote { get; init; }
-    public IReadOnlySet<TaskCapability> Capabilities { get; init; } = new HashSet<TaskCapability>();
-    public IReadOnlySet<PlatformType> SupportedPlatforms { get; init; } = new HashSet<PlatformType>();
+    public IReadOnlyCollection<TaskCapability> Capabilities { get; init; } = new HashSet<TaskCapability>();
+    public IReadOnlyCollection<PlatformType> SupportedPlatforms { get; init; } = new HashSet<PlatformType>();
 }
 
 public sealed record ModelResolution
