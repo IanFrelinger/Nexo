@@ -133,28 +133,19 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f ne
 Create a temporary template file:
 
 ```bash
-python - <<'PY'
-import json
-import os
-path = "/tmp/pipeline_gate_demo.json"
-with open(path, "w", encoding="utf-8", newline="\n") as fh:
-    json.dump(
-        {
-            "templateId": "gate-demo",
-            "version": "1.0",
-            "stages": [
-                { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
-                { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
-            ],
-            "edges": [
-                { "fromStageId": "ingest", "toStageId": "hybrid" }
-            ]
-        },
-        fh,
-        indent=2,
-    )
-print(path)
-PY
+cat > /tmp/pipeline_gate_demo.json <<'JSON'
+{
+  "templateId": "gate-demo",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
 ```
 
 Validate and run:
