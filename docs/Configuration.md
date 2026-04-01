@@ -15,6 +15,23 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `NEXO_LOOP_INSTRUMENT` | `1` = instrumented loop | `false` |
 | `NEXO_LLM_RETRY_COUNT` | Retries for cloud LLM (5xx/429) | `3` |
 
+## Pipelines (`NEXO_PIPELINE_*`)
+
+Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXO_PIPELINE_MAX_RETRIES` | Max stage retry attempts before failure | `3` |
+| `NEXO_PIPELINE_RETRY_DELAY_MS` | Delay between retries in milliseconds | `100` |
+| `NEXO_PIPELINE_RESUME_FAILED` | `1`/`true` to resume failed stages by default | `false` |
+| `NEXO_PIPELINE_ALLOW_MISSING_RESUME_SOURCE` | `1`/`true` to continue when source run is missing | `false` |
+| `NEXO_PIPELINE_ENABLE_TEST_HOOKS` | Enables deterministic failure/test hooks for gate scenarios | `false` |
+| `NEXO_PIPELINE_COMPLETION_POLICY` | Completion policy override (for example `AllowNonCriticalStageFailures`) | `Strict` |
+| `NEXO_PIPELINE_STORE_PROVIDER` | Pipeline run store provider (for example `LiteDb`) | in-memory |
+| `NEXO_PIPELINE_STORE_PATH` | Store path when using file-backed providers | unset |
+| `NEXO_PIPELINE_DETERMINISTIC_ADAPTER` | Override deterministic adapter identifier | framework default |
+| `NEXO_PIPELINE_AGENTIC_ADAPTER` | Override agentic adapter identifier | framework default |
+
 ## OpenAI
 
 | Variable | Description | Default |

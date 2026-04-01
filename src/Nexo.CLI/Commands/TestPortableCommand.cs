@@ -123,7 +123,7 @@ public class TestPortableCommand
             if (host != "macos") console.WriteLine("  - ios: Requires macOS");
             if (host != "macos") console.WriteLine("  - macos: Requires Apple hardware");
             console.WriteLine("");
-            console.WriteLine("To get full coverage (all platforms), use CI: gh workflow run \"Cross-Platform Tests\" --ref main");
+            console.WriteLine("To get full coverage (all platforms), use CI: gh workflow run \"Cross-Platform Tests\" --ref master");
         }
     }
 

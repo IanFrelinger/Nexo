@@ -30,7 +30,8 @@ Those should run as additional gates (v2+).
 
 ## 2) Required preconditions
 
-- .NET 8 SDK installed.
+- .NET SDK 9.x installed (repository is pinned via `global.json`).
+- .NET 8 runtime/targeting support available for `net8.0` test/build lanes.
 - Repository checked out cleanly.
 - No local uncommitted production code modifications.
 - Optional: `NEXO_PIPELINE_STORE_PROVIDER` and `NEXO_PIPELINE_STORE_PATH` available for durable resume validation.
@@ -132,28 +133,19 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f ne
 Create a temporary template file:
 
 ```bash
-python - <<'PY'
-import json
-import os
-path = "/tmp/pipeline_gate_demo.json"
-with open(path, "w", encoding="utf-8", newline="\n") as fh:
-    json.dump(
-        {
-            "templateId": "gate-demo",
-            "version": "1.0",
-            "stages": [
-                { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
-                { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
-            ],
-            "edges": [
-                { "fromStageId": "ingest", "toStageId": "hybrid" }
-            ]
-        },
-        fh,
-        indent=2,
-    )
-print(path)
-PY
+cat > /tmp/pipeline_gate_demo.json <<'JSON'
+{
+  "templateId": "gate-demo",
+  "version": "1.0",
+  "stages": [
+    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
+    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
+  ],
+  "edges": [
+    { "fromStageId": "ingest", "toStageId": "hybrid" }
+  ]
+}
+JSON
 ```
 
 Validate and run:

@@ -224,6 +224,48 @@ Pipeline runtime option precedence:
 | Run local test entrypoint | `dotnet run --project src/Nexo.CLI -- test local` |
 | CI verification bundle | `dotnet run --project src/Nexo.CLI -- ci` |
 
+## Demo Scripts (for rollout and live demos)
+
+Use these when you need an end-to-end walkthrough without manually stitching commands together.
+
+```bash
+# high-signal demo flow (build, bootstrap, chat, orchestration, dogfood)
+bash scripts/oh-shit-demo.sh --quick
+
+# skip build if CLI is already built
+bash scripts/oh-shit-demo.sh --quick --no-build
+
+# unity sidecar demo (generate + compile validation + dogfood block1)
+bash scripts/unity-sidecar-demo.sh run-demo --prompt "add a dash ability"
+```
+
+References:
+- `scripts/oh-shit-demo.sh`
+- `scripts/unity-sidecar-demo.sh`
+- `docs/UnitySidecarDemo.md`
+
+## Docker Compose Workflows
+
+The repository includes optional compose definitions for test and ephemeral runtime scenarios.
+
+CI validation:
+- `.github/workflows/compose-gate.yml` runs compose-based checks on every relevant PR/push.
+- You can trigger manually with:
+  - `gh workflow run "Compose Gate" --ref master`
+
+```bash
+# run Ubuntu test service and write JSON/log output into ./test-results
+docker compose -f docker-compose.test.yml up --build test-ubuntu
+
+# start ephemeral Ollama container (and optional Postgres profile)
+docker compose -f docker-compose.ephemeral.yml up ollama
+docker compose -f docker-compose.ephemeral.yml --profile db up postgres
+```
+
+Notes:
+- `docker-compose.test.yml` mounts `./test-results` and runs `BaseFrameworkSmokeTests` (`net9.0`) in container, writing log/summary artifacts there.
+- `docker-compose.ephemeral.yml` is for disposable local orchestration dependencies.
+
 ## Providers
 
 LLM/vision routing is provider-based:

@@ -1,0 +1,147 @@
+name: Compose Gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/compose-gate.yml"
+      - "docker-compose.test.yml"
+      - "docker-compose.ephemeral.yml"
+      - ".docker/Dockerfile.test"
+      - ".docker/Dockerfile.ephemeral"
+      - "src/Nexo.CLI/**"
+      - "README.md"
+      - "docs/DocsIndex.md"
+  pull_request:
+    paths:
+      - ".github/workflows/compose-gate.yml"
+      - "docker-compose.test.yml"
+      - "docker-compose.ephemeral.yml"
+      - ".docker/Dockerfile.test"
+      - ".docker/Dockerfile.ephemeral"
+      - "src/Nexo.CLI/**"
+      - "README.md"
+      - "docs/DocsIndex.md"
+  workflow_dispatch:
+
+jobs:
+  compose-test-lane:
+    name: Compose test lane (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker and Compose
+        shell: bash
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Run docker-compose.test.yml service
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+          docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-ubuntu test-ubuntu
+          test -f test-results/ubuntu-results.json
+          test -f test-results/ubuntu-logs.txt
+
+      - name: Emit compose test summary
+        if: always()
+        shell: bash
+        run: |
+          SUMMARY_FILE="${RUNNER_TEMP}/compose-test-summary.txt"
+          {
+            echo "compose-gate test lane summary"
+            echo "workflow=${GITHUB_WORKFLOW}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            if [ -f test-results/ubuntu-results.json ]; then
+              echo "ubuntu_results_json_present=true"
+            else
+              echo "ubuntu_results_json_present=false"
+            fi
+            if [ -f test-results/ubuntu-logs.txt ]; then
+              echo "ubuntu_logs_present=true"
+            else
+              echo "ubuntu_logs_present=false"
+            fi
+          } > "${SUMMARY_FILE}"
+
+      - name: Cleanup compose test lane
+        if: always()
+        shell: bash
+        run: |
+          docker compose -f docker-compose.test.yml down --remove-orphans
+
+      - name: Upload compose test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-gate-test-lane
+          path: |
+            test-results/ubuntu-results.json
+            test-results/ubuntu-logs.txt
+            ${{ runner.temp }}/compose-test-summary.txt
+          retention-days: 14
+
+  compose-ephemeral-lane:
+    name: Compose ephemeral lane
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker and Compose
+        shell: bash
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Validate docker-compose.ephemeral.yml
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.ephemeral.yml config > "${RUNNER_TEMP}/compose-ephemeral.config.yaml"
+          docker compose -f docker-compose.ephemeral.yml --profile db config > "${RUNNER_TEMP}/compose-ephemeral-db.config.yaml"
+
+      - name: Start and verify ephemeral postgres profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.ephemeral.yml --profile db up -d postgres
+          sleep 5
+          POSTGRES_ID="$(docker compose -f docker-compose.ephemeral.yml --profile db ps -q postgres)"
+          test -n "${POSTGRES_ID}"
+          POSTGRES_RUNNING="$(docker inspect --format='{{.State.Running}}' "${POSTGRES_ID}")"
+          test "${POSTGRES_RUNNING}" = "true"
+
+      - name: Collect ephemeral lane logs
+        if: always()
+        shell: bash
+        run: |
+          docker compose -f docker-compose.ephemeral.yml --profile db ps > "${RUNNER_TEMP}/compose-ephemeral-db.ps.txt" || true
+          docker compose -f docker-compose.ephemeral.yml --profile db logs --no-color postgres > "${RUNNER_TEMP}/compose-ephemeral-postgres.log" || true
+
+      - name: Cleanup ephemeral lane
+        if: always()
+        shell: bash
+        run: |
+          docker compose -f docker-compose.ephemeral.yml --profile db down --remove-orphans
+
+      - name: Upload ephemeral lane artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-gate-ephemeral-lane
+          path: |
+            ${{ runner.temp }}/compose-ephemeral.config.yaml
+            ${{ runner.temp }}/compose-ephemeral-db.config.yaml
+            ${{ runner.temp }}/compose-ephemeral-db.ps.txt
+            ${{ runner.temp }}/compose-ephemeral-postgres.log
+          retention-days: 14
