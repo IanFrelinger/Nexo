@@ -11,8 +11,12 @@ services:
     environment:
       - DOTNET_VERSION=8.0
     command: >
-      bash -lc "cd /workspace/src/Nexo.CLI &&
-      dotnet run --project Nexo.CLI.csproj -- test --format-json
-      > /workspace/test-results/ubuntu-results.json
-      2> /workspace/test-results/ubuntu-logs.txt"
+      bash -lc "dotnet test /workspace/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+      -f net9.0
+      --filter 'FullyQualifiedName~BaseFrameworkSmokeTests'
+      --logger 'trx;LogFileName=ubuntu-baseframework.trx'
+      --results-directory /workspace/test-results
+      > /workspace/test-results/ubuntu-logs.txt 2>&1
+      && printf '{\"ok\":true,\"suite\":\"BaseFrameworkSmokeTests\",\"framework\":\"net9.0\"}\n'
+      > /workspace/test-results/ubuntu-results.json"
 

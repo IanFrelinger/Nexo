@@ -263,7 +263,7 @@ docker compose -f docker-compose.ephemeral.yml --profile db up postgres
 ```
 
 Notes:
-- `docker-compose.test.yml` mounts `./test-results` and runs CLI test commands in container.
+- `docker-compose.test.yml` mounts `./test-results` and runs `BaseFrameworkSmokeTests` (`net9.0`) in container, writing log/summary artifacts there.
 - `docker-compose.ephemeral.yml` is for disposable local orchestration dependencies.
 
 ## Providers
