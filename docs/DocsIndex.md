@@ -15,6 +15,7 @@ Use this page as the navigation starting point for docs.
 
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
+- `.github/workflows/compose-gate.yml` — validates `docker-compose.test.yml` and `docker-compose.ephemeral.yml` lanes.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/container-image-publish.yml` — publish official GHCR CLI image (latest + sha tags).

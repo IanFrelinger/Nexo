@@ -248,6 +248,11 @@ References:
 
 The repository includes optional compose definitions for test and ephemeral runtime scenarios.
 
+CI validation:
+- `.github/workflows/compose-gate.yml` runs compose-based checks on every relevant PR/push.
+- You can trigger manually with:
+  - `gh workflow run "Compose Gate" --ref master`
+
 ```bash
 # run Ubuntu test service and write JSON/log output into ./test-results
 docker compose -f docker-compose.test.yml up --build test-ubuntu
