@@ -12,32 +12,8 @@ services:
     environment:
       - DOTNET_VERSION=8.0
     command: >
-      bash -c "
-        cd src/Nexo.CLI &&
-        dotnet run --project Nexo.CLI.csproj -- test --format-json > /workspace/test-results/ubuntu-results.json 2>/workspace/test-results/ubuntu-logs.txt &&
-        python3 << 'PYEOF'
-import json
-import sys
-import re
-try:
-    with open('/workspace/test-results/ubuntu-results.json', 'r') as f:
-        content = f.read()
-    matches = re.findall(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content, re.DOTALL)
-    for match in reversed(matches):
-        try:
-            data = json.loads(match)
-            if 'TotalTests' in data:
-                with open('/workspace/test-results/ubuntu-results.json', 'w') as out:
-                    json.dump(data, out, indent=2)
-                print(f'✅ Ubuntu Tests: {data.get(\"TotalTests\", 0)} total, {data.get(\"PassedTests\", 0)} passed, {data.get(\"FailedTests\", 0)} failed')
-                sys.exit(0 if data.get('FailedTests', 0) == 0 else 1)
-        except:
-            continue
-    print('❌ No valid test results found')
-    sys.exit(1)
-except Exception as e:
-    print(f'Error: {e}')
-    sys.exit(1)
-PYEOF
-      "
+      bash -lc "cd /workspace/src/Nexo.CLI &&
+      dotnet run --project Nexo.CLI.csproj -- test --format-json
+      > /workspace/test-results/ubuntu-results.json
+      2> /workspace/test-results/ubuntu-logs.txt"
 
