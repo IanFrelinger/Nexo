@@ -8,7 +8,6 @@ services:
     image: nexo-test:ubuntu
     volumes:
       - ./test-results:/workspace/test-results
-      - ./src:/workspace/src
     environment:
       - DOTNET_VERSION=8.0
     command: >
