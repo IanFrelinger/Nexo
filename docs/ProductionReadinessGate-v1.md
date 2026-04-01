@@ -30,7 +30,8 @@ Those should run as additional gates (v2+).
 
 ## 2) Required preconditions
 
-- .NET 8 SDK installed.
+- .NET SDK 9.x installed (repository is pinned via `global.json`).
+- .NET 8 runtime/targeting support available for `net8.0` test/build lanes.
 - Repository checked out cleanly.
 - No local uncommitted production code modifications.
 - Optional: `NEXO_PIPELINE_STORE_PROVIDER` and `NEXO_PIPELINE_STORE_PATH` available for durable resume validation.

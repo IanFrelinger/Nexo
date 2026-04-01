@@ -22,6 +22,12 @@ Use this page as the navigation starting point for docs.
 - `docs/ReleaseCandidateChecklist-v1.md` — release candidate sign-off checklist.
 - `docs/Testing.md` — test guard rails, timeout policy, and workflow guidance.
 
+## Demo / Rollout Walkthroughs
+
+- `scripts/oh-shit-demo.sh` — high-signal end-to-end demo script (bootstrap, chat, orchestration, dogfood).
+- `scripts/unity-sidecar-demo.sh` — Unity sidecar demo entrypoint.
+- `docs/UnitySidecarDemo.md` — sidecar demo behavior and commands.
+
 ## Security / Trust
 
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
@@ -38,4 +44,5 @@ Use this page as the navigation starting point for docs.
 
 - `docs/Persistence.md` — persistence behavior and options.
 - `docs/ComponentLibrary.md` — component catalog references.
-- `docs/UnitySidecarDemo.md` — Unity sidecar demonstration notes.
+- `docker-compose.test.yml` — containerized test lane (`test-ubuntu`) with mounted test artifacts.
+- `docker-compose.ephemeral.yml` — disposable local dependencies (Ollama, optional Postgres profile).

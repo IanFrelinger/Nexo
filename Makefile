@@ -47,7 +47,7 @@ test-platform:
 # Trigger cross-platform tests in CI (Mac, Windows, Linux from one place)
 # Requires: gh auth login. Usage: make test-cross-platform [SCOPE=smoke|persistence|full]
 test-cross-platform:
-	gh workflow run "Cross-Platform Tests" --ref main -f scope=$${SCOPE:-smoke}
+	gh workflow run "Cross-Platform Tests" --ref master -f scope=$${SCOPE:-smoke}
 
 # Portable tests: C#-driven (replaces scripts/portable-test.sh). Works on Windows, macOS, Linux, mobile.
 # Usage: make test-portable [SCOPE=persistence|smoke|all]. Use --list to see targets: dotnet run --project src/Nexo.CLI -- test portable --list

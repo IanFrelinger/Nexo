@@ -34,6 +34,14 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 ## Running Tests
 
+`nexo` command note:
+- Commands shown as `nexo ...` assume the CLI tool is installed on your PATH.
+- If you have not installed the global tool, use the equivalent project invocation:
+  - `dotnet run --project src/Nexo.CLI -- <subcommand>`
+- Example:
+  - `nexo validate`
+  - `dotnet run --project src/Nexo.CLI -- validate`
+
 ```bash
 # Local (all tests, 30s blame-hang)
 make test
@@ -45,10 +53,15 @@ dotnet test --blame-hang-timeout 30s --blame-hang-dump-type none
 # due to platform-specific test/runtime constraints.
 # Prefer running after setup scripts and initial CLI smoke checks.
 nexo validate
+# equivalent:
+dotnet run --project src/Nexo.CLI -- validate
 
 # nexo dogfood: add --verbose to stream build/test output
 nexo dogfood block2 --verbose
 nexo dogfood all --verbose
+# equivalent:
+dotnet run --project src/Nexo.CLI -- dogfood block2 --verbose
+dotnet run --project src/Nexo.CLI -- dogfood all --verbose
 
 # Integration tests only
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
@@ -61,6 +74,8 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
 # Adaptation tests across all Docker environments (linear)
 make test-adaptation-all-envs
 # Or: nexo test multi-env --suite adaptation --all
+# equivalent:
+dotnet run --project src/Nexo.CLI -- test multi-env --suite adaptation --all
 
 # Cross-platform (CI)
 make test-cross-platform SCOPE=integration
