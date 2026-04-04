@@ -67,10 +67,17 @@ var app = builder.Build();
             log.LogInformation("ExposureProfile is {Profile}: review docs for firewall / ACL guidance.", prof);
         }
     }
+
+    if (sec.RequireApiKeyForMutatingEndpoints && string.IsNullOrWhiteSpace(sec.ApiKey))
+    {
+        log.LogWarning(
+            "Nexo API key auth is required for mutating endpoints, but no API key is configured. Mutating endpoints are effectively unauthenticated.");
+    }
 }
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseNexoApiKeyAuth();
 
 app.MapNexoEndpoints();
 app.MapFallbackToFile("index.html");

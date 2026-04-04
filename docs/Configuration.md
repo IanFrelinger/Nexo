@@ -24,6 +24,10 @@ Advisory only — does not enforce firewalls or Tailscale ACLs. See **`docs/Tail
 | `Nexo__Security__ExposureProfile` | `Localhost`, `Lan`, `Tailnet`, or `Public` (case-insensitive) | `Localhost` in `appsettings.json` |
 | `Nexo__Security__CustomAdvisory` | Optional extra line shown in the Director portal advisory | unset |
 | `Nexo__Security__ShowAdvisoryInPortal` | `true` / `false` — show advisory banner in portal | `true` |
+| `Nexo__Security__RequireApiKeyForMutatingEndpoints` | `true` / `false` — enforce API key checks for POST/PUT/PATCH/DELETE under `/api/*` | `false` |
+| `Nexo__Security__ApiKey` | Shared secret required for protected mutating requests | unset (disabled) |
+| `Nexo__Security__ApiKeyHeaderName` | Header used for key checks | `X-Nexo-Api-Key` |
+| `Nexo__Security__ExcludedApiKeyPaths` | Comma-separated API path prefixes exempted from key checks | none |
 
 ## Pipelines (`NEXO_PIPELINE_*`)
 

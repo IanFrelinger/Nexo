@@ -2,7 +2,7 @@ services:
   ollama:
     image: ollama/ollama:latest
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     volumes:
       - ollama-models:/root/.ollama
     restart: unless-stopped
@@ -23,7 +23,7 @@ services:
       # Nexo__Security__ShowAdvisoryInPortal: "true"
       # Nexo__Security__CustomAdvisory: "Restrict with Tailscale ACLs; Ollama not on funnel."
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - nexo-dailies:/data/dailies
     restart: unless-stopped

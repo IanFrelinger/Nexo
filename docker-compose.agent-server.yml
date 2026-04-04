@@ -12,7 +12,7 @@ services:
   ollama:
     image: ${NEXO_OLLAMA_IMAGE:-ollama/ollama:latest}
     ports:
-      - "${NEXO_OLLAMA_HOST_PORT:-11434}:11434"
+      - "127.0.0.1:${NEXO_OLLAMA_HOST_PORT:-11434}:11434"
     volumes:
       - ollama-models:/root/.ollama
     restart: unless-stopped
@@ -34,7 +34,7 @@ services:
       Nexo__Barriers__RequireExplicitBarrier: ${Nexo__Barriers__RequireExplicitBarrier:-false}
       NEXO_OBSERVATION_DEGRADED_MODE: ${NEXO_OBSERVATION_DEGRADED_MODE:-1}
     ports:
-      - "${NEXO_AGENT_SERVER_HTTP_PORT:-8080}:8080"
+      - "127.0.0.1:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}:8080"
     volumes:
       # Named volume; keep mount path aligned with NEXO_DAILIES_PATH (default /data/dailies).
       - nexo-dailies:/data/dailies
