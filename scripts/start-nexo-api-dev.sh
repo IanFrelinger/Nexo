@@ -5,6 +5,7 @@
 #   bash scripts/start-nexo-api-dev.sh --pull
 #   bash scripts/start-nexo-api-dev.sh --model llama3.2 --api-port 8080
 #   bash scripts/start-nexo-api-dev.sh --skip-ollama   # Ollama already running
+#   bash scripts/start-nexo-api-dev.sh --listen-lan   # phone / other devices on same Wi-Fi
 set -euo pipefail
 
 MODEL="llama3.1"
@@ -12,6 +13,7 @@ OLLAMA_PORT="11434"
 API_PORT="8080"
 SKIP_OLLAMA=0
 PULL=0
+LISTEN_LAN=0
 COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-}"
 WAIT_SECONDS=120
 
@@ -20,7 +22,7 @@ COMPOSE_FILE="${ROOT}/docker-compose.ollama.yml"
 OLLAMA_URL="http://127.0.0.1:${OLLAMA_PORT}"
 
 usage() {
-  echo "Usage: $0 [--model TAG] [--ollama-port N] [--api-port N] [--pull] [--skip-ollama] [--wait SEC] [--compose-project NAME]" >&2
+  echo "Usage: $0 [--model TAG] [--ollama-port N] [--api-port N] [--pull] [--skip-ollama] [--wait SEC] [--compose-project NAME] [--listen-lan]" >&2
   exit 2
 }
 
@@ -33,6 +35,7 @@ while [[ $# -gt 0 ]]; do
     --skip-ollama) SKIP_OLLAMA=1; shift ;;
     --wait) WAIT_SECONDS="${2:-}"; shift 2 ;;
     --compose-project) export COMPOSE_PROJECT_NAME="${2:-}"; shift 2 ;;
+    --listen-lan) LISTEN_LAN=1; shift ;;
     -h|--help) usage ;;
     *) echo "Unknown option: $1" >&2; usage ;;
   esac
@@ -72,16 +75,31 @@ fi
 export OLLAMA_BASE_URL="${OLLAMA_URL}"
 export OLLAMA_MODEL="${MODEL}"
 export Nexo__NodeCapabilityRuntime__Ollama__BaseUrl="${OLLAMA_URL}"
-export ASPNETCORE_URLS="http://127.0.0.1:${API_PORT}"
+if [[ "${LISTEN_LAN}" -eq 1 ]]; then
+  export ASPNETCORE_URLS="http://0.0.0.0:${API_PORT}"
+else
+  export ASPNETCORE_URLS="http://127.0.0.1:${API_PORT}"
+fi
 unset NEXO_BACKGROUND_AGENTS_CONFIG 2>/dev/null || true
 
-cat <<EOF
+LAN_IP=""
+if command -v hostname >/dev/null 2>&1; then
+  LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+fi
+if [[ -z "${LAN_IP}" ]] && command -v ipconfig >/dev/null 2>&1; then
+  LAN_IP="$(ipconfig getifaddr en0 2>/dev/null || true)"
+fi
 
-Nexo.API → http://127.0.0.1:${API_PORT}  |  Ollama → ${OLLAMA_URL}  |  Model → ${MODEL}
-
-Stop Ollama: docker compose -f docker-compose.ollama.yml down
-Or: bash scripts/stop-nexo-api-dev.sh
-
-EOF
+echo ""
+echo "Nexo.API (this machine) → http://127.0.0.1:${API_PORT}  |  Ollama → ${OLLAMA_URL}  |  Model → ${MODEL}"
+if [[ "${LISTEN_LAN}" -eq 1 ]]; then
+  echo ""
+  echo "LAN / phone (same Wi‑Fi): try http://${LAN_IP:-<this-host-LAN-IP>}:${API_PORT}"
+  echo "Allow the port in your OS firewall if needed. Do not use --listen-lan on untrusted networks."
+fi
+echo ""
+echo "Stop Ollama: docker compose -f docker-compose.ollama.yml down"
+echo "Or: bash scripts/stop-nexo-api-dev.sh"
+echo ""
 
 dotnet run --project "${ROOT}/src/Nexo.API/Nexo.API.csproj"

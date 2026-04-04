@@ -277,6 +277,7 @@ docker compose -f docker-compose.ollama.yml up -d
 # One-shot dev: Docker Ollama → wait for health → run Nexo.API (Windows / PowerShell)
 # powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-nexo-api-dev.ps1 -Pull   # first time or new model
 # powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-nexo-api-dev.ps1
+# Phone on same Wi‑Fi: add -ListenLan (Windows) or --listen-lan (bash); open http://<pc-ip>:8080 — allow firewall
 # Linux/macOS/WSL: bash scripts/start-nexo-api-dev.sh --pull
 # Stop Ollama: scripts/stop-nexo-api-dev.ps1 | scripts/stop-nexo-api-dev.sh
 

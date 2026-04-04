@@ -30,6 +30,10 @@
 
 .PARAMETER WaitSeconds
   Max seconds to wait for Ollama /api/tags (default: 120).
+
+.PARAMETER ListenLan
+  Bind Nexo.API on 0.0.0.0 so other devices on your Wi‑Fi/LAN can open the portal (http://<this-pc-ip>:port).
+  Ollama stays on 127.0.0.1 from the API process (Docker published port). You may need a Windows Firewall allow rule for ApiPort.
 #>
 param(
     [string] $Model = "llama3.1",
@@ -38,7 +42,8 @@ param(
     [switch] $SkipOllama,
     [switch] $Pull,
     [string] $ComposeProjectName = "",
-    [int] $WaitSeconds = 120
+    [int] $WaitSeconds = 120,
+    [switch] $ListenLan
 )
 
 $ErrorActionPreference = "Stop"
@@ -84,15 +89,28 @@ if (-not $SkipOllama) {
 $env:OLLAMA_BASE_URL = $ollamaUrl
 $env:OLLAMA_MODEL = $Model
 $env:Nexo__NodeCapabilityRuntime__Ollama__BaseUrl = $ollamaUrl
-$env:ASPNETCORE_URLS = "http://127.0.0.1:$ApiPort"
+if ($ListenLan) {
+    $env:ASPNETCORE_URLS = "http://0.0.0.0:$ApiPort"
+} else {
+    $env:ASPNETCORE_URLS = "http://127.0.0.1:$ApiPort"
+}
 Remove-Item Env:NEXO_BACKGROUND_AGENTS_CONFIG -ErrorAction SilentlyContinue
 
-Write-Host @"
-
-Nexo.API → http://127.0.0.1:$ApiPort  |  Ollama → $ollamaUrl  |  Model → $Model
-
-Stop Ollama container: docker compose -f docker-compose.ollama.yml down
-Or: powershell -File scripts/stop-nexo-api-dev.ps1
-
-"@
+Write-Host ""
+Write-Host "Nexo.API (this PC) → http://127.0.0.1:$ApiPort  |  Ollama → $ollamaUrl  |  Model → $Model"
+if ($ListenLan) {
+    Write-Host ""
+    Write-Host "LAN / phone: same Wi‑Fi as this PC, open one of:"
+    Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        Where-Object { $_.PrefixOrigin -ne 'WellKnown' -and $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+        Select-Object -ExpandProperty IPAddress -Unique |
+        ForEach-Object { Write-Host "  http://${_}:$ApiPort" }
+    Write-Host ""
+    Write-Host "If the phone cannot connect, allow inbound TCP $ApiPort in Windows Defender Firewall."
+    Write-Host "Anyone on your LAN can reach the portal — do not use -ListenLan on untrusted networks."
+}
+Write-Host ""
+Write-Host "Stop Ollama: docker compose -f docker-compose.ollama.yml down"
+Write-Host "Or: powershell -File scripts/stop-nexo-api-dev.ps1"
+Write-Host ""
 dotnet run --project (Join-Path $RepoRoot "src/Nexo.API/Nexo.API.csproj")
