@@ -8,7 +8,9 @@ using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
+using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace Nexo.API.Endpoints;
@@ -71,6 +73,11 @@ public static class NexoEndpoints
             .WithName("GetCapabilities")
             .WithSummary("Get node capability manifest for brick routing")
             .Produces<NodeCapabilityManifestDto>(StatusCodes.Status200OK);
+
+        group.MapGet("/security/advisory", GetSecurityAdvisory)
+            .WithName("GetSecurityAdvisory")
+            .WithSummary("Operator exposure profile and hints (user-configured; advisory only)")
+            .Produces<SecurityAdvisoryResponse>(StatusCodes.Status200OK);
 
         group.MapPost("/director/run", RunDirectorWorkflowAsync)
             .WithName("RunDirectorWorkflow")
@@ -465,6 +472,22 @@ public static class NexoEndpoints
             AcceptingRemoteWork = manifest.AcceptingRemoteWork,
             GeneratedAt = manifest.GeneratedAt
         };
+    }
+
+    private static IResult GetSecurityAdvisory(IOptions<NexoSecurityOptions> optionsAccessor)
+    {
+        var options = optionsAccessor.Value;
+        if (!Enum.TryParse<NexoExposureProfile>(options.ExposureProfile, true, out var profile))
+            profile = NexoExposureProfile.Localhost;
+
+        var (summary, hints) = SecurityAdvisoryContent.For(profile);
+        var custom = string.IsNullOrWhiteSpace(options.CustomAdvisory) ? null : options.CustomAdvisory.Trim();
+        return Results.Ok(new SecurityAdvisoryResponse(
+            profile.ToString(),
+            summary,
+            hints,
+            custom,
+            options.ShowAdvisoryInPortal));
     }
 }
 

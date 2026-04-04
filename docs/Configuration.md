@@ -15,6 +15,16 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `NEXO_LOOP_INSTRUMENT` | `1` = instrumented loop | `false` |
 | `NEXO_LLM_RETRY_COUNT` | Retries for cloud LLM (5xx/429) | `3` |
 
+## Nexo.API exposure (`Nexo__Security__*`)
+
+Advisory only — does not enforce firewalls or Tailscale ACLs. See **`docs/TailscaleAndNexo.md`** and **`docs/config/security-exposure.env.example`**.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `Nexo__Security__ExposureProfile` | `Localhost`, `Lan`, `Tailnet`, or `Public` (case-insensitive) | `Localhost` in `appsettings.json` |
+| `Nexo__Security__CustomAdvisory` | Optional extra line shown in the Director portal advisory | unset |
+| `Nexo__Security__ShowAdvisoryInPortal` | `true` / `false` — show advisory banner in portal | `true` |
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.

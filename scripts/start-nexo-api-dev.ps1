@@ -34,6 +34,7 @@
 .PARAMETER ListenLan
   Bind Nexo.API on 0.0.0.0 so other devices on your Wi‑Fi/LAN can open the portal (http://<this-pc-ip>:port).
   Ollama stays on 127.0.0.1 from the API process (Docker published port). You may need a Windows Firewall allow rule for ApiPort.
+  Sets Nexo__Security__ExposureProfile=Lan unless you already set it (use Tailnet when using Tailscale — see docs/TailscaleAndNexo.md).
 #>
 param(
     [string] $Model = "llama3.1",
@@ -95,6 +96,14 @@ if ($ListenLan) {
     $env:ASPNETCORE_URLS = "http://127.0.0.1:$ApiPort"
 }
 Remove-Item Env:NEXO_BACKGROUND_AGENTS_CONFIG -ErrorAction SilentlyContinue
+
+if (-not $env:Nexo__Security__ExposureProfile) {
+    if ($ListenLan) {
+        $env:Nexo__Security__ExposureProfile = "Lan"
+    } else {
+        $env:Nexo__Security__ExposureProfile = "Localhost"
+    }
+}
 
 Write-Host ""
 Write-Host "Nexo.API (this PC) → http://127.0.0.1:$ApiPort  |  Ollama → $ollamaUrl  |  Model → $Model"

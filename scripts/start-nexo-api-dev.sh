@@ -82,6 +82,14 @@ else
 fi
 unset NEXO_BACKGROUND_AGENTS_CONFIG 2>/dev/null || true
 
+if [[ -z "${Nexo__Security__ExposureProfile:-}" ]]; then
+  if [[ "${LISTEN_LAN}" -eq 1 ]]; then
+    export Nexo__Security__ExposureProfile="Lan"
+  else
+    export Nexo__Security__ExposureProfile="Localhost"
+  fi
+fi
+
 LAN_IP=""
 if command -v hostname >/dev/null 2>&1; then
   LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"

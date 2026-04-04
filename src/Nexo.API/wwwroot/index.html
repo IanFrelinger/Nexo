@@ -84,6 +84,28 @@
       border-radius: 10px;
       border: 1px solid var(--line);
     }
+    .security-advisory {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--text);
+      padding: 10px 12px;
+      background: color-mix(in srgb, var(--warn) 14%, transparent);
+      border-radius: 10px;
+      border: 1px solid var(--line);
+    }
+    .security-advisory.dismissed { display: none !important; }
+    .security-advisory .adv-title { font-weight: 700; margin-bottom: 6px; }
+    .security-advisory ul { margin: 6px 0 0 18px; padding: 0; color: var(--muted); }
+    .security-advisory button.dismiss {
+      margin-top: 8px;
+      border: none;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 12px;
+      text-decoration: underline;
+      padding: 0;
+    }
     .toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -310,6 +332,13 @@
         <strong>Personal by design.</strong> Screen preferences live only in this browser (local storage).
         Your dailies and API data stay on the Nexo host you control — nothing here requires an account.
       </p>
+      <div id="securityAdvisory" class="security-advisory" hidden role="region" aria-label="Operator security advisory">
+        <div class="adv-title" id="securityAdvisoryTitle"></div>
+        <p id="securityAdvisorySummary" class="muted" style="margin:0;"></p>
+        <ul id="securityAdvisoryHints"></ul>
+        <p id="securityAdvisoryCustom" class="muted" style="margin:8px 0 0 0;" hidden></p>
+        <button type="button" class="dismiss" id="securityAdvisoryDismiss">Dismiss for this session</button>
+      </div>
       <div class="toolbar">
         <span id="connPill" class="pill dot" title="API reachability">Connecting…</span>
         <span id="modePill" class="pill" hidden></span>
@@ -576,6 +605,44 @@
         return body;
       }
 
+      const securityAdvisoryBox = el("securityAdvisory");
+
+      async function loadSecurityAdvisory() {
+        try {
+          const a = await fetchJson("/api/security/advisory");
+          if (!a || !a.showInPortal) return;
+          if (sessionStorage.getItem("nexo.securityAdvisory.dismissed") === "1") return;
+          const isLocal = (a.exposureProfile || "") === "Localhost";
+          if (isLocal && !a.customAdvisory) return;
+
+          el("securityAdvisoryTitle").textContent = "Exposure: " + (a.exposureProfile || "—");
+          el("securityAdvisorySummary").textContent = a.summary || "";
+          const ul = el("securityAdvisoryHints");
+          ul.innerHTML = "";
+          (a.hints || []).forEach((h) => {
+            const li = document.createElement("li");
+            li.textContent = h;
+            ul.appendChild(li);
+          });
+          const cust = el("securityAdvisoryCustom");
+          if (a.customAdvisory) {
+            cust.hidden = false;
+            cust.textContent = a.customAdvisory;
+          } else {
+            cust.hidden = true;
+            cust.textContent = "";
+          }
+          securityAdvisoryBox.hidden = false;
+        } catch {
+          /* non-fatal */
+        }
+      }
+
+      el("securityAdvisoryDismiss").addEventListener("click", () => {
+        sessionStorage.setItem("nexo.securityAdvisory.dismissed", "1");
+        securityAdvisoryBox.classList.add("dismissed");
+      });
+
       let capLoaded = false;
       async function loadCapabilities() {
         if (capLoaded) return;
@@ -742,6 +809,7 @@
       setFocus(prefs.defaultFocus || "shape");
 
       refreshStatus().catch(() => {});
+      loadSecurityAdvisory().catch(() => {});
       loadDailies().catch((err) => setStatus("Failed to load dailies: " + err.message));
 
       setInterval(() => refreshStatus().catch(() => {}), 60000);
