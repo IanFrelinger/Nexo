@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       echo "Unknown argument: $1" >&2
-      echo "Usage: $0 [--project-root <path>] [--profile <default|unity-host>] [--dry-run]" >&2
+      echo "Usage: $0 [--project-root <path>] [--profile <default|host-apps>] [--dry-run]" >&2
       exit 2
       ;;
   esac
@@ -39,9 +39,9 @@ if [[ "${DRY_RUN}" -eq 0 ]]; then
   mkdir -p "${SANDBOX_ROOT}/agents/workspaces"
   mkdir -p "${SANDBOX_ROOT}/tools/bin"
   mkdir -p "${SANDBOX_ROOT}/tools/cache"
-  mkdir -p "${SANDBOX_ROOT}/unity/projects"
-  mkdir -p "${SANDBOX_ROOT}/unity/cache"
-  mkdir -p "${SANDBOX_ROOT}/unity/editors"
+  mkdir -p "${SANDBOX_ROOT}/host_apps/projects"
+  mkdir -p "${SANDBOX_ROOT}/host_apps/cache"
+  mkdir -p "${SANDBOX_ROOT}/host_apps/runtimes"
   mkdir -p "${SANDBOX_ROOT}/logs"
   mkdir -p "${SANDBOX_ROOT}/tmp"
 fi
@@ -55,8 +55,8 @@ echo
 echo "Recommended environment exports:"
 echo "  export NEXO_SANDBOX_ROOT=\"${SANDBOX_ROOT}\""
 echo "  export NEXO_TOOL_ROOT=\"${SANDBOX_ROOT}/tools\""
-echo "  export NEXO_UNITY_PROJECT_ROOT=\"${SANDBOX_ROOT}/unity/projects\""
-echo "  export NEXO_UNITY_CACHE_ROOT=\"${SANDBOX_ROOT}/unity/cache\""
+echo "  export NEXO_HOST_APP_PROJECT_ROOT=\"${SANDBOX_ROOT}/host_apps/projects\""
+echo "  export NEXO_HOST_APP_CACHE_ROOT=\"${SANDBOX_ROOT}/host_apps/cache\""
 echo
 echo "Optional cache/tool relocation (project-local):"
 echo "  export XDG_CACHE_HOME=\"${SANDBOX_ROOT}/tools/cache\""

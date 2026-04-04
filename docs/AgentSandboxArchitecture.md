@@ -1,7 +1,7 @@
 # Agent Sandbox Architecture (Host + Project-Scoped Tools)
 
 This guide describes how to run Nexo agents in a constrained sandbox while still
-allowing host-bound tools (for example Unity Editor) and dependency downloads.
+allowing host-bound tools and dependency downloads.
 
 ## Goals
 
@@ -11,15 +11,16 @@ allowing host-bound tools (for example Unity Editor) and dependency downloads.
 
 ## Policy enforcement in this repo
 
-`PathAllowlist` now supports configurable sandbox prefixes:
+`PathAllowlist` supports sandboxed writes in two ways:
 
-- Defaults: `src/`, `tests/`, `docs/`
-- Optional env var: `NEXO_AGENT_SANDBOX_PATHS`
+- Relative allowlisted prefixes (defaults): `src/`, `tests/`, `docs/`, `.nexo/`
+- Optional extra prefixes via env: `NEXO_PATH_ALLOWLIST_EXTRA`
+- Absolute paths only when inside sandbox root (`WorldSnapshot["SandboxRoot"]` or `NEXO_SANDBOX_ROOT`)
 
-When set, `NEXO_AGENT_SANDBOX_PATHS` extends allowed write prefixes (comma-separated):
+When set, `NEXO_PATH_ALLOWLIST_EXTRA` extends relative write prefixes (comma-separated):
 
 ```bash
-export NEXO_AGENT_SANDBOX_PATHS=".nexo/sandbox/projects/,.nexo/sandbox/tools/,.nexo/sandbox/cache/"
+export NEXO_PATH_ALLOWLIST_EXTRA=".nexo/host_apps/,.nexo/agents/workspaces/"
 ```
 
 The policy still blocks:
@@ -34,11 +35,17 @@ Create a per-project sandbox tree under repo root:
 
 ```text
 .nexo/
-  sandbox/
-    projects/      # agent-created project artifacts
-    tools/         # third-party tools/SDKs installed for this project
-    cache/         # npm/nuget/pip/unity package caches
-    logs/          # run logs/audit traces
+  agents/
+    workspaces/    # agent-created artifacts and generated work trees
+  tools/
+    bin/           # third-party tools/SDKs installed for this project
+    cache/         # npm/nuget/pip package caches
+  host_apps/
+    projects/      # host-app project data staged for agent workflows
+    cache/         # host-app package/import caches
+    runtimes/      # optional host-app runtime payloads
+  logs/
+  tmp/
 ```
 
 Bootstrap helper:
@@ -47,24 +54,15 @@ Bootstrap helper:
 bash scripts/sandbox/init-agent-sandbox.sh
 ```
 
-## Host-bound applications (Unity, etc.)
+## Host-bound applications (generic)
 
 Some tools cannot be containerized economically or by license.
 For these, use a split model:
 
 1. Keep editor/runtime host-installed by a human operator.
-2. Keep project-specific dependencies/caches under `.nexo/sandbox`.
+2. Keep project-specific dependencies/caches under `.nexo/`.
 3. Restrict agent-generated files to sandbox + approved code folders.
 4. Trigger host apps through wrapper scripts that accept only sandboxed paths.
-
-### Unity pattern
-
-- Unity Editor remains host-installed and user-licensed.
-- Agent output goes to:
-  - `.nexo/sandbox/projects/<project>/...`
-  - or directly to controlled Unity project subfolders under repo.
-- Unity package/download caches use `.nexo/sandbox/cache`.
-- Any script invoking Unity should validate paths before execution.
 
 ## Operating modes
 
@@ -73,27 +71,29 @@ For these, use a split model:
 - Use container execution for generic build/test tasks.
 - Mount only sandbox directories into container.
 
-### Mode B: Hybrid host workers (Unity-capable)
+### Mode B: Hybrid host workers (host-app capable)
 
-- Use host workers for Unity-specific operations.
+- Use host workers for tool/app operations that cannot be containerized by default.
 - Keep strict path allowlist + sandbox-rooted caches.
 - Prefer dedicated OS user account for agent processes.
 
 ## Minimal hardening checklist
 
 1. Run agent daemons as non-admin user.
-2. Set `NEXO_AGENT_SANDBOX_PATHS` in daemon environment.
-3. Route all temp/cache dirs (`TMPDIR`, package caches) to `.nexo/sandbox/cache`.
-4. Keep network egress rules narrow for worker nodes where possible.
-5. Audit tool calls and denied writes.
+2. Set `NEXO_SANDBOX_ROOT` in daemon environment.
+3. Optionally set `NEXO_PATH_ALLOWLIST_EXTRA` for additional project-local prefixes.
+4. Route all temp/cache dirs (`TMPDIR`, package caches) to `.nexo/tools/cache` and `.nexo/host_apps/cache`.
+5. Keep network egress rules narrow for worker nodes where possible.
+6. Audit tool calls and denied writes.
 
 ## Example daemon env
 
 ```bash
-export NEXO_AGENT_SANDBOX_PATHS=".nexo/sandbox/projects/,.nexo/sandbox/tools/,.nexo/sandbox/cache/"
-export TMPDIR="$PWD/.nexo/sandbox/cache/tmp"
-export NUGET_PACKAGES="$PWD/.nexo/sandbox/cache/nuget"
-export npm_config_cache="$PWD/.nexo/sandbox/cache/npm"
+export NEXO_SANDBOX_ROOT="$PWD/.nexo"
+export NEXO_PATH_ALLOWLIST_EXTRA=".nexo/host_apps/,.nexo/agents/workspaces/"
+export TMPDIR="$PWD/.nexo/tools/cache/tmp"
+export NUGET_PACKAGES="$PWD/.nexo/tools/cache/nuget"
+export npm_config_cache="$PWD/.nexo/tools/cache/npm"
 ```
 
 Then run:
