@@ -271,6 +271,9 @@ CI validation:
 # run Ubuntu test service and write JSON/log output into ./test-results
 docker compose -f docker-compose.test.yml up --build test-ubuntu
 
+# Ollama in Docker only (models in a named volume; use with host-run Nexo — see scripts/run-ollama-docker.ps1)
+docker compose -f docker-compose.ollama.yml up -d
+
 # start ephemeral Ollama container (and optional Postgres profile)
 docker compose -f docker-compose.ephemeral.yml up ollama
 docker compose -f docker-compose.ephemeral.yml --profile db up postgres

@@ -59,6 +59,8 @@ Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), t
 | `OLLAMA_VISION_MODEL` | Vision model | `richardyoung/smolvlm2-2.2b-instruct` |
 | `OLLAMA_TIMEOUT_SECONDS` | Request timeout | `300` |
 
+**Docker Desktop (models in containers):** `docker compose -f docker-compose.ollama.yml up -d`, then `scripts/run-ollama-docker.ps1` or `scripts/run-ollama-docker.sh` to pull a tag. From the host, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` and `Nexo__NodeCapabilityRuntime__Ollama__BaseUrl` to the same URL.
+
 ### Node Capability Runtime (NCR) Ollama
 
 Desktop NCR uses its own options-bound Ollama endpoint for model serving.

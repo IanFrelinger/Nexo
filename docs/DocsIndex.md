@@ -50,4 +50,5 @@ Use this page as the navigation starting point for docs.
 - `docs/Persistence.md` — persistence behavior and options.
 - `docs/ComponentLibrary.md` — component catalog references.
 - `docker-compose.test.yml` — containerized test lane (`test-ubuntu`) with mounted test artifacts.
+- `docker-compose.ollama.yml` — Ollama-only stack (named volume for models; pair with host-run Nexo).
 - `docker-compose.ephemeral.yml` — disposable local dependencies (Ollama, optional Postgres profile).
