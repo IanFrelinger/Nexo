@@ -42,7 +42,7 @@ Use this page as the navigation starting point for docs.
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
 - `docs/SelfHostedGameServerPortal.md` — self-hosted game-dev server portal and directorial dailies workflow.
-- `docs/SelfHostedAgentServer.md` — self-hosted agent server: portal, API, Ollama, and Runtime Studio agent cluster (`docker-compose.agent-server.yml`).
+- `docs/SelfHostedAgentServer.md` — self-hosted agent server: portal, API, Ollama, and Runtime Studio agent cluster (`docker-compose.agent-server.yml`); template `docs/config/agent-server.env.example`.
 - `apps/runtime-studio/README.md` — application-layer planner + worker agent-set integration scaffold.
 
 ## Additional Material

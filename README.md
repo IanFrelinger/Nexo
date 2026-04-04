@@ -286,7 +286,7 @@ Notes:
 - `docker-compose.test.yml` mounts `./test-results` and runs `BaseFrameworkSmokeTests` (`net9.0`) in container, writing log/summary artifacts there.
 - `docker-compose.ephemeral.yml` is for disposable local orchestration dependencies.
 - `docker-compose.portal.yml` serves a browser portal on `http://localhost:8080` for iterative directorial runs and daily review.
-- `docker-compose.agent-server.yml` adds a mounted workspace and loads the Runtime Studio agent set; see `docs/SelfHostedAgentServer.md`.
+- `docker-compose.agent-server.yml` adds a mounted workspace and loads the Runtime Studio agent set; see `docs/SelfHostedAgentServer.md` and `docs/config/agent-server.env.example` for ports, paths, and platform-specific options.
 
 ## Providers
 
