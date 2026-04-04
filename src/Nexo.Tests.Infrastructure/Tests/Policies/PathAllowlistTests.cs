@@ -157,6 +157,57 @@ public sealed class PathAllowlistTests
     }
 
     [Fact]
+    public void Approve_RepoFsWrite_WithSandboxRootConfigured_AllowsPathUnderSandboxRoot()
+    {
+        var sandboxRoot = Path.Combine(Path.GetTempPath(), "nexo-sandbox");
+        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", sandboxRoot);
+        var fullPath = Path.GetFullPath(Path.Combine(sandboxRoot, "workspaces/project-a/generated/file.cs"));
+        var json = JsonSerializer.SerializeToElement(new { path = fullPath });
+        var call = new ToolCall("repo.fs.write", json);
+        var snapshot = new WorldSnapshot(0, new Dictionary<string, object?> { ["SandboxRoot"] = sandboxRoot });
+
+        var result = _policy.Approve(call, snapshot, out var reason);
+
+        result.Should().BeTrue();
+        reason.Should().Be("OK");
+        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", null);
+    }
+
+    [Fact]
+    public void Approve_RepoFsWrite_WithSandboxRootConfigured_RejectsEscapePath()
+    {
+        var sandboxRoot = Path.Combine(Path.GetTempPath(), "nexo-sandbox");
+        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", sandboxRoot);
+        var escaped = Path.GetFullPath(Path.Combine(sandboxRoot, "../outside/file.cs"));
+        var json = JsonSerializer.SerializeToElement(new { path = escaped });
+        var call = new ToolCall("repo.fs.write", json);
+        var snapshot = new WorldSnapshot(0, new Dictionary<string, object?> { ["SandboxRoot"] = sandboxRoot });
+
+        var result = _policy.Approve(call, snapshot, out var reason);
+
+        result.Should().BeFalse();
+        reason.Should().Contain("outside SandboxRoot");
+        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", null);
+    }
+
+    [Fact]
+    public void Approve_RepoFsWrite_WithSandboxRootConfigured_RejectsAbsolutePathOutsideSandboxRoot()
+    {
+        var sandboxRoot = Path.Combine(Path.GetTempPath(), "nexo-sandbox");
+        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", sandboxRoot);
+        var outsidePath = Path.Combine(Path.GetTempPath(), "elsewhere", "file.cs");
+        var json = JsonSerializer.SerializeToElement(new { path = outsidePath });
+        var call = new ToolCall("repo.fs.write", json);
+        var snapshot = new WorldSnapshot(0, new Dictionary<string, object?> { ["SandboxRoot"] = sandboxRoot });
+
+        var result = _policy.Approve(call, snapshot, out var reason);
+
+        result.Should().BeFalse();
+        reason.Should().Contain("outside SandboxRoot");
+        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", null);
+    }
+
+    [Fact]
     public void Approve_RepoFsWrite_WithEmptyPath_ReturnsFalse()
     {
         var call = CreateToolCall("repo.fs.write", "");

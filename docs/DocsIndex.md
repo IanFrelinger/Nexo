@@ -33,6 +33,7 @@ Use this page as the navigation starting point for docs.
 
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
 - `docs/Configuration.md` — environment variables and configuration reference.
+- `docs/AgentSandboxArchitecture.md` — project-scoped sandbox model for agent file/tool execution and host-app integration (Unity-friendly).
 
 ## API / SDK / Runtime
 
