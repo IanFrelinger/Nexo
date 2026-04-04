@@ -315,6 +315,7 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --fil
 Start here:
 - `docs/GettingStarted.md` – guided first-hour setup and usage
 - `docs/DocsIndex.md` – where to find docs by task
+- `apps/runtime-studio/README.md` – application-layer planner+worker agent set integration.
 
 Core references:
 - `docs/Configuration.md` – environment/config options
