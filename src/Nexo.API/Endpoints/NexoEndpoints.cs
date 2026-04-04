@@ -250,23 +250,49 @@ public static class NexoEndpoints
         }
 
         var prompt = BuildDirectorPrompt(request, previousDaily);
-        var orchestrationResult = await orchestrator.OrchestrateAsync(prompt, cancellationToken);
+        var success = false;
+        string? summary;
+        string? orchestrationError = null;
+        string? integratedOutputJson = null;
+
+        try
+        {
+            var orchestrationResult = await orchestrator.OrchestrateAsync(prompt, cancellationToken);
+            success = orchestrationResult.Success;
+            summary = orchestrationResult.IntegratedOutput != null
+                ? $"{orchestrationResult.IntegratedOutput.AgentOutputs.Count} agent(s) executed"
+                : "No integrated output generated";
+            integratedOutputJson = SerializeForDaily(orchestrationResult.IntegratedOutput?.IntegratedResults);
+        }
+        catch (Exception ex)
+        {
+            summary = "Orchestration failed before completion";
+            orchestrationError = ex.Message;
+        }
 
         ValidationResponse? validation = null;
         if (request.RunValidation)
         {
-            var validationResult = await mediator.Send(new RunValidationCommand(request.ValidationFilter), cancellationToken);
-            validation = new ValidationResponse(
-                validationResult.Passed,
-                validationResult.Message,
-                validationResult.TestsRun,
-                validationResult.TestsPassed,
-                validationResult.TestsFailed);
+            try
+            {
+                var validationResult = await mediator.Send(new RunValidationCommand(request.ValidationFilter), cancellationToken);
+                validation = new ValidationResponse(
+                    validationResult.Passed,
+                    validationResult.Message,
+                    validationResult.TestsRun,
+                    validationResult.TestsPassed,
+                    validationResult.TestsFailed);
+            }
+            catch (Exception ex)
+            {
+                validation = new ValidationResponse(
+                    false,
+                    $"Validation failed: {ex.Message}",
+                    0,
+                    0,
+                    0);
+            }
         }
-
-        var summary = orchestrationResult.IntegratedOutput != null
-            ? $"{orchestrationResult.IntegratedOutput.AgentOutputs.Count} agent(s) executed"
-            : "No integrated output generated";
 
         var dailyId = $"{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}";
         var entry = new DirectorDailyEntry(
@@ -275,10 +301,11 @@ public static class NexoEndpoints
             request.Goal.Trim(),
             request.Notes?.Trim(),
             request.ContinueFromDailyId,
-            orchestrationResult.Success,
+            success,
             summary,
-            SerializeForDaily(orchestrationResult.IntegratedOutput?.IntegratedResults),
-            validation);
+            integratedOutputJson,
+            validation,
+            orchestrationError);
 
         var dailyPath = Path.Combine(dailiesPath, $"{dailyId}.json");
         await File.WriteAllTextAsync(dailyPath, JsonSerializer.Serialize(entry, DailySerializerOptions), cancellationToken);
@@ -290,6 +317,7 @@ public static class NexoEndpoints
             entry.Summary,
             entry.IntegratedOutputJson,
             entry.Validation,
+            entry.OrchestrationError,
             entry.ContinueFromDailyId));
     }
 
@@ -472,6 +500,7 @@ public sealed record DirectorRunResponse(
     string? Summary,
     string? IntegratedOutputJson,
     ValidationResponse? Validation,
+    string? OrchestrationError,
     string? ContinuedFromDailyId);
 
 public sealed record DirectorDailySummary(
@@ -491,4 +520,5 @@ public sealed record DirectorDailyEntry(
     bool Success,
     string? Summary,
     string? IntegratedOutputJson,
-    ValidationResponse? Validation);
+    ValidationResponse? Validation,
+    string? OrchestrationError);
