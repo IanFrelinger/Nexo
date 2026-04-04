@@ -1,31 +1,154 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="night">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nexo Director Portal</title>
+  <meta name="description" content="Personal Nexo workspace — your goals, your machine, your pace." />
+  <title>Your Nexo space</title>
   <style>
-    :root {
+    :root[data-theme="night"] {
       --bg: #0b1220;
       --panel: #121a2b;
       --line: #334155;
       --text: #e2e8f0;
       --muted: #94a3b8;
       --accent: #38bdf8;
+      --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
       --ok: #22c55e;
       --warn: #f59e0b;
       --bad: #ef4444;
+      --glow: rgba(56, 189, 248, 0.12);
     }
+    :root[data-theme="dusk"] {
+      --bg: #141018;
+      --panel: #1f1824;
+      --line: #4a3f52;
+      --text: #f1e8f0;
+      --muted: #b6a8b8;
+      --accent: #e8a0bf;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+      --ok: #6ee7b7;
+      --warn: #fcd34d;
+      --bad: #fb7185;
+      --glow: rgba(232, 160, 191, 0.1);
+    }
+    :root[data-theme="paper"] {
+      --bg: #f8f5f0;
+      --panel: #fffefb;
+      --line: #d4cec4;
+      --text: #1c1917;
+      --muted: #57534e;
+      --accent: #0d9488;
+      --accent-soft: color-mix(in srgb, var(--accent) 15%, transparent);
+      --ok: #059669;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --glow: rgba(13, 148, 136, 0.08);
+    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      font-family: "Segoe UI", Inter, ui-sans-serif, system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
+      line-height: 1.45;
+      min-height: 100vh;
     }
     .wrap {
       max-width: 1100px;
       margin: 0 auto;
       padding: 20px;
+    }
+    header.hero {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    header.hero h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .tagline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 42rem;
+    }
+    .trust {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 10px 12px;
+      background: var(--accent-soft);
+      border-radius: 10px;
+      border: 1px solid var(--line);
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 14px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .pill.dot::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .pill.ok::before { background: var(--ok); }
+    .pill.bad::before { background: var(--bad); }
+    button.icon {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button.icon:hover { border-color: var(--accent); }
+    .intent-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .intent-row legend {
+      width: 100%;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .intent {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .intent[aria-pressed="true"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--text);
     }
     .panel {
       background: var(--panel);
@@ -33,19 +156,26 @@
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 16px;
+      box-shadow: 0 0 0 1px var(--glow);
     }
-    h1, h2 {
-      margin: 0 0 12px 0;
+    h2 {
+      margin: 0 0 10px 0;
+      font-size: 1.05rem;
     }
-    .sub {
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
+    .sub { color: var(--muted); margin-bottom: 12px; font-size: 13px; }
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
+      align-items: start;
     }
+    body[data-focus="review"] .grid { grid-template-columns: 1fr; }
+    body[data-focus="review"] .panel-run { order: 2; }
+    body[data-focus="review"] .panel-dailies { order: 1; }
+    body[data-focus="explore"] .panel-run { display: none; }
+    body[data-focus="explore"] .grid { grid-template-columns: 1fr; }
+    .panel-run { order: 1; }
+    .panel-dailies { order: 2; }
     label {
       display: block;
       margin-top: 10px;
@@ -53,20 +183,16 @@
       color: var(--muted);
       font-size: 13px;
     }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
-      box-sizing: border-box;
       border: 1px solid var(--line);
-      background: #0f172a;
+      background: color-mix(in srgb, var(--bg) 65%, var(--panel));
       color: var(--text);
       border-radius: 8px;
       padding: 10px;
       font-size: 14px;
     }
-    textarea {
-      min-height: 130px;
-      resize: vertical;
-    }
+    textarea { min-height: 120px; resize: vertical; }
     .row {
       display: flex;
       gap: 12px;
@@ -74,19 +200,35 @@
       margin-top: 10px;
       flex-wrap: wrap;
     }
-    button {
-      border: 1px solid #0284c7;
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px dashed var(--line);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .chip:hover { border-style: solid; color: var(--text); }
+    button.primary {
+      border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line));
       background: var(--accent);
       color: #082f49;
       border-radius: 8px;
-      padding: 10px 14px;
+      padding: 10px 16px;
       font-weight: 700;
       cursor: pointer;
     }
+    :root[data-theme="paper"] button.primary { color: #fff; }
     button.secondary {
-      border-color: var(--line);
+      border: 1px solid var(--line);
       background: transparent;
       color: var(--text);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
     }
     .status {
       margin-top: 10px;
@@ -94,18 +236,22 @@
       border-radius: 8px;
       border: 1px solid var(--line);
       white-space: pre-wrap;
-      background: #0f172a;
+      background: color-mix(in srgb, var(--bg) 70%, var(--panel));
       font-size: 13px;
     }
     .daily-list button {
       width: 100%;
       text-align: left;
       margin-top: 8px;
-      background: #0f172a;
+      background: color-mix(in srgb, var(--bg) 50%, var(--panel));
       color: var(--text);
-      border-color: var(--line);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
       font-weight: 500;
+      cursor: pointer;
     }
+    .daily-list button:hover { border-color: var(--accent); }
     .badge {
       padding: 2px 8px;
       border-radius: 999px;
@@ -113,60 +259,112 @@
       margin-left: 8px;
       font-weight: 700;
     }
-    .ok { background: color-mix(in srgb, var(--ok) 20%, transparent); color: #86efac; }
-    .bad { background: color-mix(in srgb, var(--bad) 20%, transparent); color: #fca5a5; }
+    .ok { background: color-mix(in srgb, var(--ok) 22%, transparent); color: var(--ok); }
+    .bad { background: color-mix(in srgb, var(--bad) 22%, transparent); color: var(--bad); }
     .muted { color: var(--muted); font-size: 12px; }
     .json {
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: #0f172a;
+      background: color-mix(in srgb, var(--bg) 70%, var(--panel));
       padding: 10px;
       overflow: auto;
-      max-height: 500px;
+      max-height: 480px;
       white-space: pre-wrap;
       font-size: 12px;
     }
+    details.advanced { margin-top: 12px; }
+    details.advanced summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .explore-cap {
+      font-size: 13px;
+    }
+    .explore-cap ul { margin: 8px 0 0 18px; padding: 0; color: var(--muted); }
+    dialog.settings {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 0;
+      max-width: min(420px, 94vw);
+    }
+    dialog.settings::backdrop { background: rgba(0,0,0,0.45); }
+    .settings-inner { padding: 18px; }
+    .settings-inner h3 { margin: 0 0 12px 0; }
+    .settings-inner footer { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
     @media (max-width: 900px) {
       .grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body>
+<body data-focus="shape">
   <div class="wrap">
-    <h1>Nexo Director Portal</h1>
-    <div class="sub">Iterative game-dev workflow: direct, generate, test, and review dailies from your browser.</div>
+    <header class="hero">
+      <h1 id="greeting">Your Nexo space</h1>
+      <p class="tagline" id="subGreeting">
+        Software that bends to you — set a direction, run an iteration, keep a trail of dailies on <em>your</em> machine.
+      </p>
+      <p class="trust">
+        <strong>Personal by design.</strong> Screen preferences live only in this browser (local storage).
+        Your dailies and API data stay on the Nexo host you control — nothing here requires an account.
+      </p>
+      <div class="toolbar">
+        <span id="connPill" class="pill dot" title="API reachability">Connecting…</span>
+        <span id="modePill" class="pill" hidden></span>
+        <span style="flex:1"></span>
+        <button type="button" class="icon" id="settingsBtn" aria-haspopup="dialog">Preferences</button>
+      </div>
+      <fieldset class="intent-row" aria-label="What you need right now">
+        <legend>Right now I want to…</legend>
+        <button type="button" class="intent" id="intentShape" aria-pressed="true" data-focus="shape">Shape what’s next</button>
+        <button type="button" class="intent" id="intentReview" aria-pressed="false" data-focus="review">Review my trail</button>
+        <button type="button" class="intent" id="intentExplore" aria-pressed="false" data-focus="explore">Explore this node</button>
+      </fieldset>
+    </header>
 
-    <div class="grid">
-      <section class="panel">
-        <h2>Run directorial iteration</h2>
-        <label for="goal">Goal / direction</label>
-        <textarea id="goal" placeholder="Add a stamina-based dodge and tune combat pacing for minute-5 retention."></textarea>
+    <section class="panel" id="panelExplore" hidden>
+      <h2>This Nexo node</h2>
+      <p class="sub">What your server reports about itself — useful when you’re deciding what to ask for.</p>
+      <div id="capBlock" class="explore-cap muted">Loading capabilities…</div>
+    </section>
 
-        <label for="notes">Notes (optional)</label>
-        <textarea id="notes" placeholder="Keep UI minimal. Prioritize responsive feel over visual effects."></textarea>
+    <div class="grid" id="mainGrid">
+      <section class="panel panel-run">
+        <h2 id="runHeading">Your next iteration</h2>
+        <p class="sub" id="runSub">Describe the outcome you want; Nexo orchestrates and can run validation afterward.</p>
 
-        <label for="continueFromDailyId">Continue from daily ID (optional)</label>
-        <input id="continueFromDailyId" placeholder="20260404010101999-..." />
+        <label for="goal">What should happen?</label>
+        <textarea id="goal" placeholder=""></textarea>
+        <div class="chips" id="goalChips" aria-label="Suggestion starters"></div>
 
-        <div class="row">
-          <input id="runValidation" type="checkbox" checked style="width:auto;" />
-          <label for="runValidation" style="margin:0;">Run validation after orchestration</label>
+        <label for="notes">Context only you need (optional)</label>
+        <textarea id="notes" placeholder="Constraints, references, mood — optional private notes for this run."></textarea>
+
+        <label for="continueFromDailyId">Build on a previous daily (optional)</label>
+        <input id="continueFromDailyId" placeholder="Paste a daily ID from your trail" />
+
+        <details class="advanced" id="advancedRun">
+          <summary>More options</summary>
+          <div class="row">
+            <input id="runValidation" type="checkbox" checked style="width:auto;" />
+            <label for="runValidation" style="margin:0;">Run validation after orchestration</label>
+          </div>
+          <label for="validationFilter">Validation filter (optional)</label>
+          <input id="validationFilter" placeholder="e.g. FullyQualifiedName~Playtest" />
+        </details>
+
+        <div class="row" style="margin-top:14px;">
+          <button type="button" class="primary" id="runBtn">Run iteration</button>
+          <button type="button" class="secondary" id="refreshBtn">Refresh dailies</button>
         </div>
-
-        <label for="validationFilter">Validation filter (optional)</label>
-        <input id="validationFilter" placeholder="FullyQualifiedName~Playtest" />
-
-        <div class="row">
-          <button id="runBtn">Run iteration</button>
-          <button id="refreshBtn" class="secondary">Refresh dailies</button>
-        </div>
-
         <div id="status" class="status">Idle.</div>
       </section>
 
-      <section class="panel">
-        <h2>Dailies</h2>
-        <div class="muted">Newest first. Click an entry to inspect details.</div>
+      <section class="panel panel-dailies">
+        <h2>Your trail</h2>
+        <p class="muted">Iterations you’ve run, newest first. Only you and your host see these files.</p>
         <div id="dailies" class="daily-list"></div>
       </section>
     </div>
@@ -177,116 +375,377 @@
     </section>
   </div>
 
+  <dialog class="settings" id="settingsDlg" aria-labelledby="settingsTitle">
+    <form method="dialog" class="settings-inner">
+      <h3 id="settingsTitle">Preferences</h3>
+      <label for="prefName">What should we call you? (optional, local only)</label>
+      <input id="prefName" autocomplete="off" placeholder="First name or nickname" />
+      <label for="prefTheme">Palette</label>
+      <select id="prefTheme">
+        <option value="night">Night</option>
+        <option value="dusk">Dusk</option>
+        <option value="paper">Paper (light)</option>
+      </select>
+      <label for="prefDefaultFocus">Default screen when you open the portal</label>
+      <select id="prefDefaultFocus">
+        <option value="shape">Shape what’s next</option>
+        <option value="review">Review my trail</option>
+        <option value="explore">Explore this node</option>
+      </select>
+      <p class="muted" style="margin-top:12px;">Clearing resets themes and names on this browser only.</p>
+      <footer>
+        <button type="submit" class="primary" value="save">Save</button>
+        <button type="button" class="secondary" id="resetPrefs">Reset preferences</button>
+      </footer>
+    </form>
+  </dialog>
+
   <script>
-    const runBtn = document.getElementById("runBtn");
-    const refreshBtn = document.getElementById("refreshBtn");
-    const statusEl = document.getElementById("status");
-    const dailiesEl = document.getElementById("dailies");
-    const selectedDailyEl = document.getElementById("selectedDaily");
+    (function () {
+      const LS_KEY = "nexo.portal.prefs.v1";
+      const defaultPrefs = () => ({
+        version: 1,
+        callYou: "",
+        theme: "night",
+        defaultFocus: "shape"
+      });
 
-    function setStatus(text) {
-      statusEl.textContent = text;
-    }
-
-    function pretty(value) {
-      return JSON.stringify(value, null, 2);
-    }
-
-    async function fetchJson(url, options) {
-      const res = await fetch(url, options);
-      const text = await res.text();
-      let body = text;
-      try { body = text ? JSON.parse(text) : null; } catch {}
-      if (!res.ok) {
-        throw new Error((body && body.title) ? body.title : `HTTP ${res.status}`);
-      }
-      return body;
-    }
-
-    async function loadDailies() {
-      const items = await fetchJson("/api/director/dailies");
-      dailiesEl.innerHTML = "";
-
-      if (!items || !items.length) {
-        dailiesEl.innerHTML = '<div class="muted" style="margin-top:8px;">No dailies yet.</div>';
-        return;
+      function loadPrefs() {
+        try {
+          const raw = localStorage.getItem(LS_KEY);
+          if (!raw) return defaultPrefs();
+          const o = JSON.parse(raw);
+          return { ...defaultPrefs(), ...o, version: 1 };
+        } catch {
+          return defaultPrefs();
+        }
       }
 
-      for (const item of items) {
-        const btn = document.createElement("button");
-        const created = new Date(item.createdAtUtc).toLocaleString();
-        btn.innerHTML = `
-          <div>
-            <strong>${item.dailyId}</strong>
-            <span class="badge ${item.success ? "ok" : "bad"}">${item.success ? "PASS" : "FAIL"}</span>
-          </div>
-          <div class="muted">${created}</div>
-          <div style="margin-top:6px;">${item.goal}</div>
-        `;
-        btn.onclick = () => loadDaily(item.dailyId);
-        dailiesEl.appendChild(btn);
+      function savePrefs(p) {
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...p, version: 1 }));
       }
-    }
 
-    async function loadDaily(dailyId) {
-      setStatus(`Loading daily ${dailyId}...`);
-      const daily = await fetchJson(`/api/director/dailies/${encodeURIComponent(dailyId)}`);
-      selectedDailyEl.textContent = pretty(daily);
-      setStatus(`Loaded daily ${dailyId}.`);
-    }
+      const prefs = loadPrefs();
+      document.documentElement.dataset.theme = prefs.theme || "night";
 
-    async function runIteration() {
-      const payload = {
-        goal: document.getElementById("goal").value.trim(),
-        notes: document.getElementById("notes").value.trim() || null,
-        continueFromDailyId: document.getElementById("continueFromDailyId").value.trim() || null,
-        runValidation: document.getElementById("runValidation").checked,
-        validationFilter: document.getElementById("validationFilter").value.trim() || null
+      const el = (id) => document.getElementById(id);
+      const greeting = el("greeting");
+      const subGreeting = el("subGreeting");
+      const connPill = el("connPill");
+      const modePill = el("modePill");
+      const goal = el("goal");
+      const goalChips = el("goalChips");
+      const statusEl = el("status");
+      const dailiesEl = el("dailies");
+      const selectedDailyEl = el("selectedDaily");
+      const panelExplore = el("panelExplore");
+      const capBlock = el("capBlock");
+      const settingsDlg = el("settingsDlg");
+      const prefName = el("prefName");
+      const prefTheme = el("prefTheme");
+      const prefDefaultFocus = el("prefDefaultFocus");
+
+      const chipSets = {
+        shape: [
+          "Tighten one interaction loop I care about this week",
+          "Reduce friction in the path from intent to feedback",
+          "Ship a small vertical slice and note what felt heavy",
+          "Document what I learned so future-me can continue"
+        ],
+        review: [
+          "Skim last 3 dailies for a recurring theme",
+          "Find where validation failed and what to retry",
+          "Pick one failed run to continue from"
+        ],
+        explore: [
+          "What can this node run locally vs remotely?",
+          "What capabilities should I mention in my next goal?"
+        ]
       };
 
-      if (!payload.goal) {
-        setStatus("Goal is required.");
-        return;
+      function applyGreeting() {
+        const name = (prefs.callYou || "").trim();
+        const hour = new Date().getHours();
+        let t = "Hello";
+        if (hour < 12) t = "Good morning";
+        else if (hour < 18) t = "Good afternoon";
+        else t = "Good evening";
+        greeting.textContent = name ? t + ", " + name : "Your Nexo space";
+        subGreeting.innerHTML =
+          "Software that bends to you — set a direction, run an iteration, keep a trail of dailies on <em>your</em> machine.";
       }
 
-      setStatus("Running directorial iteration...");
-      runBtn.disabled = true;
-
-      try {
-        const result = await fetchJson("/api/director/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+      function setFocus(f) {
+        document.body.dataset.focus = f;
+        ["intentShape", "intentReview", "intentExplore"].forEach((id) => {
+          const b = el(id);
+          b.setAttribute("aria-pressed", b.dataset.focus === f ? "true" : "false");
         });
-
-        setStatus(
-          `Completed.\nDaily ID: ${result.dailyId}\n` +
-          `Success: ${result.success}\nSummary: ${result.summary ?? "n/a"}`
-        );
-
-        await loadDailies();
-        if (result.dailyId) {
-          await loadDaily(result.dailyId);
-        }
-      } catch (err) {
-        setStatus(`Run failed: ${err.message}`);
-      } finally {
-        runBtn.disabled = false;
+        panelExplore.hidden = f !== "explore";
+        el("runHeading").textContent =
+          f === "review" ? "When you’re ready, another iteration" : "Your next iteration";
+        el("runSub").textContent =
+          f === "review"
+            ? "You’re in review mode — the trail is primary. Expand options below if you want to run again."
+            : f === "explore"
+            ? "Switch back to “Shape what’s next” to run an iteration."
+            : "Describe the outcome you want; Nexo orchestrates and can run validation afterward.";
+        renderChips(f === "explore" ? "explore" : f === "review" ? "review" : "shape");
+        if (f === "explore") loadCapabilities();
       }
-    }
 
-    runBtn.addEventListener("click", runIteration);
-    refreshBtn.addEventListener("click", async () => {
-      setStatus("Refreshing dailies...");
+      function renderChips(setKey) {
+        goalChips.innerHTML = "";
+        const items = chipSets[setKey] || chipSets.shape;
+        items.forEach((text) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip";
+          b.textContent = text;
+          b.addEventListener("click", () => {
+            goal.value = goal.value ? goal.value.trim() + "\n\n" + text : text;
+            goal.focus();
+          });
+          goalChips.appendChild(b);
+        });
+      }
+
+      el("intentShape").addEventListener("click", () => setFocus("shape"));
+      el("intentReview").addEventListener("click", () => setFocus("review"));
+      el("intentExplore").addEventListener("click", () => setFocus("explore"));
+
+      prefName.value = prefs.callYou || "";
+      prefTheme.value = prefs.theme || "night";
+      prefDefaultFocus.value = prefs.defaultFocus || "shape";
+
+      el("settingsBtn").addEventListener("click", () => settingsDlg.showModal());
+      settingsDlg.addEventListener("close", () => {
+        if (settingsDlg.returnValue !== "save") return;
+        prefs.callYou = prefName.value.trim();
+        prefs.theme = prefTheme.value || "night";
+        prefs.defaultFocus = prefDefaultFocus.value || "shape";
+        savePrefs(prefs);
+        document.documentElement.dataset.theme = prefs.theme;
+        applyGreeting();
+        setFocus(prefs.defaultFocus);
+        document.querySelectorAll(".intent").forEach((b) => {
+          b.setAttribute("aria-pressed", b.dataset.focus === prefs.defaultFocus ? "true" : "false");
+        });
+      });
+      el("resetPrefs").addEventListener("click", () => {
+        localStorage.removeItem(LS_KEY);
+        location.reload();
+      });
+
+      const adv = el("advancedRun");
       try {
-        await loadDailies();
-        setStatus("Dailies refreshed.");
-      } catch (err) {
-        setStatus(`Refresh failed: ${err.message}`);
-      }
-    });
+        const showAdv = localStorage.getItem("nexo.portal.advancedOpen.v1") === "1";
+        adv.open = showAdv;
+      } catch {}
+      adv.addEventListener("toggle", () => {
+        try {
+          localStorage.setItem("nexo.portal.advancedOpen.v1", adv.open ? "1" : "0");
+        } catch {}
+      });
 
-    loadDailies().catch(err => setStatus(`Failed to load dailies: ${err.message}`));
+      try {
+        const v = localStorage.getItem("nexo.portal.runValidation.v1");
+        if (v !== null) el("runValidation").checked = v === "1";
+        const f = localStorage.getItem("nexo.portal.validationFilter.v1");
+        if (f) el("validationFilter").value = f;
+      } catch {}
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      function pretty(value) {
+        return JSON.stringify(value, null, 2);
+      }
+
+      async function fetchJson(url, options) {
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let body = text;
+        try {
+          body = text ? JSON.parse(text) : null;
+        } catch {}
+        if (!res.ok) {
+          throw new Error(body && body.title ? body.title : "HTTP " + res.status);
+        }
+        return body;
+      }
+
+      let capLoaded = false;
+      async function loadCapabilities() {
+        if (capLoaded) return;
+        capLoaded = true;
+        try {
+          const cap = await fetchJson("/api/capabilities");
+          capBlock.textContent = "";
+          const p1 = document.createElement("p");
+          p1.appendChild(document.createElement("strong")).textContent = "Platform: ";
+          p1.appendChild(document.createTextNode(String(cap.platform ?? "?")));
+          p1.appendChild(document.createTextNode(" · "));
+          const tierStrong = document.createElement("strong");
+          tierStrong.textContent = "Tier: ";
+          p1.appendChild(tierStrong);
+          p1.appendChild(document.createTextNode(String(cap.tier ?? "?")));
+          capBlock.appendChild(p1);
+          const p2 = document.createElement("p");
+          p2.appendChild(document.createElement("strong")).textContent = "Node: ";
+          p2.appendChild(document.createTextNode(String(cap.nodeId ?? "—")));
+          capBlock.appendChild(p2);
+          const capTitle = document.createElement("p");
+          capTitle.appendChild(document.createElement("strong")).textContent = "Capabilities";
+          capBlock.appendChild(capTitle);
+          const ul = document.createElement("ul");
+          const list = cap.supportedCapabilities || [];
+          if (list.length) {
+            for (const c of list) {
+              const li = document.createElement("li");
+              li.textContent = String(c);
+              ul.appendChild(li);
+            }
+          } else {
+            const li = document.createElement("li");
+            li.textContent = "—";
+            ul.appendChild(li);
+          }
+          capBlock.appendChild(ul);
+          const mTitle = document.createElement("p");
+          mTitle.appendChild(document.createElement("strong")).textContent = "Models (reported)";
+          capBlock.appendChild(mTitle);
+          const mids = (cap.availableModelIds && cap.availableModelIds.length)
+            ? cap.availableModelIds
+            : cap.hotModelIds || [];
+          const mp = document.createElement("p");
+          mp.className = "muted";
+          mp.textContent = mids.length ? mids.join(", ") : "—";
+          capBlock.appendChild(mp);
+        } catch (e) {
+          capBlock.textContent = "Capabilities unavailable (" + e.message + "). The API may still run iterations.";
+          capLoaded = false;
+        }
+      }
+
+      async function refreshStatus() {
+        try {
+          const s = await fetchJson("/api/status");
+          connPill.classList.remove("bad");
+          connPill.classList.add("ok");
+          connPill.textContent = "API reachable";
+          modePill.hidden = false;
+          modePill.textContent = "Mode: " + (s.mode || "—");
+        } catch {
+          connPill.classList.remove("ok");
+          connPill.classList.add("bad");
+          connPill.textContent = "API unreachable";
+          modePill.hidden = true;
+        }
+      }
+
+      async function loadDailies() {
+        const items = await fetchJson("/api/director/dailies");
+        dailiesEl.innerHTML = "";
+        if (!items || !items.length) {
+          dailiesEl.innerHTML =
+            '<div class="muted" style="margin-top:8px;">No dailies yet — your trail starts with your first iteration.</div>';
+          return;
+        }
+        for (const item of items) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          const head = document.createElement("div");
+          const strong = document.createElement("strong");
+          strong.textContent = item.dailyId;
+          const badge = document.createElement("span");
+          badge.className = "badge " + (item.success ? "ok" : "bad");
+          badge.textContent = item.success ? "ok" : "needs attention";
+          head.appendChild(strong);
+          head.appendChild(badge);
+          const meta = document.createElement("div");
+          meta.className = "muted";
+          meta.textContent = new Date(item.createdAtUtc).toLocaleString();
+          const goalLine = document.createElement("div");
+          goalLine.style.marginTop = "6px";
+          goalLine.textContent = item.goal ?? "";
+          btn.appendChild(head);
+          btn.appendChild(meta);
+          btn.appendChild(goalLine);
+          btn.addEventListener("click", () => loadDaily(item.dailyId));
+          dailiesEl.appendChild(btn);
+        }
+      }
+
+      async function loadDaily(dailyId) {
+        setStatus("Loading daily " + dailyId + "…");
+        const daily = await fetchJson("/api/director/dailies/" + encodeURIComponent(dailyId));
+        selectedDailyEl.textContent = pretty(daily);
+        setStatus("Loaded daily " + dailyId + ".");
+      }
+
+      async function runIteration() {
+        const payload = {
+          goal: goal.value.trim(),
+          notes: el("notes").value.trim() || null,
+          continueFromDailyId: el("continueFromDailyId").value.trim() || null,
+          runValidation: el("runValidation").checked,
+          validationFilter: el("validationFilter").value.trim() || null
+        };
+        if (!payload.goal) {
+          setStatus("Add a short description of what should happen — even one sentence is enough.");
+          return;
+        }
+        setStatus("Running…");
+        el("runBtn").disabled = true;
+        try {
+          localStorage.setItem("nexo.portal.runValidation.v1", payload.runValidation ? "1" : "0");
+          localStorage.setItem("nexo.portal.validationFilter.v1", payload.validationFilter || "");
+        } catch {}
+        try {
+          const result = await fetchJson("/api/director/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          setStatus(
+            "Done.\nDaily ID: " +
+              result.dailyId +
+              "\nSuccess: " +
+              result.success +
+              "\nSummary: " +
+              (result.summary ?? "n/a")
+          );
+          await loadDailies();
+          if (result.dailyId) await loadDaily(result.dailyId);
+          setFocus("review");
+        } catch (err) {
+          setStatus("Run failed: " + err.message);
+        } finally {
+          el("runBtn").disabled = false;
+        }
+      }
+
+      el("runBtn").addEventListener("click", runIteration);
+      el("refreshBtn").addEventListener("click", async () => {
+        setStatus("Refreshing dailies…");
+        try {
+          await loadDailies();
+          setStatus("Dailies refreshed.");
+        } catch (err) {
+          setStatus("Refresh failed: " + err.message);
+        }
+      });
+
+      applyGreeting();
+      setFocus(prefs.defaultFocus || "shape");
+
+      refreshStatus().catch(() => {});
+      loadDailies().catch((err) => setStatus("Failed to load dailies: " + err.message));
+
+      setInterval(() => refreshStatus().catch(() => {}), 60000);
+    })();
   </script>
 </body>
 </html>

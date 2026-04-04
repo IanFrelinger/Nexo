@@ -35,6 +35,10 @@ Open the portal:
 - Local: `http://localhost:8080`
 - Remote LAN: `http://<your-server-ip>:8080`
 
+### Portal philosophy (personal software)
+
+The Director UI is intentionally **personal and adaptive**: it assumes one human at a time, keeps **preferences in the browser** (local storage only), and lets you choose **what you need now** — shaping the next iteration, reviewing your trail of dailies, or exploring what this Nexo node reports about itself (`/api/status`, `/api/capabilities`). Palettes and greetings are for **your** comfort, not analytics.
+
 ## 2) Directorial iteration flow
 
 In the portal:

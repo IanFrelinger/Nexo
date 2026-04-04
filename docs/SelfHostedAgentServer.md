@@ -8,7 +8,7 @@ It is **not** the Cursor IDE remote stack; Nexo is the framework that hosts agen
 
 | Surface | Purpose |
 |--------|---------|
-| `http://<host>:<port>/` | Director portal (static UI); host port defaults to **8080** (`NEXO_AGENT_SERVER_HTTP_PORT`) |
+| `http://<host>:<port>/` | Director portal (static, **intent-adaptive** UI — local preferences only); host port defaults to **8080** (`NEXO_AGENT_SERVER_HTTP_PORT`) |
 | `POST /api/director/run` | One directorial iteration → daily JSON |
 | `GET /api/director/dailies` | List dailies |
 | `POST /api/agent`, `POST /api/orchestrate` | On-demand agent / orchestration calls |
