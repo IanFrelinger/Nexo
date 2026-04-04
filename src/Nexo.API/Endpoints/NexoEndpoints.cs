@@ -18,6 +18,11 @@ namespace Nexo.API.Endpoints;
 /// </summary>
 public static class NexoEndpoints
 {
+    private static readonly JsonSerializerOptions DailySerializerOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
+
     public static IEndpointRouteBuilder MapNexoEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api").WithTags("Nexo");
@@ -66,6 +71,25 @@ public static class NexoEndpoints
             .WithName("GetCapabilities")
             .WithSummary("Get node capability manifest for brick routing")
             .Produces<NodeCapabilityManifestDto>(StatusCodes.Status200OK);
+
+        group.MapPost("/director/run", RunDirectorWorkflowAsync)
+            .WithName("RunDirectorWorkflow")
+            .WithSummary("Run one directorial iteration and persist as a daily")
+            .Produces<DirectorRunResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/director/dailies", ListDailiesAsync)
+            .WithName("ListDirectorDailies")
+            .WithSummary("List persisted directorial dailies")
+            .Produces<List<DirectorDailySummary>>(StatusCodes.Status200OK);
+
+        group.MapGet("/director/dailies/{dailyId}", GetDailyAsync)
+            .WithName("GetDirectorDaily")
+            .WithSummary("Get one persisted directorial daily")
+            .Produces<DirectorDailyEntry>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
@@ -199,6 +223,213 @@ public static class NexoEndpoints
         return Results.Ok(ToDto(manifest));
     }
 
+    private static async Task<IResult> RunDirectorWorkflowAsync(
+        [FromBody] DirectorRunRequest request,
+        [FromServices] Orchestrator orchestrator,
+        [FromServices] IMediator mediator,
+        [FromServices] IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Goal))
+            return Results.BadRequest(new ProblemDetails { Title = "Goal is required" });
+
+        var dailiesPath = ResolveDailiesPath(configuration);
+        Directory.CreateDirectory(dailiesPath);
+
+        DirectorDailyEntry? previousDaily = null;
+        if (!string.IsNullOrWhiteSpace(request.ContinueFromDailyId))
+        {
+            if (!IsValidDailyId(request.ContinueFromDailyId))
+                return Results.BadRequest(new ProblemDetails { Title = "ContinueFromDailyId is invalid" });
+
+            var previousPath = Path.Combine(dailiesPath, $"{request.ContinueFromDailyId}.json");
+            if (File.Exists(previousPath))
+            {
+                previousDaily = await TryReadDailyAsync(previousPath, cancellationToken);
+            }
+        }
+
+        var prompt = BuildDirectorPrompt(request, previousDaily);
+        var success = false;
+        string? summary;
+        string? orchestrationError = null;
+        string? integratedOutputJson = null;
+
+        try
+        {
+            var orchestrationResult = await orchestrator.OrchestrateAsync(prompt, cancellationToken);
+            success = orchestrationResult.Success;
+            summary = orchestrationResult.IntegratedOutput != null
+                ? $"{orchestrationResult.IntegratedOutput.AgentOutputs.Count} agent(s) executed"
+                : "No integrated output generated";
+            integratedOutputJson = SerializeForDaily(orchestrationResult.IntegratedOutput?.IntegratedResults);
+        }
+        catch (Exception ex)
+        {
+            summary = "Orchestration failed before completion";
+            orchestrationError = ex.Message;
+        }
+
+        ValidationResponse? validation = null;
+        if (request.RunValidation)
+        {
+            try
+            {
+                var validationResult = await mediator.Send(new RunValidationCommand(request.ValidationFilter), cancellationToken);
+                validation = new ValidationResponse(
+                    validationResult.Passed,
+                    validationResult.Message,
+                    validationResult.TestsRun,
+                    validationResult.TestsPassed,
+                    validationResult.TestsFailed);
+            }
+            catch (Exception ex)
+            {
+                validation = new ValidationResponse(
+                    false,
+                    $"Validation failed: {ex.Message}",
+                    0,
+                    0,
+                    0);
+            }
+        }
+
+        var dailyId = $"{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}";
+        var entry = new DirectorDailyEntry(
+            dailyId,
+            DateTimeOffset.UtcNow,
+            request.Goal.Trim(),
+            request.Notes?.Trim(),
+            request.ContinueFromDailyId,
+            success,
+            summary,
+            integratedOutputJson,
+            validation,
+            orchestrationError);
+
+        var dailyPath = Path.Combine(dailiesPath, $"{dailyId}.json");
+        await File.WriteAllTextAsync(dailyPath, JsonSerializer.Serialize(entry, DailySerializerOptions), cancellationToken);
+
+        return Results.Ok(new DirectorRunResponse(
+            entry.Success,
+            entry.DailyId,
+            dailyPath,
+            entry.Summary,
+            entry.IntegratedOutputJson,
+            entry.Validation,
+            entry.OrchestrationError,
+            entry.ContinueFromDailyId));
+    }
+
+    private static async Task<IResult> ListDailiesAsync(
+        [FromServices] IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        var dailiesPath = ResolveDailiesPath(configuration);
+        if (!Directory.Exists(dailiesPath))
+            return Results.Ok(Array.Empty<DirectorDailySummary>());
+
+        var summaries = new List<DirectorDailySummary>();
+        foreach (var file in Directory.EnumerateFiles(dailiesPath, "*.json"))
+        {
+            var entry = await TryReadDailyAsync(file, cancellationToken);
+            if (entry is null)
+                continue;
+
+            summaries.Add(new DirectorDailySummary(
+                entry.DailyId,
+                entry.CreatedAtUtc,
+                entry.Goal,
+                entry.Success,
+                entry.Summary,
+                entry.ContinueFromDailyId));
+        }
+
+        return Results.Ok(summaries.OrderByDescending(x => x.CreatedAtUtc));
+    }
+
+    private static async Task<IResult> GetDailyAsync(
+        string dailyId,
+        [FromServices] IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        if (!IsValidDailyId(dailyId))
+            return Results.BadRequest(new ProblemDetails { Title = "dailyId is invalid" });
+
+        var dailiesPath = ResolveDailiesPath(configuration);
+        var dailyPath = Path.Combine(dailiesPath, $"{dailyId}.json");
+        if (!File.Exists(dailyPath))
+            return Results.NotFound(new ProblemDetails { Title = "dailyId not found" });
+
+        var entry = await TryReadDailyAsync(dailyPath, cancellationToken);
+        if (entry is null)
+            return Results.NotFound(new ProblemDetails { Title = "daily entry is unreadable" });
+
+        return Results.Ok(entry);
+    }
+
+    private static string ResolveDailiesPath(IConfiguration configuration)
+    {
+        var configuredPath = configuration["NEXO_DAILIES_PATH"];
+        if (string.IsNullOrWhiteSpace(configuredPath))
+            configuredPath = configuration["Nexo:DailiesPath"];
+
+        configuredPath ??= Path.Combine(AppContext.BaseDirectory, "dailies");
+        return Path.GetFullPath(configuredPath);
+    }
+
+    private static bool IsValidDailyId(string dailyId)
+    {
+        if (string.IsNullOrWhiteSpace(dailyId))
+            return false;
+
+        if (dailyId.Contains("..", StringComparison.Ordinal))
+            return false;
+
+        return dailyId.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+    }
+
+    private static async Task<DirectorDailyEntry?> TryReadDailyAsync(string path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var stream = File.OpenRead(path);
+            return await JsonSerializer.DeserializeAsync<DirectorDailyEntry>(stream, DailySerializerOptions, cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string BuildDirectorPrompt(DirectorRunRequest request, DirectorDailyEntry? previousDaily)
+    {
+        if (previousDaily is null)
+            return request.Goal.Trim();
+
+        var previousSummary = previousDaily.Summary ?? "No prior summary";
+        return
+            $"Continue from daily {previousDaily.DailyId}. " +
+            $"Previous goal: {previousDaily.Goal}. " +
+            $"Previous summary: {previousSummary}. " +
+            $"Director notes for this iteration: {request.Goal.Trim()}";
+    }
+
+    private static string? SerializeForDaily(object? payload)
+    {
+        if (payload is null)
+            return null;
+
+        try
+        {
+            return JsonSerializer.Serialize(payload, DailySerializerOptions);
+        }
+        catch
+        {
+            return payload.ToString();
+        }
+    }
+
     private static NodeCapabilityManifestDto ToDto(NodeCapabilityManifest manifest)
     {
         return new NodeCapabilityManifestDto
@@ -254,3 +485,40 @@ public sealed record ExecutionBuildResponse(bool Success, string? ErrorMessage, 
 
 public sealed record ExecutionRunRequest(string ImageTag, string[] Command, Dictionary<string, string>? EnvironmentVariables = null, Dictionary<string, string>? VolumeMounts = null, string? WorkingDirectory = null);
 public sealed record ExecutionRunResponse(bool Success, int ExitCode, string StandardOutput, string StandardError, string? ContainerId, double DurationMs);
+
+public sealed record DirectorRunRequest(
+    string Goal,
+    string? Notes = null,
+    bool RunValidation = true,
+    string? ValidationFilter = null,
+    string? ContinueFromDailyId = null);
+
+public sealed record DirectorRunResponse(
+    bool Success,
+    string DailyId,
+    string DailyPath,
+    string? Summary,
+    string? IntegratedOutputJson,
+    ValidationResponse? Validation,
+    string? OrchestrationError,
+    string? ContinuedFromDailyId);
+
+public sealed record DirectorDailySummary(
+    string DailyId,
+    DateTimeOffset CreatedAtUtc,
+    string Goal,
+    bool Success,
+    string? Summary,
+    string? ContinueFromDailyId);
+
+public sealed record DirectorDailyEntry(
+    string DailyId,
+    DateTimeOffset CreatedAtUtc,
+    string Goal,
+    string? Notes,
+    string? ContinueFromDailyId,
+    bool Success,
+    string? Summary,
+    string? IntegratedOutputJson,
+    ValidationResponse? Validation,
+    string? OrchestrationError);

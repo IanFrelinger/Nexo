@@ -1,0 +1,29 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+  nexo-api:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.api
+    depends_on:
+      - ollama
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.2
+      NEXO_DAILIES_PATH: /data/dailies
+    ports:
+      - "8080:8080"
+    volumes:
+      - nexo-dailies:/data/dailies
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  nexo-dailies:

@@ -33,6 +33,7 @@ Use this page as the navigation starting point for docs.
 
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
 - `docs/Configuration.md` — environment variables and configuration reference.
+- `docs/AgentSandboxArchitecture.md` — project-scoped sandbox model for agent file/tool execution and host-app integration (Unity-friendly).
 
 ## API / SDK / Runtime
 
@@ -40,6 +41,8 @@ Use this page as the navigation starting point for docs.
 - `docs/sdk.md` — SDK integration guidance.
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
+- `docs/SelfHostedGameServerPortal.md` — self-hosted game-dev server portal and directorial dailies workflow.
+- `apps/runtime-studio/README.md` — application-layer planner + worker agent-set integration scaffold.
 
 ## Additional Material
 

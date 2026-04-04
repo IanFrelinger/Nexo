@@ -1,0 +1,106 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "runtime-planner",
+        "Name": "Runtime Studio Planner",
+        "Role": "extender",
+        "ModelProvider": "ollama",
+        "ModelName": "llama3.1",
+        "Commands": [
+          "plan",
+          "decompose",
+          "propose_changes",
+          "self_extend"
+        ],
+        "Parameters": {
+          "RepoRoot": ".",
+          "Objective": "Plan and drive iterative runtime-studio improvements under sandbox policy.",
+          "AgentName": "runtime-studio-planner"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:03:00",
+          "InitialDelay": "00:00:10"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "runtime-worker-optimizer",
+        "Name": "Runtime Studio Optimizer Worker",
+        "Role": "optimizer",
+        "ParentId": "runtime-planner",
+        "ModelProvider": "ollama",
+        "ModelName": "llama3.1",
+        "Commands": [
+          "analyze",
+          "suggest"
+        ],
+        "Parameters": {
+          "AnalysisPath": "."
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:04:00",
+          "InitialDelay": "00:00:20"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "runtime-worker-tester",
+        "Name": "Runtime Studio Tester Worker",
+        "Role": "tester",
+        "ParentId": "runtime-planner",
+        "ModelProvider": "deterministic",
+        "Commands": [
+          "test"
+        ],
+        "Parameters": {
+          "Filter": "FullyQualifiedName~PathAllowlist"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:05:00",
+          "InitialDelay": "00:00:30"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      }
+    ]
+  }
+}

@@ -65,17 +65,38 @@ public sealed class PathAllowlistPropertyTests
     [Fact]
     public void PathAllowlist_AllowedPrefixes_AreConsistentlyAllowed()
     {
+        var sandboxRoot = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "nexo-policy-prop-sandbox"));
+        var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>
+        {
+            ["SandboxRoot"] = sandboxRoot
+        });
+
         // Suffix must not contain ".." (path traversal) which would cause rejection
-        Gen.OneOf(Gen.Const("src/"), Gen.Const("tests/"), Gen.Const("docs/"))
+        Gen.OneOf(Gen.Const("src/"), Gen.Const("tests/"), Gen.Const("docs/"), Gen.Const(".nexo/"))
             .SelectMany(prefix => Gen.String[1, 50]
                 .Where(s => !s.Contains("..", StringComparison.Ordinal))
                 .Select(suffix => prefix + suffix))
             .Sample(path =>
             {
                 var call = CreateWriteCall(path);
-                var result = _allowlist.Approve(call, EmptySnapshot, out var reason);
+                var result = _allowlist.Approve(call, snapshot, out var reason);
 
                 result.Should().BeTrue($"path under allowed prefix without traversal must be allowed: {path}");
+                reason.Should().Be("OK");
+            });
+
+        // Files under sandbox root should also be accepted.
+        Gen.String[1, 50]
+            .Where(s => !s.Contains("..", StringComparison.Ordinal))
+            .Where(s => s.IndexOfAny(Path.GetInvalidFileNameChars()) < 0)
+            .Sample(suffix =>
+            {
+                var relative = $"tools-cache/{suffix}.txt";
+                var full = Path.GetFullPath(Path.Combine(sandboxRoot, relative));
+                var call = CreateWriteCall(full);
+                var result = _allowlist.Approve(call, snapshot, out var reason);
+
+                result.Should().BeTrue($"sandbox path should be allowed: {full}");
                 reason.Should().Be("OK");
             });
     }
