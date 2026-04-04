@@ -40,6 +40,7 @@ Use this page as the navigation starting point for docs.
 - `docs/sdk.md` — SDK integration guidance.
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
+- `docs/SelfHostedGameServerPortal.md` — self-hosted game-dev server portal and directorial dailies workflow.
 
 ## Additional Material
 

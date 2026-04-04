@@ -260,11 +260,15 @@ docker compose -f docker-compose.test.yml up --build test-ubuntu
 # start ephemeral Ollama container (and optional Postgres profile)
 docker compose -f docker-compose.ephemeral.yml up ollama
 docker compose -f docker-compose.ephemeral.yml --profile db up postgres
+
+# start self-hosted director portal (API + dailies + Ollama)
+docker compose -f docker-compose.portal.yml up -d --build
 ```
 
 Notes:
 - `docker-compose.test.yml` mounts `./test-results` and runs `BaseFrameworkSmokeTests` (`net9.0`) in container, writing log/summary artifacts there.
 - `docker-compose.ephemeral.yml` is for disposable local orchestration dependencies.
+- `docker-compose.portal.yml` serves a browser portal on `http://localhost:8080` for iterative directorial runs and daily review.
 
 ## Providers
 

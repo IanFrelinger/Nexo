@@ -18,6 +18,10 @@ builder.Services.AddNexo(options =>
 
 var app = builder.Build();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapNexoEndpoints();
+app.MapFallbackToFile("index.html");
 
 app.Run();
