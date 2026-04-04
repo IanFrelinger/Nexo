@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Nexo.BackgroundAgents.Extending;
+using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Hosting;

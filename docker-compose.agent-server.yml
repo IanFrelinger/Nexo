@@ -1,0 +1,45 @@
+# Self-hosted Nexo agent server: browser portal + REST API + Runtime Studio background agent cluster (planner / optimizer / tester).
+# Mounts this repository at /work so agents use the same tree as on a developer machine.
+#
+# From repo root:
+#   docker compose -f docker-compose.agent-server.yml up -d --build
+#   docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1
+#
+# Portal: http://localhost:8080  |  API: /api/status, /api/agent, /api/orchestrate, /api/director/*
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+  nexo-api:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.agent-server
+    depends_on:
+      - ollama
+    working_dir: /work
+    entrypoint: ["dotnet", "/app/Nexo.API.dll"]
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.1
+      NEXO_DAILIES_PATH: /data/dailies
+      NEXO_BACKGROUND_AGENTS_CONFIG: /work/apps/runtime-studio/config/agent_set.local.json
+      # Match background-agent daemon defaults for hosted runs without full barrier config.
+      Nexo__Barriers__RequireExplicitBarrier: "false"
+      NEXO_OBSERVATION_DEGRADED_MODE: "1"
+    ports:
+      - "8080:8080"
+    volumes:
+      - nexo-dailies:/data/dailies
+      - ${NEXO_REPO_ROOT:-.}:/work
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  nexo-dailies:

@@ -34,6 +34,8 @@ bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh
 bash apps/runtime-studio/scripts/run_agent_set_local.sh --duration 5m --disable-observation
 ```
 
+To run the **same agent set** behind the **Nexo.API** web portal (Docker, mounted repo), see `docs/SelfHostedAgentServer.md` and `docker-compose.agent-server.yml`.
+
 The run script configures:
 
 - `NEXO_SANDBOX_ROOT`

@@ -1,11 +1,10 @@
-using System.Linq;
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Agents;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.Runtime;
 
-namespace Nexo.CLI.Commands.BackgroundAgent;
+namespace Nexo.BackgroundAgents.HostRunners;
 
 /// <summary>
 /// Host implementation of ISelfExtendRunner: builds a toolbox (repo.fs.write, repo.fs.search_replace),

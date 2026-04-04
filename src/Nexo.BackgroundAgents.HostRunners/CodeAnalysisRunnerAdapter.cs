@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.Core.Application.Analysis.Ports;
 
-namespace Nexo.CLI.Commands.BackgroundAgent;
+namespace Nexo.BackgroundAgents.HostRunners;
 
 /// <summary>
 /// Dog-fooded implementation of ICodeAnalysisRunner: runs the application's own analysis pipeline

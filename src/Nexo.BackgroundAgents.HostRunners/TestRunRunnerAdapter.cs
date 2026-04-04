@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 
-namespace Nexo.CLI.Commands.BackgroundAgent;
+namespace Nexo.BackgroundAgents.HostRunners;
 
 /// <summary>
 /// Dog-fooded implementation of ITestRunRunner: runs the application's own test pipeline

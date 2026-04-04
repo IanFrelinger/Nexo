@@ -80,6 +80,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1 -Build
 ```
 
+### Remote development (Cursor / VS Code)
+
+**Dev Container (recommended):** install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension, open this repo, then **Dev Containers: Reopen in Container**. The container uses .NET 9, persists NuGet packages in a named volume, and runs the same setup-gate `dotnet restore` graph as `scripts/docker-restore.ps1` (not full `Nexo.sln`, which requires MAUI workloads).
+
+**Remote SSH:** on the Linux/macOS host, install prerequisites (`bash scripts/setup/setup.sh all` or your usual bootstrap), clone the repo, then in Cursor use **Remote-SSH: Connect to Host…** and open the folder. Cursor installs its server component on first connect; you only need a normal user account, SSH, and the toolchain on the machine.
+
 ### One-click bootstrap installers (Option 1)
 
 For single-command install/bootstrap wrappers, see:
@@ -271,12 +277,16 @@ docker compose -f docker-compose.ephemeral.yml --profile db up postgres
 
 # start self-hosted director portal (API + dailies + Ollama)
 docker compose -f docker-compose.portal.yml up -d --build
+
+# self-hosted agent server: portal + API + Ollama + Runtime Studio background agent cluster (mounts repo at /work)
+docker compose -f docker-compose.agent-server.yml up -d --build
 ```
 
 Notes:
 - `docker-compose.test.yml` mounts `./test-results` and runs `BaseFrameworkSmokeTests` (`net9.0`) in container, writing log/summary artifacts there.
 - `docker-compose.ephemeral.yml` is for disposable local orchestration dependencies.
 - `docker-compose.portal.yml` serves a browser portal on `http://localhost:8080` for iterative directorial runs and daily review.
+- `docker-compose.agent-server.yml` adds a mounted workspace and loads the Runtime Studio agent set; see `docs/SelfHostedAgentServer.md`.
 
 ## Providers
 

@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
-using Nexo.CLI.Commands.BackgroundAgent;
+using Nexo.BackgroundAgents.HostRunners;
 using Nexo.CLI.Runtime;
 
 namespace Nexo.CLI.Commands;

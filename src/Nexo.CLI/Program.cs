@@ -1120,7 +1120,7 @@ static class Program
         root.AddCommand(new RuntimeCommand());
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
         root.AddCommand(new SelfExtendCommand(
-            () => ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>()));
+            () => ServiceProvider.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>()));
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
@@ -1152,13 +1152,13 @@ static class Program
             _ => new Nexo.Infrastructure.SelfImprovement.FileBasedSelfImprovementMetricsStore());
 
         // Dog-food: optimizer agents run the app's own analysis pipeline
-        services.TryAddSingleton<Nexo.BackgroundAgents.Optimization.ICodeAnalysisRunner, Nexo.CLI.Commands.BackgroundAgent.CodeAnalysisRunnerAdapter>();
+        services.TryAddSingleton<Nexo.BackgroundAgents.Optimization.ICodeAnalysisRunner, Nexo.BackgroundAgents.HostRunners.CodeAnalysisRunnerAdapter>();
         // Dog-food: tester agents run the app's own test pipeline
-        services.TryAddSingleton<Nexo.BackgroundAgents.Testing.ITestRunRunner, Nexo.CLI.Commands.BackgroundAgent.TestRunRunnerAdapter>();
+        services.TryAddSingleton<Nexo.BackgroundAgents.Testing.ITestRunRunner, Nexo.BackgroundAgents.HostRunners.TestRunRunnerAdapter>();
         // Dog-food: extender agents run self-extend cycle (LLM + tools with path policy)
-        services.TryAddSingleton<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>();
+        services.TryAddSingleton<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>();
         services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner>(
-            sp => sp.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SelfExtendRunnerAdapter>());
+            sp => sp.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>());
 
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();

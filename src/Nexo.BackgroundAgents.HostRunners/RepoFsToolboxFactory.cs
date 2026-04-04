@@ -3,7 +3,7 @@ using Nexo.Policies.Dev;
 using Nexo.Runtime;
 using Nexo.Tools.Dev;
 
-namespace Nexo.CLI.Commands.BackgroundAgent;
+namespace Nexo.BackgroundAgents.HostRunners;
 
 /// <summary>
 /// Shared factory for minimal repo-fs toolbox (write, search_replace) and policy (path allowlist, max write size).

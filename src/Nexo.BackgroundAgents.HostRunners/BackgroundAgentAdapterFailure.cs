@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Nexo.CLI.Commands.BackgroundAgent;
+namespace Nexo.BackgroundAgents.HostRunners;
 
 /// <summary>
 /// Shared failure handling for background agent runner adapters: log exception and return message for run-result Summary.
