@@ -77,6 +77,30 @@ Suggested baseline:
 - Require VPN or zero-trust access for director review sessions.
 - Back up the `nexo-dailies` Docker volume.
 
+### Exposing Nexo on the public Internet
+
+`Nexo.API` does **not** ship with login or API-key gates on `/` and `/api/*` today. Treat **any** Internet reachability as “full access to whatever Nexo can do on that host,” unless you add a **front door**.
+
+**Recommended patterns (pick one):**
+
+| Approach | Idea | Tradeoff |
+|----------|------|----------|
+| **Private network only** | **Tailscale**, **WireGuard**, **Tailscale subnet router**, corporate VPN. Nexo stays on `127.0.0.1` or a private IP; **no** public `8080`. | Best security/cost ratio for individuals; users need the VPN app. |
+| **TLS + auth reverse proxy** | **Caddy**, **nginx**, **Traefik**, or **Envoy** terminates **HTTPS** on **443**, enforces **Basic Auth**, **OAuth2/OIDC**, or **mTLS**; proxies to `http://127.0.0.1:8080` only. | You operate certs (Let’s Encrypt via Caddy/nginx) and identity; Nexo stays unmodified. |
+| **Managed edge + policy** | **Cloudflare Tunnel** (or similar) to origin; optional **Cloudflare Access** / **Zero Trust** so only allowed identities hit the hostname. | Hides origin IP; dependency on vendor; configure policies carefully. |
+
+**Do not:**
+
+- Port-forward **plain HTTP 8080** from your router to Nexo (no TLS, no auth).
+- Publish **Ollama** (`11434`) or **Docker API** to the Internet.
+- Run **`docker-compose.agent-server.yml` with a read/write repo mount** against the open Internet without strong edge controls — that is arbitrary-code / arbitrary-change territory.
+
+**Operational extras that help:**
+
+- **Rate limiting** and **request size limits** at the proxy.
+- **Separate machine or VM** for Internet-facing Nexo from your main dev PC.
+- **Backups** of dailies and any persisted state; **updates** for proxy, OS, and images.
+
 ## 4) API quick examples
 
 Create one daily:
