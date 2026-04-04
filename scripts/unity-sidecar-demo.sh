@@ -10,6 +10,7 @@ Usage:
   bash scripts/unity-sidecar-demo.sh generate --prompt "add a dash ability"
   bash scripts/unity-sidecar-demo.sh validate
   bash scripts/unity-sidecar-demo.sh run-demo --prompt "add a health pickup system"
+  bash scripts/unity-sidecar-demo.sh supervise --game "co-op dungeon crawler" --iterations 2
 EOF
   exit 1
 fi

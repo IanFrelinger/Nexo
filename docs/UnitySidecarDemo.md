@@ -23,6 +23,7 @@ dotnet run --project tools/Nexo.UnitySidecarDemo -- <args>
 - `generate` – takes a gameplay prompt, calls Nexo orchestration, and writes Unity-style generated scripts
 - `validate` – compiles generated scripts in Ubuntu using Unity stubs
 - `run-demo` – runs `generate` + `validate` + dogfood block1 checks
+- `supervise` – runs a supervisor loop across Gameplay/Combat/Economy/AI roles and validates each iteration
 
 Output root defaults to:
 
@@ -56,6 +57,9 @@ bash scripts/unity-sidecar-demo.sh generate --prompt "add a health pickup system
 
 # Validate generated scripts compile
 bash scripts/unity-sidecar-demo.sh validate
+
+# Supervisor-driven iterative team loop
+bash scripts/unity-sidecar-demo.sh supervise --game "co-op dungeon crawler" --iterations 2
 ```
 
 ## Suggested next step (Unity machine)
