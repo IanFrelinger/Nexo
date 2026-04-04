@@ -14,6 +14,8 @@ cat <<EOF
 
 Ollama: http://127.0.0.1:${PORT}
 
+Start Nexo.API next (Ollama already up): bash scripts/start-nexo-api-dev.sh --skip-ollama
+
 export OLLAMA_BASE_URL=http://127.0.0.1:${PORT}
 export OLLAMA_MODEL=${MODEL}
 export Nexo__NodeCapabilityRuntime__Ollama__BaseUrl=http://127.0.0.1:${PORT}

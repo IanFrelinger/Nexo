@@ -31,7 +31,11 @@ Write-Host @"
 
 Ollama is listening at http://127.0.0.1:$Port
 
-Set for Nexo on this machine, then start Nexo.API or CLI:
+Or start Nexo.API with env + health wait (all platforms):
+  powershell -File scripts/start-nexo-api-dev.ps1 -Pull
+  bash scripts/start-nexo-api-dev.sh --pull
+
+Manual env for Nexo:
   `$env:OLLAMA_BASE_URL = 'http://127.0.0.1:$Port'
   `$env:OLLAMA_MODEL = '$Model'
   `$env:Nexo__NodeCapabilityRuntime__Ollama__BaseUrl = 'http://127.0.0.1:$Port'

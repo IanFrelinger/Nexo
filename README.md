@@ -274,6 +274,12 @@ docker compose -f docker-compose.test.yml up --build test-ubuntu
 # Ollama in Docker only (models in a named volume; use with host-run Nexo — see scripts/run-ollama-docker.ps1)
 docker compose -f docker-compose.ollama.yml up -d
 
+# One-shot dev: Docker Ollama → wait for health → run Nexo.API (Windows / PowerShell)
+# powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-nexo-api-dev.ps1 -Pull   # first time or new model
+# powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-nexo-api-dev.ps1
+# Linux/macOS/WSL: bash scripts/start-nexo-api-dev.sh --pull
+# Stop Ollama: scripts/stop-nexo-api-dev.ps1 | scripts/stop-nexo-api-dev.sh
+
 # start ephemeral Ollama container (and optional Postgres profile)
 docker compose -f docker-compose.ephemeral.yml up ollama
 docker compose -f docker-compose.ephemeral.yml --profile db up postgres
