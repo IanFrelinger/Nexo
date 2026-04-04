@@ -53,6 +53,21 @@ Each run creates a JSON daily file in `NEXO_DAILIES_PATH` (`/data/dailies` in co
 
 ## 3) Remote access and hardening
 
+### Basic checklist (avoid the biggest risks)
+
+The Nexo API is **powerful and mostly unauthenticated by default** — anyone who can open the HTTP port can call `/api/director/run`, `/api/orchestrate`, etc. You do not need “enterprise security” for a home lab, but these steps avoid common foot-guns:
+
+1. **Shrink who can reach the port** — Prefer `127.0.0.1` / SSH or VPN to the host. Use `-ListenLan` / `--listen-lan` only on **Wi‑Fi you trust**; never on café/hotel networks.
+2. **Firewall** — On Windows/macOS/Linux, do not add a blanket “allow 8080 from anywhere” rule. If you must expose the API on the LAN, restrict to the LAN subnet; **do not port-forward 8080 to the public internet** without something stronger (below).
+3. **Internet-facing use** — Put **TLS + authentication** (reverse proxy, Cloudflare Tunnel, Tailscale Funnel with auth, etc.) in front of the app; expose **443** only, not raw `8080`.
+4. **Docker `ports:`** — Publishing `8080:8080` listens on **all interfaces** on the host. For local-only, use a compose override such as `"127.0.0.1:8080:8080"` so phones/LAN cannot hit it unless you intend that.
+5. **Mounted repo** — Agent-server style stacks mount your project **read/write**; agents can change files under policy. Use a **read-only** bind (`:ro`) in an override if you only want experimentation without writes.
+6. **Secrets** — Keep `OPENAI_*`, `AZURE_*`, and similar keys in **environment or secret stores**, not in git. Prefer `.env` files that are **gitignored**.
+7. **Backups** — Back up the **dailies** volume or directory (`NEXO_DAILIES_PATH`) if you care about history.
+8. **Updates** — Periodically pull newer **Ollama** and **API** base images / rebuild, and patch the host OS.
+
+### Beyond the home LAN
+
 For public Internet access, put a reverse proxy + TLS in front of port `8080` and restrict source IPs where possible.
 
 Suggested baseline:
