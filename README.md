@@ -72,6 +72,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 ```
 
+**Windows + Docker (no local .NET SDK):** restoring the full `Nexo.sln` in a plain Linux SDK container fails on MAUI/Android workloads. Use the setup-gate restore (same projects as `setup.sh restore`) inside one container, with a persistent NuGet volume:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1
+# optional: also build Nexo.CLI in-container
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1 -Build
+```
+
 ### One-click bootstrap installers (Option 1)
 
 For single-command install/bootstrap wrappers, see:
