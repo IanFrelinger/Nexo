@@ -1,12 +1,12 @@
-# Self-hosted Nexo agent server: browser portal + REST API + Runtime Studio background agent cluster (planner / optimizer / tester).
-# Mounts a host directory into the container so agents use the same tree as on a developer machine.
+# Nexo.API + Ollama + Director portal + mounted workspace + background agents (default JSON: apps/runtime-studio/config/agent_set.local.json).
+# How this differs from docker-compose.portal.yml and from the CLI daemon: apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api
 #
 # From repo root:
 #   docker compose -f docker-compose.agent-server.yml up -d --build
 #   docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1
 #
-# Configuration: copy docs/config/agent-server.env.example to `.env` or pass --env-file.
-# Portal: http://localhost:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}/  |  API: /api/status, /api/agent, /api/orchestrate, /api/director/*
+# Env: docs/config/agent-server.env.example
+# Portal: http://localhost:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}/
 
 services:
   ollama:

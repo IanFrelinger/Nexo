@@ -8,6 +8,26 @@ This sits outside kernel internals and uses:
 - project-scoped sandboxing under `.nexo/`
 - local-first model routing via Ollama
 
+<a id="how-runtime-studio-fits-with-nexo-api"></a>
+
+## How this fits (one config, flexible hosts)
+
+There is **no second “Runtime Studio app”** in the repo — only this folder (config + scripts) plus the shared Nexo kernel.
+
+| Piece | What it is |
+|--------|------------|
+| **`config/agent_set.local.json`** | **Single source of truth** for the planner / optimizer / tester **background** agent definitions (`BackgroundAgents:Agents`). |
+| **CLI daemon** (`run_agent_set_local.sh`) | Runs that JSON in a **standalone** `nexo background-agent daemon` process (best for local dev matching CI-style scripts). |
+| **`Nexo.API` + `NEXO_BACKGROUND_AGENTS_CONFIG`** | Runs the **same JSON** inside the API process (best with Docker / a mounted repo — see `docs/SelfHostedAgentServer.md`). |
+| **Director portal** (`Nexo.API` `/`) | **Different workflow**: human-driven goals → orchestration → **dailies** JSON. It does not replace the background cluster; it often lives on the **same** API host. |
+
+**Compose (pick the lane you need):**
+
+- **`docker-compose.portal.yml`** — portal + API + Ollama; **no** mounted workspace / default agent-server cluster wiring.
+- **`docker-compose.agent-server.yml`** — portal + API + Ollama + **mounted repo** + default `NEXO_BACKGROUND_AGENTS_CONFIG` → this folder’s JSON.
+
+Cross-platform env tuning: `docs/config/agent-server.env.example`.
+
 ## Why this exists in `apps/`
 
 This is a runtime application of Nexo, not a kernel primitive.
@@ -33,8 +53,6 @@ From repo root:
 bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh
 bash apps/runtime-studio/scripts/run_agent_set_local.sh --duration 5m --disable-observation
 ```
-
-To run the **same agent set** behind the **Nexo.API** web portal (Docker, mounted repo), see `docs/SelfHostedAgentServer.md`, `docker-compose.agent-server.yml`, and cross-platform env template `docs/config/agent-server.env.example`.
 
 The run script configures:
 

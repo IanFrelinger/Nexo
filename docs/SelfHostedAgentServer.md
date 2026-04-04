@@ -1,8 +1,10 @@
 # Self-hosted Nexo agent server (portal + cluster)
 
-This is the **self-hosted** setup for running Nexo as a small **agent server**: a browser **Director portal**, HTTP APIs, **Ollama**, and the **Runtime Studio** background agent cluster (planner + optimizer + tester) described in `apps/runtime-studio/README.md`.
+Docker lane for **Nexo.API** with a **mounted workspace**, bundled **Ollama**, the **Director portal**, and the **same** background agent JSON as Runtime Studio (`NEXO_BACKGROUND_AGENTS_CONFIG` → `apps/runtime-studio/config/agent_set.local.json` by default).
 
-It is **not** the Cursor IDE remote stack; Nexo is the framework that hosts agents and exposes them over HTTP.
+**Mental model:** [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api) in `apps/runtime-studio/README.md` — one JSON agent set; pick CLI daemon, API-hosted cluster, or portal-only compose as needed.
+
+Not the Cursor IDE remote stack — Nexo is the framework that hosts agents over HTTP.
 
 ## What you get
 

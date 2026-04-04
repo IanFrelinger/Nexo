@@ -278,15 +278,14 @@ docker compose -f docker-compose.ephemeral.yml --profile db up postgres
 # start self-hosted director portal (API + dailies + Ollama)
 docker compose -f docker-compose.portal.yml up -d --build
 
-# self-hosted agent server: portal + API + Ollama + Runtime Studio background agent cluster (mounts repo at /work)
+# full portal stack: mounted workspace + background agents (see apps/runtime-studio README)
 docker compose -f docker-compose.agent-server.yml up -d --build
 ```
 
 Notes:
 - `docker-compose.test.yml` mounts `./test-results` and runs `BaseFrameworkSmokeTests` (`net9.0`) in container, writing log/summary artifacts there.
 - `docker-compose.ephemeral.yml` is for disposable local orchestration dependencies.
-- `docker-compose.portal.yml` serves a browser portal on `http://localhost:8080` for iterative directorial runs and daily review.
-- `docker-compose.agent-server.yml` adds a mounted workspace and loads the Runtime Studio agent set; see `docs/SelfHostedAgentServer.md` and `docs/config/agent-server.env.example` for ports, paths, and platform-specific options.
+- **Portal stacks:** `docker-compose.portal.yml` = Director UI + API + Ollama. `docker-compose.agent-server.yml` = same plus **mounted repo** + default background agents from `apps/runtime-studio/config/agent_set.local.json`. Relationship diagram: `apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api`. Docker tuning: `docs/SelfHostedAgentServer.md`, `docs/config/agent-server.env.example`.
 
 ## Providers
 
@@ -333,7 +332,7 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --fil
 Start here:
 - `docs/GettingStarted.md` – guided first-hour setup and usage
 - `docs/DocsIndex.md` – where to find docs by task
-- `apps/runtime-studio/README.md` – application-layer planner+worker agent set integration.
+- `apps/runtime-studio/README.md` – Runtime Studio agent-set JSON; hub for CLI vs compose vs Director portal (see “How this fits” there).
 
 Core references:
 - `docs/Configuration.md` – environment/config options

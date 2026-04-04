@@ -1,6 +1,6 @@
 # Self-Hosted Nexo Game Dev Server Portal
 
-For the **full stack** (portal + Ollama + **Runtime Studio background agent cluster** on a mounted repo), use `docker-compose.agent-server.yml` and `docs/SelfHostedAgentServer.md`.
+**Compose:** this page describes **`docker-compose.portal.yml`** (portal + API + Ollama, no default mounted-workspace agent cluster). For portal + **mounted repo** + background agents using Runtime Studio’s JSON, use **`docker-compose.agent-server.yml`** — `docs/SelfHostedAgentServer.md`. How those pieces relate: `apps/runtime-studio/README.md` → [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
 
 This setup gives you a remote web portal for a **directorial workflow**:
 

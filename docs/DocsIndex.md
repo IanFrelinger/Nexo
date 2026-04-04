@@ -41,9 +41,9 @@ Use this page as the navigation starting point for docs.
 - `docs/sdk.md` — SDK integration guidance.
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
-- `docs/SelfHostedGameServerPortal.md` — self-hosted game-dev server portal and directorial dailies workflow.
-- `docs/SelfHostedAgentServer.md` — self-hosted agent server: portal, API, Ollama, and Runtime Studio agent cluster (`docker-compose.agent-server.yml`); template `docs/config/agent-server.env.example`.
-- `apps/runtime-studio/README.md` — application-layer planner + worker agent-set integration scaffold.
+- `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
+- `docs/SelfHostedGameServerPortal.md` — `docker-compose.portal.yml`: Director portal + dailies API (lighter stack).
+- `docs/SelfHostedAgentServer.md` — `docker-compose.agent-server.yml`: mounted workspace + env template `docs/config/agent-server.env.example`.
 
 ## Additional Material
 
