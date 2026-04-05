@@ -38,12 +38,22 @@ Kernel packages stay reusable; Runtime Studio defines product workflow, operator
 Config file:
 
 - `apps/runtime-studio/config/agent_set.local.json`
+- `apps/runtime-studio/config/agent_set.game_director.local.json` (director mode for game projects)
 
 Agent roles included:
 
 - `runtime-planner` (`extender`) - planning + safe code actions through policy-gated self-extend
 - `runtime-worker-optimizer` (`optimizer`) - code analysis worker
 - `runtime-worker-tester` (`tester`) - test verification worker
+
+Game director mode roles included:
+
+- `game-director-planner` (`extender`) - plans iterations and delegates technical execution
+- `game-worker-asset-pipeline` (`extender`) - drives asset pipeline tasks and integration
+- `game-worker-level-layout` (`extender`) - executes level layout / blockout iteration tasks
+- `game-worker-systems-designer` (`extender`) - implements and tunes game systems
+- `game-worker-code-optimizer` (`optimizer`) - static analysis / optimization sweeps
+- `game-worker-test-automation` (`tester`) - recurring automated test execution
 
 ## Quick start
 
@@ -52,6 +62,20 @@ From repo root:
 ```bash
 bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh
 bash apps/runtime-studio/scripts/run_agent_set_local.sh --duration 5m --disable-observation
+```
+
+Game director quick start:
+
+```bash
+bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh
+bash apps/runtime-studio/scripts/run_game_director_local.sh --duration 10m --disable-observation
+```
+
+Set a test filter for your project lane before starting:
+
+```bash
+export NEXO_GAME_TEST_FILTER="FullyQualifiedName~YourGameNamespace"
+bash apps/runtime-studio/scripts/run_game_director_local.sh --duration 10m
 ```
 
 The run script configures:
@@ -73,4 +97,5 @@ Common changes:
 - update `ModelName` for planner/worker split
 - change tester filter
 - adjust exfiltration policy boundaries
+- adjust each game worker `Objective` to match your project pillars (art style, encounter pacing, systems depth)
 
