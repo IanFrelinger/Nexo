@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 namespace Nexo.API.Security;
 
@@ -12,7 +11,6 @@ namespace Nexo.API.Security;
 /// </summary>
 public sealed class NexoApiKeyAuthMiddleware
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private const string DefaultApiKeyHeaderName = "X-Nexo-Api-Key";
     private const string DefaultAuthorizationHeaderName = "Authorization";
     private const string DefaultBearerScheme = "Bearer";
@@ -39,11 +37,7 @@ public sealed class NexoApiKeyAuthMiddleware
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "application/json";
-            var payload = JsonSerializer.Serialize(new
-            {
-                title = "Unauthorized",
-                detail = failureDetail
-            }, JsonOptions);
+            var payload = "{\"title\":\"Unauthorized\",\"detail\":\"" + EscapeJsonString(failureDetail) + "\"}";
             await context.Response.WriteAsync(payload);
             return;
         }
@@ -355,6 +349,15 @@ public sealed class NexoApiKeyAuthMiddleware
         var leftBytes = Encoding.UTF8.GetBytes(left);
         var rightBytes = Encoding.UTF8.GetBytes(right);
         return CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
+    }
+
+    private static string EscapeJsonString(string value)
+    {
+        return value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal)
+            .Replace("\r", "\\r", StringComparison.Ordinal)
+            .Replace("\n", "\\n", StringComparison.Ordinal);
     }
 }
 
