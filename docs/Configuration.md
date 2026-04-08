@@ -28,6 +28,19 @@ Advisory only — does not enforce firewalls or Tailscale ACLs. See **`docs/Tail
 | `Nexo__Security__ApiKey` | Shared secret required for protected mutating requests | unset (disabled) |
 | `Nexo__Security__ApiKeyHeaderName` | Header used for key checks | `X-Nexo-Api-Key` |
 | `Nexo__Security__ExcludedApiKeyPaths` | Comma-separated API path prefixes exempted from key checks | none |
+| `Nexo__Security__AuthorizationMode` | Built-in auth mode: `None`, `ApiKey`, `BearerToken`, `Basic`, `ApiKeyOrBearerToken`, `ApiKeyOrBasic`, `BearerTokenOrBasic`, `Any` | `None` |
+| `Nexo__Security__AuthorizationScope` | Built-in auth scope: `MutatingApi` or `AllApi` | `MutatingApi` |
+| `Nexo__Security__ExcludedAuthorizationPaths` | Comma-separated API path prefixes exempted from built-in auth checks | none |
+| `Nexo__Security__BearerToken` | Shared secret for bearer token authorization | unset |
+| `Nexo__Security__BearerTokenHeaderName` | Header used for bearer token checks | `Authorization` |
+| `Nexo__Security__BearerTokenScheme` | Bearer scheme prefix when using `Authorization` header | `Bearer` |
+| `Nexo__Security__BasicAuthUsername` | Username for built-in basic auth | unset |
+| `Nexo__Security__BasicAuthPassword` | Password for built-in basic auth | unset |
+| `Nexo__Security__BasicAuthHeaderName` | Header used for basic auth checks | `Authorization` |
+
+Notes:
+- If `AuthorizationMode` is set to anything except `None`, built-in auth mode takes precedence over legacy `RequireApiKeyForMutatingEndpoints`.
+- `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments.
 
 ## Pipelines (`NEXO_PIPELINE_*`)
 

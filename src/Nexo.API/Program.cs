@@ -68,7 +68,51 @@ var app = builder.Build();
         }
     }
 
-    if (sec.RequireApiKeyForMutatingEndpoints && string.IsNullOrWhiteSpace(sec.ApiKey))
+    var hasConfiguredAuthMode = Enum.TryParse<NexoAuthorizationMode>(sec.AuthorizationMode, true, out var authMode)
+        && authMode != NexoAuthorizationMode.None;
+    if (hasConfiguredAuthMode)
+    {
+        if (!Enum.TryParse<NexoAuthorizationScope>(sec.AuthorizationScope, true, out var authScope))
+        {
+            authScope = NexoAuthorizationScope.MutatingApi;
+            log.LogWarning(
+                "Nexo built-in auth scope '{Scope}' is invalid; defaulting to {DefaultScope}.",
+                sec.AuthorizationScope,
+                authScope);
+        }
+
+        log.LogInformation("Nexo built-in auth mode {Mode} is enabled with scope {Scope}.", authMode, authScope);
+        if (sec.RequireApiKeyForMutatingEndpoints)
+        {
+            log.LogInformation(
+                "Legacy RequireApiKeyForMutatingEndpoints is also set. Built-in auth mode {Mode} takes precedence.",
+                authMode);
+        }
+
+        var missingConfig = authMode switch
+        {
+            NexoAuthorizationMode.ApiKey => string.IsNullOrWhiteSpace(sec.ApiKey),
+            NexoAuthorizationMode.BearerToken => string.IsNullOrWhiteSpace(sec.BearerToken),
+            NexoAuthorizationMode.Basic => string.IsNullOrWhiteSpace(sec.BasicAuthUsername) || string.IsNullOrWhiteSpace(sec.BasicAuthPassword),
+            NexoAuthorizationMode.ApiKeyOrBearerToken => string.IsNullOrWhiteSpace(sec.ApiKey) && string.IsNullOrWhiteSpace(sec.BearerToken),
+            NexoAuthorizationMode.ApiKeyOrBasic => string.IsNullOrWhiteSpace(sec.ApiKey)
+                                                   && (string.IsNullOrWhiteSpace(sec.BasicAuthUsername) || string.IsNullOrWhiteSpace(sec.BasicAuthPassword)),
+            NexoAuthorizationMode.BearerTokenOrBasic => string.IsNullOrWhiteSpace(sec.BearerToken)
+                                                        && (string.IsNullOrWhiteSpace(sec.BasicAuthUsername) || string.IsNullOrWhiteSpace(sec.BasicAuthPassword)),
+            NexoAuthorizationMode.Any => string.IsNullOrWhiteSpace(sec.ApiKey)
+                                         && string.IsNullOrWhiteSpace(sec.BearerToken)
+                                         && (string.IsNullOrWhiteSpace(sec.BasicAuthUsername) || string.IsNullOrWhiteSpace(sec.BasicAuthPassword)),
+            _ => false
+        };
+
+        if (missingConfig)
+        {
+            log.LogWarning(
+                "Nexo built-in auth mode {Mode} is enabled but required credentials are not fully configured. Protected routes will reject requests until configuration is complete.",
+                authMode);
+        }
+    }
+    else if (sec.RequireApiKeyForMutatingEndpoints && string.IsNullOrWhiteSpace(sec.ApiKey))
     {
         log.LogWarning(
             "Nexo API key auth is required for mutating endpoints, but no API key is configured. Mutating endpoints are effectively unauthenticated.");
