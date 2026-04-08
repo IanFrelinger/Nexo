@@ -55,7 +55,7 @@ Each run creates a JSON daily file in `NEXO_DAILIES_PATH` (`/data/dailies` in co
 
 ### Basic checklist (avoid the biggest risks)
 
-The Nexo API is **powerful and mostly unauthenticated by default** — anyone who can open the HTTP port can call `/api/director/run`, `/api/orchestrate`, etc. You do not need “enterprise security” for a home lab, but these steps avoid common foot-guns:
+The Nexo API is **powerful and open by default unless you enable built-in auth** — anyone who can open the HTTP port can call `/api/director/run`, `/api/orchestrate`, etc. You do not need “enterprise security” for a home lab, but these steps avoid common foot-guns:
 
 1. **Shrink who can reach the port** — Prefer `127.0.0.1` / SSH or VPN to the host. Use `-ListenLan` / `--listen-lan` only on **Wi‑Fi you trust**; never on café/hotel networks. For **Tailscale**, see **`docs/TailscaleAndNexo.md`** (ACLs + `Nexo__Security__ExposureProfile=Tailnet` so logs and the portal advisory match your intent).
 2. **Firewall** — On Windows/macOS/Linux, do not add a blanket “allow 8080 from anywhere” rule. If you must expose the API on the LAN, restrict to the LAN subnet; **do not port-forward 8080 to the public internet** without something stronger (below).
@@ -79,7 +79,7 @@ Suggested baseline:
 
 ### Exposing Nexo on the public Internet
 
-`Nexo.API` does **not** ship with login or API-key gates on `/` and `/api/*` today. Treat **any** Internet reachability as “full access to whatever Nexo can do on that host,” unless you add a **front door**.
+`Nexo.API` supports optional built-in API auth layers, but they are not enabled by default and do not replace edge hardening. Treat **any** Internet reachability as “full access to whatever Nexo can do on that host,” unless you configure auth and add a **front door**.
 
 **Recommended patterns (pick one):**
 
