@@ -57,7 +57,7 @@ public sealed class CapabilityRoutingBrickTests
                 ComputeClass = GpuComputeClass.Medium,
                 EstimatedDuration = TimeSpan.FromSeconds(10)
             },
-            new TestExecutionContext()).ConfigureAwait(false);
+            new TestExecutionContext());
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
@@ -123,7 +123,7 @@ public sealed class CapabilityRoutingBrickTests
                 ComputeClass = GpuComputeClass.High,
                 EstimatedDuration = TimeSpan.FromMinutes(1)
             },
-            new TestExecutionContext()).ConfigureAwait(false);
+            new TestExecutionContext());
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
@@ -166,6 +166,25 @@ public sealed class CapabilityRoutingBrickTests
             ModelId = "m",
             MinimumVramBytes = 256L * 1024 * 1024,
             ComputeClass = GpuComputeClass.Low
+        });
+
+        target.Should().BeOfType<ExecutionTarget.Remote>();
+    }
+
+    [Fact]
+    public void NCR_RoutesToRemote_DueToInsufficientComputeClass()
+    {
+        var router = BuildRouter(
+            availableVram: 32L * 1024 * 1024 * 1024,
+            computeClass: GpuComputeClass.Low,
+            queueDepth: 0,
+            queueThreshold: 4);
+
+        var target = router.ResolveExecutionTarget(new JobRequirements
+        {
+            ModelId = "m",
+            MinimumVramBytes = 512L * 1024 * 1024,
+            ComputeClass = GpuComputeClass.High
         });
 
         target.Should().BeOfType<ExecutionTarget.Remote>();
@@ -229,7 +248,7 @@ public sealed class CapabilityRoutingBrickTests
         var result = await brick.ExecuteAsync(
             new RunPodJobPayload { ModelId = "m", Prompt = "timeout please" },
             new JobRequirements { ModelId = "m" },
-            new TestExecutionContext()).ConfigureAwait(false);
+            new TestExecutionContext());
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().NotBeNull();
@@ -263,7 +282,7 @@ public sealed class CapabilityRoutingBrickTests
         var result = await brick.ExecuteAsync(
             new RunPodJobPayload { ModelId = "m", Prompt = "fail dispatch" },
             new JobRequirements { ModelId = "m" },
-            new TestExecutionContext()).ConfigureAwait(false);
+            new TestExecutionContext());
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().NotBeNull();
