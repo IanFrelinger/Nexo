@@ -20,6 +20,14 @@ public enum RunPodJobState
     Unknown
 }
 
+public enum RemoteExecutionPreference
+{
+    UseSystemDefault = 0,
+    CloudOnly = 1,
+    PreferPeerNetwork = 2,
+    PeerNetworkOnly = 3
+}
+
 public sealed record RunPodInstance
 {
     public string InstanceId { get; init; } = string.Empty;
@@ -60,6 +68,7 @@ public sealed record JobRequirements
     public TimeSpan EstimatedDuration { get; init; } = TimeSpan.FromMinutes(1);
     public string ModelId { get; init; } = string.Empty;
     public bool IsOvernightOrBackground { get; init; }
+    public RemoteExecutionPreference RemoteExecutionPreference { get; init; } = RemoteExecutionPreference.UseSystemDefault;
 }
 
 public sealed record GenerationExecutionResult
@@ -83,6 +92,12 @@ public sealed class RunPodBrickConfig
     public string OutputStagingPath { get; set; } = Path.Combine(Path.GetTempPath(), "nexo-runpod");
     public int QueueDepthThreshold { get; set; } = 4;
     public string BaseUrl { get; set; } = "https://api.runpod.io";
+    public bool EnablePeerNetworkRouting { get; set; }
+    public bool PreferPeerNetworkOverCloud { get; set; } = true;
+    public string PeerCapabilityId { get; set; } = "generation.capability-routing";
+    public string PeerRoutingBrickId { get; set; } = "generation.capability-routing";
+    public TimeSpan PeerRequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
+    public TimeSpan PeerDiscoveryInterval { get; set; } = TimeSpan.FromSeconds(10);
 }
 
 public interface IRunPodClient
@@ -120,6 +135,10 @@ public interface IBrickExecutor
 }
 
 public interface ILocalExecutor : IBrickExecutor
+{
+}
+
+public interface IPeerExecutor : IBrickExecutor
 {
 }
 

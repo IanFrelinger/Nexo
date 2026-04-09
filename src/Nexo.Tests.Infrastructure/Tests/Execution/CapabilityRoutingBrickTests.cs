@@ -9,6 +9,7 @@ using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Routing;
+using Nexo.Core.Application.Mesh.Models;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
@@ -41,7 +42,16 @@ public sealed class CapabilityRoutingBrickTests
         });
         var runPodClient = new StubRunPodClient();
         var runPodBrick = new RunPodBrick(runPodClient, config, NullLogger<RunPodBrick>.Instance);
-        var router = new NcrCapabilityRouter(snapshot, localExecutor, runPodBrick, config, NullLogger<NcrCapabilityRouter>.Instance);
+        var peerExecutor = new StubPeerExecutor();
+        var peerSnapshot = new StubPeerSnapshot();
+        var router = new NcrCapabilityRouter(
+            snapshot,
+            peerSnapshot,
+            peerExecutor,
+            localExecutor,
+            runPodBrick,
+            config,
+            NullLogger<NcrCapabilityRouter>.Instance);
         var brick = new CapabilityRoutingBrick(router, NullLogger<CapabilityRoutingBrick>.Instance);
 
         var result = await brick.ExecuteAsync(
@@ -107,7 +117,16 @@ public sealed class CapabilityRoutingBrickTests
         var localExecutor = new StubLocalExecutor(_ =>
             Result<GenerationExecutionResult>.Failure("local.should_not_run", "Local executor should not run in this test."));
         var runPodBrick = new RunPodBrick(runPodClient, config, NullLogger<RunPodBrick>.Instance);
-        var router = new NcrCapabilityRouter(snapshot, localExecutor, runPodBrick, config, NullLogger<NcrCapabilityRouter>.Instance);
+        var peerExecutor = new StubPeerExecutor();
+        var peerSnapshot = new StubPeerSnapshot();
+        var router = new NcrCapabilityRouter(
+            snapshot,
+            peerSnapshot,
+            peerExecutor,
+            localExecutor,
+            runPodBrick,
+            config,
+            NullLogger<NcrCapabilityRouter>.Instance);
         var brick = new CapabilityRoutingBrick(router, NullLogger<CapabilityRoutingBrick>.Instance);
 
         var result = await brick.ExecuteAsync(
@@ -324,6 +343,208 @@ public sealed class CapabilityRoutingBrickTests
         adaptation.AdditionalBrickTypes.Should().Contain(typeof(CapabilityRoutingBrick));
     }
 
+    [Fact]
+    public void PeerPreferred_RoutesToPeer_WhenEligiblePeerExists()
+    {
+        var localExecutor = new StubLocalExecutor(_ => Result<GenerationExecutionResult>.Success(new GenerationExecutionResult
+        {
+            Payload = [1],
+            Provider = "local",
+            ModelId = "m",
+            IsRemote = false
+        }));
+        var runPodConfig = Options.Create(new RunPodBrickConfig
+        {
+            Timeout = TimeSpan.FromSeconds(2),
+            PollingInterval = TimeSpan.FromMilliseconds(20),
+            QueueDepthThreshold = 4,
+            EnablePeerNetworkRouting = true,
+            PreferPeerNetworkOverCloud = true,
+            OutputStagingPath = Path.Combine(Path.GetTempPath(), $"nexo-peer-pref-{Guid.NewGuid():N}")
+        });
+        var runPod = new RunPodBrick(new StubRunPodClient(), runPodConfig, NullLogger<RunPodBrick>.Instance);
+        var peerExecutor = new StubPeerExecutor();
+        var peerSnapshot = new StubPeerSnapshot
+        {
+            Candidates =
+            [
+                new PeerExecutionCandidate
+                {
+                    PeerId = "peer-1",
+                    Endpoint = "http://peer-1",
+                    AvailableVramBytes = 24L * 1024 * 1024 * 1024,
+                    ComputeClass = GpuComputeClass.High,
+                    QueueDepth = 0,
+                    CapturedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        };
+        var router = new NcrCapabilityRouter(
+            new SnapshotStub
+            {
+                AvailableVramBytes = 128L * 1024 * 1024,
+                ComputeClass = GpuComputeClass.Low,
+                CurrentQueueDepth = 0
+            },
+            peerSnapshot,
+            peerExecutor,
+            localExecutor,
+            runPod,
+            runPodConfig,
+            NullLogger<NcrCapabilityRouter>.Instance);
+
+        var target = router.ResolveExecutionTarget(new JobRequirements
+        {
+            ModelId = "m",
+            MinimumVramBytes = 4L * 1024 * 1024 * 1024,
+            ComputeClass = GpuComputeClass.Medium,
+            RemoteExecutionPreference = RemoteExecutionPreference.PreferPeerNetwork
+        });
+
+        target.Should().BeOfType<ExecutionTarget.Remote>();
+        var remote = (ExecutionTarget.Remote)target;
+        remote.Executor.Should().BeSameAs(peerExecutor);
+        remote.Reason.ToLowerInvariant().Should().Contain("peer");
+    }
+
+    [Fact]
+    public void PeerOnly_RoutesToPeer_WhenEligiblePeerExists()
+    {
+        var runPodConfig = Options.Create(new RunPodBrickConfig
+        {
+            Timeout = TimeSpan.FromSeconds(2),
+            PollingInterval = TimeSpan.FromMilliseconds(20),
+            QueueDepthThreshold = 4,
+            EnablePeerNetworkRouting = true,
+            OutputStagingPath = Path.Combine(Path.GetTempPath(), $"nexo-peer-only-{Guid.NewGuid():N}")
+        });
+
+        var localExecutor = new StubLocalExecutor(_ => Result<GenerationExecutionResult>.Success(new GenerationExecutionResult
+        {
+            Payload = [1],
+            Provider = "local",
+            ModelId = "m",
+            IsRemote = false
+        }));
+        var runPod = new RunPodBrick(new StubRunPodClient(), runPodConfig, NullLogger<RunPodBrick>.Instance);
+        var peerExecutor = new StubPeerExecutor();
+        var peerSnapshot = new StubPeerSnapshot
+        {
+            Candidates =
+            [
+                new PeerExecutionCandidate
+                {
+                    PeerId = "peer-1",
+                    Endpoint = "http://peer-1",
+                    AvailableVramBytes = 16L * 1024 * 1024 * 1024,
+                    ComputeClass = GpuComputeClass.High,
+                    QueueDepth = 0,
+                    CapturedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        };
+
+        var router = new NcrCapabilityRouter(
+            new SnapshotStub
+            {
+                AvailableVramBytes = 128L * 1024 * 1024,
+                ComputeClass = GpuComputeClass.Low,
+                CurrentQueueDepth = 0
+            },
+            peerSnapshot,
+            peerExecutor,
+            localExecutor,
+            runPod,
+            runPodConfig,
+            NullLogger<NcrCapabilityRouter>.Instance);
+
+        var target = router.ResolveExecutionTarget(new JobRequirements
+        {
+            ModelId = "m",
+            MinimumVramBytes = 2L * 1024 * 1024 * 1024,
+            ComputeClass = GpuComputeClass.Medium,
+            RemoteExecutionPreference = RemoteExecutionPreference.PeerNetworkOnly
+        });
+
+        target.Should().BeOfType<ExecutionTarget.Remote>();
+        var remote = (ExecutionTarget.Remote)target;
+        remote.Executor.Should().BeSameAs(peerExecutor);
+        remote.Reason.ToLowerInvariant().Should().Contain("peer");
+    }
+
+[Fact]
+    public async Task PeerOnly_ReturnsErrorExecutor_WhenNoEligiblePeers()
+    {
+        var runPodConfig = Options.Create(new RunPodBrickConfig
+        {
+            Timeout = TimeSpan.FromSeconds(2),
+            PollingInterval = TimeSpan.FromMilliseconds(20),
+            QueueDepthThreshold = 4,
+            EnablePeerNetworkRouting = true,
+            OutputStagingPath = Path.Combine(Path.GetTempPath(), $"nexo-peer-none-{Guid.NewGuid():N}")
+        });
+
+        var localExecutor = new StubLocalExecutor(_ => Result<GenerationExecutionResult>.Success(new GenerationExecutionResult
+        {
+            Payload = [1],
+            Provider = "local",
+            ModelId = "m",
+            IsRemote = false
+        }));
+        var runPod = new RunPodBrick(new StubRunPodClient(), runPodConfig, NullLogger<RunPodBrick>.Instance);
+        var peerExecutor = new StubPeerExecutor
+        {
+            NextResult = Result<GenerationExecutionResult>.Failure("peer-routing.no_eligible_peers", "No eligible peer endpoint is currently available.")
+        };
+        var peerSnapshot = new StubPeerSnapshot
+        {
+            Candidates =
+            [
+                new PeerExecutionCandidate
+                {
+                    PeerId = "peer-low",
+                    Endpoint = "http://peer-low",
+                    AvailableVramBytes = 128L * 1024 * 1024,
+                    ComputeClass = GpuComputeClass.Low,
+                    QueueDepth = 0,
+                    CapturedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        };
+
+        var router = new NcrCapabilityRouter(
+            new SnapshotStub
+            {
+                AvailableVramBytes = 128L * 1024 * 1024,
+                ComputeClass = GpuComputeClass.Low,
+                CurrentQueueDepth = 0
+            },
+            peerSnapshot,
+            peerExecutor,
+            localExecutor,
+            runPod,
+            runPodConfig,
+            NullLogger<NcrCapabilityRouter>.Instance);
+
+        var target = router.ResolveExecutionTarget(new JobRequirements
+        {
+            ModelId = "m",
+            MinimumVramBytes = 8L * 1024 * 1024 * 1024,
+            ComputeClass = GpuComputeClass.High,
+            RemoteExecutionPreference = RemoteExecutionPreference.PeerNetworkOnly
+        });
+
+        target.Should().BeOfType<ExecutionTarget.Remote>();
+        var remote = (ExecutionTarget.Remote)target;
+        var result = await remote.Executor.ExecuteAsync(
+            new RunPodJobPayload { ModelId = "m", Prompt = "p" },
+            new JobRequirements { ModelId = "m" },
+            new TestExecutionContext());
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().NotBeNull();
+        result.Error!.Code.Should().Be("peer-routing.no_eligible_peers");
+    }
+
     private static NcrCapabilityRouter BuildRouter(
         long availableVram,
         GpuComputeClass computeClass,
@@ -352,7 +573,16 @@ public sealed class CapabilityRoutingBrickTests
         }));
         var runPodClient = new StubRunPodClient();
         var runPodBrick = new RunPodBrick(runPodClient, config, NullLogger<RunPodBrick>.Instance);
-        return new NcrCapabilityRouter(snapshot, localExecutor, runPodBrick, config, NullLogger<NcrCapabilityRouter>.Instance);
+        var peerExecutor = new StubPeerExecutor();
+        var peerSnapshot = new StubPeerSnapshot();
+        return new NcrCapabilityRouter(
+            snapshot,
+            peerSnapshot,
+            peerExecutor,
+            localExecutor,
+            runPodBrick,
+            config,
+            NullLogger<NcrCapabilityRouter>.Instance);
     }
 
     private sealed class SnapshotStub : INCRCapabilitySnapshot
@@ -361,6 +591,11 @@ public sealed class CapabilityRoutingBrickTests
         public GpuComputeClass ComputeClass { get; set; } = GpuComputeClass.None;
         public int CurrentQueueDepth { get; set; }
         public DateTimeOffset CapturedAt { get; set; } = DateTimeOffset.UtcNow;
+    }
+
+    private sealed class StubPeerSnapshot : IPeerCapabilitySnapshot
+    {
+        public IReadOnlyList<PeerExecutionCandidate> Candidates { get; init; } = [];
     }
 
     private sealed class StubLocalExecutor : ILocalExecutor
@@ -453,5 +688,18 @@ public sealed class CapabilityRoutingBrickTests
             => Task.FromResult("ok");
         public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
+    }
+
+    private sealed class StubPeerExecutor : IPeerExecutor
+    {
+        public Result<GenerationExecutionResult> NextResult { get; set; } =
+            Result<GenerationExecutionResult>.Failure("peer-routing.stub", "Stub peer executor should not be invoked in router-only tests.");
+
+        public Task<Result<GenerationExecutionResult>> ExecuteAsync(
+            RunPodJobPayload payload,
+            JobRequirements requirements,
+            IExecutionContext context,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(NextResult);
     }
 }

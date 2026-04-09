@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Execution.Routing;
+using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Infrastructure.Adaptation;
 
@@ -37,6 +38,11 @@ public static class RunPodCapabilityRoutingServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, NCRCapabilityPoller>());
         services.TryAddSingleton<INCRCapabilitySnapshot>(sp =>
             sp.GetServices<IHostedService>().OfType<NCRCapabilityPoller>().First());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, PeerCapabilitySnapshotPoller>());
+        services.TryAddSingleton<IPeerCapabilitySnapshot>(sp =>
+            sp.GetServices<IHostedService>().OfType<PeerCapabilitySnapshotPoller>().First());
+        services.TryAddSingleton<NexoPeerBrickExecutor>();
+        services.TryAddSingleton<IPeerExecutor>(sp => sp.GetRequiredService<NexoPeerBrickExecutor>());
 
         services.TryAddSingleton<ILocalExecutor, ProviderFactoryLocalExecutor>();
         services.TryAddSingleton<RunPodBrick>();
