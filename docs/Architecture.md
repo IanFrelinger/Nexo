@@ -46,6 +46,16 @@ Nexo is an AI-enhanced development orchestration platform with a layered archite
 - **ProviderFactory**: Routes LLM calls to OpenAI, Azure, Ollama, or mock (with Polly retries)
 - **Persistence**: In-memory by default; LiteDB for pattern store, audit log
 - **Adaptation**: Brick decomposition, recompilation, fix generation
+- **Execution routing**: NCR-driven local/remote routing with peer-network and RunPod cloud execution paths
+
+#### Execution Routing (Generation)
+
+- **Entry point**: `CapabilityRoutingBrick` (`generation.capability-routing`) is the default generation brick.
+- **Router**: `NcrCapabilityRouter` resolves targets from NCR capability snapshots and job requirements.
+- **Local path**: `ILocalExecutor` is selected when VRAM, compute class, and queue depth satisfy requirements.
+- **Peer path**: `NexoPeerBrickExecutor` dispatches to eligible peer Nexo nodes with timeout + failover.
+- **Cloud path**: `RunPodBrick` executes full RunPod lifecycle (spin up, dispatch, poll, pull, teardown).
+- **Policy controls**: job-level `RemoteExecutionPreference` plus system-level peer routing options.
 
 ### Trust &amp; Information Architecture
 
