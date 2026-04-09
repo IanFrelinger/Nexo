@@ -11,7 +11,7 @@
 | Area | Status | Gap Severity |
 |------|--------|---------------|
 | Dogfood gates (Blocks 1–9 + Phase F) | All implemented in tests; `make dogfood-all` passes | Low |
-| CLI dogfood parity | Only `nexo dogfood block1` exposed; blocks 2–9 test-only | Medium |
+| CLI dogfood parity | `nexo dogfood` exposes `block1`–`block9`, `closedloop`, `phasef`, `all` | Resolved |
 | Observe → Improve integration | Observe and improve are separate; patterns don't drive analysis | Medium |
 | Test failure → adaptation trigger | Self-improvement loop exists; test failure ingestion unclear | Low |
 | Trust in improve flow | Trust phases 1–4 implemented; improve may not use sanitization | Low |
@@ -25,13 +25,14 @@
 - All 9 blocks and Phase F (closed loop, changelog, test failure store) have passing tests.
 - `make dogfood-all` runs Phase C (blocks 1–6), Phase D+E (blocks 7–9), closed loop, and Phase F.
 - CI supports `scope=dogfood` in Cross-Platform Tests workflow.
+- `nexo dogfood` exposes `block1`–`block9`, `closedloop`, `phasef`, and `all`.
 
 ### Gap
-- **CLI parity:** `nexo dogfood` only exposes `block1`. Blocks 2–9, closed loop, and Phase F are validated only via `dotnet test` / `make dogfood-*`.
-- **North Star expectation:** Users should be able to run each gate from the CLI for quick validation without invoking the test runner.
+- **No functional parity gap.** CLI and test runner both cover all dogfood gates.
+- **Discoverability gap:** users still need clearer docs on when to use `nexo dogfood ...` vs `make dogfood-*`.
 
 ### Recommendation
-Add `nexo dogfood block2` through `nexo dogfood block9`, `nexo dogfood closedloop`, and `nexo dogfood phasef` subcommands that invoke the same logic as the tests (or delegate to test runner with a filter).
+Keep CLI parity marked as resolved; prioritize documentation examples that map each `nexo dogfood` command to the equivalent `make` and test-filter paths.
 
 ---
 
@@ -75,16 +76,17 @@ Add `nexo dogfood block2` through `nexo dogfood block9`, `nexo dogfood closedloo
 
 ### Current State
 - Trust phases 1–4 implemented: classification, sanitization, access boundary, audit dashboard.
-- `SanitizingProviderFactory` wraps `IProviderFactory` when Trust is enabled.
-- `ImproveCommand` uses `ProviderFactory` (and fix generation may call LLM). Trust/sanitization is applied when the host is configured with `NEXO_TRUST_ENABLED` and `AddNexo` Trust options.
+- `SanitizingProviderFactory` wraps `IProviderFactory` when Trust is enabled via hosting registration (`AddNexo`).
+- `ImproveCommand` builds a lightweight service collection and registers `ProviderFactory` directly.
+- Default `FixGenerator` paths are rule-based; cloud LLM usage in improve is optional and configuration-dependent.
 
 ### Gap
-- **ImproveCommand builds its own `ServiceProvider`** with `AddCodeAnalyzers`, `AddAdaptationInfrastructure`, etc. It does not use `AddNexo()` from Hosting. Whether `SanitizingProviderFactory` is registered in this light-weight service setup is unclear.
-- If fix generation uses LLM and Trust is not wired in the improve flow, prompts could reach cloud without sanitization when running `nexo improve`.
+- **Trust wiring gap risk:** `ImproveCommand` does not inherit hosting-level Trust registration by default.
+- If future improve paths send prompts to cloud providers, they must explicitly include Trust sanitization registration in the CLI-local DI graph.
 
 ### Recommendation
-- Audit `ImproveCommand` service registration: ensure `SanitizingProviderFactory` is used when Trust is enabled.
-- Add a dogfood test that runs improve with Trust enabled and asserts sanitization/audit behavior.
+- Document the current improve wiring (local DI, default rule-based fix generation).
+- Add a focused test that validates Trust sanitization is active when improve is configured to use cloud-backed fix generation.
 
 ---
 
@@ -126,11 +128,10 @@ Add `nexo dogfood block2` through `nexo dogfood block9`, `nexo dogfood closedloo
 
 | Priority | Gap | Effort | Impact |
 |----------|-----|--------|--------|
-| 1 | CLI dogfood parity (blocks 2–9, closedloop, phasef) | Medium | High – aligns CLI with North Star gates |
-| 2 | Observe → improve integration (pattern-driven analysis) | High | Medium – completes "observe → analyze → adapt" |
-| 3 | Trust in improve flow (sanitization when LLM used) | Low | High – security/compliance |
-| 4 | Test failure ingestion path documentation | Low | Medium – enables self-improvement in production |
-| 5 | Documentation (North Star, changelog, dogfood in README/GettingStarted) | Low | Medium – discoverability |
+| 1 | Observe → improve integration (pattern-driven analysis) | High | Medium – completes "observe → analyze → adapt" |
+| 2 | Trust in improve flow (sanitization when LLM used) | Low | High – security/compliance |
+| 3 | Test failure ingestion path documentation | Low | Medium – enables self-improvement in production |
+| 4 | Documentation (North Star, changelog, dogfood in README/GettingStarted) | Low | Medium – discoverability |
 
 ---
 
