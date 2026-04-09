@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Execution.Routing;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution.Routing;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
@@ -192,6 +193,254 @@ public sealed class PeerToPeerRoutingSmokeTests
         result.Error.Detail.Should().NotBeNullOrWhiteSpace();
         result.Error.Detail!.Should().Contain("peer-down");
         result.Error.Detail.Should().Contain("peer-bad-gateway");
+    }
+
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task PeerExecutor_StressBurstConcurrency_MaintainsHighSuccessRate()
+    {
+        const int requestCount = 120;
+        var peerCallCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["peer-1"] = 0,
+            ["peer-2"] = 0,
+            ["peer-3"] = 0
+        };
+        var gate = new object();
+        using var httpClient = new HttpClient(new FakeHttpMessageHandler(async (request, cancellationToken) =>
+        {
+            var host = request.RequestUri?.Host ?? string.Empty;
+            lock (gate)
+            {
+                if (!peerCallCounts.TryAdd(host, 1))
+                {
+                    peerCallCounts[host]++;
+                }
+            }
+
+            // peer-1 intermittently fails to force failover pressure.
+            if (string.Equals(host, "peer-1", StringComparison.OrdinalIgnoreCase))
+            {
+                var count = peerCallCounts[host];
+                if (count % 3 == 0)
+                {
+                    return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+                }
+            }
+
+            // peer-2 intermittently slow but usually succeeds.
+            if (string.Equals(host, "peer-2", StringComparison.OrdinalIgnoreCase))
+            {
+                var count = peerCallCounts[host];
+                if (count % 5 == 0)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(120), cancellationToken);
+                }
+            }
+
+            byte[] payload = [7, 7, 7];
+            var response = CreateSuccessResponseJson(payload, $"/tmp/{host}-burst.bin", $"{host} ok");
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(response, Encoding.UTF8, "application/json")
+            };
+        }));
+
+        var snapshot = new StaticPeerSnapshot(
+        [
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-1",
+                Endpoint = "http://peer-1:8080",
+                AvailableVramBytes = 16L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.High,
+                QueueDepth = 0
+            },
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-2",
+                Endpoint = "http://peer-2:8080",
+                AvailableVramBytes = 24L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.Extreme,
+                QueueDepth = 1
+            },
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-3",
+                Endpoint = "http://peer-3:8080",
+                AvailableVramBytes = 20L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.High,
+                QueueDepth = 2
+            }
+        ]);
+
+        var config = Options.Create(new RunPodBrickConfig
+        {
+            QueueDepthThreshold = 10,
+            PeerRequestTimeout = TimeSpan.FromMilliseconds(180),
+            PeerRoutingBrickId = "generation.capability-routing"
+        });
+        var sut = new NexoPeerBrickExecutor(
+            new StaticHttpClientFactory(httpClient),
+            NullLogger<NexoPeerBrickExecutor>.Instance,
+            snapshot,
+            config);
+
+        var tasks = Enumerable.Range(0, requestCount)
+            .Select(i => sut.ExecuteAsync(
+                new RunPodJobPayload
+                {
+                    ModelId = "model-burst",
+                    Prompt = $"burst-{i}",
+                    GenerationParameters = new Dictionary<string, object> { ["seed"] = i }
+                },
+                new JobRequirements
+                {
+                    ModelId = "model-burst",
+                    MinimumVramBytes = 1,
+                    ComputeClass = GpuComputeClass.Low
+                },
+                new TestExecutionContext()))
+            .ToArray();
+
+        var results = await Task.WhenAll(tasks);
+        var successCount = results.Count(r => r.IsSuccess);
+        var failureCount = results.Length - successCount;
+
+        // Stress acceptance: some failures allowed under chaos, but majority should still pass.
+        successCount.Should().BeGreaterThanOrEqualTo((int)(requestCount * 0.90));
+        failureCount.Should().BeLessThanOrEqualTo((int)(requestCount * 0.10));
+        results.Where(r => r.IsSuccess).Should().OnlyContain(r => r.Value != null && r.Value.Provider == "nexo-peer");
+
+        // Burst should exercise fallback across multiple peers with non-trivial call volume.
+        peerCallCounts["peer-1"].Should().BeGreaterThan(0);
+        peerCallCounts["peer-2"].Should().BeGreaterThan(0);
+        peerCallCounts.Values.Count(v => v > 0).Should().BeGreaterThanOrEqualTo(2);
+        peerCallCounts.Values.Sum().Should().BeGreaterThanOrEqualTo(requestCount);
+    }
+
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task PeerExecutor_StressChaosIntermittentOutages_RecoversWithFallback()
+    {
+        const int requestCount = 80;
+        var random = new Random(1337);
+        var peerSuccessCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["peer-chaos-a"] = 0,
+            ["peer-chaos-b"] = 0,
+            ["peer-chaos-c"] = 0
+        };
+        var gate = new object();
+
+        using var httpClient = new HttpClient(new FakeHttpMessageHandler(async (request, cancellationToken) =>
+        {
+            var host = request.RequestUri?.Host ?? string.Empty;
+            var roll = random.Next(0, 100);
+
+            if (string.Equals(host, "peer-chaos-a", StringComparison.OrdinalIgnoreCase))
+            {
+                if (roll < 35)
+                {
+                    return new HttpResponseMessage(HttpStatusCode.BadGateway);
+                }
+            }
+
+            if (string.Equals(host, "peer-chaos-b", StringComparison.OrdinalIgnoreCase))
+            {
+                if (roll < 20)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(200), cancellationToken);
+                }
+            }
+
+            if (string.Equals(host, "peer-chaos-c", StringComparison.OrdinalIgnoreCase))
+            {
+                if (roll < 15)
+                {
+                    throw new HttpRequestException("socket reset");
+                }
+            }
+
+            lock (gate)
+            {
+                if (!peerSuccessCounts.TryAdd(host, 1))
+                {
+                    peerSuccessCounts[host]++;
+                }
+            }
+
+            var response = CreateSuccessResponseJson([4, 2, 0], $"/tmp/{host}-chaos.bin", $"{host} ok");
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(response, Encoding.UTF8, "application/json")
+            };
+        }));
+
+        var snapshot = new StaticPeerSnapshot(
+        [
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-chaos-a",
+                Endpoint = "http://peer-chaos-a:8080",
+                AvailableVramBytes = 12L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.High,
+                QueueDepth = 0
+            },
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-chaos-b",
+                Endpoint = "http://peer-chaos-b:8080",
+                AvailableVramBytes = 14L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.High,
+                QueueDepth = 1
+            },
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-chaos-c",
+                Endpoint = "http://peer-chaos-c:8080",
+                AvailableVramBytes = 18L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.Extreme,
+                QueueDepth = 2
+            }
+        ]);
+
+        var config = Options.Create(new RunPodBrickConfig
+        {
+            QueueDepthThreshold = 10,
+            PeerRequestTimeout = TimeSpan.FromMilliseconds(120),
+            PeerRoutingBrickId = "generation.capability-routing"
+        });
+        var sut = new NexoPeerBrickExecutor(
+            new StaticHttpClientFactory(httpClient),
+            NullLogger<NexoPeerBrickExecutor>.Instance,
+            snapshot,
+            config);
+
+        var tasks = Enumerable.Range(0, requestCount)
+            .Select(i => sut.ExecuteAsync(
+                new RunPodJobPayload
+                {
+                    ModelId = "model-chaos",
+                    Prompt = $"chaos-{i}",
+                    GenerationParameters = new Dictionary<string, object> { ["step"] = i }
+                },
+                new JobRequirements
+                {
+                    ModelId = "model-chaos",
+                    MinimumVramBytes = 1,
+                    ComputeClass = GpuComputeClass.Low
+                },
+                new TestExecutionContext()))
+            .ToArray();
+
+        var results = await Task.WhenAll(tasks);
+        var successCount = results.Count(r => r.IsSuccess);
+
+        // Under heavier outage simulation, require strong but not perfect success.
+        successCount.Should().BeGreaterThanOrEqualTo((int)(requestCount * 0.80));
+        results.Where(r => r.IsSuccess).Should().OnlyContain(r => r.Value != null && r.Value.Payload.Length > 0);
+
+        // Ensure fallback reached alternate peers (not single-point success).
+        peerSuccessCounts.Values.Count(v => v > 0).Should().BeGreaterThanOrEqualTo(2);
     }
 
     private static string CreateSuccessResponseJson(byte[] payload, string outputPath, string summary)
