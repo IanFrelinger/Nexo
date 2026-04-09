@@ -7,6 +7,7 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXO_CONFIG_PATH` | Path to config file | `~/.nexo/config.json` |
+| `NEXO_DEPLOYMENT_PROFILE` | Hosting dependency profile for `AddNexo()` module composition (`full`, `server`, `edge`, `air-gapped`, `system`) | `full` |
 | `NEXO_AIRGAP` | `1` or `true` = air-gapped; no cloud calls | unset |
 | `NEXO_AIRGAP_PROBE` | `1` = probe network to detect air-gap | unset |
 | `NEXO_TRUST_ENABLED` | `1` = enable Trust & sanitization | `false` |

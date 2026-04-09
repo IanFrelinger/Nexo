@@ -1,6 +1,10 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Nexo.BackgroundAgents.Registry;
+using Nexo.BackgroundAgents.Trust;
+using Nexo.Abstractions.Routing;
+using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Hosting;
 using Nexo.Tests.Infrastructure.Helpers;
@@ -81,5 +85,42 @@ public sealed class HostingE2ESmokeTests
 
         var patternStore = sp.GetService<Nexo.Core.Application.Observation.Ports.IPatternStore>();
         patternStore.Should().BeNull("observation pipeline should not register IPatternStore when disabled");
+    }
+
+    [Fact(Timeout = TestTimeouts.E2E)]
+    public void AddNexoProfile_Edge_PeelsOffOptionalServices()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddNexoProfile(NexoDeploymentProfile.Edge);
+        var sp = services.BuildServiceProvider();
+
+        sp.GetService<IPatternStore>().Should().BeNull();
+        sp.GetService<IBackgroundAgentRegistry>().Should().BeNull();
+        sp.GetService<IEndpointRegistry>().Should().BeNull();
+        sp.GetService<ICloudSanitizationProxy>().Should().BeNull();
+    }
+
+    [Fact(Timeout = TestTimeouts.E2E)]
+    public void AddNexo_UsesEnvironmentDeploymentProfile_WhenOptionsDoNotOverride()
+    {
+        const string profileKey = "NEXO_DEPLOYMENT_PROFILE";
+        var previous = Environment.GetEnvironmentVariable(profileKey);
+        Environment.SetEnvironmentVariable(profileKey, "edge");
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddNexo();
+            var sp = services.BuildServiceProvider();
+
+            sp.GetService<IPatternStore>().Should().BeNull();
+            sp.GetService<IBackgroundAgentRegistry>().Should().BeNull();
+            sp.GetService<IEndpointRegistry>().Should().BeNull();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(profileKey, previous);
+        }
     }
 }

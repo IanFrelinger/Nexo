@@ -39,10 +39,43 @@ namespace Nexo.Hosting;
 /// </summary>
 public static class NexoServiceCollectionExtensions
 {
+    private sealed record ModuleSelection(
+        bool IncludeNodeCapabilityRuntime,
+        bool IncludeRuntimeTransport,
+        bool IncludePersistence,
+        bool IncludeAdaptation,
+        bool IncludePipelineComposition,
+        bool IncludeBackgroundAgents,
+        bool IncludeBackgroundAgentRag,
+        bool IncludeObservationPipeline,
+        bool IncludeTrustServices,
+        bool IncludeWorkflowIntegrations,
+        bool IncludeTestingAdapters);
+
+    /// <summary>
+    /// Adds Nexo with an explicit deployment profile.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="profile">Dependency profile to apply.</param>
+    /// <param name="configure">Optional additional options overrides.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddNexoProfile(
+        this IServiceCollection services,
+        NexoDeploymentProfile profile,
+        Action<NexoHostingOptions>? configure = null)
+    {
+        return services.AddNexo(options =>
+        {
+            options.DeploymentProfile = profile;
+            configure?.Invoke(options);
+        });
+    }
+
     /// <summary>
     /// Adds the Nexo kernel to the service collection. Registers orchestration, adaptation,
     /// persistence, trust services, provider factory, workflow executor, analysis, validation,
-    /// and agent execution. Use <paramref name="configure"/> to override defaults.
+    /// and agent execution. Use <paramref name="configure"/> to override defaults, including
+    /// deployment profile selection for environment-specific dependency peeling.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">Optional action to configure NexoHostingOptions.</param>
@@ -53,6 +86,8 @@ public static class NexoServiceCollectionExtensions
     {
         var options = new NexoHostingOptions();
         configure?.Invoke(options);
+        var deploymentProfile = ResolveDeploymentProfile(options);
+        var modules = GetModuleSelection(deploymentProfile);
 
         services.AddHttpClient();
         var configuration = new ConfigurationBuilder()
@@ -60,19 +95,8 @@ public static class NexoServiceCollectionExtensions
             .Build();
         services.AddOptions<Nexo.Infrastructure.Execution.RemoteCapabilitiesOptions>()
             .Bind(configuration.GetSection("Nexo:RemoteCapabilities"));
-        services.AddNodeCapabilityRuntimeCore(configuration);
-        if (OperatingSystem.IsWindows())
-            services.AddNodeCapabilityRuntimeWindows(configuration);
-        else if (OperatingSystem.IsMacOS())
-            services.AddNodeCapabilityRuntimeMacOS(configuration);
-        else if (OperatingSystem.IsLinux())
-            services.AddNodeCapabilityRuntimeLinux(configuration);
-        else if (OperatingSystem.IsIOS())
-            services.AddNodeCapabilityRuntimeiOS(configuration);
-        else if (OperatingSystem.IsAndroid())
-            services.AddNodeCapabilityRuntimeAndroid(configuration);
-        else
-            services.AddNodeCapabilityRuntimeLinux(configuration);
+        if (modules.IncludeNodeCapabilityRuntime)
+            RegisterNodeCapabilityRuntime(services, configuration);
 
         services.AddMediatR(cfg =>
         {
@@ -102,17 +126,31 @@ public static class NexoServiceCollectionExtensions
         });
 
         services.AddNexoOrchestration();
-        services.AddOptions<GrpcTransportOptions>();
-        services.AddOptions<RoutingOptions>();
-        services.TryAddSingleton<IEndpointRegistry, InMemoryEndpointRegistry>();
-        services.TryAddSingleton<IGrpcChannelFactory, DefaultGrpcChannelFactory>();
-        services.AddNexoRuntimeTransport<InProcessAgentTransport, GrpcAgentTransport>();
-        services.AddNexoPersistence();
-        services.AddAdaptationInfrastructure(options.PatternStorePath);
-        services.AddPipelineCompositionLayer();
-        services.AddBackgroundAgents(registerHostedService: options.RegisterBackgroundAgentHostedService);
-        services.AddBackgroundAgentsRAG();
-        if (!options.DisableObservationPipeline)
+        if (modules.IncludeRuntimeTransport)
+        {
+            services.AddOptions<GrpcTransportOptions>();
+            services.AddOptions<RoutingOptions>();
+            services.TryAddSingleton<IEndpointRegistry, InMemoryEndpointRegistry>();
+            services.TryAddSingleton<IGrpcChannelFactory, DefaultGrpcChannelFactory>();
+            services.AddNexoRuntimeTransport<InProcessAgentTransport, GrpcAgentTransport>();
+        }
+
+        if (modules.IncludePersistence)
+            services.AddNexoPersistence();
+
+        if (modules.IncludeAdaptation)
+            services.AddAdaptationInfrastructure(options.PatternStorePath);
+
+        if (modules.IncludePipelineComposition)
+            services.AddPipelineCompositionLayer();
+
+        if (modules.IncludeBackgroundAgents)
+            services.AddBackgroundAgents(registerHostedService: options.RegisterBackgroundAgentHostedService);
+
+        if (modules.IncludeBackgroundAgentRag)
+            services.AddBackgroundAgentsRAG();
+
+        if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
         {
             var repoRoot = RepoPathResolver.FindRepoRoot();
             var observationFailOpen = options.ObservationFailOpen ?? ParseBooleanEnvironmentVariable("NEXO_OBSERVATION_FAIL_OPEN");
@@ -123,7 +161,9 @@ public static class NexoServiceCollectionExtensions
                 opts.FailOpenOnStoreErrors = observationFailOpen;
             }, registerHostedService: options.RegisterBackgroundAgentHostedService);
         }
-        services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
+
+        if (modules.IncludeBackgroundAgents)
+            services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
 
         services.AddSingleton<Nexo.Infrastructure.Execution.Models.HotSwappableModel>(sp =>
         {
@@ -152,14 +192,18 @@ public static class NexoServiceCollectionExtensions
             services.AddSingleton<IEphemeralModelLifecycle, OllamaEphemeralLifecycle>();
 
         var ephemeralDb = Environment.GetEnvironmentVariable("NEXO_EPHEMERAL_DB")?.Trim();
-        if (string.Equals(ephemeralDb, "postgres", StringComparison.OrdinalIgnoreCase))
+        if (modules.IncludePersistence && string.Equals(ephemeralDb, "postgres", StringComparison.OrdinalIgnoreCase))
             services.AddSingleton<Nexo.Core.Application.Persistence.Ports.IEphemeralDatabaseLifecycle, PostgresEphemeralLifecycle>();
 
-        var trustEnabled = options.TrustEnabled ?? string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
+        var trustEnabledByConfig = options.TrustEnabled ?? string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
+        var trustEnabled = modules.IncludeTrustServices && trustEnabledByConfig;
         var loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
         var useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
 
-        services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: useAdaptive);
+        if (modules.IncludeTrustServices)
+        {
+            services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: useAdaptive);
+        }
 
         if (useAdaptive)
         {
@@ -193,12 +237,16 @@ public static class NexoServiceCollectionExtensions
         }
 
         services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowPdfExporter, Nexo.Infrastructure.Workflows.QuestPdfWorkflowExporter>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowWebhookClient, Nexo.Infrastructure.Workflows.HttpWorkflowWebhookClient>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseReader, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseReader>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseWriter, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseWriter>();
-        services.AddSingleton<Nexo.Infrastructure.Execution.IClusterRegistry, Nexo.Infrastructure.Execution.ClusterRegistry>();
-        services.AddSingleton<Nexo.Core.Application.Common.Ports.IClusterStore, Nexo.Infrastructure.Workflows.ClusterStoreAdapter>();
+
+        if (modules.IncludeWorkflowIntegrations)
+        {
+            services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowPdfExporter, Nexo.Infrastructure.Workflows.QuestPdfWorkflowExporter>();
+            services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowWebhookClient, Nexo.Infrastructure.Workflows.HttpWorkflowWebhookClient>();
+            services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseReader, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseReader>();
+            services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowDatabaseWriter, Nexo.Infrastructure.Workflows.DapperWorkflowDatabaseWriter>();
+            services.AddSingleton<Nexo.Infrastructure.Execution.IClusterRegistry, Nexo.Infrastructure.Execution.ClusterRegistry>();
+            services.AddSingleton<Nexo.Core.Application.Common.Ports.IClusterStore, Nexo.Infrastructure.Workflows.ClusterStoreAdapter>();
+        }
 
         services.TryAddSingleton<Nexo.Infrastructure.Execution.ISemanticCache>(sp =>
             new Nexo.Infrastructure.Execution.SemanticCache(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.SemanticCache>>()));
@@ -266,29 +314,34 @@ public static class NexoServiceCollectionExtensions
         services.AddSingleton<IMetricsCollector, Nexo.Infrastructure.Metrics.MemoryMetricsCollector>();
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
 
-        var executionRemoteUrl = options.ExecutionRemoteUrl ?? Environment.GetEnvironmentVariable("NEXO_EXECUTION_REMOTE_URL")?.Trim();
-        if (!string.IsNullOrEmpty(executionRemoteUrl))
+        if (modules.IncludeTestingAdapters)
         {
-            var baseUrl = executionRemoteUrl.TrimEnd('/') + "/";
-            services.AddHttpClient("NexoExecution", c => c.BaseAddress = new Uri(baseUrl));
-            services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
+            var executionRemoteUrl = options.ExecutionRemoteUrl ?? Environment.GetEnvironmentVariable("NEXO_EXECUTION_REMOTE_URL")?.Trim();
+            if (!string.IsNullOrEmpty(executionRemoteUrl))
             {
-                var factory = sp.GetRequiredService<IHttpClientFactory>();
-                var client = factory.CreateClient("NexoExecution");
-                var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform>>();
-                return new Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform(client, logger);
-            });
+                var baseUrl = executionRemoteUrl.TrimEnd('/') + "/";
+                services.AddHttpClient("NexoExecution", c => c.BaseAddress = new Uri(baseUrl));
+                services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
+                {
+                    var factory = sp.GetRequiredService<IHttpClientFactory>();
+                    var client = factory.CreateClient("NexoExecution");
+                    var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform>>();
+                    return new Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform(client, logger);
+                });
+            }
+            else
+            {
+                services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
+                    new Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform>>()));
+            }
+
+            services.AddSingleton<Nexo.Infrastructure.Testing.Docker.IDockerService>(sp =>
+                new Nexo.Infrastructure.Testing.Docker.DockerService(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.Docker.DockerService>>()));
+            services.AddSingleton<Nexo.Infrastructure.Testing.CodeAnalysis.ICodeAnalysisService>(sp =>
+                new Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService>>()));
+            services.AddArtifactCleanup();
         }
-        else
-        {
-            services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
-                new Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.DockerExecutionPlatform>>()));
-        }
-        services.AddSingleton<Nexo.Infrastructure.Testing.Docker.IDockerService>(sp =>
-            new Nexo.Infrastructure.Testing.Docker.DockerService(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.Docker.DockerService>>()));
-        services.AddSingleton<Nexo.Infrastructure.Testing.CodeAnalysis.ICodeAnalysisService>(sp =>
-            new Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.CodeAnalysis.RoslynCodeAnalysisService>>()));
-        services.AddArtifactCleanup();
+
         services.AddScoped<Nexo.Infrastructure.Validation.Parsers.ITestResultParser, Nexo.Infrastructure.Validation.Parsers.TrxTestResultParser>();
         services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.SecurityAnalysisRule>();
         services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.CodeQualityRule>();
@@ -300,6 +353,125 @@ public static class NexoServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    private static void RegisterNodeCapabilityRuntime(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddNodeCapabilityRuntimeCore(configuration);
+        if (OperatingSystem.IsWindows())
+            services.AddNodeCapabilityRuntimeWindows(configuration);
+        else if (OperatingSystem.IsMacOS())
+            services.AddNodeCapabilityRuntimeMacOS(configuration);
+        else if (OperatingSystem.IsLinux())
+            services.AddNodeCapabilityRuntimeLinux(configuration);
+        else if (OperatingSystem.IsIOS())
+            services.AddNodeCapabilityRuntimeiOS(configuration);
+        else if (OperatingSystem.IsAndroid())
+            services.AddNodeCapabilityRuntimeAndroid(configuration);
+        else
+            services.AddNodeCapabilityRuntimeLinux(configuration);
+    }
+
+    private static NexoDeploymentProfile ResolveDeploymentProfile(NexoHostingOptions options)
+    {
+        if (options.DeploymentProfile.HasValue)
+            return options.DeploymentProfile.Value;
+
+        var raw = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
+        if (TryParseDeploymentProfile(raw, out var parsed))
+            return parsed;
+
+        return NexoDeploymentProfile.Full;
+    }
+
+    private static bool TryParseDeploymentProfile(string? raw, out NexoDeploymentProfile profile)
+    {
+        profile = NexoDeploymentProfile.Full;
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+
+        var normalized = raw.Trim().ToLowerInvariant();
+        profile = normalized switch
+        {
+            "full" => NexoDeploymentProfile.Full,
+            "server" => NexoDeploymentProfile.Server,
+            "edge" => NexoDeploymentProfile.Edge,
+            "airgapped" => NexoDeploymentProfile.AirGapped,
+            "air-gapped" => NexoDeploymentProfile.AirGapped,
+            "system" => NexoDeploymentProfile.System,
+            "core" => NexoDeploymentProfile.System,
+            _ => profile
+        };
+
+        return normalized is "full" or "server" or "edge" or "airgapped" or "air-gapped" or "system" or "core";
+    }
+
+    private static ModuleSelection GetModuleSelection(NexoDeploymentProfile profile)
+    {
+        return profile switch
+        {
+            NexoDeploymentProfile.Full => new ModuleSelection(
+                IncludeNodeCapabilityRuntime: true,
+                IncludeRuntimeTransport: true,
+                IncludePersistence: true,
+                IncludeAdaptation: true,
+                IncludePipelineComposition: true,
+                IncludeBackgroundAgents: true,
+                IncludeBackgroundAgentRag: true,
+                IncludeObservationPipeline: true,
+                IncludeTrustServices: true,
+                IncludeWorkflowIntegrations: true,
+                IncludeTestingAdapters: true),
+            NexoDeploymentProfile.Server => new ModuleSelection(
+                IncludeNodeCapabilityRuntime: true,
+                IncludeRuntimeTransport: true,
+                IncludePersistence: true,
+                IncludeAdaptation: true,
+                IncludePipelineComposition: true,
+                IncludeBackgroundAgents: true,
+                IncludeBackgroundAgentRag: true,
+                IncludeObservationPipeline: true,
+                IncludeTrustServices: true,
+                IncludeWorkflowIntegrations: true,
+                IncludeTestingAdapters: true),
+            NexoDeploymentProfile.Edge => new ModuleSelection(
+                IncludeNodeCapabilityRuntime: false,
+                IncludeRuntimeTransport: false,
+                IncludePersistence: true,
+                IncludeAdaptation: false,
+                IncludePipelineComposition: true,
+                IncludeBackgroundAgents: false,
+                IncludeBackgroundAgentRag: false,
+                IncludeObservationPipeline: false,
+                IncludeTrustServices: false,
+                IncludeWorkflowIntegrations: false,
+                IncludeTestingAdapters: false),
+            NexoDeploymentProfile.AirGapped => new ModuleSelection(
+                IncludeNodeCapabilityRuntime: true,
+                IncludeRuntimeTransport: false,
+                IncludePersistence: true,
+                IncludeAdaptation: true,
+                IncludePipelineComposition: true,
+                IncludeBackgroundAgents: false,
+                IncludeBackgroundAgentRag: false,
+                IncludeObservationPipeline: false,
+                IncludeTrustServices: false,
+                IncludeWorkflowIntegrations: false,
+                IncludeTestingAdapters: false),
+            NexoDeploymentProfile.System => new ModuleSelection(
+                IncludeNodeCapabilityRuntime: false,
+                IncludeRuntimeTransport: false,
+                IncludePersistence: false,
+                IncludeAdaptation: false,
+                IncludePipelineComposition: false,
+                IncludeBackgroundAgents: false,
+                IncludeBackgroundAgentRag: false,
+                IncludeObservationPipeline: false,
+                IncludeTrustServices: false,
+                IncludeWorkflowIntegrations: false,
+                IncludeTestingAdapters: false),
+            _ => throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unknown Nexo deployment profile.")
+        };
     }
 
     private static bool ParseBooleanEnvironmentVariable(string key)

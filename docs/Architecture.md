@@ -56,6 +56,7 @@ Nexo is an AI-enhanced development orchestration platform with a layered archite
 ### Hosting
 
 - **AddNexo()**: Registers all kernel services
+- **AddNexoProfile(...)**: Registers environment-specific module sets (`Full`, `Server`, `Edge`, `AirGapped`, `System`) to peel optional dependencies.
 - **AddNexoOpenTelemetry()**: Optional metrics export
 
 ## Data Flow
