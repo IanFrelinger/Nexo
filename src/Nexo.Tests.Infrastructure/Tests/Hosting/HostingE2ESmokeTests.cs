@@ -7,6 +7,7 @@ using Nexo.Abstractions.Routing;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Hosting;
+using Nexo.Runtime.Routing;
 using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
@@ -97,7 +98,7 @@ public sealed class HostingE2ESmokeTests
 
         sp.GetService<IPatternStore>().Should().BeNull();
         sp.GetService<IBackgroundAgentRegistry>().Should().BeNull();
-        sp.GetService<IEndpointRegistry>().Should().BeNull();
+        sp.GetRequiredService<IEndpointRegistry>().Should().NotBeOfType<InMemoryEndpointRegistry>();
         sp.GetService<ICloudSanitizationProxy>().Should().BeNull();
     }
 
@@ -116,7 +117,7 @@ public sealed class HostingE2ESmokeTests
 
             sp.GetService<IPatternStore>().Should().BeNull();
             sp.GetService<IBackgroundAgentRegistry>().Should().BeNull();
-            sp.GetService<IEndpointRegistry>().Should().BeNull();
+            sp.GetRequiredService<IEndpointRegistry>().Should().NotBeOfType<InMemoryEndpointRegistry>();
         }
         finally
         {
