@@ -14,6 +14,7 @@ using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Execution;
+using Nexo.Infrastructure.Execution.Routing;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Maintenance;
@@ -60,6 +61,7 @@ public static class NexoServiceCollectionExtensions
             .Build();
         services.AddOptions<Nexo.Infrastructure.Execution.RemoteCapabilitiesOptions>()
             .Bind(configuration.GetSection("Nexo:RemoteCapabilities"));
+        services.AddRunPodCapabilityRouting(configuration);
         services.AddNodeCapabilityRuntimeCore(configuration);
         if (OperatingSystem.IsWindows())
             services.AddNodeCapabilityRuntimeWindows(configuration);

@@ -1,0 +1,63 @@
+using System.Text;
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Execution.Routing;
+using Nexo.Core.Domain.Execution;
+
+namespace Nexo.Infrastructure.Execution.Routing;
+
+/// <summary>
+/// Local generation executor backed by the existing provider factory.
+/// </summary>
+public sealed class ProviderFactoryLocalExecutor : ILocalExecutor
+{
+    private readonly IProviderFactory _providerFactory;
+    private readonly ILogger<ProviderFactoryLocalExecutor> _logger;
+
+    public ProviderFactoryLocalExecutor(
+        IProviderFactory providerFactory,
+        ILogger<ProviderFactoryLocalExecutor> logger)
+    {
+        _providerFactory = providerFactory ?? throw new ArgumentNullException(nameof(providerFactory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<Result<GenerationExecutionResult>> ExecuteAsync(
+        RunPodJobPayload payload,
+        JobRequirements requirements,
+        IExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation(
+                "capability-routing local executor start: provider={Provider} model={ModelId}",
+                context.Provider,
+                payload.ModelId);
+
+            var response = await _providerFactory.ExecuteLLMAsync(
+                context.Provider,
+                string.Empty,
+                payload.Prompt,
+                payload.GenerationParameters,
+                cancellationToken).ConfigureAwait(false);
+
+            var bytes = Encoding.UTF8.GetBytes(response);
+            return Result<GenerationExecutionResult>.Success(new GenerationExecutionResult
+            {
+                Payload = bytes,
+                Provider = context.Provider,
+                ModelId = payload.ModelId,
+                IsRemote = false,
+                Summary = "Local execution completed"
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Local generation execution failed for model={ModelId}", payload.ModelId);
+            return Result<GenerationExecutionResult>.Failure(
+                "local.execution_failed",
+                "Local execution failed.",
+                ex.Message);
+        }
+    }
+}
