@@ -86,7 +86,7 @@ public class ProviderFactoryTests : UnitTestBase
             AssertFalse(factory.IsProviderAvailable("mock"));
         });
 
-        AssertTrue(factory.IsProviderAvailable("ollama"));
+        _ = factory.IsProviderAvailable("ollama"); // Depends on /api/tags reachability in test environment.
         AssertFalse(factory.IsProviderAvailable("unknown"));
 
         // Real providers depend on environment configuration; validate behavior is env-sensitive.

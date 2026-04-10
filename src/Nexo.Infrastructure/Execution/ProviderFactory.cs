@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Ephemeral.Ports;
+using Nexo.Infrastructure.Execution.Ollama;
 using Polly;
 using Polly.Retry;
 using System.Net;
@@ -16,6 +17,9 @@ public class ProviderFactory : IProviderFactory
 {
     private readonly ILogger<ProviderFactory> _logger;
     private readonly IEphemeralModelLifecycle? _ephemeralLifecycle;
+    private readonly object _ollamaProviderLock = new();
+    private OllamaProvider? _ollamaProvider;
+    private string? _ollamaProviderBaseUrl;
     private static readonly HttpClient Http = new();
     private static readonly AsyncRetryPolicy<HttpResponseMessage> HttpRetryPolicy = CreateHttpRetryPolicy();
 
@@ -30,23 +34,6 @@ public class ProviderFactory : IProviderFactory
             .WaitAndRetryAsync(
                 maxRetries,
                 attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
-    }
-    private static HttpClient? _ollamaHttp;
-    private static readonly object OllamaHttpLock = new();
-
-    private static HttpClient OllamaHttp
-    {
-        get
-        {
-            if (_ollamaHttp != null) return _ollamaHttp;
-            lock (OllamaHttpLock)
-            {
-                if (_ollamaHttp != null) return _ollamaHttp;
-                var seconds = int.TryParse(Environment.GetEnvironmentVariable("OLLAMA_TIMEOUT_SECONDS"), out var s) && s > 0 ? s : 300;
-                _ollamaHttp = new HttpClient { Timeout = TimeSpan.FromSeconds(seconds) };
-                return _ollamaHttp;
-            }
-        }
     }
     private readonly HashSet<string> _availableProviders = new()
     {
@@ -72,6 +59,16 @@ public class ProviderFactory : IProviderFactory
     {
         _logger = logger;
         _ephemeralLifecycle = ephemeralLifecycle;
+
+        try
+        {
+            var baseUrl = GetOllamaBaseUrlAsync(CancellationToken.None).GetAwaiter().GetResult();
+            _ = GetOrCreateOllamaProvider(baseUrl);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to initialize Ollama provider manifest during ProviderFactory startup.");
+        }
     }
     
     /// <inheritdoc />
@@ -92,7 +89,7 @@ public class ProviderFactory : IProviderFactory
             "azure" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT"))
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY"))
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")),
-            "ollama" => true,
+            "ollama" => IsOllamaProviderAvailable(),
             "local" => LocalModelProvider.IsAvailable(),
             "video" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("VIDEO_SERVICE_URL")),
             _ => false
@@ -331,143 +328,41 @@ public class ProviderFactory : IProviderFactory
     {
         var baseUrl = await GetOllamaBaseUrlAsync(ct);
         var hasImages = imageBytesList is { Count: > 0 };
-        // Per-brick model override from config; else env vars; else defaults.
         var configModel = GetModelFromConfig(config);
         var requestedModel = configModel
             ?? (hasImages
                 ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "richardyoung/smolvlm2-2.2b-instruct")
                 : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1"));
-        var model = await ResolveOllamaModelAsync(baseUrl, requestedModel, hasImages, ct);
-        var url = $"{baseUrl}/api/chat";
+        var ollamaProvider = GetOrCreateOllamaProvider(baseUrl);
 
-        using var req = new HttpRequestMessage(HttpMethod.Post, url);
-
-        // Build message payload - support single or multiple images
-        object userMessage;
-        if (hasImages && imageBytesList != null)
+        var validation = ollamaProvider.ValidateModel(requestedModel);
+        if (!validation.IsSuccess)
         {
-            var imageBase64Array = imageBytesList
-                .Where(b => b != null && b.Length > 0)
-                .Select(b => Convert.ToBase64String(b!))
-                .ToArray();
-            userMessage = new
+            var refresh = await ollamaProvider.RefreshModelsAsync(ct).ConfigureAwait(false);
+            if (!refresh.IsSuccess)
             {
-                role = "user",
-                content = userPrompt ?? "",
-                images = imageBase64Array
-            };
-        }
-        else
-        {
-            userMessage = new
-            {
-                role = "user",
-                content = userPrompt ?? ""
-            };
-        }
-
-        var payload = new
-        {
-            model,
-            stream = false,
-            messages = new[]
-            {
-                new { role = "system", content = systemPrompt ?? "" },
-                userMessage
+                throw new ModelUnavailableException(
+                    $"Ollama manifest refresh failed. {FormatOllamaError(refresh.Error)}");
             }
-        };
 
-        req.Content = new StringContent(JsonSerializer.Serialize(payload));
-        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-        using var resp = await OllamaHttp.SendAsync(req, ct);
-        var body = await resp.Content.ReadAsStringAsync(ct);
-
-        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
-        {
-            var available = await GetOllamaModelNamesAsync(baseUrl, ct);
-            throw new InvalidOperationException(
-                $"Ollama model '{model}' not found (404). Available: {string.Join(", ", available)}. " +
-                "Pull a model with: ollama pull " + (hasImages ? "richardyoung/smolvlm2-2.2b-instruct" : "llama3.2:3b") + " (or llava:7b)");
-        }
-
-        resp.EnsureSuccessStatusCode();
-
-        using var doc = JsonDocument.Parse(body);
-        var content = doc.RootElement
-            .GetProperty("message")
-            .GetProperty("content")
-            .GetString();
-
-        return content ?? throw new InvalidOperationException("Ollama response content was null");
-    }
-
-    /// <summary>
-    /// Resolve the requested model name to an available Ollama model. If the requested model
-    /// is not found, pick the first available vision or text model so the agent can run without manual config.
-    /// </summary>
-    private async Task<string> ResolveOllamaModelAsync(string baseUrl, string requestedModel, bool forVision, CancellationToken ct)
-    {
-        var available = await GetOllamaModelNamesAsync(baseUrl, ct);
-        if (available.Count == 0)
-            return requestedModel;
-
-        var exact = available.FirstOrDefault(m => string.Equals(m, requestedModel, StringComparison.OrdinalIgnoreCase));
-        if (exact != null)
-            return exact;
-
-        if (forVision)
-        {
-            var vision = available.FirstOrDefault(m => m.Contains("smolvlm", StringComparison.OrdinalIgnoreCase))
-                ?? available.FirstOrDefault(m => m.Contains("llava", StringComparison.OrdinalIgnoreCase));
-            if (vision != null)
+            validation = ollamaProvider.ValidateModel(requestedModel);
+            if (!validation.IsSuccess)
             {
-                _logger.LogInformation("Ollama model '{Requested}' not found; using vision model '{Resolved}'", requestedModel, vision);
-                return vision;
-            }
-        }
-        else
-        {
-            var text = available.FirstOrDefault(m => m.Contains("llama", StringComparison.OrdinalIgnoreCase))
-                ?? available.FirstOrDefault();
-            if (text != null)
-            {
-                _logger.LogInformation("Ollama model '{Requested}' not found; using '{Resolved}'", requestedModel, text);
-                return text;
+                throw new ModelUnavailableException(
+                    $"Ollama model validation failed. {FormatOllamaError(validation.Error)}");
             }
         }
 
-        var fallback = available[0];
-        _logger.LogInformation("Ollama model '{Requested}' not found; using '{Resolved}'", requestedModel, fallback);
-        return fallback;
-    }
+        var execution = await ollamaProvider
+            .ExecuteChatAsync(requestedModel, systemPrompt, userPrompt, imageBytesList, ct)
+            .ConfigureAwait(false);
+        if (!execution.IsSuccess)
+        {
+            throw new ModelUnavailableException(
+                $"Ollama execution failed. {FormatOllamaError(execution.Error)}");
+        }
 
-    private async Task<List<string>> GetOllamaModelNamesAsync(string baseUrl, CancellationToken ct)
-    {
-        try
-        {
-            using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/tags");
-            using var resp = await OllamaHttp.SendAsync(req, ct);
-            resp.EnsureSuccessStatusCode();
-            var body = await resp.Content.ReadAsStringAsync(ct);
-            using var doc = JsonDocument.Parse(body);
-            var list = new List<string>();
-            if (doc.RootElement.TryGetProperty("models", out var models))
-            {
-                foreach (var m in models.EnumerateArray())
-                {
-                    var name = m.TryGetProperty("name", out var n) ? n.GetString() : null;
-                    if (!string.IsNullOrEmpty(name))
-                        list.Add(name);
-                }
-            }
-            return list;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not list Ollama models at {BaseUrl}/api/tags", baseUrl);
-            return new List<string>();
-        }
+        return execution.Value ?? string.Empty;
     }
 
     /// <inheritdoc />
@@ -669,34 +564,75 @@ public class ProviderFactory : IProviderFactory
         return url.TrimEnd('/');
     }
 
+    private bool IsOllamaProviderAvailable()
+    {
+        try
+        {
+            var baseUrl = GetOllamaBaseUrlAsync(CancellationToken.None).GetAwaiter().GetResult();
+            var provider = GetOrCreateOllamaProvider(baseUrl);
+            var health = provider.CheckHealthAsync(CancellationToken.None).GetAwaiter().GetResult();
+            return health.IsSuccess && health.Value == true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Unable to run Ollama health check.");
+            return false;
+        }
+    }
+
+    private OllamaProvider GetOrCreateOllamaProvider(string baseUrl)
+    {
+        lock (_ollamaProviderLock)
+        {
+            if (_ollamaProvider != null
+                && string.Equals(_ollamaProviderBaseUrl, baseUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                return _ollamaProvider;
+            }
+
+            var timeoutSeconds = int.TryParse(Environment.GetEnvironmentVariable("OLLAMA_TIMEOUT_SECONDS"), out var configuredTimeout)
+                && configuredTimeout > 0
+                ? configuredTimeout
+                : 300;
+
+            var httpClient = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(timeoutSeconds)
+            };
+
+            _ollamaProvider = new OllamaProvider(httpClient, baseUrl, _logger);
+            _ollamaProviderBaseUrl = baseUrl;
+            return _ollamaProvider;
+        }
+    }
+
+    private static string FormatOllamaError(Error? error)
+    {
+        if (error is null)
+        {
+            return "Unknown Ollama error.";
+        }
+
+        var metadataSuffix = error.Metadata is { Count: > 0 }
+            ? $" Metadata: {string.Join(", ", error.Metadata.Select(kvp => $"{kvp.Key}={kvp.Value}"))}."
+            : string.Empty;
+
+        return $"{error.Code}: {error.Message}{metadataSuffix}";
+    }
+
     /// <inheritdoc />
     public async Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
     {
         var baseUrl = await GetOllamaBaseUrlAsync(cancellationToken);
-        List<string> models;
-        try
-        {
-            using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/tags");
-            using var resp = await OllamaHttp.SendAsync(req, cancellationToken);
-            resp.EnsureSuccessStatusCode();
-            var body = await resp.Content.ReadAsStringAsync(cancellationToken);
-            using var doc = JsonDocument.Parse(body);
-            models = new List<string>();
-            if (doc.RootElement.TryGetProperty("models", out var arr))
-            {
-                foreach (var m in arr.EnumerateArray())
-                {
-                    var name = m.TryGetProperty("name", out var n) ? n.GetString() : null;
-                    if (!string.IsNullOrEmpty(name)) models.Add(name);
-                }
-            }
-        }
-        catch (HttpRequestException ex)
+        var provider = GetOrCreateOllamaProvider(baseUrl);
+        var healthResult = await provider.CheckHealthAsync(cancellationToken).ConfigureAwait(false);
+        if (!healthResult.IsSuccess || healthResult.Value != true)
         {
             throw new InvalidOperationException(
-                $"Ollama is not reachable at {baseUrl}. Start Ollama (e.g. ollama serve or: docker run -d -p 11434:11434 ollama/ollama). {ex.Message}", ex);
+                $"Ollama is not reachable at {baseUrl}. {FormatOllamaError(healthResult.Error)}");
         }
 
+        var models = provider.Manifest.Select(m => m.Name).ToList();
         if (models.Count == 0)
             throw new InvalidOperationException(
                 $"Ollama at {baseUrl} returned no models. Pull a model: ollama pull llama3.2:3b (and for vision: ollama pull richardyoung/smolvlm2-2.2b-instruct or llava:7b).");
