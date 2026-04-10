@@ -53,11 +53,12 @@ public sealed class DependencyResolver
         var agentId = container.AgentId;
         _agents[agentId] = container;
 
-        // Build dependency graph
-        _dependencyGraph[agentId] = new HashSet<string>(container.Agent.Spec.Dependencies);
+        // Build effective dependency graph from explicit dependencies + chain-of-command supervisor.
+        var effectiveDependencies = BuildEffectiveDependencies(container.Agent.Spec);
+        _dependencyGraph[agentId] = effectiveDependencies;
         
         // Build reverse dependency graph (who depends on this agent) - thread-safe
-        foreach (var dep in container.Agent.Spec.Dependencies)
+        foreach (var dep in effectiveDependencies)
         {
             _reverseDependencyGraph.AddOrUpdate(
                 dep,
@@ -73,7 +74,7 @@ public sealed class DependencyResolver
         }
 
         _logger.LogDebug("Registered agent {AgentId} with {DependencyCount} dependencies", 
-            agentId, container.Agent.Spec.Dependencies.Count);
+            agentId, effectiveDependencies.Count);
     }
 
     /// <summary>
@@ -90,7 +91,7 @@ public sealed class DependencyResolver
             .Where(container =>
             {
                 var agentId = container.AgentId;
-                var dependencies = container.Agent.Spec.Dependencies;
+                var dependencies = GetDependenciesForAgent(agentId);
 
                 // Agent is ready if:
                 // 1. All dependencies have outputs
@@ -131,7 +132,7 @@ public sealed class DependencyResolver
         }
 
         var blocking = new HashSet<string>();
-        CollectBlockingDependencies(agentId, container.Agent.Spec.Dependencies, blocking, new HashSet<string>());
+        CollectBlockingDependencies(agentId, GetDependenciesForAgent(agentId), blocking, new HashSet<string>());
         return blocking.ToList();
     }
 
@@ -144,7 +145,7 @@ public sealed class DependencyResolver
     /// <param name="visited">The set of already visited agent IDs to prevent cycles.</param>
     private void CollectBlockingDependencies(
         string agentId,
-        IReadOnlyList<string> dependencies,
+        IReadOnlyCollection<string> dependencies,
         HashSet<string> blocking,
         HashSet<string> visited)
     {
@@ -163,7 +164,7 @@ public sealed class DependencyResolver
             else if (_agents.TryGetValue(dep, out var depContainer))
             {
                 // Check transitive dependencies
-                CollectBlockingDependencies(dep, depContainer.Agent.Spec.Dependencies, blocking, visited);
+                CollectBlockingDependencies(dep, GetDependenciesForAgent(dep), blocking, visited);
             }
         }
     }
@@ -199,7 +200,7 @@ public sealed class DependencyResolver
                     // Check if all dependencies are now resolved (including transitive)
                     if (AreAllDependenciesResolved(dependentId, new HashSet<string>()))
                     {
-                        var dependencyOutputs = GetDependencyOutputs(dependent.Agent.Spec.Dependencies);
+                        var dependencyOutputs = GetDependencyOutputs(GetDependenciesForAgent(dependentId));
                         _ = dependent.Agent.WaitForDependenciesAsync(dependencyOutputs);
                         newlyUnblocked.Add(dependentId);
                     }
@@ -238,7 +239,7 @@ public sealed class DependencyResolver
             {
                 if (AreAllDependenciesResolved(dependentId, new HashSet<string>()))
                 {
-                    var dependencyOutputs = GetDependencyOutputs(dependent.Agent.Spec.Dependencies);
+                    var dependencyOutputs = GetDependencyOutputs(GetDependenciesForAgent(dependentId));
                     _ = dependent.Agent.WaitForDependenciesAsync(dependencyOutputs);
                     NotifyTransitiveDependents(dependentId, visited);
                 }
@@ -265,7 +266,7 @@ public sealed class DependencyResolver
             return false;
         }
 
-        var dependencies = container.Agent.Spec.Dependencies;
+        var dependencies = GetDependenciesForAgent(agentId);
         foreach (var dep in dependencies)
         {
             // Direct dependency must have output
@@ -299,6 +300,50 @@ public sealed class DependencyResolver
                 result[dep] = output;
             }
         }
+        return result;
+    }
+
+    /// <summary>
+    /// Gets effective dependencies for an agent after command-hierarchy enrichment.
+    /// </summary>
+    /// <param name="agentId">Agent id.</param>
+    /// <returns>Effective dependency list for scheduling and resolution.</returns>
+    public IReadOnlyList<string> GetDependenciesForAgent(string agentId)
+    {
+        if (string.IsNullOrWhiteSpace(agentId))
+        {
+            return Array.Empty<string>();
+        }
+
+        if (_dependencyGraph.TryGetValue(agentId, out var dependencies))
+        {
+            return dependencies.ToList();
+        }
+
+        return Array.Empty<string>();
+    }
+
+    /// <summary>
+    /// Gets outputs for dependency ids.
+    /// </summary>
+    /// <param name="dependencies">Dependency ids.</param>
+    /// <returns>Resolved dependency outputs map.</returns>
+    public IReadOnlyDictionary<string, object> GetDependencyOutputs(IEnumerable<string> dependencies)
+    {
+        var result = new Dictionary<string, object>();
+        foreach (var dep in dependencies)
+        {
+            if (string.IsNullOrWhiteSpace(dep))
+            {
+                continue;
+            }
+
+            if (_outputs.TryGetValue(dep, out var output))
+            {
+                result[dep] = output;
+            }
+        }
+
         return result;
     }
 
@@ -366,7 +411,7 @@ public sealed class DependencyResolver
             return false;
         }
 
-        return container.Agent.Spec.Dependencies.All(dep => _outputs.ContainsKey(dep));
+        return GetDependenciesForAgent(agentId).All(dep => _outputs.ContainsKey(dep));
     }
 
     /// <summary>
@@ -387,6 +432,32 @@ public sealed class DependencyResolver
         _outputs.Clear();
         _dependencyGraph.Clear();
         _reverseDependencyGraph.Clear();
+    }
+
+    private static HashSet<string> BuildEffectiveDependencies(AgentSpawnSpec spec)
+    {
+        var dependencies = new HashSet<string>(
+            spec.Dependencies.Where(dep => !string.IsNullOrWhiteSpace(dep)),
+            StringComparer.OrdinalIgnoreCase);
+
+        var supervisor = ResolveSupervisor(spec);
+        if (!string.IsNullOrWhiteSpace(supervisor) &&
+            !string.Equals(spec.AgentId, supervisor, StringComparison.OrdinalIgnoreCase))
+        {
+            dependencies.Add(supervisor);
+        }
+
+        return dependencies;
+    }
+
+    private static string? ResolveSupervisor(AgentSpawnSpec spec)
+    {
+        if (!string.IsNullOrWhiteSpace(spec.ReportsToAgentId))
+        {
+            return spec.ReportsToAgentId;
+        }
+
+        return spec.CommandChain.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
     }
 }
 

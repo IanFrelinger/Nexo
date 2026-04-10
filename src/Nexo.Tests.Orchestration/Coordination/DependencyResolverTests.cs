@@ -148,5 +148,49 @@ public class DependencyResolverTests
         var index2 = orderList.IndexOf("agent-2");
         index1.Should().BeLessThan(index2); // agent-1 should come before agent-2
     }
+
+    [Fact]
+    public async Task ChainOfCommandSupervisor_IsEnforcedAsDependency()
+    {
+        // Arrange
+        var resolver = new DependencyResolver(_logger);
+        var factory = new AgentFactory(
+            _serviceProvider.GetRequiredService<ILogger<AgentFactory>>(),
+            _serviceProvider);
+
+        var commanderSpec = new AgentSpawnSpec
+        {
+            AgentId = "commander-1",
+            Domain = "Strategy",
+            Goal = "Set mission goals"
+        };
+
+        var squadSpec = new AgentSpawnSpec
+        {
+            AgentId = "squad-1",
+            Domain = "Execution",
+            Goal = "Execute mission goal",
+            ReportsToAgentId = "commander-1"
+        };
+
+        var commanderContainer = factory.CreateContainer(commanderSpec);
+        var squadContainer = factory.CreateContainer(squadSpec);
+        await commanderContainer.InitializeAsync();
+        await squadContainer.InitializeAsync();
+        resolver.RegisterAgent(commanderContainer);
+        resolver.RegisterAgent(squadContainer);
+
+        // Act + Assert (before commander output)
+        resolver.GetReadyAgents().Should().Contain(c => c.AgentId == "commander-1");
+        resolver.GetReadyAgents().Should().NotContain(c => c.AgentId == "squad-1");
+        resolver.AreDependenciesResolved("squad-1").Should().BeFalse();
+        resolver.GetDependenciesForAgent("squad-1").Should().Contain("commander-1");
+
+        resolver.RecordOutput("commander-1", new { acknowledged = true });
+
+        // Assert (after commander output)
+        resolver.AreDependenciesResolved("squad-1").Should().BeTrue();
+        resolver.GetReadyAgents().Should().Contain(c => c.AgentId == "squad-1");
+    }
 }
 

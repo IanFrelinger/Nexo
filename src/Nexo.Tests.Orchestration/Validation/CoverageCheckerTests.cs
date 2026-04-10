@@ -106,5 +106,32 @@ public class CoverageCheckerTests
         // Assert
         errors.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task ValidateAsync_UsesExplicitGoalsForCoverage()
+    {
+        // Arrange
+        var result = new DecompositionResult
+        {
+            Agents = new[]
+            {
+                new AgentSpawnSpec
+                {
+                    AgentId = "agent-1",
+                    Domain = "Recon",
+                    Goal = "Execute mission",
+                    Goals = new[] { "Design stealth system", "Design reconnaissance system" },
+                    Description = "Implements tactical systems"
+                }
+            },
+            OriginalRequest = "Design stealth system and reconnaissance system"
+        };
+
+        // Act
+        var errors = await _validator.ValidateAsync(result);
+
+        // Assert
+        errors.Should().NotContain(e => e.ErrorType == "Coverage" && e.Message.Contains("may not be covered"));
+    }
 }
 

@@ -48,7 +48,9 @@ public sealed class CoverageChecker : IValidator
 
         // Check if each requirement is covered by at least one agent
         var allAgentGoals = result.Agents
-            .SelectMany(a => new[] { a.Goal, a.Description ?? string.Empty })
+            .SelectMany(a => a.Goals.Count > 0
+                ? a.Goals.Concat(new[] { a.Description ?? string.Empty })
+                : new[] { a.Goal, a.Description ?? string.Empty })
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s!.ToLowerInvariant())
             .ToList();

@@ -50,7 +50,7 @@ public sealed class DependencyAnalyzer : IValidator
         var agentIds = result.Agents.Select(a => a.AgentId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var agent in result.Agents)
         {
-            foreach (var dep in agent.Dependencies)
+            foreach (var dep in GetEffectiveDependencies(agent))
             {
                 if (!agentIds.Contains(dep))
                 {
@@ -91,13 +91,31 @@ public sealed class DependencyAnalyzer : IValidator
                 graph[agent.AgentId] = new List<string>();
             }
 
-            foreach (var dep in agent.Dependencies)
+            foreach (var dep in GetEffectiveDependencies(agent))
             {
                 graph[agent.AgentId].Add(dep);
             }
         }
 
         return graph;
+    }
+
+    private static IReadOnlyList<string> GetEffectiveDependencies(AgentSpawnSpec agent)
+    {
+        var dependencies = new HashSet<string>(
+            agent.Dependencies.Where(dep => !string.IsNullOrWhiteSpace(dep)),
+            StringComparer.OrdinalIgnoreCase);
+
+        var supervisor = !string.IsNullOrWhiteSpace(agent.ReportsToAgentId)
+            ? agent.ReportsToAgentId
+            : agent.CommandChain.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
+
+        if (!string.IsNullOrWhiteSpace(supervisor))
+        {
+            dependencies.Add(supervisor);
+        }
+
+        return dependencies.ToList();
     }
 
     private List<string>? DetectCycle(Dictionary<string, List<string>> graph)

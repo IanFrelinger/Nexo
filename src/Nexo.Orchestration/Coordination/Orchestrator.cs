@@ -332,7 +332,7 @@ public sealed class Orchestrator
                     }
 
                     var dependencyOutputs = _dependencyResolver.GetDependencyOutputs(
-                        container.Agent.Spec.Dependencies);
+                        _dependencyResolver.GetDependenciesForAgent(agentId));
                     var invocation = new AgentInvocationRequest(
                         AgentName: agentId,
                         CorrelationId: correlationId,
