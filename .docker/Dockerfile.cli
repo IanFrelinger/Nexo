@@ -22,7 +22,8 @@ RUN dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework="${TARGETFRAM
         -p:ErrorOnDuplicatePublishOutputFiles=false
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/runtime:${DOTNET_RUNTIME_VERSION}
+# CLI transitively depends on ASP.NET Core shared framework via hosting references.
+FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_RUNTIME_VERSION}
 WORKDIR /app
 
 COPY --from=build /app/publish/ /app/
