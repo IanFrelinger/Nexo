@@ -345,7 +345,13 @@ public sealed class Orchestrator
                         Metadata: new Dictionary<string, string>
                         {
                             ["domain"] = container.Agent.Spec.Domain,
-                            ["spanId"] = rootSpanId ?? string.Empty
+                            ["spanId"] = rootSpanId ?? string.Empty,
+                            ["goal"] = container.Agent.Spec.Goal,
+                            ["goals"] = string.Join("|", container.Agent.Spec.Goals),
+                            ["clusterId"] = container.Agent.Spec.ClusterId ?? string.Empty,
+                            ["reportsToAgentId"] = container.Agent.Spec.ReportsToAgentId ?? string.Empty,
+                            ["commandChain"] = string.Join("|", container.Agent.Spec.CommandChain),
+                            ["ollamaModel"] = container.Agent.Spec.OllamaModel ?? string.Empty
                         },
                         DependencyOutputs: dependencyOutputs);
 

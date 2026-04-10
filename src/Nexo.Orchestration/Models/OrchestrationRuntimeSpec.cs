@@ -28,6 +28,8 @@ public sealed record ModelRuntimeSpec
     public string Prefer { get; init; } = "auto";
     /// <summary> Provider name (openai/azure/ollama/offline/mock-json/...) </summary>
     public string? Provider { get; init; }
+    /// <summary> Optional model identifier (for example an Ollama model/tag name). </summary>
+    public string? Model { get; init; }
 }
 
 public interface IOrchestrationRuntimeSpecAccessor
@@ -91,15 +93,16 @@ public sealed class OrchestrationRuntimeModelDecorator : IModel
             return _inner.CompleteAsync(input, ct);
         }
 
-        var routed = InjectDirectives(input, rt.Prefer, rt.Provider);
+        var routed = InjectDirectives(input, rt.Prefer, rt.Provider, rt.Model);
         return _inner.CompleteAsync(routed, ct);
     }
 
-    public static ModelInput InjectDirectives(ModelInput input, string? prefer, string? provider)
+    public static ModelInput InjectDirectives(ModelInput input, string? prefer, string? provider, string? model)
     {
         var directives = new List<string>();
         if (!string.IsNullOrWhiteSpace(prefer)) directives.Add($"nexo.model.prefer={prefer}");
         if (!string.IsNullOrWhiteSpace(provider)) directives.Add($"nexo.model.provider={provider}");
+        if (!string.IsNullOrWhiteSpace(model)) directives.Add($"nexo.model.name={model}");
         if (directives.Count == 0) return input;
 
         var header = string.Join("\n", directives);
@@ -141,7 +144,8 @@ public sealed class AgentScopedModel : IModel
         var header = $"nexo.agent.id={_agentId}\n" +
                      $"nexo.agent.domain={_domain}\n" +
                      $"nexo.model.prefer={_runtime.Prefer}\n" +
-                     (string.IsNullOrWhiteSpace(_runtime.Provider) ? "" : $"nexo.model.provider={_runtime.Provider}\n");
+                     (string.IsNullOrWhiteSpace(_runtime.Provider) ? "" : $"nexo.model.provider={_runtime.Provider}\n") +
+                     (string.IsNullOrWhiteSpace(_runtime.Model) ? "" : $"nexo.model.name={_runtime.Model}\n");
 
         var msgs = input.Messages.ToList();
         for (var i = 0; i < msgs.Count; i++)

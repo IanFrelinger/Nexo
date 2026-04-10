@@ -42,7 +42,12 @@ public sealed class DecompositionPromptBuilder
                   "agentId": "unique-id",
                   "domain": "DomainName",
                   "goal": "Clear goal statement",
+                  "goals": ["Goal 1", "Goal 2"],
                   "description": "Detailed description",
+                  "clusterId": "optional-cluster-id",
+                  "reportsToAgentId": "optional-supervisor-agent-id",
+                  "commandChain": ["supervisor-agent-id", "director-agent-id"],
+                  "ollamaModel": "optional-ollama-model-name",
                   "dependencies": ["other-agent-id"],
                   "outputSchema": { ... },
                   "constraints": [
@@ -66,6 +71,9 @@ public sealed class DecompositionPromptBuilder
             
             Guidelines:
             - Each agent should have a clear, focused goal
+            - Use "clusterId" to group agents that belong to the same work cluster
+            - Use "reportsToAgentId"/"commandChain" only when a chain of command is needed
+            - Use "ollamaModel" when a specific agent should run on a specific Ollama model
             - Dependencies should reflect actual data/result dependencies
             - Resource requirements should be realistic estimates
             - Priority: higher numbers = more critical

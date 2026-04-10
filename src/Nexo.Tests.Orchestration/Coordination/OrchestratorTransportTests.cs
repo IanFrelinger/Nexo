@@ -116,6 +116,50 @@ public sealed class OrchestratorTransportTests
         capturedRequest!.CorrelationId.Should().Be(result.CorrelationId);
     }
 
+    [Fact]
+    public async Task OrchestrateAsync_PropagatesClusterChainGoalsAndModelMetadata()
+    {
+        AgentInvocationRequest? capturedRequest = null;
+        var transportMock = new Mock<IAgentTransport>(MockBehavior.Strict);
+        transportMock
+            .Setup(t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<AgentInvocationRequest, CancellationToken>((request, _) => capturedRequest = request)
+            .ReturnsAsync(new AgentResult(
+                Success: true,
+                Output: new { ok = true }));
+
+        var decomposition = new DecompositionResult
+        {
+            OriginalRequest = "request",
+            Agents =
+            [
+                new AgentSpawnSpec
+                {
+                    AgentId = "agent-1",
+                    Domain = "General",
+                    Goal = "Execute mission",
+                    ClusterId = "alpha-cluster",
+                    ReportsToAgentId = "commander-1",
+                    CommandChain = new[] { "commander-1", "lead-2" },
+                    Goals = new[] { "primary objective", "secondary objective" },
+                    OllamaModel = "qwen2.5:7b"
+                }
+            ]
+        };
+
+        var sut = CreateOrchestrator(CreateArchitectMock(decomposition).Object, transportMock.Object);
+        var result = await sut.OrchestrateAsync("metadata propagation");
+
+        result.Success.Should().BeTrue();
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Metadata.Should().NotBeNull();
+        capturedRequest.Metadata!["clusterId"].Should().Be("alpha-cluster");
+        capturedRequest.Metadata["reportsToAgentId"].Should().Be("commander-1");
+        capturedRequest.Metadata["commandChain"].Should().Be("commander-1|lead-2");
+        capturedRequest.Metadata["goals"].Should().Be("primary objective|secondary objective");
+        capturedRequest.Metadata["ollamaModel"].Should().Be("qwen2.5:7b");
+    }
+
     private static Mock<IArchitectAgent> CreateArchitectMock(DecompositionResult decomposition)
     {
         var architectMock = new Mock<IArchitectAgent>(MockBehavior.Strict);
