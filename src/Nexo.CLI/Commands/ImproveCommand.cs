@@ -24,7 +24,7 @@ namespace Nexo.CLI.Commands;
 
 /// <summary>
 /// Block 4: Closed-loop improve. Runs analyze bricks → adapt from violations.
-/// Dogfood: observe → analyze → adapt.
+/// Dogfood flow is sequential: run observe separately, then this command for analyze → adapt.
 /// </summary>
 public sealed class ImproveCommand : Command
 {

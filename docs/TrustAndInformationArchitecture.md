@@ -215,30 +215,32 @@ IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? si
 
 ## Delivery Phases (Revised)
 
+The sections above define the target architecture. The phase list below reflects implementation status in the current codebase.
+
 ### Phase 1 — Classification + Sanitization (Extend Existing) — Implemented
-- Add `IDataTaxonomy` and `DataTaxonomy` with config file
-- Add `SanitizingProviderFactory` wrapping `IProviderFactory`
-- Use `ISensitiveContentFilter` for PII in prompts
-- Add `ICloudSanitizationProxy` and `ISanitizationAuditLog`
-- Register wrapper in DI when Trust is enabled
+- Implemented `IDataTaxonomy` and `DataTaxonomy` with config file support
+- Implemented `SanitizingProviderFactory` wrapping `IProviderFactory`
+- Implemented prompt PII filtering via `ISensitiveContentFilter`
+- Implemented `ICloudSanitizationProxy` and `ISanitizationAuditLog`
+- Implemented DI registration for Trust-enabled wrapper wiring
 
 ### Phase 2 — Knowledge Log with Provenance — Implemented
-- Add `IUserKnowledgeLogStore` (LiteDB impl: `LiteDbUserKnowledgeLogStore`)
-- Schema: entries, provenance (`SourceObservationIds`), versioning
-- Export to JSON/Markdown (`ExportToJsonAsync`, `ExportToMarkdownAsync`)
-- No changes to `IKnowledgeChunkStore` or `IKnowledgeSyncService`
+- Implemented `IUserKnowledgeLogStore` (LiteDB impl: `LiteDbUserKnowledgeLogStore`)
+- Implemented schema with entries, provenance (`SourceObservationIds`), and versioning
+- Implemented JSON/Markdown export (`ExportToJsonAsync`, `ExportToMarkdownAsync`)
+- Preserved `IKnowledgeChunkStore` and `IKnowledgeSyncService` unchanged
 
 ### Phase 3 — Access Boundary + Observation Gate — Implemented
-- Add `IAccessBoundary` and `IObservationGate` (`AccessBoundary`, `ObservationGate`)
-- Persist boundary config (JSON or SQLite)
-- Integrate into observation pipelines (`KnowledgeBaseIndexer`, `ObservationPipelineService`)
-- Add pause control and per-project overrides (`TrustCommand` pause, resume, allow, deny, boundary)
+- Implemented `IAccessBoundary` and `IObservationGate` (`AccessBoundary`, `ObservationGate`)
+- Implemented boundary config persistence (JSON/SQLite)
+- Integrated checks into observation pipelines (`KnowledgeBaseIndexer`, `ObservationPipelineService`)
+- Implemented pause controls and per-project overrides (`TrustCommand` pause/resume/allow/deny/boundary)
 
 ### Phase 4 — Audit Dashboard + Compliance — Implemented
-- Add `IDataDecisionAuditLog` (or extend `ISanitizationAuditLog`)
-- Unify sanitization, boundary, classification events
-- Export for compliance (structured JSON, Markdown, CSV via `TrustCommand.AuditAsync`)
-- UI: persistent boundary indicator, audit view (`TrustCommand.DashboardAsync`, `BoundaryAsync`)
+- Implemented `IDataDecisionAuditLog` support (or equivalent `ISanitizationAuditLog` extension)
+- Unified sanitization, boundary, and classification events
+- Implemented compliance export (structured JSON, Markdown, CSV via `TrustCommand.AuditAsync`)
+- Implemented persistent boundary indicator and audit view (`TrustCommand.DashboardAsync`, `BoundaryAsync`)
 
 ---
 
