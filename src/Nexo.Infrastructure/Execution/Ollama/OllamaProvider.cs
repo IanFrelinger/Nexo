@@ -8,11 +8,6 @@ namespace Nexo.Infrastructure.Execution.Ollama;
 
 public sealed class OllamaProvider
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web)
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     private readonly HttpClient _httpClient;
     private readonly ILogger? _logger;
     private readonly object _manifestLock = new();
@@ -96,21 +91,8 @@ public sealed class OllamaProvider
             }
 
             await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            var tags = await JsonSerializer.DeserializeAsync<OllamaTagsResponse>(contentStream, SerializerOptions, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (tags is null)
-            {
-                IsAvailable = false;
-                return Result<IReadOnlyList<OllamaModelManifest>>.Failure(new Error(
-                    "OLLAMA_TAGS_EMPTY_RESPONSE",
-                    "Ollama /api/tags returned an empty response."));
-            }
-
-            var manifest = tags.Models
-                .Where(model => !string.IsNullOrWhiteSpace(model.Name))
-                .Select(model => new OllamaModelManifest(model.Name, model.Size, model.ModifiedAt))
-                .ToArray();
+            using var jsonDocument = await JsonDocument.ParseAsync(contentStream, cancellationToken: cancellationToken).ConfigureAwait(false);
+            var manifest = ParseManifest(jsonDocument.RootElement);
 
             lock (_manifestLock)
             {
@@ -194,42 +176,7 @@ public sealed class OllamaProvider
                 "Model validation failed before Ollama execution."));
         }
 
-        object userMessage;
-        if (imageBytesList is { Count: > 0 })
-        {
-            var imageBase64Array = imageBytesList
-                .Where(bytes => bytes != null && bytes.Length > 0)
-                .Select(Convert.ToBase64String)
-                .ToArray();
-
-            userMessage = new
-            {
-                role = "user",
-                content = userPrompt ?? string.Empty,
-                images = imageBase64Array
-            };
-        }
-        else
-        {
-            userMessage = new
-            {
-                role = "user",
-                content = userPrompt ?? string.Empty
-            };
-        }
-
-        var payload = new
-        {
-            model = validationResult.Value.Name,
-            stream = false,
-            messages = new[]
-            {
-                new { role = "system", content = systemPrompt ?? string.Empty },
-                userMessage
-            }
-        };
-
-        var json = JsonSerializer.Serialize(payload);
+        var json = BuildChatPayload(validationResult.Value.Name, systemPrompt, userPrompt, imageBytesList);
         using var request = new HttpRequestMessage(HttpMethod.Post, "api/chat")
         {
             Content = new StringContent(json, Encoding.UTF8)
@@ -279,5 +226,107 @@ public sealed class OllamaProvider
                 "OLLAMA_CHAT_INVALID_JSON",
                 $"Failed to parse Ollama /api/chat response: {ex.Message}"));
         }
+    }
+
+    private static OllamaModelManifest[] ParseManifest(JsonElement root)
+    {
+        if (!root.TryGetProperty("models", out var modelsElement) || modelsElement.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var manifest = new List<OllamaModelManifest>();
+        foreach (var modelElement in modelsElement.EnumerateArray())
+        {
+            var name = modelElement.TryGetProperty("name", out var nameElement)
+                ? nameElement.GetString()
+                : null;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            var size = modelElement.TryGetProperty("size", out var sizeElement) && sizeElement.ValueKind == JsonValueKind.Number
+                ? sizeElement.GetInt64()
+                : 0L;
+
+            DateTimeOffset? modifiedAt = null;
+            if (modelElement.TryGetProperty("modified_at", out var modifiedAtElement)
+                && modifiedAtElement.ValueKind == JsonValueKind.String
+                && DateTimeOffset.TryParse(modifiedAtElement.GetString(), out var parsedModifiedAt))
+            {
+                modifiedAt = parsedModifiedAt;
+            }
+
+            manifest.Add(new OllamaModelManifest(name, size, modifiedAt));
+        }
+
+        return manifest.ToArray();
+    }
+
+    private static string BuildChatPayload(
+        string modelName,
+        string systemPrompt,
+        string userPrompt,
+        IReadOnlyList<byte[]>? imageBytesList)
+    {
+        var systemEscaped = EscapeJsonString(systemPrompt ?? string.Empty);
+        var userEscaped = EscapeJsonString(userPrompt ?? string.Empty);
+        var modelEscaped = EscapeJsonString(modelName);
+
+        if (imageBytesList is { Count: > 0 })
+        {
+            var images = imageBytesList
+                .Where(bytes => bytes != null && bytes.Length > 0)
+                .Select(bytes => $"\"{EscapeJsonString(Convert.ToBase64String(bytes))}\"");
+
+            return
+                $"{{\"model\":\"{modelEscaped}\",\"stream\":false,\"messages\":[" +
+                $"{{\"role\":\"system\",\"content\":\"{systemEscaped}\"}}," +
+                $"{{\"role\":\"user\",\"content\":\"{userEscaped}\",\"images\":[{string.Join(",", images)}]}}" +
+                "]}}";
+        }
+
+        return
+            $"{{\"model\":\"{modelEscaped}\",\"stream\":false,\"messages\":[" +
+            $"{{\"role\":\"system\",\"content\":\"{systemEscaped}\"}}," +
+            $"{{\"role\":\"user\",\"content\":\"{userEscaped}\"}}" +
+            "]}}";
+    }
+
+    private static string EscapeJsonString(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var sb = new StringBuilder(value.Length + 8);
+        foreach (var ch in value)
+        {
+            switch (ch)
+            {
+                case '\"': sb.Append("\\\""); break;
+                case '\\': sb.Append("\\\\"); break;
+                case '\b': sb.Append("\\b"); break;
+                case '\f': sb.Append("\\f"); break;
+                case '\n': sb.Append("\\n"); break;
+                case '\r': sb.Append("\\r"); break;
+                case '\t': sb.Append("\\t"); break;
+                default:
+                    if (char.IsControl(ch))
+                    {
+                        sb.Append("\\u");
+                        sb.Append(((int)ch).ToString("x4"));
+                    }
+                    else
+                    {
+                        sb.Append(ch);
+                    }
+                    break;
+            }
+        }
+
+        return sb.ToString();
     }
 }
