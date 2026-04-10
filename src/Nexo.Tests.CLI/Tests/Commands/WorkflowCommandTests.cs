@@ -51,7 +51,10 @@ public sealed class WorkflowCommandTests : UnitTestBase
     private static WorkflowCommand CreateCommand(
         Func<string, string, string?, bool, bool, CancellationToken, Task<WorkflowCommand.ScenarioExecutionResult>>? scenarioExecutor = null)
     {
-        return new WorkflowCommand(scenarioExecutor ?? StubScenarioExecutorAsync);
+        WorkflowCommand.ScenarioExecutor executor = scenarioExecutor is null
+            ? StubScenarioExecutorAsync
+            : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
+        return new WorkflowCommand(executor);
     }
 
     private async Task TestScaffoldWritesSpecFileAsync()
@@ -321,9 +324,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     limit: 20,
                     benchmarkSet: "workflow-lab",
                     outputPath: reportPath,
-                    format: "md",
-                    json: true,
-                    cancellationToken)).ConfigureAwait(false);
+                    json: false)).ConfigureAwait(false);
 
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"bestConfiguration\"", StringComparison.OrdinalIgnoreCase), "Report output should include best configuration.");

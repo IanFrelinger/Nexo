@@ -807,7 +807,17 @@ public sealed class WorkflowCommand : Command
     private static string RenderReportContent(WorkflowReportResult result, bool preferJson, string outputPath)
     {
         var extension = Path.GetExtension(outputPath).Trim().ToLowerInvariant();
-        if (preferJson || extension == ".json")
+        if (extension == ".md")
+        {
+            return RenderReportMarkdown(result);
+        }
+
+        if (extension == ".txt")
+        {
+            return RenderReportText(result);
+        }
+
+        if (extension == ".json")
         {
             return JsonSerializer.Serialize(new
             {
@@ -817,9 +827,14 @@ public sealed class WorkflowCommand : Command
             }, new JsonSerializerOptions { WriteIndented = true });
         }
 
-        if (extension == ".md")
+        if (preferJson)
         {
-            return RenderReportMarkdown(result);
+            return JsonSerializer.Serialize(new
+            {
+                ok = result.Ok,
+                summary = result.Summary,
+                report = result.Report
+            }, new JsonSerializerOptions { WriteIndented = true });
         }
 
         return RenderReportText(result);
