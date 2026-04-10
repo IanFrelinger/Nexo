@@ -15,6 +15,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestHistoryReturnsExpectedSummaryAsync().ConfigureAwait(false);
             await TestStressRunsWithInjectedRequestAndPersistsHistoryAsync(cancellationToken).ConfigureAwait(false);
             await TestStressReturnsFailureWhenExecutorFailsAsync(cancellationToken).ConfigureAwait(false);
+            await TestReportGeneratesMarkdownBenchmarkOutputAsync(cancellationToken).ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(WorkflowCommandTests),
@@ -265,6 +266,71 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     cancellationToken)).ConfigureAwait(false);
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("\"ok\": false", StringComparison.OrdinalIgnoreCase), "Stress should fail when executor fails.");
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestReportGeneratesMarkdownBenchmarkOutputAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 91.1,
+                ElapsedMs = 120,
+                AgentCount = 2,
+                ConflictCount = 1,
+                EscalationCount = 0,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                ScenarioId = "request-a::composition-a::profile-b::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-b",
+                Iteration = 1,
+                Success = false,
+                Score = 40.0,
+                ElapsedMs = 320,
+                AgentCount = 2,
+                ConflictCount = 2,
+                EscalationCount = 1,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var reportPath = Path.Combine(repoRoot, "workflow_report.md");
+            var command = CreateCommand();
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteReportAsync(
+                    repoRoot,
+                    limit: 20,
+                    benchmarkSet: "workflow-lab",
+                    outputPath: reportPath,
+                    format: "md",
+                    json: true,
+                    cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"bestConfiguration\"", StringComparison.OrdinalIgnoreCase), "Report output should include best configuration.");
+            AssertTrue(File.Exists(reportPath), "Markdown report file should be written.");
+            var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(markdown.Contains("# Workflow Stress Benchmark Report", StringComparison.Ordinal));
+            AssertTrue(markdown.Contains("Best configuration", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {

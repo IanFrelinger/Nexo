@@ -39,6 +39,7 @@ public sealed class WorkflowCommand : Command
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
+        ConfigureReportCommand();
     }
 
     private void ConfigureScaffoldCommand()
@@ -151,6 +152,32 @@ public sealed class WorkflowCommand : Command
         AddCommand(history);
     }
 
+    private void ConfigureReportCommand()
+    {
+        var report = new Command("report", "Generate benchmark report from workflow stress history.");
+        var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
+        var limitOpt = new Option<int>("--limit", () => 200, "Maximum history entries to analyze.");
+        var benchmarkSetOpt = new Option<string?>("--benchmark-set", () => null, "Optional benchmark-set filter.");
+        var outputOpt = new Option<string?>("--output", () => null, "Optional report output file path (.json, .md, .txt).");
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
+        report.AddOption(repoRootOpt);
+        report.AddOption(limitOpt);
+        report.AddOption(benchmarkSetOpt);
+        report.AddOption(outputOpt);
+        report.AddOption(jsonOpt);
+        report.SetHandler((InvocationContext ctx) =>
+        {
+            var exitCode = ExecuteReportAsync(
+                ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
+                ctx.ParseResult.GetValueForOption(limitOpt),
+                ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
+                ctx.ParseResult.GetValueForOption(outputOpt),
+                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+            ctx.ExitCode = exitCode;
+        });
+        AddCommand(report);
+    }
+
     internal Task<int> ExecuteScaffoldAsync(string outputPath, bool force, bool json)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
@@ -209,6 +236,68 @@ public sealed class WorkflowCommand : Command
             rows,
             new WorkflowHistorySummary(total, successCount, total - successCount, best?.ScenarioId, best?.Score)), json);
         return Task.FromResult(0);
+    }
+
+    internal Task<int> ExecuteReportAsync(
+        string repoRoot,
+        int limit,
+        string? benchmarkSet,
+        string? outputPath,
+        bool json)
+    {
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
+        {
+            WriteReportResult(new WorkflowReportResult(
+                false,
+                $"Repo root not found: {fullRepoRoot}",
+                new WorkflowBenchmarkReport(
+                    DateTimeOffset.UtcNow,
+                    0,
+                    0,
+                    0,
+                    0d,
+                    0,
+                    0,
+                    0d,
+                    0d,
+                    0d,
+                    Array.Empty<WorkflowScenarioBenchmark>(),
+                    Array.Empty<WorkflowScenarioBenchmark>())), json);
+            return Task.FromResult(1);
+        }
+
+        var rows = WorkflowLabHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, limit));
+        if (!string.IsNullOrWhiteSpace(benchmarkSet))
+        {
+            var normalized = benchmarkSet.Trim().ToLowerInvariant();
+            rows = rows
+                .Where(x => string.Equals(x.BenchmarkSet, normalized, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+        }
+
+        var report = BuildBenchmarkReport(rows);
+        var result = new WorkflowReportResult(
+            report.TotalRuns > 0,
+            report.TotalRuns > 0
+                ? $"Benchmark report generated from {report.TotalRuns} run(s)."
+                : "No workflow stress history found for the selected filters.",
+            report);
+
+        if (!string.IsNullOrWhiteSpace(outputPath))
+        {
+            var fullOutputPath = Path.GetFullPath(outputPath);
+            var directory = Path.GetDirectoryName(fullOutputPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+
+            var content = RenderReportContent(result, json, fullOutputPath);
+            File.WriteAllText(fullOutputPath, content);
+            result = result with { OutputPath = fullOutputPath };
+        }
+
+        WriteReportResult(result, json);
+        return Task.FromResult(result.Ok ? 0 : 1);
     }
 
     internal async Task<int> ExecuteStressAsync(
@@ -639,6 +728,166 @@ public sealed class WorkflowCommand : Command
         return string.IsNullOrWhiteSpace(normalized) ? "workflow-lab" : normalized;
     }
 
+    private static WorkflowBenchmarkReport BuildBenchmarkReport(IReadOnlyList<WorkflowLabStressHistoryRow> rows)
+    {
+        var items = rows ?? Array.Empty<WorkflowLabStressHistoryRow>();
+        var totalRuns = items.Count;
+        var successRuns = items.Count(x => x.Success);
+        var failedRuns = totalRuns - successRuns;
+        var successRate = totalRuns == 0 ? 0d : Math.Round((double)successRuns / totalRuns, 4);
+        var avgElapsed = totalRuns == 0 ? 0L : (long)Math.Round(items.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
+        var p95Elapsed = ComputePercentile(items.Select(x => x.ElapsedMs), 0.95);
+        var avgScore = totalRuns == 0 ? 0d : Math.Round(items.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+        var avgConflicts = totalRuns == 0 ? 0d : Math.Round(items.Select(x => (double)x.ConflictCount).DefaultIfEmpty(0d).Average(), 3);
+        var avgEscalations = totalRuns == 0 ? 0d : Math.Round(items.Select(x => (double)x.EscalationCount).DefaultIfEmpty(0d).Average(), 3);
+
+        var scenarioStats = items
+            .GroupBy(x => $"{x.RequestId}::{x.CompositionId}::{x.ModelProfileId}", StringComparer.OrdinalIgnoreCase)
+            .Select(g =>
+            {
+                var data = g.ToArray();
+                var groupSuccess = data.Count(x => x.Success);
+                return new WorkflowScenarioBenchmark(
+                    ScenarioGroupId: g.Key,
+                    Runs: data.Length,
+                    Successes: groupSuccess,
+                    Failures: data.Length - groupSuccess,
+                    SuccessRate: data.Length == 0 ? 0d : Math.Round((double)groupSuccess / data.Length, 4),
+                    AverageElapsedMs: (long)Math.Round(data.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average()),
+                    P95ElapsedMs: ComputePercentile(data.Select(x => x.ElapsedMs), 0.95),
+                    AverageScore: Math.Round(data.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3),
+                    AverageConflicts: Math.Round(data.Select(x => (double)x.ConflictCount).DefaultIfEmpty(0d).Average(), 3),
+                    AverageEscalations: Math.Round(data.Select(x => (double)x.EscalationCount).DefaultIfEmpty(0d).Average(), 3))
+                {
+                    LastFailureSummary = data
+                        .Where(x => !x.Success && !string.IsNullOrWhiteSpace(x.Summary))
+                        .OrderByDescending(x => x.StartedAtUtc)
+                        .Select(x => x.Summary)
+                        .FirstOrDefault()
+                };
+            })
+            .OrderByDescending(x => x.SuccessRate)
+            .ThenByDescending(x => x.AverageScore)
+            .ThenBy(x => x.AverageElapsedMs)
+            .ToArray();
+
+        var topScenarios = scenarioStats.Take(5).ToArray();
+        var bottlenecks = scenarioStats
+            .Where(x => x.Failures > 0 || x.P95ElapsedMs > avgElapsed * 1.5)
+            .OrderByDescending(x => x.Failures)
+            .ThenByDescending(x => x.P95ElapsedMs)
+            .Take(5)
+            .ToArray();
+
+        return new WorkflowBenchmarkReport(
+            GeneratedAtUtc: DateTimeOffset.UtcNow,
+            TotalRuns: totalRuns,
+            SuccessRuns: successRuns,
+            FailedRuns: failedRuns,
+            SuccessRate: successRate,
+            AverageElapsedMs: avgElapsed,
+            P95ElapsedMs: p95Elapsed,
+            AverageScore: avgScore,
+            AverageConflicts: avgConflicts,
+            AverageEscalations: avgEscalations,
+            TopScenarios: topScenarios,
+            Bottlenecks: bottlenecks);
+    }
+
+    private static long ComputePercentile(IEnumerable<long> source, double percentile)
+    {
+        var ordered = source.OrderBy(x => x).ToArray();
+        if (ordered.Length == 0)
+            return 0;
+        var clamped = Math.Clamp(percentile, 0d, 1d);
+        var index = (int)Math.Ceiling((ordered.Length - 1) * clamped);
+        return ordered[index];
+    }
+
+    private static string RenderReportContent(WorkflowReportResult result, bool preferJson, string outputPath)
+    {
+        var extension = Path.GetExtension(outputPath).Trim().ToLowerInvariant();
+        if (preferJson || extension == ".json")
+        {
+            return JsonSerializer.Serialize(new
+            {
+                ok = result.Ok,
+                summary = result.Summary,
+                report = result.Report
+            }, new JsonSerializerOptions { WriteIndented = true });
+        }
+
+        if (extension == ".md")
+        {
+            return RenderReportMarkdown(result);
+        }
+
+        return RenderReportText(result);
+    }
+
+    private static string RenderReportMarkdown(WorkflowReportResult result)
+    {
+        var report = result.Report;
+        var sb = new StringBuilder();
+        sb.AppendLine("# Workflow Stress Benchmark Report");
+        sb.AppendLine();
+        sb.AppendLine($"Generated: {report.GeneratedAtUtc:O}");
+        sb.AppendLine();
+        sb.AppendLine("## Summary");
+        sb.AppendLine($"- Total runs: {report.TotalRuns}");
+        sb.AppendLine($"- Success runs: {report.SuccessRuns}");
+        sb.AppendLine($"- Failed runs: {report.FailedRuns}");
+        sb.AppendLine($"- Success rate: {report.SuccessRate:P1}");
+        sb.AppendLine($"- Avg latency: {report.AverageElapsedMs} ms");
+        sb.AppendLine($"- P95 latency: {report.P95ElapsedMs} ms");
+        sb.AppendLine($"- Avg score: {report.AverageScore:F2}");
+        sb.AppendLine($"- Avg conflicts: {report.AverageConflicts:F2}");
+        sb.AppendLine($"- Avg escalations: {report.AverageEscalations:F2}");
+        sb.AppendLine();
+        sb.AppendLine("## Top Scenarios");
+        foreach (var scenario in report.TopScenarios)
+        {
+            sb.AppendLine($"- `{scenario.ScenarioGroupId}` | success {scenario.Successes}/{scenario.Runs} ({scenario.SuccessRate:P1}) | score {scenario.AverageScore:F2} | p95 {scenario.P95ElapsedMs} ms");
+        }
+        sb.AppendLine();
+        sb.AppendLine("## Bottlenecks");
+        foreach (var bottleneck in report.Bottlenecks)
+        {
+            sb.AppendLine($"- `{bottleneck.ScenarioGroupId}` | failures {bottleneck.Failures} | p95 {bottleneck.P95ElapsedMs} ms | last failure: {bottleneck.LastFailureSummary ?? "n/a"}");
+        }
+        return sb.ToString();
+    }
+
+    private static string RenderReportText(WorkflowReportResult result)
+    {
+        var report = result.Report;
+        var sb = new StringBuilder();
+        sb.AppendLine("Workflow Stress Benchmark Report");
+        sb.AppendLine($"Generated: {report.GeneratedAtUtc:O}");
+        sb.AppendLine($"Total runs: {report.TotalRuns}");
+        sb.AppendLine($"Success runs: {report.SuccessRuns}");
+        sb.AppendLine($"Failed runs: {report.FailedRuns}");
+        sb.AppendLine($"Success rate: {report.SuccessRate:P1}");
+        sb.AppendLine($"Average latency: {report.AverageElapsedMs} ms");
+        sb.AppendLine($"P95 latency: {report.P95ElapsedMs} ms");
+        sb.AppendLine($"Average score: {report.AverageScore:F2}");
+        sb.AppendLine($"Average conflicts: {report.AverageConflicts:F2}");
+        sb.AppendLine($"Average escalations: {report.AverageEscalations:F2}");
+        sb.AppendLine();
+        sb.AppendLine("Top scenarios:");
+        foreach (var scenario in report.TopScenarios)
+        {
+            sb.AppendLine($"- {scenario.ScenarioGroupId}: success {scenario.Successes}/{scenario.Runs}, score {scenario.AverageScore:F2}, p95 {scenario.P95ElapsedMs} ms");
+        }
+        sb.AppendLine();
+        sb.AppendLine("Bottlenecks:");
+        foreach (var bottleneck in report.Bottlenecks)
+        {
+            sb.AppendLine($"- {bottleneck.ScenarioGroupId}: failures {bottleneck.Failures}, p95 {bottleneck.P95ElapsedMs} ms, last failure={bottleneck.LastFailureSummary ?? "n/a"}");
+        }
+        return sb.ToString();
+    }
+
     private static string? ResolveRoleModel(WorkflowLabModelProfileSpec profile, WorkflowLabAgentRoleSpec role)
     {
         if (!string.IsNullOrWhiteSpace(role.OllamaModel))
@@ -736,6 +985,29 @@ public sealed class WorkflowCommand : Command
         }
     }
 
+    private static void WriteReportResult(WorkflowReportResult result, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = result.Ok,
+                summary = result.Summary,
+                outputPath = result.OutputPath,
+                report = result.Report
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.WriteLine($"workflow report: {(result.Ok ? "ok" : "failed")}");
+        Console.WriteLine(result.Summary);
+        if (!string.IsNullOrWhiteSpace(result.OutputPath))
+            Console.WriteLine($"  output={result.OutputPath}");
+        Console.WriteLine($"  success-rate={result.Report.SuccessRate:P1}, avg-latency={result.Report.AverageElapsedMs}ms, p95={result.Report.P95ElapsedMs}ms");
+        if (result.Report.TopScenarios.Count > 0)
+            Console.WriteLine($"  best={result.Report.TopScenarios[0].ScenarioGroupId} score={result.Report.TopScenarios[0].AverageScore:F2}");
+    }
+
     private sealed record WorkflowScaffoldResult(bool Ok, string Summary, string? OutputPath = null);
 
     private sealed record WorkflowStressRunRecord(
@@ -786,6 +1058,41 @@ public sealed class WorkflowCommand : Command
         string Summary,
         IReadOnlyList<WorkflowLabStressHistoryRow>? Items = null,
         WorkflowHistorySummary? SummaryStats = null);
+
+    private sealed record WorkflowScenarioBenchmark(
+        string ScenarioGroupId,
+        int Runs,
+        int Successes,
+        int Failures,
+        double SuccessRate,
+        long AverageElapsedMs,
+        long P95ElapsedMs,
+        double AverageScore,
+        double AverageConflicts,
+        double AverageEscalations)
+    {
+        public string? LastFailureSummary { get; init; }
+    }
+
+    private sealed record WorkflowBenchmarkReport(
+        DateTimeOffset GeneratedAtUtc,
+        int TotalRuns,
+        int SuccessRuns,
+        int FailedRuns,
+        double SuccessRate,
+        long AverageElapsedMs,
+        long P95ElapsedMs,
+        double AverageScore,
+        double AverageConflicts,
+        double AverageEscalations,
+        IReadOnlyList<WorkflowScenarioBenchmark> TopScenarios,
+        IReadOnlyList<WorkflowScenarioBenchmark> Bottlenecks);
+
+    private sealed record WorkflowReportResult(
+        bool Ok,
+        string Summary,
+        WorkflowBenchmarkReport Report,
+        string? OutputPath = null);
 
     internal sealed record ScenarioExecutionResult(
         bool Ok,
