@@ -327,11 +327,11 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     json: false)).ConfigureAwait(false);
 
             AssertEqual(0, exitCode);
-            AssertTrue(output.Contains("\"bestConfiguration\"", StringComparison.OrdinalIgnoreCase), "Report output should include best configuration.");
+            AssertTrue(output.Contains("workflow report: ok", StringComparison.OrdinalIgnoreCase), "Report output should indicate success.");
             AssertTrue(File.Exists(reportPath), "Markdown report file should be written.");
             var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
             AssertTrue(markdown.Contains("# Workflow Stress Benchmark Report", StringComparison.Ordinal));
-            AssertTrue(markdown.Contains("Best configuration", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("## Top Scenarios", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
