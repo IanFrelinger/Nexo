@@ -188,6 +188,10 @@ Provider behavior and full configuration are documented in `docs/Configuration.m
 # targeted infrastructure tests
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
 
+# execution routing smoke + stress (NCR local, peer network fallback, cloud routing behavior)
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+  --filter "FullyQualifiedName~PeerToPeerRoutingSmokeTests|FullyQualifiedName~CapabilityRoutingBrickTests"
+
 # broader local test command
 dotnet run --project src/Nexo.CLI -- test local
 ```

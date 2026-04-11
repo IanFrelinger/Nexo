@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Linq;
+using System.Threading;
 
 if (args.Length < 2)
 {
@@ -70,6 +71,8 @@ else
 }
 int copied = 0;
 int failed = 0;
+int skippedUnchanged = 0;
+int skippedLocked = 0;
 
 foreach (var libProperty in runtime.EnumerateObject())
 {
@@ -155,8 +158,45 @@ foreach (var libProperty in runtime.EnumerateObject())
 
         try
         {
-            File.Copy(sourcePath, destPath, overwrite: true);
-            copied++;
+            if (IsSameFile(sourcePath, destPath))
+            {
+                skippedUnchanged++;
+                continue;
+            }
+
+            const int maxAttempts = 4;
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    File.Copy(sourcePath, destPath, overwrite: true);
+                    copied++;
+                    break;
+                }
+                catch (Exception ex) when (IsTransientLock(ex) && attempt < maxAttempts)
+                {
+                    Thread.Sleep(attempt * 40);
+                }
+                catch (Exception ex) when (IsTransientLock(ex))
+                {
+                    // If destination already exists, keep going - this is usually a testhost lock race.
+                    if (File.Exists(destPath))
+                    {
+                        skippedLocked++;
+                        Console.WriteLine($"Skipped locked assembly (already present): {destPath}");
+                        break;
+                    }
+
+                    Console.Error.WriteLine($"Failed to copy {sourcePath}: {ex.Message}");
+                    failed++;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Failed to copy {sourcePath}: {ex.Message}");
+                    failed++;
+                    break;
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -166,5 +206,42 @@ foreach (var libProperty in runtime.EnumerateObject())
     }
 }
 
-Console.WriteLine($"Copied {copied} assemblies, {failed} failures");
+Console.WriteLine($"Copied {copied} assemblies, {skippedUnchanged} unchanged, {skippedLocked} locked-skipped, {failed} failures");
 Environment.Exit(failed == 0 ? 0 : 1);
+
+static bool IsSameFile(string sourcePath, string destinationPath)
+{
+    if (!File.Exists(sourcePath) || !File.Exists(destinationPath))
+    {
+        return false;
+    }
+
+    try
+    {
+        var source = new FileInfo(sourcePath);
+        var destination = new FileInfo(destinationPath);
+        return source.Length == destination.Length &&
+               source.LastWriteTimeUtc == destination.LastWriteTimeUtc;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+static bool IsTransientLock(Exception ex)
+{
+    return ex switch
+    {
+        IOException ioEx when IsSharingViolation(ioEx) => true,
+        UnauthorizedAccessException => true,
+        _ => false
+    };
+}
+
+static bool IsSharingViolation(IOException ex)
+{
+    const int sharingViolation = unchecked((int)0x80070020);
+    const int lockViolation = unchecked((int)0x80070021);
+    return ex.HResult == sharingViolation || ex.HResult == lockViolation;
+}

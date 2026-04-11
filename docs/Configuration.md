@@ -143,6 +143,33 @@ Operational guidance:
 |----------|-------------|---------|
 | `NEXO_MESH_PEER_ID` | Mesh peer identifier | random GUID |
 
+## RunPod + Capability Routing (`Nexo:RunPod:*`)
+
+Generation execution routing uses NCR + peer network + RunPod cloud. These options are bound from `Nexo:RunPod:*` and can be set with environment variables (`__` separator).
+
+| Key / Variable | Description | Default |
+|----------------|-------------|---------|
+| `Nexo:RunPod:ApiKey` (`Nexo__RunPod__ApiKey`) | RunPod API key | empty |
+| `Nexo:RunPod:BaseUrl` (`Nexo__RunPod__BaseUrl`) | RunPod API base URL | `https://api.runpod.io` |
+| `Nexo:RunPod:PreferredGpuTier` (`Nexo__RunPod__PreferredGpuTier`) | Preferred GPU tier for cloud jobs | `NVIDIA_A4000` |
+| `Nexo:RunPod:Timeout` (`Nexo__RunPod__Timeout`) | Max remote job execution duration before timeout/teardown | `00:10:00` |
+| `Nexo:RunPod:PollingInterval` (`Nexo__RunPod__PollingInterval`) | RunPod status polling interval | `00:00:02` |
+| `Nexo:RunPod:OutputStagingPath` (`Nexo__RunPod__OutputStagingPath`) | Staged output path for remote artifacts | temp path (`nexo-runpod`) |
+| `Nexo:RunPod:QueueDepthThreshold` (`Nexo__RunPod__QueueDepthThreshold`) | Local queue threshold before remote routing | `4` |
+| `Nexo:RunPod:EnablePeerNetworkRouting` (`Nexo__RunPod__EnablePeerNetworkRouting`) | Enables routing to peer Nexo nodes | `false` |
+| `Nexo:RunPod:PreferPeerNetworkOverCloud` (`Nexo__RunPod__PreferPeerNetworkOverCloud`) | System default preference when remote routing is required | `true` |
+| `Nexo:RunPod:PeerCapabilityId` (`Nexo__RunPod__PeerCapabilityId`) | Capability identifier required for peer eligibility | `generation.capability-routing` |
+| `Nexo:RunPod:PeerRoutingBrickId` (`Nexo__RunPod__PeerRoutingBrickId`) | Brick id invoked on peer nodes | `generation.capability-routing` |
+| `Nexo:RunPod:PeerRequestTimeout` (`Nexo__RunPod__PeerRequestTimeout`) | Per-peer request timeout before failover | `00:00:30` |
+| `Nexo:RunPod:PeerDiscoveryInterval` (`Nexo__RunPod__PeerDiscoveryInterval`) | Peer capability snapshot refresh interval | `00:00:10` |
+
+Routing behavior:
+- `CapabilityRoutingBrick` is the default generation entry point.
+- `RemoteExecutionPreference` (job-level) can force or prefer peer/cloud routing (`UseSystemDefault`, `CloudOnly`, `PreferPeerNetwork`, `PeerNetworkOnly`).
+- Peer execution includes candidate ranking, timeout handling, and failover across eligible peers.
+
+See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilience behavior.
+
 ## Ephemeral Execution
 
 | Variable | Description | Default |

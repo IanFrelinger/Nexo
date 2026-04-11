@@ -87,6 +87,33 @@ gh workflow run "Cross-Platform Tests" -f scope=adaptation
 make dogfood-all
 ```
 
+## Execution Routing Smoke + Stress Tests
+
+The routing stack (NCR local + peer network + RunPod cloud) has targeted smoke coverage in:
+
+- `CapabilityRoutingBrickTests`
+- `PeerToPeerRoutingSmokeTests`
+
+Run them with:
+
+```bash
+# Peer smoke + stress scenarios (fallback, timeout, outage, burst concurrency)
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+  -f net8.0 --filter "FullyQualifiedName~PeerToPeerRoutingSmokeTests"
+
+# Routing regression (peer smoke + core capability router)
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+  --filter "FullyQualifiedName~PeerToPeerRoutingSmokeTests|FullyQualifiedName~CapabilityRoutingBrickTests"
+```
+
+What these stress tests simulate:
+- concurrent burst traffic to peers
+- intermittent HTTP failures and socket resets
+- latency spikes that trigger per-peer timeout and failover
+- recovery with success-rate thresholds under degraded network conditions
+
+Note: `src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.cs` is lock-tolerant for transient file-copy races during test builds (retry/backoff + safe lock skips when outputs already exist), so transient assembly lock contention should not surface as `MSB3073` copy-script warnings.
+
 ## Safe Validation (Avoid Memory Explosion)
 
 Running multiple validation commands in parallel (e.g. from Cursor's integrated terminal) can cause severe memory pressure and freeze the machine. Each `dotnet test` run buffers output and spawns test hosts; running 5+ in parallel can exceed 100GB RAM.
