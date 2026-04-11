@@ -244,7 +244,7 @@ internal static class Program
 
         var payload = new
         {
-            ok = true,
+            ok = nexoResult.ExitCode == 0,
             stage = "generate",
             prompt,
             className,
@@ -254,7 +254,7 @@ internal static class Program
             nexoChatExitCode = nexoResult.ExitCode
         };
         Console.WriteLine(JsonSerializer.Serialize(payload, JsonOptions()));
-        return 0;
+        return nexoResult.ExitCode == 0 ? 0 : 1;
     }
 
     private static async Task<int> ValidateAsync(string repoRoot, Dictionary<string, string> options)
