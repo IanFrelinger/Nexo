@@ -27,6 +27,16 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public class OrchestrateCommand
 {
+    public sealed record StructuredOrchestrationResult(
+        bool Ok,
+        string CorrelationId,
+        string? Error,
+        string? ErrorCode,
+        bool? Success = null,
+        int? AgentCount = null,
+        int? Conflicts = null,
+        int? Escalations = null);
+
     private readonly Orchestrator _orchestrator;
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<OrchestrateCommand> _logger;
@@ -82,6 +92,99 @@ public class OrchestrateCommand
             preferredRegion: null,
             json,
             verbose);
+
+    public async Task<StructuredOrchestrationResult> ExecuteStructuredAsync(
+        string request,
+        string? runtimeSpecPath,
+        string? runtimeSpecJson,
+        string? preferModel,
+        string? provider,
+        string? barrierLevel,
+        string? preferredRegion,
+        CancellationToken cancellationToken,
+        string? jwt = null,
+        IReadOnlyDictionary<string, string>? headers = null)
+    {
+        var correlationId = Guid.NewGuid().ToString();
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["CorrelationId"] = correlationId
+        });
+
+        try
+        {
+            var spec = OrchestrationRuntimeSpecLoader.Load(runtimeSpecPath, runtimeSpecJson);
+            if (!string.IsNullOrWhiteSpace(preferModel))
+            {
+                spec = spec with { Model = spec.Model with { Prefer = preferModel!.Trim() } };
+            }
+            if (!string.IsNullOrWhiteSpace(provider))
+            {
+                spec = spec with { Model = spec.Model with { Provider = provider!.Trim() } };
+            }
+            if (!string.IsNullOrWhiteSpace(barrierLevel))
+            {
+                spec = spec with { BarrierLevel = barrierLevel.Trim() };
+            }
+            if (!string.IsNullOrWhiteSpace(preferredRegion))
+            {
+                spec = spec with { PreferredRegion = preferredRegion.Trim() };
+            }
+
+            await InitializeBarrierContextAsync(
+                barrierLevel: spec.BarrierLevel,
+                jwt: jwt,
+                headers: headers,
+                correlationId: correlationId,
+                cancellationToken: cancellationToken);
+
+            var modelPrefer = spec.Model?.Prefer;
+            OrchestrationResult result;
+            if (_ephemeralLifecycle != null)
+            {
+                await using var session = await _ephemeralLifecycle.StartSessionAsync(modelPrefer);
+                using var _ = _runtime.Begin(spec);
+                result = await _orchestrator.OrchestrateAsync(request);
+            }
+            else
+            {
+                using var _ = _runtime.Begin(spec);
+                result = await _orchestrator.OrchestrateAsync(request);
+            }
+
+            return new StructuredOrchestrationResult(
+                Ok: result.Success,
+                CorrelationId: correlationId,
+                Error: null,
+                ErrorCode: null,
+                Success: result.Success,
+                AgentCount: result.Decomposition?.Agents.Count ?? 0,
+                Conflicts: result.Conflicts.Count,
+                Escalations: result.Escalations.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Orchestration failed");
+            var errorCode = ex switch
+            {
+                BarrierContextMissingException b => b.ErrorCode,
+                BarrierElevationException b => b.ErrorCode,
+                BarrierCeilingExceededException b => b.ErrorCode,
+                ArgumentException a when string.Equals(a.ParamName, "level", StringComparison.Ordinal) => "BARRIER_VALIDATION_FAILED",
+                EndpointUnavailableException => "ENDPOINT_UNAVAILABLE",
+                _ => "UNEXPECTED_ERROR"
+            };
+            return new StructuredOrchestrationResult(
+                Ok: false,
+                CorrelationId: correlationId,
+                Error: ex.Message,
+                ErrorCode: errorCode,
+                Success: false,
+                AgentCount: 0,
+                Conflicts: 0,
+                Escalations: 0);
+        }
+    }
 
     public async Task<int> ExecuteAsync(
         string request,

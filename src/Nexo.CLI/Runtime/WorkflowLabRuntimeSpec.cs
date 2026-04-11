@@ -127,6 +127,7 @@ public sealed record WorkflowLabExecutionSpec
     public int Iterations { get; init; } = 1;
     public bool PersistHistory { get; init; } = true;
     public string BenchmarkSet { get; init; } = "workflow-lab";
+    public bool SkipScenariosWhenProviderUnavailable { get; init; } = true;
 }
 
 public sealed record WorkflowLabRequestSpec
