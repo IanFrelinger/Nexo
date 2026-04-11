@@ -4,6 +4,10 @@ namespace Nexo.CLI.Runtime;
 
 public sealed record WorkflowLabStressHistoryRow
 {
+    public string RunId { get; init; } = string.Empty;
+    public string GitSha { get; init; } = string.Empty;
+    public string SpecHash { get; init; } = string.Empty;
+    public string ProviderSnapshot { get; init; } = string.Empty;
     public string ScenarioId { get; init; } = string.Empty;
     public string RequestId { get; init; } = string.Empty;
     public string CompositionId { get; init; } = string.Empty;
@@ -17,6 +21,7 @@ public sealed record WorkflowLabStressHistoryRow
     public int EscalationCount { get; init; }
     public double Score { get; init; }
     public string? Summary { get; init; }
+    public bool Skipped { get; init; }
     public string FailureCategory { get; init; } = "none";
     public string BenchmarkSet { get; init; } = "workflow-lab";
 }

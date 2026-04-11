@@ -326,6 +326,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     repoRoot,
                     limit: 20,
                     benchmarkSet: "workflow-lab",
+                    runId: null,
+                    since: null,
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
 
@@ -337,6 +339,75 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(markdown.Contains("## Top Scenarios", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("## Failure Categories", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("orchestration_failure", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("## Recommendations", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("global_baseline", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestReportFiltersByRunIdAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "run-a",
+                GitSha = "abc123",
+                SpecHash = "spec-a",
+                ProviderSnapshot = "ollama",
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 90.0,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "run-b",
+                GitSha = "def456",
+                SpecHash = "spec-b",
+                ProviderSnapshot = "ollama",
+                ScenarioId = "request-b::composition-b::profile-b::iter-1",
+                RequestId = "request-b",
+                CompositionId = "composition-b",
+                ModelProfileId = "profile-b",
+                Iteration = 1,
+                Success = false,
+                Score = 10.0,
+                ElapsedMs = 300,
+                FailureCategory = "orchestration_failure",
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var reportPath = Path.Combine(repoRoot, "workflow_report_run_a.md");
+            var command = CreateCommand();
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteReportAsync(
+                    repoRoot,
+                    limit: 20,
+                    benchmarkSet: "workflow-lab",
+                    runId: "run-a",
+                    since: null,
+                    outputPath: reportPath,
+                    json: false)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("workflow report: ok", StringComparison.OrdinalIgnoreCase));
+            var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(markdown.Contains("Run ID: run-a", StringComparison.Ordinal));
+            AssertTrue(!markdown.Contains("run-b", StringComparison.OrdinalIgnoreCase), "Report should filter out run-b data.");
         }
         finally
         {
@@ -370,7 +441,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
   "error": "barrier context rejected"
 }
 """);
-                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, "model_execution_failure"));
+                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, false, "model_execution_failure"));
             });
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteStressAsync(

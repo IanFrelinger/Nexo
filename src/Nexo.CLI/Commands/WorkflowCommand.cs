@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.CLI.Runtime;
+using Nexo.Infrastructure.Execution;
 using Nexo.Orchestration.Models;
 
 namespace Nexo.CLI.Commands;
@@ -23,30 +24,50 @@ public sealed class WorkflowCommand : Command
         CancellationToken cancellationToken);
 
     private readonly ScenarioExecutor _scenarioExecutor;
+    private readonly Func<string, CancellationToken, Task<PreflightResult>> _providerPreflight;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
-        : this(async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>
-        {
-            var orchestrate = orchestrateFactory();
-            return await ExecuteScenarioAsync(orchestrate, request, runtimeSpecJson, provider, outputJson, verbose, ct).ConfigureAwait(false);
-        })
+        : this(
+            async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>
+            {
+                var orchestrate = orchestrateFactory();
+                return await ExecuteScenarioAsync(orchestrate, request, runtimeSpecJson, provider, outputJson, verbose, ct).ConfigureAwait(false);
+            },
+            (provider, ct) => PreflightProviderAsync(provider, ct))
     {
     }
 
     public WorkflowCommand(Func<IServiceScope> orchestrationScopeFactory)
-        : this(async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>
-        {
-            using var scope = orchestrationScopeFactory();
-            var orchestrate = scope.ServiceProvider.GetRequiredService<OrchestrateCommand>();
-            return await ExecuteScenarioAsync(orchestrate, request, runtimeSpecJson, provider, outputJson, verbose, ct).ConfigureAwait(false);
-        })
+        : this(
+            async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>
+            {
+                using var scope = orchestrationScopeFactory();
+                var orchestrate = scope.ServiceProvider.GetRequiredService<OrchestrateCommand>();
+                return await ExecuteScenarioAsync(orchestrate, request, runtimeSpecJson, provider, outputJson, verbose, ct).ConfigureAwait(false);
+            },
+            async (provider, ct) =>
+            {
+                using var scope = orchestrationScopeFactory();
+                return await PreflightProviderAsync(
+                    provider,
+                    ct,
+                    scope.ServiceProvider.GetService<IProviderFactory>()).ConfigureAwait(false);
+            })
     {
     }
 
     internal WorkflowCommand(ScenarioExecutor scenarioExecutor)
+        : this(scenarioExecutor, (provider, ct) => PreflightProviderAsync(provider, ct))
+    {
+    }
+
+    private WorkflowCommand(
+        ScenarioExecutor scenarioExecutor,
+        Func<string, CancellationToken, Task<PreflightResult>> providerPreflight)
         : base("workflow", "Scaffold and stress-test agentic workflow compositions.")
     {
         _scenarioExecutor = scenarioExecutor ?? throw new ArgumentNullException(nameof(scenarioExecutor));
+        _providerPreflight = providerPreflight ?? throw new ArgumentNullException(nameof(providerPreflight));
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -169,11 +190,15 @@ public sealed class WorkflowCommand : Command
         var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
         var limitOpt = new Option<int>("--limit", () => 200, "Maximum history entries to analyze.");
         var benchmarkSetOpt = new Option<string?>("--benchmark-set", () => null, "Optional benchmark-set filter.");
+        var runIdOpt = new Option<string?>("--run-id", () => null, "Optional run-id filter for a single benchmark session.");
+        var sinceOpt = new Option<string?>("--since", () => null, "Optional ISO-8601 UTC timestamp filter (e.g. 2026-04-11T00:00:00Z).");
         var outputOpt = new Option<string?>("--output", () => null, "Optional report output file path (.json, .md, .txt).");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
         report.AddOption(repoRootOpt);
         report.AddOption(limitOpt);
         report.AddOption(benchmarkSetOpt);
+        report.AddOption(runIdOpt);
+        report.AddOption(sinceOpt);
         report.AddOption(outputOpt);
         report.AddOption(jsonOpt);
         report.SetHandler((InvocationContext ctx) =>
@@ -182,6 +207,8 @@ public sealed class WorkflowCommand : Command
                 ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
                 ctx.ParseResult.GetValueForOption(limitOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
+                ctx.ParseResult.GetValueForOption(runIdOpt),
+                ctx.ParseResult.GetValueForOption(sinceOpt),
                 ctx.ParseResult.GetValueForOption(outputOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
@@ -253,6 +280,8 @@ public sealed class WorkflowCommand : Command
         string repoRoot,
         int limit,
         string? benchmarkSet,
+        string? runId,
+        string? since,
         string? outputPath,
         bool json)
     {
@@ -275,7 +304,13 @@ public sealed class WorkflowCommand : Command
                     0d,
                     Array.Empty<WorkflowScenarioBenchmark>(),
                     Array.Empty<WorkflowScenarioBenchmark>(),
-                    Array.Empty<WorkflowFailureCategoryStat>())), json);
+                    Array.Empty<WorkflowFailureCategoryStat>(),
+                    Array.Empty<string>(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    Array.Empty<WorkflowRecommendation>())), json);
             return Task.FromResult(1);
         }
 
@@ -286,6 +321,15 @@ public sealed class WorkflowCommand : Command
             rows = rows
                 .Where(x => string.Equals(x.BenchmarkSet, normalized, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(runId))
+        {
+            var normalizedRunId = runId.Trim();
+            rows = rows.Where(x => string.Equals(x.RunId, normalizedRunId, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(since) && DateTimeOffset.TryParse(since, out var sinceUtc))
+        {
+            rows = rows.Where(x => x.StartedAtUtc >= sinceUtc).ToArray();
         }
 
         var report = BuildBenchmarkReport(rows);
@@ -353,6 +397,20 @@ public sealed class WorkflowCommand : Command
         var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
         var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
         var sharedRequest = string.IsNullOrWhiteSpace(requestOverride) ? null : requestOverride.Trim();
+        var runId = BuildRunId();
+        var specHash = ComputeSpecHash(JsonSerializer.Serialize(spec));
+        var gitSha = ResolveGitSha();
+        var providerSnapshot = BuildProviderSnapshot(profiles);
+
+        var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
+        foreach (var provider in profiles
+                     .Select(x => x.Default.Provider)
+                     .Where(x => !string.IsNullOrWhiteSpace(x))
+                     .Select(x => x!.Trim())
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
+        }
 
         var runs = new List<WorkflowStressRunRecord>();
         foreach (var request in requests)
@@ -368,31 +426,51 @@ public sealed class WorkflowCommand : Command
                         var runtime = BuildRuntimeSpec(composition, profile);
                         var runtimeJson = JsonSerializer.Serialize(runtime);
                         var runtimeExecutionRequest = BuildExecutionRequest(request, composition, profile, sharedRequest);
+                        var profileProvider = profile.Default.Provider?.Trim();
                         var startedAt = DateTimeOffset.UtcNow;
                         var sw = Stopwatch.StartNew();
                         ScenarioExecutionResult scenario;
-                        try
-                        {
-                            scenario = await _scenarioExecutor(
-                                runtimeExecutionRequest,
-                                runtimeJson,
-                                profile.Default.Provider,
-                                true,
-                                verbose,
-                                ct).ConfigureAwait(false);
-                        }
-                        catch (Exception ex)
+                        if (!string.IsNullOrWhiteSpace(profileProvider) &&
+                            preflightByProvider.TryGetValue(profileProvider, out var preflight) &&
+                            !preflight.Ok)
                         {
                             scenario = new ScenarioExecutionResult(
-                                Ok: false,
-                                Summary: $"Scenario executor failed: {ex.Message}",
+                                Ok: true,
+                                Summary: $"Skipped due to provider preflight failure ({profileProvider}): {preflight.Detail}",
                                 ConflictCount: 0,
                                 EscalationCount: 0,
-                                FailureCategory: "executor_failure");
+                                FailureCategory: "skipped_infra",
+                                Skipped: true);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                scenario = await _scenarioExecutor(
+                                    runtimeExecutionRequest,
+                                    runtimeJson,
+                                    profile.Default.Provider,
+                                    true,
+                                    verbose,
+                                    ct).ConfigureAwait(false);
+                            }
+                            catch (Exception ex)
+                            {
+                                scenario = new ScenarioExecutionResult(
+                                    Ok: false,
+                                    Summary: $"Scenario executor failed: {ex.Message}",
+                                    ConflictCount: 0,
+                                    EscalationCount: 0,
+                                    FailureCategory: "executor_failure");
+                            }
                         }
                         var elapsedMs = sw.ElapsedMilliseconds;
                         var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
                         runs.Add(new WorkflowStressRunRecord(
+                            runId,
+                            gitSha,
+                            specHash,
+                            providerSnapshot,
                             scenarioId,
                             request.Id,
                             composition.Id,
@@ -406,6 +484,7 @@ public sealed class WorkflowCommand : Command
                             score,
                             scenario.Summary,
                             scenario.FailureCategory,
+                            scenario.Skipped,
                             startedAt,
                             benchmarkSet));
                     }
@@ -445,6 +524,10 @@ public sealed class WorkflowCommand : Command
                     repoRoot,
                     new WorkflowLabStressHistoryRow
                     {
+                        RunId = run.RunId,
+                        GitSha = run.GitSha,
+                        SpecHash = run.SpecHash,
+                        ProviderSnapshot = run.ProviderSnapshot,
                         ScenarioId = run.ScenarioId,
                         RequestId = run.RequestId,
                         CompositionId = run.CompositionId,
@@ -458,23 +541,26 @@ public sealed class WorkflowCommand : Command
                         EscalationCount = run.EscalationCount,
                         Score = run.Score,
                         Summary = run.Summary,
+                        Skipped = run.Skipped,
                         FailureCategory = run.FailureCategory,
                         BenchmarkSet = run.BenchmarkSet
                     });
             }
         }
 
-        var allPassed = runs.All(run => run.Success);
-        var failureCount = runs.Count(run => !run.Success);
+        var allPassed = runs.All(run => run.Success || run.Skipped);
+        var failureCount = runs.Count(run => !run.Success && !run.Skipped);
+        var skippedCount = runs.Count(run => run.Skipped);
         var best = aggregates.FirstOrDefault(x => x.Successes > 0);
         var result = new WorkflowStressResult(
             allPassed,
             allPassed
-                ? $"Workflow stress completed: {runs.Count} run(s) across {aggregates.Length} scenario groups."
-                : $"Workflow stress completed with {failureCount} failing run(s) out of {runs.Count}.",
+                ? $"Workflow stress completed: {runs.Count} run(s) across {aggregates.Length} scenario groups (run-id={runId})."
+                : $"Workflow stress completed with {failureCount} failing run(s), {skippedCount} skipped run(s), out of {runs.Count} (run-id={runId}).",
             runs,
             aggregates,
             best,
+            runId,
             benchmarkSet,
             persistHistory);
         WriteStressResult(result, json);
@@ -515,115 +601,36 @@ public sealed class WorkflowCommand : Command
         bool verbose,
         CancellationToken ct)
     {
-        var (exitCode, stdOut, stdErr) = await CaptureConsoleAsync(
-            () => orchestrate.ExecuteAsync(
-                request,
-                runtimeSpecPath: null,
-                runtimeSpecJson,
-                preferModel: null,
-                provider,
-                barrierLevel: null,
-                preferredRegion: null,
-                json,
-                verbose),
-            ct).ConfigureAwait(false);
-        var combined = string.Join(
-            Environment.NewLine,
-            new[] { stdOut, stdErr }.Where(x => !string.IsNullOrWhiteSpace(x)));
-        var parsed = TryParseOrchestratePayload(combined);
-        if (parsed is null)
+        var result = await orchestrate.ExecuteStructuredAsync(
+            request,
+            runtimeSpecPath: null,
+            runtimeSpecJson,
+            preferModel: null,
+            provider,
+            barrierLevel: null,
+            preferredRegion: null,
+            cancellationToken: ct).ConfigureAwait(false);
+
+        if (result.Ok)
         {
-            var category = ClassifyFailureCategory(combined);
             return new ScenarioExecutionResult(
-                false,
-                "Scenario failed: orchestrate output did not contain JSON payload.",
-                0,
-                0,
-                category);
+                Ok: true,
+                Summary: "Orchestration run completed successfully.",
+                ConflictCount: result.Conflicts ?? 0,
+                EscalationCount: result.Escalations ?? 0,
+                FailureCategory: "none");
         }
 
-        var failureCategory = parsed.Ok
-            ? "none"
-            : ClassifyFailureCategory(combined, parsed.ErrorCode);
-
-        var summary = parsed.Summary;
-        if (!parsed.Ok && exitCode != 0 && !summary.Contains("errorCode", StringComparison.OrdinalIgnoreCase))
-        {
-            summary = $"{summary} (exitCode={exitCode})";
-        }
-
+        var summary = string.IsNullOrWhiteSpace(result.ErrorCode)
+            ? $"Orchestration failed: {result.Error ?? "unknown error"}"
+            : $"Orchestration failed with errorCode={result.ErrorCode}: {result.Error ?? "no error details"}";
+        var category = ClassifyFailureCategory(result.Error ?? string.Empty, result.ErrorCode);
         return new ScenarioExecutionResult(
-            parsed.Ok,
-            summary,
-            parsed.ConflictCount,
-            parsed.EscalationCount,
-            failureCategory);
-    }
-
-    private static async Task<(int ExitCode, string StdOut, string StdErr)> CaptureConsoleAsync(
-        Func<Task<int>> run,
-        CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        var originalOut = Console.Out;
-        var originalErr = Console.Error;
-        using var outWriter = new StringWriter();
-        using var errWriter = new StringWriter();
-        try
-        {
-            Console.SetOut(outWriter);
-            Console.SetError(errWriter);
-            var exitCode = await run().ConfigureAwait(false);
-            return (exitCode, outWriter.ToString(), errWriter.ToString());
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-            Console.SetError(originalErr);
-        }
-    }
-
-    private static ParsedOrchestratePayload? TryParseOrchestratePayload(string output)
-    {
-        if (string.IsNullOrWhiteSpace(output))
-            return null;
-
-        var idx = output.LastIndexOf('{');
-        while (idx >= 0)
-        {
-            var candidate = output[idx..].Trim();
-            try
-            {
-                using var doc = JsonDocument.Parse(candidate);
-                var root = doc.RootElement;
-                var ok = root.TryGetProperty("ok", out var okNode) && okNode.ValueKind == JsonValueKind.True;
-                if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
-                {
-                    var errorCode = root.TryGetProperty("errorCode", out var errorCodeNode)
-                        ? errorCodeNode.GetString()
-                        : null;
-                    var error = root.TryGetProperty("error", out var errorNode)
-                        ? errorNode.GetString()
-                        : null;
-                    var fallbackSummary = string.IsNullOrWhiteSpace(errorCode)
-                        ? "Orchestrate response missing data payload."
-                        : $"Orchestration failed with errorCode={errorCode}: {error ?? "no error details"}";
-                    return new ParsedOrchestratePayload(ok, fallbackSummary, 0, 0, errorCode);
-                }
-                var summary = data.TryGetProperty("success", out var successNode) && successNode.ValueKind == JsonValueKind.True
-                    ? "Orchestration run completed successfully."
-                    : "Orchestration reported failure.";
-                var conflictCount = data.TryGetProperty("conflicts", out var conflictsNode) ? conflictsNode.GetInt32() : 0;
-                var escalationCount = data.TryGetProperty("escalations", out var escalationsNode) ? escalationsNode.GetInt32() : 0;
-                return new ParsedOrchestratePayload(ok, summary, conflictCount, escalationCount, null);
-            }
-            catch
-            {
-                idx = idx > 0 ? output.LastIndexOf('{', idx - 1) : -1;
-            }
-        }
-
-        return null;
+            Ok: false,
+            Summary: summary,
+            ConflictCount: result.Conflicts ?? 0,
+            EscalationCount: result.Escalations ?? 0,
+            FailureCategory: category);
     }
 
     private static string ClassifyFailureCategory(string output, string? parsedErrorCode = null)
@@ -779,6 +786,78 @@ public sealed class WorkflowCommand : Command
         return Path.Combine(Environment.CurrentDirectory, ".nexo", "workflow", "workflow_lab.runtime.json");
     }
 
+    private static string BuildRunId()
+        => DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..8];
+
+    private static string ResolveGitSha()
+    {
+        try
+        {
+            var head = Path.Combine(Environment.CurrentDirectory, ".git", "HEAD");
+            if (!File.Exists(head))
+                return "unknown";
+            var headRef = File.ReadAllText(head).Trim();
+            if (!headRef.StartsWith("ref:", StringComparison.OrdinalIgnoreCase))
+                return headRef.Length >= 12 ? headRef[..12] : headRef;
+            var refPath = headRef["ref:".Length..].Trim();
+            var fullRefPath = Path.Combine(Environment.CurrentDirectory, ".git", refPath.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(fullRefPath))
+                return "unknown";
+            var sha = File.ReadAllText(fullRefPath).Trim();
+            return sha.Length >= 12 ? sha[..12] : sha;
+        }
+        catch
+        {
+            return "unknown";
+        }
+    }
+
+    private static string ComputeSpecHash(string raw)
+    {
+        var text = raw ?? string.Empty;
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(text);
+        var hash = sha.ComputeHash(bytes);
+        return Convert.ToHexString(hash)[..12].ToLowerInvariant();
+    }
+
+    private static string BuildProviderSnapshot(IReadOnlyList<WorkflowLabModelProfileSpec> profiles)
+    {
+        var providers = profiles
+            .Select(x => x.Default.Provider)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return providers.Length == 0 ? "none" : string.Join(",", providers);
+    }
+
+    private static Task<PreflightResult> PreflightProviderAsync(
+        string provider,
+        CancellationToken ct,
+        IProviderFactory? providerFactory = null)
+    {
+        var normalized = string.IsNullOrWhiteSpace(provider) ? "unset" : provider.Trim().ToLowerInvariant();
+        if (normalized is "unset" or "offline" or "mock-json")
+            return Task.FromResult(new PreflightResult(true, normalized, "Provider does not require runtime connectivity check."));
+
+        if (providerFactory is null)
+            return Task.FromResult(new PreflightResult(false, normalized, "Provider factory unavailable for preflight."));
+
+        try
+        {
+            var available = providerFactory.IsProviderAvailable(normalized);
+            return Task.FromResult(available
+                ? new PreflightResult(true, normalized, "Provider available.")
+                : new PreflightResult(false, normalized, "Provider unavailable."));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(new PreflightResult(false, normalized, ex.Message));
+        }
+    }
+
     private static string BuildScenarioId(string requestId, string compositionId, string profileId, int iteration)
         => $"{requestId}::{compositionId}::{profileId}::iter-{iteration}";
 
@@ -851,6 +930,22 @@ public sealed class WorkflowCommand : Command
             .Take(5)
             .ToArray();
 
+        var runIds = items
+            .Select(x => x.RunId)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var recommendations = CreateRecommendations(
+            scenarioStats,
+            failuresByCategory,
+            successRate,
+            avgElapsed,
+            topScenarios);
+
+        var latest = items.OrderByDescending(x => x.StartedAtUtc).FirstOrDefault();
+
         return new WorkflowBenchmarkReport(
             GeneratedAtUtc: DateTimeOffset.UtcNow,
             TotalRuns: totalRuns,
@@ -864,7 +959,81 @@ public sealed class WorkflowCommand : Command
             AverageEscalations: avgEscalations,
             TopScenarios: topScenarios,
             Bottlenecks: bottlenecks,
-            FailureCategories: failuresByCategory);
+            FailureCategories: failuresByCategory,
+            RunIds: runIds,
+            LatestRunId: latest?.RunId,
+            GitSha: latest?.GitSha,
+            SpecHash: latest?.SpecHash,
+            ProviderSnapshot: latest?.ProviderSnapshot,
+            Recommendations: recommendations);
+    }
+
+    private static IReadOnlyList<WorkflowRecommendation> CreateRecommendations(
+        IReadOnlyList<WorkflowScenarioBenchmark> scenarioStats,
+        IReadOnlyList<WorkflowFailureCategoryStat> failuresByCategory,
+        double successRate,
+        long avgElapsedMs,
+        IReadOnlyList<WorkflowScenarioBenchmark> topScenarios)
+    {
+        var output = new List<WorkflowRecommendation>();
+        var stable = scenarioStats
+            .Where(x => x.SuccessRate >= 0.8)
+            .OrderByDescending(x => x.SuccessRate)
+            .ThenBy(x => x.P95ElapsedMs)
+            .ThenByDescending(x => x.AverageScore)
+            .FirstOrDefault();
+
+        if (stable != null)
+        {
+            output.Add(new WorkflowRecommendation(
+                "best_stable_config",
+                "use",
+                stable.ScenarioGroupId,
+                $"Stable success-rate {stable.SuccessRate:P1} with p95 {stable.P95ElapsedMs} ms."));
+        }
+        else if (topScenarios.Count > 0)
+        {
+            var candidate = topScenarios[0];
+            output.Add(new WorkflowRecommendation(
+                "candidate_best_config",
+                "investigate",
+                candidate.ScenarioGroupId,
+                $"No stable config yet; top candidate success-rate {candidate.SuccessRate:P1}, p95 {candidate.P95ElapsedMs} ms."));
+        }
+
+        var infraFailures = failuresByCategory
+            .FirstOrDefault(x => string.Equals(x.Category, "infra_unavailable", StringComparison.OrdinalIgnoreCase));
+        if (infraFailures != null && infraFailures.Count > 0)
+        {
+            output.Add(new WorkflowRecommendation(
+                "infra_dependency",
+                "fix",
+                null,
+                $"Detected {infraFailures.Count} infra_unavailable failures; stabilize provider/runtime dependencies before comparing models."));
+        }
+
+        var badConfigs = scenarioStats
+            .Where(x => x.Failures >= Math.Max(2, (int)Math.Ceiling(x.Runs * 0.7)))
+            .OrderByDescending(x => x.Failures)
+            .ThenByDescending(x => x.P95ElapsedMs)
+            .Take(3)
+            .ToArray();
+        foreach (var bad in badConfigs)
+        {
+            output.Add(new WorkflowRecommendation(
+                "do_not_use_config",
+                "avoid",
+                bad.ScenarioGroupId,
+                $"High failure rate ({bad.Failures}/{bad.Runs}) and p95 {bad.P95ElapsedMs} ms."));
+        }
+
+        output.Add(new WorkflowRecommendation(
+            "global_baseline",
+            "monitor",
+            null,
+            $"Current benchmark baseline success-rate {successRate:P1}, average latency {avgElapsedMs} ms."));
+
+        return output;
     }
 
     private static long ComputePercentile(IEnumerable<long> source, double percentile)
@@ -920,6 +1089,14 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine("# Workflow Stress Benchmark Report");
         sb.AppendLine();
         sb.AppendLine($"Generated: {report.GeneratedAtUtc:O}");
+        if (!string.IsNullOrWhiteSpace(report.LatestRunId))
+            sb.AppendLine($"Run ID: {report.LatestRunId}");
+        if (!string.IsNullOrWhiteSpace(report.GitSha))
+            sb.AppendLine($"Git SHA: {report.GitSha}");
+        if (!string.IsNullOrWhiteSpace(report.SpecHash))
+            sb.AppendLine($"Spec hash: {report.SpecHash}");
+        if (!string.IsNullOrWhiteSpace(report.ProviderSnapshot))
+            sb.AppendLine($"Provider snapshot: {report.ProviderSnapshot}");
         sb.AppendLine();
         sb.AppendLine("## Summary");
         sb.AppendLine($"- Total runs: {report.TotalRuns}");
@@ -949,6 +1126,12 @@ public sealed class WorkflowCommand : Command
         {
             sb.AppendLine($"- `{bottleneck.ScenarioGroupId}` | failures {bottleneck.Failures} | p95 {bottleneck.P95ElapsedMs} ms | last failure: {bottleneck.LastFailureSummary ?? "n/a"}");
         }
+        sb.AppendLine();
+        sb.AppendLine("## Recommendations");
+        foreach (var rec in report.Recommendations)
+        {
+            sb.AppendLine($"- `{rec.Kind}` [{rec.Action}] {(string.IsNullOrWhiteSpace(rec.Target) ? "" : rec.Target + " — ")}{rec.Rationale}");
+        }
         return sb.ToString();
     }
 
@@ -958,6 +1141,14 @@ public sealed class WorkflowCommand : Command
         var sb = new StringBuilder();
         sb.AppendLine("Workflow Stress Benchmark Report");
         sb.AppendLine($"Generated: {report.GeneratedAtUtc:O}");
+        if (!string.IsNullOrWhiteSpace(report.LatestRunId))
+            sb.AppendLine($"Run ID: {report.LatestRunId}");
+        if (!string.IsNullOrWhiteSpace(report.GitSha))
+            sb.AppendLine($"Git SHA: {report.GitSha}");
+        if (!string.IsNullOrWhiteSpace(report.SpecHash))
+            sb.AppendLine($"Spec hash: {report.SpecHash}");
+        if (!string.IsNullOrWhiteSpace(report.ProviderSnapshot))
+            sb.AppendLine($"Provider snapshot: {report.ProviderSnapshot}");
         sb.AppendLine($"Total runs: {report.TotalRuns}");
         sb.AppendLine($"Success runs: {report.SuccessRuns}");
         sb.AppendLine($"Failed runs: {report.FailedRuns}");
@@ -984,6 +1175,13 @@ public sealed class WorkflowCommand : Command
         foreach (var bottleneck in report.Bottlenecks)
         {
             sb.AppendLine($"- {bottleneck.ScenarioGroupId}: failures {bottleneck.Failures}, p95 {bottleneck.P95ElapsedMs} ms, last failure={bottleneck.LastFailureSummary ?? "n/a"}");
+        }
+        sb.AppendLine();
+        sb.AppendLine("Recommendations:");
+        foreach (var rec in report.Recommendations)
+        {
+            var target = string.IsNullOrWhiteSpace(rec.Target) ? string.Empty : $"{rec.Target}: ";
+            sb.AppendLine($"- [{rec.Action}] {rec.Kind} {target}{rec.Rationale}");
         }
         return sb.ToString();
     }
@@ -1038,6 +1236,7 @@ public sealed class WorkflowCommand : Command
             {
                 ok = result.Ok,
                 summary = result.Summary,
+                runId = result.RunId,
                 benchmarkSet = result.BenchmarkSet,
                 persistHistory = result.PersistHistory,
                 runs = result.Runs,
@@ -1050,7 +1249,7 @@ public sealed class WorkflowCommand : Command
         Console.WriteLine($"workflow stress: {(result.Ok ? "ok" : "failed")}");
         Console.WriteLine(result.Summary);
         if (!string.IsNullOrWhiteSpace(result.BenchmarkSet))
-            Console.WriteLine($"  benchmark-set={result.BenchmarkSet} (persist-history={result.PersistHistory})");
+            Console.WriteLine($"  run-id={result.RunId ?? "n/a"}, benchmark-set={result.BenchmarkSet} (persist-history={result.PersistHistory})");
         foreach (var aggregate in (result.Aggregates ?? Array.Empty<WorkflowStressAggregate>()).Take(5))
         {
             Console.WriteLine(
@@ -1106,11 +1305,21 @@ public sealed class WorkflowCommand : Command
         Console.WriteLine($"  success-rate={result.Report.SuccessRate:P1}, avg-latency={result.Report.AverageElapsedMs}ms, p95={result.Report.P95ElapsedMs}ms");
         if (result.Report.TopScenarios.Count > 0)
             Console.WriteLine($"  best={result.Report.TopScenarios[0].ScenarioGroupId} score={result.Report.TopScenarios[0].AverageScore:F2}");
+        if (result.Report.Recommendations.Count > 0)
+        {
+            Console.WriteLine("  recommendations:");
+            foreach (var rec in result.Report.Recommendations.Take(5))
+                Console.WriteLine($"    - [{rec.Action}] {rec.Kind}: {rec.Rationale}");
+        }
     }
 
     private sealed record WorkflowScaffoldResult(bool Ok, string Summary, string? OutputPath = null);
 
     private sealed record WorkflowStressRunRecord(
+        string RunId,
+        string GitSha,
+        string SpecHash,
+        string ProviderSnapshot,
         string ScenarioId,
         string RequestId,
         string CompositionId,
@@ -1124,6 +1333,7 @@ public sealed class WorkflowCommand : Command
         double Score,
         string Summary,
         string FailureCategory,
+        bool Skipped,
         DateTimeOffset StartedAtUtc,
         string BenchmarkSet);
 
@@ -1144,6 +1354,7 @@ public sealed class WorkflowCommand : Command
         IReadOnlyList<WorkflowStressRunRecord>? Runs = null,
         IReadOnlyList<WorkflowStressAggregate>? Aggregates = null,
         WorkflowStressAggregate? Best = null,
+        string? RunId = null,
         string? BenchmarkSet = null,
         bool? PersistHistory = null);
 
@@ -1192,7 +1403,19 @@ public sealed class WorkflowCommand : Command
         double AverageEscalations,
         IReadOnlyList<WorkflowScenarioBenchmark> TopScenarios,
         IReadOnlyList<WorkflowScenarioBenchmark> Bottlenecks,
-        IReadOnlyList<WorkflowFailureCategoryStat> FailureCategories);
+        IReadOnlyList<WorkflowFailureCategoryStat> FailureCategories,
+        IReadOnlyList<string> RunIds,
+        string? LatestRunId,
+        string? GitSha,
+        string? SpecHash,
+        string? ProviderSnapshot,
+        IReadOnlyList<WorkflowRecommendation> Recommendations);
+
+    private sealed record WorkflowRecommendation(
+        string Kind,
+        string Action,
+        string? Target,
+        string Rationale);
 
     private sealed record WorkflowReportResult(
         bool Ok,
@@ -1205,12 +1428,11 @@ public sealed class WorkflowCommand : Command
         string Summary,
         int ConflictCount,
         int EscalationCount,
+        bool Skipped = false,
         string FailureCategory = "none");
 
-    private sealed record ParsedOrchestratePayload(
+    private sealed record PreflightResult(
         bool Ok,
-        string Summary,
-        int ConflictCount,
-        int EscalationCount,
-        string? ErrorCode = null);
+        string Provider,
+        string Detail);
 }
