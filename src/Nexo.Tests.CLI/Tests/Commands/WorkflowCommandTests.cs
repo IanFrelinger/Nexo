@@ -23,6 +23,9 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestGatePassesAndFailsWithThresholdsAsync().ConfigureAwait(false);
             await TestBaselinePromoteListAndShowAsync(cancellationToken).ConfigureAwait(false);
             await TestGateUsesPolicyFileAndActiveBaselineAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeGeneratesRecommendationReportAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeAutoPromotesWinnerBaselineAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeInvokesModelPullerWithResolvedModelsAsync(cancellationToken).ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(WorkflowCommandTests),
@@ -76,6 +79,22 @@ public sealed class WorkflowCommandTests : UnitTestBase
             providerPreflight is null
                 ? null
                 : (provider, ct) => providerPreflight(provider, ct));
+    }
+
+    private static WorkflowCommand CreateCommandWithPreflightAndPuller(
+        Func<string, string, string?, bool, bool, CancellationToken, Task<WorkflowCommand.ScenarioExecutionResult>>? scenarioExecutor,
+        Func<string, CancellationToken, Task<bool>> providerPreflight,
+        Func<IReadOnlyList<string>, CancellationToken, Task<WorkflowCommand.ModelPullResult>> modelPuller)
+    {
+        WorkflowCommand.ScenarioExecutor executor = scenarioExecutor is null
+            ? StubScenarioExecutorAsync
+            : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
+        return new WorkflowCommand(
+            executor,
+            providerPreflight is null
+                ? null
+                : (provider, ct) => providerPreflight(provider, ct),
+            modelPuller);
     }
 
     private async Task TestScaffoldWritesSpecFileAsync()
@@ -839,6 +858,360 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(gateOutput.Contains("workflow gate: passed", StringComparison.OrdinalIgnoreCase) ||
                        gateOutput.Contains("\"passed\": true", StringComparison.OrdinalIgnoreCase));
             AssertTrue(gateOutput.Contains("comparison=candidate vs baseline", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeGeneratesRecommendationReportAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": true,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-a", "prompt": "Plan and implement feature A." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-fast",
+      "roles": [
+        { "agentId": "planner-1", "role": "planner", "goal": "Plan" }
+      ]
+    },
+    {
+      "id": "comp-thorough",
+      "roles": [
+        { "agentId": "planner-2", "role": "planner", "goal": "Plan thoroughly" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-a",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+
+            var command = CreateCommandWithPreflight(
+                (request, _, _, _, _, _) =>
+            {
+                var ok = request.Contains("feature A", StringComparison.OrdinalIgnoreCase);
+                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(ok, ok ? "ok" : "fail", 0, 0));
+            },
+                (_, _) => Task.FromResult(true),
+                (models, _) => Task.FromResult(new WorkflowCommand.ModelPullResult(
+                    Ok: true,
+                    Summary: $"stub pull ok ({models.Count})",
+                    Models: models,
+                    PulledModels: models)));
+            var reportPath = Path.Combine(repoRoot, "workflow_optimize_report.md");
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: true,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: 7,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 8,
+                    autoPullModels: false,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: reportPath,
+                    json: false,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("workflow optimize: ok", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("recommendation-report=", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(File.Exists(reportPath), "Expected optimize recommendation report to be written.");
+
+            var report = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(report.Contains("# Workflow Optimize Recommendation Report", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("## Winner", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("## Recommendations", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeAutoPromotesWinnerBaselineAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": true,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-a", "prompt": "Deliver feature A." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-a",
+      "roles": [
+        { "agentId": "builder-1", "role": "builder", "goal": "Build" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-a",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+
+            var command = CreateCommandWithPreflight(
+                (_, _, _, _, _, _) => Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0)),
+                (_, _) => Task.FromResult(true),
+                (models, _) => Task.FromResult(new WorkflowCommand.ModelPullResult(
+                    Ok: true,
+                    Summary: $"stub pull ok ({models.Count})",
+                    Models: models,
+                    PulledModels: models)));
+            var reportPath = Path.Combine(repoRoot, "workflow_optimize_report_promote.md");
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: true,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    autoPullModels: false,
+                    promoteWinner: true,
+                    policyFile: null,
+                    reportOutputPath: reportPath,
+                    json: false,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("workflow optimize: ok", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("promoted-baseline-id=", StringComparison.OrdinalIgnoreCase));
+
+            var active = WorkflowBaselineStore.ReadActive(repoRoot, "workflow-lab");
+            AssertTrue(active is not null, "Expected optimize to auto-promote winner baseline.");
+            AssertTrue(!string.IsNullOrWhiteSpace(active!.RunId), "Promoted baseline should have run-id.");
+            AssertTrue(File.Exists(reportPath), "Expected optimize promotion report to be written.");
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeInvokesModelPullerWithResolvedModelsAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-a", "prompt": "Deliver feature A." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-a",
+      "roles": [
+        { "agentId": "planner-1", "role": "planner", "goal": "Plan", "ollamaModel": "qwen2.5:7b" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-a",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" },
+      "agents": {
+        "planner-1": { "prefer": "agentic", "provider": "ollama", "model": "qwen2.5:7b" }
+      }
+    }
+  ]
+}
+""";
+
+            IReadOnlyList<string>? pulledModels = null;
+            var command = CreateCommandWithPreflightAndPuller(
+                (_, _, _, _, _, _) => Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0)),
+                (_, _) => Task.FromResult(true),
+                (models, _) =>
+                {
+                    pulledModels = models.ToArray();
+                    return Task.FromResult(new WorkflowCommand.ModelPullResult(
+                        Ok: true,
+                        Summary: "pulled",
+                        Models: models.ToArray(),
+                        PulledModels: models.ToArray(),
+                        FailedModels: Array.Empty<string>()));
+                });
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    autoPullModels: true,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: null,
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(pulledModels is not null, "Expected optimize to invoke model puller.");
+            AssertTrue(pulledModels!.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
+            AssertTrue(pulledModels.Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeAutoPullInvokesModelPullerAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-a", "prompt": "Deliver feature A." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-a",
+      "roles": [
+        { "agentId": "builder-1", "role": "builder", "goal": "Build", "ollamaModel": "codellama:13b" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-a",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" },
+      "agents": {
+        "builder-1": { "prefer": "agentic", "provider": "ollama", "model": "qwen2.5:7b" }
+      }
+    }
+  ]
+}
+""";
+
+            var pulled = new List<string>();
+            var command = new WorkflowCommand(
+                (_, _, _, _, _, _) => Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0)),
+                (provider, _) => Task.FromResult(true),
+                (models, _) =>
+                {
+                    pulled.AddRange(models);
+                    return Task.FromResult(new WorkflowCommand.ModelPullResult(
+                        Ok: true,
+                        Summary: "pulled",
+                        Models: models,
+                        PulledModels: models));
+                });
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    autoPullModels: true,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: null,
+                    json: false,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("workflow optimize: ok", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(pulled.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
+            AssertTrue(pulled.Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected agent-specific Ollama model to be pulled.");
+            AssertTrue(pulled.Contains("codellama:13b", StringComparer.OrdinalIgnoreCase), "Expected role hint Ollama model to be pulled.");
         }
         finally
         {

@@ -25,6 +25,7 @@ public sealed class WorkflowCommand : Command
 
     private readonly ScenarioExecutor _scenarioExecutor;
     private readonly Func<string, CancellationToken, Task<PreflightResult>> _providerPreflight;
+    private readonly Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>> _ollamaModelPuller;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -63,13 +64,27 @@ public sealed class WorkflowCommand : Command
                 new PreflightResult(
                     Ok: true,
                     Provider: string.IsNullOrWhiteSpace(provider) ? "unset" : provider,
-                    Detail: "Test preflight override: provider assumed available.")))
+                    Detail: "Test preflight override: provider assumed available.")),
+            (models, _) => Task.FromResult(
+                new ModelPullResult(
+                    Ok: true,
+                    Summary: $"Test model pull override: assumed available for {models.Count} model(s).",
+                    Models: models.ToArray(),
+                    PulledModels: models.ToArray())))
     {
     }
 
     internal WorkflowCommand(
         ScenarioExecutor scenarioExecutor,
         Func<string, CancellationToken, Task<bool>>? providerPreflight)
+        : this(scenarioExecutor, providerPreflight, null)
+    {
+    }
+
+    internal WorkflowCommand(
+        ScenarioExecutor scenarioExecutor,
+        Func<string, CancellationToken, Task<bool>>? providerPreflight,
+        Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>>? ollamaModelPuller)
         : this(
             scenarioExecutor,
             providerPreflight is null
@@ -85,23 +100,27 @@ public sealed class WorkflowCommand : Command
                         Ok: ok,
                         Provider: string.IsNullOrWhiteSpace(provider) ? "unset" : provider.Trim(),
                         Detail: ok ? "Provider available." : "Provider unavailable.");
-                })
+                },
+            ollamaModelPuller)
     {
     }
 
     private WorkflowCommand(
         ScenarioExecutor scenarioExecutor,
-        Func<string, CancellationToken, Task<PreflightResult>> providerPreflight)
+        Func<string, CancellationToken, Task<PreflightResult>> providerPreflight,
+        Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>>? ollamaModelPuller = null)
         : base("workflow", "Scaffold and stress-test agentic workflow compositions.")
     {
         _scenarioExecutor = scenarioExecutor ?? throw new ArgumentNullException(nameof(scenarioExecutor));
         _providerPreflight = providerPreflight ?? throw new ArgumentNullException(nameof(providerPreflight));
+        _ollamaModelPuller = ollamaModelPuller ?? PullOllamaModelsAsync;
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
         ConfigureReportCommand();
         ConfigureGateCommand();
         ConfigureBaselineCommand();
+        ConfigureOptimizeCommand();
     }
 
     private void ConfigureScaffoldCommand()
@@ -386,6 +405,124 @@ public sealed class WorkflowCommand : Command
         baseline.AddCommand(show);
 
         AddCommand(baseline);
+    }
+
+    private void ConfigureOptimizeCommand()
+    {
+        var optimize = new Command("optimize", "Auto-select workflow composition/model combinations, stress-test, and emit recommendations.");
+        var requestOverrideOpt = new Option<string?>(
+            "--request",
+            () => null,
+            "Optional request override used for all optimize candidates.");
+        var specPathOpt = new Option<string?>(
+            "--spec",
+            () => null,
+            "Path to workflow lab runtime spec JSON (defaults to .nexo/workflow/workflow_lab.runtime.json).");
+        var specJsonOpt = new Option<string?>("--spec-json", () => null, "Inline workflow lab runtime spec JSON.");
+        var providerOpt = new Option<string?>(
+            "--provider",
+            () => null,
+            "Override provider for all profile entries unless explicitly set.");
+        var preferOpt = new Option<string?>(
+            "--prefer",
+            () => null,
+            "Override model preference for all profile entries (agentic|deterministic|auto).");
+        var iterationsOverrideOpt = new Option<int?>(
+            "--iterations",
+            () => null,
+            "Override iteration count from execution spec.");
+        var benchmarkSetOpt = new Option<string?>(
+            "--benchmark-set",
+            () => null,
+            "Benchmark set tag used for optimize runs.");
+        var persistHistoryOpt = new Option<bool?>(
+            "--persist-history",
+            () => null,
+            "Persist optimize-run history entries in JSONL history.");
+        var warmupRunsOpt = new Option<int?>(
+            "--warmup-runs",
+            () => null,
+            "Override warmup runs per candidate (defaults to execution.warmupRuns).");
+        var shuffleScenariosOpt = new Option<bool?>(
+            "--shuffle-scenarios",
+            () => null,
+            "Override candidate order shuffle behavior (defaults to execution.shuffleScenarios).");
+        var randomSeedOpt = new Option<int?>(
+            "--random-seed",
+            () => null,
+            "Override candidate shuffle seed (defaults to execution.randomSeed).");
+        var cooldownMsOpt = new Option<int?>(
+            "--cooldown-ms",
+            () => null,
+            "Override cooldown delay between candidate runs in milliseconds.");
+        var maxCandidatesOpt = new Option<int>(
+            "--max-candidates",
+            () => 24,
+            "Maximum request/composition/profile candidates to evaluate.");
+        var autoPullModelsOpt = new Option<bool>(
+            "--auto-pull-models",
+            () => true,
+            "Automatically pull required Ollama models before candidate execution.");
+        var promoteWinnerOpt = new Option<bool>(
+            "--promote-winner",
+            () => true,
+            "Auto-promote winner candidate as active baseline when policy checks pass.");
+        var policyFileOpt = new Option<string?>(
+            "--policy-file",
+            () => null,
+            "Optional workflow gate policy JSON used for winner promotion checks.");
+        var reportOutputOpt = new Option<string?>(
+            "--report-output",
+            () => null,
+            "Optional recommendation report output path (.md, .txt, .json).");
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
+        var verboseOpt = new Option<bool>("--verbose", () => false, "Emit orchestrator progress output.");
+
+        optimize.AddOption(requestOverrideOpt);
+        optimize.AddOption(specPathOpt);
+        optimize.AddOption(specJsonOpt);
+        optimize.AddOption(providerOpt);
+        optimize.AddOption(preferOpt);
+        optimize.AddOption(iterationsOverrideOpt);
+        optimize.AddOption(benchmarkSetOpt);
+        optimize.AddOption(persistHistoryOpt);
+        optimize.AddOption(warmupRunsOpt);
+        optimize.AddOption(shuffleScenariosOpt);
+        optimize.AddOption(randomSeedOpt);
+        optimize.AddOption(cooldownMsOpt);
+        optimize.AddOption(maxCandidatesOpt);
+        optimize.AddOption(autoPullModelsOpt);
+        optimize.AddOption(promoteWinnerOpt);
+        optimize.AddOption(policyFileOpt);
+        optimize.AddOption(reportOutputOpt);
+        optimize.AddOption(jsonOpt);
+        optimize.AddOption(verboseOpt);
+        optimize.SetHandler((InvocationContext ctx) =>
+        {
+            var exitCode = ExecuteOptimizeAsync(
+                ctx.ParseResult.GetValueForOption(requestOverrideOpt),
+                ctx.ParseResult.GetValueForOption(specPathOpt),
+                ctx.ParseResult.GetValueForOption(specJsonOpt),
+                ctx.ParseResult.GetValueForOption(providerOpt),
+                ctx.ParseResult.GetValueForOption(preferOpt),
+                ctx.ParseResult.GetValueForOption(iterationsOverrideOpt),
+                ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
+                ctx.ParseResult.GetValueForOption(persistHistoryOpt),
+                ctx.ParseResult.GetValueForOption(warmupRunsOpt),
+                ctx.ParseResult.GetValueForOption(shuffleScenariosOpt),
+                ctx.ParseResult.GetValueForOption(randomSeedOpt),
+                ctx.ParseResult.GetValueForOption(cooldownMsOpt),
+                ctx.ParseResult.GetValueForOption(maxCandidatesOpt),
+                ctx.ParseResult.GetValueForOption(autoPullModelsOpt),
+                ctx.ParseResult.GetValueForOption(promoteWinnerOpt),
+                ctx.ParseResult.GetValueForOption(policyFileOpt),
+                ctx.ParseResult.GetValueForOption(reportOutputOpt),
+                ctx.ParseResult.GetValueForOption(jsonOpt),
+                ctx.ParseResult.GetValueForOption(verboseOpt),
+                ctx.GetCancellationToken()).GetAwaiter().GetResult();
+            ctx.ExitCode = exitCode;
+        });
+        AddCommand(optimize);
     }
 
     internal Task<int> ExecuteScaffoldAsync(string outputPath, bool force, bool json)
@@ -1004,6 +1141,726 @@ public sealed class WorkflowCommand : Command
             persistHistory);
         WriteStressResult(result, json);
         return result.Ok ? 0 : 1;
+    }
+
+    internal async Task<int> ExecuteOptimizeAsync(
+        string? requestOverride,
+        string? specPath,
+        string? specJson,
+        string? providerOverride,
+        string? preferOverride,
+        int? iterationsOverride,
+        string? benchmarkSetOverride,
+        bool? persistHistoryOverride,
+        int? warmupRunsOverride,
+        bool? shuffleScenariosOverride,
+        int? randomSeedOverride,
+        int? cooldownMsOverride,
+        int maxCandidates,
+        bool autoPullModels,
+        bool promoteWinner,
+        string? policyFile,
+        string? reportOutputPath,
+        bool json,
+        bool verbose,
+        CancellationToken ct)
+    {
+        var resolvedSpecPath = ResolveDefaultSpecPath(specPath);
+        WorkflowLabRuntimeSpec spec;
+        try
+        {
+            spec = WorkflowLabRuntimeSpecLoader.Load(resolvedSpecPath, specJson);
+        }
+        catch (Exception ex)
+        {
+            WriteOptimizeResult(new WorkflowOptimizeResult(false, $"Failed to load workflow lab spec: {ex.Message}"), json);
+            return 1;
+        }
+
+        var repoRoot = Environment.CurrentDirectory;
+        var requests = NormalizeRequests(spec.Requests);
+        var compositions = NormalizeCompositions(spec.Compositions);
+        var profiles = NormalizeProfiles(spec.ModelProfiles, providerOverride, preferOverride);
+        if (requests.Length == 0 || compositions.Length == 0 || profiles.Length == 0)
+        {
+            WriteOptimizeResult(new WorkflowOptimizeResult(
+                false,
+                "Workflow optimize spec must include at least one request, composition, and model profile."), json);
+            return 1;
+        }
+
+        var benchmarkSet = NormalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
+        var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
+        var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
+        var warmupRuns = Math.Max(0, warmupRunsOverride ?? spec.Execution.WarmupRuns);
+        var cooldownMs = Math.Max(0, cooldownMsOverride ?? spec.Execution.CooldownMs);
+        var shuffleScenarios = shuffleScenariosOverride ?? spec.Execution.ShuffleScenarioOrder;
+        var randomSeed = randomSeedOverride ?? spec.Execution.RandomSeed;
+        var rng = randomSeed.HasValue ? new Random(randomSeed.Value) : null;
+        var sharedRequest = string.IsNullOrWhiteSpace(requestOverride) ? null : requestOverride.Trim();
+        var optimizeRunId = BuildRunId();
+        var specHash = ComputeSpecHash(JsonSerializer.Serialize(spec));
+        var gitSha = ResolveGitSha();
+        var providerSnapshot = BuildProviderSnapshot(profiles);
+
+        var scenarioPlans = BuildScenarioPlans(requests, compositions, profiles, iterations);
+        var groupedCandidates = scenarioPlans
+            .GroupBy(
+                x => $"{x.Request.Id}::{x.Composition.Id}::{x.Profile.Id}",
+                StringComparer.OrdinalIgnoreCase)
+            .Select(g => new OptimizeCandidatePlan(
+                g.Key,
+                g.First().Request,
+                g.First().Composition,
+                g.First().Profile,
+                g.OrderBy(x => x.Iteration).ToArray()))
+            .ToList();
+
+        if (shuffleScenarios && groupedCandidates.Count > 1)
+            ShuffleOptimizeCandidates(groupedCandidates, rng ?? new Random());
+
+        var maxCandidateCount = Math.Max(1, maxCandidates);
+        if (groupedCandidates.Count > maxCandidateCount)
+            groupedCandidates = groupedCandidates.Take(maxCandidateCount).ToList();
+
+        var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
+        foreach (var provider in profiles
+                     .Select(x => x.Default.Provider)
+                     .Where(x => !string.IsNullOrWhiteSpace(x))
+                     .Select(x => x!.Trim())
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
+        }
+
+        var candidates = new List<WorkflowOptimizeCandidate>();
+        var persistedRows = new List<WorkflowLabStressHistoryRow>();
+        for (var candidateIndex = 0; candidateIndex < groupedCandidates.Count; candidateIndex++)
+        {
+            ct.ThrowIfCancellationRequested();
+            var candidate = groupedCandidates[candidateIndex];
+            var candidateRunId = $"{optimizeRunId}-c{candidateIndex + 1:D2}";
+            var profileProvider = candidate.Profile.Default.Provider?.Trim();
+            var requiredModels = ResolveOllamaModelsForCandidate(candidate.Composition, candidate.Profile);
+            var pullResult = autoPullModels
+                ? await _ollamaModelPuller(requiredModels, ct).ConfigureAwait(false)
+                : new ModelPullResult(
+                    Ok: true,
+                    Summary: "Model auto-pull disabled.",
+                    Models: requiredModels,
+                    PulledModels: Array.Empty<string>());
+
+            var runs = new List<WorkflowStressRunRecord>();
+            foreach (var plan in candidate.Plans)
+            {
+                var request = plan.Request;
+                var composition = plan.Composition;
+                var profile = plan.Profile;
+                var iteration = plan.Iteration;
+                var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, iteration);
+                var runtime = BuildRuntimeSpec(composition, profile);
+                var runtimeJson = JsonSerializer.Serialize(runtime);
+                var runtimeExecutionRequest = BuildExecutionRequest(request, composition, profile, sharedRequest);
+
+                for (var warmup = 0; warmup < warmupRuns; warmup++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (!pullResult.Ok)
+                        break;
+                    if (!string.IsNullOrWhiteSpace(profileProvider) &&
+                        preflightByProvider.TryGetValue(profileProvider, out var warmupPreflight) &&
+                        !warmupPreflight.Ok)
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        _ = await _scenarioExecutor(
+                            runtimeExecutionRequest,
+                            runtimeJson,
+                            profile.Default.Provider,
+                            true,
+                            verbose,
+                            ct).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // Warmups are intentionally ignored in persisted metrics.
+                    }
+                }
+
+                ct.ThrowIfCancellationRequested();
+                var startedAt = DateTimeOffset.UtcNow;
+                var sw = Stopwatch.StartNew();
+                ScenarioExecutionResult scenario;
+                if (!pullResult.Ok)
+                {
+                    scenario = new ScenarioExecutionResult(
+                        Ok: true,
+                        Summary: $"Skipped due to model pull failure: {pullResult.Summary}",
+                        ConflictCount: 0,
+                        EscalationCount: 0,
+                        FailureCategory: "skipped_infra",
+                        Skipped: true);
+                }
+                else if (!string.IsNullOrWhiteSpace(profileProvider) &&
+                         preflightByProvider.TryGetValue(profileProvider, out var preflight) &&
+                         !preflight.Ok)
+                {
+                    scenario = new ScenarioExecutionResult(
+                        Ok: true,
+                        Summary: $"Skipped due to provider preflight failure ({profileProvider}): {preflight.Detail}",
+                        ConflictCount: 0,
+                        EscalationCount: 0,
+                        FailureCategory: "skipped_infra",
+                        Skipped: true);
+                }
+                else
+                {
+                    try
+                    {
+                        scenario = await _scenarioExecutor(
+                            runtimeExecutionRequest,
+                            runtimeJson,
+                            profile.Default.Provider,
+                            true,
+                            verbose,
+                            ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        scenario = new ScenarioExecutionResult(
+                            Ok: false,
+                            Summary: $"Scenario executor failed: {ex.Message}",
+                            ConflictCount: 0,
+                            EscalationCount: 0,
+                            FailureCategory: "executor_failure");
+                    }
+                }
+
+                var elapsedMs = sw.ElapsedMilliseconds;
+                var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
+                var runRecord = new WorkflowStressRunRecord(
+                    candidateRunId,
+                    gitSha,
+                    specHash,
+                    providerSnapshot,
+                    scenarioId,
+                    request.Id,
+                    composition.Id,
+                    profile.Id,
+                    iteration,
+                    scenario.Ok,
+                    composition.Roles.Count,
+                    scenario.ConflictCount,
+                    scenario.EscalationCount,
+                    elapsedMs,
+                    score,
+                    scenario.Summary,
+                    scenario.FailureCategory,
+                    scenario.Skipped,
+                    startedAt,
+                    benchmarkSet);
+                runs.Add(runRecord);
+
+                var historyRow = new WorkflowLabStressHistoryRow
+                {
+                    RunId = runRecord.RunId,
+                    GitSha = runRecord.GitSha,
+                    SpecHash = runRecord.SpecHash,
+                    ProviderSnapshot = runRecord.ProviderSnapshot,
+                    ScenarioId = runRecord.ScenarioId,
+                    RequestId = runRecord.RequestId,
+                    CompositionId = runRecord.CompositionId,
+                    ModelProfileId = runRecord.ModelProfileId,
+                    Iteration = runRecord.Iteration,
+                    StartedAtUtc = runRecord.StartedAtUtc,
+                    ElapsedMs = runRecord.ElapsedMs,
+                    Success = runRecord.Success,
+                    AgentCount = runRecord.AgentCount,
+                    ConflictCount = runRecord.ConflictCount,
+                    EscalationCount = runRecord.EscalationCount,
+                    Score = runRecord.Score,
+                    Summary = runRecord.Summary,
+                    Skipped = runRecord.Skipped,
+                    FailureCategory = runRecord.FailureCategory,
+                    BenchmarkSet = runRecord.BenchmarkSet
+                };
+                if (persistHistory)
+                    WorkflowLabHistoryStore.Append(repoRoot, historyRow);
+                persistedRows.Add(historyRow);
+
+                if (cooldownMs > 0)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(cooldownMs), ct).ConfigureAwait(false);
+                }
+            }
+
+            var successCount = runs.Count(x => x.Success);
+            var failureCount = runs.Count(x => !x.Success && !x.Skipped);
+            var skippedCount = runs.Count(x => x.Skipped);
+            var successRate = runs.Count == 0 ? 0d : Math.Round((double)successCount / runs.Count, 4);
+            var avgLatency = runs.Count == 0
+                ? 0L
+                : (long)Math.Round(runs.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
+            var p95Latency = runs.Count == 0 ? 0L : ComputePercentile(runs.Select(x => x.ElapsedMs), 0.95);
+            var avgScore = runs.Count == 0
+                ? 0d
+                : Math.Round(runs.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+            candidates.Add(new WorkflowOptimizeCandidate(
+                CandidateId: candidate.CandidateId,
+                RunId: candidateRunId,
+                RequestId: candidate.Request.Id,
+                CompositionId: candidate.Composition.Id,
+                ModelProfileId: candidate.Profile.Id,
+                TotalRuns: runs.Count,
+                Successes: successCount,
+                Failures: failureCount,
+                Skipped: skippedCount,
+                SuccessRate: successRate,
+                AverageLatencyMs: avgLatency,
+                P95LatencyMs: p95Latency,
+                AverageScore: avgScore,
+                Models: requiredModels,
+                AutoPullSummary: pullResult.Summary,
+                AutoPullOk: pullResult.Ok));
+        }
+
+        if (candidates.Count == 0)
+        {
+            WriteOptimizeResult(new WorkflowOptimizeResult(false, "No optimize candidates were generated."), json);
+            return 1;
+        }
+
+        var ranked = candidates
+            .OrderByDescending(x => x.SuccessRate)
+            .ThenByDescending(x => x.AverageScore)
+            .ThenBy(x => x.P95LatencyMs)
+            .ThenBy(x => x.AverageLatencyMs)
+            .ToArray();
+        var winner = ranked[0];
+        var recommendations = BuildOptimizeRecommendations(ranked);
+
+        string? promotionSummary = null;
+        string? promotedBaselineId = null;
+        if (promoteWinner && persistHistory)
+        {
+            var policyLoad = LoadGatePolicy(policyFile);
+            if (!policyLoad.Ok)
+            {
+                promotionSummary = $"Promotion skipped: {policyLoad.Error}";
+            }
+            else
+            {
+                var effectiveMinSuccessRateDelta = policyLoad.Policy?.MinSuccessRateDelta ?? -0.05;
+                var effectiveMaxP95LatencyRegressionMs = policyLoad.Policy?.MaxP95LatencyRegressionMs ?? 250;
+                var effectiveMaxAverageLatencyRegressionMs = policyLoad.Policy?.MaxAverageLatencyRegressionMs ?? 150;
+                var effectiveMinAverageScoreDelta = policyLoad.Policy?.MinAverageScoreDelta ?? -5.0;
+                var effectiveMaxRegressedScenarios = policyLoad.Policy?.MaxRegressedScenarios ?? 2;
+                var activeBaseline = WorkflowBaselineStore.ReadActive(repoRoot, benchmarkSet);
+                if (activeBaseline is not null)
+                {
+                    var history = WorkflowLabHistoryStore.ReadAll(repoRoot)
+                        .Where(x => string.Equals(x.BenchmarkSet, benchmarkSet, StringComparison.OrdinalIgnoreCase))
+                        .ToArray();
+                    var comparison = BuildComparison(history, winner.RunId, activeBaseline.RunId);
+                    if (!comparison.Valid)
+                    {
+                        promotionSummary = $"Promotion skipped: failed to compare against active baseline {activeBaseline.RunId}.";
+                    }
+                    else
+                    {
+                        var failures = new List<string>();
+                        if (comparison.SuccessRateDelta < effectiveMinSuccessRateDelta)
+                            failures.Add("success-rate");
+                        if (comparison.P95LatencyDeltaMs > effectiveMaxP95LatencyRegressionMs)
+                            failures.Add("p95-latency");
+                        if (comparison.AverageLatencyDeltaMs > effectiveMaxAverageLatencyRegressionMs)
+                            failures.Add("avg-latency");
+                        if (comparison.AverageScoreDelta < effectiveMinAverageScoreDelta)
+                            failures.Add("avg-score");
+                        if (comparison.RegressedScenarios > effectiveMaxRegressedScenarios)
+                            failures.Add("regressed-scenarios");
+
+                        if (failures.Count > 0)
+                        {
+                            promotionSummary =
+                                $"Promotion skipped: winner failed policy gates versus baseline {activeBaseline.RunId} ({string.Join(", ", failures)}).";
+                        }
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(promotionSummary))
+                {
+                    var winnerRows = persistedRows
+                        .Where(x => string.Equals(x.RunId, winner.RunId, StringComparison.OrdinalIgnoreCase))
+                        .ToArray();
+                    if (winnerRows.Length == 0)
+                    {
+                        promotionSummary = "Promotion skipped: winner rows missing from history.";
+                    }
+                    else
+                    {
+                        var latest = winnerRows
+                            .OrderByDescending(x => x.StartedAtUtc)
+                            .First();
+                        var promoted = new WorkflowBaselineRecord
+                        {
+                            BaselineId = BuildBaselineId(benchmarkSet, winner.RunId),
+                            BenchmarkSet = benchmarkSet,
+                            RunId = winner.RunId,
+                            GitSha = latest.GitSha ?? "unknown",
+                            SpecHash = latest.SpecHash ?? "unknown",
+                            ProviderSnapshot = latest.ProviderSnapshot ?? "unknown",
+                            PromotedAtUtc = DateTimeOffset.UtcNow,
+                            Active = true,
+                            Notes = $"auto-promoted by workflow optimize ({optimizeRunId})",
+                            Policy = policyLoad.Policy is null
+                                ? null
+                                : new WorkflowGatePolicySpec
+                                {
+                                    BenchmarkSet = policyLoad.Policy.BenchmarkSet,
+                                    MinSuccessRateDelta = policyLoad.Policy.MinSuccessRateDelta,
+                                    MaxP95LatencyRegressionMs = policyLoad.Policy.MaxP95LatencyRegressionMs,
+                                    MaxAverageLatencyRegressionMs = policyLoad.Policy.MaxAverageLatencyRegressionMs,
+                                    MinAverageScoreDelta = policyLoad.Policy.MinAverageScoreDelta,
+                                    MaxRegressedScenarios = policyLoad.Policy.MaxRegressedScenarios
+                                }
+                        };
+                        WorkflowBaselineStore.Promote(repoRoot, promoted);
+                        promotedBaselineId = promoted.BaselineId;
+                        promotionSummary = $"Promoted winner run-id {winner.RunId} as active baseline {promoted.BaselineId}.";
+                    }
+                }
+            }
+        }
+        else if (promoteWinner && !persistHistory)
+        {
+            promotionSummary = "Promotion skipped: persist-history disabled.";
+        }
+
+        var reportPath = ResolveOptimizeReportPath(reportOutputPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
+        var reportContent = RenderOptimizationRecommendationContent(
+            reportPath,
+            optimizeRunId,
+            benchmarkSet,
+            ranked,
+            winner,
+            recommendations,
+            promotionSummary);
+        File.WriteAllText(reportPath, reportContent);
+
+        var hasSuccess = ranked.Any(x => x.Successes > 0);
+        var result = new WorkflowOptimizeResult(
+            Ok: hasSuccess,
+            Summary: hasSuccess
+                ? $"Workflow optimize completed: evaluated {ranked.Length} candidate(s); winner={winner.CandidateId}."
+                : $"Workflow optimize completed with no successful candidates across {ranked.Length} evaluated candidate(s).",
+            SessionRunId: optimizeRunId,
+            BenchmarkSet: benchmarkSet,
+            RecommendationReportPath: reportPath,
+            Candidates: ranked,
+            Winner: winner,
+            Recommendations: recommendations,
+            PromotionSummary: promotionSummary,
+            PromotedBaselineId: promotedBaselineId);
+        WriteOptimizeResult(result, json);
+        return result.Ok ? 0 : 1;
+    }
+
+    private static IReadOnlyList<WorkflowOptimizeRecommendation> BuildOptimizeRecommendations(
+        IReadOnlyList<WorkflowOptimizeCandidate> ranked)
+    {
+        var recommendations = new List<WorkflowOptimizeRecommendation>();
+        if (ranked.Count == 0)
+            return recommendations;
+
+        var winner = ranked[0];
+        recommendations.Add(new WorkflowOptimizeRecommendation(
+            Kind: "winner",
+            Action: "promote",
+            CandidateId: winner.CandidateId,
+            Rationale:
+            $"Highest rank by success-rate/score/latency (success-rate {winner.SuccessRate:P1}, avg-score {winner.AverageScore:F2}, p95 {winner.P95LatencyMs} ms)."));
+
+        var stable = ranked
+            .Where(x => x.SuccessRate >= 0.8 && x.AutoPullOk)
+            .OrderByDescending(x => x.SuccessRate)
+            .ThenBy(x => x.P95LatencyMs)
+            .ThenByDescending(x => x.AverageScore)
+            .FirstOrDefault();
+        if (stable is not null && !string.Equals(stable.CandidateId, winner.CandidateId, StringComparison.OrdinalIgnoreCase))
+        {
+            recommendations.Add(new WorkflowOptimizeRecommendation(
+                Kind: "stable-alternative",
+                Action: "consider",
+                CandidateId: stable.CandidateId,
+                Rationale: $"Alternative stable candidate with success-rate {stable.SuccessRate:P1} and p95 {stable.P95LatencyMs} ms."));
+        }
+
+        foreach (var pullFailed in ranked.Where(x => !x.AutoPullOk).Take(3))
+        {
+            recommendations.Add(new WorkflowOptimizeRecommendation(
+                Kind: "infra-remediation",
+                Action: "fix",
+                CandidateId: pullFailed.CandidateId,
+                Rationale: $"Model pull failed for candidate ({pullFailed.AutoPullSummary}); install or pull required models first."));
+        }
+
+        foreach (var weak in ranked.Where(x => x.Failures > 0).OrderByDescending(x => x.Failures).Take(3))
+        {
+            recommendations.Add(new WorkflowOptimizeRecommendation(
+                Kind: "avoid",
+                Action: "de-prioritize",
+                CandidateId: weak.CandidateId,
+                Rationale: $"Candidate observed {weak.Failures} measured failures over {weak.TotalRuns} runs."));
+        }
+
+        return recommendations;
+    }
+
+    private static IReadOnlyList<string> ResolveOllamaModelsForCandidate(
+        WorkflowLabCompositionSpec composition,
+        WorkflowLabModelProfileSpec profile)
+    {
+        var models = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        static void AddModel(HashSet<string> target, string? model)
+        {
+            if (string.IsNullOrWhiteSpace(model))
+                return;
+            target.Add(model.Trim());
+        }
+
+        if (string.Equals(profile.Default.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
+            AddModel(models, profile.Default.Model);
+
+        foreach (var runtime in profile.Agents.Values)
+        {
+            if (!string.Equals(runtime.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
+                continue;
+            AddModel(models, runtime.Model);
+        }
+
+        foreach (var role in composition.Roles)
+        {
+            AddModel(models, role.OllamaModel);
+            if (profile.AgentModelHints.TryGetValue(role.AgentId, out var hint))
+                AddModel(models, hint);
+            if (profile.Agents.TryGetValue(role.AgentId, out var runtime) &&
+                string.Equals(runtime.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
+            {
+                AddModel(models, runtime.Model);
+            }
+        }
+
+        return models
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string ResolveOptimizeReportPath(string? reportOutputPath)
+    {
+        if (!string.IsNullOrWhiteSpace(reportOutputPath))
+            return Path.GetFullPath(reportOutputPath);
+
+        return Path.Combine(
+            Environment.CurrentDirectory,
+            ".nexo",
+            "workflow",
+            "optimize_recommendation_report.md");
+    }
+
+    private static string RenderOptimizationRecommendationContent(
+        string reportPath,
+        string sessionRunId,
+        string benchmarkSet,
+        IReadOnlyList<WorkflowOptimizeCandidate> ranked,
+        WorkflowOptimizeCandidate winner,
+        IReadOnlyList<WorkflowOptimizeRecommendation> recommendations,
+        string? promotionSummary)
+    {
+        var extension = Path.GetExtension(reportPath).Trim().ToLowerInvariant();
+        if (extension == ".json")
+        {
+            return JsonSerializer.Serialize(new
+            {
+                generatedAtUtc = DateTimeOffset.UtcNow,
+                sessionRunId,
+                benchmarkSet,
+                winner,
+                candidates = ranked,
+                recommendations,
+                promotionSummary
+            }, new JsonSerializerOptions { WriteIndented = true });
+        }
+
+        if (extension == ".txt")
+            return RenderOptimizationRecommendationText(sessionRunId, benchmarkSet, ranked, winner, recommendations, promotionSummary);
+
+        return RenderOptimizationRecommendationMarkdown(sessionRunId, benchmarkSet, ranked, winner, recommendations, promotionSummary);
+    }
+
+    private static string RenderOptimizationRecommendationMarkdown(
+        string sessionRunId,
+        string benchmarkSet,
+        IReadOnlyList<WorkflowOptimizeCandidate> ranked,
+        WorkflowOptimizeCandidate winner,
+        IReadOnlyList<WorkflowOptimizeRecommendation> recommendations,
+        string? promotionSummary)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("# Workflow Optimize Recommendation Report");
+        sb.AppendLine();
+        sb.AppendLine($"Generated: {DateTimeOffset.UtcNow:O}");
+        sb.AppendLine($"Session run-id: {sessionRunId}");
+        sb.AppendLine($"Benchmark set: {benchmarkSet}");
+        sb.AppendLine();
+        sb.AppendLine("## Winner");
+        sb.AppendLine($"- Candidate: `{winner.CandidateId}`");
+        sb.AppendLine($"- Run-id: `{winner.RunId}`");
+        sb.AppendLine($"- Success rate: {winner.SuccessRate:P1}");
+        sb.AppendLine($"- Avg score: {winner.AverageScore:F2}");
+        sb.AppendLine($"- Avg latency: {winner.AverageLatencyMs} ms");
+        sb.AppendLine($"- P95 latency: {winner.P95LatencyMs} ms");
+        sb.AppendLine($"- Models: {(winner.Models.Count == 0 ? "none" : string.Join(", ", winner.Models))}");
+        sb.AppendLine($"- Auto-pull: {(winner.AutoPullOk ? "ok" : "failed")} ({winner.AutoPullSummary})");
+        sb.AppendLine();
+        sb.AppendLine("## Ranked Candidates");
+        foreach (var candidate in ranked)
+        {
+            sb.AppendLine(
+                $"- `{candidate.CandidateId}` | run `{candidate.RunId}` | success {candidate.SuccessRate:P1} | score {candidate.AverageScore:F2} | avg {candidate.AverageLatencyMs} ms | p95 {candidate.P95LatencyMs} ms | pull {(candidate.AutoPullOk ? "ok" : "failed")}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("## Recommendations");
+        foreach (var recommendation in recommendations)
+        {
+            sb.AppendLine(
+                $"- `{recommendation.Kind}` [{recommendation.Action}] {(string.IsNullOrWhiteSpace(recommendation.CandidateId) ? "" : recommendation.CandidateId + " — ")}{recommendation.Rationale}");
+        }
+
+        sb.AppendLine();
+        sb.AppendLine("## Promotion");
+        sb.AppendLine($"- {promotionSummary ?? "Promotion was not requested."}");
+        return sb.ToString();
+    }
+
+    private static string RenderOptimizationRecommendationText(
+        string sessionRunId,
+        string benchmarkSet,
+        IReadOnlyList<WorkflowOptimizeCandidate> ranked,
+        WorkflowOptimizeCandidate winner,
+        IReadOnlyList<WorkflowOptimizeRecommendation> recommendations,
+        string? promotionSummary)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("Workflow Optimize Recommendation Report");
+        sb.AppendLine($"Generated: {DateTimeOffset.UtcNow:O}");
+        sb.AppendLine($"Session run-id: {sessionRunId}");
+        sb.AppendLine($"Benchmark set: {benchmarkSet}");
+        sb.AppendLine($"Winner: {winner.CandidateId} ({winner.RunId}) success={winner.SuccessRate:P1}, score={winner.AverageScore:F2}, avg={winner.AverageLatencyMs}ms, p95={winner.P95LatencyMs}ms");
+        sb.AppendLine("Ranked candidates:");
+        foreach (var candidate in ranked)
+        {
+            sb.AppendLine(
+                $"- {candidate.CandidateId}: run={candidate.RunId}, success={candidate.SuccessRate:P1}, score={candidate.AverageScore:F2}, avg={candidate.AverageLatencyMs}ms, p95={candidate.P95LatencyMs}ms, pull={(candidate.AutoPullOk ? "ok" : "failed")}");
+        }
+
+        sb.AppendLine("Recommendations:");
+        foreach (var recommendation in recommendations)
+        {
+            sb.AppendLine(
+                $"- [{recommendation.Action}] {recommendation.Kind} {(string.IsNullOrWhiteSpace(recommendation.CandidateId) ? "" : recommendation.CandidateId + ": ")}{recommendation.Rationale}");
+        }
+
+        sb.AppendLine($"Promotion: {promotionSummary ?? "Promotion was not requested."}");
+        return sb.ToString();
+    }
+
+    private static async Task<ModelPullResult> PullOllamaModelsAsync(
+        IReadOnlyList<string> models,
+        CancellationToken ct)
+    {
+        var requested = (models ?? Array.Empty<string>())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (requested.Length == 0)
+        {
+            return new ModelPullResult(
+                Ok: true,
+                Summary: "No Ollama models required for this candidate.",
+                Models: requested,
+                PulledModels: Array.Empty<string>(),
+                FailedModels: Array.Empty<string>());
+        }
+
+        var pulled = new List<string>();
+        var failed = new List<string>();
+        foreach (var model in requested)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo("ollama")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardError = false,
+                        RedirectStandardOutput = false,
+                        CreateNoWindow = true
+                    }
+                };
+                process.StartInfo.ArgumentList.Add("pull");
+                process.StartInfo.ArgumentList.Add(model);
+                if (!process.Start())
+                {
+                    failed.Add(model);
+                    continue;
+                }
+
+                await process.WaitForExitAsync(ct).ConfigureAwait(false);
+                if (process.ExitCode == 0)
+                    pulled.Add(model);
+                else
+                    failed.Add(model);
+            }
+            catch
+            {
+                failed.Add(model);
+            }
+        }
+
+        var ok = failed.Count == 0;
+        var summary = ok
+            ? $"Pulled {pulled.Count} Ollama model(s): {string.Join(", ", pulled)}."
+            : $"Pulled {pulled.Count}/{requested.Length} Ollama model(s); failed: {string.Join(", ", failed)}.";
+        return new ModelPullResult(
+            Ok: ok,
+            Summary: summary,
+            Models: requested,
+            PulledModels: pulled.ToArray(),
+            FailedModels: failed.ToArray());
+    }
+
+    private static void ShuffleOptimizeCandidates(IReadOnlyList<OptimizeCandidatePlan> candidates, Random rng)
+    {
+        if (candidates is not List<OptimizeCandidatePlan> list)
+            return;
+
+        for (var i = list.Count - 1; i > 0; i--)
+        {
+            var j = rng.Next(i + 1);
+            (list[i], list[j]) = (list[j], list[i]);
+        }
     }
 
     private static string BuildExecutionRequest(
@@ -1969,6 +2826,51 @@ public sealed class WorkflowCommand : Command
         }
     }
 
+    private static void WriteOptimizeResult(WorkflowOptimizeResult result, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = result.Ok,
+                summary = result.Summary,
+                sessionRunId = result.SessionRunId,
+                benchmarkSet = result.BenchmarkSet,
+                recommendationReportPath = result.RecommendationReportPath,
+                winner = result.Winner,
+                recommendations = result.Recommendations,
+                promotionSummary = result.PromotionSummary,
+                promotedBaselineId = result.PromotedBaselineId,
+                candidates = result.Candidates
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.WriteLine($"workflow optimize: {(result.Ok ? "ok" : "failed")}");
+        Console.WriteLine(result.Summary);
+        if (!string.IsNullOrWhiteSpace(result.SessionRunId))
+            Console.WriteLine($"  session-run-id={result.SessionRunId}");
+        if (!string.IsNullOrWhiteSpace(result.BenchmarkSet))
+            Console.WriteLine($"  benchmark-set={result.BenchmarkSet}");
+        if (!string.IsNullOrWhiteSpace(result.RecommendationReportPath))
+            Console.WriteLine($"  recommendation-report={result.RecommendationReportPath}");
+        if (result.Winner is not null)
+        {
+            Console.WriteLine(
+                $"  winner={result.Winner.CandidateId} (run-id={result.Winner.RunId}, success-rate={result.Winner.SuccessRate:P1}, avg-score={result.Winner.AverageScore:F2}, p95={result.Winner.P95LatencyMs}ms)");
+        }
+        if (result.Recommendations is { Count: > 0 })
+        {
+            Console.WriteLine("  recommendations:");
+            foreach (var recommendation in result.Recommendations)
+                Console.WriteLine($"    - [{recommendation.Action}] {recommendation.Kind}: {recommendation.Rationale}");
+        }
+        if (!string.IsNullOrWhiteSpace(result.PromotionSummary))
+            Console.WriteLine($"  promotion={result.PromotionSummary}");
+        if (!string.IsNullOrWhiteSpace(result.PromotedBaselineId))
+            Console.WriteLine($"  promoted-baseline-id={result.PromotedBaselineId}");
+    }
+
     private static void WriteGateResult(WorkflowGateResult result, bool json)
     {
         if (json)
@@ -2135,6 +3037,42 @@ public sealed class WorkflowCommand : Command
         string? BenchmarkSet = null,
         bool? PersistHistory = null);
 
+    private sealed record WorkflowOptimizeCandidate(
+        string CandidateId,
+        string RunId,
+        string RequestId,
+        string CompositionId,
+        string ModelProfileId,
+        int TotalRuns,
+        int Successes,
+        int Failures,
+        int Skipped,
+        double SuccessRate,
+        long AverageLatencyMs,
+        long P95LatencyMs,
+        double AverageScore,
+        IReadOnlyList<string> Models,
+        string AutoPullSummary,
+        bool AutoPullOk);
+
+    private sealed record WorkflowOptimizeRecommendation(
+        string Kind,
+        string Action,
+        string CandidateId,
+        string Rationale);
+
+    private sealed record WorkflowOptimizeResult(
+        bool Ok,
+        string Summary,
+        string? SessionRunId = null,
+        string? BenchmarkSet = null,
+        string? RecommendationReportPath = null,
+        IReadOnlyList<WorkflowOptimizeCandidate>? Candidates = null,
+        WorkflowOptimizeCandidate? Winner = null,
+        IReadOnlyList<WorkflowOptimizeRecommendation>? Recommendations = null,
+        string? PromotionSummary = null,
+        string? PromotedBaselineId = null);
+
     private sealed record WorkflowHistorySummary(
         int Total,
         int Success,
@@ -2267,11 +3205,25 @@ public sealed class WorkflowCommand : Command
         WorkflowGatePolicy? Policy,
         string? Error);
 
+    private sealed record OptimizeCandidatePlan(
+        string CandidateId,
+        WorkflowLabRequestSpec Request,
+        WorkflowLabCompositionSpec Composition,
+        WorkflowLabModelProfileSpec Profile,
+        IReadOnlyList<ScenarioPlan> Plans);
+
     private sealed record ScenarioPlan(
         WorkflowLabRequestSpec Request,
         WorkflowLabCompositionSpec Composition,
         WorkflowLabModelProfileSpec Profile,
         int Iteration);
+
+    internal sealed record ModelPullResult(
+        bool Ok,
+        string Summary,
+        IReadOnlyList<string> Models,
+        IReadOnlyList<string> PulledModels,
+        IReadOnlyList<string>? FailedModels = null);
 
     internal sealed record ScenarioExecutionResult(
         bool Ok,
