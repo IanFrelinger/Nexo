@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.BrickContracts;
 using Nexo.Core.Application.Execution.Routing;
@@ -279,81 +279,109 @@ public sealed class NexoPeerBrickExecutor : IPeerExecutor
             return false;
         }
 
-        if (!TryReadBooleanProperty(responseJson, "success", out var success))
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(responseJson);
+        }
+        catch (JsonException)
         {
             error = new Error
             {
                 Code = "peer.invalid_response",
-                Message = "Peer execution response did not include a success flag."
+                Message = "Peer execution response is not valid JSON."
             };
             return false;
         }
 
-        var summary = TryReadStringProperty(responseJson, "summary") ?? string.Empty;
-        var remoteError = TryReadStringProperty(responseJson, "error") ?? string.Empty;
-        if (!success)
+        using (document)
         {
-            result = new PeerExecutionParseResult(
-                false,
-                Array.Empty<byte>(),
-                string.Empty,
-                summary,
-                string.IsNullOrWhiteSpace(remoteError) ? "Peer execution failed." : remoteError);
+            var root = document.RootElement;
+            if (!TryReadBooleanProperty(root, "success", out var success))
+            {
+                error = new Error
+                {
+                    Code = "peer.invalid_response",
+                    Message = "Peer execution response did not include a success flag."
+                };
+                return false;
+            }
+
+            var summary = TryReadStringProperty(root, "summary") ?? string.Empty;
+            var remoteError = TryReadStringProperty(root, "error")
+                ?? TryReadStringProperty(root, "errorMessage")
+                ?? string.Empty;
+            if (!success)
+            {
+                result = new PeerExecutionParseResult(
+                    false,
+                    Array.Empty<byte>(),
+                    string.Empty,
+                    summary,
+                    string.IsNullOrWhiteSpace(remoteError) ? "Peer execution failed." : remoteError);
+                return true;
+            }
+
+            var payloadSource = root;
+            if (!TryReadPayloadBytes(payloadSource, out var payload)
+                && TryGetPropertyIgnoreCase(root, "output", out var outputElement)
+                && outputElement.ValueKind == JsonValueKind.Object)
+            {
+                payloadSource = outputElement;
+            }
+
+            if (!TryReadPayloadBytes(payloadSource, out payload))
+            {
+                error = new Error
+                {
+                    Code = "peer.invalid_output",
+                    Message = "Peer execution response did not include a valid payload."
+                };
+                return false;
+            }
+
+            var outputPath = TryReadStringProperty(payloadSource, "outputPath")
+                ?? TryReadStringProperty(root, "outputPath")
+                ?? string.Empty;
+            result = new PeerExecutionParseResult(true, payload, outputPath, summary, string.Empty);
             return true;
         }
+    }
 
-        if (!TryReadPayloadBytes(responseJson, out var payload))
+    private static bool TryReadPayloadBytes(JsonElement root, out byte[] payload)
+    {
+        payload = Array.Empty<byte>();
+        if (!TryGetPropertyIgnoreCase(root, "payload", out var payloadElement))
         {
-            error = new Error
-            {
-                Code = "peer.invalid_output",
-                Message = "Peer execution response did not include a valid payload."
-            };
             return false;
         }
 
-        var outputPath = TryReadStringProperty(responseJson, "outputPath") ?? string.Empty;
-        result = new PeerExecutionParseResult(true, payload, outputPath, summary, string.Empty);
-        return true;
-    }
-
-    private static bool TryReadPayloadBytes(string json, out byte[] payload)
-    {
-        payload = Array.Empty<byte>();
-
-        var wrapperMatch = Regex.Match(
-            json,
-            "\"payload\"\\s*:\\s*\\{[^\\}]*\"base64\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"])*)\"",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline);
-        if (wrapperMatch.Success)
+        if (payloadElement.ValueKind == JsonValueKind.String)
         {
-            return TryDecodeBase64Value(wrapperMatch.Groups["value"].Value, out payload);
+            return TryDecodeBase64Value(payloadElement.GetString(), out payload);
         }
 
-        var stringMatch = Regex.Match(
-            json,
-            "\"payload\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"])*)\"",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline);
-        if (stringMatch.Success)
+        if (payloadElement.ValueKind == JsonValueKind.Object
+            && TryGetPropertyIgnoreCase(payloadElement, "base64", out var base64Element)
+            && base64Element.ValueKind == JsonValueKind.String)
         {
-            return TryDecodeBase64Value(stringMatch.Groups["value"].Value, out payload);
+            return TryDecodeBase64Value(base64Element.GetString(), out payload);
         }
 
         return false;
     }
 
-    private static bool TryDecodeBase64Value(string escapedValue, out byte[] payload)
+    private static bool TryDecodeBase64Value(string? base64Value, out byte[] payload)
     {
         payload = Array.Empty<byte>();
-        var base64 = UnescapeJsonString(escapedValue);
-        if (string.IsNullOrWhiteSpace(base64))
+        if (string.IsNullOrWhiteSpace(base64Value))
         {
             return false;
         }
 
         try
         {
-            payload = Convert.FromBase64String(base64);
+            payload = Convert.FromBase64String(base64Value);
             return payload.Length > 0;
         }
         catch (FormatException)
@@ -560,100 +588,55 @@ public sealed class NexoPeerBrickExecutor : IPeerExecutor
         }
     }
 
-    private static bool TryReadBooleanProperty(string json, string propertyName, out bool value)
+    private static bool TryReadBooleanProperty(JsonElement root, string propertyName, out bool value)
     {
         value = false;
-        var pattern = $"\"{Regex.Escape(propertyName)}\"\\s*:\\s*(?<value>true|false)";
-        var match = Regex.Match(json, pattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-        if (!match.Success)
+        if (!TryGetPropertyIgnoreCase(root, propertyName, out var property))
         {
             return false;
         }
 
-        var text = match.Groups["value"].Value;
-        value = string.Equals(text, "true", StringComparison.OrdinalIgnoreCase);
-        return true;
+        if (property.ValueKind == JsonValueKind.True)
+        {
+            value = true;
+            return true;
+        }
+
+        if (property.ValueKind == JsonValueKind.False)
+        {
+            value = false;
+            return true;
+        }
+
+        return false;
     }
 
-    private static string? TryReadStringProperty(string json, string propertyName)
+    private static string? TryReadStringProperty(JsonElement root, string propertyName)
     {
-        var pattern = $"\"{Regex.Escape(propertyName)}\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"])*)\"";
-        var match = Regex.Match(json, pattern, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-        if (!match.Success)
+        if (!TryGetPropertyIgnoreCase(root, propertyName, out var property))
         {
             return null;
         }
 
-        return UnescapeJsonString(match.Groups["value"].Value);
+        return property.ValueKind == JsonValueKind.String ? property.GetString() : null;
     }
 
-    private static string UnescapeJsonString(string escaped)
+    private static bool TryGetPropertyIgnoreCase(JsonElement root, string propertyName, out JsonElement value)
     {
-        if (string.IsNullOrEmpty(escaped))
+        if (root.ValueKind == JsonValueKind.Object)
         {
-            return string.Empty;
-        }
-
-        var builder = new StringBuilder(escaped.Length);
-        for (var i = 0; i < escaped.Length; i++)
-        {
-            var c = escaped[i];
-            if (c != '\\')
+            foreach (var property in root.EnumerateObject())
             {
-                builder.Append(c);
-                continue;
-            }
-
-            if (i + 1 >= escaped.Length)
-            {
-                break;
-            }
-
-            var next = escaped[++i];
-            switch (next)
-            {
-                case '"':
-                    builder.Append('"');
-                    break;
-                case '\\':
-                    builder.Append('\\');
-                    break;
-                case '/':
-                    builder.Append('/');
-                    break;
-                case 'b':
-                    builder.Append('\b');
-                    break;
-                case 'f':
-                    builder.Append('\f');
-                    break;
-                case 'n':
-                    builder.Append('\n');
-                    break;
-                case 'r':
-                    builder.Append('\r');
-                    break;
-                case 't':
-                    builder.Append('\t');
-                    break;
-                case 'u':
-                    if (i + 4 < escaped.Length)
-                    {
-                        var hex = escaped.Substring(i + 1, 4);
-                        if (ushort.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var code))
-                        {
-                            builder.Append((char)code);
-                            i += 4;
-                        }
-                    }
-                    break;
-                default:
-                    builder.Append(next);
-                    break;
+                if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    value = property.Value;
+                    return true;
+                }
             }
         }
 
-        return builder.ToString();
+        value = default;
+        return false;
     }
 
     private static string EscapeJsonString(string value)

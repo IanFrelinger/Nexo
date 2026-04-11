@@ -198,6 +198,11 @@ foreach (var libProperty in runtime.EnumerateObject())
                 }
             }
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to copy {sourcePath}: {ex.Message}");
+            failed++;
+        }
     }
 }
 

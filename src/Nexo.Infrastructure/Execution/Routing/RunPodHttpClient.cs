@@ -247,7 +247,10 @@ public sealed class RunPodHttpClient : IRunPodClient
         }
 
         if (string.Equals(raw, "failed", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(raw, "error", StringComparison.OrdinalIgnoreCase))
+            string.Equals(raw, "error", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "cancelled", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "canceled", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "aborted", StringComparison.OrdinalIgnoreCase))
         {
             return RunPodJobState.Failed;
         }

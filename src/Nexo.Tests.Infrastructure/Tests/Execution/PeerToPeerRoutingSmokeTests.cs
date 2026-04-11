@@ -139,6 +139,65 @@ public sealed class PeerToPeerRoutingSmokeTests
     }
 
     [Fact]
+    public async Task PeerExecutor_ParsesTopLevelSuccessFlag_IgnoringNestedSuccessFields()
+    {
+        using var httpClient = new HttpClient(new FakeHttpMessageHandler((request, _) =>
+        {
+            var base64 = Convert.ToBase64String([3, 1, 4]);
+            var json = $$"""
+            {
+              "meta": { "success": false, "error": "nested should be ignored" },
+              "success": true,
+              "summary": "peer ok",
+              "output": {
+                "payload": {
+                  "__type": "bytes",
+                  "base64": "{{base64}}"
+                },
+                "outputPath": "/tmp/peer-output.bin"
+              }
+            }
+            """;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json")
+            });
+        }));
+
+        var snapshot = new StaticPeerSnapshot(
+        [
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-top-level",
+                Endpoint = "http://peer-top-level:8080",
+                AvailableVramBytes = 16L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.Extreme,
+                QueueDepth = 0
+            }
+        ]);
+        var config = Options.Create(new RunPodBrickConfig
+        {
+            QueueDepthThreshold = 10,
+            PeerRequestTimeout = TimeSpan.FromSeconds(1),
+            PeerRoutingBrickId = "generation.capability-routing"
+        });
+        var sut = new NexoPeerBrickExecutor(
+            new StaticHttpClientFactory(httpClient),
+            NullLogger<NexoPeerBrickExecutor>.Instance,
+            snapshot,
+            config);
+
+        var result = await sut.ExecuteAsync(
+            new RunPodJobPayload { ModelId = "model-parse", Prompt = "parse test" },
+            new JobRequirements { ModelId = "model-parse", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
+            new TestExecutionContext());
+
+        result.IsSuccess.Should().BeTrue($"{result.Error?.Code}:{result.Error?.Message}:{result.Error?.Detail}");
+        result.Value.Should().NotBeNull();
+        result.Value!.Payload.Should().Equal([3, 1, 4]);
+    }
+
+    [Fact]
     public async Task PeerExecutor_ReturnsAggregatedFailure_WhenAllPeersFail()
     {
         using var httpClient = new HttpClient(new FakeHttpMessageHandler((request, _) =>
