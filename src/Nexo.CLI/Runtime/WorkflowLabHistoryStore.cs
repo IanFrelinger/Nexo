@@ -22,6 +22,13 @@ public sealed record WorkflowLabStressHistoryRow
     public double Score { get; init; }
     public string? Summary { get; init; }
     public bool Skipped { get; init; }
+    public bool Warmup { get; init; }
+    public long CpuTimeDeltaMs { get; init; }
+    public long WorkingSetMb { get; init; }
+    public long PrivateMemoryMb { get; init; }
+    public long ManagedMemoryMb { get; init; }
+    public int ThreadCount { get; init; }
+    public string HardwareProfile { get; init; } = string.Empty;
     public string FailureCategory { get; init; } = "none";
     public string BenchmarkSet { get; init; } = "workflow-lab";
 }
@@ -62,6 +69,34 @@ public static class WorkflowLabHistoryStore
         return parsed
             .OrderByDescending(p => p.StartedAtUtc)
             .Take(maxItems)
+            .ToArray();
+    }
+
+    public static IReadOnlyList<WorkflowLabStressHistoryRow> ReadAll(string repoRoot)
+    {
+        var path = GetPath(repoRoot);
+        if (!File.Exists(path))
+            return Array.Empty<WorkflowLabStressHistoryRow>();
+
+        var parsed = new List<WorkflowLabStressHistoryRow>();
+        foreach (var line in File.ReadLines(path))
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+            try
+            {
+                var item = JsonSerializer.Deserialize<WorkflowLabStressHistoryRow>(line);
+                if (item != null)
+                    parsed.Add(item);
+            }
+            catch
+            {
+                // Keep history resilient to malformed lines.
+            }
+        }
+
+        return parsed
+            .OrderByDescending(p => p.StartedAtUtc)
             .ToArray();
     }
 

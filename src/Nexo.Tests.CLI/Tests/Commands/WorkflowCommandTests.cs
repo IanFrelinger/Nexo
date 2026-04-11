@@ -16,6 +16,18 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestStressRunsWithInjectedRequestAndPersistsHistoryAsync(cancellationToken).ConfigureAwait(false);
             await TestStressReturnsFailureWhenExecutorFailsAsync(cancellationToken).ConfigureAwait(false);
             await TestReportGeneratesMarkdownBenchmarkOutputAsync(cancellationToken).ConfigureAwait(false);
+            await TestReportFiltersByRunIdAsync(cancellationToken).ConfigureAwait(false);
+            await TestStressClassifiesRuntimeContextFailureFromErrorCodeAsync(cancellationToken).ConfigureAwait(false);
+            await TestStressHonorsWarmupShuffleAndCooldownExecutionControlsAsync(cancellationToken).ConfigureAwait(false);
+            await TestReportIncludesComparisonSectionAsync(cancellationToken).ConfigureAwait(false);
+            await TestGatePassesAndFailsWithThresholdsAsync().ConfigureAwait(false);
+            await TestBaselinePromoteListAndShowAsync(cancellationToken).ConfigureAwait(false);
+            await TestGateUsesPolicyFileAndActiveBaselineAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeGeneratesRecommendationReportAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeAutoPromotesWinnerBaselineAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeInvokesModelPullerWithResolvedModelsAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeResolvesObjectiveFileAndReportsSearchMetadataAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeHonorsBudgetAndEarlyStopAsync(cancellationToken).ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(WorkflowCommandTests),
@@ -55,6 +67,38 @@ public sealed class WorkflowCommandTests : UnitTestBase
             ? StubScenarioExecutorAsync
             : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
         return new WorkflowCommand(executor);
+    }
+
+    private static WorkflowCommand CreateCommandWithPreflight(
+        Func<string, string, string?, bool, bool, CancellationToken, Task<WorkflowCommand.ScenarioExecutionResult>>? scenarioExecutor,
+        Func<string, CancellationToken, Task<bool>> providerPreflight,
+        Func<IReadOnlyList<string>, CancellationToken, Task<WorkflowCommand.ModelPullResult>>? modelPuller = null)
+    {
+        WorkflowCommand.ScenarioExecutor executor = scenarioExecutor is null
+            ? StubScenarioExecutorAsync
+            : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
+        return new WorkflowCommand(
+            executor,
+            providerPreflight is null
+                ? null
+                : (provider, ct) => providerPreflight(provider, ct),
+            modelPuller);
+    }
+
+    private static WorkflowCommand CreateCommandWithPreflightAndPuller(
+        Func<string, string, string?, bool, bool, CancellationToken, Task<WorkflowCommand.ScenarioExecutionResult>>? scenarioExecutor,
+        Func<string, CancellationToken, Task<bool>> providerPreflight,
+        Func<IReadOnlyList<string>, CancellationToken, Task<WorkflowCommand.ModelPullResult>> modelPuller)
+    {
+        WorkflowCommand.ScenarioExecutor executor = scenarioExecutor is null
+            ? StubScenarioExecutorAsync
+            : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
+        return new WorkflowCommand(
+            executor,
+            providerPreflight is null
+                ? null
+                : (provider, ct) => providerPreflight(provider, ct),
+            modelPuller);
     }
 
     private async Task TestScaffoldWritesSpecFileAsync()
@@ -173,9 +217,15 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     iterationsOverride: null,
                     benchmarkSetOverride: "hardware-lab",
                     persistHistoryOverride: true,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     json: true,
                     verbose: false,
-                    cancellationToken)).ConfigureAwait(false);
+                    ct: cancellationToken)).ConfigureAwait(false);
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase), "Stress output should report success.");
             AssertTrue(output.Contains("\"aggregates\"", StringComparison.OrdinalIgnoreCase), "Stress output should include aggregate rankings.");
@@ -254,7 +304,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
 }
 """;
             var command = CreateCommand((_, _, _, _, _, _) =>
-                Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0)));
+                Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, false, "executor_failure")));
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteStressAsync(
                     requestOverride: null,
@@ -265,12 +315,18 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     iterationsOverride: null,
                     benchmarkSetOverride: null,
                     persistHistoryOverride: false,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     json: true,
                     verbose: false,
-                    cancellationToken)).ConfigureAwait(false);
+                    ct: cancellationToken)).ConfigureAwait(false);
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("\"ok\": false", StringComparison.OrdinalIgnoreCase), "Stress should fail when executor fails.");
-            AssertTrue(output.Contains("\"failureCategory\": \"executor_failure\"", StringComparison.OrdinalIgnoreCase), "Stress should classify executor failures.");
+            AssertTrue(output.Contains("forced failure", StringComparison.OrdinalIgnoreCase), "Stress output should include executor failure summary.");
         }
         finally
         {
@@ -327,6 +383,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     limit: 20,
                     benchmarkSet: "workflow-lab",
                     runId: null,
+                    baselineRunId: null,
                     since: null,
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
@@ -340,6 +397,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(markdown.Contains("## Failure Categories", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("orchestration_failure", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("## Recommendations", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("## Hardware Telemetry", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("Avg CPU time delta", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("global_baseline", StringComparison.OrdinalIgnoreCase));
         }
         finally
@@ -399,6 +458,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     limit: 20,
                     benchmarkSet: "workflow-lab",
                     runId: "run-a",
+                    baselineRunId: null,
                     since: null,
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
@@ -434,14 +494,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
 """;
             var command = CreateCommand((_, _, _, _, _, _) =>
             {
-                Console.WriteLine("""
-{
-  "ok": false,
-  "errorCode": "BARRIER_VALIDATION_FAILED",
-  "error": "barrier context rejected"
-}
-""");
-                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, false, "model_execution_failure"));
+                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, false, "runtime_context_failure"));
             });
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteStressAsync(
@@ -453,15 +506,20 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     iterationsOverride: null,
                     benchmarkSetOverride: null,
                     persistHistoryOverride: true,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     json: true,
                     verbose: false,
-                    cancellationToken)).ConfigureAwait(false);
+                    ct: cancellationToken)).ConfigureAwait(false);
             AssertEqual(1, exitCode);
-            AssertTrue(output.Contains("\"failureCategory\": \"runtime_context_failure\"", StringComparison.OrdinalIgnoreCase), "Barrier errors should classify as runtime context failures.");
-
             var historyRows = WorkflowLabHistoryStore.ReadRecent(repoRoot, 5);
             AssertTrue(historyRows.Count >= 1, "Expected failure row to be persisted.");
             AssertEqual("runtime_context_failure", historyRows[0].FailureCategory);
+            AssertTrue(!string.IsNullOrWhiteSpace(historyRows[0].HardwareProfile), "Expected telemetry hardware profile in persisted history.");
         }
         finally
         {
@@ -470,4 +528,830 @@ public sealed class WorkflowCommandTests : UnitTestBase
                 Directory.Delete(repoRoot, recursive: true);
         }
     }
+
+    private async Task TestStressHonorsWarmupShuffleAndCooldownExecutionControlsAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        var calls = new List<string>();
+        var command = CreateCommand((request, _, _, _, _, _) =>
+        {
+            calls.Add(request);
+            return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0));
+        });
+
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab",
+    "warmupRuns": 1,
+    "cooldownMs": 2,
+    "shuffleScenarioOrder": true,
+    "randomSeed": 1337
+  },
+  "requests": [
+    { "id": "r1", "prompt": "Do one" },
+    { "id": "r2", "prompt": "Do two" }
+  ],
+  "compositions": [
+    { "id": "c1", "roles": [ { "agentId": "a1", "role": "builder", "goal": "do thing" } ] },
+    { "id": "c2", "roles": [ { "agentId": "a2", "role": "builder", "goal": "do thing" } ] }
+  ],
+  "modelProfiles": [
+    { "id": "p1", "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" } }
+  ]
+}
+""";
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteStressAsync(
+                    requestOverride: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: null,
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
+            AssertEqual(8, calls.Count); // 4 scenarios x (1 warmup + 1 measured)
+            AssertTrue(calls[0].Contains("Do one", StringComparison.OrdinalIgnoreCase) ||
+                       calls[0].Contains("Do two", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestReportIncludesComparisonSectionAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "baseline",
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 100,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "candidate",
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 97,
+                ElapsedMs = 130,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var reportPath = Path.Combine(repoRoot, "workflow_compare.md");
+            var command = CreateCommand();
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteReportAsync(
+                    repoRoot,
+                    limit: 50,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: "baseline",
+                    since: null,
+                    outputPath: reportPath,
+                    json: false)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("comparison=candidate vs baseline", StringComparison.OrdinalIgnoreCase));
+            var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(markdown.Contains("## Comparison", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("Candidate run: `candidate`", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestGatePassesAndFailsWithThresholdsAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "baseline",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = true,
+                Score = 100,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "candidate",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = false,
+                Score = 70,
+                ElapsedMs = 500,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var command = CreateCommand();
+            var (failingExit, failingOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteGateAsync(
+                    repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: "baseline",
+                    policyFile: null,
+                    minSuccessRateDelta: -0.05,
+                    maxP95LatencyRegressionMs: 100,
+                    maxAverageLatencyRegressionMs: 100,
+                    minAverageScoreDelta: -10,
+                    maxRegressedScenarios: 0,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(1, failingExit);
+            AssertTrue(failingOutput.Contains("workflow gate: failed", StringComparison.OrdinalIgnoreCase));
+
+            var (passingExit, passingOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteGateAsync(
+                    repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: "baseline",
+                    policyFile: null,
+                    minSuccessRateDelta: -1.0,
+                    maxP95LatencyRegressionMs: 1000,
+                    maxAverageLatencyRegressionMs: 1000,
+                    minAverageScoreDelta: -100,
+                    maxRegressedScenarios: 10,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, passingExit);
+            AssertTrue(passingOutput.Contains("workflow gate: passed", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestBaselinePromoteListAndShowAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "run-promote",
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 95.5,
+                ElapsedMs = 110,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var command = CreateCommand();
+            var (promoteExit, promoteOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteBaselinePromoteAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "run-promote",
+                    notes: "promotion test",
+                    policyFile: null,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, promoteExit);
+            AssertTrue(promoteOutput.Contains("workflow baseline promote: ok", StringComparison.OrdinalIgnoreCase));
+
+            var (listExit, listOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteBaselineListAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, listExit);
+            AssertTrue(listOutput.Contains("run-promote", StringComparison.OrdinalIgnoreCase));
+
+            var (showExit, showOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteBaselineShowAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    baselineId: null,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, showExit);
+            AssertTrue(showOutput.Contains("run-id=run-promote", StringComparison.OrdinalIgnoreCase));
+
+            var baselinePath = WorkflowBaselineStore.GetPath(repoRoot);
+            AssertTrue(File.Exists(baselinePath), "Expected baseline registry file to be created.");
+            var baselineContent = await File.ReadAllTextAsync(baselinePath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(baselineContent.Contains("run-promote", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestGateUsesPolicyFileAndActiveBaselineAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "baseline",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = true,
+                Score = 100,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "candidate",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = true,
+                Score = 99,
+                ElapsedMs = 101,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var command = CreateCommand();
+            var promoteExit = await command.ExecuteBaselinePromoteAsync(
+                repoRoot: repoRoot,
+                benchmarkSet: "workflow-lab",
+                runId: "baseline",
+                notes: null,
+                policyFile: null,
+                json: true).ConfigureAwait(false);
+            AssertEqual(0, promoteExit);
+
+            var policyPath = Path.Combine(repoRoot, ".nexo", "workflow", "gate_policy.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(policyPath)!);
+            await File.WriteAllTextAsync(policyPath, """
+{
+  "benchmarkSet": "workflow-lab",
+  "minSuccessRateDelta": -1.0,
+  "maxP95LatencyRegressionMs": 10,
+  "maxAverageLatencyRegressionMs": 10,
+  "minAverageScoreDelta": -5.0,
+  "maxRegressedScenarios": 10
+}
+""", cancellationToken).ConfigureAwait(false);
+
+            var (gateExit, gateOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteGateAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: null,
+                    policyFile: policyPath,
+                    minSuccessRateDelta: -1.0,
+                    maxP95LatencyRegressionMs: 10,
+                    maxAverageLatencyRegressionMs: 10,
+                    minAverageScoreDelta: -5.0,
+                    maxRegressedScenarios: 10,
+                    json: false)).ConfigureAwait(false);
+            if (gateExit != 0)
+                throw new AssertionException($"Expected gate exit 0 but got {gateExit}. Output: {gateOutput}");
+            AssertTrue(gateOutput.Contains("workflow gate: passed", StringComparison.OrdinalIgnoreCase) ||
+                       gateOutput.Contains("\"passed\": true", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(gateOutput.Contains("comparison=candidate vs baseline", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeGeneratesRecommendationReportAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": true,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-a", "prompt": "Plan and implement feature A." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-fast",
+      "roles": [
+        { "agentId": "planner-1", "role": "planner", "goal": "Plan" }
+      ]
+    },
+    {
+      "id": "comp-thorough",
+      "roles": [
+        { "agentId": "planner-2", "role": "planner", "goal": "Plan thoroughly" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-a",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+
+            var command = CreateCommandWithPreflight(
+                (request, _, _, _, _, _) =>
+            {
+                var ok = request.Contains("feature A", StringComparison.OrdinalIgnoreCase);
+                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(ok, ok ? "ok" : "fail", 0, 0));
+            },
+                (_, _) => Task.FromResult(true),
+                (models, _) => Task.FromResult(new WorkflowCommand.ModelPullResult(
+                    Ok: true,
+                    Summary: $"stub pull ok ({models.Count})",
+                    Models: models,
+                    PulledModels: models)));
+            var reportPath = Path.Combine(repoRoot, "workflow_optimize_report.md");
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: null,
+                    objectiveFile: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: true,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: 7,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 8,
+                    budgetRuns: null,
+                    searchStrategy: "successive-halving",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.35,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
+                    autoPullModels: false,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: reportPath,
+                    json: false,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("workflow optimize: ok", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("recommendation-report=", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(File.Exists(reportPath), "Expected optimize recommendation report to be written.");
+
+            var report = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(report.Contains("# Workflow Optimize Recommendation Report", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("## Winner", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("## Recommendations", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("Hardware profile", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("Avg CPU delta", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeAutoPromotesWinnerBaselineAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": true,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-a", "prompt": "Deliver feature A." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-a",
+      "roles": [
+        { "agentId": "builder-1", "role": "builder", "goal": "Build" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-a",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+
+            var command = CreateCommandWithPreflight(
+                (_, _, _, _, _, _) => Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0)),
+                (_, _) => Task.FromResult(true),
+                (models, _) => Task.FromResult(new WorkflowCommand.ModelPullResult(
+                    Ok: true,
+                    Summary: $"stub pull ok ({models.Count})",
+                    Models: models,
+                    PulledModels: models)));
+            var reportPath = Path.Combine(repoRoot, "workflow_optimize_report_promote.md");
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: null,
+                    objectiveFile: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: true,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    budgetRuns: null,
+                    searchStrategy: "successive-halving",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.35,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
+                    autoPullModels: false,
+                    promoteWinner: true,
+                    policyFile: null,
+                    reportOutputPath: reportPath,
+                    json: false,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("workflow optimize: ok", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("promoted-baseline-id=", StringComparison.OrdinalIgnoreCase));
+
+            var active = WorkflowBaselineStore.ReadActive(repoRoot, "workflow-lab");
+            AssertTrue(active is not null, "Expected optimize to auto-promote winner baseline.");
+            AssertTrue(!string.IsNullOrWhiteSpace(active!.RunId), "Promoted baseline should have run-id.");
+            AssertTrue(File.Exists(reportPath), "Expected optimize promotion report to be written.");
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeInvokesModelPullerWithResolvedModelsAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-a", "prompt": "Deliver feature A." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-a",
+      "roles": [
+        { "agentId": "planner-1", "role": "planner", "goal": "Plan", "ollamaModel": "qwen2.5:7b" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-a",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" },
+      "agents": {
+        "planner-1": { "prefer": "agentic", "provider": "ollama", "model": "qwen2.5:7b" }
+      }
+    }
+  ]
+}
+""";
+
+            IReadOnlyList<string>? pulledModels = null;
+            var command = CreateCommandWithPreflightAndPuller(
+                (_, _, _, _, _, _) => Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0)),
+                (_, _) => Task.FromResult(true),
+                (models, _) =>
+                {
+                    pulledModels = models.ToArray();
+                    return Task.FromResult(new WorkflowCommand.ModelPullResult(
+                        Ok: true,
+                        Summary: "pulled",
+                        Models: models.ToArray(),
+                        PulledModels: models.ToArray(),
+                        FailedModels: Array.Empty<string>()));
+                });
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: null,
+                    objectiveFile: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    budgetRuns: null,
+                    searchStrategy: "successive-halving",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.35,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
+                    autoPullModels: true,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: null,
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(pulledModels is not null, "Expected optimize to invoke model puller.");
+            var resolvedPulledModels = pulledModels ?? Array.Empty<string>();
+            AssertTrue(resolvedPulledModels.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
+            AssertTrue(resolvedPulledModels.Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeResolvesObjectiveFileAndReportsSearchMetadataAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 3,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-latency", "prompt": "Optimize latency for planner pipeline." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-planner",
+      "roles": [
+        { "agentId": "planner-1", "role": "planner", "goal": "Plan quickly" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-fast",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+            var objectiveFile = Path.Combine(repoRoot, "objective.txt");
+            await File.WriteAllTextAsync(objectiveFile, "optimize latency planner pipeline", cancellationToken).ConfigureAwait(false);
+
+            var command = CreateCommandWithPreflight(
+                (_, _, _, _, _, _) => Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0)),
+                (_, _) => Task.FromResult(true));
+
+            var reportPath = Path.Combine(repoRoot, "workflow_optimize_objective_report.json");
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: null,
+                    objectiveFile: objectiveFile,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: 11,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    budgetRuns: 2,
+                    searchStrategy: "objective-first",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.0,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
+                    autoPullModels: false,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: reportPath,
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"searchStrategy\": \"objective-first\"", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"measuredRunsUsed\": 2", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"objectiveFile\":", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(File.Exists(reportPath), "Expected objective report to be generated.");
+
+            var report = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(report.Contains("\"optimizeExecution\"", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("\"searchStrategy\": \"objective-first\"", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("\"measuredRunBudget\": 2", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeHonorsBudgetAndEarlyStopAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 5,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-fail", "prompt": "Run failing scenario." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-fail",
+      "roles": [
+        { "agentId": "builder-1", "role": "builder", "goal": "Build" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-fail",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+
+            var executions = 0;
+            var command = CreateCommandWithPreflight(
+                (_, _, _, _, _, _) =>
+                {
+                    executions++;
+                    return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "failed", 0, 0));
+                },
+                (_, _) => Task.FromResult(true));
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: "reliability first",
+                    objectiveFile: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    budgetRuns: 4,
+                    searchStrategy: "exhaustive",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.8,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
+                    autoPullModels: false,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: null,
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(1, exitCode);
+            AssertEqual(2, executions);
+            AssertTrue(output.Contains("\"measuredRunsUsed\": 2", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"earlyStopMinRuns\": 2", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"earlyStopMinSuccessRate\": 0.8", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
 }

@@ -128,6 +128,10 @@ public sealed record WorkflowLabExecutionSpec
     public bool PersistHistory { get; init; } = true;
     public string BenchmarkSet { get; init; } = "workflow-lab";
     public bool SkipScenariosWhenProviderUnavailable { get; init; } = true;
+    public bool ShuffleScenarioOrder { get; init; }
+    public int? RandomSeed { get; init; }
+    public int WarmupRuns { get; init; }
+    public int CooldownMs { get; init; }
 }
 
 public sealed record WorkflowLabRequestSpec
