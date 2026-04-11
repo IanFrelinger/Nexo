@@ -23,6 +23,12 @@ public sealed record WorkflowLabStressHistoryRow
     public string? Summary { get; init; }
     public bool Skipped { get; init; }
     public bool Warmup { get; init; }
+    public long CpuTimeDeltaMs { get; init; }
+    public long WorkingSetMb { get; init; }
+    public long PrivateMemoryMb { get; init; }
+    public long ManagedMemoryMb { get; init; }
+    public int ThreadCount { get; init; }
+    public string HardwareProfile { get; init; } = string.Empty;
     public string FailureCategory { get; init; } = "none";
     public string BenchmarkSet { get; init; } = "workflow-lab";
 }

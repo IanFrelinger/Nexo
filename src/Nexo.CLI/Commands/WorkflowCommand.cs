@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.CLI.Runtime;
 using Nexo.Infrastructure.Execution;
 using Nexo.Orchestration.Models;
+using Process = System.Diagnostics.Process;
 
 namespace Nexo.CLI.Commands;
 
@@ -735,6 +736,12 @@ public sealed class WorkflowCommand : Command
                     0d,
                     0d,
                     0d,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    "unknown",
                     Array.Empty<WorkflowScenarioBenchmark>(),
                     Array.Empty<WorkflowScenarioBenchmark>(),
                     Array.Empty<WorkflowFailureCategoryStat>(),
@@ -1002,6 +1009,7 @@ public sealed class WorkflowCommand : Command
 
             ct.ThrowIfCancellationRequested();
             var startedAt = DateTimeOffset.UtcNow;
+            var cpuStart = Process.GetCurrentProcess().TotalProcessorTime;
             var sw = Stopwatch.StartNew();
             ScenarioExecutionResult scenario;
             if (!string.IsNullOrWhiteSpace(profileProvider) &&
@@ -1039,6 +1047,7 @@ public sealed class WorkflowCommand : Command
                 }
             }
             var elapsedMs = sw.ElapsedMilliseconds;
+            var telemetry = CaptureRuntimeTelemetry(startedAt, cpuStart);
             var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
             runs.Add(new WorkflowStressRunRecord(
                 runId,
@@ -1060,7 +1069,13 @@ public sealed class WorkflowCommand : Command
                 scenario.FailureCategory,
                 scenario.Skipped,
                 startedAt,
-                benchmarkSet));
+                benchmarkSet,
+                telemetry.CpuTimeDeltaMs,
+                telemetry.WorkingSetMb,
+                telemetry.PrivateMemoryMb,
+                telemetry.ManagedMemoryMb,
+                telemetry.ThreadCount,
+                telemetry.HardwareProfile));
 
             if (cooldownMs > 0)
             {
@@ -1118,6 +1133,12 @@ public sealed class WorkflowCommand : Command
                         Score = run.Score,
                         Summary = run.Summary,
                         Skipped = run.Skipped,
+                        CpuTimeDeltaMs = run.CpuTimeDeltaMs,
+                        WorkingSetMb = run.WorkingSetMb,
+                        PrivateMemoryMb = run.PrivateMemoryMb,
+                        ManagedMemoryMb = run.ManagedMemoryMb,
+                        ThreadCount = run.ThreadCount,
+                        HardwareProfile = run.HardwareProfile,
                         FailureCategory = run.FailureCategory,
                         BenchmarkSet = run.BenchmarkSet
                     });
@@ -1292,6 +1313,7 @@ public sealed class WorkflowCommand : Command
 
                 ct.ThrowIfCancellationRequested();
                 var startedAt = DateTimeOffset.UtcNow;
+                var cpuStart = Process.GetCurrentProcess().TotalProcessorTime;
                 var sw = Stopwatch.StartNew();
                 ScenarioExecutionResult scenario;
                 if (!pullResult.Ok)
@@ -1340,6 +1362,7 @@ public sealed class WorkflowCommand : Command
                 }
 
                 var elapsedMs = sw.ElapsedMilliseconds;
+                var telemetry = CaptureRuntimeTelemetry(startedAt, cpuStart);
                 var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
                 var runRecord = new WorkflowStressRunRecord(
                     candidateRunId,
@@ -1361,7 +1384,13 @@ public sealed class WorkflowCommand : Command
                     scenario.FailureCategory,
                     scenario.Skipped,
                     startedAt,
-                    benchmarkSet);
+                    benchmarkSet,
+                    telemetry.CpuTimeDeltaMs,
+                    telemetry.WorkingSetMb,
+                    telemetry.PrivateMemoryMb,
+                    telemetry.ManagedMemoryMb,
+                    telemetry.ThreadCount,
+                    telemetry.HardwareProfile);
                 runs.Add(runRecord);
 
                 var historyRow = new WorkflowLabStressHistoryRow
@@ -1384,6 +1413,12 @@ public sealed class WorkflowCommand : Command
                     Score = runRecord.Score,
                     Summary = runRecord.Summary,
                     Skipped = runRecord.Skipped,
+                    CpuTimeDeltaMs = runRecord.CpuTimeDeltaMs,
+                    WorkingSetMb = runRecord.WorkingSetMb,
+                    PrivateMemoryMb = runRecord.PrivateMemoryMb,
+                    ManagedMemoryMb = runRecord.ManagedMemoryMb,
+                    ThreadCount = runRecord.ThreadCount,
+                    HardwareProfile = runRecord.HardwareProfile,
                     FailureCategory = runRecord.FailureCategory,
                     BenchmarkSet = runRecord.BenchmarkSet
                 };
@@ -1408,6 +1443,21 @@ public sealed class WorkflowCommand : Command
             var avgScore = runs.Count == 0
                 ? 0d
                 : Math.Round(runs.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+            var avgCpuDelta = runs.Count == 0
+                ? 0L
+                : (long)Math.Round(runs.Select(x => (double)x.CpuTimeDeltaMs).DefaultIfEmpty(0d).Average());
+            var p95WorkingSet = runs.Count == 0 ? 0L : ComputePercentile(runs.Select(x => x.WorkingSetMb), 0.95);
+            var p95PrivateMemory = runs.Count == 0 ? 0L : ComputePercentile(runs.Select(x => x.PrivateMemoryMb), 0.95);
+            var p95ManagedMemory = runs.Count == 0 ? 0L : ComputePercentile(runs.Select(x => x.ManagedMemoryMb), 0.95);
+            var maxThreadCount = runs.Count == 0 ? 0 : runs.Max(x => x.ThreadCount);
+            var hardwareProfile = runs
+                .Select(x => x.HardwareProfile)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .OrderByDescending(x => x.Count())
+                .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.Key)
+                .FirstOrDefault() ?? "unknown";
             candidates.Add(new WorkflowOptimizeCandidate(
                 CandidateId: candidate.CandidateId,
                 RunId: candidateRunId,
@@ -1422,6 +1472,12 @@ public sealed class WorkflowCommand : Command
                 AverageLatencyMs: avgLatency,
                 P95LatencyMs: p95Latency,
                 AverageScore: avgScore,
+                AverageCpuTimeDeltaMs: avgCpuDelta,
+                P95WorkingSetMb: p95WorkingSet,
+                P95PrivateMemoryMb: p95PrivateMemory,
+                P95ManagedMemoryMb: p95ManagedMemory,
+                MaxThreadCount: maxThreadCount,
+                HardwareProfile: hardwareProfile,
                 Models: requiredModels,
                 AutoPullSummary: pullResult.Summary,
                 AutoPullOk: pullResult.Ok));
@@ -1693,7 +1749,16 @@ public sealed class WorkflowCommand : Command
                 winner,
                 candidates = ranked,
                 recommendations,
-                promotionSummary
+                promotionSummary,
+                hardwareTelemetry = new
+                {
+                    hardwareProfile = winner.HardwareProfile,
+                    averageCpuTimeDeltaMs = winner.AverageCpuTimeDeltaMs,
+                    p95WorkingSetMb = winner.P95WorkingSetMb,
+                    p95PrivateMemoryMb = winner.P95PrivateMemoryMb,
+                    p95ManagedMemoryMb = winner.P95ManagedMemoryMb,
+                    maxThreadCount = winner.MaxThreadCount
+                }
             }, new JsonSerializerOptions { WriteIndented = true });
         }
 
@@ -1727,12 +1792,18 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"- P95 latency: {winner.P95LatencyMs} ms");
         sb.AppendLine($"- Models: {(winner.Models.Count == 0 ? "none" : string.Join(", ", winner.Models))}");
         sb.AppendLine($"- Auto-pull: {(winner.AutoPullOk ? "ok" : "failed")} ({winner.AutoPullSummary})");
+        sb.AppendLine($"- Avg CPU delta: {winner.AverageCpuTimeDeltaMs} ms");
+        sb.AppendLine($"- P95 working set: {winner.P95WorkingSetMb} MB");
+        sb.AppendLine($"- P95 private memory: {winner.P95PrivateMemoryMb} MB");
+        sb.AppendLine($"- P95 managed memory: {winner.P95ManagedMemoryMb} MB");
+        sb.AppendLine($"- Max threads: {winner.MaxThreadCount}");
+        sb.AppendLine($"- Hardware profile: {winner.HardwareProfile}");
         sb.AppendLine();
         sb.AppendLine("## Ranked Candidates");
         foreach (var candidate in ranked)
         {
             sb.AppendLine(
-                $"- `{candidate.CandidateId}` | run `{candidate.RunId}` | success {candidate.SuccessRate:P1} | score {candidate.AverageScore:F2} | avg {candidate.AverageLatencyMs} ms | p95 {candidate.P95LatencyMs} ms | pull {(candidate.AutoPullOk ? "ok" : "failed")}");
+                $"- `{candidate.CandidateId}` | run `{candidate.RunId}` | success {candidate.SuccessRate:P1} | score {candidate.AverageScore:F2} | avg {candidate.AverageLatencyMs} ms | p95 {candidate.P95LatencyMs} ms | cpu {candidate.AverageCpuTimeDeltaMs} ms | ws-p95 {candidate.P95WorkingSetMb} MB | pull {(candidate.AutoPullOk ? "ok" : "failed")}");
         }
 
         sb.AppendLine();
@@ -1763,11 +1834,12 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"Session run-id: {sessionRunId}");
         sb.AppendLine($"Benchmark set: {benchmarkSet}");
         sb.AppendLine($"Winner: {winner.CandidateId} ({winner.RunId}) success={winner.SuccessRate:P1}, score={winner.AverageScore:F2}, avg={winner.AverageLatencyMs}ms, p95={winner.P95LatencyMs}ms");
+        sb.AppendLine($"Winner telemetry: cpu={winner.AverageCpuTimeDeltaMs}ms, ws-p95={winner.P95WorkingSetMb}MB, private-p95={winner.P95PrivateMemoryMb}MB, managed-p95={winner.P95ManagedMemoryMb}MB, max-threads={winner.MaxThreadCount}, profile={winner.HardwareProfile}");
         sb.AppendLine("Ranked candidates:");
         foreach (var candidate in ranked)
         {
             sb.AppendLine(
-                $"- {candidate.CandidateId}: run={candidate.RunId}, success={candidate.SuccessRate:P1}, score={candidate.AverageScore:F2}, avg={candidate.AverageLatencyMs}ms, p95={candidate.P95LatencyMs}ms, pull={(candidate.AutoPullOk ? "ok" : "failed")}");
+                $"- {candidate.CandidateId}: run={candidate.RunId}, success={candidate.SuccessRate:P1}, score={candidate.AverageScore:F2}, avg={candidate.AverageLatencyMs}ms, p95={candidate.P95LatencyMs}ms, cpu={candidate.AverageCpuTimeDeltaMs}ms, ws-p95={candidate.P95WorkingSetMb}MB, pull={(candidate.AutoPullOk ? "ok" : "failed")}");
         }
 
         sb.AppendLine("Recommendations:");
@@ -2202,6 +2274,55 @@ public sealed class WorkflowCommand : Command
         return $"{prefix}-{suffix}";
     }
 
+    private static RuntimeTelemetry CaptureRuntimeTelemetry(DateTimeOffset startedAtUtc, TimeSpan cpuStart)
+    {
+        try
+        {
+            using var process = Process.GetCurrentProcess();
+            process.Refresh();
+            var _ = startedAtUtc;
+            var cpuDeltaMs = Math.Max(
+                0L,
+                (long)Math.Round((process.TotalProcessorTime - cpuStart).TotalMilliseconds));
+            var workingSetMb = BytesToMb(process.WorkingSet64);
+            var privateMemoryMb = BytesToMb(process.PrivateMemorySize64);
+            var managedMemoryMb = BytesToMb(GC.GetTotalMemory(forceFullCollection: false));
+            var threadCount = process.Threads.Count;
+            var hardwareProfile = ResolveHardwareProfile(process);
+            return new RuntimeTelemetry(
+                CpuTimeDeltaMs: cpuDeltaMs,
+                WorkingSetMb: workingSetMb,
+                PrivateMemoryMb: privateMemoryMb,
+                ManagedMemoryMb: managedMemoryMb,
+                ThreadCount: threadCount,
+                HardwareProfile: hardwareProfile);
+        }
+        catch
+        {
+            return new RuntimeTelemetry(
+                CpuTimeDeltaMs: 0,
+                WorkingSetMb: 0,
+                PrivateMemoryMb: 0,
+                ManagedMemoryMb: 0,
+                ThreadCount: 0,
+                HardwareProfile: "unknown");
+        }
+    }
+
+    private static string ResolveHardwareProfile(Process process)
+    {
+        var cpu = Environment.ProcessorCount;
+        var memoryMb = BytesToMb(process.WorkingSet64);
+        return $"cpu:{cpu}|ws:{memoryMb}mb";
+    }
+
+    private static long BytesToMb(long bytes)
+    {
+        if (bytes <= 0)
+            return 0;
+        return (long)Math.Round(bytes / (1024d * 1024d));
+    }
+
     private static WorkflowBenchmarkReport BuildBenchmarkReport(IReadOnlyList<WorkflowLabStressHistoryRow> rows)
     {
         var items = rows ?? Array.Empty<WorkflowLabStressHistoryRow>();
@@ -2214,6 +2335,19 @@ public sealed class WorkflowCommand : Command
         var avgScore = totalRuns == 0 ? 0d : Math.Round(items.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
         var avgConflicts = totalRuns == 0 ? 0d : Math.Round(items.Select(x => (double)x.ConflictCount).DefaultIfEmpty(0d).Average(), 3);
         var avgEscalations = totalRuns == 0 ? 0d : Math.Round(items.Select(x => (double)x.EscalationCount).DefaultIfEmpty(0d).Average(), 3);
+        var avgCpuDelta = totalRuns == 0 ? 0L : (long)Math.Round(items.Select(x => (double)x.CpuTimeDeltaMs).DefaultIfEmpty(0d).Average());
+        var p95WorkingSet = ComputePercentile(items.Select(x => x.WorkingSetMb), 0.95);
+        var p95PrivateMemory = ComputePercentile(items.Select(x => x.PrivateMemoryMb), 0.95);
+        var p95ManagedMemory = ComputePercentile(items.Select(x => x.ManagedMemoryMb), 0.95);
+        var maxThreadCount = items.Count == 0 ? 0 : items.Max(x => x.ThreadCount);
+        var hardwareProfile = items
+            .Select(x => x.HardwareProfile)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(x => x.Count())
+            .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.Key)
+            .FirstOrDefault() ?? "unknown";
         var failuresByCategory = items
             .Where(x => !x.Success)
             .GroupBy(
@@ -2291,6 +2425,12 @@ public sealed class WorkflowCommand : Command
             AverageScore: avgScore,
             AverageConflicts: avgConflicts,
             AverageEscalations: avgEscalations,
+            AverageCpuTimeDeltaMs: avgCpuDelta,
+            P95WorkingSetMb: p95WorkingSet,
+            P95PrivateMemoryMb: p95PrivateMemory,
+            P95ManagedMemoryMb: p95ManagedMemory,
+            MaxThreadCount: maxThreadCount,
+            HardwareProfile: hardwareProfile,
             TopScenarios: topScenarios,
             Bottlenecks: bottlenecks,
             FailureCategories: failuresByCategory,
@@ -2299,6 +2439,12 @@ public sealed class WorkflowCommand : Command
             GitSha: latest?.GitSha,
             SpecHash: latest?.SpecHash,
             ProviderSnapshot: latest?.ProviderSnapshot,
+            AverageCpuTimeDeltaMs: avgCpuDelta,
+            P95WorkingSetMb: p95WorkingSet,
+            P95PrivateMemoryMb: p95PrivateMemory,
+            P95ManagedMemoryMb: p95ManagedMemory,
+            MaxThreadCount: maxThreadCount,
+            HardwareProfile: hardwareProfile,
             Recommendations: recommendations);
     }
 
@@ -2593,6 +2739,14 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"- Avg conflicts: {report.AverageConflicts:F2}");
         sb.AppendLine($"- Avg escalations: {report.AverageEscalations:F2}");
         sb.AppendLine();
+        sb.AppendLine("## Hardware Telemetry");
+        sb.AppendLine($"- Hardware profile: {report.HardwareProfile}");
+        sb.AppendLine($"- Avg CPU time delta: {report.AverageCpuTimeDeltaMs} ms");
+        sb.AppendLine($"- P95 working set: {report.P95WorkingSetMb} MB");
+        sb.AppendLine($"- P95 private memory: {report.P95PrivateMemoryMb} MB");
+        sb.AppendLine($"- P95 managed memory: {report.P95ManagedMemoryMb} MB");
+        sb.AppendLine($"- Max thread count: {report.MaxThreadCount}");
+        sb.AppendLine();
         sb.AppendLine("## Failure Categories");
         foreach (var category in report.FailureCategories)
         {
@@ -2654,6 +2808,20 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"Average score: {report.AverageScore:F2}");
         sb.AppendLine($"Average conflicts: {report.AverageConflicts:F2}");
         sb.AppendLine($"Average escalations: {report.AverageEscalations:F2}");
+        sb.AppendLine($"Average CPU time delta: {report.AverageCpuTimeDeltaMs} ms");
+        sb.AppendLine($"P95 working-set memory: {report.P95WorkingSetMb} MB");
+        sb.AppendLine($"P95 private memory: {report.P95PrivateMemoryMb} MB");
+        sb.AppendLine($"P95 managed memory: {report.P95ManagedMemoryMb} MB");
+        sb.AppendLine($"Max thread count: {report.MaxThreadCount}");
+        sb.AppendLine($"Hardware profile: {report.HardwareProfile}");
+        sb.AppendLine();
+        sb.AppendLine("Hardware telemetry:");
+        sb.AppendLine($"- Hardware profile: {report.HardwareProfile}");
+        sb.AppendLine($"- Average CPU time delta: {report.AverageCpuTimeDeltaMs} ms");
+        sb.AppendLine($"- P95 working set: {report.P95WorkingSetMb} MB");
+        sb.AppendLine($"- P95 private memory: {report.P95PrivateMemoryMb} MB");
+        sb.AppendLine($"- P95 managed memory: {report.P95ManagedMemoryMb} MB");
+        sb.AppendLine($"- Max thread count: {report.MaxThreadCount}");
         sb.AppendLine();
         sb.AppendLine("Failure categories:");
         foreach (var category in report.FailureCategories)
@@ -3014,6 +3182,12 @@ public sealed class WorkflowCommand : Command
         string FailureCategory,
         bool Skipped,
         DateTimeOffset StartedAtUtc,
+        long CpuTimeDeltaMs,
+        long WorkingSetMb,
+        long PrivateMemoryMb,
+        long ManagedMemoryMb,
+        int ThreadCount,
+        string HardwareProfile,
         string BenchmarkSet);
 
     private sealed record WorkflowStressAggregate(
@@ -3115,7 +3289,12 @@ public sealed class WorkflowCommand : Command
         long P95ElapsedMs,
         double AverageScore,
         double AverageConflicts,
-        double AverageEscalations,
+        long AverageCpuTimeDeltaMs,
+        long P95WorkingSetMb,
+        long P95PrivateMemoryMb,
+        long P95ManagedMemoryMb,
+        long MaxThreadCount,
+        string HardwareProfile,
         IReadOnlyList<WorkflowScenarioBenchmark> TopScenarios,
         IReadOnlyList<WorkflowScenarioBenchmark> Bottlenecks,
         IReadOnlyList<WorkflowFailureCategoryStat> FailureCategories,
@@ -3217,6 +3396,14 @@ public sealed class WorkflowCommand : Command
         WorkflowLabCompositionSpec Composition,
         WorkflowLabModelProfileSpec Profile,
         int Iteration);
+
+    private sealed record RuntimeTelemetry(
+        long CpuTimeDeltaMs,
+        long WorkingSetMb,
+        long PrivateMemoryMb,
+        long ManagedMemoryMb,
+        int ThreadCount,
+        string HardwareProfile);
 
     internal sealed record ModelPullResult(
         bool Ok,

@@ -389,6 +389,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(markdown.Contains("## Failure Categories", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("orchestration_failure", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("## Recommendations", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("## Hardware Telemetry", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("Avg CPU time delta", StringComparison.OrdinalIgnoreCase));
             AssertTrue(markdown.Contains("global_baseline", StringComparison.OrdinalIgnoreCase));
         }
         finally
@@ -507,6 +509,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var historyRows = WorkflowLabHistoryStore.ReadRecent(repoRoot, 5);
             AssertTrue(historyRows.Count >= 1, "Expected failure row to be persisted.");
             AssertEqual("runtime_context_failure", historyRows[0].FailureCategory);
+            AssertTrue(!string.IsNullOrWhiteSpace(historyRows[0].HardwareProfile), "Expected telemetry hardware profile in persisted history.");
         }
         finally
         {
@@ -952,6 +955,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(report.Contains("# Workflow Optimize Recommendation Report", StringComparison.OrdinalIgnoreCase));
             AssertTrue(report.Contains("## Winner", StringComparison.OrdinalIgnoreCase));
             AssertTrue(report.Contains("## Recommendations", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("Hardware profile", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("Avg CPU delta", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
