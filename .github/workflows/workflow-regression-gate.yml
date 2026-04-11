@@ -1,0 +1,96 @@
+name: Workflow Regression Gate
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/workflow-regression-gate.yml"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.Tests.CLI/**"
+      - "src/Nexo.CLI/Runtime/**"
+  workflow_dispatch:
+
+jobs:
+  workflow-regression:
+    name: Workflow benchmark regression gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build CLI tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet build src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
+
+      - name: Run workflow command test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet run --project src/Nexo.CLI -- test local --filter WorkflowCommandTests --format-json
+
+      - name: Seed workflow history and baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .nexo/runtime .nexo/workflow
+          cat > .nexo/runtime/workflow_lab_history.jsonl <<'JSONL'
+          {"runId":"baseline-run","gitSha":"baseline123","specHash":"spec-baseline","providerSnapshot":"offline","scenarioId":"req::comp::profile::iter-1","requestId":"req","compositionId":"comp","modelProfileId":"profile","iteration":1,"startedAtUtc":"2026-01-01T00:00:00Z","elapsedMs":120,"success":true,"agentCount":1,"conflictCount":0,"escalationCount":0,"score":100.0,"summary":"baseline","skipped":false,"warmup":false,"failureCategory":"none","benchmarkSet":"workflow-lab"}
+          {"runId":"candidate-run","gitSha":"candidate123","specHash":"spec-candidate","providerSnapshot":"offline","scenarioId":"req::comp::profile::iter-1","requestId":"req","compositionId":"comp","modelProfileId":"profile","iteration":1,"startedAtUtc":"2026-01-02T00:00:00Z","elapsedMs":130,"success":true,"agentCount":1,"conflictCount":0,"escalationCount":0,"score":99.0,"summary":"candidate","skipped":false,"warmup":false,"failureCategory":"none","benchmarkSet":"workflow-lab"}
+          JSONL
+
+          cat > .nexo/workflow/workflow_gate.policy.json <<'JSON'
+          {
+            "benchmarkSet": "workflow-lab",
+            "minSuccessRateDelta": -0.10,
+            "maxP95LatencyRegressionMs": 300,
+            "maxAverageLatencyRegressionMs": 200,
+            "minAverageScoreDelta": -10.0,
+            "maxRegressedScenarios": 2
+          }
+          JSON
+
+          dotnet run --project src/Nexo.CLI -- workflow baseline promote \
+            --repo-root . \
+            --benchmark-set workflow-lab \
+            --run-id baseline-run \
+            --policy-file .nexo/workflow/workflow_gate.policy.json \
+            --json
+
+      - name: Run workflow report compare
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet run --project src/Nexo.CLI -- workflow report \
+            --repo-root . \
+            --benchmark-set workflow-lab \
+            --run-id candidate-run \
+            --baseline-run-id baseline-run \
+            --output "${RUNNER_TEMP}/workflow_report.md"
+
+      - name: Run workflow gate with active baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet run --project src/Nexo.CLI -- workflow gate \
+            --repo-root . \
+            --benchmark-set workflow-lab \
+            --run-id candidate-run \
+            --policy-file .nexo/workflow/workflow_gate.policy.json
+
+      - name: Upload workflow gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-regression-gate
+          path: |
+            .nexo/runtime/workflow_lab_history.jsonl
+            .nexo/runtime/workflow_lab_baselines.jsonl
+            ${{ runner.temp }}/workflow_report.md
+          retention-days: 14

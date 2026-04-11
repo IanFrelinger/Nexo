@@ -21,6 +21,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestStressHonorsWarmupShuffleAndCooldownExecutionControlsAsync(cancellationToken).ConfigureAwait(false);
             await TestReportIncludesComparisonSectionAsync(cancellationToken).ConfigureAwait(false);
             await TestGatePassesAndFailsWithThresholdsAsync().ConfigureAwait(false);
+            await TestBaselinePromoteListAndShowAsync(cancellationToken).ConfigureAwait(false);
+            await TestGateUsesPolicyFileAndActiveBaselineAsync(cancellationToken).ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(WorkflowCommandTests),
@@ -60,6 +62,20 @@ public sealed class WorkflowCommandTests : UnitTestBase
             ? StubScenarioExecutorAsync
             : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
         return new WorkflowCommand(executor);
+    }
+
+    private static WorkflowCommand CreateCommandWithPreflight(
+        Func<string, string, string?, bool, bool, CancellationToken, Task<WorkflowCommand.ScenarioExecutionResult>>? scenarioExecutor,
+        Func<string, CancellationToken, Task<bool>> providerPreflight)
+    {
+        WorkflowCommand.ScenarioExecutor executor = scenarioExecutor is null
+            ? StubScenarioExecutorAsync
+            : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
+        return new WorkflowCommand(
+            executor,
+            providerPreflight is null
+                ? null
+                : (provider, ct) => providerPreflight(provider, ct));
     }
 
     private async Task TestScaffoldWritesSpecFileAsync()
@@ -652,6 +668,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     benchmarkSet: "workflow-lab",
                     runId: "candidate",
                     baselineRunId: "baseline",
+                    policyFile: null,
                     minSuccessRateDelta: -0.05,
                     maxP95LatencyRegressionMs: 100,
                     maxAverageLatencyRegressionMs: 100,
@@ -667,6 +684,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     benchmarkSet: "workflow-lab",
                     runId: "candidate",
                     baselineRunId: "baseline",
+                    policyFile: null,
                     minSuccessRateDelta: -1.0,
                     maxP95LatencyRegressionMs: 1000,
                     maxAverageLatencyRegressionMs: 1000,
@@ -678,6 +696,153 @@ public sealed class WorkflowCommandTests : UnitTestBase
         }
         finally
         {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestBaselinePromoteListAndShowAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "run-promote",
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 95.5,
+                ElapsedMs = 110,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var command = CreateCommand();
+            var (promoteExit, promoteOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteBaselinePromoteAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "run-promote",
+                    notes: "promotion test",
+                    policyFile: null,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, promoteExit);
+            AssertTrue(promoteOutput.Contains("workflow baseline promote: ok", StringComparison.OrdinalIgnoreCase));
+
+            var (listExit, listOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteBaselineListAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, listExit);
+            AssertTrue(listOutput.Contains("run-promote", StringComparison.OrdinalIgnoreCase));
+
+            var (showExit, showOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteBaselineShowAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    baselineId: null,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, showExit);
+            AssertTrue(showOutput.Contains("run-id=run-promote", StringComparison.OrdinalIgnoreCase));
+
+            var baselinePath = WorkflowBaselineStore.GetPath(repoRoot);
+            AssertTrue(File.Exists(baselinePath), "Expected baseline registry file to be created.");
+            var baselineContent = await File.ReadAllTextAsync(baselinePath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(baselineContent.Contains("run-promote", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestGateUsesPolicyFileAndActiveBaselineAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "baseline",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = true,
+                Score = 100,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "candidate",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = true,
+                Score = 99,
+                ElapsedMs = 101,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var command = CreateCommand();
+            var promoteExit = await command.ExecuteBaselinePromoteAsync(
+                repoRoot: repoRoot,
+                benchmarkSet: "workflow-lab",
+                runId: "baseline",
+                notes: null,
+                policyFile: null,
+                json: true).ConfigureAwait(false);
+            AssertEqual(0, promoteExit);
+
+            var policyPath = Path.Combine(repoRoot, ".nexo", "workflow", "gate_policy.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(policyPath)!);
+            await File.WriteAllTextAsync(policyPath, """
+{
+  "benchmarkSet": "workflow-lab",
+  "minSuccessRateDelta": -1.0,
+  "maxP95LatencyRegressionMs": 10,
+  "maxAverageLatencyRegressionMs": 10,
+  "minAverageScoreDelta": -5.0,
+  "maxRegressedScenarios": 10
+}
+""", cancellationToken).ConfigureAwait(false);
+
+            var (gateExit, gateOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteGateAsync(
+                    repoRoot: repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: null,
+                    policyFile: policyPath,
+                    minSuccessRateDelta: -1.0,
+                    maxP95LatencyRegressionMs: 10,
+                    maxAverageLatencyRegressionMs: 10,
+                    minAverageScoreDelta: -5.0,
+                    maxRegressedScenarios: 10,
+                    json: false)).ConfigureAwait(false);
+            if (gateExit != 0)
+                throw new AssertionException($"Expected gate exit 0 but got {gateExit}. Output: {gateOutput}");
+            AssertTrue(gateOutput.Contains("workflow gate: passed", StringComparison.OrdinalIgnoreCase) ||
+                       gateOutput.Contains("\"passed\": true", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(gateOutput.Contains("comparison=candidate vs baseline", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
         }

@@ -66,6 +66,34 @@ public static class WorkflowLabHistoryStore
             .ToArray();
     }
 
+    public static IReadOnlyList<WorkflowLabStressHistoryRow> ReadAll(string repoRoot)
+    {
+        var path = GetPath(repoRoot);
+        if (!File.Exists(path))
+            return Array.Empty<WorkflowLabStressHistoryRow>();
+
+        var parsed = new List<WorkflowLabStressHistoryRow>();
+        foreach (var line in File.ReadLines(path))
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+            try
+            {
+                var item = JsonSerializer.Deserialize<WorkflowLabStressHistoryRow>(line);
+                if (item != null)
+                    parsed.Add(item);
+            }
+            catch
+            {
+                // Keep history resilient to malformed lines.
+            }
+        }
+
+        return parsed
+            .OrderByDescending(p => p.StartedAtUtc)
+            .ToArray();
+    }
+
     public static void Append(string repoRoot, WorkflowLabStressHistoryRow report)
     {
         var path = GetPath(repoRoot);
