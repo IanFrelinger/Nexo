@@ -31,6 +31,7 @@ internal static class Program
             "generate" => await GenerateAsync(repoRoot, options),
             "validate" => await ValidateAsync(repoRoot, options),
             "run-demo" => await RunDemoAsync(repoRoot, options),
+            "supervise" => await SuperviseAsync(repoRoot, options),
             _ => UnknownCommand(command)
         };
     }
@@ -71,6 +72,125 @@ internal static class Program
         Console.WriteLine(JsonSerializer.Serialize(payload, JsonOptions()));
 
         return dogfoodResult.ExitCode;
+    }
+
+    private static async Task<int> SuperviseAsync(string repoRoot, Dictionary<string, string> options)
+    {
+        var gameConcept = options.TryGetValue("game", out var requestedGame) && !string.IsNullOrWhiteSpace(requestedGame)
+            ? requestedGame.Trim()
+            : "a co-op arena action roguelite";
+
+        var outputRoot = options.TryGetValue("output-root", out var providedRoot)
+            ? providedRoot
+            : DefaultOutputRoot;
+
+        var iterations = 2;
+        if (options.TryGetValue("iterations", out var rawIterations))
+        {
+            if (!int.TryParse(rawIterations, out iterations) || iterations <= 0)
+            {
+                Console.Error.WriteLine("supervise requires --iterations to be a positive integer.");
+                return 2;
+            }
+        }
+
+        var team = BuildSupervisorTeam();
+        var allIterationsPassed = true;
+        var iterationReports = new List<object>();
+        var generatedFiles = new List<string>();
+
+        for (var iteration = 1; iteration <= iterations; iteration++)
+        {
+            var roleReports = new List<object>();
+            foreach (var role in team)
+            {
+                var iterationPrompt = BuildSupervisorPrompt(gameConcept, role, iteration, iterations);
+                var systemName = SanitizeClassName($"{role.RoleName}Iteration{iteration}System");
+                var generateOptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["prompt"] = iterationPrompt,
+                    ["output-root"] = outputRoot,
+                    ["system-name"] = systemName
+                };
+
+                var generateExit = await GenerateAsync(repoRoot, generateOptions);
+                var generatedFile = Path.Combine(outputRoot, "Assets", "GeneratedSystems", $"{systemName}.cs");
+                generatedFiles.Add(generatedFile);
+
+                roleReports.Add(new
+                {
+                    role = role.RoleName,
+                    focus = role.FocusArea,
+                    systemName,
+                    generatedFile,
+                    exitCode = generateExit,
+                    ok = generateExit == 0
+                });
+
+                if (generateExit != 0)
+                {
+                    allIterationsPassed = false;
+                    iterationReports.Add(new
+                    {
+                        iteration,
+                        ok = false,
+                        roleReports
+                    });
+                    break;
+                }
+            }
+
+            if (!allIterationsPassed)
+                break;
+
+            var validateExit = await ValidateAsync(repoRoot, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["output-root"] = outputRoot
+            });
+
+            var iterationPassed = validateExit == 0;
+            if (!iterationPassed)
+                allIterationsPassed = false;
+
+            iterationReports.Add(new
+            {
+                iteration,
+                ok = iterationPassed,
+                validateExitCode = validateExit,
+                roleReports
+            });
+
+            if (!iterationPassed)
+                break;
+        }
+
+        var absoluteOutputRoot = Path.GetFullPath(Path.Combine(repoRoot, outputRoot));
+        Directory.CreateDirectory(absoluteOutputRoot);
+        var reportPath = Path.Combine(absoluteOutputRoot, "supervisor_report.json");
+        var reportPayload = new
+        {
+            ok = allIterationsPassed,
+            stage = "supervise",
+            game = gameConcept,
+            iterations,
+            generatedFiles,
+            iterationReports,
+            generatedAtUtc = DateTimeOffset.UtcNow
+        };
+        await File.WriteAllTextAsync(reportPath, JsonSerializer.Serialize(reportPayload, JsonOptions()));
+
+        var consolePayload = new
+        {
+            ok = allIterationsPassed,
+            stage = "supervise",
+            game = gameConcept,
+            iterations,
+            teamSize = team.Count,
+            outputRoot = Path.GetRelativePath(repoRoot, absoluteOutputRoot),
+            reportFile = Path.GetRelativePath(repoRoot, reportPath)
+        };
+        Console.WriteLine(JsonSerializer.Serialize(consolePayload, JsonOptions()));
+        return allIterationsPassed ? 0 : 1;
     }
 
     private static async Task<int> GenerateAsync(string repoRoot, Dictionary<string, string> options)
@@ -124,7 +244,7 @@ internal static class Program
 
         var payload = new
         {
-            ok = true,
+            ok = nexoResult.ExitCode == 0,
             stage = "generate",
             prompt,
             className,
@@ -134,7 +254,7 @@ internal static class Program
             nexoChatExitCode = nexoResult.ExitCode
         };
         Console.WriteLine(JsonSerializer.Serialize(payload, JsonOptions()));
-        return 0;
+        return nexoResult.ExitCode == 0 ? 0 : 1;
     }
 
     private static async Task<int> ValidateAsync(string repoRoot, Dictionary<string, string> options)
@@ -568,13 +688,37 @@ public static class Mathf
         help.AppendLine("  generate  --prompt \"...\" [--output-root tools/unity-demo-output] [--system-name DashAbilitySystem]");
         help.AppendLine("  validate  [--output-root tools/unity-demo-output]");
         help.AppendLine("  run-demo  [--prompt \"...\"] [--output-root tools/unity-demo-output]");
+        help.AppendLine("  supervise [--game \"...\"] [--iterations 2] [--output-root tools/unity-demo-output]");
         help.AppendLine();
         help.AppendLine("Examples:");
         help.AppendLine("  dotnet run --project tools/Nexo.UnitySidecarDemo -- generate --prompt \"add a dash ability\"");
         help.AppendLine("  dotnet run --project tools/Nexo.UnitySidecarDemo -- validate");
         help.AppendLine("  dotnet run --project tools/Nexo.UnitySidecarDemo -- run-demo --prompt \"add a health pickup system\"");
+        help.AppendLine("  dotnet run --project tools/Nexo.UnitySidecarDemo -- supervise --game \"build a coop dungeon crawler\" --iterations 2");
         Console.WriteLine(help.ToString());
+    }
+
+    private static List<SupervisorRole> BuildSupervisorTeam()
+    {
+        return new List<SupervisorRole>
+        {
+            new("Gameplay", "Core movement and player loop", "Design or improve the core movement loop for {GAME}. Include a dash or traversal interaction and clear tunables."),
+            new("Combat", "Combat interactions and balance", "Design combat mechanics for {GAME}. Include timing windows, risk/reward, and a dash-attack interaction."),
+            new("Economy", "Rewards and progression pacing", "Design rewards and progression for {GAME}. Include health pickup balance, recovery pacing, and spend/sink signals."),
+            new("AI", "Enemy and encounter behavior", "Design enemy behavior for {GAME}. Define one encounter pattern, telegraphs, and adaptation to player movement.")
+        };
+    }
+
+    private static string BuildSupervisorPrompt(
+        string gameConcept,
+        SupervisorRole role,
+        int iteration,
+        int totalIterations)
+    {
+        return $"{role.PromptTemplate.Replace("{GAME}", gameConcept, StringComparison.Ordinal)} " +
+               $"Iteration {iteration} of {totalIterations}: produce a focused, implementable gameplay system script.";
     }
 }
 
 internal sealed record CommandResult(int ExitCode, string StdOut, string StdErr);
+internal sealed record SupervisorRole(string RoleName, string FocusArea, string PromptTemplate);

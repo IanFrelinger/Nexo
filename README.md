@@ -251,6 +251,9 @@ bash scripts/oh-shit-demo.sh --quick --no-build
 
 # unity sidecar demo (generate + compile validation + dogfood block1)
 bash scripts/unity-sidecar-demo.sh run-demo --prompt "add a dash ability"
+
+# supervisor loop (gameplay/combat/economy/ai) with iterative validation
+bash scripts/unity-sidecar-demo.sh supervise --game "co-op dungeon crawler" --iterations 2
 ```
 
 References:
