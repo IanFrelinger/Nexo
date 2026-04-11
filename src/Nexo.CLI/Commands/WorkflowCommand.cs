@@ -1069,13 +1069,13 @@ public sealed class WorkflowCommand : Command
                 scenario.FailureCategory,
                 scenario.Skipped,
                 startedAt,
-                benchmarkSet,
                 telemetry.CpuTimeDeltaMs,
                 telemetry.WorkingSetMb,
                 telemetry.PrivateMemoryMb,
                 telemetry.ManagedMemoryMb,
                 telemetry.ThreadCount,
-                telemetry.HardwareProfile));
+                telemetry.HardwareProfile,
+                benchmarkSet));
 
             if (cooldownMs > 0)
             {
@@ -1384,13 +1384,13 @@ public sealed class WorkflowCommand : Command
                     scenario.FailureCategory,
                     scenario.Skipped,
                     startedAt,
-                    benchmarkSet,
                     telemetry.CpuTimeDeltaMs,
                     telemetry.WorkingSetMb,
                     telemetry.PrivateMemoryMb,
                     telemetry.ManagedMemoryMb,
                     telemetry.ThreadCount,
-                    telemetry.HardwareProfile);
+                    telemetry.HardwareProfile,
+                    benchmarkSet);
                 runs.Add(runRecord);
 
                 var historyRow = new WorkflowLabStressHistoryRow
@@ -2439,12 +2439,6 @@ public sealed class WorkflowCommand : Command
             GitSha: latest?.GitSha,
             SpecHash: latest?.SpecHash,
             ProviderSnapshot: latest?.ProviderSnapshot,
-            AverageCpuTimeDeltaMs: avgCpuDelta,
-            P95WorkingSetMb: p95WorkingSet,
-            P95PrivateMemoryMb: p95PrivateMemory,
-            P95ManagedMemoryMb: p95ManagedMemory,
-            MaxThreadCount: maxThreadCount,
-            HardwareProfile: hardwareProfile,
             Recommendations: recommendations);
     }
 
@@ -3225,6 +3219,12 @@ public sealed class WorkflowCommand : Command
         long AverageLatencyMs,
         long P95LatencyMs,
         double AverageScore,
+        long AverageCpuTimeDeltaMs,
+        long P95WorkingSetMb,
+        long P95PrivateMemoryMb,
+        long P95ManagedMemoryMb,
+        long MaxThreadCount,
+        string HardwareProfile,
         IReadOnlyList<string> Models,
         string AutoPullSummary,
         bool AutoPullOk);
@@ -3289,6 +3289,7 @@ public sealed class WorkflowCommand : Command
         long P95ElapsedMs,
         double AverageScore,
         double AverageConflicts,
+        double AverageEscalations,
         long AverageCpuTimeDeltaMs,
         long P95WorkingSetMb,
         long P95PrivateMemoryMb,
