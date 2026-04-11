@@ -16,6 +16,11 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestStressRunsWithInjectedRequestAndPersistsHistoryAsync(cancellationToken).ConfigureAwait(false);
             await TestStressReturnsFailureWhenExecutorFailsAsync(cancellationToken).ConfigureAwait(false);
             await TestReportGeneratesMarkdownBenchmarkOutputAsync(cancellationToken).ConfigureAwait(false);
+            await TestReportFiltersByRunIdAsync(cancellationToken).ConfigureAwait(false);
+            await TestStressClassifiesRuntimeContextFailureFromErrorCodeAsync(cancellationToken).ConfigureAwait(false);
+            await TestStressHonorsWarmupShuffleAndCooldownExecutionControlsAsync(cancellationToken).ConfigureAwait(false);
+            await TestReportIncludesComparisonSectionAsync(cancellationToken).ConfigureAwait(false);
+            await TestGatePassesAndFailsWithThresholdsAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(WorkflowCommandTests),
@@ -466,6 +471,204 @@ public sealed class WorkflowCommandTests : UnitTestBase
         finally
         {
             Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestStressHonorsWarmupShuffleAndCooldownExecutionControlsAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        var calls = new List<string>();
+        var command = CreateCommand((request, _, _, _, _, _) =>
+        {
+            calls.Add(request);
+            return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0));
+        });
+
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab",
+    "warmupRuns": 1,
+    "cooldownMs": 2,
+    "shuffleScenarioOrder": true,
+    "randomSeed": 1337
+  },
+  "requests": [
+    { "id": "r1", "prompt": "Do one" },
+    { "id": "r2", "prompt": "Do two" }
+  ],
+  "compositions": [
+    { "id": "c1", "roles": [ { "agentId": "a1", "role": "builder", "goal": "do thing" } ] },
+    { "id": "c2", "roles": [ { "agentId": "a2", "role": "builder", "goal": "do thing" } ] }
+  ],
+  "modelProfiles": [
+    { "id": "p1", "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" } }
+  ]
+}
+""";
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteStressAsync(
+                    requestOverride: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: null,
+                    persistHistoryOverride: false,
+                    json: true,
+                    verbose: false,
+                    cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
+            AssertEqual(8, calls.Count); // 4 scenarios x (1 warmup + 1 measured)
+            AssertTrue(calls[0].Contains("Do one", StringComparison.OrdinalIgnoreCase) ||
+                       calls[0].Contains("Do two", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestReportIncludesComparisonSectionAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "baseline",
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 100,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "candidate",
+                ScenarioId = "request-a::composition-a::profile-a::iter-1",
+                RequestId = "request-a",
+                CompositionId = "composition-a",
+                ModelProfileId = "profile-a",
+                Iteration = 1,
+                Success = true,
+                Score = 97,
+                ElapsedMs = 130,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var reportPath = Path.Combine(repoRoot, "workflow_compare.md");
+            var command = CreateCommand();
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteReportAsync(
+                    repoRoot,
+                    limit: 50,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: "baseline",
+                    since: null,
+                    outputPath: reportPath,
+                    json: false)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("comparison=candidate vs baseline", StringComparison.OrdinalIgnoreCase));
+            var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(markdown.Contains("## Comparison", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("Candidate run: `candidate`", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestGatePassesAndFailsWithThresholdsAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "baseline",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = true,
+                Score = 100,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "candidate",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = false,
+                Score = 70,
+                ElapsedMs = 500,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            var command = CreateCommand();
+            var (failingExit, failingOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteGateAsync(
+                    repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: "baseline",
+                    minSuccessRateDelta: -0.05,
+                    maxP95LatencyRegressionMs: 100,
+                    maxAverageLatencyRegressionMs: 100,
+                    minAverageScoreDelta: -10,
+                    maxRegressedScenarios: 0,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(1, failingExit);
+            AssertTrue(failingOutput.Contains("workflow gate: failed", StringComparison.OrdinalIgnoreCase));
+
+            var (passingExit, passingOutput) = await CaptureConsoleAsync(
+                () => command.ExecuteGateAsync(
+                    repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: "baseline",
+                    minSuccessRateDelta: -1.0,
+                    maxP95LatencyRegressionMs: 1000,
+                    maxAverageLatencyRegressionMs: 1000,
+                    minAverageScoreDelta: -100,
+                    maxRegressedScenarios: 10,
+                    json: false)).ConfigureAwait(false);
+            AssertEqual(0, passingExit);
+            AssertTrue(passingOutput.Contains("workflow gate: passed", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
         }

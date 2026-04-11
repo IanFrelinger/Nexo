@@ -72,6 +72,7 @@ public sealed class WorkflowCommand : Command
         ConfigureStressCommand();
         ConfigureHistoryCommand();
         ConfigureReportCommand();
+        ConfigureGateCommand();
     }
 
     private void ConfigureScaffoldCommand()
@@ -129,6 +130,22 @@ public sealed class WorkflowCommand : Command
             "--persist-history",
             () => null,
             "Persist workflow lab results in JSONL history.");
+        var warmupRunsOpt = new Option<int?>(
+            "--warmup-runs",
+            () => null,
+            "Override warmup runs per scenario group (defaults to execution.warmupRuns).");
+        var shuffleScenariosOpt = new Option<bool?>(
+            "--shuffle-scenarios",
+            () => null,
+            "Override scenario shuffle behavior (defaults to execution.shuffleScenarios).");
+        var randomSeedOpt = new Option<int?>(
+            "--random-seed",
+            () => null,
+            "Override scenario shuffle seed (defaults to execution.randomSeed).");
+        var cooldownMsOpt = new Option<int?>(
+            "--cooldown-ms",
+            () => null,
+            "Override cooldown delay between scenario executions in milliseconds.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
         var verboseOpt = new Option<bool>("--verbose", () => false, "Emit orchestrator progress output.");
 
@@ -140,6 +157,10 @@ public sealed class WorkflowCommand : Command
         stress.AddOption(iterationsOverrideOpt);
         stress.AddOption(benchmarkSetOpt);
         stress.AddOption(persistHistoryOpt);
+        stress.AddOption(warmupRunsOpt);
+        stress.AddOption(shuffleScenariosOpt);
+        stress.AddOption(randomSeedOpt);
+        stress.AddOption(cooldownMsOpt);
         stress.AddOption(jsonOpt);
         stress.AddOption(verboseOpt);
         stress.SetHandler((InvocationContext ctx) =>
@@ -153,6 +174,10 @@ public sealed class WorkflowCommand : Command
                 ctx.ParseResult.GetValueForOption(iterationsOverrideOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
                 ctx.ParseResult.GetValueForOption(persistHistoryOpt),
+                ctx.ParseResult.GetValueForOption(warmupRunsOpt),
+                ctx.ParseResult.GetValueForOption(shuffleScenariosOpt),
+                ctx.ParseResult.GetValueForOption(randomSeedOpt),
+                ctx.ParseResult.GetValueForOption(cooldownMsOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.ParseResult.GetValueForOption(verboseOpt),
                 ctx.GetCancellationToken()).GetAwaiter().GetResult();
@@ -191,6 +216,7 @@ public sealed class WorkflowCommand : Command
         var limitOpt = new Option<int>("--limit", () => 200, "Maximum history entries to analyze.");
         var benchmarkSetOpt = new Option<string?>("--benchmark-set", () => null, "Optional benchmark-set filter.");
         var runIdOpt = new Option<string?>("--run-id", () => null, "Optional run-id filter for a single benchmark session.");
+        var baselineRunIdOpt = new Option<string?>("--baseline-run-id", () => null, "Optional baseline run-id for comparison against --run-id.");
         var sinceOpt = new Option<string?>("--since", () => null, "Optional ISO-8601 UTC timestamp filter (e.g. 2026-04-11T00:00:00Z).");
         var outputOpt = new Option<string?>("--output", () => null, "Optional report output file path (.json, .md, .txt).");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
@@ -198,6 +224,7 @@ public sealed class WorkflowCommand : Command
         report.AddOption(limitOpt);
         report.AddOption(benchmarkSetOpt);
         report.AddOption(runIdOpt);
+        report.AddOption(baselineRunIdOpt);
         report.AddOption(sinceOpt);
         report.AddOption(outputOpt);
         report.AddOption(jsonOpt);
@@ -208,12 +235,55 @@ public sealed class WorkflowCommand : Command
                 ctx.ParseResult.GetValueForOption(limitOpt),
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
                 ctx.ParseResult.GetValueForOption(runIdOpt),
+                ctx.ParseResult.GetValueForOption(baselineRunIdOpt),
                 ctx.ParseResult.GetValueForOption(sinceOpt),
                 ctx.ParseResult.GetValueForOption(outputOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
         AddCommand(report);
+    }
+
+    private void ConfigureGateCommand()
+    {
+        var gate = new Command("gate", "Evaluate a candidate run against a baseline run and fail on regression.");
+        var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
+        var benchmarkSetOpt = new Option<string?>("--benchmark-set", () => null, "Optional benchmark-set filter.");
+        var runIdOpt = new Option<string>("--run-id", "Candidate run-id to evaluate.");
+        var baselineRunIdOpt = new Option<string>("--baseline-run-id", "Baseline run-id used for regression comparison.");
+        var minSuccessRateDeltaOpt = new Option<double>("--min-success-rate-delta", () => -0.05, "Minimum allowed success-rate delta (candidate - baseline).");
+        var maxP95LatencyRegressionMsOpt = new Option<long>("--max-p95-latency-regression-ms", () => 250, "Maximum allowed P95 latency regression in ms.");
+        var maxAverageLatencyRegressionMsOpt = new Option<long>("--max-avg-latency-regression-ms", () => 150, "Maximum allowed average latency regression in ms.");
+        var minAverageScoreDeltaOpt = new Option<double>("--min-average-score-delta", () => -5.0, "Minimum allowed average score delta (candidate - baseline).");
+        var maxRegressedScenariosOpt = new Option<int>("--max-regressed-scenarios", () => 2, "Maximum allowed count of regressed scenario groups.");
+        var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
+
+        gate.AddOption(repoRootOpt);
+        gate.AddOption(benchmarkSetOpt);
+        gate.AddOption(runIdOpt);
+        gate.AddOption(baselineRunIdOpt);
+        gate.AddOption(minSuccessRateDeltaOpt);
+        gate.AddOption(maxP95LatencyRegressionMsOpt);
+        gate.AddOption(maxAverageLatencyRegressionMsOpt);
+        gate.AddOption(minAverageScoreDeltaOpt);
+        gate.AddOption(maxRegressedScenariosOpt);
+        gate.AddOption(jsonOpt);
+        gate.SetHandler((InvocationContext ctx) =>
+        {
+            var exitCode = ExecuteGateAsync(
+                ctx.ParseResult.GetValueForOption(repoRootOpt) ?? Environment.CurrentDirectory,
+                ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
+                ctx.ParseResult.GetValueForOption(runIdOpt) ?? string.Empty,
+                ctx.ParseResult.GetValueForOption(baselineRunIdOpt) ?? string.Empty,
+                ctx.ParseResult.GetValueForOption(minSuccessRateDeltaOpt),
+                ctx.ParseResult.GetValueForOption(maxP95LatencyRegressionMsOpt),
+                ctx.ParseResult.GetValueForOption(maxAverageLatencyRegressionMsOpt),
+                ctx.ParseResult.GetValueForOption(minAverageScoreDeltaOpt),
+                ctx.ParseResult.GetValueForOption(maxRegressedScenariosOpt),
+                ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
+            ctx.ExitCode = exitCode;
+        });
+        AddCommand(gate);
     }
 
     internal Task<int> ExecuteScaffoldAsync(string outputPath, bool force, bool json)
@@ -281,6 +351,7 @@ public sealed class WorkflowCommand : Command
         int limit,
         string? benchmarkSet,
         string? runId,
+        string? baselineRunId,
         string? since,
         string? outputPath,
         bool json)
@@ -322,23 +393,38 @@ public sealed class WorkflowCommand : Command
                 .Where(x => string.Equals(x.BenchmarkSet, normalized, StringComparison.OrdinalIgnoreCase))
                 .ToArray();
         }
-        if (!string.IsNullOrWhiteSpace(runId))
-        {
-            var normalizedRunId = runId.Trim();
-            rows = rows.Where(x => string.Equals(x.RunId, normalizedRunId, StringComparison.OrdinalIgnoreCase)).ToArray();
-        }
         if (!string.IsNullOrWhiteSpace(since) && DateTimeOffset.TryParse(since, out var sinceUtc))
         {
             rows = rows.Where(x => x.StartedAtUtc >= sinceUtc).ToArray();
         }
 
-        var report = BuildBenchmarkReport(rows);
+        var comparison = BuildComparison(rows, runId, baselineRunId);
+        if (comparison is { Valid: false })
+        {
+            WriteReportResult(new WorkflowReportResult(
+                false,
+                comparison.Summary ?? "Unable to build workflow run comparison.",
+                BuildBenchmarkReport(Array.Empty<WorkflowLabStressHistoryRow>()),
+                null,
+                comparison), json);
+            return Task.FromResult(1);
+        }
+
+        var filteredRows = rows;
+        if (!string.IsNullOrWhiteSpace(runId))
+        {
+            var normalizedRunId = runId.Trim();
+            filteredRows = filteredRows.Where(x => string.Equals(x.RunId, normalizedRunId, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+
+        var report = BuildBenchmarkReport(filteredRows);
         var result = new WorkflowReportResult(
             report.TotalRuns > 0,
             report.TotalRuns > 0
                 ? $"Benchmark report generated from {report.TotalRuns} run(s)."
                 : "No workflow stress history found for the selected filters.",
-            report);
+            report,
+            Comparison: comparison);
 
         if (!string.IsNullOrWhiteSpace(outputPath))
         {
@@ -354,6 +440,66 @@ public sealed class WorkflowCommand : Command
 
         WriteReportResult(result, json);
         return Task.FromResult(result.Ok ? 0 : 1);
+    }
+
+    internal Task<int> ExecuteGateAsync(
+        string repoRoot,
+        string? benchmarkSet,
+        string runId,
+        string baselineRunId,
+        double minSuccessRateDelta,
+        long maxP95LatencyRegressionMs,
+        long maxAverageLatencyRegressionMs,
+        double minAverageScoreDelta,
+        int maxRegressedScenarios,
+        bool json)
+    {
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
+        {
+            WriteGateResult(new WorkflowGateResult(false, false, $"Repo root not found: {fullRepoRoot}"), json);
+            return Task.FromResult(1);
+        }
+
+        if (string.IsNullOrWhiteSpace(runId) || string.IsNullOrWhiteSpace(baselineRunId))
+        {
+            WriteGateResult(new WorkflowGateResult(false, false, "Both --run-id and --baseline-run-id are required."), json);
+            return Task.FromResult(1);
+        }
+
+        var rows = WorkflowLabHistoryStore.ReadRecent(fullRepoRoot, 5000);
+        if (!string.IsNullOrWhiteSpace(benchmarkSet))
+        {
+            var normalized = benchmarkSet.Trim().ToLowerInvariant();
+            rows = rows.Where(x => string.Equals(x.BenchmarkSet, normalized, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+
+        var comparison = BuildComparison(rows, runId, baselineRunId);
+        if (!comparison.Valid)
+        {
+            WriteGateResult(new WorkflowGateResult(false, false, comparison.Summary ?? "Failed to build comparison.", Comparison: comparison), json);
+            return Task.FromResult(1);
+        }
+
+        var failures = new List<string>();
+        if (comparison.SuccessRateDelta < minSuccessRateDelta)
+            failures.Add($"successRateDelta {comparison.SuccessRateDelta:F4} < {minSuccessRateDelta:F4}");
+        if (comparison.P95LatencyDeltaMs > maxP95LatencyRegressionMs)
+            failures.Add($"p95LatencyDeltaMs {comparison.P95LatencyDeltaMs} > {maxP95LatencyRegressionMs}");
+        if (comparison.AverageLatencyDeltaMs > maxAverageLatencyRegressionMs)
+            failures.Add($"averageLatencyDeltaMs {comparison.AverageLatencyDeltaMs} > {maxAverageLatencyRegressionMs}");
+        if (comparison.AverageScoreDelta < minAverageScoreDelta)
+            failures.Add($"averageScoreDelta {comparison.AverageScoreDelta:F3} < {minAverageScoreDelta:F3}");
+        if (comparison.RegressedScenarios > maxRegressedScenarios)
+            failures.Add($"regressedScenarios {comparison.RegressedScenarios} > {maxRegressedScenarios}");
+
+        var passed = failures.Count == 0;
+        var summary = passed
+            ? $"Workflow gate passed for run {comparison.RunId} vs baseline {comparison.BaselineRunId}."
+            : $"Workflow gate failed for run {comparison.RunId} vs baseline {comparison.BaselineRunId}: {string.Join("; ", failures)}";
+        var result = new WorkflowGateResult(true, passed, summary, failures.ToArray(), comparison);
+        WriteGateResult(result, json);
+        return Task.FromResult(passed ? 0 : 1);
     }
 
     internal async Task<int> ExecuteStressAsync(
@@ -401,6 +547,9 @@ public sealed class WorkflowCommand : Command
         var specHash = ComputeSpecHash(JsonSerializer.Serialize(spec));
         var gitSha = ResolveGitSha();
         var providerSnapshot = BuildProviderSnapshot(profiles);
+        var warmupRuns = Math.Max(0, spec.Execution.WarmupRuns);
+        var cooldownMs = Math.Max(0, spec.Execution.CooldownMs);
+        var rng = spec.Execution.RandomSeed.HasValue ? new Random(spec.Execution.RandomSeed.Value) : null;
 
         var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
         foreach (var provider in profiles
@@ -412,83 +561,114 @@ public sealed class WorkflowCommand : Command
             preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
         }
 
+        var scenarioPlans = BuildScenarioPlans(requests, compositions, profiles, iterations);
+        if (spec.Execution.ShuffleScenarioOrder && scenarioPlans.Count > 1)
+            ShuffleScenarioPlans(scenarioPlans, rng ?? new Random());
+
         var runs = new List<WorkflowStressRunRecord>();
-        foreach (var request in requests)
+        foreach (var plan in scenarioPlans)
         {
-            foreach (var composition in compositions)
+            var request = plan.Request;
+            var composition = plan.Composition;
+            var profile = plan.Profile;
+            var i = plan.Iteration;
+            var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, i);
+            var runtime = BuildRuntimeSpec(composition, profile);
+            var runtimeJson = JsonSerializer.Serialize(runtime);
+            var runtimeExecutionRequest = BuildExecutionRequest(request, composition, profile, sharedRequest);
+            var profileProvider = profile.Default.Provider?.Trim();
+
+            for (var warmup = 0; warmup < warmupRuns; warmup++)
             {
-                foreach (var profile in profiles)
+                ct.ThrowIfCancellationRequested();
+                if (!string.IsNullOrWhiteSpace(profileProvider) &&
+                    preflightByProvider.TryGetValue(profileProvider, out var warmupPreflight) &&
+                    !warmupPreflight.Ok)
                 {
-                    for (var i = 1; i <= iterations; i++)
-                    {
-                        ct.ThrowIfCancellationRequested();
-                        var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, i);
-                        var runtime = BuildRuntimeSpec(composition, profile);
-                        var runtimeJson = JsonSerializer.Serialize(runtime);
-                        var runtimeExecutionRequest = BuildExecutionRequest(request, composition, profile, sharedRequest);
-                        var profileProvider = profile.Default.Provider?.Trim();
-                        var startedAt = DateTimeOffset.UtcNow;
-                        var sw = Stopwatch.StartNew();
-                        ScenarioExecutionResult scenario;
-                        if (!string.IsNullOrWhiteSpace(profileProvider) &&
-                            preflightByProvider.TryGetValue(profileProvider, out var preflight) &&
-                            !preflight.Ok)
-                        {
-                            scenario = new ScenarioExecutionResult(
-                                Ok: true,
-                                Summary: $"Skipped due to provider preflight failure ({profileProvider}): {preflight.Detail}",
-                                ConflictCount: 0,
-                                EscalationCount: 0,
-                                FailureCategory: "skipped_infra",
-                                Skipped: true);
-                        }
-                        else
-                        {
-                            try
-                            {
-                                scenario = await _scenarioExecutor(
-                                    runtimeExecutionRequest,
-                                    runtimeJson,
-                                    profile.Default.Provider,
-                                    true,
-                                    verbose,
-                                    ct).ConfigureAwait(false);
-                            }
-                            catch (Exception ex)
-                            {
-                                scenario = new ScenarioExecutionResult(
-                                    Ok: false,
-                                    Summary: $"Scenario executor failed: {ex.Message}",
-                                    ConflictCount: 0,
-                                    EscalationCount: 0,
-                                    FailureCategory: "executor_failure");
-                            }
-                        }
-                        var elapsedMs = sw.ElapsedMilliseconds;
-                        var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
-                        runs.Add(new WorkflowStressRunRecord(
-                            runId,
-                            gitSha,
-                            specHash,
-                            providerSnapshot,
-                            scenarioId,
-                            request.Id,
-                            composition.Id,
-                            profile.Id,
-                            i,
-                            scenario.Ok,
-                            composition.Roles.Count,
-                            scenario.ConflictCount,
-                            scenario.EscalationCount,
-                            elapsedMs,
-                            score,
-                            scenario.Summary,
-                            scenario.FailureCategory,
-                            scenario.Skipped,
-                            startedAt,
-                            benchmarkSet));
-                    }
+                    break;
                 }
+
+                try
+                {
+                    _ = await _scenarioExecutor(
+                        runtimeExecutionRequest,
+                        runtimeJson,
+                        profile.Default.Provider,
+                        true,
+                        verbose,
+                        ct).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Warmups are intentionally ignored in persisted metrics.
+                }
+            }
+
+            ct.ThrowIfCancellationRequested();
+            var startedAt = DateTimeOffset.UtcNow;
+            var sw = Stopwatch.StartNew();
+            ScenarioExecutionResult scenario;
+            if (!string.IsNullOrWhiteSpace(profileProvider) &&
+                preflightByProvider.TryGetValue(profileProvider, out var preflight) &&
+                !preflight.Ok)
+            {
+                scenario = new ScenarioExecutionResult(
+                    Ok: true,
+                    Summary: $"Skipped due to provider preflight failure ({profileProvider}): {preflight.Detail}",
+                    ConflictCount: 0,
+                    EscalationCount: 0,
+                    FailureCategory: "skipped_infra",
+                    Skipped: true);
+            }
+            else
+            {
+                try
+                {
+                    scenario = await _scenarioExecutor(
+                        runtimeExecutionRequest,
+                        runtimeJson,
+                        profile.Default.Provider,
+                        true,
+                        verbose,
+                        ct).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    scenario = new ScenarioExecutionResult(
+                        Ok: false,
+                        Summary: $"Scenario executor failed: {ex.Message}",
+                        ConflictCount: 0,
+                        EscalationCount: 0,
+                        FailureCategory: "executor_failure");
+                }
+            }
+            var elapsedMs = sw.ElapsedMilliseconds;
+            var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
+            runs.Add(new WorkflowStressRunRecord(
+                runId,
+                gitSha,
+                specHash,
+                providerSnapshot,
+                scenarioId,
+                request.Id,
+                composition.Id,
+                profile.Id,
+                i,
+                scenario.Ok,
+                composition.Roles.Count,
+                scenario.ConflictCount,
+                scenario.EscalationCount,
+                elapsedMs,
+                score,
+                scenario.Summary,
+                scenario.FailureCategory,
+                scenario.Skipped,
+                startedAt,
+                benchmarkSet));
+
+            if (cooldownMs > 0)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(cooldownMs), ct).ConfigureAwait(false);
             }
         }
 
@@ -1046,6 +1226,145 @@ public sealed class WorkflowCommand : Command
         return ordered[index];
     }
 
+    private static IReadOnlyList<ScenarioPlan> BuildScenarioPlans(
+        IReadOnlyList<WorkflowLabRequestSpec> requests,
+        IReadOnlyList<WorkflowLabCompositionSpec> compositions,
+        IReadOnlyList<WorkflowLabModelProfileSpec> profiles,
+        int iterations)
+    {
+        var plans = new List<ScenarioPlan>();
+        foreach (var request in requests)
+        {
+            foreach (var composition in compositions)
+            {
+                foreach (var profile in profiles)
+                {
+                    for (var i = 1; i <= iterations; i++)
+                    {
+                        plans.Add(new ScenarioPlan(request, composition, profile, i));
+                    }
+                }
+            }
+        }
+
+        return plans;
+    }
+
+    private static void ShuffleScenarioPlans(IList<ScenarioPlan> plans, Random rng)
+    {
+        for (var i = plans.Count - 1; i > 0; i--)
+        {
+            var j = rng.Next(i + 1);
+            (plans[i], plans[j]) = (plans[j], plans[i]);
+        }
+    }
+
+    private static WorkflowRunComparison BuildComparison(
+        IReadOnlyList<WorkflowLabStressHistoryRow> rows,
+        string? runId,
+        string? baselineRunId)
+    {
+        if (string.IsNullOrWhiteSpace(runId) && string.IsNullOrWhiteSpace(baselineRunId))
+        {
+            return new WorkflowRunComparison(true, "No run comparison requested.");
+        }
+
+        if (string.IsNullOrWhiteSpace(runId) || string.IsNullOrWhiteSpace(baselineRunId))
+        {
+            return new WorkflowRunComparison(false, "Both run-id and baseline-run-id are required for comparison.");
+        }
+
+        var candidateId = runId.Trim();
+        var baselineId = baselineRunId.Trim();
+        var candidateRows = rows
+            .Where(x => string.Equals(x.RunId, candidateId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        var baselineRows = rows
+            .Where(x => string.Equals(x.RunId, baselineId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (candidateRows.Length == 0)
+            return new WorkflowRunComparison(false, $"No history found for run-id '{candidateId}'.");
+        if (baselineRows.Length == 0)
+            return new WorkflowRunComparison(false, $"No history found for baseline-run-id '{baselineId}'.");
+
+        var candidateSuccessRate = candidateRows.Length == 0 ? 0d : Math.Round((double)candidateRows.Count(x => x.Success) / candidateRows.Length, 4);
+        var baselineSuccessRate = baselineRows.Length == 0 ? 0d : Math.Round((double)baselineRows.Count(x => x.Success) / baselineRows.Length, 4);
+        var candidateAvgLatency = (long)Math.Round(candidateRows.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
+        var baselineAvgLatency = (long)Math.Round(baselineRows.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
+        var candidateP95 = ComputePercentile(candidateRows.Select(x => x.ElapsedMs), 0.95);
+        var baselineP95 = ComputePercentile(baselineRows.Select(x => x.ElapsedMs), 0.95);
+        var candidateScore = Math.Round(candidateRows.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+        var baselineScore = Math.Round(baselineRows.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+
+        var candidateByScenario = candidateRows
+            .GroupBy(x => $"{x.RequestId}::{x.CompositionId}::{x.ModelProfileId}", StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => new
+                {
+                    SuccessRate = Math.Round((double)g.Count(x => x.Success) / Math.Max(1, g.Count()), 4),
+                    AvgLatency = (long)Math.Round(g.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average()),
+                    AvgScore = Math.Round(g.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3)
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        var baselineByScenario = baselineRows
+            .GroupBy(x => $"{x.RequestId}::{x.CompositionId}::{x.ModelProfileId}", StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => new
+                {
+                    SuccessRate = Math.Round((double)g.Count(x => x.Success) / Math.Max(1, g.Count()), 4),
+                    AvgLatency = (long)Math.Round(g.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average()),
+                    AvgScore = Math.Round(g.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3)
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        var scenarioDeltas = candidateByScenario.Keys
+            .Intersect(baselineByScenario.Keys, StringComparer.OrdinalIgnoreCase)
+            .Select(key =>
+            {
+                var candidate = candidateByScenario[key];
+                var baseline = baselineByScenario[key];
+                return new WorkflowScenarioDelta(
+                    key,
+                    candidate.SuccessRate - baseline.SuccessRate,
+                    candidate.AvgLatency - baseline.AvgLatency,
+                    Math.Round(candidate.AvgScore - baseline.AvgScore, 3));
+            })
+            .OrderBy(x => x.SuccessRateDelta)
+            .ThenByDescending(x => x.AverageLatencyDeltaMs)
+            .ToArray();
+
+        var regressedScenarios = scenarioDeltas.Count(x =>
+            x.SuccessRateDelta < 0 ||
+            x.AverageLatencyDeltaMs > 0 ||
+            x.AverageScoreDelta < 0);
+
+        return new WorkflowRunComparison(
+            true,
+            $"Compared run {candidateId} against baseline {baselineId}.",
+            candidateId,
+            baselineId,
+            candidateRows.Length,
+            baselineRows.Length,
+            candidateSuccessRate,
+            baselineSuccessRate,
+            candidateSuccessRate - baselineSuccessRate,
+            candidateAvgLatency,
+            baselineAvgLatency,
+            candidateAvgLatency - baselineAvgLatency,
+            candidateP95,
+            baselineP95,
+            candidateP95 - baselineP95,
+            candidateScore,
+            baselineScore,
+            Math.Round(candidateScore - baselineScore, 3),
+            regressedScenarios,
+            scenarioDeltas);
+    }
+
     private static string RenderReportContent(WorkflowReportResult result, bool preferJson, string outputPath)
     {
         var extension = Path.GetExtension(outputPath).Trim().ToLowerInvariant();
@@ -1132,6 +1451,18 @@ public sealed class WorkflowCommand : Command
         {
             sb.AppendLine($"- `{rec.Kind}` [{rec.Action}] {(string.IsNullOrWhiteSpace(rec.Target) ? "" : rec.Target + " — ")}{rec.Rationale}");
         }
+        if (result.Comparison is { Valid: true, RunId: not null, BaselineRunId: not null })
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Comparison");
+            sb.AppendLine($"- Candidate run: `{result.Comparison.RunId}`");
+            sb.AppendLine($"- Baseline run: `{result.Comparison.BaselineRunId}`");
+            sb.AppendLine($"- Success-rate delta: {result.Comparison.SuccessRateDelta:+0.0000;-0.0000;0.0000}");
+            sb.AppendLine($"- Avg latency delta: {result.Comparison.AverageLatencyDeltaMs} ms");
+            sb.AppendLine($"- P95 latency delta: {result.Comparison.P95LatencyDeltaMs} ms");
+            sb.AppendLine($"- Avg score delta: {result.Comparison.AverageScoreDelta:+0.000;-0.000;0.000}");
+            sb.AppendLine($"- Regressed scenarios: {result.Comparison.RegressedScenarios}");
+        }
         return sb.ToString();
     }
 
@@ -1182,6 +1513,18 @@ public sealed class WorkflowCommand : Command
         {
             var target = string.IsNullOrWhiteSpace(rec.Target) ? string.Empty : $"{rec.Target}: ";
             sb.AppendLine($"- [{rec.Action}] {rec.Kind} {target}{rec.Rationale}");
+        }
+        if (result.Comparison is { Valid: true, RunId: not null, BaselineRunId: not null })
+        {
+            sb.AppendLine();
+            sb.AppendLine("Comparison:");
+            sb.AppendLine($"- Candidate run: {result.Comparison.RunId}");
+            sb.AppendLine($"- Baseline run: {result.Comparison.BaselineRunId}");
+            sb.AppendLine($"- Success-rate delta: {result.Comparison.SuccessRateDelta:+0.0000;-0.0000;0.0000}");
+            sb.AppendLine($"- Avg latency delta: {result.Comparison.AverageLatencyDeltaMs} ms");
+            sb.AppendLine($"- P95 latency delta: {result.Comparison.P95LatencyDeltaMs} ms");
+            sb.AppendLine($"- Avg score delta: {result.Comparison.AverageScoreDelta:+0.000;-0.000;0.000}");
+            sb.AppendLine($"- Regressed scenarios: {result.Comparison.RegressedScenarios}");
         }
         return sb.ToString();
     }
@@ -1293,7 +1636,8 @@ public sealed class WorkflowCommand : Command
                 ok = result.Ok,
                 summary = result.Summary,
                 outputPath = result.OutputPath,
-                report = result.Report
+                report = result.Report,
+                comparison = result.Comparison
             }, new JsonSerializerOptions { WriteIndented = true }));
             return;
         }
@@ -1311,6 +1655,54 @@ public sealed class WorkflowCommand : Command
             foreach (var rec in result.Report.Recommendations.Take(5))
                 Console.WriteLine($"    - [{rec.Action}] {rec.Kind}: {rec.Rationale}");
         }
+        if (result.Comparison is { Valid: true, RunId: not null, BaselineRunId: not null })
+        {
+            Console.WriteLine(RenderComparisonText(result.Comparison, "  "));
+        }
+    }
+
+    private static void WriteGateResult(WorkflowGateResult result, bool json)
+    {
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = result.Ok,
+                passed = result.Passed,
+                summary = result.Summary,
+                failures = result.Failures,
+                comparison = result.Comparison
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return;
+        }
+
+        Console.WriteLine($"workflow gate: {(result.Ok ? (result.Passed ? "passed" : "failed") : "error")}");
+        Console.WriteLine(result.Summary);
+        if (result.Failures.Count > 0)
+        {
+            Console.WriteLine("  thresholds:");
+            foreach (var failure in result.Failures)
+                Console.WriteLine($"    - {failure}");
+        }
+        if (result.Comparison is { Valid: true })
+        {
+            Console.WriteLine(RenderComparisonText(result.Comparison, "  "));
+        }
+    }
+
+    private static string RenderComparisonText(WorkflowRunComparison comparison, string indent)
+    {
+        var prefix = string.IsNullOrEmpty(indent) ? string.Empty : indent;
+        var lines = new[]
+        {
+            $"{prefix}comparison={comparison.RunId} vs {comparison.BaselineRunId}",
+            $"{prefix}success-rate-delta={comparison.SuccessRateDelta:+0.0000;-0.0000;0.0000}",
+            $"{prefix}avg-latency-delta={comparison.AverageLatencyDeltaMs}ms",
+            $"{prefix}p95-latency-delta={comparison.P95LatencyDeltaMs}ms",
+            $"{prefix}avg-score-delta={comparison.AverageScoreDelta:+0.000;-0.000;0.000}",
+            $"{prefix}regressed-scenarios={comparison.RegressedScenarios}"
+        };
+        return string.Join(Environment.NewLine, lines);
     }
 
     private sealed record WorkflowScaffoldResult(bool Ok, string Summary, string? OutputPath = null);
@@ -1421,7 +1813,49 @@ public sealed class WorkflowCommand : Command
         bool Ok,
         string Summary,
         WorkflowBenchmarkReport Report,
-        string? OutputPath = null);
+        string? OutputPath = null,
+        WorkflowRunComparison? Comparison = null);
+
+    private sealed record WorkflowGateResult(
+        bool Ok,
+        bool Passed,
+        string Summary,
+        IReadOnlyList<string>? Failures = null,
+        WorkflowRunComparison? Comparison = null);
+
+    private sealed record WorkflowRunComparison(
+        bool Valid,
+        string Summary,
+        string? RunId = null,
+        string? BaselineRunId = null,
+        int CandidateRunCount = 0,
+        int BaselineRunCount = 0,
+        double CandidateSuccessRate = 0d,
+        double BaselineSuccessRate = 0d,
+        double SuccessRateDelta = 0d,
+        long CandidateAverageLatencyMs = 0,
+        long BaselineAverageLatencyMs = 0,
+        long AverageLatencyDeltaMs = 0,
+        long CandidateP95LatencyMs = 0,
+        long BaselineP95LatencyMs = 0,
+        long P95LatencyDeltaMs = 0,
+        double CandidateAverageScore = 0d,
+        double BaselineAverageScore = 0d,
+        double AverageScoreDelta = 0d,
+        int RegressedScenarios = 0,
+        IReadOnlyList<WorkflowScenarioDelta>? ScenarioDeltas = null);
+
+    private sealed record WorkflowScenarioDelta(
+        string ScenarioGroupId,
+        double SuccessRateDelta,
+        long AverageLatencyDeltaMs,
+        double AverageScoreDelta);
+
+    private sealed record ScenarioPlan(
+        WorkflowLabRequestSpec Request,
+        WorkflowLabCompositionSpec Composition,
+        WorkflowLabModelProfileSpec Profile,
+        int Iteration);
 
     internal sealed record ScenarioExecutionResult(
         bool Ok,

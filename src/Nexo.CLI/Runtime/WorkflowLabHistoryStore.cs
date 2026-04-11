@@ -22,6 +22,7 @@ public sealed record WorkflowLabStressHistoryRow
     public double Score { get; init; }
     public string? Summary { get; init; }
     public bool Skipped { get; init; }
+    public bool Warmup { get; init; }
     public string FailureCategory { get; init; } = "none";
     public string BenchmarkSet { get; init; } = "workflow-lab";
 }
