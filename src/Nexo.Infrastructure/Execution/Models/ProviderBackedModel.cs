@@ -20,7 +20,7 @@ public sealed class ProviderBackedModel : IModel
 
     public async Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct)
     {
-        var (provider, systemPrompt, userPrompt) = Parse(input);
+        var (provider, model, systemPrompt, userPrompt) = Parse(input);
         if (string.IsNullOrWhiteSpace(provider)) provider = "offline";
 
         if (!_providerFactory.IsProviderAvailable(provider))
@@ -32,15 +32,16 @@ public sealed class ProviderBackedModel : IModel
             provider,
             systemPrompt,
             userPrompt,
-            config: new { },
+            config: string.IsNullOrWhiteSpace(model) ? new { } : new { model },
             cancellationToken: ct);
 
         return new ModelOutput(text);
     }
 
-    private static (string? provider, string systemPrompt, string userPrompt) Parse(ModelInput input)
+    private static (string? provider, string? model, string systemPrompt, string userPrompt) Parse(ModelInput input)
     {
         var provider = (string?)null;
+        var model = (string?)null;
         var systemParts = new List<string>();
         var userParts = new List<string>();
 
@@ -58,6 +59,11 @@ public sealed class ProviderBackedModel : IModel
                         provider = trimmed["nexo.model.provider=".Length..].Trim();
                         continue;
                     }
+                    if (trimmed.StartsWith("nexo.model.name=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        model = trimmed["nexo.model.name=".Length..].Trim();
+                        continue;
+                    }
                     systemParts.Add(line);
                 }
             }
@@ -67,7 +73,7 @@ public sealed class ProviderBackedModel : IModel
             }
         }
 
-        return (provider, string.Join('\n', systemParts).Trim(), string.Join('\n', userParts).Trim());
+        return (provider, model, string.Join('\n', systemParts).Trim(), string.Join('\n', userParts).Trim());
     }
 }
 

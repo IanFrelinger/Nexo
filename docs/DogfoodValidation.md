@@ -139,7 +139,7 @@ Nexo's North Star: every capability must be used by Nexo on itself. Each block h
 
 **Status:** Implemented. `DogfoodClosedLoopTests.ImproveFlow_AnalyzeBlock1Path_Completes` validates the gate.
 
-### Phase F: Changelog and Test Failure Store
+### Phase F (continued): Changelog and Test Failure Store
 
 **Gate:** Changelog generated from promoted changes; test failures stored for adaptation trigger.
 

@@ -93,12 +93,36 @@ foreach (var libProperty in runtime.EnumerateObject())
     
     // Collect runtime assembly paths from both "runtime" and "runtimeTargets".
     // On Windows RID-specific graphs, dependencies are often emitted in runtimeTargets.
-    var runtimeAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    // IMPORTANT: Some packages (e.g. System.Text.Encodings.Web) list both lib/netX and
+    // runtimes/browser/... assets. Copying the browser build last overwrites the desktop DLL
+    // and breaks System.Text.Json (PlatformNotSupportedException in JsonSerializer .cctor).
+    var currentRid = System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier;
+    var candidatesByDll = new Dictionary<string, List<(string RelPath, int Priority)>>(StringComparer.OrdinalIgnoreCase);
+
+    void AddCandidate(string relPath, int priority)
+    {
+        if (!relPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+            return;
+        // Never ship browser/wasm builds into desktop test output.
+        if (relPath.Contains("/runtimes/browser/", StringComparison.OrdinalIgnoreCase) ||
+            relPath.Contains("\\runtimes\\browser\\", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var dllName = Path.GetFileName(relPath);
+        if (!candidatesByDll.TryGetValue(dllName, out var list))
+        {
+            list = new List<(string, int)>();
+            candidatesByDll[dllName] = list;
+        }
+        list.Add((relPath, priority));
+    }
+
     if (libProperty.Value.TryGetProperty("runtime", out var runtimePaths))
     {
         foreach (var runtimePathProperty in runtimePaths.EnumerateObject())
-            runtimeAssetPaths.Add(runtimePathProperty.Name);
+            AddCandidate(runtimePathProperty.Name, priority: 0); // lib/ assets win over RID-specific
     }
+
     if (libProperty.Value.TryGetProperty("runtimeTargets", out var runtimeTargets))
     {
         foreach (var runtimeTargetProperty in runtimeTargets.EnumerateObject())
@@ -107,27 +131,32 @@ foreach (var libProperty in runtime.EnumerateObject())
                 !string.Equals(assetType.GetString(), "runtime", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            runtimeAssetPaths.Add(runtimeTargetProperty.Name);
+            var relPath = runtimeTargetProperty.Name;
+            if (runtimeTargetProperty.Value.TryGetProperty("rid", out var ridEl))
+            {
+                var rid = ridEl.GetString() ?? "";
+                if (string.Equals(rid, "browser", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!string.Equals(rid, currentRid, StringComparison.OrdinalIgnoreCase))
+                    continue;
+            }
+
+            AddCandidate(relPath, priority: 1);
         }
     }
 
-    // Process each runtime path
-    foreach (var path in runtimeAssetPaths)
+    foreach (var kv in candidatesByDll)
     {
-        // Only process .dll files
-        if (!path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+        var best = kv.Value.OrderBy(t => t.Priority).ThenBy(t => t.RelPath, StringComparer.OrdinalIgnoreCase).First();
+        var relPath = best.RelPath;
+        var libPath = relPath.Replace('/', Path.DirectorySeparatorChar);
+        var sourcePath = Path.Combine(nugetRoot, pkgNameLower, pkgVersion, libPath);
+        var destPath = Path.Combine(outputDir, kv.Key);
+
+        if (!File.Exists(sourcePath))
             continue;
 
-        // Build source path - normalize path separators
-        var libPath = path.Replace('/', Path.DirectorySeparatorChar);
-        var sourcePath = Path.Combine(nugetRoot, pkgNameLower, pkgVersion, libPath);
-
-        // Build destination path
-        var dllName = Path.GetFileName(path);
-        var destPath = Path.Combine(outputDir, dllName);
-
-        // Copy if source exists
-        if (File.Exists(sourcePath))
+        try
         {
             if (IsSameFile(sourcePath, destPath))
             {
@@ -168,9 +197,7 @@ foreach (var libProperty in runtime.EnumerateObject())
                     break;
                 }
             }
-
         }
-        // Don't fail on missing assemblies - some might be in different locations
     }
 }
 

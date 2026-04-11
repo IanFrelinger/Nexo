@@ -6,6 +6,13 @@ namespace Nexo.Hosting;
 public sealed class NexoHostingOptions
 {
     /// <summary>
+    /// Optional dependency profile that controls which non-core modules are registered.
+    /// Defaults to <see cref="NexoDeploymentProfile.Full"/> unless overridden by
+    /// NEXO_DEPLOYMENT_PROFILE.
+    /// </summary>
+    public NexoDeploymentProfile? DeploymentProfile { get; set; }
+
+    /// <summary>
     /// Path to the configuration file (default: ~/.nexo/config.json).
     /// </summary>
     public string? ConfigPath { get; set; }

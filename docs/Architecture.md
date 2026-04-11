@@ -62,10 +62,12 @@ Nexo is an AI-enhanced development orchestration platform with a layered archite
 - **SanitizingProviderFactory**: Wraps `IProviderFactory`, sanitizes prompts before cloud
 - **CloudSanitizationProxy**: PII checks, `ISensitiveContentFilter` (email, phone, SSN, API keys)
 - **Audit log**: Redactions and decisions
+- **Scope note**: Trust wiring is automatic in `AddNexo()` hosting registration; standalone CLI command DI graphs must explicitly opt in.
 
 ### Hosting
 
 - **AddNexo()**: Registers all kernel services
+- **AddNexoProfile(...)**: Registers environment-specific module sets (`Full`, `Server`, `Edge`, `AirGapped`, `System`) to peel optional dependencies.
 - **AddNexoOpenTelemetry()**: Optional metrics export
 
 ## Data Flow

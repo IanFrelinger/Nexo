@@ -15,13 +15,15 @@ ENV SkipCopyAssemblies=true
 ENV TARGETFRAMEWORK=${TARGETFRAMEWORK:-net8.0}
 
 # Restore and publish CLI - framework dependent by default.
-RUN dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework="${TARGETFRAMEWORK}" && \
+# Use single-node MSBuild in container builds to avoid intermittent file-lock races.
+RUN dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework="${TARGETFRAMEWORK}" -m:1 && \
     dotnet publish src/Nexo.CLI/Nexo.CLI.csproj -c Release -o /app/publish \
-        --self-contained false -p:TargetFramework="${TARGETFRAMEWORK}" -p:UseAppHost=false -p:SkipCopyAssemblies=true \
+        -m:1 --self-contained false -p:TargetFramework="${TARGETFRAMEWORK}" -p:BuildInParallel=false -p:UseAppHost=false -p:SkipCopyAssemblies=true \
         -p:ErrorOnDuplicatePublishOutputFiles=false
 
 # Runtime stage
-FROM mcr.microsoft.com/dotnet/runtime:${DOTNET_RUNTIME_VERSION}
+# CLI transitively depends on ASP.NET Core shared framework via hosting references.
+FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_RUNTIME_VERSION}
 WORKDIR /app
 
 COPY --from=build /app/publish/ /app/
