@@ -69,7 +69,12 @@ public class ArchitectAgentIntegrationTests
                   "agentId": "combat-1",
                   "domain": "Combat",
                   "goal": "Design weapon system",
+                  "goals": ["Design weapon system", "Balance damage output"],
                   "description": "Create weapon mechanics",
+                  "clusterId": "combat-cluster",
+                  "reportsToAgentId": "lead-architect",
+                  "commandChain": ["lead-architect", "game-director"],
+                  "ollamaModel": "llama3.2:3b",
                   "dependencies": [],
                   "priority": 0
                 }
@@ -97,6 +102,11 @@ public class ArchitectAgentIntegrationTests
         result.Agents.Should().HaveCount(1);
         result.Agents[0].AgentId.Should().Be("combat-1");
         result.Agents[0].Domain.Should().Be("Combat");
+        result.Agents[0].ClusterId.Should().Be("combat-cluster");
+        result.Agents[0].ReportsToAgentId.Should().Be("lead-architect");
+        result.Agents[0].CommandChain.Should().ContainInOrder("lead-architect", "game-director");
+        result.Agents[0].Goals.Should().Contain("Balance damage output");
+        result.Agents[0].OllamaModel.Should().Be("llama3.2:3b");
     }
 
     [Fact]

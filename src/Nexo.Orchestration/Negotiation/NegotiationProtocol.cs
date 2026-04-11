@@ -553,7 +553,8 @@ public sealed class NegotiationProtocol
     private static IReadOnlyList<string> ExtractUnderlyingGoals(AgentSpawnSpec spec)
     {
         // Extract underlying goals from description and goal
-        var text = $"{spec.Goal} {spec.Description}".ToLowerInvariant();
+        var declaredGoals = spec.Goals.Count > 0 ? string.Join(" ", spec.Goals) : spec.Goal;
+        var text = $"{declaredGoals} {spec.Description}".ToLowerInvariant();
         var goals = new List<string>();
 
         // Look for goal indicators

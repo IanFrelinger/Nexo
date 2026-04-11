@@ -265,6 +265,15 @@ public sealed class AgentFactory
 
         var accessor = _serviceProvider.GetService(typeof(IOrchestrationRuntimeSpecAccessor)) as IOrchestrationRuntimeSpecAccessor;
         var runtime = accessor?.Current.Resolve(spec.AgentId, spec.Domain) ?? new ModelRuntimeSpec();
+        if (!string.IsNullOrWhiteSpace(spec.OllamaModel) &&
+            (string.IsNullOrWhiteSpace(runtime.Provider) || string.Equals(runtime.Provider, "ollama", StringComparison.OrdinalIgnoreCase)))
+        {
+            runtime = runtime with
+            {
+                Provider = "ollama",
+                Model = spec.OllamaModel
+            };
+        }
 
         return new AgentScopedModel(baseModel, spec.AgentId, spec.Domain, runtime);
     }

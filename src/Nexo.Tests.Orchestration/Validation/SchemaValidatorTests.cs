@@ -205,5 +205,58 @@ public class SchemaValidatorTests
         // Assert
         errors.Should().Contain(e => e.ErrorType == "Schema" && e.Message.Contains("negative"));
     }
+
+    [Fact]
+    public async Task ValidateAsync_ReportsToNonExistentAgent_ReturnsError()
+    {
+        var result = new DecompositionResult
+        {
+            Agents = new[]
+            {
+                new AgentSpawnSpec
+                {
+                    AgentId = "agent-1",
+                    Domain = "Combat",
+                    Goal = "Execute mission",
+                    ReportsToAgentId = "missing-commander"
+                }
+            },
+            OriginalRequest = "Execute command chain"
+        };
+
+        var errors = await _validator.ValidateAsync(result);
+
+        errors.Should().Contain(e => e.ErrorType == "Schema" && e.Message.Contains("reports to non-existent agent"));
+    }
+
+    [Fact]
+    public async Task ValidateAsync_CommandChainWithDuplicates_ReturnsError()
+    {
+        var result = new DecompositionResult
+        {
+            Agents = new[]
+            {
+                new AgentSpawnSpec
+                {
+                    AgentId = "lead-1",
+                    Domain = "Strategy",
+                    Goal = "Lead mission"
+                },
+                new AgentSpawnSpec
+                {
+                    AgentId = "agent-1",
+                    Domain = "Combat",
+                    Goal = "Execute mission",
+                    ReportsToAgentId = "lead-1",
+                    CommandChain = new[] { "lead-1", "lead-1" }
+                }
+            },
+            OriginalRequest = "Execute command chain"
+        };
+
+        var errors = await _validator.ValidateAsync(result);
+
+        errors.Should().Contain(e => e.ErrorType == "Schema" && e.Message.Contains("command chain contains duplicates"));
+    }
 }
 

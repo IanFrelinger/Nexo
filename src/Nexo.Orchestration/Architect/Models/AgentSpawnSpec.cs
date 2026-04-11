@@ -39,9 +39,34 @@ public sealed record AgentSpawnSpec
     public required string Goal { get; init; }
 
     /// <summary>
+    /// Additional goals for the agent. If omitted, defaults to the primary <see cref="Goal"/>.
+    /// </summary>
+    public IReadOnlyList<string> Goals { get; init; } = Array.Empty<string>();
+
+    /// <summary>
     /// Detailed description of what this agent should accomplish.
     /// </summary>
     public string? Description { get; init; }
+
+    /// <summary>
+    /// Optional cluster identifier used to group related agents.
+    /// </summary>
+    public string? ClusterId { get; init; }
+
+    /// <summary>
+    /// Optional direct supervisor agent ID in the chain of command.
+    /// </summary>
+    public string? ReportsToAgentId { get; init; }
+
+    /// <summary>
+    /// Optional command chain, ordered from nearest supervisor to highest authority.
+    /// </summary>
+    public IReadOnlyList<string> CommandChain { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Optional Ollama model name to use for this specific agent.
+    /// </summary>
+    public string? OllamaModel { get; init; }
 
     /// <summary>
     /// List of agent IDs that must complete before this agent can start.

@@ -161,6 +161,53 @@ public sealed class DecompositionJsonParser
                 ? descProp.GetString()
                 : null;
 
+            var goals = agentElement.TryGetProperty("goals", out var goalsProp)
+                ? goalsProp.EnumerateArray().Select(e => e.GetString()!).Where(s => !string.IsNullOrWhiteSpace(s)).ToList()
+                : new List<string>();
+            if (goals.Count == 0 && !string.IsNullOrWhiteSpace(goal))
+            {
+                goals.Add(goal);
+            }
+
+            var clusterId = agentElement.TryGetProperty("clusterId", out var clusterProp)
+                ? clusterProp.GetString()
+                : null;
+
+            var reportsToAgentId = agentElement.TryGetProperty("reportsToAgentId", out var reportsToProp)
+                ? reportsToProp.GetString()
+                : null;
+            if (string.IsNullOrWhiteSpace(reportsToAgentId)
+                && agentElement.TryGetProperty("chainOfCommand", out var legacyChainOfCommandProp)
+                && legacyChainOfCommandProp.ValueKind == JsonValueKind.Array)
+            {
+                reportsToAgentId = legacyChainOfCommandProp
+                    .EnumerateArray()
+                    .Select(e => e.GetString())
+                    .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
+            }
+
+            var commandChain = agentElement.TryGetProperty("commandChain", out var chainProp)
+                ? chainProp.EnumerateArray().Select(e => e.GetString()!).Where(s => !string.IsNullOrWhiteSpace(s)).ToList()
+                : new List<string>();
+            if (commandChain.Count == 0
+                && agentElement.TryGetProperty("chainOfCommand", out var legacyCommandChainProp)
+                && legacyCommandChainProp.ValueKind == JsonValueKind.Array)
+            {
+                commandChain = legacyCommandChainProp
+                    .EnumerateArray()
+                    .Select(e => e.GetString()!)
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .ToList();
+            }
+            if (commandChain.Count == 0 && !string.IsNullOrWhiteSpace(reportsToAgentId))
+            {
+                commandChain.Add(reportsToAgentId);
+            }
+
+            var ollamaModel = agentElement.TryGetProperty("ollamaModel", out var ollamaModelProp)
+                ? ollamaModelProp.GetString()
+                : null;
+
             var dependencies = agentElement.TryGetProperty("dependencies", out var depsProp)
                 ? depsProp.EnumerateArray().Select(e => e.GetString()!).Where(s => !string.IsNullOrWhiteSpace(s)).ToList()
                 : new List<string>();
@@ -196,7 +243,12 @@ public sealed class DecompositionJsonParser
                 Name = string.IsNullOrWhiteSpace(name) ? agentId : name!,
                 Domain = domain,
                 Goal = goal,
+                Goals = goals,
                 Description = description,
+                ClusterId = clusterId,
+                ReportsToAgentId = reportsToAgentId,
+                CommandChain = commandChain,
+                OllamaModel = ollamaModel,
                 Dependencies = dependencies,
                 OutputSchema = outputSchema,
                 Constraints = constraints,

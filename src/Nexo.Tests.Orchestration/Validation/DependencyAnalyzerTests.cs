@@ -182,5 +182,38 @@ public class DependencyAnalyzerTests
         // Assert
         errors.Should().Contain(e => e.ErrorType == "Dependency" && e.Severity == ValidationSeverity.Warning);
     }
+
+    [Fact]
+    public async Task ValidateAsync_CommandHierarchyCycle_ReturnsError()
+    {
+        // Arrange
+        var result = new DecompositionResult
+        {
+            Agents = new[]
+            {
+                new AgentSpawnSpec
+                {
+                    AgentId = "commander-1",
+                    Domain = "Strategy",
+                    Goal = "Direct mission",
+                    ReportsToAgentId = "lead-1"
+                },
+                new AgentSpawnSpec
+                {
+                    AgentId = "lead-1",
+                    Domain = "Execution",
+                    Goal = "Lead squad",
+                    ReportsToAgentId = "commander-1"
+                }
+            },
+            OriginalRequest = "Create mission command chain"
+        };
+
+        // Act
+        var errors = await _validator.ValidateAsync(result);
+
+        // Assert
+        errors.Should().Contain(e => e.ErrorType == "Dependency" && e.Message.Contains("Circular dependency"));
+    }
 }
 

@@ -30,6 +30,11 @@ public sealed class SchemaValidator : IValidator
         CancellationToken cancellationToken = default)
     {
         var errors = new List<ValidationError>();
+        var agentIds = result.Agents.Select(a => a.AgentId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var agentById = result.Agents
+            .Where(a => !string.IsNullOrWhiteSpace(a.AgentId))
+            .GroupBy(a => a.AgentId, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
         foreach (var agent in result.Agents)
         {
@@ -81,7 +86,6 @@ public sealed class SchemaValidator : IValidator
             }
 
             // Validate dependencies reference existing agents
-            var agentIds = result.Agents.Select(a => a.AgentId).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var dep in agent.Dependencies)
             {
                 if (!agentIds.Contains(dep))
@@ -102,6 +106,102 @@ public sealed class SchemaValidator : IValidator
                     {
                         ErrorType = "Schema",
                         Message = $"Agent '{agent.AgentId}' cannot depend on itself",
+                        AgentId = agent.AgentId,
+                        Severity = ValidationSeverity.Error
+                    });
+                }
+            }
+
+            // Validate chain-of-command references.
+            if (!string.IsNullOrWhiteSpace(agent.ReportsToAgentId))
+            {
+                if (string.Equals(agent.AgentId, agent.ReportsToAgentId, StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(new ValidationError
+                    {
+                        ErrorType = "Schema",
+                        Message = $"Agent '{agent.AgentId}' cannot report to itself",
+                        AgentId = agent.AgentId,
+                        Severity = ValidationSeverity.Error
+                    });
+                }
+
+                if (!agentIds.Contains(agent.ReportsToAgentId))
+                {
+                    errors.Add(new ValidationError
+                    {
+                        ErrorType = "Schema",
+                        Message = $"Agent '{agent.AgentId}' reports to non-existent agent '{agent.ReportsToAgentId}'",
+                        AgentId = agent.AgentId,
+                        Severity = ValidationSeverity.Error
+                    });
+                }
+
+                if (agentById.TryGetValue(agent.ReportsToAgentId, out var supervisor) &&
+                    !string.IsNullOrWhiteSpace(agent.ClusterId) &&
+                    !string.IsNullOrWhiteSpace(supervisor.ClusterId) &&
+                    !string.Equals(agent.ClusterId, supervisor.ClusterId, StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(new ValidationError
+                    {
+                        ErrorType = "Schema",
+                        Message = $"Agent '{agent.AgentId}' reports across clusters ('{agent.ClusterId}' -> '{supervisor.ClusterId}').",
+                        AgentId = agent.AgentId,
+                        Severity = ValidationSeverity.Warning
+                    });
+                }
+            }
+
+            if (agent.CommandChain.Count > 0)
+            {
+                var duplicateChainEntries = agent.CommandChain
+                    .GroupBy(id => id, StringComparer.OrdinalIgnoreCase)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+                if (duplicateChainEntries.Count > 0)
+                {
+                    errors.Add(new ValidationError
+                    {
+                        ErrorType = "Schema",
+                        Message = $"Agent '{agent.AgentId}' command chain contains duplicates: {string.Join(", ", duplicateChainEntries)}",
+                        AgentId = agent.AgentId,
+                        Severity = ValidationSeverity.Error
+                    });
+                }
+
+                if (agent.CommandChain.Any(entry => string.Equals(entry, agent.AgentId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    errors.Add(new ValidationError
+                    {
+                        ErrorType = "Schema",
+                        Message = $"Agent '{agent.AgentId}' command chain cannot include itself",
+                        AgentId = agent.AgentId,
+                        Severity = ValidationSeverity.Error
+                    });
+                }
+
+                foreach (var chainAgent in agent.CommandChain)
+                {
+                    if (!agentIds.Contains(chainAgent))
+                    {
+                        errors.Add(new ValidationError
+                        {
+                            ErrorType = "Schema",
+                            Message = $"Agent '{agent.AgentId}' command chain references non-existent agent '{chainAgent}'",
+                            AgentId = agent.AgentId,
+                            Severity = ValidationSeverity.Error
+                        });
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(agent.ReportsToAgentId) &&
+                    !string.Equals(agent.ReportsToAgentId, agent.CommandChain[0], StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(new ValidationError
+                    {
+                        ErrorType = "Schema",
+                        Message = $"Agent '{agent.AgentId}' reportsToAgentId must match the first commandChain entry",
                         AgentId = agent.AgentId,
                         Severity = ValidationSeverity.Error
                     });

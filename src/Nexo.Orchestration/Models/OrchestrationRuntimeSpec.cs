@@ -97,7 +97,7 @@ public sealed class OrchestrationRuntimeModelDecorator : IModel
         return _inner.CompleteAsync(routed, ct);
     }
 
-    public static ModelInput InjectDirectives(ModelInput input, string? prefer, string? provider, string? model = null)
+    public static ModelInput InjectDirectives(ModelInput input, string? prefer, string? provider, string? model)
     {
         var directives = new List<string>();
         if (!string.IsNullOrWhiteSpace(prefer)) directives.Add($"nexo.model.prefer={prefer}");

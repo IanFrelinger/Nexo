@@ -53,6 +53,35 @@ public sealed class OrchestrationRuntimeSpecTests
         capture.LastSystem.Should().Contain("nexo.model.provider=offline");
     }
 
+    [Fact]
+    public async Task AgentFactory_InsertsOllamaModelDirective_WhenSpecifiedOnAgent()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IOrchestrationRuntimeSpecAccessor, OrchestrationRuntimeSpecAccessor>();
+
+        var capture = new CapturingModel();
+        services.AddSingleton<IModel>(capture);
+
+        var sp = services.BuildServiceProvider();
+        var factory = new AgentFactory(sp.GetRequiredService<ILogger<AgentFactory>>(), sp);
+        var agentSpec = new AgentSpawnSpec
+        {
+            AgentId = "ai-1",
+            Domain = "AI",
+            Goal = "Plan encounters",
+            OllamaModel = "llama3.2:3b"
+        };
+
+        var agent = factory.CreateAgent(agentSpec);
+        await agent.InitializeAsync();
+        await agent.ExecuteAsync();
+
+        capture.LastSystem.Should().NotBeNullOrWhiteSpace();
+        capture.LastSystem.Should().Contain("nexo.model.provider=ollama");
+        capture.LastSystem.Should().Contain("nexo.model.name=llama3.2:3b");
+    }
+
     private sealed class CapturingModel : IModel
     {
         public string? LastSystem { get; private set; }
