@@ -17,6 +17,7 @@ public sealed record WorkflowLabStressHistoryRow
     public int EscalationCount { get; init; }
     public double Score { get; init; }
     public string? Summary { get; init; }
+    public string FailureCategory { get; init; } = "none";
     public string BenchmarkSet { get; init; } = "workflow-lab";
 }
 

@@ -183,6 +183,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var historyRows = WorkflowLabHistoryStore.ReadRecent(repoRoot, 10);
             AssertTrue(historyRows.Count >= 1, "Expected stress run to persist at least one history row.");
             AssertEqual("hardware-lab", historyRows[0].BenchmarkSet);
+            AssertEqual("none", historyRows[0].FailureCategory);
         }
         finally
         {
@@ -269,6 +270,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     cancellationToken)).ConfigureAwait(false);
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("\"ok\": false", StringComparison.OrdinalIgnoreCase), "Stress should fail when executor fails.");
+            AssertTrue(output.Contains("\"failureCategory\": \"executor_failure\"", StringComparison.OrdinalIgnoreCase), "Stress should classify executor failures.");
         }
         finally
         {
@@ -313,6 +315,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                 AgentCount = 2,
                 ConflictCount = 2,
                 EscalationCount = 1,
+                FailureCategory = "orchestration_failure",
                 BenchmarkSet = "workflow-lab"
             });
 
@@ -332,6 +335,62 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
             AssertTrue(markdown.Contains("# Workflow Stress Benchmark Report", StringComparison.Ordinal));
             AssertTrue(markdown.Contains("## Top Scenarios", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("## Failure Categories", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(markdown.Contains("orchestration_failure", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestStressClassifiesRuntimeContextFailureFromErrorCodeAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": { "iterations": 1, "persistHistory": true, "benchmarkSet": "workflow-lab" },
+  "requests": [ { "id": "request", "prompt": "Do thing" } ],
+  "compositions": [ { "id": "comp", "roles": [ { "agentId": "a1", "role": "builder", "goal": "do thing" } ] } ],
+  "modelProfiles": [ { "id": "profile", "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" } } ]
+}
+""";
+            var command = CreateCommand((_, _, _, _, _, _) =>
+            {
+                Console.WriteLine("""
+{
+  "ok": false,
+  "errorCode": "BARRIER_VALIDATION_FAILED",
+  "error": "barrier context rejected"
+}
+""");
+                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, "model_execution_failure"));
+            });
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteStressAsync(
+                    requestOverride: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: null,
+                    persistHistoryOverride: true,
+                    json: true,
+                    verbose: false,
+                    cancellationToken)).ConfigureAwait(false);
+            AssertEqual(1, exitCode);
+            AssertTrue(output.Contains("\"failureCategory\": \"runtime_context_failure\"", StringComparison.OrdinalIgnoreCase), "Barrier errors should classify as runtime context failures.");
+
+            var historyRows = WorkflowLabHistoryStore.ReadRecent(repoRoot, 5);
+            AssertTrue(historyRows.Count >= 1, "Expected failure row to be persisted.");
+            AssertEqual("runtime_context_failure", historyRows[0].FailureCategory);
         }
         finally
         {
