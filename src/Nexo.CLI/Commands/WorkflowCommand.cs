@@ -415,6 +415,14 @@ public sealed class WorkflowCommand : Command
             "--request",
             () => null,
             "Optional request override used for all optimize candidates.");
+        var objectiveOpt = new Option<string?>(
+            "--objective",
+            () => null,
+            "Optional high-level objective used to prioritize candidate generation.");
+        var objectiveFileOpt = new Option<string?>(
+            "--objective-file",
+            () => null,
+            "Optional file path containing objective text used to prioritize candidate generation.");
         var specPathOpt = new Option<string?>(
             "--spec",
             () => null,
@@ -460,6 +468,22 @@ public sealed class WorkflowCommand : Command
             "--max-candidates",
             () => 24,
             "Maximum request/composition/profile candidates to evaluate.");
+        var budgetRunsOpt = new Option<int?>(
+            "--budget-runs",
+            () => null,
+            "Optional maximum measured runs budget across all optimize candidates.");
+        var searchStrategyOpt = new Option<string>(
+            "--search-strategy",
+            () => "successive-halving",
+            "Candidate search strategy (successive-halving|objective-first|exhaustive).");
+        var earlyStopMinRunsOpt = new Option<int?>(
+            "--early-stop-min-runs",
+            () => 2,
+            "Minimum measured runs before early-stop checks trigger.");
+        var earlyStopMinSuccessRateOpt = new Option<double?>(
+            "--early-stop-min-success-rate",
+            () => 0.35,
+            "Minimum measured success-rate required after early-stop minimum runs.");
         var autoPullModelsOpt = new Option<bool>(
             "--auto-pull-models",
             () => true,
@@ -480,6 +504,8 @@ public sealed class WorkflowCommand : Command
         var verboseOpt = new Option<bool>("--verbose", () => false, "Emit orchestrator progress output.");
 
         optimize.AddOption(requestOverrideOpt);
+        optimize.AddOption(objectiveOpt);
+        optimize.AddOption(objectiveFileOpt);
         optimize.AddOption(specPathOpt);
         optimize.AddOption(specJsonOpt);
         optimize.AddOption(providerOpt);
@@ -492,6 +518,10 @@ public sealed class WorkflowCommand : Command
         optimize.AddOption(randomSeedOpt);
         optimize.AddOption(cooldownMsOpt);
         optimize.AddOption(maxCandidatesOpt);
+        optimize.AddOption(budgetRunsOpt);
+        optimize.AddOption(searchStrategyOpt);
+        optimize.AddOption(earlyStopMinRunsOpt);
+        optimize.AddOption(earlyStopMinSuccessRateOpt);
         optimize.AddOption(autoPullModelsOpt);
         optimize.AddOption(promoteWinnerOpt);
         optimize.AddOption(policyFileOpt);
@@ -502,6 +532,8 @@ public sealed class WorkflowCommand : Command
         {
             var exitCode = ExecuteOptimizeAsync(
                 ctx.ParseResult.GetValueForOption(requestOverrideOpt),
+                ctx.ParseResult.GetValueForOption(objectiveOpt),
+                ctx.ParseResult.GetValueForOption(objectiveFileOpt),
                 ctx.ParseResult.GetValueForOption(specPathOpt),
                 ctx.ParseResult.GetValueForOption(specJsonOpt),
                 ctx.ParseResult.GetValueForOption(providerOpt),
@@ -514,6 +546,10 @@ public sealed class WorkflowCommand : Command
                 ctx.ParseResult.GetValueForOption(randomSeedOpt),
                 ctx.ParseResult.GetValueForOption(cooldownMsOpt),
                 ctx.ParseResult.GetValueForOption(maxCandidatesOpt),
+                ctx.ParseResult.GetValueForOption(budgetRunsOpt),
+                ctx.ParseResult.GetValueForOption(searchStrategyOpt),
+                ctx.ParseResult.GetValueForOption(earlyStopMinRunsOpt),
+                ctx.ParseResult.GetValueForOption(earlyStopMinSuccessRateOpt),
                 ctx.ParseResult.GetValueForOption(autoPullModelsOpt),
                 ctx.ParseResult.GetValueForOption(promoteWinnerOpt),
                 ctx.ParseResult.GetValueForOption(policyFileOpt),
@@ -1166,6 +1202,8 @@ public sealed class WorkflowCommand : Command
 
     internal async Task<int> ExecuteOptimizeAsync(
         string? requestOverride,
+        string? objective,
+        string? objectiveFile,
         string? specPath,
         string? specJson,
         string? providerOverride,
@@ -1178,6 +1216,10 @@ public sealed class WorkflowCommand : Command
         int? randomSeedOverride,
         int? cooldownMsOverride,
         int maxCandidates,
+        int? budgetRuns,
+        string? searchStrategy,
+        int? earlyStopMinRuns,
+        double? earlyStopMinSuccessRate,
         bool autoPullModels,
         bool promoteWinner,
         string? policyFile,
@@ -1210,6 +1252,17 @@ public sealed class WorkflowCommand : Command
             return 1;
         }
 
+        var objectiveText = ResolveObjectiveText(objective, objectiveFile);
+        if (objectiveText is null && !string.IsNullOrWhiteSpace(objectiveFile))
+        {
+            WriteOptimizeResult(new WorkflowOptimizeResult(
+                false,
+                $"Failed to load objective file: {objectiveFile}",
+                Objective: objective,
+                ObjectiveFile: objectiveFile), json);
+            return 1;
+        }
+
         var benchmarkSet = NormalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
         var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
         var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
@@ -1218,6 +1271,10 @@ public sealed class WorkflowCommand : Command
         var shuffleScenarios = shuffleScenariosOverride ?? spec.Execution.ShuffleScenarioOrder;
         var randomSeed = randomSeedOverride ?? spec.Execution.RandomSeed;
         var rng = randomSeed.HasValue ? new Random(randomSeed.Value) : null;
+        var strategy = NormalizeSearchStrategy(searchStrategy);
+        var minRunsForEarlyStop = Math.Max(1, earlyStopMinRuns ?? 2);
+        var minSuccessForEarlyStop = Math.Clamp(earlyStopMinSuccessRate ?? 0.35, 0d, 1d);
+        var measuredRunBudget = budgetRuns.HasValue ? Math.Max(1, budgetRuns.Value) : int.MaxValue;
         var sharedRequest = string.IsNullOrWhiteSpace(requestOverride) ? null : requestOverride.Trim();
         var optimizeRunId = BuildRunId();
         var specHash = ComputeSpecHash(JsonSerializer.Serialize(spec));
@@ -1237,12 +1294,16 @@ public sealed class WorkflowCommand : Command
                 g.OrderBy(x => x.Iteration).ToArray()))
             .ToList();
 
+        var objectiveKeywordSet = BuildObjectiveKeywordSet(objectiveText);
+
         if (shuffleScenarios && groupedCandidates.Count > 1)
             ShuffleOptimizeCandidates(groupedCandidates, rng ?? new Random());
 
         var maxCandidateCount = Math.Max(1, maxCandidates);
         if (groupedCandidates.Count > maxCandidateCount)
             groupedCandidates = groupedCandidates.Take(maxCandidateCount).ToList();
+
+        groupedCandidates = SortCandidatesForSearchStrategy(groupedCandidates, strategy, objectiveKeywordSet);
 
         var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
         foreach (var provider in profiles
@@ -1254,11 +1315,14 @@ public sealed class WorkflowCommand : Command
             preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
         }
 
+        var measuredRunsUsed = 0;
         var candidates = new List<WorkflowOptimizeCandidate>();
         var persistedRows = new List<WorkflowLabStressHistoryRow>();
         for (var candidateIndex = 0; candidateIndex < groupedCandidates.Count; candidateIndex++)
         {
             ct.ThrowIfCancellationRequested();
+            if (measuredRunsUsed >= measuredRunBudget)
+                break;
             var candidate = groupedCandidates[candidateIndex];
             var candidateRunId = $"{optimizeRunId}-c{candidateIndex + 1:D2}";
             var profileProvider = candidate.Profile.Default.Provider?.Trim();
@@ -1272,8 +1336,13 @@ public sealed class WorkflowCommand : Command
                     PulledModels: Array.Empty<string>());
 
             var runs = new List<WorkflowStressRunRecord>();
-            foreach (var plan in candidate.Plans)
+            var candidatePlans = strategy == "successive-halving"
+                ? candidate.Plans.Take(Math.Max(1, (candidate.Plans.Count + 1) / 2)).ToArray()
+                : candidate.Plans.ToArray();
+            foreach (var plan in candidatePlans)
             {
+                if (measuredRunsUsed >= measuredRunBudget)
+                    break;
                 var request = plan.Request;
                 var composition = plan.Composition;
                 var profile = plan.Profile;
@@ -1392,6 +1461,7 @@ public sealed class WorkflowCommand : Command
                     telemetry.HardwareProfile,
                     benchmarkSet);
                 runs.Add(runRecord);
+                measuredRunsUsed++;
 
                 var historyRow = new WorkflowLabStressHistoryRow
                 {
@@ -1429,6 +1499,14 @@ public sealed class WorkflowCommand : Command
                 if (cooldownMs > 0)
                 {
                     await Task.Delay(TimeSpan.FromMilliseconds(cooldownMs), ct).ConfigureAwait(false);
+                }
+
+                if (runs.Count >= minRunsForEarlyStop)
+                {
+                    var successful = runs.Count(x => x.Success);
+                    var successRateNow = runs.Count == 0 ? 0d : (double)successful / runs.Count;
+                    if (successRateNow < minSuccessForEarlyStop)
+                        break;
                 }
             }
 
@@ -1605,7 +1683,14 @@ public sealed class WorkflowCommand : Command
             ranked,
             winner,
             recommendations,
-            promotionSummary);
+            promotionSummary,
+            objectiveText,
+            objectiveFile,
+            strategy,
+            measuredRunsUsed,
+            measuredRunBudget,
+            minRunsForEarlyStop,
+            minSuccessForEarlyStop);
         File.WriteAllText(reportPath, reportContent);
 
         var hasSuccess = ranked.Any(x => x.Successes > 0);
@@ -1621,7 +1706,14 @@ public sealed class WorkflowCommand : Command
             Winner: winner,
             Recommendations: recommendations,
             PromotionSummary: promotionSummary,
-            PromotedBaselineId: promotedBaselineId);
+            PromotedBaselineId: promotedBaselineId,
+            Objective: objectiveText,
+            ObjectiveFile: objectiveFile,
+            SearchStrategy: strategy,
+            BudgetRuns: measuredRunBudget == int.MaxValue ? null : measuredRunBudget,
+            MeasuredRunsUsed: measuredRunsUsed,
+            EarlyStopMinRuns: minRunsForEarlyStop,
+            EarlyStopMinSuccessRate: minSuccessForEarlyStop);
         WriteOptimizeResult(result, json);
         return result.Ok ? 0 : 1;
     }
@@ -1736,7 +1828,14 @@ public sealed class WorkflowCommand : Command
         IReadOnlyList<WorkflowOptimizeCandidate> ranked,
         WorkflowOptimizeCandidate winner,
         IReadOnlyList<WorkflowOptimizeRecommendation> recommendations,
-        string? promotionSummary)
+        string? promotionSummary,
+        string? objective,
+        string? objectiveFile,
+        string searchStrategy,
+        int measuredRunsUsed,
+        int measuredRunBudget,
+        int earlyStopMinRuns,
+        double earlyStopMinSuccessRate)
     {
         var extension = Path.GetExtension(reportPath).Trim().ToLowerInvariant();
         if (extension == ".json")
@@ -1750,6 +1849,16 @@ public sealed class WorkflowCommand : Command
                 candidates = ranked,
                 recommendations,
                 promotionSummary,
+                optimizeExecution = new
+                {
+                    objective,
+                    objectiveFile,
+                    searchStrategy,
+                    measuredRunsUsed,
+                    measuredRunBudget = measuredRunBudget == int.MaxValue ? null : measuredRunBudget,
+                    earlyStopMinRuns,
+                    earlyStopMinSuccessRate
+                },
                 hardwareTelemetry = new
                 {
                     hardwareProfile = winner.HardwareProfile,
@@ -1763,9 +1872,35 @@ public sealed class WorkflowCommand : Command
         }
 
         if (extension == ".txt")
-            return RenderOptimizationRecommendationText(sessionRunId, benchmarkSet, ranked, winner, recommendations, promotionSummary);
+            return RenderOptimizationRecommendationText(
+                sessionRunId,
+                benchmarkSet,
+                ranked,
+                winner,
+                recommendations,
+                promotionSummary,
+                objective,
+                objectiveFile,
+                searchStrategy,
+                measuredRunsUsed,
+                measuredRunBudget,
+                earlyStopMinRuns,
+                earlyStopMinSuccessRate);
 
-        return RenderOptimizationRecommendationMarkdown(sessionRunId, benchmarkSet, ranked, winner, recommendations, promotionSummary);
+        return RenderOptimizationRecommendationMarkdown(
+            sessionRunId,
+            benchmarkSet,
+            ranked,
+            winner,
+            recommendations,
+            promotionSummary,
+            objective,
+            objectiveFile,
+            searchStrategy,
+            measuredRunsUsed,
+            measuredRunBudget,
+            earlyStopMinRuns,
+            earlyStopMinSuccessRate);
     }
 
     private static string RenderOptimizationRecommendationMarkdown(
@@ -1774,7 +1909,14 @@ public sealed class WorkflowCommand : Command
         IReadOnlyList<WorkflowOptimizeCandidate> ranked,
         WorkflowOptimizeCandidate winner,
         IReadOnlyList<WorkflowOptimizeRecommendation> recommendations,
-        string? promotionSummary)
+        string? promotionSummary,
+        string? objective,
+        string? objectiveFile,
+        string searchStrategy,
+        int measuredRunsUsed,
+        int measuredRunBudget,
+        int earlyStopMinRuns,
+        double earlyStopMinSuccessRate)
     {
         var sb = new StringBuilder();
         sb.AppendLine("# Workflow Optimize Recommendation Report");
@@ -1782,6 +1924,13 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"Generated: {DateTimeOffset.UtcNow:O}");
         sb.AppendLine($"Session run-id: {sessionRunId}");
         sb.AppendLine($"Benchmark set: {benchmarkSet}");
+        if (!string.IsNullOrWhiteSpace(objective))
+            sb.AppendLine($"Objective: {objective}");
+        if (!string.IsNullOrWhiteSpace(objectiveFile))
+            sb.AppendLine($"Objective file: {objectiveFile}");
+        sb.AppendLine($"Search strategy: {searchStrategy}");
+        sb.AppendLine($"Measured runs used: {measuredRunsUsed}{(measuredRunBudget == int.MaxValue ? string.Empty : "/" + measuredRunBudget)}");
+        sb.AppendLine($"Early stop: min-runs={earlyStopMinRuns}, min-success-rate={earlyStopMinSuccessRate:P0}");
         sb.AppendLine();
         sb.AppendLine("## Winner");
         sb.AppendLine($"- Candidate: `{winner.CandidateId}`");
@@ -1826,13 +1975,27 @@ public sealed class WorkflowCommand : Command
         IReadOnlyList<WorkflowOptimizeCandidate> ranked,
         WorkflowOptimizeCandidate winner,
         IReadOnlyList<WorkflowOptimizeRecommendation> recommendations,
-        string? promotionSummary)
+        string? promotionSummary,
+        string? objective,
+        string? objectiveFile,
+        string searchStrategy,
+        int measuredRunsUsed,
+        int measuredRunBudget,
+        int earlyStopMinRuns,
+        double earlyStopMinSuccessRate)
     {
         var sb = new StringBuilder();
         sb.AppendLine("Workflow Optimize Recommendation Report");
         sb.AppendLine($"Generated: {DateTimeOffset.UtcNow:O}");
         sb.AppendLine($"Session run-id: {sessionRunId}");
         sb.AppendLine($"Benchmark set: {benchmarkSet}");
+        if (!string.IsNullOrWhiteSpace(objective))
+            sb.AppendLine($"Objective: {objective}");
+        if (!string.IsNullOrWhiteSpace(objectiveFile))
+            sb.AppendLine($"Objective file: {objectiveFile}");
+        sb.AppendLine($"Search strategy: {searchStrategy}");
+        sb.AppendLine($"Measured runs used: {measuredRunsUsed}{(measuredRunBudget == int.MaxValue ? string.Empty : "/" + measuredRunBudget)}");
+        sb.AppendLine($"Early stop: min-runs={earlyStopMinRuns}, min-success-rate={earlyStopMinSuccessRate:P0}");
         sb.AppendLine($"Winner: {winner.CandidateId} ({winner.RunId}) success={winner.SuccessRate:P1}, score={winner.AverageScore:F2}, avg={winner.AverageLatencyMs}ms, p95={winner.P95LatencyMs}ms");
         sb.AppendLine($"Winner telemetry: cpu={winner.AverageCpuTimeDeltaMs}ms, ws-p95={winner.P95WorkingSetMb}MB, private-p95={winner.P95PrivateMemoryMb}MB, managed-p95={winner.P95ManagedMemoryMb}MB, max-threads={winner.MaxThreadCount}, profile={winner.HardwareProfile}");
         sb.AppendLine("Ranked candidates:");
@@ -2879,6 +3042,123 @@ public sealed class WorkflowCommand : Command
         return Math.Round(score, 3);
     }
 
+    private static string? ResolveObjectiveText(string? objective, string? objectiveFile)
+    {
+        if (!string.IsNullOrWhiteSpace(objective))
+            return objective.Trim();
+        if (string.IsNullOrWhiteSpace(objectiveFile))
+            return null;
+        try
+        {
+            var path = Path.GetFullPath(objectiveFile.Trim());
+            if (!File.Exists(path))
+                return null;
+            var content = File.ReadAllText(path);
+            return string.IsNullOrWhiteSpace(content) ? null : content.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static HashSet<string> BuildObjectiveKeywordSet(string? objective)
+    {
+        var output = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(objective))
+            return output;
+
+        var separators = new[] { ' ', '\t', '\r', '\n', ',', '.', ';', ':', '|', '-', '_', '/', '\\', '(', ')', '[', ']', '{', '}', '"' };
+        foreach (var token in objective.Split(separators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (token.Length < 3)
+                continue;
+            output.Add(token.ToLowerInvariant());
+        }
+        return output;
+    }
+
+    private static string NormalizeSearchStrategy(string? searchStrategy)
+    {
+        var value = string.IsNullOrWhiteSpace(searchStrategy)
+            ? "successive-halving"
+            : searchStrategy.Trim().ToLowerInvariant();
+        return value switch
+        {
+            "objective-first" => "objective-first",
+            "exhaustive" => "exhaustive",
+            _ => "successive-halving"
+        };
+    }
+
+    private static List<OptimizeCandidatePlan> SortCandidatesForSearchStrategy(
+        IReadOnlyList<OptimizeCandidatePlan> candidates,
+        string strategy,
+        HashSet<string> objectiveKeywords)
+    {
+        var list = candidates.ToList();
+        if (list.Count <= 1 || string.Equals(strategy, "exhaustive", StringComparison.OrdinalIgnoreCase))
+            return list;
+
+        var ranked = list
+            .Select(candidate => new
+            {
+                Candidate = candidate,
+                ObjectiveScore = ScoreCandidateForObjective(candidate, objectiveKeywords)
+            })
+            .OrderByDescending(x => x.ObjectiveScore)
+            .ThenByDescending(x => x.Candidate.Composition.Roles.Count)
+            .ThenBy(x => x.Candidate.CandidateId, StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.Candidate)
+            .ToList();
+
+        if (string.Equals(strategy, "objective-first", StringComparison.OrdinalIgnoreCase))
+            return ranked;
+
+        var halved = Math.Max(1, (ranked.Count + 1) / 2);
+        return ranked.Take(halved).Concat(ranked.Skip(halved)).ToList();
+    }
+
+    private static int ScoreCandidateForObjective(OptimizeCandidatePlan candidate, HashSet<string> objectiveKeywords)
+    {
+        if (objectiveKeywords.Count == 0)
+            return 0;
+
+        var score = 0;
+        score += CountMatches(candidate.Request.Id, objectiveKeywords) * 3;
+        score += CountMatches(candidate.Request.Prompt, objectiveKeywords) * 3;
+        score += CountMatches(candidate.Composition.Id, objectiveKeywords) * 2;
+        score += CountMatches(candidate.Composition.Description, objectiveKeywords) * 2;
+        score += CountMatches(candidate.Profile.Id, objectiveKeywords) * 2;
+
+        foreach (var role in candidate.Composition.Roles)
+        {
+            score += CountMatches(role.AgentId, objectiveKeywords);
+            score += CountMatches(role.Role, objectiveKeywords);
+            score += CountMatches(role.Domain, objectiveKeywords);
+            score += CountMatches(role.Goal, objectiveKeywords) * 2;
+            score += CountMatches(role.OllamaModel, objectiveKeywords);
+        }
+
+        return score;
+    }
+
+    private static int CountMatches(string? text, HashSet<string> objectiveKeywords)
+    {
+        if (string.IsNullOrWhiteSpace(text) || objectiveKeywords.Count == 0)
+            return 0;
+
+        var lowered = text.ToLowerInvariant();
+        var matches = 0;
+        foreach (var token in objectiveKeywords)
+        {
+            if (lowered.Contains(token, StringComparison.OrdinalIgnoreCase))
+                matches++;
+        }
+
+        return matches;
+    }
+
     private static void WriteScaffoldResult(WorkflowScaffoldResult result, bool json)
     {
         if (json)
@@ -3003,6 +3283,13 @@ public sealed class WorkflowCommand : Command
                 recommendations = result.Recommendations,
                 promotionSummary = result.PromotionSummary,
                 promotedBaselineId = result.PromotedBaselineId,
+                objective = result.Objective,
+                objectiveFile = result.ObjectiveFile,
+                searchStrategy = result.SearchStrategy,
+                budgetRuns = result.BudgetRuns,
+                measuredRunsUsed = result.MeasuredRunsUsed,
+                earlyStopMinRuns = result.EarlyStopMinRuns,
+                earlyStopMinSuccessRate = result.EarlyStopMinSuccessRate,
                 candidates = result.Candidates
             }, new JsonSerializerOptions { WriteIndented = true }));
             return;
@@ -3016,6 +3303,16 @@ public sealed class WorkflowCommand : Command
             Console.WriteLine($"  benchmark-set={result.BenchmarkSet}");
         if (!string.IsNullOrWhiteSpace(result.RecommendationReportPath))
             Console.WriteLine($"  recommendation-report={result.RecommendationReportPath}");
+        if (!string.IsNullOrWhiteSpace(result.Objective))
+            Console.WriteLine($"  objective={result.Objective}");
+        if (!string.IsNullOrWhiteSpace(result.ObjectiveFile))
+            Console.WriteLine($"  objective-file={result.ObjectiveFile}");
+        if (!string.IsNullOrWhiteSpace(result.SearchStrategy))
+            Console.WriteLine($"  search-strategy={result.SearchStrategy}");
+        if (result.MeasuredRunsUsed.HasValue)
+            Console.WriteLine($"  measured-runs-used={result.MeasuredRunsUsed}{(result.BudgetRuns.HasValue ? "/" + result.BudgetRuns.Value : string.Empty)}");
+        if (result.EarlyStopMinRuns.HasValue || result.EarlyStopMinSuccessRate.HasValue)
+            Console.WriteLine($"  early-stop=min-runs:{result.EarlyStopMinRuns ?? 0}, min-success-rate:{(result.EarlyStopMinSuccessRate ?? 0d):P0}");
         if (result.Winner is not null)
         {
             Console.WriteLine(
@@ -3245,7 +3542,14 @@ public sealed class WorkflowCommand : Command
         WorkflowOptimizeCandidate? Winner = null,
         IReadOnlyList<WorkflowOptimizeRecommendation>? Recommendations = null,
         string? PromotionSummary = null,
-        string? PromotedBaselineId = null);
+        string? PromotedBaselineId = null,
+        string? Objective = null,
+        string? ObjectiveFile = null,
+        string? SearchStrategy = null,
+        int? BudgetRuns = null,
+        int? MeasuredRunsUsed = null,
+        int? EarlyStopMinRuns = null,
+        double? EarlyStopMinSuccessRate = null);
 
     private sealed record WorkflowHistorySummary(
         int Total,

@@ -26,6 +26,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestOptimizeGeneratesRecommendationReportAsync(cancellationToken).ConfigureAwait(false);
             await TestOptimizeAutoPromotesWinnerBaselineAsync(cancellationToken).ConfigureAwait(false);
             await TestOptimizeInvokesModelPullerWithResolvedModelsAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeResolvesObjectiveFileAndReportsSearchMetadataAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeHonorsBudgetAndEarlyStopAsync(cancellationToken).ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(WorkflowCommandTests),
@@ -69,7 +71,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
 
     private static WorkflowCommand CreateCommandWithPreflight(
         Func<string, string, string?, bool, bool, CancellationToken, Task<WorkflowCommand.ScenarioExecutionResult>>? scenarioExecutor,
-        Func<string, CancellationToken, Task<bool>> providerPreflight)
+        Func<string, CancellationToken, Task<bool>> providerPreflight,
+        Func<IReadOnlyList<string>, CancellationToken, Task<WorkflowCommand.ModelPullResult>>? modelPuller = null)
     {
         WorkflowCommand.ScenarioExecutor executor = scenarioExecutor is null
             ? StubScenarioExecutorAsync
@@ -78,7 +81,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             executor,
             providerPreflight is null
                 ? null
-                : (provider, ct) => providerPreflight(provider, ct));
+                : (provider, ct) => providerPreflight(provider, ct),
+            modelPuller);
     }
 
     private static WorkflowCommand CreateCommandWithPreflightAndPuller(
@@ -926,6 +930,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteOptimizeAsync(
                     requestOverride: null,
+                    objective: null,
+                    objectiveFile: null,
                     specPath: null,
                     specJson: runtimeSpecJson,
                     providerOverride: null,
@@ -938,6 +944,10 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     randomSeedOverride: 7,
                     cooldownMsOverride: 0,
                     maxCandidates: 8,
+                    budgetRuns: null,
+                    searchStrategy: "successive-halving",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.35,
                     autoPullModels: false,
                     promoteWinner: false,
                     policyFile: null,
@@ -1012,6 +1022,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteOptimizeAsync(
                     requestOverride: null,
+                    objective: null,
+                    objectiveFile: null,
                     specPath: null,
                     specJson: runtimeSpecJson,
                     providerOverride: null,
@@ -1024,6 +1036,10 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     randomSeedOverride: null,
                     cooldownMsOverride: 0,
                     maxCandidates: 4,
+                    budgetRuns: null,
+                    searchStrategy: "successive-halving",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.35,
                     autoPullModels: false,
                     promoteWinner: true,
                     policyFile: null,
@@ -1104,6 +1120,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteOptimizeAsync(
                     requestOverride: null,
+                    objective: null,
+                    objectiveFile: null,
                     specPath: null,
                     specJson: runtimeSpecJson,
                     providerOverride: null,
@@ -1116,6 +1134,10 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     randomSeedOverride: null,
                     cooldownMsOverride: 0,
                     maxCandidates: 4,
+                    budgetRuns: null,
+                    searchStrategy: "successive-halving",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.35,
                     autoPullModels: true,
                     promoteWinner: false,
                     policyFile: null,
@@ -1129,6 +1151,181 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(pulledModels is not null, "Expected optimize to invoke model puller.");
             AssertTrue(pulledModels!.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
             AssertTrue(pulledModels.Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeResolvesObjectiveFileAndReportsSearchMetadataAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 3,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-latency", "prompt": "Optimize latency for planner pipeline." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-planner",
+      "roles": [
+        { "agentId": "planner-1", "role": "planner", "goal": "Plan quickly" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-fast",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+            var objectiveFile = Path.Combine(repoRoot, "objective.txt");
+            await File.WriteAllTextAsync(objectiveFile, "optimize latency planner pipeline", cancellationToken).ConfigureAwait(false);
+
+            var command = CreateCommandWithPreflight(
+                (_, _, _, _, _, _) => Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(true, "ok", 0, 0)),
+                (_, _) => Task.FromResult(true));
+
+            var reportPath = Path.Combine(repoRoot, "workflow_optimize_objective_report.json");
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: null,
+                    objectiveFile: objectiveFile,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: 11,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    budgetRuns: 2,
+                    searchStrategy: "objective-first",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.0,
+                    autoPullModels: false,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: reportPath,
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"searchStrategy\": \"objective-first\"", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"measuredRunsUsed\": 2", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"objectiveFile\":", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(File.Exists(reportPath), "Expected objective report to be generated.");
+
+            var report = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(report.Contains("\"optimizeExecution\"", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("\"searchStrategy\": \"objective-first\"", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("\"measuredRunBudget\": 2", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeHonorsBudgetAndEarlyStopAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 5,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-fail", "prompt": "Run failing scenario." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-fail",
+      "roles": [
+        { "agentId": "builder-1", "role": "builder", "goal": "Build" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-fail",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+
+            var executions = 0;
+            var command = CreateCommandWithPreflight(
+                (_, _, _, _, _, _) =>
+                {
+                    executions++;
+                    return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "failed", 0, 0));
+                },
+                (_, _) => Task.FromResult(true));
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: "reliability first",
+                    objectiveFile: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    budgetRuns: 4,
+                    searchStrategy: "exhaustive",
+                    earlyStopMinRuns: 2,
+                    earlyStopMinSuccessRate: 0.8,
+                    autoPullModels: false,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: null,
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(1, exitCode);
+            AssertEqual(2, executions);
+            AssertTrue(output.Contains("\"measuredRunsUsed\": 2", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"earlyStopMinRuns\": 2", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"earlyStopMinSuccessRate\": 0.8", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
