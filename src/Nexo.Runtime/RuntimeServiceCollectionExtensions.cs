@@ -20,6 +20,8 @@ namespace Nexo.Runtime;
 /// </summary>
 public static class RuntimeServiceCollectionExtensions
 {
+    private static readonly string[] DefaultBarrierLevels = ["public", "internal"];
+
     /// <summary>
     /// Registers routing transport composition using explicitly-provided local and remote transport types.
     /// Uses TryAdd so host applications can fully override registration.
@@ -47,7 +49,11 @@ public static class RuntimeServiceCollectionExtensions
         IConfiguration configuration)
     {
         services.AddOptions<BarrierOptions>()
-            .Configure(options => configuration.GetSection("Nexo:Barriers").Bind(options));
+            .Configure(options =>
+            {
+                configuration.GetSection("Nexo:Barriers").Bind(options);
+                EnsureBarrierLevels(options);
+            });
         services.AddOptions<RoutingOptions>()
             .Configure(options => configuration.GetSection("Nexo:Routing").Bind(options));
         services.AddBarrierAuditSinks(configuration);
@@ -66,6 +72,30 @@ public static class RuntimeServiceCollectionExtensions
         services.AddHostedService<EndpointHealthMonitor>();
 #endif
         return services;
+    }
+
+    private static void EnsureBarrierLevels(BarrierOptions options)
+    {
+        var levels = options.Levels;
+        if (levels is null)
+            return;
+
+        var normalized = levels
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Select(static value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        levels.Clear();
+        if (normalized.Length == 0)
+        {
+            foreach (var defaultLevel in DefaultBarrierLevels)
+                levels.Add(defaultLevel);
+            return;
+        }
+
+        foreach (var level in normalized)
+            levels.Add(level);
     }
 
     public static IServiceCollection AddBarrierAuditSinks(
