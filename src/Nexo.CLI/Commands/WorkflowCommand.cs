@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Nexo.CLI.Runtime;
 using Nexo.Orchestration.Models;
 
@@ -27,6 +28,16 @@ public sealed class WorkflowCommand : Command
         : this(async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>
         {
             var orchestrate = orchestrateFactory();
+            return await ExecuteScenarioAsync(orchestrate, request, runtimeSpecJson, provider, outputJson, verbose, ct).ConfigureAwait(false);
+        })
+    {
+    }
+
+    public WorkflowCommand(Func<IServiceScope> orchestrationScopeFactory)
+        : this(async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>
+        {
+            using var scope = orchestrationScopeFactory();
+            var orchestrate = scope.ServiceProvider.GetRequiredService<OrchestrateCommand>();
             return await ExecuteScenarioAsync(orchestrate, request, runtimeSpecJson, provider, outputJson, verbose, ct).ConfigureAwait(false);
         })
     {
@@ -263,7 +274,8 @@ public sealed class WorkflowCommand : Command
                     0d,
                     0d,
                     Array.Empty<WorkflowScenarioBenchmark>(),
-                    Array.Empty<WorkflowScenarioBenchmark>())), json);
+                    Array.Empty<WorkflowScenarioBenchmark>(),
+                    Array.Empty<WorkflowFailureCategoryStat>())), json);
             return Task.FromResult(1);
         }
 
@@ -375,7 +387,8 @@ public sealed class WorkflowCommand : Command
                                 Ok: false,
                                 Summary: $"Scenario executor failed: {ex.Message}",
                                 ConflictCount: 0,
-                                EscalationCount: 0);
+                                EscalationCount: 0,
+                                FailureCategory: "executor_failure");
                         }
                         var elapsedMs = sw.ElapsedMilliseconds;
                         var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
@@ -392,6 +405,7 @@ public sealed class WorkflowCommand : Command
                             elapsedMs,
                             score,
                             scenario.Summary,
+                            scenario.FailureCategory,
                             startedAt,
                             benchmarkSet));
                     }
@@ -444,6 +458,7 @@ public sealed class WorkflowCommand : Command
                         EscalationCount = run.EscalationCount,
                         Score = run.Score,
                         Summary = run.Summary,
+                        FailureCategory = run.FailureCategory,
                         BenchmarkSet = run.BenchmarkSet
                     });
             }
@@ -500,7 +515,7 @@ public sealed class WorkflowCommand : Command
         bool verbose,
         CancellationToken ct)
     {
-        var (stdOut, stdErr) = await CaptureConsoleAsync(
+        var (exitCode, stdOut, stdErr) = await CaptureConsoleAsync(
             () => orchestrate.ExecuteAsync(
                 request,
                 runtimeSpecPath: null,
@@ -518,21 +533,34 @@ public sealed class WorkflowCommand : Command
         var parsed = TryParseOrchestratePayload(combined);
         if (parsed is null)
         {
+            var category = ClassifyFailureCategory(combined);
             return new ScenarioExecutionResult(
                 false,
                 "Scenario failed: orchestrate output did not contain JSON payload.",
                 0,
-                0);
+                0,
+                category);
+        }
+
+        var failureCategory = parsed.Ok
+            ? "none"
+            : ClassifyFailureCategory(combined, parsed.ErrorCode);
+
+        var summary = parsed.Summary;
+        if (!parsed.Ok && exitCode != 0 && !summary.Contains("errorCode", StringComparison.OrdinalIgnoreCase))
+        {
+            summary = $"{summary} (exitCode={exitCode})";
         }
 
         return new ScenarioExecutionResult(
             parsed.Ok,
-            parsed.Summary,
+            summary,
             parsed.ConflictCount,
-            parsed.EscalationCount);
+            parsed.EscalationCount,
+            failureCategory);
     }
 
-    private static async Task<(string StdOut, string StdErr)> CaptureConsoleAsync(
+    private static async Task<(int ExitCode, string StdOut, string StdErr)> CaptureConsoleAsync(
         Func<Task<int>> run,
         CancellationToken ct)
     {
@@ -545,15 +573,14 @@ public sealed class WorkflowCommand : Command
         {
             Console.SetOut(outWriter);
             Console.SetError(errWriter);
-            await run().ConfigureAwait(false);
+            var exitCode = await run().ConfigureAwait(false);
+            return (exitCode, outWriter.ToString(), errWriter.ToString());
         }
         finally
         {
             Console.SetOut(originalOut);
             Console.SetError(originalErr);
         }
-
-        return (outWriter.ToString(), errWriter.ToString());
     }
 
     private static ParsedOrchestratePayload? TryParseOrchestratePayload(string output)
@@ -571,13 +598,24 @@ public sealed class WorkflowCommand : Command
                 var root = doc.RootElement;
                 var ok = root.TryGetProperty("ok", out var okNode) && okNode.ValueKind == JsonValueKind.True;
                 if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
-                    return new ParsedOrchestratePayload(ok, "Orchestrate response missing data payload.", 0, 0);
+                {
+                    var errorCode = root.TryGetProperty("errorCode", out var errorCodeNode)
+                        ? errorCodeNode.GetString()
+                        : null;
+                    var error = root.TryGetProperty("error", out var errorNode)
+                        ? errorNode.GetString()
+                        : null;
+                    var fallbackSummary = string.IsNullOrWhiteSpace(errorCode)
+                        ? "Orchestrate response missing data payload."
+                        : $"Orchestration failed with errorCode={errorCode}: {error ?? "no error details"}";
+                    return new ParsedOrchestratePayload(ok, fallbackSummary, 0, 0, errorCode);
+                }
                 var summary = data.TryGetProperty("success", out var successNode) && successNode.ValueKind == JsonValueKind.True
                     ? "Orchestration run completed successfully."
                     : "Orchestration reported failure.";
                 var conflictCount = data.TryGetProperty("conflicts", out var conflictsNode) ? conflictsNode.GetInt32() : 0;
                 var escalationCount = data.TryGetProperty("escalations", out var escalationsNode) ? escalationsNode.GetInt32() : 0;
-                return new ParsedOrchestratePayload(ok, summary, conflictCount, escalationCount);
+                return new ParsedOrchestratePayload(ok, summary, conflictCount, escalationCount, null);
             }
             catch
             {
@@ -586,6 +624,29 @@ public sealed class WorkflowCommand : Command
         }
 
         return null;
+    }
+
+    private static string ClassifyFailureCategory(string output, string? parsedErrorCode = null)
+    {
+        if (!string.IsNullOrWhiteSpace(parsedErrorCode))
+        {
+            if (parsedErrorCode.Contains("BARRIER", StringComparison.OrdinalIgnoreCase))
+                return "runtime_context_failure";
+            if (parsedErrorCode.Contains("ENDPOINT", StringComparison.OrdinalIgnoreCase))
+                return "infra_unavailable";
+        }
+
+        var text = output ?? string.Empty;
+        if (text.Contains("BarrierContext has already been initialized", StringComparison.OrdinalIgnoreCase))
+            return "runtime_context_failure";
+        if (text.Contains("At least one barrier level must be defined", StringComparison.OrdinalIgnoreCase))
+            return "runtime_context_failure";
+        if (text.Contains("Connection refused", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("Could not list Ollama models", StringComparison.OrdinalIgnoreCase))
+            return "infra_unavailable";
+        if (text.Contains("Orchestrate response missing data payload", StringComparison.OrdinalIgnoreCase))
+            return "orchestration_failure";
+        return "model_execution_failure";
     }
 
     private static OrchestrationRuntimeSpec BuildRuntimeSpec(
@@ -740,6 +801,17 @@ public sealed class WorkflowCommand : Command
         var avgScore = totalRuns == 0 ? 0d : Math.Round(items.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
         var avgConflicts = totalRuns == 0 ? 0d : Math.Round(items.Select(x => (double)x.ConflictCount).DefaultIfEmpty(0d).Average(), 3);
         var avgEscalations = totalRuns == 0 ? 0d : Math.Round(items.Select(x => (double)x.EscalationCount).DefaultIfEmpty(0d).Average(), 3);
+        var failuresByCategory = items
+            .Where(x => !x.Success)
+            .GroupBy(
+                x => string.IsNullOrWhiteSpace(x.FailureCategory) || string.Equals(x.FailureCategory, "none", StringComparison.OrdinalIgnoreCase)
+                    ? ClassifyFailureCategory(x.Summary ?? string.Empty)
+                    : x.FailureCategory!,
+                StringComparer.OrdinalIgnoreCase)
+            .Select(g => new WorkflowFailureCategoryStat(g.Key, g.Count()))
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
         var scenarioStats = items
             .GroupBy(x => $"{x.RequestId}::{x.CompositionId}::{x.ModelProfileId}", StringComparer.OrdinalIgnoreCase)
@@ -791,7 +863,8 @@ public sealed class WorkflowCommand : Command
             AverageConflicts: avgConflicts,
             AverageEscalations: avgEscalations,
             TopScenarios: topScenarios,
-            Bottlenecks: bottlenecks);
+            Bottlenecks: bottlenecks,
+            FailureCategories: failuresByCategory);
     }
 
     private static long ComputePercentile(IEnumerable<long> source, double percentile)
@@ -859,6 +932,12 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"- Avg conflicts: {report.AverageConflicts:F2}");
         sb.AppendLine($"- Avg escalations: {report.AverageEscalations:F2}");
         sb.AppendLine();
+        sb.AppendLine("## Failure Categories");
+        foreach (var category in report.FailureCategories)
+        {
+            sb.AppendLine($"- `{category.Category}`: {category.Count}");
+        }
+        sb.AppendLine();
         sb.AppendLine("## Top Scenarios");
         foreach (var scenario in report.TopScenarios)
         {
@@ -888,6 +967,12 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"Average score: {report.AverageScore:F2}");
         sb.AppendLine($"Average conflicts: {report.AverageConflicts:F2}");
         sb.AppendLine($"Average escalations: {report.AverageEscalations:F2}");
+        sb.AppendLine();
+        sb.AppendLine("Failure categories:");
+        foreach (var category in report.FailureCategories)
+        {
+            sb.AppendLine($"- {category.Category}: {category.Count}");
+        }
         sb.AppendLine();
         sb.AppendLine("Top scenarios:");
         foreach (var scenario in report.TopScenarios)
@@ -1038,6 +1123,7 @@ public sealed class WorkflowCommand : Command
         long ElapsedMs,
         double Score,
         string Summary,
+        string FailureCategory,
         DateTimeOffset StartedAtUtc,
         string BenchmarkSet);
 
@@ -1089,6 +1175,10 @@ public sealed class WorkflowCommand : Command
         public string? LastFailureSummary { get; init; }
     }
 
+    private sealed record WorkflowFailureCategoryStat(
+        string Category,
+        int Count);
+
     private sealed record WorkflowBenchmarkReport(
         DateTimeOffset GeneratedAtUtc,
         int TotalRuns,
@@ -1101,7 +1191,8 @@ public sealed class WorkflowCommand : Command
         double AverageConflicts,
         double AverageEscalations,
         IReadOnlyList<WorkflowScenarioBenchmark> TopScenarios,
-        IReadOnlyList<WorkflowScenarioBenchmark> Bottlenecks);
+        IReadOnlyList<WorkflowScenarioBenchmark> Bottlenecks,
+        IReadOnlyList<WorkflowFailureCategoryStat> FailureCategories);
 
     private sealed record WorkflowReportResult(
         bool Ok,
@@ -1113,11 +1204,13 @@ public sealed class WorkflowCommand : Command
         bool Ok,
         string Summary,
         int ConflictCount,
-        int EscalationCount);
+        int EscalationCount,
+        string FailureCategory = "none");
 
     private sealed record ParsedOrchestratePayload(
         bool Ok,
         string Summary,
         int ConflictCount,
-        int EscalationCount);
+        int EscalationCount,
+        string? ErrorCode = null);
 }
