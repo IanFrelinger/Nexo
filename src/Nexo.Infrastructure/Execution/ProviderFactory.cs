@@ -20,6 +20,7 @@ public class ProviderFactory : IProviderFactory
     private readonly object _ollamaProviderLock = new();
     private OllamaProvider? _ollamaProvider;
     private string? _ollamaProviderBaseUrl;
+    private HttpClient? _ollamaHttpClient;
     private static readonly HttpClient Http = new();
     private static readonly AsyncRetryPolicy<HttpResponseMessage> HttpRetryPolicy = CreateHttpRetryPolicy();
 
@@ -600,6 +601,12 @@ public class ProviderFactory : IProviderFactory
                 Timeout = TimeSpan.FromSeconds(timeoutSeconds)
             };
 
+            if (_ollamaHttpClient is not null)
+            {
+                _ollamaHttpClient.Dispose();
+            }
+
+            _ollamaHttpClient = httpClient;
             _ollamaProvider = new OllamaProvider(httpClient, baseUrl, _logger);
             _ollamaProviderBaseUrl = baseUrl;
             return _ollamaProvider;
