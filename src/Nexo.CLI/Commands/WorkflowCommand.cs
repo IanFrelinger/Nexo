@@ -1855,7 +1855,7 @@ public sealed class WorkflowCommand : Command
                     objectiveFile,
                     searchStrategy,
                     measuredRunsUsed,
-                    measuredRunBudget = measuredRunBudget == int.MaxValue ? null : measuredRunBudget,
+                    measuredRunBudget = measuredRunBudget == int.MaxValue ? (int?)null : measuredRunBudget,
                     earlyStopMinRuns,
                     earlyStopMinSuccessRate
                 },
