@@ -27,6 +27,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestOptimizeAutoPromotesWinnerBaselineAsync(cancellationToken).ConfigureAwait(false);
             await TestOptimizeInvokesModelPullerWithResolvedModelsAsync(cancellationToken).ConfigureAwait(false);
             await TestOptimizeResolvesObjectiveFileAndReportsSearchMetadataAsync(cancellationToken).ConfigureAwait(false);
+            await TestOptimizeSynthesizesObjectiveCandidatesAndReportsProvenanceAsync(cancellationToken).ConfigureAwait(false);
             await TestOptimizeHonorsBudgetAndEarlyStopAsync(cancellationToken).ConfigureAwait(false);
             return new TestResult
             {
@@ -1345,6 +1346,104 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(output.Contains("\"measuredRunsUsed\": 2", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"earlyStopMinRuns\": 2", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"earlyStopMinSuccessRate\": 0.8", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestOptimizeSynthesizesObjectiveCandidatesAndReportsProvenanceAsync(CancellationToken cancellationToken)
+    {
+        var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
+        try
+        {
+            Environment.CurrentDirectory = repoRoot;
+            const string runtimeSpecJson = """
+{
+  "execution": {
+    "iterations": 1,
+    "persistHistory": false,
+    "benchmarkSet": "workflow-lab"
+  },
+  "requests": [
+    { "id": "req-opt", "prompt": "Optimize latency and quality for planner pipeline." }
+  ],
+  "compositions": [
+    {
+      "id": "comp-opt",
+      "roles": [
+        { "agentId": "planner-1", "role": "planner", "goal": "Plan quickly and correctly" },
+        { "agentId": "builder-1", "role": "builder", "goal": "Implement with quality" }
+      ]
+    }
+  ],
+  "modelProfiles": [
+    {
+      "id": "profile-opt",
+      "default": { "prefer": "agentic", "provider": "ollama", "model": "llama3.1" }
+    }
+  ]
+}
+""";
+            var reportPath = Path.Combine(repoRoot, "workflow_optimize_synth_report.md");
+            var command = CreateCommandWithPreflight(
+                (request, _, _, _, _, _) =>
+                {
+                    var synthesized = request.Contains("Optimization objective focus", StringComparison.OrdinalIgnoreCase);
+                    return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(
+                        Ok: synthesized,
+                        Summary: synthesized ? "synthesized-candidate-ok" : "baseline-candidate-failed",
+                        ConflictCount: 0,
+                        EscalationCount: 0));
+                },
+                (_, _) => Task.FromResult(true));
+
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteOptimizeAsync(
+                    requestOverride: null,
+                    objective: "latency quality planner builder",
+                    objectiveFile: null,
+                    specPath: null,
+                    specJson: runtimeSpecJson,
+                    providerOverride: null,
+                    preferOverride: null,
+                    iterationsOverride: null,
+                    benchmarkSetOverride: "workflow-lab",
+                    persistHistoryOverride: false,
+                    warmupRunsOverride: 0,
+                    shuffleScenariosOverride: false,
+                    randomSeedOverride: 19,
+                    cooldownMsOverride: 0,
+                    maxCandidates: 4,
+                    budgetRuns: 2,
+                    searchStrategy: "objective-first",
+                    earlyStopMinRuns: 1,
+                    earlyStopMinSuccessRate: 0.0,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
+                    autoPullModels: false,
+                    promoteWinner: false,
+                    policyFile: null,
+                    reportOutputPath: reportPath,
+                    json: true,
+                    verbose: false,
+                    ct: cancellationToken)).ConfigureAwait(false);
+
+            AssertEqual(0, exitCode);
+            AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"synthesizedCandidateCount\": 1", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"synthesized\": true", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"objectiveScore\":", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"synthesisRationale\":", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(File.Exists(reportPath), "Expected synthesized optimize report to be written.");
+
+            var report = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
+            AssertTrue(report.Contains("Synthesized candidates: 1", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(report.Contains("Synthesis rationale", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {

@@ -1388,15 +1388,27 @@ public sealed class WorkflowCommand : Command
             .ToList();
 
         var objectiveKeywordSet = BuildObjectiveKeywordSet(objectiveText);
+        var maxCandidateCount = Math.Max(1, maxCandidates);
+        var synthesizedCandidates = BuildObjectiveSynthesizedCandidates(
+            groupedCandidates,
+            objectiveKeywordSet,
+            maxCandidateCount);
+        if (synthesizedCandidates.Count > 0)
+        {
+            groupedCandidates = groupedCandidates
+                .Concat(synthesizedCandidates)
+                .GroupBy(x => x.CandidateId, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.First())
+                .ToList();
+        }
 
         if (shuffleScenarios && groupedCandidates.Count > 1)
             ShuffleOptimizeCandidates(groupedCandidates, rng ?? new Random());
 
-        var maxCandidateCount = Math.Max(1, maxCandidates);
+        groupedCandidates = SortCandidatesForSearchStrategy(groupedCandidates, strategy, objectiveKeywordSet);
+
         if (groupedCandidates.Count > maxCandidateCount)
             groupedCandidates = groupedCandidates.Take(maxCandidateCount).ToList();
-
-        groupedCandidates = SortCandidatesForSearchStrategy(groupedCandidates, strategy, objectiveKeywordSet);
 
         var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
         foreach (var provider in profiles
@@ -1641,6 +1653,7 @@ public sealed class WorkflowCommand : Command
                 .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.Key)
                 .FirstOrDefault() ?? "unknown";
+            var candidateObjectiveScore = ScoreCandidateForObjective(candidate, objectiveKeywordSet);
             candidates.Add(new WorkflowOptimizeCandidate(
                 CandidateId: candidate.CandidateId,
                 RunId: candidateRunId,
@@ -1663,7 +1676,10 @@ public sealed class WorkflowCommand : Command
                 HardwareProfile: hardwareProfile,
                 Models: requiredModels,
                 AutoPullSummary: pullResult.Summary,
-                AutoPullOk: pullResult.Ok));
+                AutoPullOk: pullResult.Ok,
+                Synthesized: candidate.Synthesized,
+                SynthesisRationale: candidate.SynthesisRationale,
+                ObjectiveScore: candidateObjectiveScore));
         }
 
         if (candidates.Count == 0)
@@ -1675,11 +1691,13 @@ public sealed class WorkflowCommand : Command
         var ranked = candidates
             .OrderByDescending(x => x.SuccessRate)
             .ThenByDescending(x => x.AverageScore)
+            .ThenByDescending(x => x.ObjectiveScore)
             .ThenBy(x => x.P95LatencyMs)
             .ThenBy(x => x.AverageLatencyMs)
             .ToArray();
         var winner = ranked[0];
         var recommendations = BuildOptimizeRecommendations(ranked);
+        var synthesizedCandidateCount = ranked.Count(x => x.Synthesized);
 
         string? promotionSummary = null;
         string? promotedBaselineId = null;
@@ -1795,7 +1813,8 @@ public sealed class WorkflowCommand : Command
             measuredRunsUsed,
             measuredRunBudget,
             minRunsForEarlyStop,
-            minSuccessForEarlyStop);
+            minSuccessForEarlyStop,
+            synthesizedCandidateCount);
         File.WriteAllText(reportPath, reportContent);
 
         var hasSuccess = ranked.Any(x => x.Successes > 0);
@@ -1818,7 +1837,8 @@ public sealed class WorkflowCommand : Command
             BudgetRuns: measuredRunBudget == int.MaxValue ? null : measuredRunBudget,
             MeasuredRunsUsed: measuredRunsUsed,
             EarlyStopMinRuns: minRunsForEarlyStop,
-            EarlyStopMinSuccessRate: minSuccessForEarlyStop);
+            EarlyStopMinSuccessRate: minSuccessForEarlyStop,
+            SynthesizedCandidateCount: synthesizedCandidateCount);
         WriteOptimizeResult(result, json);
         return result.Ok ? 0 : 1;
     }
@@ -1940,7 +1960,8 @@ public sealed class WorkflowCommand : Command
         int measuredRunsUsed,
         int measuredRunBudget,
         int earlyStopMinRuns,
-        double earlyStopMinSuccessRate)
+        double earlyStopMinSuccessRate,
+        int synthesizedCandidateCount)
     {
         var extension = Path.GetExtension(reportPath).Trim().ToLowerInvariant();
         if (extension == ".json")
@@ -1962,7 +1983,8 @@ public sealed class WorkflowCommand : Command
                     measuredRunsUsed,
                     measuredRunBudget = measuredRunBudget == int.MaxValue ? (int?)null : measuredRunBudget,
                     earlyStopMinRuns,
-                    earlyStopMinSuccessRate
+                    earlyStopMinSuccessRate,
+                    synthesizedCandidateCount
                 },
                 hardwareTelemetry = new
                 {
@@ -1990,7 +2012,8 @@ public sealed class WorkflowCommand : Command
                 measuredRunsUsed,
                 measuredRunBudget,
                 earlyStopMinRuns,
-                earlyStopMinSuccessRate);
+                earlyStopMinSuccessRate,
+                synthesizedCandidateCount);
 
         return RenderOptimizationRecommendationMarkdown(
             sessionRunId,
@@ -2005,7 +2028,8 @@ public sealed class WorkflowCommand : Command
             measuredRunsUsed,
             measuredRunBudget,
             earlyStopMinRuns,
-            earlyStopMinSuccessRate);
+            earlyStopMinSuccessRate,
+            synthesizedCandidateCount);
     }
 
     private static string RenderOptimizationRecommendationMarkdown(
@@ -2021,7 +2045,8 @@ public sealed class WorkflowCommand : Command
         int measuredRunsUsed,
         int measuredRunBudget,
         int earlyStopMinRuns,
-        double earlyStopMinSuccessRate)
+        double earlyStopMinSuccessRate,
+        int synthesizedCandidateCount)
     {
         var sb = new StringBuilder();
         sb.AppendLine("# Workflow Optimize Recommendation Report");
@@ -2036,10 +2061,15 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"Search strategy: {searchStrategy}");
         sb.AppendLine($"Measured runs used: {measuredRunsUsed}{(measuredRunBudget == int.MaxValue ? string.Empty : "/" + measuredRunBudget)}");
         sb.AppendLine($"Early stop: min-runs={earlyStopMinRuns}, min-success-rate={earlyStopMinSuccessRate:P0}");
+        sb.AppendLine($"Synthesized candidates: {synthesizedCandidateCount}");
         sb.AppendLine();
         sb.AppendLine("## Winner");
         sb.AppendLine($"- Candidate: `{winner.CandidateId}`");
         sb.AppendLine($"- Run-id: `{winner.RunId}`");
+        sb.AppendLine($"- Objective score: {winner.ObjectiveScore}");
+        sb.AppendLine($"- Synthesized: {(winner.Synthesized ? "yes" : "no")}");
+        if (winner.Synthesized && !string.IsNullOrWhiteSpace(winner.SynthesisRationale))
+            sb.AppendLine($"- Synthesis rationale: {winner.SynthesisRationale}");
         sb.AppendLine($"- Success rate: {winner.SuccessRate:P1}");
         sb.AppendLine($"- Avg score: {winner.AverageScore:F2}");
         sb.AppendLine($"- Avg latency: {winner.AverageLatencyMs} ms");
@@ -2057,7 +2087,9 @@ public sealed class WorkflowCommand : Command
         foreach (var candidate in ranked)
         {
             sb.AppendLine(
-                $"- `{candidate.CandidateId}` | run `{candidate.RunId}` | success {candidate.SuccessRate:P1} | score {candidate.AverageScore:F2} | avg {candidate.AverageLatencyMs} ms | p95 {candidate.P95LatencyMs} ms | cpu {candidate.AverageCpuTimeDeltaMs} ms | ws-p95 {candidate.P95WorkingSetMb} MB | pull {(candidate.AutoPullOk ? "ok" : "failed")}");
+                $"- `{candidate.CandidateId}` | run `{candidate.RunId}` | objective-score {candidate.ObjectiveScore} | synthesized {(candidate.Synthesized ? "yes" : "no")} | success {candidate.SuccessRate:P1} | score {candidate.AverageScore:F2} | avg {candidate.AverageLatencyMs} ms | p95 {candidate.P95LatencyMs} ms | cpu {candidate.AverageCpuTimeDeltaMs} ms | ws-p95 {candidate.P95WorkingSetMb} MB | pull {(candidate.AutoPullOk ? "ok" : "failed")}");
+            if (candidate.Synthesized && !string.IsNullOrWhiteSpace(candidate.SynthesisRationale))
+                sb.AppendLine($"  - rationale: {candidate.SynthesisRationale}");
         }
 
         sb.AppendLine();
@@ -2087,7 +2119,8 @@ public sealed class WorkflowCommand : Command
         int measuredRunsUsed,
         int measuredRunBudget,
         int earlyStopMinRuns,
-        double earlyStopMinSuccessRate)
+        double earlyStopMinSuccessRate,
+        int synthesizedCandidateCount)
     {
         var sb = new StringBuilder();
         sb.AppendLine("Workflow Optimize Recommendation Report");
@@ -2101,13 +2134,17 @@ public sealed class WorkflowCommand : Command
         sb.AppendLine($"Search strategy: {searchStrategy}");
         sb.AppendLine($"Measured runs used: {measuredRunsUsed}{(measuredRunBudget == int.MaxValue ? string.Empty : "/" + measuredRunBudget)}");
         sb.AppendLine($"Early stop: min-runs={earlyStopMinRuns}, min-success-rate={earlyStopMinSuccessRate:P0}");
+        sb.AppendLine($"Synthesized candidates: {synthesizedCandidateCount}");
         sb.AppendLine($"Winner: {winner.CandidateId} ({winner.RunId}) success={winner.SuccessRate:P1}, score={winner.AverageScore:F2}, avg={winner.AverageLatencyMs}ms, p95={winner.P95LatencyMs}ms");
+        sb.AppendLine($"Winner objective: score={winner.ObjectiveScore}, synthesized={(winner.Synthesized ? "yes" : "no")}, rationale={winner.SynthesisRationale ?? "n/a"}");
         sb.AppendLine($"Winner telemetry: cpu={winner.AverageCpuTimeDeltaMs}ms, ws-p95={winner.P95WorkingSetMb}MB, private-p95={winner.P95PrivateMemoryMb}MB, managed-p95={winner.P95ManagedMemoryMb}MB, max-threads={winner.MaxThreadCount}, profile={winner.HardwareProfile}");
         sb.AppendLine("Ranked candidates:");
         foreach (var candidate in ranked)
         {
             sb.AppendLine(
-                $"- {candidate.CandidateId}: run={candidate.RunId}, success={candidate.SuccessRate:P1}, score={candidate.AverageScore:F2}, avg={candidate.AverageLatencyMs}ms, p95={candidate.P95LatencyMs}ms, cpu={candidate.AverageCpuTimeDeltaMs}ms, ws-p95={candidate.P95WorkingSetMb}MB, pull={(candidate.AutoPullOk ? "ok" : "failed")}");
+                $"- {candidate.CandidateId}: run={candidate.RunId}, objective-score={candidate.ObjectiveScore}, synthesized={(candidate.Synthesized ? "yes" : "no")}, success={candidate.SuccessRate:P1}, score={candidate.AverageScore:F2}, avg={candidate.AverageLatencyMs}ms, p95={candidate.P95LatencyMs}ms, cpu={candidate.AverageCpuTimeDeltaMs}ms, ws-p95={candidate.P95WorkingSetMb}MB, pull={(candidate.AutoPullOk ? "ok" : "failed")}");
+            if (candidate.Synthesized && !string.IsNullOrWhiteSpace(candidate.SynthesisRationale))
+                sb.AppendLine($"  rationale={candidate.SynthesisRationale}");
         }
 
         sb.AppendLine("Recommendations:");
@@ -3393,6 +3430,198 @@ public sealed class WorkflowCommand : Command
         return output;
     }
 
+    private static List<OptimizeCandidatePlan> BuildObjectiveSynthesizedCandidates(
+        IReadOnlyList<OptimizeCandidatePlan> baseCandidates,
+        HashSet<string> objectiveKeywords,
+        int maxCandidates)
+    {
+        var synthesized = new List<OptimizeCandidatePlan>();
+        if (baseCandidates.Count == 0 || objectiveKeywords.Count == 0 || !ShouldSynthesizeCandidates(objectiveKeywords))
+            return synthesized;
+
+        var seedCount = Math.Min(baseCandidates.Count, Math.Max(1, Math.Min(3, maxCandidates / 2)));
+        var seeds = baseCandidates
+            .Select(candidate => new
+            {
+                Candidate = candidate,
+                ObjectiveScore = ScoreCandidateForObjective(candidate, objectiveKeywords)
+            })
+            .OrderByDescending(x => x.ObjectiveScore)
+            .ThenByDescending(x => x.Candidate.Composition.Roles.Count)
+            .ThenBy(x => x.Candidate.CandidateId, StringComparer.OrdinalIgnoreCase)
+            .Take(seedCount)
+            .Select(x => x.Candidate)
+            .ToArray();
+
+        for (var i = 0; i < seeds.Length; i++)
+        {
+            var seed = seeds[i];
+            var synthesizedRequest = seed.Request with
+            {
+                Id = $"{seed.Request.Id}-synth-{i + 1}",
+                Prompt = BuildSynthesizedPrompt(seed.Request.Prompt, objectiveKeywords)
+            };
+            var synthesizedProfile = SynthesizeProfileForObjective(seed.Profile, seed.Composition, objectiveKeywords, i);
+            var candidateId = $"{seed.CandidateId}::synth-{i + 1}";
+            var rationale = BuildSynthesisRationale(seed, objectiveKeywords, synthesizedProfile);
+            var plans = seed.Plans
+                .Select(plan => new ScenarioPlan(
+                    synthesizedRequest,
+                    seed.Composition,
+                    synthesizedProfile,
+                    plan.Iteration))
+                .ToArray();
+            synthesized.Add(new OptimizeCandidatePlan(
+                CandidateId: candidateId,
+                Request: synthesizedRequest,
+                Composition: seed.Composition,
+                Profile: synthesizedProfile,
+                Plans: plans,
+                Synthesized: true,
+                SynthesisRationale: rationale));
+        }
+
+        return synthesized;
+    }
+
+    private static bool ShouldSynthesizeCandidates(HashSet<string> objectiveKeywords)
+    {
+        return objectiveKeywords.Contains("latency") ||
+               objectiveKeywords.Contains("fast") ||
+               objectiveKeywords.Contains("speed") ||
+               objectiveKeywords.Contains("throughput") ||
+               objectiveKeywords.Contains("quality") ||
+               objectiveKeywords.Contains("accuracy") ||
+               objectiveKeywords.Contains("reasoning") ||
+               objectiveKeywords.Contains("thorough");
+    }
+
+    private static string BuildSynthesizedPrompt(string prompt, HashSet<string> objectiveKeywords)
+    {
+        if (objectiveKeywords.Count == 0)
+            return prompt;
+        var directives = objectiveKeywords
+            .Take(4)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (directives.Length == 0)
+            return prompt;
+        return $"{prompt}\n\nOptimization objective focus: prioritize {string.Join(", ", directives)}.";
+    }
+
+    private static WorkflowLabModelProfileSpec SynthesizeProfileForObjective(
+        WorkflowLabModelProfileSpec profile,
+        WorkflowLabCompositionSpec composition,
+        HashSet<string> objectiveKeywords,
+        int seedIndex)
+    {
+        var defaultRuntime = profile.Default;
+        var defaultHint = ResolveObjectiveDefaultModelHint(objectiveKeywords, seedIndex);
+        if (!string.IsNullOrWhiteSpace(defaultHint) &&
+            string.Equals(defaultRuntime.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
+        {
+            defaultRuntime = defaultRuntime with { Model = defaultHint };
+        }
+
+        var agents = profile.Agents.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        var hints = profile.AgentModelHints.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
+        foreach (var role in composition.Roles)
+        {
+            var roleHint = ResolveObjectiveRoleModelHint(objectiveKeywords, role, seedIndex);
+            if (string.IsNullOrWhiteSpace(roleHint))
+                continue;
+            hints[role.AgentId] = roleHint;
+
+            if (agents.TryGetValue(role.AgentId, out var runtime))
+            {
+                var resolvedProvider = string.IsNullOrWhiteSpace(runtime.Provider) ? defaultRuntime.Provider : runtime.Provider;
+                agents[role.AgentId] = runtime with { Provider = resolvedProvider, Model = roleHint };
+            }
+            else if (string.Equals(defaultRuntime.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
+            {
+                agents[role.AgentId] = defaultRuntime with { Model = roleHint };
+            }
+        }
+
+        return profile with
+        {
+            Id = $"{profile.Id}-synth-{seedIndex + 1}",
+            Description = string.IsNullOrWhiteSpace(profile.Description)
+                ? "Objective-synthesized profile."
+                : $"{profile.Description} [objective-synthesized]",
+            Default = defaultRuntime,
+            Agents = agents,
+            AgentModelHints = hints
+        };
+    }
+
+    private static string? ResolveObjectiveDefaultModelHint(HashSet<string> objectiveKeywords, int seedIndex)
+    {
+        var lowLatency = objectiveKeywords.Contains("latency") ||
+                         objectiveKeywords.Contains("fast") ||
+                         objectiveKeywords.Contains("speed") ||
+                         objectiveKeywords.Contains("throughput");
+        if (lowLatency)
+            return seedIndex % 2 == 0 ? "qwen2.5:7b" : "mistral:7b";
+
+        var highReasoning = objectiveKeywords.Contains("quality") ||
+                            objectiveKeywords.Contains("accuracy") ||
+                            objectiveKeywords.Contains("reasoning") ||
+                            objectiveKeywords.Contains("thorough");
+        if (highReasoning)
+            return seedIndex % 2 == 0 ? "llama3.1" : "qwen2.5:7b";
+
+        return null;
+    }
+
+    private static string? ResolveObjectiveRoleModelHint(
+        HashSet<string> objectiveKeywords,
+        WorkflowLabAgentRoleSpec role,
+        int seedIndex)
+    {
+        var roleText = $"{role.Role} {role.Domain} {role.Goal}".ToLowerInvariant();
+        var lowLatency = objectiveKeywords.Contains("latency") ||
+                         objectiveKeywords.Contains("fast") ||
+                         objectiveKeywords.Contains("speed") ||
+                         objectiveKeywords.Contains("throughput");
+        if (lowLatency)
+        {
+            if (roleText.Contains("planner") || roleText.Contains("coordinat"))
+                return "qwen2.5:7b";
+            if (roleText.Contains("qa") || roleText.Contains("review"))
+                return "mistral:7b";
+            return seedIndex % 2 == 0 ? "qwen2.5:7b" : "llama3.1";
+        }
+
+        var qualityFocus = objectiveKeywords.Contains("quality") ||
+                           objectiveKeywords.Contains("accuracy") ||
+                           objectiveKeywords.Contains("reasoning") ||
+                           objectiveKeywords.Contains("thorough");
+        if (qualityFocus)
+        {
+            if (roleText.Contains("builder") || roleText.Contains("engineer"))
+                return "codellama:13b";
+            if (roleText.Contains("qa") || roleText.Contains("review"))
+                return "mistral:7b";
+            return "llama3.1";
+        }
+
+        return null;
+    }
+
+    private static string BuildSynthesisRationale(
+        OptimizeCandidatePlan seed,
+        HashSet<string> objectiveKeywords,
+        WorkflowLabModelProfileSpec synthesizedProfile)
+    {
+        var keywords = objectiveKeywords
+            .Take(4)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var keywordText = keywords.Length == 0 ? "none" : string.Join(", ", keywords);
+        return $"Derived from {seed.CandidateId}; objective keywords [{keywordText}] applied to request prompt and profile {synthesizedProfile.Id}.";
+    }
+
     private static string NormalizeSearchStrategy(string? searchStrategy)
     {
         var value = string.IsNullOrWhiteSpace(searchStrategy)
@@ -3605,6 +3834,7 @@ public sealed class WorkflowCommand : Command
                 measuredRunsUsed = result.MeasuredRunsUsed,
                 earlyStopMinRuns = result.EarlyStopMinRuns,
                 earlyStopMinSuccessRate = result.EarlyStopMinSuccessRate,
+                synthesizedCandidateCount = result.SynthesizedCandidateCount,
                 candidates = result.Candidates
             }, new JsonSerializerOptions { WriteIndented = true }));
             return;
@@ -3628,6 +3858,8 @@ public sealed class WorkflowCommand : Command
             Console.WriteLine($"  measured-runs-used={result.MeasuredRunsUsed}{(result.BudgetRuns.HasValue ? "/" + result.BudgetRuns.Value : string.Empty)}");
         if (result.EarlyStopMinRuns.HasValue || result.EarlyStopMinSuccessRate.HasValue)
             Console.WriteLine($"  early-stop=min-runs:{result.EarlyStopMinRuns ?? 0}, min-success-rate:{(result.EarlyStopMinSuccessRate ?? 0d):P0}");
+        if (result.SynthesizedCandidateCount.HasValue)
+            Console.WriteLine($"  synthesized-candidates={result.SynthesizedCandidateCount}");
         if (result.Winner is not null)
         {
             Console.WriteLine(
@@ -3839,7 +4071,10 @@ public sealed class WorkflowCommand : Command
         string HardwareProfile,
         IReadOnlyList<string> Models,
         string AutoPullSummary,
-        bool AutoPullOk);
+        bool AutoPullOk,
+        bool Synthesized = false,
+        string? SynthesisRationale = null,
+        int ObjectiveScore = 0);
 
     private sealed record WorkflowOptimizeRecommendation(
         string Kind,
@@ -3864,7 +4099,8 @@ public sealed class WorkflowCommand : Command
         int? BudgetRuns = null,
         int? MeasuredRunsUsed = null,
         int? EarlyStopMinRuns = null,
-        double? EarlyStopMinSuccessRate = null);
+        double? EarlyStopMinSuccessRate = null,
+        int? SynthesizedCandidateCount = null);
 
     private sealed record WorkflowHistorySummary(
         int Total,
@@ -4009,7 +4245,9 @@ public sealed class WorkflowCommand : Command
         WorkflowLabRequestSpec Request,
         WorkflowLabCompositionSpec Composition,
         WorkflowLabModelProfileSpec Profile,
-        IReadOnlyList<ScenarioPlan> Plans);
+        IReadOnlyList<ScenarioPlan> Plans,
+        bool Synthesized = false,
+        string? SynthesisRationale = null);
 
     private sealed record ScenarioPlan(
         WorkflowLabRequestSpec Request,
