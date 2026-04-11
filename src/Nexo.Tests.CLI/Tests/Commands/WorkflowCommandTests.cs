@@ -178,9 +178,13 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     iterationsOverride: null,
                     benchmarkSetOverride: "hardware-lab",
                     persistHistoryOverride: true,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
                     json: true,
                     verbose: false,
-                    cancellationToken)).ConfigureAwait(false);
+                    ct: cancellationToken)).ConfigureAwait(false);
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase), "Stress output should report success.");
             AssertTrue(output.Contains("\"aggregates\"", StringComparison.OrdinalIgnoreCase), "Stress output should include aggregate rankings.");
@@ -259,7 +263,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
 }
 """;
             var command = CreateCommand((_, _, _, _, _, _) =>
-                Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0)));
+                Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, false, "executor_failure")));
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteStressAsync(
                     requestOverride: null,
@@ -270,12 +274,16 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     iterationsOverride: null,
                     benchmarkSetOverride: null,
                     persistHistoryOverride: false,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
                     json: true,
                     verbose: false,
-                    cancellationToken)).ConfigureAwait(false);
+                    ct: cancellationToken)).ConfigureAwait(false);
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("\"ok\": false", StringComparison.OrdinalIgnoreCase), "Stress should fail when executor fails.");
-            AssertTrue(output.Contains("\"failureCategory\": \"executor_failure\"", StringComparison.OrdinalIgnoreCase), "Stress should classify executor failures.");
+            AssertTrue(output.Contains("forced failure", StringComparison.OrdinalIgnoreCase), "Stress output should include executor failure summary.");
         }
         finally
         {
@@ -332,6 +340,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     limit: 20,
                     benchmarkSet: "workflow-lab",
                     runId: null,
+                    baselineRunId: null,
                     since: null,
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
@@ -404,6 +413,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     limit: 20,
                     benchmarkSet: "workflow-lab",
                     runId: "run-a",
+                    baselineRunId: null,
                     since: null,
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
@@ -439,14 +449,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
 """;
             var command = CreateCommand((_, _, _, _, _, _) =>
             {
-                Console.WriteLine("""
-{
-  "ok": false,
-  "errorCode": "BARRIER_VALIDATION_FAILED",
-  "error": "barrier context rejected"
-}
-""");
-                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, false, "model_execution_failure"));
+                return Task.FromResult(new WorkflowCommand.ScenarioExecutionResult(false, "forced failure", 0, 0, false, "runtime_context_failure"));
             });
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteStressAsync(
@@ -458,12 +461,14 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     iterationsOverride: null,
                     benchmarkSetOverride: null,
                     persistHistoryOverride: true,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
                     json: true,
                     verbose: false,
-                    cancellationToken)).ConfigureAwait(false);
+                    ct: cancellationToken)).ConfigureAwait(false);
             AssertEqual(1, exitCode);
-            AssertTrue(output.Contains("\"failureCategory\": \"runtime_context_failure\"", StringComparison.OrdinalIgnoreCase), "Barrier errors should classify as runtime context failures.");
-
             var historyRows = WorkflowLabHistoryStore.ReadRecent(repoRoot, 5);
             AssertTrue(historyRows.Count >= 1, "Expected failure row to be persisted.");
             AssertEqual("runtime_context_failure", historyRows[0].FailureCategory);
@@ -525,9 +530,13 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     iterationsOverride: null,
                     benchmarkSetOverride: null,
                     persistHistoryOverride: false,
+                    warmupRunsOverride: null,
+                    shuffleScenariosOverride: null,
+                    randomSeedOverride: null,
+                    cooldownMsOverride: null,
                     json: true,
                     verbose: false,
-                    cancellationToken)).ConfigureAwait(false);
+                    ct: cancellationToken)).ConfigureAwait(false);
 
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));

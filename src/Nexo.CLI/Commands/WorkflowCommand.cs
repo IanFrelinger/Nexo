@@ -57,7 +57,13 @@ public sealed class WorkflowCommand : Command
     }
 
     internal WorkflowCommand(ScenarioExecutor scenarioExecutor)
-        : this(scenarioExecutor, (provider, ct) => PreflightProviderAsync(provider, ct))
+        : this(
+            scenarioExecutor,
+            (provider, ct) => Task.FromResult(
+                new PreflightResult(
+                    Ok: true,
+                    Provider: string.IsNullOrWhiteSpace(provider) ? "unset" : provider,
+                    Detail: "Test preflight override: provider assumed available.")))
     {
     }
 
@@ -511,6 +517,10 @@ public sealed class WorkflowCommand : Command
         int? iterationsOverride,
         string? benchmarkSetOverride,
         bool? persistHistoryOverride,
+        int? warmupRunsOverride,
+        bool? shuffleScenariosOverride,
+        int? randomSeedOverride,
+        int? cooldownMsOverride,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -547,9 +557,11 @@ public sealed class WorkflowCommand : Command
         var specHash = ComputeSpecHash(JsonSerializer.Serialize(spec));
         var gitSha = ResolveGitSha();
         var providerSnapshot = BuildProviderSnapshot(profiles);
-        var warmupRuns = Math.Max(0, spec.Execution.WarmupRuns);
-        var cooldownMs = Math.Max(0, spec.Execution.CooldownMs);
-        var rng = spec.Execution.RandomSeed.HasValue ? new Random(spec.Execution.RandomSeed.Value) : null;
+        var warmupRuns = Math.Max(0, warmupRunsOverride ?? spec.Execution.WarmupRuns);
+        var cooldownMs = Math.Max(0, cooldownMsOverride ?? spec.Execution.CooldownMs);
+        var shuffleScenarios = shuffleScenariosOverride ?? spec.Execution.ShuffleScenarioOrder;
+        var randomSeed = randomSeedOverride ?? spec.Execution.RandomSeed;
+        var rng = randomSeed.HasValue ? new Random(randomSeed.Value) : null;
 
         var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
         foreach (var provider in profiles
@@ -562,7 +574,7 @@ public sealed class WorkflowCommand : Command
         }
 
         var scenarioPlans = BuildScenarioPlans(requests, compositions, profiles, iterations);
-        if (spec.Execution.ShuffleScenarioOrder && scenarioPlans.Count > 1)
+        if (shuffleScenarios && scenarioPlans.Count > 1)
             ShuffleScenarioPlans(scenarioPlans, rng ?? new Random());
 
         var runs = new List<WorkflowStressRunRecord>();
@@ -1250,12 +1262,15 @@ public sealed class WorkflowCommand : Command
         return plans;
     }
 
-    private static void ShuffleScenarioPlans(IList<ScenarioPlan> plans, Random rng)
+    private static void ShuffleScenarioPlans(IReadOnlyList<ScenarioPlan> plans, Random rng)
     {
         for (var i = plans.Count - 1; i > 0; i--)
         {
             var j = rng.Next(i + 1);
-            (plans[i], plans[j]) = (plans[j], plans[i]);
+            if (plans is List<ScenarioPlan> list)
+            {
+                (list[i], list[j]) = (list[j], list[i]);
+            }
         }
     }
 
@@ -1267,6 +1282,14 @@ public sealed class WorkflowCommand : Command
         if (string.IsNullOrWhiteSpace(runId) && string.IsNullOrWhiteSpace(baselineRunId))
         {
             return new WorkflowRunComparison(true, "No run comparison requested.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(runId) && string.IsNullOrWhiteSpace(baselineRunId))
+        {
+            return new WorkflowRunComparison(
+                true,
+                "No baseline run-id provided; comparison skipped.",
+                RunId: runId.Trim());
         }
 
         if (string.IsNullOrWhiteSpace(runId) || string.IsNullOrWhiteSpace(baselineRunId))
@@ -1678,7 +1701,7 @@ public sealed class WorkflowCommand : Command
 
         Console.WriteLine($"workflow gate: {(result.Ok ? (result.Passed ? "passed" : "failed") : "error")}");
         Console.WriteLine(result.Summary);
-        if (result.Failures.Count > 0)
+        if (result.Failures is { Count: > 0 })
         {
             Console.WriteLine("  thresholds:");
             foreach (var failure in result.Failures)
