@@ -1150,7 +1150,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
             AssertTrue(pulledModels is not null, "Expected optimize to invoke model puller.");
             AssertTrue(pulledModels!.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
-            AssertTrue(pulledModels.Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
+            AssertTrue((pulledModels ?? Array.Empty<string>()).Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
         }
         finally
         {
