@@ -12,6 +12,10 @@
     </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Execution/Templates/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
@@ -20,6 +24,10 @@
         <ProjectReference Include="..\Nexo.Policies\Nexo.Policies.csproj" />
         <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
         <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Execution/Templates/UiDomainKnowledgeRetentionTests.template.cs" />
     </ItemGroup>
 
     <ItemGroup>

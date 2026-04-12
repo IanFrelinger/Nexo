@@ -1517,7 +1517,7 @@ public sealed class WorkflowCommand : Command
             if (!candidateState.PullResult.Ok && executionTarget.IsLocal)
             {
                 scenario = new ScenarioExecutionResult(
-                    Ok: true,
+                    Ok: false,
                     Summary: $"Skipped due to model pull failure: {candidateState.PullResult.Summary}",
                     ConflictCount: 0,
                     EscalationCount: 0,
@@ -1530,7 +1530,7 @@ public sealed class WorkflowCommand : Command
                      !preflight.Ok)
             {
                 scenario = new ScenarioExecutionResult(
-                    Ok: true,
+                    Ok: false,
                     Summary: $"Skipped due to provider preflight failure ({candidateState.ProfileProvider}): {preflight.Detail}",
                     ConflictCount: 0,
                     EscalationCount: 0,

@@ -1024,7 +1024,9 @@ public class ProviderFactory : IProviderFactory
         calls.Add(CreateWriteCall(
             root,
             "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs",
-            BuildUiDomainKnowledgeRetentionTestSource()));
+            LoadCanonicalGeneratedSource(
+                root,
+                "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs")));
 
         return JsonSerializer.Serialize(new { tool_calls = calls });
     }
@@ -3023,111 +3025,15 @@ export function mountFeature(host, context) {
 """;
     }
 
-    private static string BuildUiDomainKnowledgeRetentionTestSource() => """
-using Nexo.Core.Application.Testing.Abstractions;
-using Nexo.Core.Application.Testing.Models;
-using System.Text.Json;
-
-namespace Nexo.Tests.CLI.Tests.Commands.SelfExtendGenerated;
-
-public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
-{
-    public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    private static string BuildUiDomainKnowledgeRetentionTestSource()
     {
-        try
-        {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            string? repoRoot = null;
-            while (dir != null)
-            {
-                if (Directory.Exists(Path.Combine(dir.FullName, "src")) &&
-                    Directory.Exists(Path.Combine(dir.FullName, "docs")))
-                {
-                    repoRoot = dir.FullName;
-                    break;
-                }
-                dir = dir.Parent;
-            }
-            AssertTrue(!string.IsNullOrWhiteSpace(repoRoot), "Unable to resolve repository root from test context.");
-
-            var uiRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "app");
-            var hostRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "host");
-            var avaloniaRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "avalonia");
-            var htmlPath = Path.Combine(uiRoot, "index.html");
-            var jsPath = Path.Combine(uiRoot, "app.js");
-            var domainPath = Path.Combine(uiRoot, "domain-knowledge.json");
-            var hostProgramPath = Path.Combine(hostRoot, "Program.cs");
-            var hostProjectPath = Path.Combine(hostRoot, "UiDemoHost.csproj");
-            var smokeProgramPath = Path.Combine(hostRoot, "SmokeProgram.cs");
-            var avaloniaContractsPath = Path.Combine(avaloniaRoot, "Nexo.Ui.Abstractions", "UiContracts.cs");
-            var avaloniaHostProgramPath = Path.Combine(avaloniaRoot, "Nexo.Ui.AvaloniaHost", "Program.cs");
-
-            AssertTrue(File.Exists(htmlPath), "Expected index.html to exist.");
-            AssertTrue(File.Exists(jsPath), "Expected app.js to exist.");
-            AssertTrue(File.Exists(domainPath), "Expected domain-knowledge.json to exist.");
-            AssertTrue(File.Exists(hostProgramPath), "Expected .NET host Program.cs to exist.");
-            AssertTrue(File.Exists(hostProjectPath), "Expected .NET host project file to exist.");
-            AssertTrue(File.Exists(smokeProgramPath), "Expected .NET smoke program to exist.");
-            AssertTrue(File.Exists(avaloniaContractsPath), "Expected Avalonia abstraction contracts to exist.");
-            AssertTrue(File.Exists(avaloniaHostProgramPath), "Expected Avalonia host Program.cs to exist.");
-
-            var html = File.ReadAllText(htmlPath);
-            var js = File.ReadAllText(jsPath);
-            var domainJson = File.ReadAllText(domainPath);
-            var hostProgram = File.ReadAllText(hostProgramPath);
-            var avaloniaContracts = File.ReadAllText(avaloniaContractsPath);
-            var avaloniaHostProgram = File.ReadAllText(avaloniaHostProgramPath);
-
-            AssertTrue(html.Contains("Nexo Chatbot", StringComparison.Ordinal), "UI should render chatbot section.");
-            AssertTrue(html.Contains("Dynamically loaded features", StringComparison.Ordinal), "UI should render dynamic feature host section.");
-            AssertTrue(js.Contains("explainNexo", StringComparison.Ordinal), "JS should implement chatbot explainer behavior.");
-            AssertTrue(js.Contains("/api/scaffold-feature", StringComparison.Ordinal), "JS should call scaffold API endpoint.");
-            AssertTrue(js.Contains("import(moduleUrl)", StringComparison.Ordinal), "JS should dynamically import generated feature modules.");
-            AssertTrue(hostProgram.Contains("MapPost(\"/api/scaffold-feature\"", StringComparison.Ordinal), ".NET host should expose scaffold endpoint.");
-            AssertTrue(hostProgram.Contains("UseStaticFiles", StringComparison.Ordinal), ".NET host should serve static UI.");
-            AssertTrue(avaloniaContracts.Contains("IUiFrameworkAdapter", StringComparison.Ordinal), "Avalonia stack should include cross-framework adapter contract.");
-            AssertTrue(avaloniaContracts.Contains("CrossFrameworkCompatibility", StringComparison.Ordinal), "Avalonia stack should include compatibility contract notes.");
-            AssertTrue(avaloniaHostProgram.Contains("AVALONIA_FEATURE_HOTLOAD", StringComparison.Ordinal), "Avalonia host should scaffold via Avalonia hotload objective.");
-            AssertTrue(avaloniaHostProgram.Contains("AVALONIA_APP_TRANSFORM", StringComparison.Ordinal), "Avalonia host should support full app transformation objective.");
-            AssertTrue(avaloniaHostProgram.Contains("Galactic Operations Console", StringComparison.Ordinal), "Avalonia host should render a distinct transformed application shell.");
-            AssertTrue(avaloniaHostProgram.Contains("AvaloniaUiFrameworkAdapter", StringComparison.Ordinal), "Avalonia host should render nodes through framework adapter.");
-            using var doc = JsonDocument.Parse(domainJson);
-            var capabilities = doc.RootElement.GetProperty("capabilities");
-            AssertTrue(capabilities.GetArrayLength() >= 4, "Expected at least 4 domain capabilities.");
-
-            return Task.FromResult(new TestResult
-            {
-                Name = nameof(UiDomainKnowledgeRetentionTests),
-                Category = "SelfExtendGenerated",
-                Passed = true,
-                Message = "UI demo retains domain knowledge and required artifacts."
-            });
-        }
-        catch (AssertionException ex)
-        {
-            return Task.FromResult(new TestResult
-            {
-                Name = nameof(UiDomainKnowledgeRetentionTests),
-                Category = "SelfExtendGenerated",
-                Passed = false,
-                ErrorMessage = $"Assertion failed: {ex.Message}",
-                StackTrace = ex.StackTrace
-            });
-        }
-        catch (Exception ex)
-        {
-            return Task.FromResult(new TestResult
-            {
-                Name = nameof(UiDomainKnowledgeRetentionTests),
-                Category = "SelfExtendGenerated",
-                Passed = false,
-                ErrorMessage = $"Unexpected exception: {ex.Message}",
-                StackTrace = ex.StackTrace
-            });
-        }
+        const string resourceName = "Nexo.Infrastructure.Execution.Templates.UiDomainKnowledgeRetentionTests.template.cs";
+        using var stream = typeof(ProviderFactory).Assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+            throw new InvalidOperationException($"Embedded resource not found: {resourceName}");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
-}
-""";
 
     private static string BuildErrorStateSource() => """
 namespace Nexo.Unity.Generated;
@@ -3362,6 +3268,28 @@ public sealed class {{testClassName}} : UnitTestBase
         return match.Success && !string.IsNullOrWhiteSpace(match.Groups["root"].Value)
             ? match.Groups["root"].Value
             : ".";
+    }
+
+    private static string LoadCanonicalGeneratedSource(string root, string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+            return BuildUiDomainKnowledgeRetentionTestSource();
+
+        try
+        {
+            var baseRoot = string.IsNullOrWhiteSpace(root) ? "." : root;
+            var fullRoot = Path.IsPathRooted(baseRoot) ? baseRoot : Path.GetFullPath(baseRoot);
+            var fullPath = Path.GetFullPath(Path.Combine(fullRoot, relativePath));
+
+            if (File.Exists(fullPath))
+                return File.ReadAllText(fullPath);
+        }
+        catch
+        {
+            // Fall back to embedded template below.
+        }
+
+        return BuildUiDomainKnowledgeRetentionTestSource();
     }
 
     private static string InferScreenType(string prompt)

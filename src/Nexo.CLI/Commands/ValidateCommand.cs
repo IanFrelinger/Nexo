@@ -51,24 +51,11 @@ public class ValidateCommand
 
         try
         {
-            Progress<ProgressReport>? progress = null;
-            if (verbose || !json)
-            {
-                progress = new Progress<ProgressReport>(report =>
-                {
-                    if (json)
-                    {
-                        _logger.LogInformation(
-                            "Progress: {Percentage}% - {Message}",
-                            report.Percentage,
-                            report.Message);
-                    }
-                    else
-                    {
-                        _renderer.RenderProgress(report);
-                    }
-                });
-            }
+            var progress = CommandExecutionSupport.CreateProgressReporter(
+                verbose,
+                json,
+                _logger,
+                _renderer);
 
             var command = new RunValidationCommand(filter, progress);
             var result = await _mediator.Send(command);
@@ -84,7 +71,12 @@ public class ValidateCommand
         }
         catch (ValidationException ex)
         {
-            return HandleValidationException(ex);
+            return CommandExecutionSupport.RenderDomainFailure(
+                _logger,
+                _renderer,
+                ex,
+                "Validation failed",
+                (int)ExitCode.ValidationFailed);
         }
         catch (Exception ex)
         {
@@ -92,20 +84,6 @@ public class ValidateCommand
             _renderer.RenderError(ex.Message);
             return (int)ExitCode.UnexpectedError;
         }
-    }
-
-    private int HandleValidationException(ValidationException ex)
-    {
-        _logger.LogError(ex, "Validation failed");
-        if (!string.IsNullOrEmpty(ex.ErrorCode))
-        {
-            _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
-        }
-        else
-        {
-            _renderer.RenderError(ex.Message);
-        }
-        return (int)ExitCode.ValidationFailed;
     }
 }
 
