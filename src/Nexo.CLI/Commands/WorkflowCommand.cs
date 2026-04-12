@@ -2395,7 +2395,10 @@ public sealed class WorkflowCommand : Command
     private sealed record MeshOrchestrateResponse(
         bool Success,
         string? Summary,
-        object? Output);
+        object? Output,
+        int? Conflicts = null,
+        int? Escalations = null,
+        string? ErrorCode = null);
 
     private static async Task<ScenarioExecutionResult> ExecuteScenarioOnMeshPeerAsync(
         string endpoint,
@@ -2451,9 +2454,11 @@ public sealed class WorkflowCommand : Command
             {
                 return new ScenarioExecutionResult(
                     Ok: true,
-                    Summary: $"Mesh peer run succeeded on {normalizedEndpoint}.",
-                    ConflictCount: 0,
-                    EscalationCount: 0,
+                    Summary: string.IsNullOrWhiteSpace(orchestrate.Summary)
+                        ? $"Mesh peer run succeeded on {normalizedEndpoint}."
+                        : orchestrate.Summary!,
+                    ConflictCount: orchestrate.Conflicts ?? 0,
+                    EscalationCount: orchestrate.Escalations ?? 0,
                     FailureCategory: "none");
             }
 
@@ -2463,9 +2468,9 @@ public sealed class WorkflowCommand : Command
             return new ScenarioExecutionResult(
                 Ok: false,
                 Summary: failureSummary,
-                ConflictCount: 0,
-                EscalationCount: 0,
-                FailureCategory: ClassifyFailureCategory(failureSummary));
+                ConflictCount: orchestrate.Conflicts ?? 0,
+                EscalationCount: orchestrate.Escalations ?? 0,
+                FailureCategory: ClassifyFailureCategory(failureSummary, orchestrate.ErrorCode));
         }
         catch (Exception ex)
         {

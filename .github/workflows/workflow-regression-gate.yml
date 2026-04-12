@@ -27,6 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
           dotnet build src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
 
       - name: Run workflow command test suite

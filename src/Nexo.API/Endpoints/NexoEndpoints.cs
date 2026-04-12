@@ -141,6 +141,7 @@ public static class NexoEndpoints
     private static async Task<IResult> OrchestrateAsync(
         [FromBody] OrchestrationRequest request,
         [FromServices] Orchestrator orchestrator,
+        [FromServices] IOrchestrationRuntimeSpecAccessor? runtimeSpecAccessor,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request?.Request))
@@ -148,11 +149,47 @@ public static class NexoEndpoints
 
         try
         {
+            OrchestrationRuntimeSpec spec;
+            if (!string.IsNullOrWhiteSpace(request.RuntimeSpecJson))
+            {
+                try
+                {
+                    spec = JsonSerializer.Deserialize<OrchestrationRuntimeSpec>(
+                               request.RuntimeSpecJson,
+                               new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                           ?? OrchestrationRuntimeSpec.Default();
+                }
+                catch (JsonException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "runtimeSpecJson is invalid",
+                        Detail = ex.Message
+                    });
+                }
+            }
+            else
+            {
+                spec = OrchestrationRuntimeSpec.Default();
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.PreferModel))
+                spec = spec with { Model = spec.Model with { Prefer = request.PreferModel.Trim() } };
+            if (!string.IsNullOrWhiteSpace(request.Provider))
+                spec = spec with { Model = spec.Model with { Provider = request.Provider.Trim() } };
+            if (!string.IsNullOrWhiteSpace(request.BarrierLevel))
+                spec = spec with { BarrierLevel = request.BarrierLevel.Trim() };
+            if (!string.IsNullOrWhiteSpace(request.PreferredRegion))
+                spec = spec with { PreferredRegion = request.PreferredRegion.Trim() };
+
+            using var _ = runtimeSpecAccessor?.Begin(spec);
             var result = await orchestrator.OrchestrateAsync(request.Request, cancellationToken);
             return Results.Ok(new OrchestrationResponse(
                 result.Success,
                 result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null,
-                result.IntegratedOutput?.IntegratedResults));
+                result.IntegratedOutput?.IntegratedResults,
+                result.Conflicts.Count,
+                result.Escalations.Count));
         }
         catch (Exception ex)
         {
@@ -498,8 +535,20 @@ public sealed record AgentResponse(bool Success, string? Message, object? Output
 public sealed record ValidationRequest(string? Filter);
 public sealed record ValidationResponse(bool Passed, string? Message, int TotalTests, int PassedTests, int FailedTests);
 
-public sealed record OrchestrationRequest(string Request);
-public sealed record OrchestrationResponse(bool Success, string? Summary, object? Output);
+public sealed record OrchestrationRequest(
+    string Request,
+    string? RuntimeSpecJson = null,
+    string? PreferModel = null,
+    string? Provider = null,
+    string? BarrierLevel = null,
+    string? PreferredRegion = null);
+public sealed record OrchestrationResponse(
+    bool Success,
+    string? Summary,
+    object? Output,
+    int? Conflicts = null,
+    int? Escalations = null,
+    string? ErrorCode = null);
 
 public sealed record StatusResponse(string Mode, string Message);
 
